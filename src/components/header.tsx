@@ -50,7 +50,7 @@ export function Header() {
           <Link href={isLoggedIn ? "/admin" : "/admin/login"}>
             <LogIn className={cn(
               "h-4 w-4",
-              'text-muted-foreground group-hover:text-white',
+              'text-white group-hover:text-white',
             )} />
           </Link>
         </Button>
