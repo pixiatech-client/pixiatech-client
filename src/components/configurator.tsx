@@ -89,9 +89,16 @@ export function Configurator({
   onMediaToggle,
   onInteraction,
 }: ConfiguratorProps) {
-  const hasProductsForSale = useMemo(() => allProducts.some(p => p.availableFor.includes('sale')), [allProducts]);
-  const hasProductsForRental = useMemo(() => allProducts.some(p => p.availableFor.includes('rental')), [allProducts]);
-  
+  const hasProductsForSale = useMemo(() => {
+    if (allProducts.length === 0) return true; // Allow clicking even if empty for better UX
+    return allProducts.some(p => !p.availableFor || p.availableFor.length === 0 || p.availableFor.includes('sale'));
+  }, [allProducts]);
+
+  const hasProductsForRental = useMemo(() => {
+    if (allProducts.length === 0) return true;
+    return allProducts.some(p => !p.availableFor || p.availableFor.length === 0 || p.availableFor.includes('rental'));
+  }, [allProducts]);
+
   const [addProductStep, setAddProductStep] = useState<AddProductStep>('idle');
   const [newProductFilters, setNewProductFilters] = useState<NewProductFilters>({ transactionType: null, productType: null });
   const [openCalendars, setOpenCalendars] = useState<Record<string, boolean>>({});
@@ -260,10 +267,11 @@ export function Configurator({
   const handleProductTypeSelect = (type: 'indoor' | 'outdoor' | 'showcase') => {
     const filters = { ...newProductFilters, productType: type };
     
-    const availableProducts = allProducts.filter(p => 
-      p.availableFor.includes(filters.transactionType!) &&
-      p.type.includes(filters.productType!)
-    );
+    const availableProducts = allProducts.filter(p => {
+        const isTransactionMatch = !p.availableFor || p.availableFor.length === 0 || p.availableFor.includes(filters.transactionType!);
+        const isTypeMatch = !p.type || p.type.length === 0 || p.type.includes(filters.productType!);
+        return isTransactionMatch && isTypeMatch;
+    });
 
     if (availableProducts.length > 0) {
       const newProductId = `config_${Date.now()}`;
@@ -336,7 +344,12 @@ export function Configurator({
 
 
   const checkProductAvailability = (transaction: 'sale' | 'rental', type: 'indoor' | 'outdoor' | 'showcase') => {
-    return allProducts.some(p => p.availableFor.includes(transaction) && p.type.includes(type));
+    if (allProducts.length === 0) return true;
+    return allProducts.some(p => {
+        const isTransactionMatch = !p.availableFor || p.availableFor.length === 0 || p.availableFor.includes(transaction);
+        const isTypeMatch = !p.type || p.type.length === 0 || p.type.includes(type);
+        return isTransactionMatch && isTypeMatch;
+    });
   };
 
 
