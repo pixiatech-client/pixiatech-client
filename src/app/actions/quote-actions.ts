@@ -106,15 +106,15 @@ export async function updatePdfSettings(data: Partial<PdfSettings>) {
 
 
 async function sendQuoteEmail(recipientEmail: string, verificationToken: string, lang: Locale) {
-  // ✅ Priorité : variable d'env → sinon localhost en dev → sinon pixiatech.com en prod
+  // ✅ Priorité : variable d'env → sinon URL de production App Hosting → sinon localhost
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') 
     || (process.env.NODE_ENV === 'production' 
-        ? 'https://pixiatech.com' 
+        ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app' 
         : 'http://localhost:3000');
 
-  // ✅ Nettoyer l'URL : supprimer les domaines Firebase Studio/Cloud Workstation automatiquement
-  const safeBaseUrl = baseUrl.includes('cloudworkstations.dev') || baseUrl.includes('firebase-studio')
-    ? 'http://localhost:3000' 
+  // ✅ Nettoyer l'URL : s'assurer qu'on n'utilise pas localhost en production si le lien vient d'une workstation
+  const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
+    ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
     : baseUrl;
 
   const verificationUrl = `${safeBaseUrl}/quote/verify?token=${verificationToken}`;

@@ -43,12 +43,14 @@ export async function createSession(idToken: string) {
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
     console.log('[Session Action] Session cookie created successfully.');
 
+    const isProd = process.env.NODE_ENV === 'production';
+    
     cookies().set('session', sessionCookie, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
-      secure: true, // Always true for SameSite=None
+      secure: isProd, // Must be true for SameSite=None, but false for localhost HTTP
       path: '/',
-      sameSite: 'none',
+      sameSite: isProd ? 'none' : 'lax', // None for iframes (requires Secure), Lax for local dev
     });
     console.log('[Session Action] Cookie set in headers.');
 
