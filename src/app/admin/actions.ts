@@ -1935,10 +1935,22 @@ export async function getProducts(options: { page?: number; limit?: number } = {
           })
           .filter((m: string) => m === 'sale' || m === 'rental');
 
+        // Normalize environment types to strictly use 'indoor', 'outdoor', or 'showcase'
+        const normalizedType = (Array.isArray(data.type) ? data.type : [data.type || 'indoor'])
+          .map((t: string) => {
+            const val = t.toLowerCase();
+            if (val === 'interieur' || val === 'indoor') return 'indoor';
+            if (val === 'exterieur' || val === 'outdoor') return 'outdoor';
+            if (val === 'semi-exterieur' || val === 'showcase' || val === 'vitrine') return 'showcase';
+            return val;
+          })
+          .filter((t: string) => t === 'indoor' || t === 'outdoor' || t === 'showcase');
+
         return { 
           id: doc.id, 
           ...data,
           availableFor: normalizedAvailableFor,
+          type: normalizedType,
           tileWidth: parseFloat(data.largeurDalle || data.tileWidth || 0),
           tileHeight: parseFloat(data.hauteurDalle || data.tileHeight || 0),
           pricePerTile: parseFloat(data.prixDalle || data.pricePerTile || 0),

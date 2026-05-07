@@ -3073,10 +3073,22 @@ export default function ProductManagementClient() {
             return val;
           });
         
+        // Normalize environment types for UI (French)
+        const normalizedType = (Array.isArray(data.type) ? data.type : [data.type || 'interieur'])
+          .map((t: string) => {
+            const val = t.toLowerCase();
+            if (val === 'indoor' || val === 'interieur') return 'interieur';
+            if (val === 'outdoor' || val === 'exterieur') return 'exterieur';
+            if (val === 'showcase' || val === 'semi-exterieur' || val === 'vitrine') return 'semi-exterieur';
+            return val;
+          });
+        
         return { 
           id: doc.id, 
           ...data,
-          mode: normalizedMode
+          mode: normalizedMode,
+          environment: normalizedType,
+          type: normalizedType
         };
       });
       setProducts(prods);
@@ -3273,7 +3285,12 @@ export default function ProductManagementClient() {
           if (m === 'location') return 'rental';
           return (m || '').toLowerCase();
         }),
-        type: environment || ['interieur'],
+        type: (environment || []).map(e => {
+          if (e === 'interieur') return 'indoor';
+          if (e === 'exterieur') return 'outdoor';
+          if (e === 'semi-exterieur' || e === 'vitrine') return 'showcase';
+          return e;
+        }),
         price: (prixVente || '0') + ' €',
         image: finalPhotoUrl || '',
         videoUrl: finalVideoUrl || '', 
