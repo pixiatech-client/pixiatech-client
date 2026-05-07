@@ -128,7 +128,7 @@ export function QuoteBuilder({
   locations,
   wizardSettings: initialWizardSettings,
 }: QuoteBuilderProps) {
-  const { t } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const [wizardSettings, setWizardSettings] = useState<WizardSettings>(initialWizardSettings);
   const [configuredProducts, setConfiguredProducts] = useState<ConfiguredProduct[]>([]);
   const [activeConfigProductId, setActiveConfigProductId] = useState<string | null>(null);
@@ -164,7 +164,6 @@ export function QuoteBuilder({
 
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
-  const { t, locale, setLocale } = useI18n();
 
 
   // Automatically switch to wizard mode on mobile if in selection mode
