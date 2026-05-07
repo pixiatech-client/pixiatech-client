@@ -40,16 +40,7 @@ import { storage } from '@/firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
-const formSchema = z.object({
-  companyName: z.string().min(1, "Le nom de l'entreprise est requis"),
-  email: z.string().email('Adresse e-mail invalide'),
-  phone: z.string().min(1, 'Le numéro de téléphone est requis'),
-  address: z.string().min(1, "L'adresse est requise"),
-  notes: z.string().optional(),
-  termsAccepted: z.boolean().refine(val => val === true, {
-    message: "Vous devez accepter les conditions pour continuer.",
-  }),
-});
+// Schema will be defined inside the component to use t() function
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -81,9 +72,19 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   console.log("DEBUG: src/components/quote-form.tsx RENDERED");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { t, locale } = useI18n();
   const dateLocale = locale === 'en' ? enUS : fr;
+
+  const formSchema = z.object({
+    companyName: z.string().min(1, t('quoteForm.validation.companyRequired')),
+    email: z.string().email(t('quoteForm.validation.emailInvalid')),
+    phone: z.string().min(1, t('quoteForm.validation.phoneRequired')),
+    address: z.string().min(1, t('quoteForm.validation.addressRequired')),
+    notes: z.string().optional(),
+    termsAccepted: z.boolean().refine(val => val === true, {
+      message: t('quoteForm.validation.termsRequired'),
+    }),
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -144,7 +145,7 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
                   onSubmitted(id, data.email);
               } else {
                   console.error("Creation error:", error);
-                  toast({ variant: 'destructive', title: 'Erreur de création', description: error });
+                  toast({ variant: 'destructive', title: t('common.error'), description: error });
               }
             } catch (err: any) {
               console.error("Submission error:", err);
@@ -219,10 +220,10 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
                                 </div>
                                 {productInfo?.tileWidth && productInfo?.tileHeight && productInfo?.tileWidth > 0 && productInfo?.tileHeight > 0 && (
                                   <>
-                                    <div className="text-sm text-slate-500">Détails dalles</div>
+                                    <div className="text-sm text-slate-500">{t('wizard.dimensions.tileDetails')}</div>
                                     <div className="text-xs text-right text-slate-500 flex flex-col items-end">
                                       <span>
-                                        {Math.ceil((p.width * p.height) / ((productInfo.tileWidth / 100) * (productInfo.tileHeight / 100)))} dalles
+                                        {Math.ceil((p.width * p.height) / ((productInfo.tileWidth / 100) * (productInfo.tileHeight / 100)))} {t('configurator.tiles')}
                                       </span>
                                       <span className="text-[10px]">
                                         ({productInfo.tileWidth}cm x {productInfo.tileHeight}cm)
@@ -371,7 +372,7 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
                                     <FormLabel className="text-sm text-muted-foreground">
-                                    J'accepte que ces données soient conservées et traitées dans le cadre de ma demande, et de la démarche commerciale qui en découle, conformément aux <Link href="https://pixiatech.com/mentions-legales/" target="_blank" className="underline hover:text-primary">mentions légales</Link>.
+                                    {t('quoteForm.gdprText')} <Link href="https://pixiatech.com/mentions-legales/" target="_blank" className="underline hover:text-primary">{t('quoteForm.gdprLink')}</Link>.
                                     </FormLabel>
                                     <FormMessage />
                                 </div>

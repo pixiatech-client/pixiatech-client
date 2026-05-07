@@ -118,7 +118,7 @@ export function DeliveryForm({ onBack, onNext, deliverySettings, onLocationChang
                         items={cityOptions}
                         value={selectedCityId}
                         onValueChange={handleValueChange}
-                        placeholder={isLoadingCities ? t('Chargement...') : t('delivery.inputPlaceholder')}
+                        placeholder={isLoadingCities ? t('common.loading') : t('delivery.inputPlaceholder')}
                         searchPlaceholder={t('delivery.inputSearchPlaceholder')}
                         disabled={isLoadingCities}
                         onEmptyResultClick={handleEmptyResultClick}

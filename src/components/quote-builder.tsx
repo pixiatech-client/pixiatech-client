@@ -69,7 +69,7 @@ const MediaPreview = ({ url, type }: { url: string, type: 'video' | 'image' }) =
                     playsInline
                     className="w-full h-full object-cover"
                 >
-                    Votre navigateur ne supporte pas la lecture de vidéos.
+                    {t('common.videoNotSupported')}
                 </video>
             </div>
         );
@@ -95,7 +95,7 @@ const MediaPreview = ({ url, type }: { url: string, type: 'video' | 'image' }) =
             <div className="w-full h-full bg-black flex items-center justify-center">
                 <Image
                     src={url}
-                    alt="Aperçu du produit"
+                    alt={t('common.productPreview')}
                     fill
                     sizes="50vw"
                     className="object-cover"
@@ -106,7 +106,7 @@ const MediaPreview = ({ url, type }: { url: string, type: 'video' | 'image' }) =
 
     return (
         <div className="w-full h-full bg-black flex items-center justify-center">
-            <p className="text-white">Aperçu du média non disponible.</p>
+            <p className="text-white">{t('common.mediaPreviewNotAvailable')}</p>
         </div>
     );
 };
@@ -128,6 +128,7 @@ export function QuoteBuilder({
   locations,
   wizardSettings: initialWizardSettings,
 }: QuoteBuilderProps) {
+  const { t } = useI18n();
   const [wizardSettings, setWizardSettings] = useState<WizardSettings>(initialWizardSettings);
   const [configuredProducts, setConfiguredProducts] = useState<ConfiguredProduct[]>([]);
   const [activeConfigProductId, setActiveConfigProductId] = useState<string | null>(null);
@@ -622,7 +623,7 @@ export function QuoteBuilder({
             if (!locations) {
                  return (
                     <div className="w-full h-full flex items-center justify-center p-8">
-                        <Loader2 className="animate-spin mr-2"/> Chargement des destinations...
+                        <Loader2 className="animate-spin mr-2"/> {t('common.loading')}
                     </div>
                 )
             }
@@ -668,7 +669,7 @@ export function QuoteBuilder({
         default:
           return (
               <div className="w-full h-full flex items-center justify-center">
-                   <p>Étape invalide.</p>
+                   <p>{t('common.invalidStep')}</p>
               </div>
           );
       }
@@ -679,7 +680,7 @@ export function QuoteBuilder({
     
     // In selection mode, don't show a specific preview
     if (originalStep === 1 && activeMode === 'selection') {
-        return <StepImagePreview imageUrl={initialSettings.previewScreenImageUrl} title={"Configuration"} />;
+        return <StepImagePreview imageUrl={initialSettings.previewScreenImageUrl} title={t("wizard.steps.config")} />;
     }
 
     const previewComponent = (
@@ -850,7 +851,7 @@ export function QuoteBuilder({
           <FloatingFooterNav 
             onBack={handleBack}
             onNext={handleNext}
-            nextLabel={getOriginalStep(currentStep) === 4 ? (isMobile ? "Recevoir l'estimation" : "Recevoir l'estimation par email") : "Suivant"}
+            nextLabel={getOriginalStep(currentStep) === 4 ? t('quoteForm.submit') : t('common.next')}
             nextDisabled={
                 (getOriginalStep(currentStep) === 2 && !selectedCityId) || 
                 (getOriginalStep(currentStep) === 4 && (!isQuoteFormValid || isSubmitting))

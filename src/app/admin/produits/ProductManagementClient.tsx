@@ -3069,18 +3069,18 @@ export default function ProductManagementClient() {
         const normalizedMode = (data.availableFor || data.mode || [])
           .map((m: string) => {
             const val = m.toLowerCase();
-            if (val === 'sale' || val === 'vente') return 'vente';
-            if (val === 'rental' || val === 'location') return 'location';
+            if (val === 'sale' || val === 'vente') return 'sale';
+            if (val === 'rental' || val === 'location') return 'rental';
             return val;
           });
         
-        // Normalize environment types for UI (French)
-        const normalizedType = (Array.isArray(data.type) ? data.type : [data.type || 'interieur'])
+        // Normalize environment types for UI (English keys for translation)
+        const normalizedType = (Array.isArray(data.type) ? data.type : [data.type || 'indoor'])
           .map((t: string) => {
             const val = t.toLowerCase();
-            if (val === 'indoor' || val === 'interieur') return 'interieur';
-            if (val === 'outdoor' || val === 'exterieur') return 'exterieur';
-            if (val === 'showcase' || val === 'semi-exterieur' || val === 'vitrine') return 'semi-exterieur';
+            if (val === 'indoor' || val === 'interieur') return 'indoor';
+            if (val === 'outdoor' || val === 'exterieur') return 'outdoor';
+            if (val === 'showcase' || val === 'semi-exterieur' || val === 'vitrine') return 'showcase';
             return val;
           });
         

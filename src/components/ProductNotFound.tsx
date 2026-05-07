@@ -3,6 +3,7 @@
 import React from 'react';
 import { Search, ChevronLeft, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useI18n } from '@/lib/i18n';
 
 const GhostIllustration = () => (
   <motion.div
@@ -31,6 +32,7 @@ export interface ProductNotFoundProps {
 }
 
 export function ProductNotFound({ onReset, onBack, pitch, environment, hideBackButton }: ProductNotFoundProps) {
+  const { t } = useI18n();
   return (
     <div className="flex-1 flex items-center justify-center p-4 font-sans w-full">
       <motion.div 
@@ -44,38 +46,34 @@ export function ProductNotFound({ onReset, onBack, pitch, environment, hideBackB
             animate={{ y: [-8, 8, -8] }} 
             transition={{ repeat: Infinity, duration: 3.5, ease: 'easeInOut' }}
           >
-            <img src="/no-product.png" alt="Aucun produit" className="w-80 h-auto object-contain drop-shadow-2xl" />
+            <img src="/no-product.png" alt={t('wizard.products.noMatchTitle').replace(/<br\s*\/?>/gi, ' ')} className="w-80 h-auto object-contain drop-shadow-2xl" />
           </motion.div>
         </div>
 
         {/* Content */}
         <div className="w-full px-4 pb-8 flex flex-col items-center text-center">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-[#0E0D12] mb-3 leading-tight tracking-tight">
-            Oups !<br />Aucun produit ne correspond
+          <h1 className="text-3xl md:text-4xl font-extrabold text-[#0E0D12] mb-3 leading-tight tracking-tight" dangerouslySetInnerHTML={{ __html: t('wizard.products.noMatchTitle') }}>
           </h1>
 
           <p className="text-base text-slate-500 leading-relaxed max-w-sm mb-6">
-            Aucune configuration pour Pitch&nbsp;
-            <span className="font-bold text-[#0E0D12]">{pitch || 'N/A'}</span>
-            {' '}et environnement{' '}
-            <span className="font-bold text-[#0E0D12]">{environment || 'N/A'}</span>.
+            {t('wizard.products.noMatchDesc', { pitch: pitch || 'N/A', environment: environment || 'N/A' })}
           </p>
 
           {/* Advice Box */}
           <div className="w-full bg-[#fffbeb] border border-[#fef3c7] rounded-3xl p-5 mb-6 text-left">
-            <h3 className="font-bold text-[#92400e] mb-2 text-sm">Que pouvez-vous faire ?</h3>
+            <h3 className="font-bold text-[#92400e] mb-2 text-sm">{t('wizard.products.whatToDo')}</h3>
             <ul className="text-[#b45309] text-sm space-y-2 font-medium">
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#f59e0b] shrink-0" />
-                Modifier la distance de pitch souhaitée.
+                {t('wizard.products.advicePitch')}
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#f59e0b] shrink-0" />
-                Changer la sélection de l'environnement d'usage.
+                {t('wizard.products.adviceEnv')}
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#f59e0b] shrink-0" />
-                Contacter notre support pour une étude sur mesure.
+                {t('wizard.products.adviceSupport')}
               </li>
             </ul>
           </div>
@@ -86,7 +84,7 @@ export function ProductNotFound({ onReset, onBack, pitch, environment, hideBackB
               onClick={onReset}
               className="group w-full bg-[#5536ff] hover:bg-[#0E0D12] text-white py-4 px-6 rounded-full font-bold flex items-center justify-center gap-3 transition-all shadow-lg active:scale-[0.98]"
             >
-              <span className="group-hover:text-[#bef264] transition-colors">Rechercher un autre produit</span>
+              <span className="group-hover:text-[#bef264] transition-colors">{t('wizard.products.searchAnother')}</span>
               <div className="bg-[#4428e0] group-hover:bg-[#bef264] p-1.5 rounded-full transition-colors shrink-0">
                 <Search size={16} strokeWidth={3} className="text-white group-hover:text-[#0E0D12] transition-colors" />
               </div>
@@ -100,7 +98,7 @@ export function ProductNotFound({ onReset, onBack, pitch, environment, hideBackB
                   <div className="bg-slate-100 group-hover:bg-[#bef264] p-1.5 rounded-full transition-colors shrink-0">
                     <ChevronLeft size={16} strokeWidth={3} className="text-[#0E0D12] group-hover:text-black transition-colors" />
                   </div>
-                  <span>Retour</span>
+                  <span>{t('common.back')}</span>
                 </button>
             )}
 
@@ -111,7 +109,7 @@ export function ProductNotFound({ onReset, onBack, pitch, environment, hideBackB
               <div className="bg-slate-100 group-hover:bg-[#0E0D12] p-1.5 rounded-full transition-colors shrink-0">
                 <MessageCircle size={16} strokeWidth={3} className="text-[#0E0D12] group-hover:text-[#bef264] transition-colors" />
               </div>
-              <span>Contacter le support</span>
+              <span>{t('wizard.products.contactSupport')}</span>
             </button>
           </div>
         </div>

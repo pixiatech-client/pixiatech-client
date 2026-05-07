@@ -1,6 +1,23 @@
 
 {
     "langName": "EN",
+    "common": {
+        "loading": "Loading...",
+        "errorLoading": "Loading Error",
+        "error": "Error",
+        "generating": "Generating...",
+        "back": "Back",
+        "next": "Next",
+        "finish": "Finish",
+        "backToSite": "Back to site",
+        "videoNotSupported": "Your browser does not support the video tag.",
+        "productPreview": "Product preview",
+        "mediaPreviewNotAvailable": "Media preview not available.",
+        "invalidStep": "Invalid step.",
+        "tiles": "tiles",
+        "screenContent": "Screen content",
+        "humanSilhouette": "Human silhouette"
+    },
     "header": {
         "login": "Login"
     },
@@ -13,6 +30,120 @@
         "step3": "Installation",
         "step4": "Estimation",
         "step5": "Success"
+    },
+    "modeSelection": {
+        "title": "Choose your mode",
+        "description": "The method that suits you best.",
+        "wizardTitle": "Guided Configuration",
+        "wizardDesc": "Recommended — Fast, simple and hassle-free.",
+        "manualTitle": "Manual Configuration",
+        "manualDesc": "Advanced — For those who already know what they want."
+    },
+    "wizard": {
+        "steps": {
+            "project": "Project",
+            "config": "Config",
+            "install": "Install",
+            "estimate": "Estimate"
+        },
+        "projectType": {
+            "title": "What is your project type?",
+            "description": "Choose the solution adapted to your needs.",
+            "rentalDesc": "Flexible solution for events or temporary needs.",
+            "saleDesc": "Permanent acquisition for a durable installation."
+        },
+        "environment": {
+            "title": "Installation Environment",
+            "indoorTitle": "Indoor",
+            "indoorDesc": "Controlled brightness, IP20 protection. Ideal for shops and offices.",
+            "semiOutdoorTitle": "Semi-outdoor",
+            "semiOutdoorDesc": "Sheltered, high brightness, IP54 protection. For halls and covered spaces.",
+            "outdoorTitle": "Outdoor",
+            "outdoorDesc": "Full sun, weather resistant, IP65/IP66. Facades and urban display.",
+            "brightnessLow": "Low",
+            "brightnessMedium": "Medium",
+            "brightnessHigh": "High"
+        },
+        "viewingDistance": {
+            "title": "Viewing Distance",
+            "label": "Estimated viewing:",
+            "replacePhoto": "Replace photo",
+            "infoBox": "The ideal pitch often corresponds to the minimum distance.",
+            "vizLabel": "Distance visualization"
+        },
+        "pixelPitch": {
+            "title": "Recommended pixel pitch",
+            "description": "The optimal choice guarantees perfect sharpness.",
+            "technicalDetails": "Technical details",
+            "resolution": "Resolution",
+            "brightness": "Brightness"
+        },
+        "dimensions": {
+            "title": "Screen Dimensions",
+            "description": "Adjust the width and height for your project.",
+            "width": "Width (m)",
+            "height": "Height (m)",
+            "aspectRatio": "Current aspect ratio",
+            "note": "NOTE: DIMENSIONS ARE BASED ON MODULES (TILES) OF 50CM X 50CM.",
+            "tileConfig": "Tiles configuration",
+            "tileCount": "This configuration uses <strong>{count} tiles</strong> ({w} × {h})",
+            "tileDetails": "Tile details"
+        },
+        "photo": {
+            "title": "Installation photo",
+            "description": "This step is optional, but it is very valuable to allow our advisor to better visualize your project.",
+            "camera": "Camera",
+            "gallery": "Gallery",
+            "change": "Change installation photo",
+            "add": "Add a photo of the location",
+            "expertAdviceTitle": "Expert advice",
+            "expertAdviceDesc": "Take the photo with sufficient distance so that we can see the electrical outlets and potential obstacles around the wall."
+        },
+        "rental": {
+            "title": "Rental period",
+            "description": "Set your dates and times for an accurate estimate.",
+            "datesLabel": "Rental dates",
+            "hoursLabel": "Hours",
+            "to": "to",
+            "pickRange": "Choose a date range"
+        },
+        "summary": {
+            "title": "Summary of your configuration",
+            "description": "Check your settings before seeing our products.",
+            "technicalDetails": "Technical Details",
+            "area": "Total area:",
+            "resolution": "Resolution:",
+            "modules": "Number of LED modules:",
+            "powerMax": "Maximum power:",
+            "powerAvg": "Average power:",
+            "breaker": "Recommended breaker:",
+            "breakerType": "Triple pole",
+            "projectType": "Project type:",
+            "environment": "Environment:",
+            "distance": "Viewing distance:",
+            "pitch": "Pixel Pitch:",
+            "rentalPeriod": "Rental period:",
+            "hours": "Hours:",
+            "simulation": "Simulation"
+        },
+        "products": {
+            "title": "Recommended products",
+            "config": "Configuration:",
+            "priceLabel": "Estimated Price",
+            "perUnit": "({price} € / unit)",
+            "quantity": "Quantity",
+            "selected": "Selected product",
+            "select": "Select this product",
+            "onEstimate": "On estimate",
+            "noMatchTitle": "Oops!<br />No products match",
+            "noMatchDesc": "No configuration for Pitch {pitch} and environment {environment}.",
+            "whatToDo": "What can you do?",
+            "advicePitch": "Adjust the desired pitch distance.",
+            "adviceEnv": "Change the environment selection.",
+            "adviceSupport": "Contact our support for a custom study.",
+            "searchAnother": "Search another product",
+            "contactSupport": "Contact support"
+        }
     },
     "configurator": {
         "defineDimensions": "2. DEFINE DIMENSIONS",
@@ -40,9 +171,12 @@
         "outdoor": "Outdoor",
         "showcase": "Showcase",
         "totalEstimate": "Total Estimate",
-        "priceExclTax": "Price (excl. tax)",
+        "priceExclTax": "Price (incl. tax)",
         "estimating": "Estimating...",
-        "next": "Next"
+        "next": "Next",
+        "minAreaReached": "Minimum area reached.",
+        "minAreaRequired": "Minimum area of {area} m² required.",
+        "quantityInfo": "Number of identical screens for this configuration"
     },
     "delivery": {
         "title": "Delivery",
@@ -84,7 +218,7 @@
         "free": "Free",
         "userInstall": "Done by user",
         "included": "Included",
-        "totalExclTax": "Estimated Total (excl. tax):",
+        "totalExclTax": "Estimated Total (incl. tax):",
         "companyName": "Company Name",
         "companyPlaceholder": "Your Company",
         "email": "Email",
@@ -96,7 +230,16 @@
         "notes": "Additional Notes",
         "notesPlaceholder": "Details about your project, technical constraints...",
         "submit": "Receive Estimation by Email",
-        "submitting": "Sending..."
+        "submitting": "Sending...",
+        "gdprText": "I agree that this data will be stored and processed in the context of my request, and the resulting commercial approach, in accordance with the",
+        "gdprLink": "legal notice",
+        "validation": {
+            "companyRequired": "Company name is required",
+            "emailInvalid": "Invalid email address",
+            "phoneRequired": "Phone number is required",
+            "addressRequired": "Address is required",
+            "termsRequired": "You must accept the terms to continue."
+        }
     },
     "email": {
         "subject": "Your PixiaTech Estimation is Available",
@@ -112,6 +255,19 @@
         "checkSpam": "If you can't find the email, please check your spam folder.",
         "backToSite": "Back to site"
     },
+    "success": {
+        "congratulations": "Congratulations!",
+        "sentEmail": "Your quote has been sent by email.",
+        "confirmationLinkSent": "A confirmation link has been sent to",
+        "clickLink": "Please click on the link in the email to finalize your request and access the estimate.",
+        "checkSpam": "Check your spam if you don't see anything.",
+        "preparing": "Preparing your estimation...",
+        "verifyEmail": "Verify your email",
+        "downloadPdf": "Download Estimation (PDF)",
+        "newEstimation": "Create a new estimation",
+        "description": "Your estimation request has been successfully received. A technical advisor will contact you as soon as possible to refine your need.",
+        "fetchError": "Unable to retrieve estimate details."
+    },
     "successPage": {
         "title": "Congratulations!",
         "message": "Your estimation request has been sent successfully. A sales representative will contact you shortly to discuss your project.",
@@ -123,6 +279,33 @@
         "errorDesc": "An error occurred during verification.",
         "verifiedToastTitle": "Email verified!",
         "verifiedToastDesc": "Your estimation request is now confirmed."
+    },
+    "pdf": {
+        "quoteFor": "Estimation for:",
+        "destination": "Destination:",
+        "quoteNumber": "Number:",
+        "date": "Date:",
+        "description": "Description",
+        "quantity": "Qty",
+        "unitPrice": "Unit Price",
+        "totalExclTax": "Total (incl. tax)",
+        "sale": "Sale",
+        "rental": "Rental",
+        "dimensions": "Dimensions: {width}m x {height}m",
+        "surface": "Area: {area} m² ({tiles} tiles)",
+        "period": "Period: from {from} to {to} ({days} d)",
+        "date_long": "On {date} from {start} to {end} ({hours}h)",
+        "subtotal": "Subtotal (incl. tax)",
+        "installation": "Installation",
+        "delivery": "Delivery",
+        "userInstall": "Done by user",
+        "tobeconfirmed": "To be confirmed",
+        "included": "Included",
+        "free": "Free",
+        "vat": "VAT (included)",
+        "totalInclTax": "Total (incl. tax)",
+        "terms": "Terms & Conditions",
+        "page": "Page {pageNumber} of {totalPages}"
     },
     "pdf": {
         "quoteFor": "Estimation for:",

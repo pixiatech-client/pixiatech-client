@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useI18n } from "@/lib/i18n";
 
 interface PreviewProps {
   width: number; // meters
@@ -24,6 +25,7 @@ export default function Preview({
   noAnimation = false,
   fixedHuman = false,
 }: PreviewProps) {
+  const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
 
@@ -84,7 +86,7 @@ export default function Preview({
           style={{ width: `${screenWidthPx}px`, height: `${screenHeightPx}px`, position: "relative" }}
           className="flex-shrink-0 shadow-lg overflow-hidden border rounded bg-black"
         >
-          <Image src={screenImageUrl} alt="Contenu de l'écran" fill className="object-cover" />
+          <Image src={screenImageUrl} alt={t('common.screenContent')} fill className="object-cover" />
         </div>
       );
     }
@@ -105,7 +107,7 @@ export default function Preview({
           <div className="silhouette-wrapper" style={{ height: `${silhouetteHeight}px` }}>
             <img
               src={humanSrc || "/silhouette.png"}
-              alt="Silhouette d'un homme"
+              alt={t('common.humanSilhouette')}
               className="silhouette-img"
             />
             <span className="silhouette-label">1.80 m</span>
@@ -116,7 +118,7 @@ export default function Preview({
           <div className="silhouette-wrapper" style={{ height: `${silhouetteHeight}px` }}>
             <img
               src={humanSrc || "/silhouette.png"}
-              alt="Silhouette d'un homme"
+              alt={t('common.humanSilhouette')}
               className="silhouette-img"
             />
             <span className="silhouette-label">1.80 m</span>

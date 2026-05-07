@@ -440,7 +440,7 @@ export function Configurator({
                               </div>
                             </TooltipTrigger>
                             <TooltipContent side="top">
-                              <p>Nombre d'écrans identiques pour cette configuration</p>
+                              <p>{t('configurator.quantityInfo')}</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -584,7 +584,7 @@ export function Configurator({
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="text-sm font-medium p-2 bg-muted rounded-md">{p.rentalDuration} heure(s)</div>
+                                    <div className="text-sm font-medium p-2 bg-muted rounded-md">{p.rentalDuration} {t('configurator.hours').toLowerCase()}</div>
                                 </div>
                             )}
                         </div>
@@ -600,8 +600,8 @@ export function Configurator({
                           )}
                         >
                           {isAreaSufficient 
-                            ? "Surface minimum atteinte."
-                            : `Surface minimum de ${minAreaRequired} m² requise.`
+                            ? t('configurator.minAreaReached')
+                            : t('configurator.minAreaRequired', { area: minAreaRequired })
                           }
                         </motion.div>
                      )}

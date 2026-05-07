@@ -1,9 +1,10 @@
 'use client';
 
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Zap, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useI18n } from '@/lib/i18n';
 
 interface ConfiguratorModeSelectionProps {
   onSelectMode: (mode: 'wizard' | 'manual') => void;
@@ -11,6 +12,7 @@ interface ConfiguratorModeSelectionProps {
 
 export function ConfiguratorModeSelection({ onSelectMode }: ConfiguratorModeSelectionProps) {
   const [exiting, setExiting] = useState<'wizard' | 'manual' | null>(null);
+  const { t } = useI18n();
 
   const handleSelect = (mode: 'wizard' | 'manual') => {
     setExiting(mode);
@@ -30,8 +32,8 @@ export function ConfiguratorModeSelection({ onSelectMode }: ConfiguratorModeSele
           className="w-full max-w-lg mx-auto flex flex-col items-center justify-center h-full p-4"
         >
           <div className='text-center mb-10'>
-            <h1 className='text-3xl font-bold tracking-tight'>Choisissez votre mode</h1>
-            <p className='text-muted-foreground mt-2'>La méthode qui vous convient le mieux.</p>
+            <h1 className='text-3xl font-bold tracking-tight'>{t('modeSelection.title')}</h1>
+            <p className='text-muted-foreground mt-2'>{t('modeSelection.description')}</p>
           </div>
 
           <div className="space-y-4 w-full">
@@ -48,9 +50,9 @@ export function ConfiguratorModeSelection({ onSelectMode }: ConfiguratorModeSele
                   <div>
                     <h3 className="flex items-center gap-2 font-black text-lg text-white">
                       <Zap className="w-5 h-5 text-[#c6ff00]" />
-                      Configuration Guidée
+                      {t('modeSelection.wizardTitle')}
                     </h3>
-                    <p className="text-sm text-white/60 mt-1">Recommandé — Rapide, simple et sans prise de tête.</p>
+                    <p className="text-sm text-white/60 mt-1">{t('modeSelection.wizardDesc')}</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-[#c6ff00] transition-transform group-hover:translate-x-1 shrink-0" />
                 </div>
@@ -68,9 +70,9 @@ export function ConfiguratorModeSelection({ onSelectMode }: ConfiguratorModeSele
                   <div>
                     <h3 className="flex items-center gap-2 font-black text-lg text-slate-900">
                       <SlidersHorizontal className="w-5 h-5 text-slate-500" />
-                      Configuration Manuelle
+                      {t('modeSelection.manualTitle')}
                     </h3>
-                    <p className="text-sm text-slate-500 mt-1">Avancé — Pour ceux qui savent déjà ce qu'ils veulent.</p>
+                    <p className="text-sm text-slate-500 mt-1">{t('modeSelection.manualDesc')}</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-slate-400 transition-transform group-hover:translate-x-1 shrink-0" />
                 </div>

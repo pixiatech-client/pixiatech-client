@@ -65,12 +65,12 @@ interface ConfiguratorWizardProps {
     initialStep?: number;
 }
 
-function HorizontalStepper({ currentStep, onStepClick, isMobile }: { currentStep: number, onStepClick: (step: number) => void, isMobile: boolean }) {
+function HorizontalStepper({ currentStep, onStepClick, isMobile, t }: { currentStep: number, onStepClick: (step: number) => void, isMobile: boolean, t: any }) {
   const steps = [
-    { id: 1, icon: <Grid size={18} />, label: 'Projet' },
-    { id: 2, icon: <Monitor size={18} />, label: 'Config' },
-    { id: 5, icon: <Wrench size={18} />, label: 'Instal' },
-    { id: 7, icon: <Calculator size={18} />, label: 'Estimation' },
+    { id: 1, icon: <Grid size={18} />, label: t('wizard.steps.project') },
+    { id: 2, icon: <Monitor size={18} />, label: t('wizard.steps.config') },
+    { id: 5, icon: <Wrench size={18} />, label: t('wizard.steps.install') },
+    { id: 7, icon: <Calculator size={18} />, label: t('wizard.steps.estimate') },
   ];
 
   return (
@@ -114,6 +114,7 @@ function HorizontalStepper({ currentStep, onStepClick, isMobile }: { currentStep
 }
 
 export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, wizardSettings, initialStep = 1 }: ConfiguratorWizardProps) {
+  const { t, locale } = useI18n();
   const [state, setState] = useState<ConfigState>(() => ({
       ...INITIAL_STATE,
       step: initialStep
@@ -257,9 +258,9 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
       }
   };
   
-  const stepTitle = getStepTitle(state.step, state.projectType);
-
-
+  const handleStepClick = (step: number) => {
+    setState(prev => ({ ...prev, step }));
+  };
 
   return (
     <div className="flex flex-col md:flex-row flex-1 bg-white h-[100dvh] overflow-hidden">
@@ -301,11 +302,12 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
               <div className="w-full max-w-[1600px] flex-1 flex flex-col pt-0 pb-44">
                 <HorizontalStepper 
                   currentStep={state.step} 
-                  onStepClick={(s) => setState(prev => ({ ...prev, step: s }))} 
+                  onStepClick={handleStepClick} 
                   isMobile={isMobile} 
+                  t={t}
                 />
                 <div className="flex-1">
-                  {renderStep(state, updateState, userProfile, wizardSettings, settings, allProducts, setIsInteracting)}
+                  {renderStep(state, updateState, userProfile, wizardSettings, settings, allProducts, setIsInteracting, t)}
                 </div>
               </div>
             </motion.div>
@@ -334,7 +336,7 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
               >
                 <div className="absolute inset-0 bg-black group-hover:bg-gray-900 transition-colors duration-300"></div>
                 <span className="relative z-10 text-white font-black uppercase tracking-[0.3em] text-[10px] ml-2 transition-colors duration-300 group-hover:text-[#c6ff00]">
-                  {state.step === 8 ? "Terminer" : "Suivant"}
+                  {state.step === 8 ? t('common.finish') : t('common.next')}
                 </span>
                 <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center transition-all duration-300 group-hover:bg-[#c6ff00] group-hover:scale-105">
                   <ChevronRight size={14} strokeWidth={3} className="text-white group-hover:text-black transition-colors duration-300" />
@@ -349,35 +351,35 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
 }
 
 
-function getStepTitle(step: number, projectType: ProjectType): string {
+function getStepTitle(step: number, projectType: ProjectType, t: any): string {
   switch (step) {
-    case 1: return "Type de projet";
-    case 2: return "Environnement";
-    case 3: return "Distance de visionnage";
-    case 4: return "Pitch pixel";
-    case 5: return "Dimensions";
-    case 6: return projectType === 'location' ? "Dates & Photo de l'installation" : "Photo de l'installation";
-    case 7: return "Résumé de configuration";
-    case 8: return "Produits recommandés";
+    case 1: return t('wizard.projectType.title');
+    case 2: return t('wizard.environment.title');
+    case 3: return t('wizard.viewingDistance.title');
+    case 4: return t('wizard.pixelPitch.title');
+    case 5: return t('wizard.dimensions.title');
+    case 6: return projectType === 'location' ? t('wizard.rental.title') : t('wizard.photo.title');
+    case 7: return t('wizard.summary.title');
+    case 8: return t('wizard.products.title');
     default: return "";
   }
 }
 
-function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigState>) => void, userProfile: UserProfile | null, wizardSettings: WizardSettings, settings: Settings, products?: Product[], setIsInteracting?: (val: boolean) => void) {
+function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigState>) => void, userProfile: UserProfile | null, wizardSettings: WizardSettings, settings: Settings, products: Product[], setIsInteracting: (val: boolean) => void, t: any) {
   switch (state.step) {
-    case 1: return <StepProjectType state={state} updateState={updateState} wizardSettings={wizardSettings} />;
-    case 2: return <StepEnvironment state={state} updateState={updateState} wizardSettings={wizardSettings} />;
-    case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} />;
-    case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} />;
-    case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} />;
-    case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} /> : <StepInstallationPhoto state={state} updateState={updateState} />;
-    case 7: return <StepSummary state={state} />;
-    case 8: return <StepFinal state={state} updateState={updateState} products={products} settings={settings} />;
+    case 1: return <StepProjectType state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
+    case 2: return <StepEnvironment state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
+    case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} />;
+    case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} />;
+    case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} t={t} />;
+    case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} t={t} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
+    case 7: return <StepSummary state={state} t={t} />;
+    case 8: return <StepFinal state={state} updateState={updateState} products={products} settings={settings} t={t} />;
     default: return null;
   }
 }
 
-export function StepProjectType({ state, updateState, wizardSettings }: { state: ConfigState, updateState: any, wizardSettings: WizardSettings }) {
+export function StepProjectType({ state, updateState, wizardSettings, t }: { state: ConfigState, updateState: any, wizardSettings: WizardSettings, t: any }) {
   const projectTypes = wizardSettings?.projectTypes;
   const images = {
     location: projectTypes?.location?.imageUrl || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=90&w=2000",
@@ -387,9 +389,9 @@ export function StepProjectType({ state, updateState, wizardSettings }: { state:
   return (
     <div className="flex flex-col flex-1 space-y-6 bg-transparent">
       <div className="w-full">
-        <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 leading-tight mb-2 text-center">Quel est votre type de projet ?</h2>
+        <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 leading-tight mb-2 text-center">{t('wizard.projectType.title')}</h2>
         <p className="text-center text-[12px] font-medium text-slate-500 italic">
-          Choisissez la solution adaptée à vos besoins.
+          {t('wizard.projectType.description')}
         </p>
       </div>
 
@@ -424,8 +426,8 @@ export function StepProjectType({ state, updateState, wizardSettings }: { state:
             )}
           >
             <CalendarIcon className={cn("w-12 h-12 mb-3 text-muted-foreground transition-colors", state.projectType !== 'location' && "group-hover:text-blue-500")} />
-            <h3 className={cn("font-bold text-lg text-foreground transition-colors", state.projectType !== 'location' && "group-hover:text-blue-500")}>Location</h3>
-            <p className="text-sm text-muted-foreground mt-1">Solution flexible pour des événements ou besoins temporaires.</p>
+            <h3 className={cn("font-bold text-lg text-foreground transition-colors", state.projectType !== 'location' && "group-hover:text-blue-500")}>{t('configurator.rental')}</h3>
+            <p className="text-sm text-muted-foreground mt-1">{t('wizard.projectType.rentalDesc')}</p>
              <div className="absolute top-4 right-4">
               {state.projectType === 'location' 
                 ? <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center"><Check className="w-4 h-4" /></div>
@@ -444,8 +446,8 @@ export function StepProjectType({ state, updateState, wizardSettings }: { state:
             )}
           >
             <ShoppingCart className={cn("w-12 h-12 mb-3 text-muted-foreground transition-colors", state.projectType !== 'vente' && "group-hover:text-green-500")} />
-            <h3 className={cn("font-bold text-lg text-foreground transition-colors", state.projectType !== 'vente' && "group-hover:text-green-500")}>Vente</h3>
-            <p className="text-sm text-muted-foreground mt-1">Acquisition permanente pour une installation durable.</p>
+            <h3 className={cn("font-bold text-lg text-foreground transition-colors", state.projectType !== 'vente' && "group-hover:text-green-500")}>{t('configurator.sale')}</h3>
+            <p className="text-sm text-muted-foreground mt-1">{t('wizard.projectType.saleDesc')}</p>
             <div className="absolute top-4 right-4">
               {state.projectType === 'vente' 
                 ? <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center"><Check className="w-4 h-4" /></div>
@@ -460,12 +462,12 @@ export function StepProjectType({ state, updateState, wizardSettings }: { state:
   );
 }
 
-export function StepEnvironment({ state, updateState, wizardSettings }: { state: ConfigState, updateState: any, wizardSettings: WizardSettings }) {
+export function StepEnvironment({ state, updateState, wizardSettings, t }: { state: ConfigState, updateState: any, wizardSettings: WizardSettings, t: any }) {
   const environments = wizardSettings?.environments;
   const envs = [
     { 
       id: 'interieur', 
-      title: 'Intérieur', 
+      title: t('wizard.environment.indoorTitle'), 
       icon: (
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="24" y="24" width="24" height="24" fill="#e0f2fe"/>
@@ -485,14 +487,14 @@ export function StepEnvironment({ state, updateState, wizardSettings }: { state:
           <path d="M12 3V5M12 19V21M3 12H5M19 12H21M5.636 5.636L7.05 7.05M16.95 16.95L18.364 18.364M5.636 18.364L7.05 16.95M16.95 7.05L18.364 5.636" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       ),
-      sub: 'Basse', 
-      desc: 'Luminosité contrôlée, protection IP20. Idéal pour commerces et bureaux.',
+      sub: t('wizard.environment.brightnessLow'), 
+      desc: t('wizard.environment.indoorDesc'),
       image: environments?.interieur?.imageUrl || 'https://picsum.photos/seed/led-interior-lobby/800/1200',
-      caption: 'Simulation: Intérieur, Lobby'
+      caption: 'Simulation: ' + t('wizard.environment.indoorTitle') + ', Lobby'
     },
     { 
       id: 'semi-exterieur', 
-      title: 'Semi-extérieur', 
+      title: t('wizard.environment.semiOutdoorTitle'), 
       icon: (
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="20" cy="16" r="6" stroke="#475569" strokeWidth="2"/>
@@ -516,14 +518,14 @@ export function StepEnvironment({ state, updateState, wizardSettings }: { state:
           <path d="M12 3V5M12 19V21M3 12H5M19 12H21M5.636 5.636L7.05 7.05M16.95 16.95L18.364 18.364M5.636 18.364L7.05 16.95M16.95 7.05L18.364 5.636" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       ),
-      sub: 'Moyenne', 
-      desc: 'Abrité, forte luminosité, protection IP54. Pour halls et espaces couverts.',
+      sub: t('wizard.environment.brightnessMedium'), 
+      desc: t('wizard.environment.semiOutdoorDesc'),
       image: environments?.['semi-exterieur']?.imageUrl || 'https://picsum.photos/seed/led-atrium/800/1200',
-      caption: 'Simulation: Semi-extérieur, Atrium'
+      caption: 'Simulation: ' + t('wizard.environment.semiOutdoorTitle') + ', Atrium'
     },
     { 
       id: 'exterieur', 
-      title: 'Extérieur', 
+      title: t('wizard.environment.outdoorTitle'), 
       icon: (
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="16" cy="16" r="5" stroke="#475569" strokeWidth="2"/>
@@ -545,10 +547,10 @@ export function StepEnvironment({ state, updateState, wizardSettings }: { state:
           <path d="M12 3V5M12 19V21M3 12H5M19 12H21M5.636 5.636L7.05 7.05M16.95 16.95L18.364 18.364M5.636 18.364L7.05 16.95M16.95 7.05L18.364 5.636" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
       ),
-      sub: 'Élevée', 
-      desc: 'Plein soleil, résistant intempéries, IP65/IP66. Façades et affichage urbain.',
+      sub: t('wizard.environment.brightnessHigh'), 
+      desc: t('wizard.environment.outdoorDesc'),
       image: environments?.exterieur?.imageUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=90&w=2000',
-      caption: 'Simulation: Extérieur, Urban Façade'
+      caption: 'Simulation: ' + t('wizard.environment.outdoorTitle') + ', Urban Façade'
     },
   ];
 
@@ -578,7 +580,7 @@ export function StepEnvironment({ state, updateState, wizardSettings }: { state:
   return (
     <div className="flex flex-col flex-1 space-y-6 bg-transparent">
       <div className="w-full">
-        <h2 className="text-[24px] md:text-[28px] font-bold text-black leading-tight mb-2 text-center">Environnement d'installation</h2>
+        <h2 className="text-[24px] md:text-[28px] font-bold text-black leading-tight mb-2 text-center">{t('wizard.environment.title')}</h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -660,7 +662,7 @@ export function StepEnvironment({ state, updateState, wizardSettings }: { state:
   );
 }
 
-export function StepViewingDistance({ state, updateState, userProfile, wizardSettings }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings }) {
+export function StepViewingDistance({ state, updateState, userProfile, wizardSettings, t }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, t: any }) {
   const allDistances = wizardSettings?.viewingDistances || [];
   const uniqueDistances = Array.from(new Map(allDistances.map(d => [d.value, d])).values());
   const viewingDistances = uniqueDistances;
@@ -679,7 +681,10 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
   return (
     <div className="flex flex-col flex-1 space-y-6 bg-transparent">
       <div className="w-full">
-        <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 leading-tight mb-2 text-center">Distance de visionnage</h2>
+        <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 leading-tight mb-2 text-center">{t('wizard.viewingDistance.title')}</h2>
+        <p className="text-center text-[12px] font-medium text-slate-500 italic">
+          {t('wizard.viewingDistance.vizLabel')}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -697,14 +702,14 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
               {userProfile?.role === 'admin' && (
                 <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white gap-2">
                   <Maximize className="w-8 h-8 rotate-45" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">Remplacer la photo</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">{t('wizard.viewingDistance.replacePhoto')}</span>
                   <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                 </label>
               )}
             </div>
           </div>
           <p className="text-center lg:text-left text-[12px] font-medium text-slate-500 italic px-4">
-            Simulation: {state.environment}, {state.projectType}
+            {t('wizard.summary.simulation')}: {state.environment === 'exterieur' ? t('configurator.outdoor') : state.environment === 'semi-exterieur' ? t('wizard.environment.semiOutdoorTitle') : t('configurator.indoor')}, {state.projectType === 'location' ? t('configurator.rental') : t('configurator.sale')}
           </p>
         </div>
 
@@ -796,14 +801,14 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
                   </g>
                 </svg>
               </div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Visualisation de la distance</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">{t('wizard.viewingDistance.vizLabel')}</p>
             </div>
 
             {/* Info Box */}
             <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl flex gap-3 items-start border border-white/20">
               <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
               <p className="text-[10px] text-slate-600 leading-relaxed">
-                Le pitch idéal correspond souvent à la distance minimale.
+                {t('wizard.viewingDistance.infoBox')}
               </p>
             </div>
           </div>
@@ -813,7 +818,7 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
   );
 }
 
-export function StepPixelPitch({ state, updateState, userProfile, wizardSettings }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings }) {
+export function StepPixelPitch({ state, updateState, userProfile, wizardSettings, t }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, t: any }) {
   const allPitches = wizardSettings?.pixelPitches || [];
   const uniquePitches = Array.from(new Map(allPitches.map(p => [p.value, p])).values());
   const pixelPitches = uniquePitches;
@@ -838,9 +843,9 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
   return (
     <div className="flex flex-col flex-1 space-y-6 bg-transparent">
       <div className="w-full">
-        <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 leading-tight mb-2 text-center">Pitch pixel recommandé</h2>
-        <div className="flex justify-center items-center gap-2">
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Visionnage estimé :</p>
+        <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 leading-tight mb-2 text-center">{t('wizard.pixelPitch.title')}</h2>
+        <div className="center flex justify-center items-center gap-2">
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{t('wizard.viewingDistance.label')}</p>
           <p className="text-slate-900 text-[11px] font-black">{state.viewingDistance}</p>
         </div>
       </div>
@@ -868,7 +873,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
             </div>
           </div>
           <p className="text-center lg:text-left text-xs text-slate-500 leading-relaxed px-4">
-            Le choix optimal garantit une netteté parfaite.
+            {t('wizard.pixelPitch.description')}
           </p>
         </div>
 
@@ -898,7 +903,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
                   </button>
                   {p.recommended && (
                     <span className="absolute -top-2.5 right-2 bg-blue-500 text-[10px] text-white px-2 py-0.5 rounded-full font-medium shadow-sm z-20">
-                      Recommandé
+                      {t('wizard.pixelPitch.recommended')}
                     </span>
                   )}
                 </div>
@@ -907,14 +912,14 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
 
             {/* Technical Details Section */}
             <div className="pt-6 border-t border-slate-100 space-y-4">
-              <h3 className="text-sm font-black text-slate-900 mb-2">Détails techniques</h3>
+              <h3 className="text-sm font-black text-slate-900 mb-2">{t('wizard.pixelPitch.technicalDetails')}</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-3 p-3 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30">
                   <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-primary">
                     <Maximize className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Résolution</p>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{t('wizard.pixelPitch.resolution')}</p>
                     <p className="text-xs font-black text-slate-900">{resX}x{resY}</p>
                   </div>
                 </div>
@@ -923,7 +928,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
                     <Sun className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Luminosité</p>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{t('wizard.pixelPitch.brightness')}</p>
                     <p className="text-xs font-black text-slate-900">{brightness.split(' ')[0]} nits</p>
                   </div>
                 </div>
@@ -936,27 +941,17 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
   );
 }
 
-export function StepDimensions({ state, updateState, settings, setIsInteracting }: { state: ConfigState, updateState: any, settings: Settings, setIsInteracting?: (val: boolean) => void }) {
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
-
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setVideoUrl(url);
-    }
-  };
-
+export function StepDimensions({ state, updateState, settings, setIsInteracting, t }: { state: ConfigState, updateState: any, settings: Settings, setIsInteracting?: (val: boolean) => void, t: any }) {
   return (
     <div className="flex flex-col flex-1 space-y-5 bg-transparent">
       <div className="w-full">
-        <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 text-center">Dimensions de l'écran</h2>
+        <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 text-center">{t('wizard.dimensions.title')}</h2>
         <p className="text-center text-[12px] font-medium text-slate-500 italic mt-1">
-          Ajustez la largeur et la hauteur pour votre projet.
+          {t('wizard.dimensions.description')}
         </p>
       </div>
 
-      {/* Preview — removed main card background as requested */}
+      {/* Preview */}
       <div className="flex justify-center">
         <div className="relative w-full h-52 md:h-[380px] lg:h-[500px] xl:h-[600px] rounded-[2.5rem] p-[2px] bg-transparent overflow-hidden">
           <div className="w-full h-full rounded-[2.3rem] overflow-hidden relative bg-transparent">
@@ -973,7 +968,7 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting 
         </div>
       </div>
 
-      {/* Sliders — glassmorphism card restored */}
+      {/* Sliders */}
       <div 
         onPointerDown={(e) => { e.stopPropagation(); setIsInteracting?.(true); }}
         onPointerUp={() => setIsInteracting?.(false)}
@@ -982,7 +977,7 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting 
       >
         <div className="relative z-10 space-y-2">
           <div className="flex justify-between items-center">
-            <Label className="font-bold text-slate-800">Largeur (m)</Label>
+            <Label className="font-bold text-slate-800">{t('wizard.dimensions.width')}</Label>
             <div className="flex items-center gap-2 bg-slate-50/80 backdrop-blur-sm rounded-xl p-1 border border-slate-200">
               <button onClick={() => updateState({ width: Math.max(0.5, state.width - 0.5) })} className="p-1 hover:bg-white rounded-lg shadow-sm transition-all"><ChevronLeft className="w-4 h-4" /></button>
               <span className="w-12 text-center font-black text-sm">{state.width.toFixed(2)}</span>
@@ -999,7 +994,7 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting 
 
         <div className="relative z-10 space-y-2">
           <div className="flex justify-between items-center">
-            <Label className="font-bold text-slate-800">Hauteur (m)</Label>
+            <Label className="font-bold text-slate-800">{t('wizard.dimensions.height')}</Label>
             <div className="flex items-center gap-2 bg-slate-50/80 backdrop-blur-sm rounded-xl p-1 border border-slate-200">
               <button onClick={() => updateState({ height: Math.max(0.5, state.height - 0.5) })} className="p-1 hover:bg-white rounded-lg shadow-sm transition-all"><ChevronLeft className="w-4 h-4" /></button>
               <span className="w-12 text-center font-black text-sm">{state.height.toFixed(2)}</span>
@@ -1018,18 +1013,18 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting 
       <div className="info-box p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
         <div className="info-title flex items-center gap-2 text-slate-800">
           <Calculator className="w-5 h-5 text-orange-500" />
-          <span>Ratio d'aspect actuel</span>
+          <span>{t('wizard.dimensions.aspectRatio')}</span>
         </div>
         <div className="info-value text-primary mb-3">
-          Calculé : {calculateRatio(state.width, state.height)}
+          {t('wizard.dimensions.calculated')} : {calculateRatio(state.width, state.height)}
         </div>
         
         <div className="info-note text-blue-600/80 uppercase">
           <Info className="w-4 h-4 shrink-0" />
-          <span>NOTE: LES DIMENSIONS SONT BASÉES SUR DES MODULES (DALLES) DE 50CM X 50CM.</span>
+          <span>{t('wizard.dimensions.note')}</span>
         </div>
 
-        {/* Configuration dalles (calculé ici, hors du Preview) */}
+        {/* Configuration dalles */}
         <div className="mt-6 pt-4 border-t border-blue-200/60">
           {(() => {
             const DALLE_SIZE_M = 0.5;
@@ -1040,11 +1035,11 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting 
               <>
                 <div className="info-title flex items-center gap-2 text-slate-800" style={{ marginTop: 0 }}>
                   <Grid className="w-5 h-5 text-orange-500" />
-                  <span>Configuration dalles</span>
+                  <span>{t('wizard.dimensions.tileConfig')}</span>
                 </div>
                 <div className="info-note text-blue-700">
                   <Info className="w-4 h-4 shrink-0" />
-                  <span>Cette configuration utilise <strong>{totalDalles} dalles</strong> ({dallesLargeur} × {dallesHauteur})</span>
+                  <span dangerouslySetInnerHTML={{ __html: t('wizard.dimensions.tileCount', { count: totalDalles, w: dallesLargeur, h: dallesHauteur }) }} />
                 </div>
               </>
             );
@@ -1055,7 +1050,7 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting 
   );
 }
 
-export function StepInstallationPhoto({ state, updateState }: { state: ConfigState, updateState: any }) {
+export function StepInstallationPhoto({ state, updateState, t }: { state: ConfigState, updateState: any, t: any }) {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -1067,9 +1062,9 @@ export function StepInstallationPhoto({ state, updateState }: { state: ConfigSta
   return (
     <div className="flex flex-col flex-1 space-y-6 bg-transparent">
       <div className="w-full">
-        <h2 className="text-[24px] md:text-[28px] font-bold text-[#0f172a] leading-tight mb-2 text-center">Photo de l'installation</h2>
+        <h2 className="text-[24px] md:text-[28px] font-bold text-[#0f172a] leading-tight mb-2 text-center">{t('wizard.photo.title')}</h2>
         <p className="text-[14px] text-slate-600 leading-relaxed text-center">
-          Cette étape est optionnelle, mais elle est très précieuse pour permettre à notre conseiller de mieux visualiser votre projet.
+          {t('wizard.photo.description')}
         </p>
       </div>
 
@@ -1095,9 +1090,7 @@ export function StepInstallationPhoto({ state, updateState }: { state: ConfigSta
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 bg-[#1a202c] flex items-center justify-center"
               >
-              {/* Simulated glowing screen */}
               <div className="w-[75%] h-[75%] bg-white shadow-[0_0_60px_rgba(255,255,255,0.9)]" />
-              {/* Side shadows to create depth */}
               <div className="absolute left-0 top-0 bottom-0 w-[12%] bg-gradient-to-r from-black/80 to-transparent" />
               <div className="absolute right-0 top-0 bottom-0 w-[12%] bg-gradient-to-l from-black/80 to-transparent" />
             </motion.div>
@@ -1107,14 +1100,13 @@ export function StepInstallationPhoto({ state, updateState }: { state: ConfigSta
       </div>
 
       <div>
-        {/* Integrated Upload Card */}
         <div className="p-5 md:p-8 border-2 border-dashed border-white/50 rounded-3xl bg-white/20 backdrop-blur-md flex flex-col items-center mb-8">
           <div className="flex items-center gap-6 md:gap-10 mb-6">
             <label className="flex flex-col items-center gap-2 cursor-pointer group">
               <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-black group-hover:text-[#c6ff00] transition-all duration-300">
                 <Camera size={28} />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">Appareil</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">{t('wizard.photo.camera')}</span>
               <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageUpload} />
             </label>
 
@@ -1124,22 +1116,21 @@ export function StepInstallationPhoto({ state, updateState }: { state: ConfigSta
               <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-black group-hover:text-[#c6ff00] transition-all duration-300">
                 <Upload size={28} />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">Galerie</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">{t('wizard.photo.gallery')}</span>
               <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
             </label>
           </div>
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 text-center">
-            {state.installationPhoto ? "Modifier la photo d'installation" : "Ajouter une photo de l'emplacement"}
+            {state.installationPhoto ? t('wizard.photo.change') : t('wizard.photo.add')}
           </p>
         </div>
 
-        {/* Expert Advice */}
         <div className="p-5 bg-white/10 backdrop-blur-md rounded-xl flex gap-3.5 items-start border border-white/20">
           <Info className="w-5 h-5 text-[#2b4c7e] shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-[13px] font-bold text-[#2b4c7e] uppercase tracking-wider mb-1.5">Conseil d'expert</h4>
+            <h4 className="text-[13px] font-bold text-[#2b4c7e] uppercase tracking-wider mb-1.5">{t('wizard.photo.expertAdviceTitle')}</h4>
             <p className="text-[14px] text-[#2b4c7e] leading-relaxed">
-              Prenez la photo avec un recul suffisant pour que nous puissions voir les prises électriques et les obstacles potentiels aux alentours du mur.
+              {t('wizard.photo.expertAdviceDesc')}
             </p>
           </div>
         </div>
@@ -1148,7 +1139,7 @@ export function StepInstallationPhoto({ state, updateState }: { state: ConfigSta
   );
 }
 
-export function StepRentalDatesAndPhoto({ state, updateState }: { state: ConfigState, updateState: any }) {
+export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: ConfigState, updateState: any, t: any }) {
     const handleDateChange = (range: DateRange | undefined) => {
         if (range?.from) {
             updateState({ rentalStartDate: range.from.toISOString() });
@@ -1172,9 +1163,9 @@ export function StepRentalDatesAndPhoto({ state, updateState }: { state: ConfigS
     return (
         <div className="flex flex-col flex-1 p-0 space-y-6 bg-transparent">
             <div className="w-full px-6 pt-2">
-                <h2 className="text-[24px] md:text-[28px] font-bold text-[#0f172a] leading-tight mb-2 text-center">Période de location</h2>
+                <h2 className="text-[24px] md:text-[28px] font-bold text-[#0f172a] leading-tight mb-2 text-center">{t('wizard.rental.title')}</h2>
                 <p className="text-center text-[12px] font-medium text-slate-500 italic">
-                    Configurez vos dates et horaires pour une estimation précise.
+                    {t('wizard.rental.description')}
                 </p>
             </div>
 
@@ -1182,7 +1173,7 @@ export function StepRentalDatesAndPhoto({ state, updateState }: { state: ConfigS
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <Label>Dates de location</Label>
+                            <Label>{t('wizard.rental.datesLabel')}</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
@@ -1195,11 +1186,11 @@ export function StepRentalDatesAndPhoto({ state, updateState }: { state: ConfigS
                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                         {startDate && endDate ? (
                                             <>
-                                                {format(startDate, "dd LLL, y", { locale: fr })} -{" "}
-                                                {format(endDate, "dd LLL, y", { locale: fr })}
+                                                {format(startDate, "dd LLL, y")} -{" "}
+                                                {format(endDate, "dd LLL, y")}
                                             </>
                                         ) : (
-                                            <span>Choisissez une plage de dates</span>
+                                            <span>{t('wizard.rental.pickRange')}</span>
                                         )}
                                     </Button>
                                 </PopoverTrigger>
@@ -1215,7 +1206,7 @@ export function StepRentalDatesAndPhoto({ state, updateState }: { state: ConfigS
                             </Popover>
                         </div>
                         <div>
-                            <Label>Horaires</Label>
+                            <Label>{t('wizard.rental.hoursLabel')}</Label>
                             <div className="flex items-center gap-2">
                                 <Select value={state.rentalStartTime || '08:00'} onValueChange={(value) => updateState({ rentalStartTime: value })}>
                                     <SelectTrigger>
@@ -1227,7 +1218,7 @@ export function StepRentalDatesAndPhoto({ state, updateState }: { state: ConfigS
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <span className="text-muted-foreground">à</span>
+                                <span className="text-muted-foreground">{t('wizard.rental.to')}</span>
                                 <Select value={state.rentalEndTime || '18:00'} onValueChange={(value) => updateState({ rentalEndTime: value })}>
                                     <SelectTrigger>
                                         <SelectValue />
@@ -1245,7 +1236,7 @@ export function StepRentalDatesAndPhoto({ state, updateState }: { state: ConfigS
             </div>
 
             <div className="pt-6 border-t">
-                <h3 className="text-xl font-bold text-[#0f172a] leading-tight mb-3">Photo de l'installation (Optionnel)</h3>
+                <h3 className="text-xl font-bold text-[#0f172a] leading-tight mb-3">{t('wizard.photo.title')} ({t('wizard.photo.optional') || 'Optionnel'})</h3>
                  <div className="w-full h-48 md:h-64 relative rounded-xl overflow-hidden shadow-inner bg-slate-900 shrink-0">
                     <AnimatePresence mode="wait">
                     {state.installationPhoto ? (
@@ -1274,14 +1265,13 @@ export function StepRentalDatesAndPhoto({ state, updateState }: { state: ConfigS
                     )}
                     </AnimatePresence>
                 </div>
-                {/* Integrated Upload Card */}
                 <div className="p-8 border-2 border-dashed border-slate-200 rounded-3xl bg-[#f4f6f9] flex flex-col items-center mt-8">
                     <div className="flex items-center gap-10 mb-6">
                         <label className="flex flex-col items-center gap-2 cursor-pointer group">
                             <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-black group-hover:text-[#c6ff00] transition-all duration-300">
                                 <Camera size={28} />
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">Appareil</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">{t('wizard.photo.camera')}</span>
                             <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageUpload} />
                         </label>
 
@@ -1291,12 +1281,12 @@ export function StepRentalDatesAndPhoto({ state, updateState }: { state: ConfigS
                             <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-black group-hover:text-[#c6ff00] transition-all duration-300">
                                 <Upload size={28} />
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">Galerie</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">{t('wizard.photo.gallery')}</span>
                             <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                         </label>
                     </div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 text-center">
-                        {state.installationPhoto ? "Modifier la photo d'installation" : "Ajouter une photo de l'emplacement"}
+                        {state.installationPhoto ? t('wizard.photo.change') : t('wizard.photo.add')}
                     </p>
                 </div>
             </div>
@@ -1304,7 +1294,7 @@ export function StepRentalDatesAndPhoto({ state, updateState }: { state: ConfigS
     );
 }
 
-export function StepSummary({ state }: { state: ConfigState }) {
+export function StepSummary({ state, t }: { state: ConfigState, t: any }) {
   const area = state.width * state.height;
   const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
   const resX = Math.round((state.width * 1000) / pitchValue);
@@ -1317,41 +1307,31 @@ export function StepSummary({ state }: { state: ConfigState }) {
   return (
     <div className="flex-1 flex flex-col bg-transparent relative scrollbar-hide">
       <div className="w-full px-6 pt-2 pb-4">
-        <h2 className="text-[24px] md:text-[28px] font-black text-[#0f172a] text-center">Résumé de votre configuration</h2>
+        <h2 className="text-[24px] md:text-[28px] font-black text-[#0f172a] text-center">{t('wizard.summary.title')}</h2>
         <p className="text-center text-[12px] font-medium text-slate-500 italic mt-1">
-          Vérifiez vos paramètres avant de voir nos produits.
+          {t('wizard.summary.description')}
         </p>
       </div>
 
-      {/* Visual Area — main card background removed */}
       <div className="relative h-[280px] md:h-[400px] shrink-0 flex items-center justify-center overflow-hidden bg-transparent rounded-[2.5rem]">
-
-        {/* Screen Container — pl-14 gives room for the Hauteur label on mobile */}
         <div className="relative w-full max-w-[300px] sm:max-w-[420px] aspect-[16/9] mt-0 z-10 ml-14" style={{ perspective: '1200px' }}>
-          
           <div className="relative w-full h-full" style={{ transform: 'rotateY(15deg) rotateX(2deg)', transformStyle: 'preserve-3d' }}>
-            
             <div className="absolute inset-0 bg-[#0f172a] border border-slate-700 shadow-2xl rounded-sm" style={{ transform: 'translateZ(-10px)' }}></div>
             <div className="absolute top-0 bottom-0 left-0 w-[10px] bg-[#1e293b] border-y border-l border-slate-600 rounded-l-sm" style={{ transform: 'rotateY(-90deg)', transformOrigin: 'left' }}></div>
-
             <div className="absolute inset-0 bg-[#0a192f] border border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.15)] overflow-hidden flex items-center justify-center rounded-sm">
               <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1080&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover opacity-90 mix-blend-screen" alt="LED Content" referrerPolicy="no-referrer" />
               <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.3)_1px,transparent_1px)]" style={{ backgroundSize: '3px 3px' }}></div>
               <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/40 via-transparent to-purple-900/20 mix-blend-overlay"></div>
             </div>
-
-            {/* Dimensions - Width */}
             <div className="absolute -bottom-10 left-0 right-0 flex items-center text-[#3b82f6] font-medium text-sm" style={{ transform: 'translateZ(10px)' }}>
               <div className="h-[2px] flex-1 bg-[#3b82f6]"></div>
-              <span className="whitespace-nowrap px-4 text-black md:text-white text-sm font-bold">Largeur <span className="text-[#3b82f6] font-normal">{state.width.toFixed(2)} m</span></span>
+              <span className="whitespace-nowrap px-4 text-black md:text-white text-sm font-bold">{t('wizard.dimensions.width')} <span className="text-[#3b82f6] font-normal">{state.width.toFixed(2)} m</span></span>
               <div className="h-[2px] flex-1 bg-[#3b82f6]"></div>
             </div>
-            
-            {/* Dimensions - Height */}
             <div className="absolute -left-10 top-0 bottom-0 flex flex-col items-center text-[#3b82f6] font-medium text-sm" style={{ transform: 'translateZ(10px)' }}>
               <div className="w-[2px] flex-1 bg-[#3b82f6]"></div>
               <span className="whitespace-nowrap py-4 text-black md:text-white text-sm font-bold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-                Hauteur <span className="text-[#3b82f6] font-normal">{state.height.toFixed(2)} m</span>
+                {t('wizard.dimensions.height')} <span className="text-[#3b82f6] font-normal">{state.height.toFixed(2)} m</span>
               </span>
               <div className="w-[2px] flex-1 bg-[#3b82f6]"></div>
             </div>
@@ -1361,29 +1341,28 @@ export function StepSummary({ state }: { state: ConfigState }) {
 
       <div className="bg-transparent p-4 sm:p-6 flex-1 relative z-20 flex flex-col items-center">
         <div className="w-full">
-          <h4 className="text-[14px] font-black text-slate-400 uppercase tracking-widest mb-5 ml-1">Détails Techniques</h4>
-          
+          <h4 className="text-[14px] font-black text-slate-400 uppercase tracking-widest mb-5 ml-1">{t('wizard.summary.technicalDetails')}</h4>
           <div className="w-full p-4 sm:p-6 rounded-[2rem] bg-white/20 backdrop-blur-xl border border-white/30 shadow-xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <DetailItem icon={<Maximize className="w-5 h-5 text-blue-500" />} iconBg="bg-blue-50" label="Surface totale:" value={`${area.toFixed(2)} m²`} />
-            <DetailItem icon={<Monitor className="w-5 h-5 text-purple-500" />} iconBg="bg-purple-50" label="Résolution:" value={`${resX} x ${resY} pixels`} />
-            <DetailItem icon={<Cpu className="w-5 h-5 text-fuchsia-500" />} iconBg="bg-fuchsia-50" label="Nombre de modules LED:" value={modules.toString()} />
-            <DetailItem icon={<Zap className="w-5 h-5 text-green-500" />} iconBg="bg-green-50" label="Puissance maximale:" value={`${powerMax.toFixed(1)} kW`} />
-            <DetailItem icon={<Zap className="w-5 h-5 text-sky-500" />} iconBg="bg-sky-50" label="Puissance moyenne:" value={`${powerAvg.toFixed(1)} kW`} />
-            <DetailItem icon={<Zap className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label="Disjoncteur recommandé:" value={`${amps}A Tripolaire`} />
+            <DetailItem icon={<Maximize className="w-5 h-5 text-blue-500" />} iconBg="bg-blue-50" label={t('wizard.summary.area')} value={`${area.toFixed(2)} m²`} />
+            <DetailItem icon={<Monitor className="w-5 h-5 text-purple-500" />} iconBg="bg-purple-50" label={t('wizard.summary.resolution')} value={`${resX} x ${resY} pixels`} />
+            <DetailItem icon={<Cpu className="w-5 h-5 text-fuchsia-500" />} iconBg="bg-fuchsia-50" label={t('wizard.summary.modules')} value={modules.toString()} />
+            <DetailItem icon={<Zap className="w-5 h-5 text-green-500" />} iconBg="bg-green-50" label={t('wizard.summary.powerMax')} value={`${powerMax.toFixed(1)} kW`} />
+            <DetailItem icon={<Zap className="w-5 h-5 text-sky-500" />} iconBg="bg-sky-50" label={t('wizard.summary.powerAvg')} value={`${powerAvg.toFixed(1)} kW`} />
+            <DetailItem icon={<Zap className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label={t('wizard.summary.breaker')} value={`${amps}A ${t('wizard.summary.breakerType') || 'Tripolaire'}`} />
             
             <div className="col-span-1 md:col-span-2 h-px bg-slate-100 my-2"></div>
             
-            <DetailItem icon={<Truck className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label="Type de projet:" value={state.projectType === 'location' ? 'Location' : 'Vente'} />
-            <DetailItem icon={<Sun className="w-5 h-5 text-teal-500" />} iconBg="bg-teal-50" label="Environnement:" value={state.environment === 'exterieur' ? 'Extérieur' : state.environment === 'semi-exterieur' ? 'Semi-extérieur' : 'Intérieur'} />
-            <DetailItem icon={<Eye className="w-5 h-5 text-cyan-500" />} iconBg="bg-cyan-50" label="Distance de visionnage:" value={state.viewingDistance} />
-            <DetailItem icon={<Grid className="w-5 h-5 text-rose-500" />} iconBg="bg-rose-50" label="Pixel Pitch:" value={state.pixelPitch} />
+            <DetailItem icon={<Truck className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label={t('wizard.summary.projectType')} value={state.projectType === 'location' ? t('configurator.rental') : t('configurator.sale')} />
+            <DetailItem icon={<Sun className="w-5 h-5 text-teal-500" />} iconBg="bg-teal-50" label={t('wizard.summary.environment')} value={state.environment === 'exterieur' ? t('configurator.outdoor') : state.environment === 'semi-exterieur' ? t('wizard.environment.semiOutdoorTitle') : t('configurator.indoor')} />
+            <DetailItem icon={<Eye className="w-5 h-5 text-cyan-500" />} iconBg="bg-cyan-50" label={t('wizard.summary.distance')} value={state.viewingDistance} />
+            <DetailItem icon={<Grid className="w-5 h-5 text-rose-500" />} iconBg="bg-rose-50" label={t('wizard.summary.pitch')} value={state.pixelPitch} />
             
             {state.projectType === 'location' && state.rentalStartDate && state.rentalEndDate && (
               <>
                 <div className="col-span-1 md:col-span-2 h-px bg-slate-100 my-2"></div>
-                <DetailItem icon={<CalendarIcon className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label="Période de location:" value={`Du ${format(new Date(state.rentalStartDate), 'dd/MM/yyyy')} au ${format(new Date(state.rentalEndDate), 'dd/MM/yyyy')}`} />
-                <DetailItem icon={<Clock className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label="Horaires:" value={`${state.rentalStartTime || '08:00'} à ${state.rentalEndTime || '18:00'}`} />
+                <DetailItem icon={<CalendarIcon className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.rentalPeriod')} value={`${format(new Date(state.rentalStartDate), 'dd/MM/yyyy')} - ${format(new Date(state.rentalEndDate), 'dd/MM/yyyy')}`} />
+                <DetailItem icon={<Clock className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.hours')} value={`${state.rentalStartTime || '08:00'} ${t('wizard.rental.to')} ${state.rentalEndTime || '18:00'}`} />
               </>
             )}
           </div>
@@ -1408,7 +1387,7 @@ function DetailItem({ icon, iconBg = "bg-slate-100", label, value }: { icon: Rea
   );
 }
 
-export function StepFinal({ state, updateState, products, settings, hideBackButton }: { state: ConfigState, updateState: any, products?: Product[], settings: Settings, hideBackButton?: boolean }) {
+export function StepFinal({ state, updateState, products, settings, t, hideBackButton }: { state: ConfigState, updateState: any, products?: Product[], settings: Settings, t: any, hideBackButton?: boolean }) {
   const area = state.width * state.height;
   const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
   
@@ -1433,9 +1412,9 @@ export function StepFinal({ state, updateState, products, settings, hideBackButt
   return (
     <div className="bg-transparent font-sans flex flex-col">
       <div className="w-full p-6 text-center">
-        <h2 className="text-[24px] md:text-[28px] font-black text-[#0f172a] uppercase tracking-[0.2em]">Produits recommandés</h2>
+        <h2 className="text-[24px] md:text-[28px] font-black text-[#0f172a] uppercase tracking-[0.2em]">{t('wizard.products.title')}</h2>
         <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mt-2">
-          Configuration: {state.pixelPitch} • {area.toFixed(2)}m²
+          {t('wizard.products.config')} {state.pixelPitch} • {area.toFixed(2)}m²
         </p>
       </div>
 
@@ -1445,7 +1424,7 @@ export function StepFinal({ state, updateState, products, settings, hideBackButt
               onReset={() => updateState({ step: 1 })}
               onBack={() => updateState({ step: 7 })}
               pitch={state.pixelPitch}
-              environment={state.environment === 'exterieur' ? 'Extérieur' : state.environment === 'semi-exterieur' ? 'Semi-extérieur' : 'Intérieur'}
+              environment={state.environment === 'exterieur' ? t('configurator.outdoor') : state.environment === 'semi-exterieur' ? t('wizard.environment.semiOutdoorTitle') : t('configurator.indoor')}
               hideBackButton={hideBackButton}
            />
         )}
@@ -1453,8 +1432,6 @@ export function StepFinal({ state, updateState, products, settings, hideBackButt
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
           {sortedProducts.map((product) => {
             const isSelected = state.selectedProduct === product.id;
-            
-            // Calculate Price
             const area = state.width * state.height;
             const quantity = state.quantity || 1;
             let unitPrice = 0;
@@ -1462,7 +1439,6 @@ export function StepFinal({ state, updateState, products, settings, hideBackButt
                 unitPrice = (product.salePricePerSqM || 0) * area;
             } else {
                 unitPrice = (product.rentalPricePerDay || 0) * area;
-                // Note: could also use rentalDuration here if we want the full project total
             }
             const totalPrice = unitPrice * quantity;
 
@@ -1485,7 +1461,6 @@ export function StepFinal({ state, updateState, products, settings, hideBackButt
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                   
-                  {/* Actions Layer */}
                   <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
                     {product.videoUrl && (
                       <button 
@@ -1524,19 +1499,19 @@ export function StepFinal({ state, updateState, products, settings, hideBackButt
                   </p>
 
                   <div className="pt-2">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Prix Estimation</p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('wizard.products.priceLabel')}</p>
                     {settings.isPriceHidden && totalPrice > 0 ? (
                         <div className="flex flex-col">
-                            <span className="text-lg font-black text-black/30 animate-pulse blur-[2px] select-none">Estimation en cours...</span>
+                            <span className="text-lg font-black text-black/30 animate-pulse blur-[2px] select-none">{t('configurator.estimating')}</span>
                         </div>
                     ) : (
                         <>
                             <p className="text-lg font-black text-slate-900">
-                                {totalPrice > 0 ? `${totalPrice.toLocaleString('fr-FR')} €` : 'Sur estimation'}
+                                {totalPrice > 0 ? `${totalPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} €` : t('wizard.products.onEstimate') || 'Sur estimation'}
                             </p>
                             {quantity > 1 && (
                                 <p className="text-[10px] font-bold text-slate-400 italic">
-                                    ({unitPrice.toLocaleString('fr-FR')} € / unité)
+                                    {t('wizard.products.perUnit', { price: unitPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US') })}
                                 </p>
                             )}
                         </>
@@ -1545,7 +1520,7 @@ export function StepFinal({ state, updateState, products, settings, hideBackButt
                   
                   {isSelected && (
                     <div className="mt-4 flex items-center justify-between bg-gray-50 p-2 rounded-xl border border-gray-100">
-                      <span className="font-black uppercase tracking-[0.1em] text-[9px] ml-2 text-gray-400">Quantité</span>
+                      <span className="font-black uppercase tracking-[0.1em] text-[9px] ml-2 text-gray-400">{t('wizard.products.quantity')}</span>
                       <div className="flex items-center gap-3">
                         <button 
                           onClick={(e) => { e.stopPropagation(); updateState({ quantity: Math.max(1, (state.quantity || 1) - 1) }) }}
@@ -1575,7 +1550,7 @@ export function StepFinal({ state, updateState, products, settings, hideBackButt
                       : "bg-white/40 backdrop-blur-md text-black border border-gray-100 hover:bg-black hover:text-[#c6ff00] hover:shadow-2xl hover:shadow-black/10"
                   )}
                 >
-                  {isSelected ? "Produit sélectionné" : "Sélectionner ce produit"}
+                  {isSelected ? t('wizard.products.selected') : t('wizard.products.select')}
                 </button>
               </div>
             );
@@ -1598,7 +1573,7 @@ function calculateRatio(w: number, h: number): string {
   if (Math.abs(ratio - 16/9) < 0.05) return "16:9 (HD)";
   if (Math.abs(ratio - 4/3) < 0.05) return "4:3 (Standard)";
   if (Math.abs(ratio - 21/9) < 0.05) return "21:9 (Ultrawide)";
-  if (Math.abs(ratio - 1) < 0.05) return "1:1 (Carré)";
+  if (Math.abs(ratio - 1) < 0.05) return "1:1";
   
   return `${rw}:${rh}`;
 }

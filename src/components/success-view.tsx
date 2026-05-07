@@ -31,6 +31,7 @@ interface SuccessViewProps {
 }
 
 function VerificationView({ email, onNewQuote }: { email: string; onNewQuote: () => void }) {
+  const { t } = useI18n();
   console.log("DEBUG: VerificationView (Image 4) Rendered for email:", email);
   return (
     <div className="w-full flex min-h-screen items-center justify-center p-4 bg-[#FAFAFA] font-sans transition-none pb-8 lg:pb-[20vh]">
@@ -41,30 +42,30 @@ function VerificationView({ email, onNewQuote }: { email: string; onNewQuote: ()
                 </div>
                 
                 <h1 className="text-[24px] md:text-[26px] font-black tracking-tight text-[#0f766e] mb-2 leading-tight">
-                    Félicitations !
+                    {t('success.congratulations')}
                 </h1>
                 <p className="text-[#0f766e] text-sm md:text-base font-bold mb-6">
-                    Votre devis a été envoyé par email.
+                    {t('success.sentEmail')}
                 </p>
                 
                 <p className="text-slate-600 text-[14px] mb-4 leading-relaxed">
-                    Un lien de confirmation a été envoyé à<br/>
+                    {t('success.confirmationLinkSent')}<br/>
                     <span className="font-bold text-black">{email}</span>
                 </p>
                 
                 <p className="text-slate-500 text-[12px] mb-8 leading-relaxed max-w-[280px] mx-auto">
-                    Veuillez cliquer sur le lien dans l'email pour finaliser votre demande et accéder à l'estimation.
+                    {t('success.clickLink')}
                 </p>
 
                 <div className="w-full bg-blue-50/60 rounded-xl p-4 mb-8 flex items-start gap-3 text-left">
                     <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                     <p className="text-[12px] text-blue-800 font-medium leading-tight">
-                        Pensez à vérifier vos spams si vous ne voyez rien.
+                        {t('success.checkSpam')}
                     </p>
                 </div>
 
                 <Button onClick={onNewQuote} variant="outline" className="rounded-full h-10 px-8 font-bold text-[11px] tracking-widest uppercase border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm w-full">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Retour au site
+                    <ArrowLeft className="w-4 h-4 mr-2" /> {t('common.backToSite')}
                 </Button>
             </div>
         </div>
@@ -144,8 +145,8 @@ export function SuccessView({ quoteId, onNewQuote, initialEmail }: SuccessViewPr
 
         toast({
           variant: "destructive",
-          title: "Erreur de chargement",
-          description: "Impossible de récupérer les détails de l'estimation.",
+          title: t('common.errorLoading'),
+          description: t('success.fetchError'),
         });
       } finally {
         setIsLoading(false);
@@ -285,8 +286,8 @@ export function SuccessView({ quoteId, onNewQuote, initialEmail }: SuccessViewPr
                       <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                   </div>
                   <div>
-                      <h1 className="text-2xl font-black text-slate-900 mb-2">Chargement en cours</h1>
-                      <p className="text-slate-500">Préparation de votre estimation...</p>
+                      <h1 className="text-2xl font-black text-slate-900 mb-2">{t('common.loading')}</h1>
+                      <p className="text-slate-500">{t('success.preparing')}</p>
                   </div>
               </div>
           </div>
@@ -320,11 +321,11 @@ export function SuccessView({ quoteId, onNewQuote, initialEmail }: SuccessViewPr
         <h1 
           className="text-4xl md:text-6xl lg:text-[72px] font-black text-[#2563eb] mb-6 tracking-tight leading-tight"
         >
-          Félicitations !
+          {t('success.congratulations')}
         </h1>
 
         <p className="text-slate-500 text-sm md:text-base leading-relaxed max-w-xl mx-auto mb-10 font-medium">
-          Votre demande d’estimation a bien été prise en compte. Un conseiller technique vous contactera dans les meilleurs délais pour affiner votre besoin.
+          {t('success.description')}
         </p>
 
         <div className="flex flex-col md:flex-row items-center justify-center gap-4 w-full">
@@ -335,7 +336,7 @@ export function SuccessView({ quoteId, onNewQuote, initialEmail }: SuccessViewPr
                 className="w-full flex items-center justify-center gap-3 bg-slate-100 text-slate-400 px-8 py-5 rounded-2xl font-bold text-[11px] md:text-xs tracking-widest uppercase cursor-not-allowed border border-slate-200 whitespace-nowrap"
               >
                 <Mail className="w-4 h-4 shrink-0" />
-                <span>Vérifiez votre email</span>
+                <span>{t('success.verifyEmail')}</span>
               </button>
             </div>
           ) : (
@@ -351,7 +352,7 @@ export function SuccessView({ quoteId, onNewQuote, initialEmail }: SuccessViewPr
               ) : (
                 <Download className="w-4 h-4 shrink-0" />
               )}
-              <span>{isPdfRendering ? 'Génération...' : showSkeleton ? 'Chargement...' : "Télécharger l'Estimation (PDF)"}</span>
+              <span>{isPdfRendering ? t('common.generating') : showSkeleton ? t('common.loading') : t('success.downloadPdf')}</span>
             </motion.button>
           )}
 
@@ -362,7 +363,7 @@ export function SuccessView({ quoteId, onNewQuote, initialEmail }: SuccessViewPr
             className="group flex-1 flex items-center justify-center gap-3 bg-black text-white px-8 py-5 rounded-2xl w-full font-bold text-[11px] md:text-xs tracking-widest uppercase transition-all duration-300 shadow-xl whitespace-nowrap"
           >
             <RefreshCcw className="w-4 h-4 shrink-0" />
-            <span>Créer une nouvelle estimation</span>
+            <span>{t('success.newEstimation')}</span>
           </motion.button>
         </div>
 
