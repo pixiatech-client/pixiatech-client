@@ -45,12 +45,14 @@ export async function createSession(idToken: string) {
 
     const isProd = process.env.NODE_ENV === 'production';
     
+    // @ts-ignore - partitioned is supported in newer Next.js versions but might not be in the types yet
     cookies().set('session', sessionCookie, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
-      secure: isProd, // Must be true for SameSite=None, but false for localhost HTTP
+      secure: isProd, 
       path: '/',
-      sameSite: isProd ? 'none' : 'lax', // None for iframes (requires Secure), Lax for local dev
+      sameSite: isProd ? 'none' : 'lax',
+      partitioned: isProd, // Essential for iframe support (CHIPS)
     });
     console.log('[Session Action] Cookie set in headers.');
 
