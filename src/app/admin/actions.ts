@@ -1900,10 +1900,10 @@ export async function getProducts(options: { page?: number; limit?: number } = {
   try {
     const productsCollection = adminDb.collection('products');
 
-    // Get counts
-    const rentalSnapshot = await productsCollection.where('availableFor', 'array-contains', 'rental').count().get();
+    // Get counts (flexible for both EN and FR terms)
+    const rentalSnapshot = await productsCollection.where('availableFor', 'array-contains-any', ['rental', 'location']).count().get();
     const rentalCount = rentalSnapshot.data().count;
-    const saleSnapshot = await productsCollection.where('availableFor', 'array-contains', 'sale').count().get();
+    const saleSnapshot = await productsCollection.where('availableFor', 'array-contains-any', ['sale', 'vente']).count().get();
     const saleCount = saleSnapshot.data().count;
 
     let products: Product[] = [];
@@ -1924,9 +1924,21 @@ export async function getProducts(options: { page?: number; limit?: number } = {
       const snapshot = await query.limit(limit + 1).get();
       products = snapshot.docs.map(doc => {
         const data = doc.data();
+        
+        // Normalize availableFor to strictly use 'sale' or 'rental' for the UI
+        const normalizedAvailableFor = (data.availableFor || data.mode || [])
+          .map((m: string) => {
+            const val = m.toLowerCase();
+            if (val === 'vente' || val === 'sale') return 'sale';
+            if (val === 'location' || val === 'rental') return 'rental';
+            return val;
+          })
+          .filter((m: string) => m === 'sale' || m === 'rental');
+
         return { 
           id: doc.id, 
           ...data,
+          availableFor: normalizedAvailableFor,
           tileWidth: parseFloat(data.largeurDalle || data.tileWidth || 0),
           tileHeight: parseFloat(data.hauteurDalle || data.tileHeight || 0),
           pricePerTile: parseFloat(data.prixDalle || data.pricePerTile || 0),

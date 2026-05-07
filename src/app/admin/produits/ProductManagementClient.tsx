@@ -3061,9 +3061,24 @@ export default function ProductManagementClient() {
   // Data Sync (Real-time Firestore)
   useEffect(() => {
     // Listen to products
-    const qProducts = collection(db, "products");
     const unsubProducts = onSnapshot(qProducts, (snapshot) => {
-      const prods = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const prods = snapshot.docs.map(doc => {
+        const data = doc.data() as any;
+        // Normalize availableFor and mode for UI (French)
+        const normalizedMode = (data.availableFor || data.mode || [])
+          .map((m: string) => {
+            const val = m.toLowerCase();
+            if (val === 'sale' || val === 'vente') return 'vente';
+            if (val === 'rental' || val === 'location') return 'location';
+            return val;
+          });
+        
+        return { 
+          id: doc.id, 
+          ...data,
+          mode: normalizedMode
+        };
+      });
       setProducts(prods);
     }, (error) => handleFirestoreError(error, 'fetching', 'products'));
 
@@ -3248,8 +3263,16 @@ export default function ProductManagementClient() {
       // --- DATA SANITIZATION ---
       const rawData: any = {
         name: productName || '',
-        mode: mode || ['vente'],
-        availableFor: (mode || []).map(m => (m || '').toLowerCase()),
+        mode: (mode || []).map(m => {
+          if (m === 'vente') return 'sale';
+          if (m === 'location') return 'rental';
+          return m;
+        }),
+        availableFor: (mode || []).map(m => {
+          if (m === 'vente') return 'sale';
+          if (m === 'location') return 'rental';
+          return (m || '').toLowerCase();
+        }),
         type: environment || ['interieur'],
         price: (prixVente || '0') + ' €',
         image: finalPhotoUrl || '',
