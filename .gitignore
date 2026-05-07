@@ -41,13 +41,9 @@ next-env.d.ts
 .env*
 
 # firebase
-.firebase/
 firebase-debug.log
 firestore-debug.log
-ui-debug.log
-*.local
-
-# next.js
-.next/
-out/
-build/
+node_modules
+node_modules
+node_modules
+node_modules
