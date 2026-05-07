@@ -3061,6 +3061,7 @@ export default function ProductManagementClient() {
   // Data Sync (Real-time Firestore)
   useEffect(() => {
     // Listen to products
+    const qProducts = query(collection(db, "products"), orderBy("createdAt", "desc"));
     const unsubProducts = onSnapshot(qProducts, (snapshot) => {
       const prods = snapshot.docs.map(doc => {
         const data = doc.data() as any;
