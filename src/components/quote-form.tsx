@@ -42,7 +42,6 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Schema will be defined inside the component to use t() function
 
-type FormValues = z.infer<typeof formSchema>;
 
 interface QuoteFormProps {
   quoteDetails: QuoteDetails;
@@ -86,7 +85,8 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
     }),
   });
 
-  const form = useForm<FormValues>({
+  const form = useForm({
+
     resolver: zodResolver(formSchema),
     defaultValues: {
       companyName: '',
@@ -110,7 +110,7 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
       }
   }));
 
-  const onSubmit = (data: FormValues) => {
+  const onSubmit = (data: any) => {
     console.log("DEBUG: src/components/quote-form.tsx onSubmit triggered - INSTANT FLOW");
     
     // 1. PRIORITÉ ABSOLUE : Afficher l'UI de succès immédiatement

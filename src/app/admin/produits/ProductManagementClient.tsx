@@ -3284,7 +3284,7 @@ export default function ProductManagementClient() {
         availableFor: (mode || []).map(m => {
           if (m === 'vente') return 'sale';
           if (m === 'location') return 'rental';
-          return (m || '').toLowerCase();
+          return String(m || '').toLowerCase();
         }),
         type: (environment || []).map(e => {
           if (e === 'interieur') return 'indoor';

@@ -34,6 +34,7 @@ import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 type PreviewMode = 'dimension' | 'video' | 'image';
 
 const MediaPreview = ({ url, type }: { url: string, type: 'video' | 'image' }) => {
+    const { t } = useI18n();
     const getEmbedUrl = (originalUrl: string) => {
         try {
             const urlObj = new URL(originalUrl);

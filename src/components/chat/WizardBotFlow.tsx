@@ -21,6 +21,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createQuoteRequest } from '@/app/actions/quote-actions';
 import { useUser } from '@/firebase';
+import { useI18n } from '@/lib/i18n';
+
 import type { QuoteDetails } from '@/lib/types';
 
 interface WizardBotFlowProps {
@@ -56,6 +58,7 @@ const STEP = {
 } as const;
 
 export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSettings, deliverySettings, locations }: WizardBotFlowProps) {
+  const { t, locale } = useI18n();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -864,7 +867,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
               {/* ── Steps ── */}
               {step === STEP.DIMENSIONS && !isTyping && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-                  <StepDimensions state={configState} updateState={(u) => setConfigState(prev => ({ ...prev, ...u }))} settings={settings} />
+                  <StepDimensions state={configState} updateState={(u) => setConfigState(prev => ({ ...prev, ...u }))} settings={settings} t={t} />
                   <div className="px-6 pb-6">
                     <Button onClick={handleDimensionsSubmit} disabled={!configState.width || !configState.height} className="w-full h-14 font-black rounded-xl bg-black hover:bg-[#B3E140] text-white hover:text-black uppercase tracking-wider text-xs shadow-xl active:scale-95 transition-all">
                       Confirmer les dimensions <ArrowRight size={16} className="ml-2" />
@@ -875,7 +878,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
               {step === STEP.SUMMARY && !isTyping && (
                 <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-100">
-                  <StepSummary state={configState} />
+                  <StepSummary state={configState} t={t} locale={locale} />
                   <div className="p-4 bg-slate-50 border-t">
                     <Button onClick={handleProceedToProducts} className="w-full h-14 font-black rounded-xl bg-black hover:bg-[#B3E140] text-white hover:text-black uppercase tracking-wider text-xs shadow-xl active:scale-95 transition-all">
                       Rechercher les produits recommandés 🔍

@@ -375,7 +375,7 @@ function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigSta
     case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} t={t} />;
     case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} t={t} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
     case 7: return <StepSummary state={state} t={t} locale={locale} />;
-    case 8: return <StepFinal state={state} updateState={updateState} products={products} settings={settings} t={t} />;
+    case 8: return <StepFinal state={state} updateState={updateState} products={products} settings={settings} t={t} locale={locale!} hideBackButton={true} />;
     default: return null;
   }
 }
@@ -1389,7 +1389,7 @@ function DetailItem({ icon, iconBg = "bg-slate-100", label, value }: { icon: Rea
   );
 }
 
-export function StepFinal({ state, updateState, products, settings, t, hideBackButton }: { state: ConfigState, updateState: any, products?: Product[], settings: Settings, t: any, hideBackButton?: boolean }) {
+export function StepFinal({ state, updateState, products, settings, t, locale, hideBackButton }: { state: ConfigState, updateState: any, products?: Product[], settings: Settings, t: any, locale: string, hideBackButton?: boolean }) {
   const area = state.width * state.height;
   const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
   
