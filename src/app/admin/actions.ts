@@ -46,9 +46,9 @@ export async function createSession(idToken: string) {
     cookies().set('session', sessionCookie, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: true, // Always true for SameSite=None
       path: '/',
-      sameSite: 'lax',
+      sameSite: 'none',
     });
     console.log('[Session Action] Cookie set in headers.');
 
