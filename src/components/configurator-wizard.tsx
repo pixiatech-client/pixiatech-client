@@ -47,7 +47,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addDays } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
+import { useI18n } from '@/lib/i18n';
 import type { DateRange } from 'react-day-picker';
 import { useUser } from '@/firebase';
 import Link from 'next/link';
@@ -307,7 +308,7 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
                   t={t}
                 />
                 <div className="flex-1">
-                  {renderStep(state, updateState, userProfile, wizardSettings, settings, allProducts, setIsInteracting, t)}
+                  {renderStep(state, updateState, userProfile, wizardSettings, settings, allProducts, setIsInteracting, t, locale)}
                 </div>
               </div>
             </motion.div>
@@ -365,7 +366,7 @@ function getStepTitle(step: number, projectType: ProjectType, t: any): string {
   }
 }
 
-function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigState>) => void, userProfile: UserProfile | null, wizardSettings: WizardSettings, settings: Settings, products: Product[], setIsInteracting: (val: boolean) => void, t: any) {
+function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigState>) => void, userProfile: UserProfile | null, wizardSettings: WizardSettings, settings: Settings, products: Product[], setIsInteracting: (val: boolean) => void, t: any, locale?: string) {
   switch (state.step) {
     case 1: return <StepProjectType state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
     case 2: return <StepEnvironment state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
@@ -373,7 +374,7 @@ function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigSta
     case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} />;
     case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} t={t} />;
     case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} t={t} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
-    case 7: return <StepSummary state={state} t={t} />;
+    case 7: return <StepSummary state={state} t={t} locale={locale} />;
     case 8: return <StepFinal state={state} updateState={updateState} products={products} settings={settings} t={t} />;
     default: return null;
   }
@@ -1294,7 +1295,8 @@ export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: Conf
     );
 }
 
-export function StepSummary({ state, t }: { state: ConfigState, t: any }) {
+export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, locale?: string }) {
+  const dateLocale = locale === 'en' ? enUS : fr;
   const area = state.width * state.height;
   const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
   const resX = Math.round((state.width * 1000) / pitchValue);
@@ -1361,7 +1363,7 @@ export function StepSummary({ state, t }: { state: ConfigState, t: any }) {
             {state.projectType === 'location' && state.rentalStartDate && state.rentalEndDate && (
               <>
                 <div className="col-span-1 md:col-span-2 h-px bg-slate-100 my-2"></div>
-                <DetailItem icon={<CalendarIcon className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.rentalPeriod')} value={`${format(new Date(state.rentalStartDate), 'dd/MM/yyyy')} - ${format(new Date(state.rentalEndDate), 'dd/MM/yyyy')}`} />
+                <DetailItem icon={<CalendarIcon className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.rentalPeriod')} value={`${format(new Date(state.rentalStartDate), 'dd/MM/yyyy', { locale: dateLocale })} - ${format(new Date(state.rentalEndDate), 'dd/MM/yyyy', { locale: dateLocale })}`} />
                 <DetailItem icon={<Clock className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.hours')} value={`${state.rentalStartTime || '08:00'} ${t('wizard.rental.to')} ${state.rentalEndTime || '18:00'}`} />
               </>
             )}
