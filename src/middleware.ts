@@ -27,16 +27,20 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   // Security Headers for Production and Iframe Support
-  response.headers.set('Content-Security-Policy', "frame-ancestors 'self' https://pixiatech.com https://www.pixiatech.com https://*.pixiatech.com;");
+  // 🔓 Added more origins for frame-ancestors to ensure the WordPress site isn't blocked
+  const csp = "frame-ancestors 'self' *;"; // Temporarily permissive for debugging
+  response.headers.set('Content-Security-Policy', csp);
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   
   // CORS for credentials (needed for cookies in iframes)
   response.headers.set('Access-Control-Allow-Credentials', 'true');
-  // Note: Access-Control-Allow-Origin cannot be '*' when Credentials is true.
-  // It must be the specific origin of the WordPress site if making cross-origin fetch calls.
-  // For document-level iframe embedding, it's mostly the CSP frame-ancestors that matters.
+  // In an iframe context, we need to be careful with Origin
+  const origin = request.headers.get('origin');
+  if (origin) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+  }
 
   return response;
 }

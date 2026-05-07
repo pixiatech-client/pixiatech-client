@@ -189,8 +189,7 @@ export default function LoginPage() {
         localStorage.removeItem('remember-password');
       }
 
-      router.push('/admin');
-      router.refresh();
+      window.location.href = '/admin';
     } catch (error: any) {
       console.error('[Login] handleLogin Error:', error);
       setLoginError(getFirebaseErrorMessage(error, error.message || 'Une erreur est survenue. Veuillez réessayer.'));
