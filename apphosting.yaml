@@ -1,5 +1,5 @@
-# Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
+# Last updated: 2026-05-07T21:15:00Z
 
 runConfig:
   # Increase this value if you'd like to automatically spin up
