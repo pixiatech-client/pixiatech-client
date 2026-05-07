@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function userDocExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserRole() {
+      return userDocExists() ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : null;
+    }
+
+    function isAdmin() {
+      return isLoggedIn() && userDocExists() && getUserRole() == "admin";
+    }
+
+    function isCommercial() {
+      let role = getUserRole();
+      return isLoggedIn() && userDocExists() && (role == "commercial" || role == "admin" || role == "fournisseur");
+    }
+
+    function isFournisseur() {
+      return isLoggedIn() && userDocExists() && getUserRole() == "fournisseur";
+    }
+
+    match /users/{userId} {
+      allow read: if isLoggedIn() && (isOwner(userId) || isAdmin());
+      allow write: if isLoggedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+    }
+
+    match /roles/{roleId} {
+      allow get, list: if isLoggedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /quotes/{quoteId} {
+      allow read: if isAdmin() || isCommercial() || (isFournisseur() && resource.data.supplierId == request.auth.uid);
+      allow create: if isLoggedIn();
+      allow update: if isAdmin() || (isFournisseur() && resource.data.supplierId == request.auth.uid);
+      allow list: if isAdmin() || isCommercial() || isFournisseur();
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+    
+    match /characteristics/{charId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    match /product_specs/{productId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    match /cities/{cityId} {
+      allow read: if true;
+      allow write: if isAdmin();
+      allow list: if isAdmin();
+    }
+
+    match /zones/{zoneId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /uploads/{uploadId} {
+      allow read: if true;
+      allow create, delete: if isLoggedIn() && isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow get: if isLoggedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isLoggedIn();
+      allow create: if isLoggedIn();
+      allow update, delete: if isLoggedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+match /chats {
+       allow list: if true;
+}
+
+match /chats/{chatId} {
+         allow read: if true;
+         allow create: if true;
+         allow update: if true;
+ 
+         match /messages/{messageId} {
+           allow read: if true;
+           allow list: if true;
+           allow create: if true;
+         }
+       }
+   }
+}

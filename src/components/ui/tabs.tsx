@@ -1,0 +1,107 @@
+"use client"
+
+import * as React from "react"
+import * as TabsPrimitive from "@radix-ui/react-tabs"
+import { motion } from "framer-motion"
+
+import { cn } from "@/lib/utils"
+
+const Tabs = TabsPrimitive.Root
+
+const TabsContent = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Content
+    ref={ref}
+    className={cn(
+      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      className
+    )}
+    {...props}
+  />
+))
+TabsContent.displayName = TabsPrimitive.Content.displayName
+
+const TabsList = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.List>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { activeTab?: string }
+>(({ className, children, activeTab: activeTabProp, ...props }, ref) => {
+  const [internalActiveTab, setInternalActiveTab] = React.useState(
+    (React.Children.toArray(children)[0] as React.ReactElement).props.value
+  );
+
+  const activeTab = activeTabProp !== undefined ? activeTabProp : internalActiveTab;
+  
+  const handleValueChange = (value: string) => {
+      if (activeTabProp === undefined) {
+          setInternalActiveTab(value);
+      }
+  };
+
+  return (
+    <TabsPrimitive.List
+      ref={ref}
+      className={cn(
+        "relative inline-flex h-auto items-center justify-center rounded-md p-1 bg-muted/60 text-muted-foreground w-full",
+        className
+      )}
+      {...props}
+    >
+       {React.Children.map(children, (child) => {
+        if (!React.isValidElement(child)) return null;
+        
+        const isChildActive = child.props.value === activeTab;
+        
+        return (
+          <div className="relative w-full">
+            {isChildActive && (
+              <motion.div
+                layoutId="tabs-bubble"
+                className={cn(
+                  "absolute inset-0 z-10 rounded-md",
+                  "dark:bg-primary bg-black"
+                )}
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            {React.cloneElement(child, {
+              ...child.props,
+              onClick: (e: any) => {
+                handleValueChange(child.props.value);
+                if (child.props.onClick) {
+                  child.props.onClick(e);
+                }
+              },
+              className: cn(
+                child.props.className,
+                "transition-colors duration-300 w-full",
+                isChildActive 
+                  ? "text-primary-foreground"
+                  : 'text-foreground hover:text-foreground/80'
+              )
+            })}
+          </div>
+        )
+      })}
+    </TabsPrimitive.List>
+  )
+})
+TabsList.displayName = TabsPrimitive.List.displayName
+
+const TabsTrigger = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 relative z-20",
+      className
+    )}
+    {...props}
+  />
+))
+TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
+
+export { Tabs, TabsList, TabsTrigger, TabsContent }

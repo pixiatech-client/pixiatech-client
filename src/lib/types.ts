@@ -1,0 +1,416 @@
+
+export type TranslatedString = {
+  fr: string;
+  en: string;
+}
+
+export type Zone = {
+  id: string;
+  name: string;
+  color?: string;
+};
+
+export type DeliveryFeeRule = {
+  id: string;
+  zoneId: string;
+  cityId?: string; // Optional: for city-specific overrides
+  fee: number;
+};
+
+export type DeliverySettings = {
+  defaultFee: number;
+  isDefaultFeeEnabled: boolean;
+  isFreeDeliveryEnabled: boolean;
+  freeDeliveryThreshold: number;
+  deliveryFeeRules: DeliveryFeeRule[];
+  isTotalFreeDeliveryEnabled?: boolean;
+  unconfiguredZoneMessage: string;
+};
+
+export type Product = {
+  id: string;
+  name: string;
+  type: ('indoor' | 'outdoor' | 'showcase')[];
+  availableFor: ('sale' | 'rental')[];
+  productUrl?: string;
+  videoUrl?: string;
+  salePricePerSqM?: number;
+  rentalPricePerDay?: number;
+  rentalPricePerHour?: number;
+  tileWidth?: number; 
+  tileHeight?: number; 
+  pricePerTile?: number; 
+  maxRentalArea?: number;
+  hasDimensions?: boolean;
+  dimensionsEnabled?: boolean;
+  minArea?: number;
+  pitch?: string;
+  distance?: string;
+  imageUrl?: string;
+  image?: string;
+  environment?: string;
+  specSheetUrl?: string;
+  manualUrl?: string;
+  specs?: Record<string, string>;
+};
+
+export type ProductSpec = {
+  id: string;
+  key: string;
+  value: string;
+}
+
+export type ConfiguredProduct = {
+  id: string; 
+  productId: string;
+  productType: 'indoor' | 'outdoor' | 'showcase';
+  width: number;
+  height: number;
+  quantity: number;
+  transactionType: 'sale' | 'rental';
+  rentalDuration: number;
+  rentalUnit: 'day' | 'hour';
+  rentalPeriod?: {
+    from: Date;
+    to: Date;
+  };
+  rentalDate?: Date;
+  rentalStartTime?: string;
+  rentalEndTime?: string;
+  tileWidth?: number;
+  tileHeight?: number;
+  pricePerTile?: number;
+  nombreEcrans?: number;
+  dimensionsEnabled?: boolean;
+  installationPhoto?: string;
+};
+
+export type QuoteDetails = {
+  products: (ConfiguredProduct & { productName: string; lineTotal: number })[];
+  screenType: 'indoor' | 'outdoor' | 'showcase'; 
+  transactionType: 'sale' | 'rental';
+  includeInstallation: boolean;
+  installationCost: number; // Added to capture the calculated cost
+  techniciansRequired: number;
+  includeDelivery: boolean;
+  isDeliveryCostFinal?: boolean; // Added this property
+  deliveryCost?: number;
+  selectedCityId?: string | null;
+  unconfiguredCityQuery?: string;
+  totalQuote: number;
+  width: number;
+  height: number;
+  productName: string;
+  rentalUnit?: 'day' | 'hour' | null;
+  rentalDuration?: number | null;
+  rentalPeriod?: {
+    from: Date;
+    to: Date;
+  };
+  lang: 'fr' | 'en';
+  sitePhoto?: string;
+  taxRate?: number;
+};
+
+export type HintBubbleSettings = {
+  enabled: boolean;
+  text: string;
+  desktopBottom: number;
+  desktopRight: number;
+  mobileBottom: number;
+  mobileRight: number;
+  duration: number;
+}
+
+export type Settings = {
+  defaultWidth: number;
+  defaultHeight: number;
+  maxWidth: number;
+  maxHeight: number;
+  maxRentalWidth?: number;
+  maxRentalHeight?: number;
+  maxProductsPerQuote?: number;
+  previewScreenImageUrl?: string;
+  previewHumanScaleImageUrl?: string;
+  technicianImageUrl?: string;
+  deliveryImageUrl?: string;
+  congratulationsImageUrl?: string;
+  paymentIconUrl?: string;
+  cardLogoUrl?: string;
+  emergencyStopEnabled?: boolean;
+  emergencyReturnUrl?: string;
+  emergencyStopMessage?: string;
+  congratulationsTitle?: TranslatedString;
+  congratulationsMessage?: TranslatedString;
+  deliveryTitle?: TranslatedString;
+  deliveryMessage?: TranslatedString;
+  installationTitle?: TranslatedString;
+  installationMessage?: TranslatedString;
+  disclaimerMessage?: TranslatedString;
+  quoteFormNotesPlaceholder?: TranslatedString;
+  isDeliveryStepEnabled?: boolean;
+  isInstallationStepEnabled?: boolean;
+  isEmailVerificationEnabled?: boolean;
+  isPriceHidden?: boolean;
+  isWizardBotEnabled?: boolean;
+  hintBubble?: HintBubbleSettings;
+  lightThemeId?: string;
+  darkThemeId?: string;
+  sidebarOrder?: string[];
+  logoConfig?: {
+    text: string;
+    letter: string;
+    color: string;
+    image: string | null;
+  };
+  performanceResetAt?: string;
+};
+
+export type City = {
+  id: string;
+  name: string;
+  postalCode: string;
+  zoneId?: string; // Link to the zone
+};
+
+export type Locations = {
+    villes: City[];
+};
+
+export type LaborRule = {
+  id: string;
+  minSqM: number;
+  technicians: number;
+  price: number;
+};
+
+export type LaborSettings = {
+  rules: LaborRule[];
+};
+
+export type PdfSettings = {
+    logoUrl?: string;
+    logoWidth?: number;
+    backgroundUrl?: string;
+    companyName: string;
+    siret?: string;
+    capital?: string;
+    address: string;
+    phone: string;
+    email: string;
+    textColor?: string;
+    titleColor?: string;
+    headerColor?: string;
+    quoteTitle?: string;
+    quoteNumberPrefix?: string;
+    termsAndConditions?: string;
+    bgColor?: string;
+    themeId?: string;
+};
+
+export type UserRole = {
+  id: string;
+  name: string;
+  color: string;
+  isDefault?: boolean;
+};
+
+export type UserProfile = {
+  uid: string;
+  email: string;
+  displayName: string;
+  phone?: string;
+  photoURL?: string;
+  backgroundImage?: string;
+  role: string;
+  status: 'pending' | 'approved';
+  createdAt: any; 
+  originalAdminUid?: string;
+};
+
+export type NotificationFirestore = {
+  id: string;
+  userId: string;
+  type: 'estimation' | 'user' | 'message' | 'delivery' | 'estimation_sent' | 'estimation_rejected' | 'order_created' | 'estimation_archived' | 'estimation_unarchived';
+  title: string;
+  description: string;
+  href: string;
+  read: boolean;
+  createdAt: any;
+  quoteRequestId?: string;
+  supplierId?: string;
+};
+
+export type QuoteHistoryEntry = {
+  userId: string;
+  userName: string;
+  userPhotoUrl?: string;
+  action: string;
+  timestamp: Date;
+  details: string;
+};
+
+
+export type QuoteRequest = Omit<QuoteDetails, 'products' | 'rentalPeriod'> & {
+  id: string;
+  number?: string;
+  createdAt: Date; 
+  updatedAt?: Date;
+  updatedBy?: string;
+  isRead: boolean;
+  status: 'pending' | 'processed' | 'trashed' | 'in_progress' | 'sent' | 'delivered' | 'archived' | 'returned';
+  client: {
+    companyName: string;
+    email: string;
+    phone: string;
+    address: string;
+    notes: string;
+    sitePhoto?: string;
+  };
+  userId?: string;
+  emailVerified: boolean;
+  verificationToken?: string;
+  verificationTokenExpires?: any;
+  history?: QuoteHistoryEntry[];
+  products: (ConfiguredProduct & { productName: string; lineTotal: number; pricePerTile?: number; nombreEcrans?: number; rentalPeriod?: { from: Date, to: Date }, rentalDate?: Date, rentalStartTime?: string; rentalEndTime?: string; })[];
+  installationCost: number;
+  unconfiguredCityQuery?: string;
+  selectedCityId?: string | null;
+  supplierId?: string;
+  trackingNumber?: string;
+  assignedAt?: Date;
+  supplierNotes?: string;
+  supplierTechDetails?: any;
+  lang: 'fr' | 'en';
+  pdfSettings?: PdfSettings;
+  pdfUrl?: string;
+  // New fields for message tracking
+  treatedBy?: string;
+  treatedByName?: string;
+  treatedByRole?: string;
+  treatedAt?: any;
+  isReturned?: boolean;
+  returnReason?: string;
+  previousStatus?: string | null;
+  isLocked?: boolean;
+};
+
+export type Theme = {
+  id: string;
+  name: string;
+  colors: {
+      adminBackground: string;
+  };
+  createdAt?: any;
+}
+
+export type WizardProjectTypeSetting = {
+    enabled: boolean;
+    imageUrl?: string;
+};
+
+export type WizardEnvironmentSetting = {
+    imageUrl?: string;
+};
+
+export type ViewingDistanceOption = {
+  id: string;
+  value: string;
+  imageUrl?: string;
+};
+
+export type PixelPitchOption = {
+  id: string;
+  value: string;
+  recommended: boolean;
+  imageUrl?: string;
+};
+
+export type WizardSettings = {
+    projectTypes: {
+        location: WizardProjectTypeSetting;
+        vente: WizardProjectTypeSetting;
+    };
+    environments: {
+        interieur: WizardEnvironmentSetting;
+        'semi-exterieur': WizardEnvironmentSetting;
+        exterieur: WizardEnvironmentSetting;
+    };
+    viewingDistanceImageUrl?: string;
+    viewingDistances: ViewingDistanceOption[];
+    pixelPitchImageUrl?: string;
+    pixelPitches: PixelPitchOption[];
+};
+
+export type UserRoleType = 'admin' | 'prestataire' | 'commercial';
+
+export interface UserPermissions {
+  canChat: boolean;
+  canBlock: boolean;
+  canDisableNotifications: boolean;
+  canRemoveChat: boolean;
+}
+
+export interface UserProfileChat extends UserProfile {
+  isOnline: boolean;
+  isTyping: boolean;
+  chatStatus?: string;
+  blockedUsers: string[]; 
+  mutedUsers: string[]; 
+  restrictedContacts: string[]; 
+  identificationBlocked?: boolean;
+  notificationsBlocked?: boolean;
+  adminOnly?: boolean; 
+  isIsolated?: boolean; 
+  isAnnoying?: boolean; 
+  isInDiscussion?: boolean; 
+  exclusionMetadata?: Record<string, { date: string, reason: string, isPublic?: boolean }>; 
+  permissions: UserPermissions;
+  lastSeen?: any; 
+  pinnedUserIds?: string[];
+}
+
+export type MessageType = 'text' | 'image' | 'video' | 'file' | 'audio' | 'summary';
+export type MessageStatus = 'sent' | 'delivered' | 'seen';
+
+export interface MessageOption {
+  label: string;
+  value: string;
+  imageUrl?: string;
+  description?: string;
+}
+
+export interface Message {
+  id: string;
+  chatId: string;
+  senderId: string;
+  senderName?: string;
+  senderRole?: string;
+  content: string;
+  type: MessageType;
+  fileUrl?: string;
+  status: MessageStatus;
+  createdAt: any; 
+  reactions?: Record<string, string[]>; 
+  options?: MessageOption[]; // Interactive rich buttons for the wizard bot
+  summaryData?: Record<string, string>; // Data for the wizard bot summary card
+  botImage?: string; // Specific avatar image for this bot message
+}
+
+export interface Chat {
+  id: string;
+  participants: string[];
+  lastMessage?: string;
+  lastMessageAt?: any; 
+  unreadCount: Record<string, number>;
+  isGroup?: boolean;
+  groupName?: string;
+}
+
+export interface AdminSettings {
+  allowProviderChat: boolean;
+  allowSalesChat: boolean;
+  allowUserBlocking: boolean;
+  allowNotifications: boolean;
+  contactListWidth: number;
+}

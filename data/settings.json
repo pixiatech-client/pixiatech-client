@@ -1,0 +1,62 @@
+{
+  "defaultWidth": 20,
+  "defaultHeight": 10,
+  "maxWidth": 20,
+  "maxHeight": 10,
+  "maxRentalWidth": 6,
+  "maxRentalHeight": 5,
+  "maxProductsPerQuote": 3,
+  "previewScreenImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Final-Comp.mp4",
+  "previewHumanScaleImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/149724.svg",
+  "technicianImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Technicien-1.png",
+  "deliveryImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Livraison.png",
+  "congratulationsImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Felicitations.png",
+  "emergencyStopEnabled": false,
+  "emergencyReturnUrl": "https://mahboubidz.com/",
+  "emergencyStopMessage": "Pour des raisons de maintenance, notre outil de devis en ligne est actuellement suspendu. Veuillez nous excuser pour la gêne occasionnée.",
+  "congratulationsTitle": {
+    "fr": "🌟🌟 Félicitations ! 🌟🌟",
+    "en": "🌟🌟 Congratulations! 🌟🌟"
+  },
+  "congratulationsMessage": {
+    "fr": "Votre demande de devis a bien été envoyée. Un commercial vous contactera dans les plus brefs délais pour discuter de votre projet.",
+    "en": "Your quote request has been sent successfully. A sales representative will contact you shortly to discuss your project."
+  },
+  "deliveryTitle": {
+    "fr": "Livraison",
+    "en": "Delivery"
+  },
+  "deliveryMessage": {
+    "fr": "Choisissez le lieu de livraison pour calculer les frais.",
+    "en": "Choose the delivery location to calculate fees."
+  },
+  "installationTitle": {
+    "fr": "Installation",
+    "en": "Installation"
+  },
+  "installationMessage": {
+    "fr": "Souhaitez-vous inclure l'installation par nos techniciens ?",
+    "en": "Would you like to include installation by our technicians?"
+  },
+  "disclaimerMessage": {
+    "fr": "L'entreprise PIXIATECH décline toute responsabilité en cas de problème lié à une installation non effectuée par ses techniciens.",
+    "en": "PIXIATECH declines all responsibility for any problem related to an installation not carried out by its technicians."
+  },
+  "quoteFormNotesPlaceholder": {
+    "fr": "Merci de préciser l’environnement d’installation, afin que nous vous proposions la solution la plus adaptée.",
+    "en": "Please specify the installation environment, so we can offer you the most suitable solution."
+  },
+  "isDeliveryStepEnabled": true,
+  "isInstallationStepEnabled": true,
+  "paymentIconUrl": "https://pixiatech.com/wp-content/uploads/2025/11/credit-cards-payment-1.png",
+  "cardLogoUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Fichier-7-copie-1.png",
+  "hintBubble": {
+    "enabled": true,
+    "text": "Pour démarrer un devis,<br /> cliquez sur + <b>Ajouter un produit</b>.",
+    "desktopBottom": 1,
+    "desktopRight": 1,
+    "mobileBottom": 1,
+    "mobileRight": 1,
+    "duration": 0
+  }
+}

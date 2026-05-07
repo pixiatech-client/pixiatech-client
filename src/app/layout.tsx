@@ -1,0 +1,60 @@
+
+import type { Metadata } from 'next';
+import './globals.css';
+import { LayoutProvider } from '@/components/layout-provider';
+
+export const metadata: Metadata = {
+  title: 'PixiaTech | Estimation',
+  description: 'Générez des estimations pour des écrans LED',
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="fr" className="scroll-smooth" suppressHydrationWarning>
+      <body className="font-body antialiased min-h-[100dvh]">
+        <div className="flare cyan" aria-hidden="true" />
+        <div className="flare magenta" aria-hidden="true" />
+        <div className="directional-flare" aria-hidden="true" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // No Flashbang
+              (function() {
+                if (
+                  localStorage.getItem("theme") === "dark" ||
+                  (!("theme" in localStorage) &&
+                    window.matchMedia("(prefers-color-scheme: dark)").matches)
+                ) {
+                  document.documentElement.classList.add("dark");
+                } else {
+                  document.documentElement.classList.remove("dark");
+                }
+              })();
+            `,
+          }}
+        />
+        <LayoutProvider>{children}</LayoutProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Mouse move listener for the interactive directional flare
+              window.addEventListener("mousemove", (e) => {
+                const directionalFlare = document.querySelector(".directional-flare");
+                if (!directionalFlare) return;
+                const { clientX, clientY } = e;
+                directionalFlare.style.opacity = "1";
+                directionalFlare.style.transform = "translate(" +
+                  (clientX - directionalFlare.offsetWidth / 2) + "px, " +
+                  (clientY - directionalFlare.offsetHeight / 2) + "px)";
+              });
+            `,
+          }}
+        />
+      </body>
+    </html>
+  );
+}

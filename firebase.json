@@ -1,0 +1,18 @@
+{
+  "hosting": {
+    "site": "studio-9205859220-a6440",
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "ssrstudio9205859220a644",
+          "region": "us-central1"
+        }
+      }
+    ]
+  },
+  "firestore": {
+    "rules": "src/firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

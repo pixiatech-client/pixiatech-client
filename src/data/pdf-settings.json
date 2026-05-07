@@ -1,0 +1,17 @@
+{
+  "logoUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Plan-de-travail-2-copie-5-1.png",
+  "logoWidth": 190,
+  "backgroundUrl": "https://i.postimg.cc/T3cZx1ff/Fichier-1-2x-100.jpg",
+  "companyName": "PIXIATECH",
+  "siret": "123 456 789 00010 100",
+  "capital": "100000€",
+  "address": "123 Rue de l'Exemple, 75001 Paris, France",
+  "phone": "+33 1 23 45 67 89",
+  "email": "contact@pixiatech.com",
+  "textColor": "#000000",
+  "titleColor": "#000000",
+  "headerColor": "#0a5499",
+  "quoteTitle": "Estimation",
+  "quoteNumberPrefix": "EST-",
+  "termsAndConditions": "Merci de votre confiance. Cette estimation est valable 30 jours."
+}

@@ -1,0 +1,28 @@
+{
+  "defaultFee": 600,
+  "isDefaultFeeEnabled": false,
+  "isFreeDeliveryEnabled": false,
+  "freeDeliveryThreshold": 10000,
+  "deliveryFeeRules": [
+    {
+      "id": "rule_1763214070810",
+      "zoneId": "BDmrBX1bvYiEzVw5TrzP",
+      "cityId": "",
+      "fee": 200
+    },
+    {
+      "id": "rule_1763214079812",
+      "zoneId": "quYmSJVKBKWVg4WEhGdL",
+      "cityId": "",
+      "fee": 100
+    },
+    {
+      "id": "rule_1763214089876",
+      "zoneId": "quYmSJVKBKWVg4WEhGdL",
+      "cityId": "QcUeLNiyY0nRc7NVOlDf",
+      "fee": 120
+    }
+  ],
+  "isTotalFreeDeliveryEnabled": false,
+  "unconfiguredZoneMessage": "Cette zone n’est pas encore configurée dans notre système. Un tarif personnalisé vous sera communiqué rapidement après vérification."
+}

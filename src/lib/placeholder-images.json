@@ -1,0 +1,16 @@
+{
+  "placeholderImages": [
+    {
+      "id": "preview-background",
+      "description": "A blurred background of a stage to give context to the LED screen preview.",
+      "imageUrl": "https://images.unsplash.com/photo-1670028514318-0ac718c0590d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzdGFnZSUyMGV2ZW50fGVufDB8fHx8MTc2MjIwMzUzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "stage event"
+    },
+    {
+      "id": "preview-screen-content",
+      "description": "A vibrant image of a butterfly on a flower to display on the preview screen.",
+      "imageUrl": "https://images.unsplash.com/photo-1529699211952-734e80c4d42b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjBjbG9zZXVwfGVufDB8fHx8MTc2MjIzMDAwMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "animal closeup"
+    }
+  ]
+}

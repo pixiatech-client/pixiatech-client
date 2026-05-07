@@ -1,0 +1,374 @@
+'use client';
+
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import type { UserProfile, UserRole } from '@/lib/types';
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Pagination } from '@/components/ui/Pagination';
+import { motion, AnimatePresence } from 'framer-motion';
+import { updateUser, deleteUsers, registerUser, getUsers } from '@/app/admin/actions';
+import { useUser, useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
+
+import { FiltersBar } from './FiltersBar';
+import { UserCard } from './UserCard';
+import { UserRow } from './UserRow';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
+import { UserProfileDrawer } from './UserProfileDrawer';
+import { UserTable } from './UserTable';
+import { User, UserRole as LocalUserRole, UserStatus } from './types';
+
+const ITEMS_PER_PAGE = 8;
+
+export function UserManager() {
+  const { userProfile, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const auth = useAuth();
+
+  // State
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paginateDirection, setPaginateDirection] = useState(0);
+
+  // Modals
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isAddMode, setIsAddMode] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+
+  // Roles
+  const rolesQuery = useMemoFirebase(
+    () => (firestore && auth.currentUser && !isUserLoading)
+      ? query(collection(firestore, 'roles'), orderBy('name'))
+      : null,
+    [firestore, auth.currentUser, isUserLoading]
+  );
+  const { data: roles } = useCollection<UserRole>(rolesQuery, { suppressPermissionError: true });
+
+  const isAdmin = userProfile?.role === 'admin';
+
+  // Fetch users
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await getUsers({ limit: ITEMS_PER_PAGE });
+      setUsers(result.users);
+      setTotalCount(result.totalCount);
+    } catch (error) {
+      toast.error('Impossible de charger les utilisateurs.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Adapt Firebase UserProfile to local User type
+  const adaptUser = useCallback((profile: UserProfile): User => {
+    const roleObj = roles?.find(r => r.id === profile.role);
+    const mappedRole = profile.role === 'admin' ? LocalUserRole.ADMINISTRATEUR
+      : profile.role === 'fournisseur' ? LocalUserRole.FOURNISSEUR
+      : LocalUserRole.COMMERCIAL;
+    const mappedStatus = profile.status === 'approved' ? UserStatus.APPROUVE
+      : profile.status === 'pending' ? UserStatus.EN_ATTENTE
+      : UserStatus.EN_ATTENTE;
+    return {
+      id: profile.uid,
+      name: profile.displayName || '',
+      email: profile.email || '',
+      phone: profile.phone,
+      role: mappedRole,
+      status: mappedStatus,
+      avatar: profile.photoURL || '',
+      backgroundImage: profile.backgroundImage || '',
+      lastLogin: new Date().toISOString(),
+      createdAt: typeof profile.createdAt === 'string'
+        ? profile.createdAt
+        : profile.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+    };
+  }, [roles]);
+
+  // Filtered users (client-side for search)
+  const filteredUsers = useMemo(() => {
+    let filtered = users;
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(u =>
+        u.displayName?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q) ||
+        u.phone?.toLowerCase().includes(q)
+      );
+    }
+
+    if (roleFilter) {
+      filtered = filtered.filter(u => {
+        const adapted = adaptUser(u);
+        return adapted.role === roleFilter;
+      });
+    }
+
+    if (statusFilter) {
+      filtered = filtered.filter(u => {
+        const adapted = adaptUser(u);
+        return adapted.status === statusFilter;
+      });
+    }
+
+    return filtered.map(adaptUser);
+  }, [users, searchQuery, roleFilter, statusFilter, adaptUser]);
+
+  // Paginated
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredUsers, currentPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
+
+  // Handlers
+  const handleAddUser = () => {
+    setSelectedUser(null);
+    setIsAddMode(true);
+    setIsDrawerOpen(true);
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setIsAddMode(false);
+    setIsDrawerOpen(true);
+  };
+
+  const handleDeleteUser = (id: string) => {
+    const user = filteredUsers.find(u => u.id === id);
+    if (user) {
+      setUserToDelete(user);
+      setIsDeleteModalOpen(true);
+    }
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeleteModalOpen(false);
+    setDeletingUserId(userToDelete.id);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      await deleteUsers([userToDelete.id]);
+      setUsers(prev => prev.filter(u => u.uid !== userToDelete.id));
+      setTotalCount(prev => prev - 1);
+      toast.success('Utilisateur supprimé avec succès.');
+    } catch (error) {
+      toast.error('Impossible de supprimer l\'utilisateur.');
+    } finally {
+      setDeletingUserId(null);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleApproveUser = async (id: string) => {
+    try {
+      await updateUser({ uid: id, status: 'approved' });
+      setUsers(prev => prev.map(u => u.uid === id ? { ...u, status: 'approved' as any } : u));
+      toast.success('Utilisateur approuvé avec succès.');
+    } catch (error) {
+      toast.error('Impossible d\'approuver l\'utilisateur.');
+    }
+  };
+
+  const handleSuspendUser = async (id: string) => {
+    try {
+      await updateUser({ uid: id, status: 'suspended' });
+      setUsers(prev => prev.map(u => u.uid === id ? { ...u, status: 'suspended' as any } : u));
+      toast.success('Utilisateur suspendu.');
+    } catch (error) {
+      toast.error('Impossible de suspendre l\'utilisateur.');
+    }
+  };
+
+  const handleChangeRole = (user: User) => {
+    setSelectedUser(user);
+    setIsAddMode(false);
+    setIsDrawerOpen(true);
+  };
+
+  const handleSaveUser = async (data: User) => {
+    try {
+      if (isAddMode) {
+        const result = await registerUser({
+          email: data.email,
+          password: '',
+          displayName: data.name,
+          phone: data.phone,
+        });
+        if (!result.success) throw new Error(result.error);
+        toast.success('Utilisateur créé avec succès.');
+        await fetchUsers();
+      } else {
+        const fbRole = data.role === LocalUserRole.ADMINISTRATEUR ? 'admin'
+          : data.role === LocalUserRole.FOURNISSEUR ? 'fournisseur'
+          : 'commercial';
+        const fbStatus = data.status === UserStatus.APPROUVE ? 'approved'
+          : data.status === UserStatus.EN_ATTENTE ? 'pending'
+          : data.status === UserStatus.SUSPENDU ? 'suspended'
+          : 'pending';
+
+        await updateUser({
+          uid: data.id,
+          displayName: data.name,
+          phone: data.phone,
+          photoURL: data.avatar,
+          backgroundImage: data.backgroundImage,
+          role: fbRole,
+          status: fbStatus as any,
+        });
+
+        setUsers(prev => prev.map(u => u.uid === data.id
+          ? {
+              ...u,
+              displayName: data.name,
+              phone: data.phone,
+              photoURL: data.avatar,
+              backgroundImage: data.backgroundImage,
+              role: fbRole,
+              status: fbStatus as any,
+            }
+          : u
+        ));
+        toast.success('Profil mis à jour avec succès.');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Une erreur est survenue.');
+      throw error;
+    }
+  };
+
+  // Loading skeletons
+  if (isLoading && users.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+          <Skeleton className="h-12 w-full rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} className="h-80 rounded-[2rem]" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h1 className="text-3xl font-bold tracking-tight text-slate-900 hidden md:block">Gestion des Utilisateurs</h1>
+      <p className="mt-1 mb-6 text-sm text-slate-500 hidden md:block">
+        Gérez les utilisateurs, les rôles et les permissions de votre plateforme.
+      </p>
+      <FiltersBar
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        roleFilter={roleFilter}
+        setRoleFilter={setRoleFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        onAddUser={handleAddUser}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+      />
+
+      {filteredUsers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center text-center py-20">
+          <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center mb-8 border border-gray-100">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+          <p className="text-xl font-bold text-gray-900 mb-2">Aucun utilisateur trouvé</p>
+          <p className="text-sm font-medium text-gray-400 max-w-xs">
+            {searchQuery ? 'Aucun résultat pour votre recherche.' : 'Aucun utilisateur enregistré pour le moment.'}
+          </p>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPage}
+            initial={{ opacity: 0, x: paginateDirection > 0 ? 50 : paginateDirection < 0 ? -50 : 0 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: paginateDirection > 0 ? -50 : 50 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
+            {paginatedUsers.map((user) => (
+              <UserCard
+                key={user.id}
+                user={user}
+                onEdit={handleEditUser}
+                onDelete={handleDeleteUser}
+                onApprove={handleApproveUser}
+                onSuspend={handleSuspendUser}
+                onChangeRole={handleChangeRole}
+                isDeleting={deletingUserId === user.id}
+              />
+            ))}
+          </motion.div>
+        </AnimatePresence>
+      ) : (
+        <UserTable
+          users={paginatedUsers}
+          onEdit={handleEditUser}
+          onDelete={handleDeleteUser}
+          onApprove={handleApproveUser}
+          onSuspend={handleSuspendUser}
+          onChangeRole={handleChangeRole}
+        />
+      )}
+
+      {/* Pagination */}
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => {
+          setPaginateDirection(page > currentPage ? 1 : -1);
+          setCurrentPage(page);
+        }}
+        totalItems={filteredUsers.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+      />
+
+      {/* Drawer */}
+      <UserProfileDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => { setIsDrawerOpen(false); setSelectedUser(null); setIsAddMode(false); }}
+        user={selectedUser}
+        onSave={handleSaveUser}
+        isAddMode={isAddMode}
+      />
+
+      {/* Delete Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => { setIsDeleteModalOpen(false); setUserToDelete(null); }}
+        onConfirm={confirmDeleteUser}
+        userName={userToDelete?.name || ''}
+      />
+    </div>
+  );
+}

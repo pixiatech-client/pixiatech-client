@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {
+      "id": "default_1",
+      "minSqM": 2,
+      "technicians": 2,
+      "price": 200
+    },
+    {
+      "id": "rule_1762391030432",
+      "minSqM": 4,
+      "technicians": 3,
+      "price": 300
+    },
+    {
+      "id": "rule_1762391040555",
+      "minSqM": 8,
+      "technicians": 4,
+      "price": 400
+    },
+    {
+      "id": "rule_1762593299199",
+      "minSqM": 10,
+      "technicians": 5,
+      "price": 500
+    }
+  ]
+}

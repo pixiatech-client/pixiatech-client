@@ -1,0 +1,203 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "type": "object",
+      "description": "Stores user profile information, including their role and status.",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's unique ID from Firebase Authentication."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin", "commercial", "fournisseur"],
+          "description": "The role assigned to the user."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved"],
+          "description": "The approval status of the user's account."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the user profile was created."
+        }
+      },
+      "required": ["uid", "email", "role", "status", "createdAt"]
+    },
+    "LedScreenProduct": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LedScreenProduct",
+      "type": "object",
+      "description": "Represents an LED screen product with its properties and pricing.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the LED screen product."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the LED screen product."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the LED screen product."
+        },
+        "type": {
+          "type": "string",
+          "description": "The Type of the LED screen product such as indoor/outdoor.",
+          "format": "string"
+        },
+        "defaultHeight": {
+          "type": "number",
+          "description": "Default height of the LED screen product (in meters)."
+        },
+        "defaultWidth": {
+          "type": "number",
+          "description": "Default width of the LED screen product (in meters)."
+        },
+        "pricePerSquareMeter": {
+          "type": "number",
+          "description": "Price per square meter of the LED screen product."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "type",
+        "defaultHeight",
+        "defaultWidth",
+        "pricePerSquareMeter"
+      ]
+    },
+    "Quotation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Quotation",
+      "type": "object",
+      "description": "Represents a quotation for an LED screen setup.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the quotation."
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to LedScreenProduct. (Relationship: LedScreenProduct 1:N Quotation)"
+        },
+        "height": {
+          "type": "number",
+          "description": "Height of the LED screen (in meters)."
+        },
+        "width": {
+          "type": "number",
+          "description": "Width of the LED screen (in meters)."
+        },
+        "totalPrice": {
+          "type": "number",
+          "description": "Total price of the LED screen setup."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Date and time when the quotation was created.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "processed", "trashed", "transmitted", "sent"],
+          "description": "The status of the quotation."
+        },
+        "supplierId": {
+            "type": "string",
+            "description": "The UID of the supplier user assigned to this quote."
+        },
+        "trackingNumber": {
+            "type": "string",
+            "description": "The tracking number provided by the supplier."
+        }
+      },
+      "required": [
+        "id",
+        "productId",
+        "height",
+        "width",
+        "totalPrice",
+        "createdAt",
+        "status"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/entities/UserProfile"
+          },
+          "description": "Stores user profiles, roles, and statuses. Admins can manage these documents.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user, matching the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/led_screen_products/{productId}",
+        "definition": {
+          "entityName": "LedScreenProduct",
+          "schema": {
+            "$ref": "#/entities/LedScreenProduct"
+          },
+          "description": "Stores LED screen product information. Accessible by admins to manage product details and pricing.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "The unique identifier for the LED screen product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/quotations/{quotationId}",
+        "definition": {
+          "entityName": "Quotation",
+          "schema": {
+            "$ref": "#/entities/Quotation"
+          },
+          "description": "Stores quotations for each user. Path-based ownership is enforced.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user who owns the quotation."
+            },
+            {
+              "name": "quotationId",
+              "description": "The unique identifier for the quotation."
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,132 @@
+
+'use client';
+
+import { useFieldArray, useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import type { LaborSettings } from '@/lib/types';
+import { updateLaborSettings } from '@/app/admin/actions';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Trash2, PlusCircle, Copy } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+
+const laborRuleSchema = z.object({
+  id: z.string(),
+  minSqM: z.coerce.number().min(0, 'Doit être positif'),
+  technicians: z.coerce.number().min(1, 'Au moins 1 technicien'),
+  price: z.coerce.number().min(0, 'Doit être positif'),
+});
+
+const laborSettingsSchema = z.object({
+  rules: z.array(laborRuleSchema),
+});
+
+type FormValues = z.infer<typeof laborSettingsSchema>;
+
+export function LaborForm({ initialSettings }: { initialSettings: LaborSettings }) {
+  const { toast } = useToast();
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(laborSettingsSchema),
+    defaultValues: {
+      rules: initialSettings.rules,
+    },
+  });
+
+  const { fields, append, remove, insert } = useFieldArray({
+    control: form.control,
+    name: 'rules',
+  });
+
+  const onSubmit = async (data: FormValues) => {
+    // Sort rules by minSqM to ensure correct evaluation later
+    const sortedRules = [...data.rules].sort((a, b) => a.minSqM - b.minSqM);
+    
+    const result = await updateLaborSettings({ ...data, rules: sortedRules });
+    if (result.success) {
+      toast({ title: 'Succès', description: 'Règles de main-d\'œuvre mises à jour.', variant: 'success' });
+    } else {
+      toast({ variant: 'destructive', title: 'Erreur', description: 'Une erreur est survenue.' });
+    }
+  };
+
+  const handleClone = (index: number) => {
+    const ruleToClone = form.getValues('rules')[index];
+    insert(index + 1, {
+      ...ruleToClone,
+      id: `rule_${Date.now()}`, // Ensure a new unique ID
+    });
+    toast({ title: 'Règle clonée', description: 'La règle a été dupliquée.', variant: 'info' });
+  };
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+            <h3 className="font-medium">Barème de main d'oeuvre</h3>
+            <div className="hidden sm:grid grid-cols-[1fr_1fr_1fr_auto_auto] items-center gap-4 px-3 py-2 font-medium text-muted-foreground">
+                <Label>À partir de (m²)</Label>
+                <Label>Nb. Techniciens</Label>
+                <Label>Tarif (€)</Label>
+                <span className="w-9"></span>
+                <span className="w-9"></span>
+            </div>
+            <div className="space-y-3">
+              {fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto_auto] items-center gap-4 p-3 rounded-lg border bg-slate-50/80 dark:bg-slate-800/20">
+                  <div className='sm:hidden'><Label>À partir de (m²)</Label></div>
+                  <Controller
+                    control={form.control}
+                    name={`rules.${index}.minSqM`}
+                    render={({ field: inputField }) => (
+                      <Input type="number" placeholder="0" {...inputField} />
+                    )}
+                  />
+                  <div className='sm:hidden'><Label>Nb. Techniciens</Label></div>
+                  <Controller
+                    control={form.control}
+                    name={`rules.${index}.technicians`}
+                    render={({ field: inputField }) => (
+                      <Input type="number" placeholder="2" {...inputField} />
+                    )}
+                  />
+                   <div className='sm:hidden'><Label>Tarif (€)</Label></div>
+                  <Controller
+                    control={form.control}
+                    name={`rules.${index}.price`}
+                    render={({ field: inputField }) => (
+                      <Input type="number" placeholder="100" {...inputField} />
+                    )}
+                  />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => handleClone(index)}>
+                    <Copy className="h-4 w-4 text-slate-500" />
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => append({ id: `rule_${Date.now()}`, minSqM: 0, technicians: 2, price: 100 })}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Ajouter une règle
+            </Button>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end pt-4">
+        <Button variant="styled" type="submit" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? 'Sauvegarde...' : 'Sauvegarder les règles'}
+        </Button>
+      </div>
+    </form>
+  );
+}
