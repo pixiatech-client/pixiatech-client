@@ -1,5 +1,10 @@
 'use client';
 
+/**
+ * FloatingChatButton Component
+ * Features: Draggable with screen constraints, responsive positioning.
+ */
+
 import React, { useState, useRef } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
