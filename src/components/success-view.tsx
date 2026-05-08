@@ -53,8 +53,12 @@ function VerificationView({ email, onNewQuote }: { email: string; onNewQuote: ()
                     <span className="font-bold text-black">{email}</span>
                 </p>
                 
-                <p className="text-slate-500 text-[12px] mb-8 leading-relaxed max-w-[280px] mx-auto">
+                <p className="text-slate-500 text-[12px] mb-6 leading-relaxed max-w-[280px] mx-auto">
                     {t('success.clickLink')}
+                </p>
+
+                <p className="text-slate-500 text-[12px] mb-8 leading-relaxed font-medium italic">
+                    {t('success.description')}
                 </p>
 
                 <div className="w-full bg-blue-50/60 rounded-xl p-4 mb-8 flex items-start gap-3 text-left">
@@ -64,8 +68,13 @@ function VerificationView({ email, onNewQuote }: { email: string; onNewQuote: ()
                     </p>
                 </div>
 
-                <Button onClick={onNewQuote} variant="outline" className="rounded-full h-10 px-8 font-bold text-[11px] tracking-widest uppercase border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm w-full">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> {t('common.backToSite')}
+                <Button 
+                    onClick={() => window.location.href = 'https://pixiatech.com/devis/'} 
+                    variant="outline" 
+                    className="rounded-full h-11 px-8 font-bold text-[11px] tracking-widest uppercase border-slate-200 text-slate-700 hover:bg-black hover:text-white hover:border-black shadow-sm w-full group transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                    <ArrowLeft className="w-4 h-4 transition-colors group-hover:text-[#2563EB]" /> 
+                    <span>{t('common.backToSite') || "Retour au site"}</span>
                 </Button>
             </div>
         </div>
