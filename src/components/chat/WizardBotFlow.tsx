@@ -724,6 +724,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           </div>
         </div>
       ) : (
+      <>
       <motion.div
         initial={{ x: '100%', y: '-50%', opacity: 0 }}
         animate={{ x: 0, y: '-50%', opacity: 1 }}
@@ -1403,6 +1404,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           </motion.div>
         )}
       </AnimatePresence>
+      </>
       )}
     </div>
   );
