@@ -555,9 +555,8 @@ export default function PixiaEditor() {
         };
         const subTotal = next.items.reduce((acc, it) => acc + (parse(it.qty) * parse(it.unitPrice)), 0);
         next.summary.sousTotal = subTotal;
-        const vatRate = parse(next.summary.vatRate || 0) / 100;
-        next.summary.tva = (subTotal + parse(next.summary.installation) + parse(next.summary.livraison)) * vatRate;
-        next.summary.totalTTC = subTotal + parse(next.summary.installation) + parse(next.summary.livraison) + next.summary.tva;
+        const totalHT = subTotal + parse(next.summary.installation) + parse(next.summary.livraison);
+        next.summary.totalTTC = totalHT; // Keep the property name for backward compatibility but it holds HT value now
       }
       persist(next, pdfConfig, styles);
       const { stack, cursor } = histRef.current;
@@ -1001,35 +1000,12 @@ export default function PixiaEditor() {
                       </div>
                     ))}
 
-                    <div className="flex justify-between items-center text-[0.78em]">
-                      <div className="flex items-center gap-1 text-slate-500 font-medium">
-                        <span>TVA (</span>
-                        <E 
-                          id="sum_vat_rate"
-                          selectedId={selectedId}
-                          setSelectedId={setSelectedId}
-                          value={String(data.summary.vatRate || 0)}
-                          onChange={(v) => update("summary.vatRate", v)}
-                          style={{ fontWeight: 800, color: "#0f172a", width: "24px", textAlign: "center" }}
-                        />
-                        <span>%)</span>
-                      </div>
-                      <E 
-                        id="sum_tva" 
-                        selectedId={selectedId} 
-                        setSelectedId={setSelectedId} 
-                        value={fmt(data.summary.tva)} 
-                        onChange={(v) => update("summary.tva", v.replace(/[^-0-9,.]/g, '').replace(',', '.'))} 
-                        elementStyle={styles.sum_tva} 
-                        style={{ fontWeight: 800, textAlign: "right", color: "#0f172a" }} 
-                      />
-                    </div>
                   </div>
                   
                   <div className="mt-8 rounded-xl p-5 flex justify-between items-center text-white shadow-md mx-[-2px]" style={{ background: `linear-gradient(135deg, ${currentTheme.primary} 0%, ${currentTheme.primary}dd 100%)` }}>
                     <div className="flex flex-col">
                       <span className="text-[0.65em] font-black uppercase tracking-widest opacity-90">TOTAL</span>
-                      <span className="text-[1.1em] font-black uppercase tracking-tight">TTC</span>
+                      <span className="text-[1.1em] font-black uppercase tracking-tight">HT</span>
                     </div>
                     <E 
                       id="total_val" 
@@ -1040,6 +1016,7 @@ export default function PixiaEditor() {
                       elementStyle={styles.total_val} 
                       style={{ fontSize: "1.6em", fontWeight: 900, textAlign: "right", color: "white", letterSpacing: "-0.04em" }} 
                     />
+
                   </div>
                 </div>
               </div>

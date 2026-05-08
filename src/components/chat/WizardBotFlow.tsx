@@ -607,9 +607,17 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         const res = await createQuoteRequest(uid, formData, quoteDetails);
         if (res.success && res.id) {
             setQuoteId(res.id);
+            // Wait briefly then show success view to let the last message render
+            setTimeout(() => {
+                updateStep(STEP.SUCCESS);
+            }, 1500);
+        } else {
+            pushBotMessage("Une erreur est survenue lors de la création de votre devis. Veuillez réessayer.", undefined, 800, '/bot-avatars/007.webp');
+            updateStep(STEP.FORM_TERMS); // Go back to let them try again
         }
     } catch (e) {
         console.error("Background quote creation failed:", e);
+        pushBotMessage("Une erreur inattendue est survenue.", undefined, 800, '/bot-avatars/007.webp');
     }
   };
 
@@ -698,6 +706,24 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         onClick={onClose}
         className="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
       />
+
+      {step === STEP.SUCCESS ? (
+        <div className="absolute inset-4 md:inset-10 z-[210] pointer-events-auto bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+          <button onClick={onClose} className="absolute top-4 right-4 z-[220] p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors">
+            <X size={20} className="text-slate-600" />
+          </button>
+          <div className="flex-1 overflow-y-auto">
+            <SuccessView 
+              quoteId={quoteId} 
+              onNewQuote={() => {
+                onClose();
+                window.location.reload();
+              }} 
+              initialEmail={formEmail} 
+            />
+          </div>
+        </div>
+      ) : (
       <motion.div
         initial={{ x: '100%', y: '-50%', opacity: 0 }}
         animate={{ x: 0, y: '-50%', opacity: 1 }}
@@ -713,7 +739,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
               <img src={getBotImage()} alt="Bot" className="w-[72px] h-[72px] object-contain origin-bottom" />
             </div>
             <div className="hidden md:flex flex-col">
-              <span className="font-bold text-white text-lg leading-tight">Assistant Estimation</span>
+              <span className="font-bold text-white text-lg leading-tight">Assistant Bot Lumi</span>
               <span className="text-[12px] text-[#86efac] font-medium flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-[#86efac] animate-pulse" />
                 En ligne
@@ -1377,7 +1403,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           </motion.div>
         )}
       </AnimatePresence>
-
+      )}
     </div>
   );
 }

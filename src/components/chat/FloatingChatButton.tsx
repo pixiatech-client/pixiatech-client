@@ -21,7 +21,7 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-[100] md:bottom-8 md:right-8">
+      <div className="fixed bottom-28 left-6 z-[100] md:bottom-24 md:left-auto md:right-8">
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}

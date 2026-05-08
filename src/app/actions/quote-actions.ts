@@ -303,7 +303,7 @@ export async function createQuoteRequest(userId: string, formData: FormValues, q
             // Trigger email sending in background (don't await)
             // Note: In some serverless environments, this might need a more robust solution like a queue, 
             // but for immediate UI responsiveness as requested, we fire and forget.
-            sendQuoteEmail(formData.email, token, quoteDetails.lang).catch(e => console.error("Background email error:", e));
+            sendQuoteEmail(formData.email, token, quoteDetails.lang || 'fr').catch(e => console.error("Background email error:", e));
         }
         return { id, success: true, requiresVerification: emailVerificationEnabled };
     }

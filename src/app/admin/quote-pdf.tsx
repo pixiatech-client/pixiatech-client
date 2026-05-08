@@ -45,8 +45,6 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
     const installation = request.installationCost || 0;
     const livraison = request.deliveryCost || 0;
     const totalHT = sousTotal + installation + livraison;
-    const tva = totalHT * 0.20;
-    const totalTTC = totalHT + tva;
     
     // Technical Data calculations
     const totalArea = products.reduce((sum, p) => sum + ((p.width || 0) * (p.height || 0) * (p.quantity || 1)), 0);
@@ -250,11 +248,10 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
                                         <div className="flex justify-between items-center text-[0.78em]"><span className="text-slate-500 font-medium">Sous-total HT</span><span style={{ fontWeight: 800, textAlign: "right", color: "#0f172a" }}>{fmt(sousTotal)}</span></div>
                                         <div className="flex justify-between items-center text-[0.78em]"><span className="text-slate-500 font-medium">Installation</span><span style={{ fontWeight: 800, textAlign: "right", color: "#0f172a" }}>{fmt(installation)}</span></div>
                                         <div className="flex justify-between items-center text-[0.78em]"><span className="text-slate-500 font-medium">Livraison</span><span style={{ fontWeight: 800, textAlign: "right", color: "#0f172a" }}>{fmt(livraison)}</span></div>
-                                        <div className="flex justify-between items-center text-[0.78em]"><span className="text-slate-500 font-medium">TVA (20%)</span><span style={{ fontWeight: 800, textAlign: "right", color: "#0f172a" }}>{fmt(tva)}</span></div>
                                     </div>
                                     <div className="mt-8 rounded-xl p-5 flex justify-between items-center text-white shadow-md mx-[-2px]" style={{ background: `linear-gradient(135deg, ${currentTheme.primary} 0%, ${currentTheme.primary}dd 100%)` }}>
-                                        <div className="flex flex-col"><span className="text-[0.65em] font-black uppercase tracking-widest opacity-90">TOTAL</span><span className="text-[1.1em] font-black uppercase tracking-tight">TTC</span></div>
-                                        <span style={{ fontSize: "1.6em", fontWeight: 900, textAlign: "right", color: "white", letterSpacing: "-0.04em" }}>{fmt(totalTTC)}</span>
+                                        <div className="flex flex-col"><span className="text-[0.65em] font-black uppercase tracking-widest opacity-90">TOTAL</span><span className="text-[1.1em] font-black uppercase tracking-tight">HT</span></div>
+                                        <span style={{ fontSize: "1.6em", fontWeight: 900, textAlign: "right", color: "white", letterSpacing: "-0.04em" }}>{fmt(totalHT)}</span>
                                     </div>
                                 </div>
                             </div>
