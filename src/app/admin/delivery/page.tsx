@@ -21,8 +21,8 @@ export default async function DeliveryPage() {
       <Accordion type="multiple" defaultValue={["zones", "tarifs", "default", "gratuite"]} className="w-full space-y-4">
         
         {/* Zones Section */}
-        <AccordionItem value="zones" className="border rounded-xl bg-white overflow-hidden shadow-sm">
-          <AccordionTrigger className="px-6 hover:no-underline hover:bg-slate-50/50 transition-colors">
+        <AccordionItem value="zones" className="border-x-0 border-t md:border rounded-none md:rounded-xl bg-white overflow-hidden shadow-none md:shadow-sm">
+          <AccordionTrigger className="px-4 md:px-6 hover:no-underline hover:bg-slate-50/50 transition-colors">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
                 <Map className="w-5 h-5 text-blue-600" />
@@ -33,14 +33,14 @@ export default async function DeliveryPage() {
               </div>
             </div>
           </AccordionTrigger>
-          <AccordionContent className="px-6 pb-6 pt-2 border-t border-slate-100">
+          <AccordionContent className="px-0 md:px-6 pb-6 pt-2 border-t border-slate-100">
             <ZoneManager />
           </AccordionContent>
         </AccordionItem>
 
         {/* Tarifs Section */}
-        <AccordionItem value="tarifs" className="border rounded-xl bg-white overflow-hidden shadow-sm">
-          <AccordionTrigger className="px-6 hover:no-underline hover:bg-slate-50/50 transition-colors">
+        <AccordionItem value="tarifs" className="border-x-0 border-t md:border rounded-none md:rounded-xl bg-white overflow-hidden shadow-none md:shadow-sm">
+          <AccordionTrigger className="px-4 md:px-6 hover:no-underline hover:bg-slate-50/50 transition-colors">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
                 <Truck className="w-5 h-5 text-amber-600" />
@@ -51,14 +51,14 @@ export default async function DeliveryPage() {
               </div>
             </div>
           </AccordionTrigger>
-          <AccordionContent className="px-6 pb-6 pt-2 border-t border-slate-100">
+          <AccordionContent className="px-0 md:px-6 pb-6 pt-2 border-t border-slate-100">
             <DepartmentFeesForm initialSettings={settings} />
           </AccordionContent>
         </AccordionItem>
 
         {/* Frais par Défaut Section */}
-        <AccordionItem value="default" className="border rounded-xl bg-white overflow-hidden shadow-sm">
-          <AccordionTrigger className="px-6 hover:no-underline hover:bg-slate-50/50 transition-colors">
+        <AccordionItem value="default" className="border-x-0 border-t md:border rounded-none md:rounded-xl bg-white overflow-hidden shadow-none md:shadow-sm">
+          <AccordionTrigger className="px-4 md:px-6 hover:no-underline hover:bg-slate-50/50 transition-colors">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center">
                 <Settings className="w-5 h-5 text-slate-600" />
@@ -69,14 +69,14 @@ export default async function DeliveryPage() {
               </div>
             </div>
           </AccordionTrigger>
-          <AccordionContent className="px-6 pb-6 pt-2 border-t border-slate-100">
+          <AccordionContent className="px-0 md:px-6 pb-6 pt-2 border-t border-slate-100">
             <DefaultFeeForm initialSettings={settings} />
           </AccordionContent>
         </AccordionItem>
 
         {/* Livraison Gratuite Section */}
-        <AccordionItem value="gratuite" className="border rounded-xl bg-white overflow-hidden shadow-sm">
-          <AccordionTrigger className="px-6 hover:no-underline hover:bg-slate-50/50 transition-colors">
+        <AccordionItem value="gratuite" className="border-x-0 border-t md:border rounded-none md:rounded-xl bg-white overflow-hidden shadow-none md:shadow-sm">
+          <AccordionTrigger className="px-4 md:px-6 hover:no-underline hover:bg-slate-50/50 transition-colors">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
                 <Percent className="w-5 h-5 text-green-600" />
@@ -87,7 +87,7 @@ export default async function DeliveryPage() {
               </div>
             </div>
           </AccordionTrigger>
-          <AccordionContent className="px-6 pb-6 pt-2 border-t border-slate-100">
+          <AccordionContent className="px-0 md:px-6 pb-6 pt-2 border-t border-slate-100">
             <FreeShippingForm initialSettings={settings} />
           </AccordionContent>
 

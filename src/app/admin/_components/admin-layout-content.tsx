@@ -24,6 +24,12 @@ import {
   LogOut,
   Globe,
   X,
+  FileText,
+  LayoutDashboard,
+  Wand2,
+  Truck,
+  HardHat,
+  FileType,
 } from 'lucide-react';
 import Link from 'next/link';
 import { logout, getThemes, updateSettings, getSettings, updateUser, type UserRole, getUsers, saveSidebarConfig } from '@/app/admin/actions';
@@ -64,6 +70,7 @@ const DEFAULT_LOGO_CONFIG = {
 
 const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor, userProfile, roles, logout, toggleTheme, mainNavItems, secondaryNavItems, mode, setMode, activeSettingsSection, onSettingsSectionChange, isSettingsPage, role, onOpenAccountDrawer, initialSettings }: { children: React.ReactNode, pageTitle: string, pageSubtitle: string, headerColor: string, userProfile: any, roles: any[], logout: any, toggleTheme: any, mainNavItems: any[], secondaryNavItems: any[], mode: string, setMode: (theme: string) => void, activeSettingsSection?: SettingsSection, onSettingsSectionChange?: (section: SettingsSection) => void, isSettingsPage?: boolean, role?: UserRoleEnum, onOpenAccountDrawer?: () => void, initialSettings?: AppSettings | null }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   useEffect(() => {
     console.log('isProfileOpen changed:', isProfileOpen);
   }, [isProfileOpen]);
@@ -247,14 +254,24 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               {sidebarState === 'hidden' && (
                 <Button
                   variant="outline"
-                  size="icon"
-                  onClick={() => setSidebarState('expanded')}
+                  size="default"
+                  onClick={() => {
+                    console.log('Mobile menu button clicked');
+                    setIsMobileMenuOpen(true);
+                  }}
                   className={cn(
-                    "group h-11 w-11 rounded-xl border-0 shadow-sm transition-all duration-200",
-                    isDark ? "bg-white/5 hover:bg-white/10" : "bg-white hover:bg-gray-100"
+                    "group h-10 px-4 rounded-full border-0 shadow-sm transition-all duration-200",
+                    isSettingsPage ? "bg-black text-white hover:bg-zinc-800" : (isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-white hover:bg-gray-100 text-gray-700")
                   )}
                 >
-                  <Menu className={cn("h-5 w-5", isDark ? "text-gray-400 group-hover:text-white" : "text-gray-400 group-hover:text-gray-700")} />
+                  {isSettingsPage ? (
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Menu Paramètres</span>
+                    </div>
+                  ) : (
+                    <Menu className="h-5 w-5" />
+                  )}
                 </Button>
               )}
               <Button
@@ -347,12 +364,101 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         <main className={cn(
           "flex-1 min-h-0",
           pathname === '/admin/messages' 
-            ? "h-[calc(100vh-88px)] overflow-hidden p-6 w-full" 
-            : "px-6 py-6"
-        )} style={{ backgroundColor: '#E8F3EB' }}>
+            ? "h-[calc(100vh-88px)] overflow-hidden p-4 md:p-6 w-full" 
+            : "px-0 py-4 md:px-6 md:py-6"
+        )} style={{ backgroundColor: typeof window !== 'undefined' && window.innerWidth < 768 ? '#ffffff' : '#E8F3EB' }}>
           {children}
         </main>
       </div>
+
+      {/* Mobile Bottom Menu Sheet */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] md:hidden"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(e, info) => {
+                if (info.offset.y > 100) setIsMobileMenuOpen(false);
+              }}
+              className="fixed inset-x-0 bottom-0 z-[151] bg-white dark:bg-zinc-900 rounded-t-[32px] p-6 pb-10 md:hidden max-h-[90vh] flex flex-col"
+            >
+              <div className="w-12 h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full mx-auto mb-8 shrink-0 cursor-grab active:cursor-grabbing" />
+              
+              <div className="flex items-center justify-between mb-6 shrink-0">
+                <h2 className="text-xl font-bold dark:text-white">{isSettingsPage ? 'Configuration' : 'Navigation'}</h2>
+                <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)} className="rounded-full">
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 overflow-y-auto custom-scrollbar pr-1">
+                {(isSettingsPage ? [
+                  { id: 'general', label: 'GÉNÉRAL', icon: Settings, color: 'bg-blue-50 text-blue-600', route: '/admin/settings/general' },
+                  { id: 'images', label: 'IMAGES', icon: ImageIcon, color: 'bg-purple-50 text-purple-600', route: '/admin/settings/images' },
+                  { id: 'content', label: 'CONTENU', icon: FileText, color: 'bg-emerald-50 text-emerald-600', route: '/admin/settings/content' },
+                  { id: 'wizard', label: 'WIZARD', icon: Wand2, color: 'bg-indigo-50 text-indigo-600', route: '/admin/settings/wizard' },
+                  { id: 'livraison', label: 'LIVRAISON', icon: Truck, color: 'bg-cyan-50 text-cyan-600', route: '/admin/settings/livraison' },
+                  { id: 'main-doeuvre', label: 'MAIN D\'ŒUVRE', icon: HardHat, color: 'bg-orange-50 text-orange-600', route: '/admin/settings/main-doeuvre' },
+                  { id: 'pdf', label: 'PDF', icon: FileType, color: 'bg-slate-50 text-slate-600', route: '/admin/settings/pdf' },
+                  { id: 'emergency', label: 'URGENCE', icon: AlertTriangle, color: 'bg-red-50 text-red-600', route: '/admin/settings/emergency' },
+                ] : [
+                  { id: 'dashboard', label: 'TABLEAU DE BORD', icon: LayoutDashboard, color: 'bg-blue-100 text-blue-600', route: '/admin' },
+                  { id: 'estimations', label: 'ESTIMATIONS', icon: FileText, color: 'bg-orange-100 text-orange-600', route: '/admin/quote-requests' },
+                  { id: 'users', label: 'UTILISATEURS', icon: Users, color: 'bg-emerald-100 text-emerald-600', route: '/admin/users' },
+                  { id: 'produit', label: 'PRODUITS', icon: Package, color: 'bg-yellow-100 text-yellow-600', route: '/admin/produits' },
+                  { id: 'settings', label: 'PARAMÈTRES', icon: Settings, color: 'bg-fuchsia-100 text-fuchsia-600', route: '/admin/settings' },
+                ]).map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      if (isSettingsPage) {
+                        onSettingsSectionChange?.(item.id as any);
+                      } else {
+                        router.push(item.route);
+                      }
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center gap-4 p-5 rounded-2xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-[0.98] border border-gray-100 dark:border-white/5"
+                  >
+                    <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm", item.color)}>
+                      <item.icon className="w-7 h-7" />
+                    </div>
+                    <span className="font-black text-gray-800 dark:text-gray-200 tracking-wider text-sm uppercase">{item.label}</span>
+                  </button>
+                ))}
+
+                <div className="h-px bg-gray-100 dark:bg-zinc-800 my-4 shrink-0" />
+
+                <button
+                  onClick={() => {
+                    logout();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="flex items-center gap-4 p-5 rounded-2xl bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-all active:scale-[0.98] border border-rose-100/50 dark:border-rose-500/20"
+                >
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-rose-100 dark:bg-rose-500/20 text-rose-600">
+                    <LogOut className="w-7 h-7" />
+                  </div>
+                  <span className="font-black text-rose-600 tracking-wider uppercase">Se déconnecter</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <ChatPanel
         isOpen={isChatPanelOpen}

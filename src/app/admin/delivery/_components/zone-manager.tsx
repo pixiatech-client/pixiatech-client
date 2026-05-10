@@ -2,15 +2,17 @@
 
 'use client';
 
-import { useState, useTransition, useCallback, useEffect } from 'react';
+import React, { useState, useTransition, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, writeBatch, doc, deleteDoc, updateDoc, addDoc, query, orderBy, limit, startAfter, getDocs, where, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import type { City, Zone } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { PlusCircle, Trash2, Loader2, FilePen, ChevronLeft, ChevronRight, FolderUp, Palette } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, FilePen, ChevronLeft, ChevronRight, FolderUp, Palette, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -80,12 +82,12 @@ function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white">
+      <CardHeader className="px-0 md:px-6">
         <CardTitle>Gestion des Zones</CardTitle>
         <CardDescription>Créez des zones géographiques et assignez-leur une couleur pour une meilleure organisation.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-0 md:px-6">
         <div className="flex gap-2">
           <Popover>
             <PopoverTrigger asChild>
@@ -163,6 +165,7 @@ export function ZoneManager() {
   const [citiesToDelete, setCitiesToDelete] = useState<string[] | null>(null);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [targetZoneId, setTargetZoneId] = useState<string>('');
+  const [expandedCityId, setExpandedCityId] = useState<string | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageCursors, setPageCursors] = useState<Record<number, QueryDocumentSnapshot<DocumentData> | null>>({ 1: null });
@@ -316,12 +319,12 @@ export function ZoneManager() {
     <div className="space-y-6">
         <ZoneEditor onZoneUpdate={refreshCurrentPage}/>
 
-        <Card>
-        <CardHeader>
+        <Card className="border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white">
+        <CardHeader className="px-0 md:px-6">
             <CardTitle>Gestion des Villes</CardTitle>
             <CardDescription>Ajoutez, modifiez et assignez des villes à vos zones de livraison.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 px-0 md:px-6">
             <div className="flex flex-col sm:flex-row gap-2">
             <Textarea
                 placeholder={"Paris, 75001\nMarseille, 13001\n(une ville par ligne, séparée par une virgule)"}
@@ -351,20 +354,20 @@ export function ZoneManager() {
 
             <div className="border rounded-lg overflow-hidden">
             <Table>
-                <TableHeader>
-                <TableRow>
+                <TableHeader className="bg-slate-50/50 hidden md:table-header-group">
+                  <TableRow className="border-b border-slate-200">
                     <TableHead className="w-[50px]">
-                    <Checkbox
+                      <Checkbox
                         checked={!!isAllSelected}
                         onCheckedChange={handleSelectAll}
                         aria-label="Tout sélectionner"
-                    />
+                      />
                     </TableHead>
                     <TableHead>Ville</TableHead>
                     <TableHead>Code Postal</TableHead>
                     <TableHead>Zone</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
                 {isLoadingCities ? (
@@ -373,26 +376,100 @@ export function ZoneManager() {
                     cities.map(city => {
                         const zone = zones?.find(z => z.id === city.zoneId);
                         return (
-                            <TableRow key={city.id} data-state={selectedCityIds.includes(city.id) ? 'selected' : ''}>
-                                <TableCell>
-                                <Checkbox
-                                    checked={selectedCityIds.includes(city.id)}
-                                    onCheckedChange={(checked) => handleSelectOne(city.id, !!checked)}
-                                    aria-label={`Sélectionner ${city.name}`}
-                                />
-                                </TableCell>
-                                <TableCell>{city.name}</TableCell>
-                                <TableCell>{city.postalCode}</TableCell>
-                                <TableCell>{zone ? <Badge style={{ backgroundColor: zone.color, color: 'white' }}>{zone.name}</Badge> : <span className="text-muted-foreground italic">Aucune</span>}</TableCell>
-                                <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" onClick={() => setEditingCity(city)}><FilePen className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setCitiesToDelete([city.id])}><Trash2 className="h-4 w-4" /></Button>
-                                </TableCell>
-                            </TableRow>
+                            <React.Fragment key={city.id}>
+                                {/* PC VIEW */}
+                                <TableRow className="hidden md:table-row" data-state={selectedCityIds.includes(city.id) ? 'selected' : ''}>
+                                    <TableCell>
+                                    <Checkbox
+                                        checked={selectedCityIds.includes(city.id)}
+                                        onCheckedChange={(checked) => handleSelectOne(city.id, !!checked)}
+                                        aria-label={`Sélectionner ${city.name}`}
+                                    />
+                                    </TableCell>
+                                    <TableCell className="font-bold text-slate-900">{city.name}</TableCell>
+                                    <TableCell className="font-medium text-slate-600">{city.postalCode}</TableCell>
+                                    <TableCell>{zone ? <Badge style={{ backgroundColor: zone.color, color: 'white' }}>{zone.name}</Badge> : <span className="text-muted-foreground italic">Aucune</span>}</TableCell>
+                                    <TableCell className="text-right">
+                                    <Button variant="ghost" size="icon" onClick={() => setEditingCity(city)}><FilePen className="h-4 w-4" /></Button>
+                                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setCitiesToDelete([city.id])}><Trash2 className="h-4 w-4" /></Button>
+                                    </TableCell>
+                                </TableRow>
+
+                                {/* MOBILE VIEW */}
+                                <TableRow className="md:hidden border-b border-slate-100 hover:bg-zinc-50 transition-colors">
+                                    <TableCell colSpan={5} className="p-0">
+                                        <div className="w-full">
+                                            <div 
+                                                className="flex items-center p-4 gap-3 cursor-pointer active:bg-slate-50 transition-colors"
+                                                onClick={() => setExpandedCityId(expandedCityId === city.id ? null : city.id)}
+                                            >
+                                                <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                                                    <Checkbox
+                                                        checked={selectedCityIds.includes(city.id)}
+                                                        onCheckedChange={(checked) => handleSelectOne(city.id, !!checked)}
+                                                        className="w-5 h-5 rounded-md"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-black text-slate-900 text-sm tracking-tight truncate">{city.name}</div>
+                                                    <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{city.postalCode}</div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {zone && (
+                                                        <Badge 
+                                                            style={{ backgroundColor: zone.color, color: 'white' }} 
+                                                            className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 h-auto border-none"
+                                                        >
+                                                            {zone.name}
+                                                        </Badge>
+                                                    )}
+                                                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
+                                                        <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-300", expandedCityId === city.id && "rotate-180")} />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <AnimatePresence initial={false}>
+                                                {expandedCityId === city.id && (
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: 'auto', opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                                                        className="overflow-hidden bg-slate-50/50 border-t border-slate-100"
+                                                    >
+                                                        <div className="px-4 py-3 flex items-center justify-between gap-4">
+                                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Options rapides</div>
+                                                            <div className="flex gap-2">
+                                                                <Button 
+                                                                    variant="outline" 
+                                                                    size="sm" 
+                                                                    onClick={(e) => { e.stopPropagation(); setEditingCity(city); }}
+                                                                    className="h-8 px-3 text-[10px] font-black uppercase tracking-widest bg-white hover:bg-slate-900 hover:text-white transition-all rounded-lg"
+                                                                >
+                                                                    <FilePen className="w-3.5 h-3.5 mr-1.5" /> Éditer
+                                                                </Button>
+                                                                <Button 
+                                                                    variant="outline" 
+                                                                    size="sm" 
+                                                                    onClick={(e) => { e.stopPropagation(); setCitiesToDelete([city.id]); }}
+                                                                    className="h-8 px-3 text-[10px] font-black uppercase tracking-widest bg-white text-destructive border-destructive/20 hover:bg-destructive hover:text-white transition-all rounded-lg"
+                                                                >
+                                                                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Supprimer
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            </React.Fragment>
                         )
                     })
                 ) : (
-                    <TableRow><TableCell colSpan={5} className="text-center h-24">Aucune ville ajoutée.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center h-24 text-slate-400 font-medium italic">Aucune ville ajoutée.</TableCell></TableRow>
                 )}
                 </TableBody>
             </Table>

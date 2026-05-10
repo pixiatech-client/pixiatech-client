@@ -128,8 +128,8 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
           )}
 
         <fieldset className="space-y-6 group" disabled={isOverridden}>
-          <Card className='group-disabled:opacity-50'>
-              <CardHeader className="flex-row items-center justify-between">
+          <Card className='group-disabled:opacity-50 border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white'>
+              <CardHeader className="flex-row items-center justify-between px-0 md:px-6">
                   <div>
                     <CardTitle>Tarifs par Zone</CardTitle>
                     <CardDescription>Définissez des coûts de livraison spécifiques pour chaque zone ou ville.</CardDescription>
@@ -141,7 +141,7 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
                     </Button>
                   )}
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 px-0 md:px-6">
                   {isLoadingCities || isLoadingZones ? (
                     <div className="flex items-center justify-center p-8">
                       <Loader2 className="animate-spin mr-2"/> Chargement...

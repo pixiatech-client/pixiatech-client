@@ -215,12 +215,14 @@ const SmartToolbar = ({ currentStyle, onUpdate, onReset, onClose }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, y: 20 }}
-      className="no-print fixed bottom-24 left-1/2 -translate-x-1/2 z-[300] bg-white border border-gray-200 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl flex flex-col items-center gap-1 p-2 min-w-[340px]"
+      initial={{ opacity: 0, y: "100%" }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: "100%" }}
+      transition={{ type: "spring", damping: 30, stiffness: 300 }}
+      className="no-print fixed bottom-0 left-0 right-0 z-[300] bg-white border-t border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-[32px] md:rounded-2xl md:bottom-24 md:left-1/2 md:-translate-x-1/2 md:w-auto md:min-w-[340px] flex flex-col items-center gap-1 p-4 md:p-2"
       onClick={(e) => e.stopPropagation()}
     >
+      <div className="w-12 h-1.5 bg-gray-100 rounded-full mb-4 md:hidden" />
       <div className="flex items-center gap-2 w-full p-1 border-b border-gray-100 mb-1">
          <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
             <button onClick={() => updateStyle('fontSize', (currentStyle.fontSize || 12) - 1)} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-gray-900 transition-all"><ChevronDown size={14}/></button>
@@ -290,12 +292,14 @@ const LogoToolbar = ({ logoConfig, onUpdate, onClose }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -20, scale: 0.95 }}
-      className="no-print fixed bottom-24 left-1/2 -translate-x-1/2 z-[300] bg-white border border-gray-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-full px-6 py-2.5 flex items-center gap-4"
+      initial={{ opacity: 0, y: "100%" }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: "100%" }}
+      transition={{ type: "spring", damping: 30, stiffness: 300 }}
+      className="no-print fixed bottom-0 left-0 right-0 z-[300] bg-white border-t border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-[32px] md:rounded-full md:bottom-24 md:left-1/2 md:-translate-x-1/2 md:w-auto px-6 py-6 md:py-2.5 flex flex-col md:flex-row items-center gap-4"
       onClick={(e) => e.stopPropagation()}
     >
+      <div className="w-12 h-1.5 bg-gray-100 rounded-full mb-2 md:hidden" />
       <button onClick={onClose} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><X size={18}/></button>
       <div className="w-px h-6 bg-gray-100" />
       <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-300">Logo</span>
@@ -332,12 +336,14 @@ const BgToolbar = ({ config, onUpdate, onClose }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -20, scale: 0.95 }}
-      className="no-print fixed bottom-24 left-1/2 -translate-x-1/2 z-[300] bg-white border border-gray-200 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-full px-6 py-2.5 flex items-center gap-4"
+      initial={{ opacity: 0, y: "100%" }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: "100%" }}
+      transition={{ type: "spring", damping: 30, stiffness: 300 }}
+      className="no-print fixed bottom-0 left-0 right-0 z-[300] bg-white border-t border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-[32px] md:rounded-full md:bottom-24 md:left-1/2 md:-translate-x-1/2 md:w-auto px-6 py-8 md:py-2.5 flex flex-col md:flex-row items-center gap-4"
       onClick={(e) => e.stopPropagation()}
     >
+      <div className="w-12 h-1.5 bg-gray-100 rounded-full mb-4 md:hidden" />
       <button onClick={onClose} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><X size={18}/></button>
       <div className="w-px h-6 bg-gray-100" />
       <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-300">Arrière-Plan PDF</span>
@@ -413,11 +419,68 @@ export default function PixiaEditor() {
     showSidebar: true
   });
   
-  const currentTheme = THEMES.find(t => t.id === pdfConfig.themeId) || THEMES[0];
   const [styles, setStyles] = useState<Record<string, React.CSSProperties>>({});
   const [selectedId, setSelectedId] = useState(null);
   const [canUndo, setCanUndo] = useState(false);
   const histRef = useRef({ stack: [DEFAULT_DATA], cursor: 0 });
+  
+  const [activeDrawer, setActiveDrawer] = useState<'themes' | 'edit' | 'logo' | 'background' | null>(null);
+  
+  const [zoom, setZoom] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) {
+        const docWidth = 820;
+        const docHeight = 1160;
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        
+        // On reserve 120px pour le dock et les paddings
+        const availableWidth = screenWidth * 0.95;
+        const availableHeight = screenHeight - 160; 
+        
+        const zoomW = availableWidth / docWidth;
+        const zoomH = availableHeight / docHeight;
+        
+        setZoom(Math.min(zoomW, zoomH));
+      } else {
+        setZoom(1);
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  useEffect(() => {
+    if (selectedId) {
+      if (selectedId === 'logo') setActiveDrawer('logo');
+      else if (selectedId === 'pdf_bg') setActiveDrawer('background');
+      else setActiveDrawer('edit');
+      setIsThemeMenuOpen(false);
+    } else {
+      setActiveDrawer(null);
+    }
+  }, [selectedId]);
+
+  const toggleThemeMenu = (e) => {
+    e.stopPropagation();
+    const next = !isThemeMenuOpen;
+    setIsThemeMenuOpen(next);
+    if (next) {
+        setSelectedId(null);
+        setActiveDrawer('themes');
+    } else {
+        setActiveDrawer(null);
+    }
+  };
+
+  const currentTheme = THEMES.find(t => t.id === pdfConfig.themeId) || THEMES[0];
+
 
   useEffect(() => {
     async function loadData() {
@@ -620,7 +683,7 @@ export default function PixiaEditor() {
 
   return (
     <main 
-      className="min-h-screen flex flex-col items-center pt-10 pb-40 selection:bg-indigo-100 transition-all duration-700 relative"
+      className={`flex flex-col items-center selection:bg-indigo-100 transition-all duration-700 relative ${isMobile ? 'h-screen overflow-hidden justify-center p-0' : 'min-h-screen pt-10 pb-40'}`}
       style={{ backgroundColor: workspaceBg }}
       onClick={() => setSelectedId(null)}
     >
@@ -634,15 +697,12 @@ export default function PixiaEditor() {
         }
         @media (max-width: 1024px) {
           .document-shadow { 
-            transform: scale(0.8); 
             transform-origin: top center;
-            margin-bottom: -200px;
           }
         }
         @media (max-width: 640px) {
           .document-shadow { 
-            transform: scale(0.5); 
-            margin-bottom: -500px;
+            transform-origin: top center;
           }
           .no-print.fixed {
             bottom: 20px;
@@ -653,35 +713,65 @@ export default function PixiaEditor() {
             justify-content: space-around;
           }
         }
+        .zoom-controls {
+          position: fixed;
+          bottom: 100px;
+          right: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          z-index: 200;
+        }
       `}} />
+
+      {isMobile && (
+        <div className="no-print zoom-controls">
+          <button 
+            onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.min(prev + 0.1, 2)); }}
+            className="w-12 h-12 bg-white border border-slate-200 shadow-xl rounded-2xl flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+          >
+            <Maximize size={20} />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.max(prev - 0.1, 0.3)); }}
+            className="w-12 h-12 bg-white border border-slate-200 shadow-xl rounded-2xl flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+          >
+            <Zap size={20} className="rotate-45" />
+          </button>
+          <div className="bg-white border border-slate-200 shadow-xl rounded-2xl px-2 py-1 text-[10px] font-black text-slate-400 text-center uppercase tracking-tighter">
+            {Math.round(zoom * 100)}%
+          </div>
+        </div>
+      )}
 
       {/* ACTIONS GROUPÉES (Thèmes PDF, Undo, Reset) */}
       <div className="no-print fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[100]">
         <div className="flex items-center gap-1.5 bg-white border border-gray-100 shadow-2xl rounded-3xl p-1.5 backdrop-blur-xl">
           <div className="relative">
             <button 
-              onClick={(e) => { e.stopPropagation(); setIsThemeMenuOpen(!isThemeMenuOpen); }}
-              className={`p-2.5 rounded-2xl transition-all flex items-center gap-2 ${isThemeMenuOpen ? 'bg-indigo-50 text-indigo-600' : 'text-gray-500 hover:bg-gray-50'}`}
+              onClick={toggleThemeMenu}
+              className={`p-2.5 rounded-2xl transition-all flex items-center gap-2 ${activeDrawer === 'themes' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-500 hover:bg-gray-50'}`}
               title="Thèmes"
             >
               <Palette size={18} />
-              <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">Thèmes</span>
+              <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider">Thèmes</span>
             </button>
 
+            {/* Desktop Theme Menu */}
             <AnimatePresence>
-              {isThemeMenuOpen && (
+              {!isMobile && activeDrawer === 'themes' && (
                 <motion.div 
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute top-full right-0 mt-3 p-3 bg-white border border-gray-100 shadow-2xl rounded-2xl min-w-[220px] grid grid-cols-5 gap-2"
+                  className="absolute bottom-full right-0 mb-3 p-3 bg-white border border-gray-100 shadow-2xl rounded-2xl min-w-[220px] grid grid-cols-5 gap-2"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="col-span-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 px-1">Choisir un thème</div>
                   {THEMES.map(t => (
                     <button 
                       key={t.id} 
-                      onClick={() => { updatePdfConfig({ ...pdfConfig, themeId: t.id }); setIsThemeMenuOpen(false); }} 
+                      onClick={() => { updatePdfConfig({ ...pdfConfig, themeId: t.id }); setIsThemeMenuOpen(false); setActiveDrawer(null); }} 
                       className={`w-8 h-8 rounded-full border-2 transition-all ${pdfConfig.themeId === t.id ? 'ring-2 ring-indigo-100 border-indigo-600 scale-110 shadow-lg' : 'border-gray-100 hover:scale-105'}`} 
                       style={{ background: t.gradient }} 
                       title={`Thème ${t.id}`} 
@@ -701,7 +791,7 @@ export default function PixiaEditor() {
               title="Détails techniques"
             >
               <Settings2 size={16} />
-              <span className="text-[10px] font-bold sr-only sm:not-sr-only uppercase">Tech</span>
+              <span className="text-[10px] font-bold uppercase">Tech</span>
             </button>
             <button 
               onClick={() => updatePdfConfig({ ...pdfConfig, showInfo: !pdfConfig.showInfo })}
@@ -709,7 +799,7 @@ export default function PixiaEditor() {
               title="Information"
             >
               <Info size={16} />
-              <span className="text-[10px] font-bold sr-only sm:not-sr-only uppercase">Info</span>
+              <span className="text-[10px] font-bold uppercase">Info</span>
             </button>
             <button 
               onClick={() => updatePdfConfig({ ...pdfConfig, showTerms: !pdfConfig.showTerms })}
@@ -717,7 +807,7 @@ export default function PixiaEditor() {
               title="Paiement"
             >
               <FileText size={16} />
-              <span className="text-[10px] font-bold sr-only sm:not-sr-only uppercase">Paiem.</span>
+              <span className="text-[10px] font-bold uppercase">Paiem.</span>
             </button>
             <button 
               onClick={() => updatePdfConfig({ ...pdfConfig, showBadges: !pdfConfig.showBadges })}
@@ -725,7 +815,7 @@ export default function PixiaEditor() {
               title="Certificats"
             >
               <CheckSquare size={16} />
-              <span className="text-[10px] font-bold sr-only sm:not-sr-only uppercase">Certif.</span>
+              <span className="text-[10px] font-bold uppercase">Certif.</span>
             </button>
             <button 
               onClick={() => updatePdfConfig({ ...pdfConfig, showSidebar: !pdfConfig.showSidebar })}
@@ -733,7 +823,7 @@ export default function PixiaEditor() {
               title="Barre latérale"
             >
               <Columns size={16} />
-              <span className="text-[10px] font-bold sr-only sm:not-sr-only uppercase">Barre</span>
+              <span className="text-[10px] font-bold uppercase">Barre</span>
             </button>
           </div>
 
@@ -748,26 +838,38 @@ export default function PixiaEditor() {
         </div>
       </div>
 
-      {/* DOCUMENT A4 */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="document-shadow relative overflow-hidden shrink-0 transition-all cursor-default"
+      {/* DOCUMENT A4 WRAPPER FOR SCALING */}
+      <div 
+        className={`${isMobile ? 'relative' : 'relative shrink-0'}`}
         style={{ 
-          width: "820px", 
-          height: "1160px", 
-          aspectRatio: "1 / 1.414", 
-          boxShadow: "0 40px 100px rgba(0,0,0,0.3)",
-          backgroundColor: pdfConfig.pdfBg,
-          backgroundImage: pdfConfig.pdfBgImage ? `url(${pdfConfig.pdfBgImage})` : 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          borderColor: selectedId === 'pdf_bg' ? '#4f46e5' : 'transparent',
-          borderWidth: '2px',
-          borderStyle: selectedId === 'pdf_bg' ? 'dashed' : 'none'
+          width: isMobile ? `${820 * zoom}px` : "auto", 
+          height: isMobile ? `${1160 * zoom}px` : "auto",
+          transition: 'all 0.5s ease'
         }}
-        onClick={(e) => { e.stopPropagation(); setSelectedId('pdf_bg'); }}
       >
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ 
+            opacity: 1, 
+            y: 0,
+            scale: zoom,
+            }}
+            className={`document-shadow overflow-hidden shrink-0 transition-all cursor-default origin-top ${isMobile ? 'absolute top-0 left-1/2 -translate-x-1/2' : 'relative'}`}
+            style={{ 
+            width: "820px", 
+            height: "1160px", 
+            aspectRatio: "1 / 1.414", 
+            boxShadow: "0 40px 100px rgba(0,0,0,0.3)",
+            backgroundColor: pdfConfig.pdfBg,
+            backgroundImage: pdfConfig.pdfBgImage ? `url(${pdfConfig.pdfBgImage})` : 'none',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            borderColor: selectedId === 'pdf_bg' ? '#4f46e5' : 'transparent',
+            borderWidth: '2px',
+            borderStyle: selectedId === 'pdf_bg' ? 'dashed' : 'none',
+            }}
+            onClick={(e) => { e.stopPropagation(); setSelectedId('pdf_bg'); }}
+        >
         {pdfConfig.showSidebar && (
           <div className="absolute left-0 top-0 bottom-0 w-[5px]" style={{ background: currentTheme.gradient }} />
         )}
@@ -866,7 +968,10 @@ export default function PixiaEditor() {
                 key={item.id} 
                 className="grid grid-cols-[3em_1fr_4em_8em_9em] items-start py-3 px-2 border-b border-gray-100 transition-colors hover:bg-gray-50/50"
               >
-                <span className="text-[0.9em] font-bold text-gray-300">{(idx + 1).toString().padStart(2, '0')}</span>
+                <span 
+                  className="text-[0.78em] font-black inline-flex items-center justify-center w-6 h-6 rounded-full mt-0.5"
+                  style={{ color: currentTheme.primary, backgroundColor: `${currentTheme.primary}15` }}
+                >{(idx + 1).toString().padStart(2, '0')}</span>
                 <div className="flex flex-col pr-6">
                   <E 
                     id={`it_desc_${item.id}`} 
@@ -1080,10 +1185,11 @@ export default function PixiaEditor() {
           )}
         </div>
       </motion.div>
+      </div>
 
       {/* TOOLBARS CONTEXTUELLES */}
       <AnimatePresence mode="wait">
-        {selectedId === 'logo' && (
+        {activeDrawer === 'logo' && (
           <LogoToolbar
             key="logo-bar"
             logoConfig={pdfConfig}
@@ -1091,7 +1197,7 @@ export default function PixiaEditor() {
             onClose={() => setSelectedId(null)}
           />
         )}
-        {selectedId === 'pdf_bg' && (
+        {activeDrawer === 'background' && (
           <BgToolbar
             key="bg-bar"
             config={pdfConfig}
@@ -1099,7 +1205,7 @@ export default function PixiaEditor() {
             onClose={() => setSelectedId(null)}
           />
         )}
-        {selectedId && selectedId !== 'logo' && selectedId !== 'pdf_bg' && (
+        {activeDrawer === 'edit' && selectedId && (
           <SmartToolbar
             key="text-bar"
             currentStyle={styles[selectedId] || {}}
@@ -1107,6 +1213,30 @@ export default function PixiaEditor() {
             onReset={() => resetStyles(selectedId)}
             onClose={() => setSelectedId(null)}
           />
+        )}
+        {isMobile && activeDrawer === 'themes' && (
+            <motion.div
+                initial={{ opacity: 0, y: "100%" }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: "100%" }}
+                transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                className="no-print fixed bottom-0 left-0 right-0 z-[300] bg-white border-t border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-[32px] p-6 pb-10 flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto mb-6 shrink-0" />
+                <div className="text-sm font-black uppercase tracking-[0.2em] text-gray-300 mb-6 text-center">Choisir un Thème</div>
+                <div className="grid grid-cols-5 gap-4 overflow-y-auto max-h-[40vh] p-2">
+                    {THEMES.map(t => (
+                        <button 
+                            key={t.id} 
+                            onClick={() => { updatePdfConfig({ ...pdfConfig, themeId: t.id }); setActiveDrawer(null); }} 
+                            className={`aspect-square rounded-2xl border-4 transition-all ${pdfConfig.themeId === t.id ? 'border-indigo-600 scale-105 shadow-xl shadow-indigo-100' : 'border-gray-50'}`} 
+                            style={{ background: t.gradient }} 
+                        />
+                    ))}
+                </div>
+                <Button variant="ghost" className="mt-6 w-full rounded-2xl py-6 font-bold text-gray-400" onClick={() => setActiveDrawer(null)}>Fermer</Button>
+            </motion.div>
         )}
       </AnimatePresence>
     </main>

@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { getSettings } from '@/app/admin/actions';
 import type { Settings as AppSettings } from '@/lib/types';
-import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle } from 'lucide-react';
+import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
@@ -17,12 +17,12 @@ interface SettingsContentProps {
 const GeneralContent = lazy(() => import('../general/page'));
 const ImagesContent = lazy(() => import('../images/page'));
 const ContentContent = lazy(() => import('../content/page'));
-const ThemesContent = lazy(() => import('../themes/page'));
 const WizardContent = lazy(() => import('../../wizard/page'));
 const LivraisonContent = lazy(() => import('../../_components/delivery-redirect'));
 const LaborContent = lazy(() => import('../../labor/page'));
 const PdfContent = lazy(() => import('../../pdf-settings/page'));
 const EmergencyContent = lazy(() => import('../emergency/page'));
+const AppearanceContent = lazy(() => import('../themes/page'));
 
 function LoadingFallback() {
     return (
@@ -42,7 +42,6 @@ const tabsConfig: TabItem[] = [
     { id: 'general', label: 'Général', icon: Settings },
     { id: 'images', label: 'Images', icon: ImageIcon },
     { id: 'content', label: 'Contenu', icon: FileText },
-    { id: 'appearance', label: 'Apparence', icon: Palette },
     { id: 'wizard', label: 'Wizard', icon: Wand2 },
     { id: 'livraison', label: 'Livraison', icon: Truck },
     { id: 'main-doeuvre', label: 'Main d\'œuvre', icon: HardHat },
@@ -53,10 +52,22 @@ const tabsConfig: TabItem[] = [
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
     const [settings, setSettings] = useState<AppSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [showMobileMenu, setShowMobileMenu] = useState(true);
+    const [isMobile, setIsMobile] = useState(false);
     const [currentSection, setCurrentSection] = useState<SettingsSection>(initialSection);
 
     useEffect(() => {
-        setCurrentSection(initialSection);
+        const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    useEffect(() => {
+        if (initialSection) {
+            setCurrentSection(initialSection);
+            setShowMobileMenu(false);
+        }
     }, [initialSection]);
 
     useEffect(() => {
@@ -76,12 +87,9 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
 
     const handleSectionChange = (section: SettingsSection) => {
         setCurrentSection(section);
+        setShowMobileMenu(false);
         onSectionChange?.(section);
     };
-
-    const currentSectionIndex = useMemo(() => {
-        return tabsConfig.findIndex(tab => tab.id === currentSection);
-    }, [currentSection]);
 
     const renderSection = () => {
         if (isLoading || !settings) {
@@ -95,8 +103,6 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <ImagesContent />;
             case 'content':
                 return <ContentContent />;
-            case 'appearance':
-                return <ThemesContent />;
             case 'wizard':
                 return <WizardContent />;
             case 'livraison':
@@ -113,22 +119,22 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
     };
 
     return (
-        <div className="flex flex-col lg:flex-row gap-8 lg:items-start pt-4">
-            <div className="w-full lg:w-72 flex-shrink-0">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 lg:items-start pt-2 lg:pt-4">
+            <div className={cn("w-full lg:w-72 flex-shrink-0 hidden lg:block")}>
                 <Tabs 
                     value={currentSection} 
                     onValueChange={(value) => handleSectionChange(value as SettingsSection)}
                     orientation="vertical"
                 >
-                    <TabsList className="flex flex-col gap-3 bg-transparent p-0 h-auto w-full items-stretch">
-                        {tabsConfig.map((tab, index) => {
+                    <TabsList className="flex flex-row lg:flex-col gap-2 md:gap-3 bg-transparent p-0 h-auto w-full items-stretch overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 px-4 md:px-0">
+                        {tabsConfig.map((tab) => {
                             const isSelected = currentSection === tab.id;
                             return (
                                 <TabsTrigger 
                                     key={tab.id} 
                                     value={tab.id}
                                     className={cn(
-                                        "w-full flex items-center justify-start gap-4 px-4 py-3 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all duration-300",
+                                        "w-auto lg:w-full flex items-center justify-start gap-3 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-2xl text-[10px] md:text-sm font-black uppercase tracking-wider transition-all duration-300 flex-shrink-0",
                                         "border border-gray-100",
                                         "data-[state=active]:bg-[#0f1113] data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-xl",
                                         "data-[state=inactive]:bg-white data-[state=inactive]:text-gray-500",
@@ -136,7 +142,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                     )}
                                 >
                                     <div className={cn(
-                                        "h-10 w-10 rounded-full flex items-center justify-center transition-all",
+                                        "h-8 w-8 md:h-10 md:w-10 rounded-full flex items-center justify-center transition-all flex-shrink-0",
                                         isSelected ? "bg-white/10" :
                                         tab.id === 'general' ? "bg-blue-100/80 text-blue-600" :
                                         tab.id === 'images' ? "bg-purple-100/80 text-purple-600" :
@@ -161,10 +167,12 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
             </div>
             
             <div className="flex-1 min-w-0 flex flex-col pt-2 lg:pt-0">
-                <div className="mb-8">
-                    <h2 className="text-3xl font-black text-[#1a1d21]">Configuration Système</h2>
-                    <p className="text-gray-400 font-medium text-sm mt-2">Gérez les options globales, les ressources et les paramètres de sécurité de votre plateforme.</p>
-                </div>
+                {!isMobile && (
+                    <div className="mb-6 md:mb-8 px-4 lg:px-0">
+                        <h2 className="text-2xl md:text-3xl font-black text-[#1a1d21]">Configuration Système</h2>
+                        <p className="text-gray-400 font-medium text-xs md:text-sm mt-2">Gérez les options globales, les ressources et les paramètres de sécurité de votre plateforme.</p>
+                    </div>
+                )}
                 
                 <div className="w-full relative min-h-[600px]">
                     <Suspense fallback={<LoadingFallback />}>

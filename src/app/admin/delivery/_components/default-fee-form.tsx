@@ -60,7 +60,7 @@ export function DefaultFeeForm({ initialSettings }: { initialSettings: DeliveryS
                   </AlertDescription>
               </Alert>
           )}
-          <div className="rounded-lg border p-4 transition-opacity group-disabled:opacity-50">
+          <div className="rounded-none md:rounded-lg border-x-0 md:border-x border-y p-4 transition-opacity group-disabled:opacity-50">
             <div className="flex items-center justify-between">
               <div>
                   <Label htmlFor="isDefaultFeeEnabled" className="font-semibold">Frais de livraison par défaut</Label>

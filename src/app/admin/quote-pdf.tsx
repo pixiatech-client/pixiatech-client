@@ -191,7 +191,10 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
                                 key={idx} 
                                 className="grid grid-cols-[3em_1fr_4em_8em_9em] items-start py-3 px-2 border-b border-gray-100"
                             >
-                                <span className="text-[0.9em] font-bold text-gray-300">{(idx + 1).toString().padStart(2, '0')}</span>
+                                <span 
+                                    className="text-[0.78em] font-black inline-flex items-center justify-center w-6 h-6 rounded-full mt-0.5"
+                                    style={{ color: currentTheme.primary, backgroundColor: `${currentTheme.primary}15` }}
+                                >{(idx + 1).toString().padStart(2, '0')}</span>
                                 <div className="flex flex-col pr-6">
                                     <span style={{ fontSize: "1.1em", fontWeight: 800, color: "#1e293b", marginBottom: "2px" }}>{item.productName || item.productType}</span>
                                     <span style={{ fontSize: "0.82em", color: "#64748b", lineHeight: "1.4" }}>Dimensions: {item.width}m x {item.height}m</span>

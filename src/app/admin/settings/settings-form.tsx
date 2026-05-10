@@ -135,7 +135,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
 
   return (
     <Card className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-      <CardContent className="space-y-8 p-8">
+      <CardContent className="space-y-6 p-4 md:p-8">
         {section === 'general' && (
             <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
@@ -166,8 +166,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
             </div>
 
             {configMode === 'sale' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-6 p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                    <div className="space-y-6 p-4 md:p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
                         <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">Valeurs par défaut</h4>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -190,7 +190,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                             </div>
                         </div>
                     </div>
-                    <div className="space-y-6 p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
+                    <div className="space-y-6 p-4 md:p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
                         <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">Limites maximales</h4>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -215,7 +215,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                     </div>
                 </div>
             ) : (
-                 <div className="space-y-6 p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
+                 <div className="space-y-6 p-4 md:p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
                     <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">Limites Location</h4>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
