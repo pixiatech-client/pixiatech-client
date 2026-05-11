@@ -62,8 +62,8 @@ const mapRoleToUserRoleEnum = (role: string | undefined): UserRoleEnum => {
 };
 
 const DEFAULT_LOGO_CONFIG = {
-  text: 'PIXIATECH',
-  letter: 'P',
+  text: 'BOT LUMI',
+  letter: 'B',
   color: 'bg-blue-600',
   image: null as string | null,
 };
@@ -137,7 +137,12 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   // Sync logoConfig when settings are loaded
   useEffect(() => {
     if (initialSettings?.logoConfig) {
-      setLogoConfig(initialSettings.logoConfig);
+      const config = { ...initialSettings.logoConfig };
+      if (config.text === 'ASSISTANT ESTIMATION') {
+        config.text = 'BOT LUMI';
+        config.letter = 'B';
+      }
+      setLogoConfig(config);
     }
   }, [initialSettings?.logoConfig]);
 
@@ -270,7 +275,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   {isSettingsPage ? (
                     <div className="flex items-center gap-2">
                       <Settings className="h-4 w-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Menu Paramètres</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">MENU</span>
                     </div>
                   ) : (
                     <Menu className="h-5 w-5" />
@@ -505,7 +510,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               className="fixed right-0 top-0 h-full w-full max-w-[320px] bg-[#F8FAFC] z-[80] shadow-2xl flex flex-col border-l border-white/20"
             >
               <div className="p-4 flex items-center justify-between border-b border-gray-100 bg-white">
-                <h2 className="text-lg font-black uppercase tracking-tighter text-gray-900">Paramètres</h2>
+                <h2 className="text-lg font-black uppercase tracking-tighter text-gray-900">MENU</h2>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -563,7 +568,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   }}
                 >
                   <LayoutDashboard size={14} />
-                  Menu Principal
+                  MENU
                 </Button>
               </div>
             </motion.div>

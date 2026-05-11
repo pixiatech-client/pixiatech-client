@@ -127,7 +127,7 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
         participants: [currentUser.uid, userId],
         createdAt: serverTimestamp(),
         lastMessageAt: serverTimestamp(),
-        lastMessage: 'Assistant Estimation',
+        lastMessage: 'Bot Lumi',
         unreadCount: {
           [currentUser.uid]: 0,
           [userId]: 0
@@ -135,38 +135,40 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
         isGroup: false
       });
 
-      // Send automated welcome messages from the bot/admin
-      const messagesRef = collection(db, 'chats', docRef.id, 'messages');
-      
-      // Message 1: Welcome
-      await addDoc(messagesRef, {
-        chatId: docRef.id,
-        senderId: userId,
-        senderName: 'Assistant Estimation',
-        senderRole: 'admin',
-        content: 'Bonjour ! 👋 Je suis votre assistant pour votre projet d\'écran LED.',
-        type: 'text',
-        status: 'sent',
-        createdAt: serverTimestamp()
-      });
+      // Send automated welcome messages ONLY for guests (Bot Lumi flow)
+      if (isGuestMode) {
+        const messagesRef = collection(db, 'chats', docRef.id, 'messages');
+        
+        // Message 1: Welcome
+        await addDoc(messagesRef, {
+          chatId: docRef.id,
+          senderId: userId,
+          senderName: 'Bot Lumi',
+          senderRole: 'admin',
+          content: 'Bonjour ! 👋 Je suis votre assistant pour votre projet d\'écran LED.',
+          type: 'text',
+          status: 'sent',
+          createdAt: serverTimestamp()
+        });
 
-      // Message 2: Question with options
-      await addDoc(messagesRef, {
-        chatId: docRef.id,
-        senderId: userId,
-        senderName: 'Assistant Estimation',
-        senderRole: 'admin',
-        content: 'Commençons par le début : s\'agit-il d\'un projet de location ou d\'un achat définitif ?',
-        type: 'text',
-        status: 'sent',
-        createdAt: serverTimestamp(),
-        options: ['Location', 'Achat'] // Adding options to message
-      });
+        // Message 2: Question with options
+        await addDoc(messagesRef, {
+          chatId: docRef.id,
+          senderId: userId,
+          senderName: 'Bot Lumi',
+          senderRole: 'admin',
+          content: 'Commençons par le début : s\'agit-il d\'un projet de location ou d\'un achat définitif ?',
+          type: 'text',
+          status: 'sent',
+          createdAt: serverTimestamp(),
+          options: ['Location', 'Achat'] // Adding options to message
+        });
 
-      await updateDoc(doc(db, 'chats', docRef.id), {
-        lastMessage: 'Commençons par le début...',
-        lastMessageAt: serverTimestamp()
-      });
+        await updateDoc(doc(db, 'chats', docRef.id), {
+          lastMessage: 'Commençons par le début...',
+          lastMessageAt: serverTimestamp()
+        });
+      }
 
       setActiveChatId(docRef.id);
       return docRef.id;

@@ -523,6 +523,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
       onConfirm: async () => {
         try {
           await deleteDoc(doc(db, 'chats', chatId, 'messages', messageId));
+          setModalConfig(prev => ({ ...prev, isOpen: false }));
         } catch (error) {
           console.error("Error deleting message:", error);
         }

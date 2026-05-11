@@ -1,15 +1,13 @@
 
 'use server';
 
-import { getQuoteRequest, getProducts, getDeliverySettings, getPdfSettings, getProductSpecs, getLaborSettings, getSettings, getUserRole } from '@/app/admin/actions';
+import { getQuoteRequest, getProducts, getDeliverySettings, getPdfSettings, getProductSpecs, getLaborSettings, getSettings, getUsers } from '@/app/admin/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import AdminQuoteDetails from './_components/admin-quote-details';
+import AdminDetailsWrapper from './_components/AdminDetailsWrapper';
 import type { City, Product, QuoteRequest } from '@/lib/types';
-import { cookies } from 'next/headers';
-import { SupplierQuoteDetails } from './_components/supplier-quote-details';
 
 export default async function QuoteDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
@@ -32,11 +30,12 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
     );
   }
   
-  const [quoteData, productsResult, deliverySettings, specs] = await Promise.all([
+  const [quoteData, productsResult, deliverySettings, specs, suppliers] = await Promise.all([
     getQuoteRequest(id),
     getProducts({ limit: 1000 }),
     getDeliverySettings(),
-    getProductSpecs()
+    getProductSpecs(),
+    getUsers({ limit: 100, userStatus: 'approved' }).then(res => res.users.filter(u => u.role === 'fournisseur'))
   ]);
 
   if (!quoteData || !productsResult) {
@@ -59,24 +58,11 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
   
   const allProducts: Product[] = productsResult.products;
   
-  const sessionCookie = cookies().get('session')?.value;
-  const userRole = sessionCookie ? await getUserRole(sessionCookie) : null;
-  
-  if (userRole === 'fournisseur') {
-    // If the user is a supplier, show only the simplified details view.
-    return (
-        <SupplierQuoteDetails
-          quote={quoteData as QuoteRequest}
-          allProducts={allProducts}
-          specs={specs}
-        />
-    )
-  }
-
-  // Otherwise, show the full admin details view.
-  return <AdminQuoteDetails 
+  // The new premium DetailsApp handles both Admin and Supplier profiles internally based on the user session.
+  return <AdminDetailsWrapper 
             quote={quoteData as QuoteRequest}
             allProducts={allProducts}
-            deliverySettings={deliverySettings}
+            allProductSpecs={specs}
+            suppliers={suppliers}
         />;
 }
