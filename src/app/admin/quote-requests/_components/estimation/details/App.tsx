@@ -609,11 +609,15 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         <div className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${
                           estimation.status === 'returned' ? 'bg-orange-500/20 border-orange-500/30 text-orange-400' :
                           estimation.status === 'processed' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
+                          estimation.status === 'in_progress' ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' :
+                          estimation.status === 'sent' ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
                           estimation.status === 'archived' ? 'bg-white/10 border-white/20 text-white/40' :
                           'bg-amber-500/20 border-amber-500/30 text-amber-400'
                         }`}>
                           {estimation.status === 'returned' ? 'Retourné' : 
-                           estimation.status === 'processed' ? 'Traité' :
+                           estimation.status === 'processed' ? 'Approuvé' :
+                           estimation.status === 'in_progress' ? 'Envoyé au fournisseur' :
+                           estimation.status === 'sent' ? 'Envoyé' :
                            estimation.status === 'archived' ? 'Archivé' :
                            estimation.status === 'trashed' ? 'Corbeille' :
                            estimation.status === 'pending' ? 'En cours' : estimation.status}
@@ -630,7 +634,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         onClick={() => setIsTransmitModalOpen(true)}
                         className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all text-emerald-500 flex items-center gap-1.5 md:gap-2"
                       >
-                        <SendHorizontal size={14} /> <span className="hidden sm:inline">Transmettre</span>
+                        <SendHorizontal size={14} /> <span className="hidden sm:inline">Envoyer</span>
                       </button>
                     )}
 

@@ -462,12 +462,16 @@ export function QuoteBuilder({
     setBaseQuote(0);
     setActiveMode('selection');
     setCurrentStep(1); // Crucial: Reset to step 1
+    setIsSubmitting(false);
   }, []);
 
 
   const handleBack = () => {
     setDirection(-1);
     const fromStep = getOriginalStep(currentStep);
+    if (fromStep === 4) {
+        setIsSubmitting(false);
+    }
     if (fromStep === 2) { // Coming from Delivery to Step 1
         if (activeMode === 'wizard') {
             setInitialWizardStep(8); // Resume at the end of wizard
@@ -573,6 +577,7 @@ export function QuoteBuilder({
     setIsSuccess(false);
     setSuccessQuoteId(null);
     setActiveMode('selection');
+    setIsSubmitting(false);
   };
 
   const handleModeSelect = (mode: 'wizard' | 'manual') => {

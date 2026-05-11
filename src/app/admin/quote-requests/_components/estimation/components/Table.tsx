@@ -24,9 +24,11 @@ interface SearchHeaderProps {
   isAdmin?: boolean;
   onEmptyTrash?: () => void;
   onResync?: () => void;
+  onSelectAll?: () => void;
+  isAllSelected?: boolean;
 }
 
-export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearchChange, total, selectedCount, activeTab, onOpenMobileDrawer, isFournisseur = false, isAdmin = false, onEmptyTrash, onResync }) => {
+export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearchChange, total, selectedCount, activeTab, onOpenMobileDrawer, isFournisseur = false, isAdmin = false, onEmptyTrash, onResync, onSelectAll, isAllSelected }) => {
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
 
   const filterItems = [
@@ -47,7 +49,17 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
 
       {/* Search + filters row */}
       <div className="flex items-center gap-3 w-full flex-1">
-        <div className="relative flex-1 flex items-stretch h-11">
+        <div className="relative flex-1 flex items-stretch h-11 overflow-hidden">
+          {onSelectAll && (
+            <div className="md:hidden flex items-center px-3 bg-white border border-zinc-200 rounded-l-lg border-r-0 shadow-sm shrink-0">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={onSelectAll}
+                className="w-4 h-4 rounded border-2 transition-all cursor-pointer accent-black"
+              />
+            </div>
+          )}
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4" />
             <input
@@ -55,7 +67,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
               placeholder="Rechercher..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full h-full pl-10 pr-2 bg-white border border-zinc-200 rounded-l-lg text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-400 transition-all"
+              className={`w-full h-full pl-10 pr-2 bg-white border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-400 transition-all ${onSelectAll ? 'md:rounded-l-lg rounded-l-none' : 'rounded-l-lg'}`}
             />
           </div>
           <div className="relative flex shrink-0">
@@ -73,7 +85,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
               className="h-full flex items-center gap-2 px-3 bg-zinc-100 border-y border-r border-zinc-200 rounded-r-lg text-xs font-bold uppercase tracking-wide hover:bg-black hover:text-white transition-all group"
             >
               <Filter className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#95d230]" />
-              Filtres
+              <span className="hidden sm:inline">Filtres</span>
               <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isFilterOpen ? 'rotate-180' : ''} group-hover:text-[#95d230]`} />
             </button>
 
@@ -1228,7 +1240,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
 
       {/* Refusal Panel */}
       <AnimatePresence>
-        {isRefusalPanelOpen && selectedEstimation && (
+        {isRefusalPanelOpen && (selectedEstimation || selectedIds.size > 0) && (
           <div className="fixed inset-0 z-[100] flex justify-end">
             <motion.div
               initial={{ opacity: 0 }}
@@ -1251,7 +1263,9 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-white tracking-tight uppercase">Refuser</h2>
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">{selectedEstimation.number}</p>
+                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">
+                      {selectedEstimation ? selectedEstimation.number : `${selectedIds.size} Estimations`}
+                    </p>
                   </div>
                 </div>
                 <button onClick={() => setIsRefusalPanelOpen(false)} className="p-2 hover:bg-white/10 rounded-lg transition-all">
@@ -1356,8 +1370,9 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                 </button>
                 <button
                   onClick={() => {
-                    if (onSupplierAction && selectedEstimation) {
-                      onSupplierAction([selectedEstimation.id], 'refuse', {
+                    if (onSupplierAction) {
+                      const ids = selectedEstimation ? [selectedEstimation.id] : Array.from(selectedIds);
+                      onSupplierAction(ids, 'refuse', {
                         reason: refusalForm.message,
                         subject: refusalForm.subject
                       });

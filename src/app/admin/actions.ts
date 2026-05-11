@@ -1229,6 +1229,56 @@ async function findQuoteRef(adminDb: admin.Firestore, quoteId: string): Promise<
   return docSnap.exists ? docRef : null;
 }
 
+async function sendSupplierEmail(supplierEmail: string, quoteNumber: string, clientName: string, message?: string) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn('SMTP credentials not configured, skipping supplier email.');
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    tls: {
+      rejectUnauthorized: false
+    }
+  });
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.pixiatech.com';
+  
+  const emailHtml = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
+      <div style="background: #000; color: #fff; padding: 20px; text-align: center;">
+        <h1 style="margin: 0; font-size: 20px;">Nouvelle Estimation Transmise</h1>
+      </div>
+      <div style="padding: 30px; line-height: 1.6; color: #333;">
+        <p>Bonjour,</p>
+        <p>Une nouvelle demande d'estimation (<b>N°${quoteNumber}</b>) pour le client <b>${clientName}</b> vous a été transmise.</p>
+        ${message ? `<div style="background: #f9f9f9; padding: 15px; border-left: 4px solid #000; margin: 20px 0;">${message}</div>` : ''}
+        <p>Veuillez vous connecter à votre tableau de bord pour traiter cette demande.</p>
+        <div style="text-align: center; margin-top: 30px;">
+          <a href="${baseUrl}/admin/quote-requests?tab=Fournisseur" style="background: #95d230; color: #000; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Accéder au tableau de bord</a>
+        </div>
+      </div>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"PixiaTech" <${process.env.SMTP_USER}>`,
+      to: supplierEmail,
+      subject: `[PIXIATECH] Nouvelle estimation N°${quoteNumber}`,
+      html: emailHtml,
+    });
+  } catch (err) {
+    console.error('Failed to send supplier email:', err);
+  }
+}
+
 export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequest>) {
   const { adminDb, FieldValue, Timestamp } = getFirebaseAdmin();
   if (!adminDb) throw new Error("Firestore not initialized");
@@ -1285,12 +1335,19 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
           userId: supplier.uid,
           type: 'estimation_sent',
           title: 'Nouvelle estimation reçue',
-          description: `Le devis N°${quoteId.substring(0, 8)} pour le client ${quoteData?.client?.companyName || 'Client'} vous a été transmis par ${adminUser.displayName || 'un commercial'} le ${dateStr} à ${timeStr}.`,
+          description: `Le devis N°${quoteId.substring(0, 8)} pour le client ${quoteData?.client?.companyName || 'Client'} vous a été transmise par ${adminUser.displayName || 'un commercial'} le ${dateStr} à ${timeStr}.`,
           href: `/admin/quotes/${quoteId}`,
           read: false,
           createdAt: FieldValue.serverTimestamp(),
           quoteRequestId: quoteId
         });
+
+        // Add background email notification
+        if (supplier.email) {
+           const quoteNumber = quoteData?.number || quoteId.substring(0, 8);
+           const clientName = quoteData?.client?.companyName || 'Client';
+           sendSupplierEmail(supplier.email, quoteNumber, clientName, data.supplierNotes).catch(console.error);
+        }
       }
       
       // Notify admin that estimation was sent to supplier

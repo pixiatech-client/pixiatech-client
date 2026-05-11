@@ -58,7 +58,7 @@ export function TransmitToSupplierDialog({ quotes, children, onSuccess }: Transm
           updateQuoteStatus(quote.id, { supplierId: selectedSupplierId, status: 'in_progress' })
         )
       );
-      toast({ title: "Succès", description: `${quotes.length} estimation(s) transmise(s) au fournisseur.`, variant: "success" });
+      toast({ title: "Succès", description: `${quotes.length} estimation(s) envoyée(s) au fournisseur.`, variant: "success" });
       onSuccess();
       setIsOpen(false);
     } catch (e: any) {
@@ -73,7 +73,7 @@ export function TransmitToSupplierDialog({ quotes, children, onSuccess }: Transm
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Transmettre à un fournisseur</DialogTitle>
+          <DialogTitle>Envoyer au fournisseur</DialogTitle>
           <DialogDescription>
             Sélectionnez un fournisseur pour lui assigner {quotes.length > 1 ? `les ${quotes.length} estimations sélectionnées` : `l'estimation`}.
           </DialogDescription>
@@ -109,7 +109,7 @@ export function TransmitToSupplierDialog({ quotes, children, onSuccess }: Transm
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Annuler</Button>
           <Button onClick={handleTransmitSubmit} disabled={!selectedSupplierId || isLoading}>
-            Transmettre
+            Envoyer
           </Button>
         </DialogFooter>
       </DialogContent>

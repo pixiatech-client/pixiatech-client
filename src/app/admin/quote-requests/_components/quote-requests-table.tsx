@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Trash2, Undo2, Phone, CheckCircle, Clock, Loader2, ChevronLeft, ChevronRight, MailWarning, Trash, Ban, MailCheck, Search, Truck, FilePen, FileText, Users } from 'lucide-react';
+import { Trash2, Undo2, Phone, CheckCircle, Clock, Loader2, ChevronLeft, ChevronRight, MailWarning, Trash, Ban, MailCheck, Search, Truck, FilePen, FileText, Users, SendHorizontal } from 'lucide-react';
 import { Pagination } from '@/components/ui/Pagination';
 import {
   AlertDialog,
@@ -42,9 +42,9 @@ import { SupplierQuoteDialog } from './supplier-quote-dialog';
 
 const statusConfig = {
     pending: { label: "En cours", color: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200", iconColor: "text-yellow-500", selectedIconColor: "text-white" },
-    processed: { label: "Traité", color: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200", iconColor: "text-green-600", selectedIconColor: "text-white" },
+    processed: { label: "Approuvé", color: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200", iconColor: "text-green-600", selectedIconColor: "text-white" },
     trashed: { label: "Corbeille", color: "bg-red-100 text-red-800 border-red-300", iconColor: "text-red-600", selectedIconColor: "text-white" },
-    in_progress: { label: "En préparation", color: "bg-cyan-100 text-cyan-800 border-cyan-300", iconColor: "text-cyan-600", selectedIconColor: "text-white" },
+    in_progress: { label: "Envoyé au fournisseur", color: "bg-cyan-100 text-cyan-800 border-cyan-300", iconColor: "text-cyan-600", selectedIconColor: "text-white" },
     sent: { label: "Envoyé", color: "bg-blue-100 text-blue-800 border-blue-300", iconColor: "text-blue-600", selectedIconColor: "text-white" },
     returned: { label: "Retourné", color: "bg-rose-100 text-rose-800 border-rose-300", iconColor: "text-rose-600", selectedIconColor: "text-white" },
     archived: { label: "Archivé", color: "bg-gray-100 text-gray-800 border-gray-300", iconColor: "text-gray-600", selectedIconColor: "text-white" },
@@ -77,6 +77,8 @@ export function QuoteRequestsTable() {
 
   const { userProfile } = useUser();
   const isAdmin = userProfile?.role === 'admin';
+  const isSupplier = userProfile?.role === 'fournisseur';
+  const [refusalMessage, setRefusalMessage] = useState('Refus groupé par le fournisseur');
   
   // ✅ ZERO dependencies — fetchRequests is stable and never recreated
   const fetchRequests = useCallback(async (
@@ -216,6 +218,14 @@ export function QuoteRequestsTable() {
         }
     } else if (dialogAction.type === 'restore' && dialogAction.ids) {
         await restoreQuotes(dialogAction.ids);
+    } else if (dialogAction.type === 'refuse' && dialogAction.ids) {
+        await Promise.all(dialogAction.ids.map(id => 
+            updateQuoteStatus(id, { 
+                status: 'returned', 
+                returnReason: refusalMessage 
+            } as any)
+        ));
+        toast({ title: 'Succès', description: `${dialogAction.ids.length} estimation(s) refusée(s).` });
     } else if (dialogAction.type === 'deleteAll') {
         if (isAdmin) {
             await permanentDeleteAllTrashedQuotes();
@@ -241,7 +251,7 @@ export function QuoteRequestsTable() {
     await updateQuoteStatus(quoteId, { status: 'processed', supplierId: undefined });
     toast({
         title: 'Estimation retournée',
-        description: "L'estimation est de nouveau dans la liste 'Traité'.",
+        description: "L'estimation est de nouveau dans la liste 'Approuvé'.",
         variant: 'info',
     });
     fetchRequests(currentPage, activeTab);
@@ -260,14 +270,25 @@ export function QuoteRequestsTable() {
                 <CardDescription className="text-sm font-medium text-slate-500 mt-1">Consultez et gérez le cycle de vie des estimations.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
-                <div className="relative flex-grow lg:flex-none">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input 
-                        placeholder="Rechercher une estimation..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 w-full lg:w-72 h-11 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all shadow-sm focus:ring-slate-900"
-                    />
+                <div className="relative flex-grow lg:flex-none flex items-center gap-3">
+                    {/* Mobile Select All */}
+                    <div className="lg:hidden flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 h-11 rounded-xl shadow-sm">
+                        <Checkbox 
+                            checked={isAllSelected}
+                            onCheckedChange={handleSelectAll}
+                            className="h-5 w-5 rounded-md border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
+                        />
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tous</span>
+                    </div>
+                    <div className="relative flex-grow">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <Input 
+                            placeholder="Rechercher..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 w-full lg:w-72 h-11 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all shadow-sm focus:ring-slate-900"
+                        />
+                    </div>
                 </div>
                  <div className="bg-slate-900 text-white py-2 px-5 rounded-xl flex flex-col items-end shadow-lg shadow-slate-200">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">Total Groupé</span>
@@ -286,7 +307,7 @@ export function QuoteRequestsTable() {
                     </TabsTrigger>
                     <TabsTrigger value="processed" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-xs px-4">
                         <CheckCircle className="mr-2 h-3.5 w-3.5" />
-                        Traité
+                        Approuvé
                     </TabsTrigger>
                      <TabsTrigger value="returned" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-xs px-4">
                         <Undo2 className="mr-2 h-3.5 w-3.5" />
@@ -310,7 +331,7 @@ export function QuoteRequestsTable() {
                      {activeTab === 'processed' && selectedRequests.length > 0 && (
                         <TransmitToSupplierDialog quotes={allRequests.filter(r => selectedRequests.includes(r.id))} onSuccess={handleRefreshData}>
                             <Button variant="outline" size="sm" className="rounded-lg font-bold border-slate-200 shadow-sm hover:bg-slate-50">
-                                <Truck className="mr-2 h-4 w-4" />
+                                <SendHorizontal className="mr-2 h-4 w-4" />
                                 Transmettre ({selectedRequests.length})
                             </Button>
                         </TransmitToSupplierDialog>
@@ -318,6 +339,16 @@ export function QuoteRequestsTable() {
                     {activeTab !== 'trashed' && selectedRequests.length > 0 && (
                         <Button variant="destructive" size="sm" className="rounded-lg font-bold shadow-sm" onClick={() => setDialogAction({ type: 'trash', ids: selectedRequests })}>
                             <Trash2 className="mr-2 h-4 w-4" /> Corbeille ({selectedRequests.length})
+                        </Button>
+                    )}
+                    {isSupplier && selectedRequests.length > 0 && activeTab !== 'trashed' && (
+                        <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            className="rounded-lg font-bold shadow-sm bg-orange-600 hover:bg-orange-700 border-0" 
+                            onClick={() => setDialogAction({ type: 'refuse', ids: selectedRequests })}
+                        >
+                            <Ban className="mr-2 h-4 w-4" /> Refuser ({selectedRequests.length})
                         </Button>
                     )}
                     {activeTab === 'trashed' && selectedRequests.length > 0 && (
@@ -499,9 +530,19 @@ export function QuoteRequestsTable() {
                             <div className='flex items-center justify-end gap-2' onClick={(e) => e.stopPropagation()}>
                                {activeTab === 'processed' ? (
                                     <TransmitToSupplierDialog quotes={[req]} onSuccess={handleRefreshData}>
-                                        <Button variant="outline" size="sm" className='rounded-lg font-bold border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-9'>
-                                            Fournisseur
-                                        </Button>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button variant="outline" size="sm" className='rounded-lg font-bold border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-9 px-3'>
+                                                        <SendHorizontal className="h-4 w-4 mr-2 text-blue-500" />
+                                                        Envoyer
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
+                                                    <p className="font-medium text-xs">Envoyer au fournisseur</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                     </TransmitToSupplierDialog>
                                ) : activeTab === 'archived' ? (
                                     <div className="flex gap-2">
@@ -575,12 +616,26 @@ export function QuoteRequestsTable() {
               {dialogAction?.type === 'delete' && `Cette action est irréversible. Les estimations seront supprimées définitivement.`}
               {dialogAction?.type === 'deleteAll' && "Cette action est irréversible. TOUTES les estimations dans la corbeille seront supprimées définitivement."}
               {dialogAction?.type === 'restore' && `Vous êtes sur le point de restaurer ${dialogAction.ids?.length} estimation(s).`}
+              {dialogAction?.type === 'refuse' && (
+                <div className="space-y-3 mt-2">
+                    <p>Vous allez refuser {dialogAction.ids?.length} estimation(s). Veuillez indiquer la raison :</p>
+                    <Input 
+                        value={refusalMessage}
+                        onChange={(e) => setRefusalMessage(e.target.value)}
+                        placeholder="Raison du refus (ex: Indisponible, erreur technique...)"
+                        className="mt-2 border-slate-200 focus:ring-orange-500"
+                    />
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
-              className={cn((dialogAction?.type === 'delete' || dialogAction?.type === 'deleteAll') && "bg-destructive hover:bg-destructive/90")}
+              className={cn(
+                (dialogAction?.type === 'delete' || dialogAction?.type === 'deleteAll' || dialogAction?.type === 'trash') && "bg-destructive hover:bg-destructive/90",
+                dialogAction?.type === 'refuse' && "bg-orange-600 hover:bg-orange-700"
+              )}
               onClick={handleDialogConfirm}
             >
               Confirmer

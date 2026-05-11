@@ -146,9 +146,11 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
               } else {
                   console.error("Creation error:", error);
                   toast({ variant: 'destructive', title: t('common.error'), description: error });
+                  if (onError) onError(error || 'Submission failed');
               }
             } catch (err: any) {
               console.error("Submission error:", err);
+              if (onError) onError(err.message || 'Submission failed');
             }
         }, 100);
     });

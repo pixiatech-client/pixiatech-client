@@ -33,7 +33,9 @@ import {
   updateDoc,
   deleteDoc,
   getDocs,
-  writeBatch
+  writeBatch,
+  orderBy,
+  limit
 } from 'firebase/firestore';
 import { firestore as db, storage } from '@/firebase/config';
 import { ref, listAll, deleteObject } from 'firebase/storage';
@@ -304,6 +306,55 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
 
      return () => unsubscribe();
    }, [currentUser.uid]);
+
+   // Phase 5: Real-time listener for current tab estimations (First page only)
+   useEffect(() => {
+     if (!userId || !activeTab || currentPage !== 1 || !db) return;
+
+     const statusKey = estimationToStatus[activeTab];
+     const quotesRef = collection(db, 'quote_requests');
+     
+     // Base query: only for the first page to keep it performant
+     let q = query(
+       quotesRef,
+       where('status', '==', statusKey),
+       orderBy('createdAt', 'desc'),
+       limit(itemsPerPage)
+     );
+
+     // If supplier, filter by supplierId
+     if (isFournisseur) {
+       q = query(q, where('supplierId', '==', userId));
+     }
+
+     const unsubscribe = onSnapshot(q, (snapshot) => {
+       // Only update if we are indeed on page 1 and not currently loading via Server Action
+       // to avoid flickering or race conditions
+       if (currentPage === 1) {
+         const newEstimations = snapshot.docs.map(doc => quoteToEstimation({ id: doc.id, ...doc.data() } as any));
+         
+         // Simple check to see if content changed
+         const currentIds = estimations.map(e => e.id).join(',');
+         const nextIds = newEstimations.map(e => e.id).join(',');
+         
+         if (currentIds !== nextIds) {
+           setEstimations(newEstimations);
+           // Also update cache for page 1
+           setPageCache(prev => ({
+             ...prev,
+             [activeTab]: {
+               ...(prev[activeTab] || {}),
+               [1]: { estimations: newEstimations, lastId: snapshot.docs[snapshot.docs.length - 1]?.id || null }
+             }
+           }));
+         }
+       }
+     }, (error) => {
+       console.error('Real-time estimations listener error:', error);
+     });
+
+     return () => unsubscribe();
+   }, [activeTab, userId, isFournisseur, currentPage, itemsPerPage]);
 
    const filteredEstimations = useMemo(() => {
     let filtered = estimations.filter((est) => {
@@ -786,25 +837,6 @@ return filtered;
              }),
            });
 
-           // Create notification for supplier
-           const now = new Date();
-           const dateStr = now.toLocaleDateString('fr-FR');
-           const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
-           await addDoc(collection(db, 'notifications'), {
-             userId: supplierId,
-             type: 'estimation',
-             title: `Nouvelle estimation reçue`,
-             description: `L'estimation N°${activeEstimation.number || activeEstimation.id.substring(0, 8)} pour le client ${(activeEstimation.client as any)?.companyName || 'Client'} vous a été transmise par ${currentUser.displayName || 'un commercial'} le ${dateStr} à ${timeStr}.`,
-             href: '/admin/quote-requests?tab=Fournisseur',
-             senderName: currentUser.displayName,
-             senderId: currentUser.uid,
-             clientName: (activeEstimation.client as any)?.companyName,
-             estimationId: activeEstimation.id,
-             read: false,
-             createdAt: serverTimestamp()
-           });
-
            const oldStatus = activeEstimation.status;
            const value = activeEstimation.totalClient || 0;
            clearCache(oldStatus);
@@ -1215,6 +1247,8 @@ return filtered;
           isAdmin={isAdmin}
           onEmptyTrash={handleEmptyTrash}
           onResync={isAdmin ? handleResync : undefined}
+          onSelectAll={handleSelectAll}
+          isAllSelected={paginatedEstimations.length > 0 && selectedItems.size === paginatedEstimations.length}
         />
 
         <div className="flex flex-col gap-4 pb-28 md:pb-0">
