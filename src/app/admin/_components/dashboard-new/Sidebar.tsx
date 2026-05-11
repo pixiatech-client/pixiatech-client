@@ -281,7 +281,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const sidebarClasses = `
-    fixed lg:sticky top-0 z-50 h-screen transition-colors duration-300 flex flex-col
+    fixed lg:sticky top-0 z-[1000] h-screen transition-colors duration-300 flex flex-col
     ${isDark ? 'bg-[#141414] text-white border-white/5' : 'bg-white text-gray-900 border-gray-200'}
     border-r overflow-hidden
   `;
@@ -304,7 +304,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       animate={{
         width: isHidden ? 0 : (isCompact ? 80 : 256),
         opacity: isHidden ? 0 : 1,
-        x: isHidden ? -20 : 0
+        x: isHidden ? '-100%' : 0
       }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className={sidebarClasses}

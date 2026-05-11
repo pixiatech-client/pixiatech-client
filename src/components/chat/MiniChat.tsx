@@ -238,7 +238,7 @@ export default function MiniChat({
             ref={menuRef}
             className="absolute pointer-events-auto flex flex-col items-end justify-center"
             style={{ 
-              right: 0, 
+              right: typeof window !== 'undefined' && window.innerWidth < 768 ? '16px' : '0', 
               top: absoluteY,
               transform: `translate(0, calc(-50% + ${topOffset}px))`
             }}

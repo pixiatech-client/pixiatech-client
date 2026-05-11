@@ -45,16 +45,20 @@ export async function createSession(idToken: string) {
 
     const isProd = process.env.NODE_ENV === 'production';
     
+    // Detect if we are behind a proxy with HTTPS (common for internal previews)
+    // We use a more robust check for development environments that need cross-site cookies
+    const isSecure = isProd || true; // Force secure for cookies to work in modern browsers/proxies
+    
     // @ts-ignore - partitioned is supported in newer Next.js versions but might not be in the types yet
     cookies().set('session', sessionCookie, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
-      secure: isProd, 
+      secure: isSecure, 
       path: '/',
-      sameSite: isProd ? 'none' : 'lax',
-      partitioned: isProd, // Essential for iframe support (CHIPS)
+      sameSite: 'none', // Required for iframe support
+      partitioned: true, // Essential for iframe support (CHIPS)
     });
-    console.log('[Session Action] Cookie set in headers.');
+    console.log('[Session Action] Cookie set in headers (Secure; SameSite=None; Partitioned).');
 
     return { success: true };
   } catch (error: any) {

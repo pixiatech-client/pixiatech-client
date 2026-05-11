@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { updatePdfSettings, getPdfSettings } from "@/app/actions/quote-actions";
 import type { PdfSettings } from "@/lib/types";
@@ -42,6 +43,8 @@ import {
   Sun,
   Eye,
   Grid3X3,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { DEFAULT_DATA } from "./template-data";
 
@@ -58,7 +61,7 @@ const deepSet = (obj, path, value) => {
     current = current[keys[i]];
   }
   const numericValue = parseFloat(value);
-  const finalValue = !isNaN(numericValue) && isFinite(value) && 
+  const finalValue = !isNaN(numericValue) && isFinite(value) &&
     !['name', 'address', 'date', 'numero', 'tagline', 'email', 'website', 'siret', 'city', 'details', 'description', 'information', 'terms'].some(k => path.includes(k))
     ? numericValue
     : value;
@@ -78,11 +81,11 @@ const fmt = (n) => {
 // A. COMPOSANT "E" (Editable avec Toolbar)
 // ─────────────────────────────────────────────
 
-const E = ({ 
-  value, 
-  onChange, 
-  style = {} as React.CSSProperties, 
-  multiline = false, 
+const E = ({
+  value,
+  onChange,
+  style = {} as React.CSSProperties,
+  multiline = false,
   className = "",
   id,
   selectedId,
@@ -178,7 +181,7 @@ const E = ({
         onBlur={commit}
         onKeyDown={handleKeyDown}
         className={className}
-        style={{...renderStyle, border: "1.5px solid #6366f1"}}
+        style={{ ...renderStyle, border: "1.5px solid #6366f1" }}
       />
     );
   }
@@ -205,7 +208,7 @@ const E = ({
 // COMPOSANT TOOLBAR SMART
 // ─────────────────────────────────────────────
 
-const SmartToolbar = ({ currentStyle, onUpdate, onReset, onClose }) => {
+const SmartToolbar = ({ currentStyle, onUpdate, onReset, onClose, isMobile }) => {
   const [activeMenu, setActiveMenu] = useState(null);
 
   const updateStyle = (key, val) => {
@@ -220,68 +223,88 @@ const SmartToolbar = ({ currentStyle, onUpdate, onReset, onClose }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: "100%" }}
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
-      className="no-print fixed bottom-0 left-0 right-0 z-[300] bg-white border-t border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-[32px] md:rounded-2xl md:bottom-24 md:left-1/2 md:-translate-x-1/2 md:w-auto md:min-w-[340px] flex flex-col items-center gap-1 p-4 md:p-2"
+      className={cn(
+        "no-print fixed z-[300] bg-white border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex flex-col items-center",
+        isMobile 
+          ? "bottom-0 left-0 right-0 border-t rounded-t-[40px] p-6 pb-10" 
+          : "bottom-24 left-1/2 -translate-x-1/2 rounded-2xl border w-auto min-w-[340px] p-2"
+      )}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="w-12 h-1.5 bg-gray-100 rounded-full mb-4 md:hidden" />
-      <div className="flex items-center gap-2 w-full p-1 border-b border-gray-100 mb-1">
-         <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
-            <button onClick={() => updateStyle('fontSize', (currentStyle.fontSize || 12) - 1)} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-gray-900 transition-all"><ChevronDown size={14}/></button>
-            <span className="text-[11px] font-black text-gray-900 px-2 min-w-[24px] text-center">{currentStyle.fontSize || 12}</span>
-            <button onClick={() => updateStyle('fontSize', (currentStyle.fontSize || 12) + 1)} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-gray-900 transition-all"><ChevronUp size={14}/></button>
-         </div>
+      {isMobile && <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto mb-6 shrink-0" />}
+      
+      <div className={cn("flex items-center gap-2 w-full p-1 border-b border-gray-100 mb-1", isMobile && "flex-wrap justify-center border-none gap-4 mb-4")}>
+        <div className="flex items-center gap-1 bg-gray-50 rounded-xl p-1">
+          <button onClick={() => updateStyle('fontSize', (currentStyle.fontSize || 12) - 1)} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-gray-900 transition-all"><ChevronDown size={14} /></button>
+          <span className="text-[11px] font-black text-gray-900 px-2 min-w-[24px] text-center">{currentStyle.fontSize || 12}</span>
+          <button onClick={() => updateStyle('fontSize', (currentStyle.fontSize || 12) + 1)} className="p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-gray-900 transition-all"><ChevronUp size={14} /></button>
+        </div>
 
-         <div className="flex bg-gray-50 rounded-xl p-1 gap-1">
-            <button onClick={() => updateStyle('textAlign', 'left')} className={`p-2 rounded-lg transition-all ${currentStyle.textAlign === 'left' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white'}`}><AlignLeft size={16}/></button>
-            <button onClick={() => updateStyle('textAlign', 'center')} className={`p-2 rounded-lg transition-all ${currentStyle.textAlign === 'center' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white'}`}><AlignCenter size={16}/></button>
-            <button onClick={() => updateStyle('textAlign', 'right')} className={`p-2 rounded-lg transition-all ${currentStyle.textAlign === 'right' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white'}`}><AlignRight size={16}/></button>
-         </div>
+        <div className="flex bg-gray-50 rounded-xl p-1 gap-1">
+          <button onClick={() => updateStyle('textAlign', 'left')} className={`p-2 rounded-lg transition-all ${currentStyle.textAlign === 'left' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white'}`}><AlignLeft size={16} /></button>
+          <button onClick={() => updateStyle('textAlign', 'center')} className={`p-2 rounded-lg transition-all ${currentStyle.textAlign === 'center' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white'}`}><AlignCenter size={16} /></button>
+          <button onClick={() => updateStyle('textAlign', 'right')} className={`p-2 rounded-lg transition-all ${currentStyle.textAlign === 'right' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white'}`}><AlignRight size={16} /></button>
+        </div>
 
-         <div className="flex bg-gray-50 rounded-xl p-1 gap-1">
-            <button onClick={() => updateStyle('fontWeight', currentStyle.fontWeight === '900' ? '400' : '900')} className={`p-2 rounded-lg transition-all ${currentStyle.fontWeight === '900' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white'}`}><Bold size={16}/></button>
-            <button onClick={() => updateStyle('fontStyle', currentStyle.fontStyle === 'italic' ? 'normal' : 'italic')} className={`p-2 rounded-lg transition-all ${currentStyle.fontStyle === 'italic' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white'}`}><Italic size={16}/></button>
-         </div>
+        <div className="flex bg-gray-50 rounded-xl p-1 gap-1">
+          <button onClick={() => updateStyle('fontWeight', currentStyle.fontWeight === '900' ? '400' : '900')} className={`p-2 rounded-lg transition-all ${currentStyle.fontWeight === '900' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white'}`}><Bold size={16} /></button>
+          <button onClick={() => updateStyle('fontStyle', currentStyle.fontStyle === 'italic' ? 'normal' : 'italic')} className={`p-2 rounded-lg transition-all ${currentStyle.fontStyle === 'italic' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-gray-400 hover:bg-white'}`}><Italic size={16} /></button>
+        </div>
 
-         <button onClick={() => setActiveMenu(activeMenu === 'color' ? null : 'color')} className={`p-2.5 rounded-xl transition-all ${activeMenu === 'color' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50 hover:text-indigo-600'}`}><Baseline size={18}/></button>
-         
-         <div className="w-px h-6 bg-gray-100 mx-1" />
-         <button onClick={onClose} className="p-2 text-gray-300 hover:text-red-500 transition-colors"><X size={18}/></button>
+        <button onClick={() => setActiveMenu(activeMenu === 'color' ? null : 'color')} className={`p-2.5 rounded-xl transition-all ${activeMenu === 'color' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50 hover:text-indigo-600'}`}><Baseline size={18} /></button>
+
+        {!isMobile && (
+          <>
+            <div className="w-px h-6 bg-gray-100 mx-1" />
+            <button onClick={onClose} className="p-2 text-gray-300 hover:text-red-500 transition-colors"><X size={18} /></button>
+          </>
+        )}
       </div>
 
       <AnimatePresence>
         {activeMenu === 'color' && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="flex gap-2 p-3 w-full justify-center bg-gray-50 rounded-2xl overflow-hidden">
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="flex gap-2 p-3 w-full justify-center bg-gray-50 rounded-2xl overflow-hidden mb-2">
             {colors.map(c => (
-              <button 
-                key={c} 
-                onClick={() => { updateStyle('color', c); setActiveMenu(null); }} 
-                className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-125 ${currentStyle.color === c ? 'border-white ring-2 ring-indigo-500' : 'border-white/20'}`} 
-                style={{ backgroundColor: c }} 
+              <button
+                key={c}
+                onClick={() => { updateStyle('color', c); setActiveMenu(null); }}
+                className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-125 ${currentStyle.color === c ? 'border-white ring-2 ring-indigo-500' : 'border-white/20'}`}
+                style={{ backgroundColor: c }}
               />
             ))}
           </motion.div>
         )}
       </AnimatePresence>
-      
-      <div className="flex items-center justify-between w-full px-4 py-1.5 rounded-b-2xl border-t border-gray-50">
+
+      <div className={cn("flex items-center justify-between w-full px-4 py-1.5 rounded-b-2xl border-t border-gray-50", isMobile && "border-none pt-0")}>
         <div className="flex items-center gap-4">
-           <div className="flex items-center gap-1 bg-gray-50 rounded-lg p-0.5">
-              <button onClick={() => updateStyle('marginTop', (currentStyle.marginTop || 0) - 2)} className="p-1 hover:bg-white rounded transition-colors text-gray-400 hover:text-indigo-600"><ChevronUp size={12}/></button>
-              <button onClick={() => updateStyle('marginTop', (currentStyle.marginTop || 0) + 2)} className="p-1 hover:bg-white rounded transition-colors text-gray-400 hover:text-indigo-600"><ChevronDown size={12}/></button>
-              <span className="text-[8px] font-black uppercase text-gray-300 ml-1">Décalage</span>
-           </div>
-           <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">
-             <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1.5 h-1.5 rounded-full bg-green-500" />
-             Édition
-           </div>
+          <div className="flex items-center gap-1 bg-gray-50 rounded-lg p-0.5">
+            <button onClick={() => updateStyle('marginTop', (currentStyle.marginTop || 0) - 2)} className="p-1 hover:bg-white rounded transition-colors text-gray-400 hover:text-indigo-600"><ChevronUp size={12} /></button>
+            <button onClick={() => updateStyle('marginTop', (currentStyle.marginTop || 0) + 2)} className="p-1 hover:bg-white rounded transition-colors text-gray-400 hover:text-indigo-600"><ChevronDown size={12} /></button>
+            <span className="text-[8px] font-black uppercase text-gray-300 ml-1">Décalage</span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">
+            <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            Édition
+          </div>
         </div>
         <button onClick={onReset} className="text-[10px] text-indigo-400 hover:text-indigo-600 font-black uppercase tracking-widest transition-colors">Réinit.</button>
       </div>
+
+      {isMobile && (
+        <Button 
+          variant="ghost" 
+          className="mt-6 w-full rounded-[24px] py-7 font-bold text-gray-400 uppercase tracking-widest" 
+          onClick={onClose}
+        >
+          Fermer
+        </Button>
+      )}
     </motion.div>
   );
 };
 
-const LogoToolbar = ({ logoConfig, onUpdate, onClose }) => {
+const LogoToolbar = ({ logoConfig, onUpdate, onClose, isMobile }) => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -297,35 +320,66 @@ const LogoToolbar = ({ logoConfig, onUpdate, onClose }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: "100%" }}
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
-      className="no-print fixed bottom-0 left-0 right-0 z-[300] bg-white border-t border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-[32px] md:rounded-full md:bottom-24 md:left-1/2 md:-translate-x-1/2 md:w-auto px-6 py-6 md:py-2.5 flex flex-col md:flex-row items-center gap-4"
+      className={cn(
+        "no-print fixed z-[300] bg-white border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex flex-col items-center transition-all",
+        isMobile 
+          ? "bottom-0 left-0 right-0 border-t rounded-t-[40px] p-6 pb-10" 
+          : "bottom-24 left-1/2 -translate-x-1/2 rounded-full border px-6 py-2.5 flex-row gap-4"
+      )}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="w-12 h-1.5 bg-gray-100 rounded-full mb-2 md:hidden" />
-      <button onClick={onClose} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><X size={18}/></button>
-      <div className="w-px h-6 bg-gray-100" />
-      <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-300">Logo</span>
+      {isMobile && <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto mb-6 shrink-0" />}
+      {!isMobile && <button onClick={onClose} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><X size={18} /></button>}
+      {!isMobile && <div className="w-px h-6 bg-gray-100" />}
       
-      <label className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 px-4 py-2 rounded-2xl transition-all border border-indigo-100 bg-indigo-50/30 group">
-        <ImageIcon size={18} className="text-indigo-500 group-hover:scale-110 transition-transform" />
-        <span className="text-[12px] font-black text-indigo-700 uppercase tracking-wider">Téléverser PNG</span>
-        <input type="file" hidden accept="image/png,image/jpeg" onChange={handleImageUpload} />
-      </label>
+      <span className={cn(
+        "font-black uppercase tracking-[0.2em] text-gray-300",
+        isMobile ? "text-sm mb-8" : "text-[11px]"
+      )}>
+        Modifier le Logo
+      </span>
 
-      {logoConfig.logoImage && (
-        <button 
-          onClick={() => onUpdate({ ...logoConfig, logoImage: null })} 
-          className="text-[10px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest px-2"
+      <div className={cn("flex items-center gap-4", isMobile && "flex-col w-full")}>
+        <label className={cn(
+          "flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-all border border-indigo-100 bg-indigo-50/30 group",
+          isMobile ? "w-full justify-center py-5 rounded-[24px]" : "px-4 py-2 rounded-2xl"
+        )}>
+          <ImageIcon size={isMobile ? 24 : 18} className="text-indigo-500 group-hover:scale-110 transition-transform" />
+          <span className={cn("font-black text-indigo-700 uppercase tracking-wider", isMobile ? "text-sm" : "text-[12px]")}>
+            Téléverser PNG
+          </span>
+          <input type="file" hidden accept="image/png,image/jpeg" onChange={handleImageUpload} />
+        </label>
+
+        {logoConfig.logoImage && (
+          <button
+            onClick={() => onUpdate({ ...logoConfig, logoImage: null })}
+            className={cn(
+              "font-black text-red-400 hover:text-red-600 uppercase tracking-widest px-2",
+              isMobile ? "text-xs py-2 mt-2" : "text-[10px]"
+            )}
+          >
+            Supprimer le logo actuel
+          </button>
+        )}
+      </div>
+      
+      {isMobile && (
+        <Button 
+          variant="ghost" 
+          className="mt-8 w-full rounded-[24px] py-7 font-bold text-gray-400 uppercase tracking-widest" 
+          onClick={onClose}
         >
-          Supprimer
-        </button>
+          Fermer
+        </Button>
       )}
     </motion.div>
   );
 };
 
-const BgToolbar = ({ config, onUpdate, onClose }) => {
+const BgToolbar = ({ config, onUpdate, onClose, isMobile }) => {
   const colors = ["#ffffff", "#f8fafc", "#f1f5f9", "#fffbeb", "#fef2f2", "#f0fdf4", "#f5f3ff", "#fafafa"];
-  
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -341,47 +395,79 @@ const BgToolbar = ({ config, onUpdate, onClose }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: "100%" }}
       transition={{ type: "spring", damping: 30, stiffness: 300 }}
-      className="no-print fixed bottom-0 left-0 right-0 z-[300] bg-white border-t border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-[32px] md:rounded-full md:bottom-24 md:left-1/2 md:-translate-x-1/2 md:w-auto px-6 py-8 md:py-2.5 flex flex-col md:flex-row items-center gap-4"
+      className={cn(
+        "no-print fixed z-[300] bg-white border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex flex-col items-center transition-all",
+        isMobile 
+          ? "bottom-0 left-0 right-0 border-t rounded-t-[40px] p-6 pb-10" 
+          : "bottom-24 left-1/2 -translate-x-1/2 rounded-full border px-6 py-2.5 flex-row gap-4"
+      )}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="w-12 h-1.5 bg-gray-100 rounded-full mb-4 md:hidden" />
-      <button onClick={onClose} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><X size={18}/></button>
-      <div className="w-px h-6 bg-gray-100" />
-      <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-300">Arrière-Plan PDF</span>
+      {isMobile && <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto mb-6 shrink-0" />}
+      {!isMobile && <button onClick={onClose} className="p-1 text-gray-400 hover:text-red-500 transition-colors"><X size={18} /></button>}
+      {!isMobile && <div className="w-px h-6 bg-gray-100" />}
       
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] font-bold text-gray-400 uppercase mr-1">Couleur</span>
-        <div className="flex gap-1.5 mt-0.5">
-          {colors.map(c => (
-             <button 
-               key={c} 
-               onClick={() => onUpdate({ ...config, pdfBg: c, pdfBgImage: null })} 
-               className={`w-6 h-6 rounded-full border-2 transition-all hover:scale-125 ${config.pdfBg === c && !config.pdfBgImage ? 'border-white ring-2 ring-indigo-500 shadow-sm' : 'border-gray-200'}`} 
-               style={{ backgroundColor: c }} 
-             />
-          ))}
-          <div className="relative group">
-            <input 
-              type="color" 
-              value={config.pdfBg || "#ffffff"} 
-              onChange={(e) => onUpdate({ ...config, pdfBg: e.target.value, pdfBgImage: null })}
-              className="w-6 h-6 rounded-full border-2 border-gray-200 cursor-pointer overflow-hidden p-0"
-            />
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black text-white text-[8px] font-bold px-1.5 py-0.5 rounded">Custom</div>
+      <span className={cn(
+        "font-black uppercase tracking-[0.2em] text-gray-300",
+        isMobile ? "text-sm mb-8" : "text-[11px]"
+      )}>
+        Arrière-Plan PDF
+      </span>
+
+      <div className={cn("flex items-center gap-4", isMobile && "flex-col w-full gap-6")}>
+        <div className="flex flex-col items-center gap-3">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">Couleur de fond</span>
+          <div className="flex flex-wrap justify-center gap-2">
+            {colors.map(c => (
+              <button
+                key={c}
+                onClick={() => onUpdate({ ...config, pdfBg: c, pdfBgImage: null })}
+                className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-125 ${config.pdfBg === c && !config.pdfBgImage ? 'border-white ring-2 ring-indigo-500 shadow-sm' : 'border-gray-200'}`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+            <div className="relative group">
+              <input
+                type="color"
+                value={config.pdfBg || "#ffffff"}
+                onChange={(e) => onUpdate({ ...config, pdfBg: e.target.value, pdfBgImage: null })}
+                className="w-8 h-8 rounded-full border-2 border-gray-200 cursor-pointer overflow-hidden p-0"
+              />
+            </div>
           </div>
+        </div>
+
+        {isMobile && <div className="h-px w-2/3 bg-slate-100" />}
+
+        <div className="flex flex-col items-center gap-3 w-full">
+          <label className={cn(
+            "flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-all border border-gray-100 shadow-sm group",
+            isMobile ? "w-full justify-center py-5 rounded-[24px]" : "px-4 py-2 rounded-2xl"
+          )}>
+            <ImageIcon size={isMobile ? 24 : 16} className="text-gray-400 group-hover:scale-110 transition-transform" />
+            <span className={cn("font-bold text-gray-600", isMobile ? "text-sm" : "text-[11px]")}>Photo de fond</span>
+            <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+          </label>
+
+          {config.pdfBgImage && (
+            <button 
+              onClick={() => onUpdate({ ...config, pdfBgImage: null })} 
+              className="text-[10px] font-bold text-red-500 hover:underline uppercase tracking-widest"
+            >
+              Supprimer la photo
+            </button>
+          )}
         </div>
       </div>
       
-      <div className="w-px h-6 bg-gray-100 mx-2" />
-      
-      <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-3 py-1.5 rounded-xl transition-all border border-gray-100">
-        <ImageIcon size={16} className="text-gray-400" />
-        <span className="text-[11px] font-bold text-gray-600">Photo de fond</span>
-        <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
-      </label>
-      
-      {config.pdfBgImage && (
-        <button onClick={() => onUpdate({ ...config, pdfBgImage: null })} className="text-[10px] font-bold text-red-500 hover:underline uppercase ml-2">Supprimer photo</button>
+      {isMobile && (
+        <Button 
+          variant="ghost" 
+          className="mt-8 w-full rounded-[24px] py-7 font-bold text-gray-400 uppercase tracking-widest" 
+          onClick={onClose}
+        >
+          Fermer
+        </Button>
       )}
     </motion.div>
   );
@@ -419,35 +505,44 @@ export default function PixiaEditor() {
     showBadges: true,
     showSidebar: true
   });
-  
+
   const [styles, setStyles] = useState<Record<string, React.CSSProperties>>({});
   const [selectedId, setSelectedId] = useState(null);
   const [canUndo, setCanUndo] = useState(false);
   const histRef = useRef({ stack: [DEFAULT_DATA], cursor: 0 });
-  
+
   const [activeDrawer, setActiveDrawer] = useState<'themes' | 'edit' | 'logo' | 'background' | null>(null);
-  
+
   const [zoom, setZoom] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
+  const [isMobileActionsOpen, setIsMobileActionsOpen] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
+
       if (mobile) {
         const docWidth = 820;
         const docHeight = 1160;
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
-        
-        // On reserve 120px pour le dock et les paddings
-        const availableWidth = screenWidth * 0.95;
-        const availableHeight = screenHeight - 160; 
-        
+
+        // Accurate space calculation
+        // Header is ~64px, Dock is ~80px, Margins ~40px
+        const reservedHeight = 200;
+        const reservedWidth = 120; // Increased to account for potential sidebar or margins
+
+        const availableWidth = screenWidth - reservedWidth;
+        const availableHeight = screenHeight - reservedHeight;
+
         const zoomW = availableWidth / docWidth;
         const zoomH = availableHeight / docHeight;
-        
-        setZoom(Math.min(zoomW, zoomH));
+
+        // Use a more conservative zoom to ensure visibility
+        const calculatedZoom = Math.min(zoomW, zoomH);
+        // Default to 44% as requested by user, but ensure it doesn't exceed calculated fit
+        setZoom(0.44);
       } else {
         setZoom(1);
       }
@@ -456,7 +551,7 @@ export default function PixiaEditor() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-  
+
   useEffect(() => {
     if (selectedId) {
       if (selectedId === 'logo') setActiveDrawer('logo');
@@ -473,10 +568,10 @@ export default function PixiaEditor() {
     const next = !isThemeMenuOpen;
     setIsThemeMenuOpen(next);
     if (next) {
-        setSelectedId(null);
-        setActiveDrawer('themes');
+      setSelectedId(null);
+      setActiveDrawer('themes');
     } else {
-        setActiveDrawer(null);
+      setActiveDrawer(null);
     }
   };
 
@@ -527,7 +622,7 @@ export default function PixiaEditor() {
           const parsed = JSON.parse(saved);
           setData(parsed);
           histRef.current = { stack: [parsed], cursor: 0 };
-        } catch (e) {}
+        } catch (e) { }
       }
       const savedConfig = localStorage.getItem("pixia_config_v6");
       if (savedConfig) {
@@ -683,12 +778,16 @@ export default function PixiaEditor() {
   };
 
   return (
-    <main 
-      className={`flex flex-col items-center selection:bg-indigo-100 transition-all duration-700 relative ${isMobile ? 'h-screen overflow-hidden justify-center p-0' : 'min-h-screen pt-10 pb-40'}`}
+    <main
+      className={cn(
+        "flex flex-col items-center selection:bg-indigo-100 transition-all duration-700 relative",
+        isMobile ? "min-h-[calc(100vh-140px)] justify-center p-0 overflow-x-hidden" : "min-h-screen pt-10 pb-40"
+      )}
       style={{ backgroundColor: workspaceBg }}
       onClick={() => setSelectedId(null)}
     >
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         body { font-family: 'Inter', sans-serif; }
         @media print {
@@ -705,22 +804,14 @@ export default function PixiaEditor() {
           .document-shadow { 
             transform-origin: top center;
           }
-          .no-print.fixed {
-            bottom: 20px;
-            top: auto;
-            right: 50%;
-            transform: translateX(50%);
-            width: 95%;
-            justify-content: space-around;
-          }
         }
         .zoom-controls {
           position: fixed;
-          bottom: 100px;
-          right: 20px;
+          bottom: 120px;
+          right: 24px;
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 12px;
           z-index: 200;
         }
       `}} />
@@ -729,138 +820,256 @@ export default function PixiaEditor() {
         <div className="no-print zoom-controls">
           <button 
             onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.min(prev + 0.1, 2)); }}
-            className="w-12 h-12 bg-white border border-slate-200 shadow-xl rounded-2xl flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+            className="w-14 h-14 bg-white border border-slate-200 shadow-2xl rounded-2xl flex items-center justify-center text-slate-700 active:scale-90 transition-all"
+            title="Zoom avant"
           >
-            <Maximize size={20} />
+            <ZoomIn size={24} />
           </button>
           <button 
-            onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.max(prev - 0.1, 0.3)); }}
-            className="w-12 h-12 bg-white border border-slate-200 shadow-xl rounded-2xl flex items-center justify-center text-slate-600 active:scale-90 transition-all"
+            onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.max(prev - 0.1, 0.1)); }}
+            className="w-14 h-14 bg-white border border-slate-200 shadow-2xl rounded-2xl flex items-center justify-center text-slate-700 active:scale-90 transition-all"
+            title="Zoom arrière"
           >
-            <Zap size={20} className="rotate-45" />
+            <ZoomOut size={24} />
           </button>
-          <div className="bg-white border border-slate-200 shadow-xl rounded-2xl px-2 py-1 text-[10px] font-black text-slate-400 text-center uppercase tracking-tighter">
+          
+          <div className="bg-white/90 backdrop-blur-md border border-slate-200 shadow-xl rounded-2xl px-2 py-1.5 text-[11px] font-black text-indigo-600 text-center uppercase tracking-tighter">
             {Math.round(zoom * 100)}%
+          </div>
+          
+          <div className="relative mt-2">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setIsMobileActionsOpen(!isMobileActionsOpen); }}
+              className={cn(
+                "w-14 h-14 shadow-2xl rounded-2xl flex items-center justify-center transition-all border",
+                isMobileActionsOpen ? "bg-indigo-600 text-white border-indigo-500" : "bg-white text-slate-700 border-slate-200"
+              )}
+              title="Actions"
+            >
+              <Grid3X3 size={24} />
+            </button>
+            
+            <AnimatePresence>
+              {isMobileActionsOpen && (
+                <>
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsMobileActionsOpen(false)}
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[350]"
+                  />
+                  
+                  <motion.div
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "100%" }}
+                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                    className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-20px_50px_rgba(0,0,0,0.1)] rounded-t-[40px] p-6 pb-12 flex flex-col gap-2 z-[400] max-h-[85vh] overflow-y-auto"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-6 shrink-0" />
+                    
+                    <div className="flex flex-col gap-2">
+                      <button 
+                        onClick={() => { 
+                          setIsMobileActionsOpen(false); 
+                          // Slight delay ensures the theme drawer renders reliably on mobile
+                          setTimeout(() => {
+                            setActiveDrawer('themes');
+                            setIsThemeMenuOpen(true);
+                            setSelectedId(null);
+                          }, 50);
+                        }}
+                        className="flex items-center gap-4 p-4 hover:bg-slate-50 rounded-[24px] transition-all bg-slate-50/50"
+                      >
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
+                          <Palette size={24} />
+                        </div>
+                        <div className="flex flex-col items-start">
+                          <span className="text-[13px] font-black uppercase tracking-wider text-slate-800">Thèmes Document</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">Changer les couleurs & styles</span>
+                        </div>
+                      </button>
+                      
+                      <div className="h-px bg-slate-100 my-2 mx-4" />
+                      
+                      <div className="grid grid-cols-1 gap-2">
+                        {[
+                          { id: 'tech', label: 'Technique', sub: 'Détails des produits', icon: Grid3X3, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', active: pdfConfig.showTechnical, key: 'showTechnical' },
+                          { id: 'info', label: 'Infos', sub: 'Notes & Informations', icon: Info, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', active: pdfConfig.showInfo, key: 'showInfo' },
+                          { id: 'pay', label: 'Paiement', sub: 'RIB & Conditions', icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', active: pdfConfig.showTerms, key: 'showTerms' },
+                          { id: 'badge', label: 'Certifs', sub: 'Labels & Qualité', icon: CheckSquare, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', active: pdfConfig.showBadges, key: 'showBadges' },
+                          { id: 'side', label: 'Barre', sub: 'Liseré de couleur', icon: Columns, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-100', active: pdfConfig.showSidebar, key: 'showSidebar' },
+                        ].map((item) => (
+                          <button 
+                            key={item.id}
+                            onClick={() => updatePdfConfig({ ...pdfConfig, [item.key]: !pdfConfig[item.key] })}
+                            className={cn(
+                              "flex items-center justify-between p-4 rounded-[24px] transition-all border",
+                              item.active ? "bg-white border-slate-200 shadow-sm" : "bg-slate-50/30 border-transparent opacity-60"
+                            )}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center border", item.bg, item.color, item.border)}>
+                                <item.icon size={24} />
+                              </div>
+                              <div className="flex flex-col items-start">
+                                <span className="text-[13px] font-black uppercase tracking-wider text-slate-800">{item.label}</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">{item.sub}</span>
+                              </div>
+                            </div>
+                            <div className={cn(
+                              "w-10 h-6 rounded-full p-1 transition-all flex items-center",
+                              item.active ? "bg-green-500 justify-end" : "bg-slate-200 justify-start"
+                            )}>
+                              <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <div className="h-px bg-slate-100 my-2 mx-4" />
+                      
+                      <button 
+                        onClick={() => { resetAll(); setIsMobileActionsOpen(false); }}
+                        className="flex items-center gap-4 p-4 hover:bg-red-50 rounded-[24px] transition-all bg-red-50/30 border border-transparent hover:border-red-100"
+                      >
+                        <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500 shadow-sm border border-red-100">
+                          <RotateCcw size={24} />
+                        </div>
+                        <div className="flex flex-col items-start text-red-600">
+                          <span className="text-[13px] font-black uppercase tracking-wider">Réinitialiser tout</span>
+                          <span className="text-[10px] font-bold opacity-70 uppercase">Remettre le document à zéro</span>
+                        </div>
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       )}
 
-      {/* ACTIONS GROUPÉES (Thèmes PDF, Undo, Reset) */}
-      <div className="no-print fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[100]">
-        <div className="flex items-center gap-1.5 bg-white border border-gray-100 shadow-2xl rounded-3xl p-1.5 backdrop-blur-xl">
-          <div className="relative">
-            <button 
-              onClick={toggleThemeMenu}
-              className={`p-2.5 rounded-2xl transition-all flex items-center gap-2 ${activeDrawer === 'themes' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-500 hover:bg-gray-50'}`}
-              title="Thèmes"
-            >
-              <Palette size={18} />
-              <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider">Thèmes</span>
-            </button>
+      {/* ACTIONS GROUPÉES (Thèmes PDF, Undo, Reset) - Hidden on Mobile */}
+      {!isMobile && (
+        <div className="no-print fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[300]">
+          <div className="flex items-center gap-1.5 bg-white border border-gray-100 shadow-2xl rounded-3xl p-1.5 backdrop-blur-xl">
+            <div className="relative">
+              <button
+                onClick={toggleThemeMenu}
+                className={`p-2.5 rounded-2xl transition-all flex items-center gap-2 ${activeDrawer === 'themes' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-500 hover:bg-gray-50'}`}
+                title="Thèmes"
+              >
+                <Palette size={18} />
+                <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider">Thèmes</span>
+              </button>
 
-            {/* Desktop Theme Menu */}
-            <AnimatePresence>
-              {!isMobile && activeDrawer === 'themes' && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute bottom-full right-0 mb-3 p-3 bg-white border border-gray-100 shadow-2xl rounded-2xl min-w-[220px] grid grid-cols-5 gap-2"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="col-span-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 px-1">Choisir un thème</div>
-                  {THEMES.map(t => (
-                    <button 
-                      key={t.id} 
-                      onClick={() => { updatePdfConfig({ ...pdfConfig, themeId: t.id }); setIsThemeMenuOpen(false); setActiveDrawer(null); }} 
-                      className={`w-8 h-8 rounded-full border-2 transition-all ${pdfConfig.themeId === t.id ? 'ring-2 ring-indigo-100 border-indigo-600 scale-110 shadow-lg' : 'border-gray-100 hover:scale-105'}`} 
-                      style={{ background: t.gradient }} 
-                      title={`Thème ${t.id}`} 
-                    />
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+              {/* Desktop Theme Menu */}
+              <AnimatePresence>
+                {!isMobile && activeDrawer === 'themes' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute bottom-full right-0 mb-3 p-3 bg-white border border-gray-100 shadow-2xl rounded-2xl min-w-[220px] grid grid-cols-5 gap-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="col-span-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 px-1">Choisir un thème</div>
+                    {THEMES.map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => { updatePdfConfig({ ...pdfConfig, themeId: t.id }); setIsThemeMenuOpen(false); setActiveDrawer(null); }}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${pdfConfig.themeId === t.id ? 'ring-2 ring-indigo-100 border-indigo-600 scale-110 shadow-lg' : 'border-gray-100 hover:scale-105'}`}
+                        style={{ background: t.gradient }}
+                        title={`Thème ${t.id}`}
+                      />
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-          <div className="w-px h-5 bg-gray-100 mx-1" />
+            <div className="w-px h-5 bg-gray-100 mx-1" />
 
-          <div className="flex items-center bg-gray-50/50 rounded-2xl p-1">
-            <button 
-              onClick={() => updatePdfConfig({ ...pdfConfig, showTechnical: !pdfConfig.showTechnical })}
-              className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showTechnical ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-              title="Détails techniques"
-            >
-              <Settings2 size={16} />
-              <span className="text-[10px] font-bold uppercase">Tech</span>
-            </button>
-            <button 
-              onClick={() => updatePdfConfig({ ...pdfConfig, showInfo: !pdfConfig.showInfo })}
-              className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showInfo ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-              title="Information"
-            >
-              <Info size={16} />
-              <span className="text-[10px] font-bold uppercase">Info</span>
-            </button>
-            <button 
-              onClick={() => updatePdfConfig({ ...pdfConfig, showTerms: !pdfConfig.showTerms })}
-              className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showTerms ? 'bg-white text-amber-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-              title="Paiement"
-            >
-              <FileText size={16} />
-              <span className="text-[10px] font-bold uppercase">Paiem.</span>
-            </button>
-            <button 
-              onClick={() => updatePdfConfig({ ...pdfConfig, showBadges: !pdfConfig.showBadges })}
-              className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showBadges ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-              title="Certificats"
-            >
-              <CheckSquare size={16} />
-              <span className="text-[10px] font-bold uppercase">Certif.</span>
-            </button>
-            <button 
-              onClick={() => updatePdfConfig({ ...pdfConfig, showSidebar: !pdfConfig.showSidebar })}
-              className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showSidebar ? 'bg-white text-slate-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-              title="Barre latérale"
-            >
-              <Columns size={16} />
-              <span className="text-[10px] font-bold uppercase">Barre</span>
-            </button>
-          </div>
+            <div className="flex items-center bg-gray-50/50 rounded-2xl p-1">
+              <button
+                onClick={() => updatePdfConfig({ ...pdfConfig, showTechnical: !pdfConfig.showTechnical })}
+                className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showTechnical ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                title="Détails techniques"
+              >
+                <Settings2 size={16} />
+                <span className="text-[10px] font-bold uppercase">Tech</span>
+              </button>
+              <button
+                onClick={() => updatePdfConfig({ ...pdfConfig, showInfo: !pdfConfig.showInfo })}
+                className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showInfo ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                title="Information"
+              >
+                <Info size={16} />
+                <span className="text-[10px] font-bold uppercase">Info</span>
+              </button>
+              <button
+                onClick={() => updatePdfConfig({ ...pdfConfig, showTerms: !pdfConfig.showTerms })}
+                className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showTerms ? 'bg-white text-amber-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                title="Paiement"
+              >
+                <FileText size={16} />
+                <span className="text-[10px] font-bold uppercase">Paiem.</span>
+              </button>
+              <button
+                onClick={() => updatePdfConfig({ ...pdfConfig, showBadges: !pdfConfig.showBadges })}
+                className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showBadges ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                title="Certificats"
+              >
+                <CheckSquare size={16} />
+                <span className="text-[10px] font-bold uppercase">Certif.</span>
+              </button>
+              <button
+                onClick={() => updatePdfConfig({ ...pdfConfig, showSidebar: !pdfConfig.showSidebar })}
+                className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showSidebar ? 'bg-white text-slate-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                title="Barre latérale"
+              >
+                <Columns size={16} />
+                <span className="text-[10px] font-bold uppercase">Barre</span>
+              </button>
+            </div>
 
-          <div className="w-px h-5 bg-gray-100 mx-1" />
+            <div className="w-px h-5 bg-gray-100 mx-1" />
 
-          <div className="flex items-center gap-1">
-            <button onClick={undo} disabled={!canUndo} title="Annuler" className={`p-2.5 rounded-xl transition-all ${canUndo ? "text-indigo-600 hover:bg-indigo-50" : "text-gray-200"}`}><Undo2 size={18} /></button>
-            <button onClick={handleSaveToDev} title="Sauvegarder pour Dev" className="p-2.5 text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"><Download size={18} /></button>
-            <button onClick={handleRestore} title="Restaurer la version sauvegardée" className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-xl transition-all"><RotateCcw size={18} /></button>
-            <button onClick={resetAll} title="Réinitialiser tout par défaut" className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><RotateCcw size={18} /></button>
+            <div className="flex items-center gap-1">
+              <button onClick={undo} disabled={!canUndo} title="Annuler" className={`p-2.5 rounded-xl transition-all ${canUndo ? "text-indigo-600 hover:bg-indigo-50" : "text-gray-200"}`}><Undo2 size={18} /></button>
+              <button onClick={handleSaveToDev} title="Sauvegarder pour Dev" className="p-2.5 text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"><Download size={18} /></button>
+              <button onClick={handleRestore} title="Restaurer la version sauvegardée" className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-xl transition-all"><RotateCcw size={18} /></button>
+              <button onClick={resetAll} title="Réinitialiser tout par défaut" className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><RotateCcw size={18} /></button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* DOCUMENT A4 WRAPPER FOR SCALING */}
-      <div 
-        className={`${isMobile ? 'relative' : 'relative shrink-0'}`}
-        style={{ 
-          width: isMobile ? `${820 * zoom}px` : "auto", 
-          height: isMobile ? `${1160 * zoom}px` : "auto",
-          transition: 'all 0.5s ease'
+      <div
+        className={cn(
+          "relative flex items-center justify-center transition-all duration-500 mx-auto",
+          isMobile ? "w-full mt-80 mb-40" : "shrink-0"
+        )}
+        style={{
+          height: isMobile ? `${1160 * zoom + 40}px` : "auto", // +40 for some breathing room
         }}
       >
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ 
-            opacity: 1, 
-            y: 0,
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            "document-shadow overflow-hidden shrink-0 transition-all cursor-default origin-top shadow-[0_40px_100px_rgba(0,0,0,0.3)]",
+            isMobile ? "" : "relative"
+          )}
+          style={{
+            width: "820px",
+            height: "1160px",
+            aspectRatio: "1 / 1.414",
             scale: zoom,
-            }}
-            className={`document-shadow overflow-hidden shrink-0 transition-all cursor-default origin-top ${isMobile ? 'absolute top-0 left-1/2 -translate-x-1/2' : 'relative'}`}
-            style={{ 
-            width: "820px", 
-            height: "1160px", 
-            aspectRatio: "1 / 1.414", 
-            boxShadow: "0 40px 100px rgba(0,0,0,0.3)",
             backgroundColor: pdfConfig.pdfBg,
             backgroundImage: pdfConfig.pdfBgImage ? `url(${pdfConfig.pdfBgImage})` : 'none',
             backgroundSize: 'cover',
@@ -868,324 +1077,324 @@ export default function PixiaEditor() {
             borderColor: selectedId === 'pdf_bg' ? '#4f46e5' : 'transparent',
             borderWidth: '2px',
             borderStyle: selectedId === 'pdf_bg' ? 'dashed' : 'none',
-            }}
-            onClick={(e) => { e.stopPropagation(); setSelectedId('pdf_bg'); }}
+          }}
+          onClick={(e) => { e.stopPropagation(); setSelectedId('pdf_bg'); }}
         >
-        {pdfConfig.showSidebar && (
-          <div className="absolute left-0 top-0 bottom-0 w-[5px]" style={{ background: currentTheme.gradient }} />
-        )}
-        <div className={`absolute inset-0 flex flex-col p-10 gap-4 text-[10.5px] ${pdfConfig.showSidebar ? 'left-[5px]' : 'left-0'}`}>
-          <div className="flex gap-10 items-start">
-            <div className="flex-1 flex items-center gap-6">
-              <div 
-                className={`w-[80px] h-[80px] flex items-center justify-center relative cursor-pointer group transition-all rounded-xl ${selectedId === 'logo' ? 'ring-2 ring-indigo-500' : 'hover:bg-gray-50'}`}
-                onClick={(e) => { e.stopPropagation(); setSelectedId('logo'); }}
-              >
-                {pdfConfig.logoImage ? (
-                  <img src={pdfConfig.logoImage} alt="Logo" className="max-w-full max-h-full object-contain" />
-                ) : (
-                  <div className="flex flex-col items-center gap-1 text-gray-300">
-                    <ImageIcon size={24} />
-                    <span className="text-[8px] font-bold uppercase tracking-widest">Logo PNG</span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors opacity-0 group-hover:opacity-100 no-print flex items-center justify-center">
-                   <Settings2 size={14} className="text-gray-400" />
-                </div>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <E id="c_name" selectedId={selectedId} setSelectedId={setSelectedId} value={data.company.name} onChange={(v) => update("company.name", v)} elementStyle={styles.c_name} style={{ fontSize: "1.7em", fontWeight: 900, color: currentTheme.text }} />
-                <E id="c_tagline" selectedId={selectedId} setSelectedId={setSelectedId} value={data.company.tagline} onChange={(v) => update("company.tagline", v)} elementStyle={styles.c_tagline} style={{ fontSize: "0.9em", fontWeight: 600, color: currentTheme.primary }} className="mb-1" />
-                <div className="flex flex-col gap-0.5 text-gray-400 mt-1">
-                  <div className="flex items-center gap-1.5"><MapPin size={11} style={{ color: currentTheme.primary }}/><E id="c_addr" selectedId={selectedId} setSelectedId={setSelectedId} value={data.company.address} onChange={(v) => update("company.address", v)} elementStyle={styles.c_addr} /></div>
-                  <div className="flex items-center gap-1.5"><Phone size={11} style={{ color: currentTheme.primary }}/><E id="c_ph" selectedId={selectedId} setSelectedId={setSelectedId} value={data.company.phone} onChange={(v) => update("company.phone", v)} elementStyle={styles.c_ph} /></div>
-                  <div className="flex items-center gap-1.5"><Mail size={11} style={{ color: currentTheme.primary }}/><E id="c_mail" selectedId={selectedId} setSelectedId={setSelectedId} value={data.company.email} onChange={(v) => update("company.email", v)} elementStyle={styles.c_mail} /></div>
-                </div>
-              </div>
-            </div>
-            <div className="flex-shrink-0 flex flex-col items-end gap-3 pt-2">
-              <E 
-                id="doc_title" 
-                selectedId={selectedId} 
-                setSelectedId={setSelectedId} 
-                value={data.quote?.title || "ESTIMATION"} 
-                onChange={(v) => update("quote.title", v)} 
-                elementStyle={styles.doc_title} 
-                style={{ fontSize: "3.8em", fontWeight: 900, textAlign: "right", color: currentTheme.text, lineHeight: 0.8, letterSpacing: "-0.05em" }} 
-              />
-              <div className="flex gap-2">
-                {[ { l: "Numéro", p: "quote.numero", v: data.quote.numero, id: "q_num" }, { l: "Date", p: "quote.date", v: data.quote.date, id: "q_date" }, { l: "Validité", p: "quote.validite", v: data.quote.validite, id: "q_val" } ].map(box => (
-                  <div key={box.l} className="border border-gray-200 rounded-lg p-2 text-center min-w-[6.5em] bg-[#fafafa]">
-                    <div className="uppercase text-[0.72em] text-gray-400 font-bold tracking-wider mb-0.5">{box.l}</div>
-                    <E id={box.id} selectedId={selectedId} setSelectedId={setSelectedId} value={box.v} onChange={(v) => update(box.p, v)} elementStyle={styles[box.id]} style={{ fontSize: "0.88em", fontWeight: 700, color: "#1f2937" }} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="bg-[#f8f9fc] border border-[#eef0f8] rounded-2xl p-5 flex gap-5 items-start mt-2 group/client transition-all hover:bg-slate-50">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 border-2 border-white shadow-sm" style={{ backgroundColor: `${currentTheme.primary}10`, color: currentTheme.primary }}>
-              <User size={24} strokeWidth={2.5} />
-            </div>
-            <div className="flex-1 flex flex-col gap-0">
-              <span className="uppercase text-[0.72em] text-gray-400 font-black tracking-[0.1em]">Client Destinataire</span>
-              <E id="cl_name" selectedId={selectedId} setSelectedId={setSelectedId} value={data.client.name} onChange={(v) => update("client.name", v)} elementStyle={styles.cl_name} style={{ fontSize: "1.6em", fontWeight: 900, color: currentTheme.text, letterSpacing: "-0.02em", marginBottom: "1px" }} />
-              
-              <div className="flex flex-col gap-1 mt-1">
-                <div className="flex items-center gap-2 text-gray-500 overflow-hidden">
-                  <MapPin size={12} className="shrink-0" style={{ color: currentTheme.primary }} />
-                  <div className="flex gap-1 items-center truncate">
-                    <E id="cl_addr" selectedId={selectedId} setSelectedId={setSelectedId} value={data.client.address} onChange={(v) => update("client.address", v)} elementStyle={styles.cl_addr} style={{ fontWeight: 500, fontSize: "0.95em" }} />
-                    <span className="text-gray-300">|</span>
-                    <E id="cl_city" selectedId={selectedId} setSelectedId={setSelectedId} value={data.client.city} onChange={(v) => update("client.city", v)} elementStyle={styles.cl_city} style={{ fontWeight: 500, fontSize: "0.95em" }} />
+          {pdfConfig.showSidebar && (
+            <div className="absolute left-0 top-0 bottom-0 w-[5px]" style={{ background: currentTheme.gradient }} />
+          )}
+          <div className={`absolute inset-0 flex flex-col p-10 gap-4 text-[10.5px] ${pdfConfig.showSidebar ? 'left-[5px]' : 'left-0'}`}>
+            <div className="flex gap-10 items-start">
+              <div className="flex-1 flex items-center gap-6">
+                <div
+                  className={`w-[80px] h-[80px] flex items-center justify-center relative cursor-pointer group transition-all rounded-xl ${selectedId === 'logo' ? 'ring-2 ring-indigo-500' : 'hover:bg-gray-50'}`}
+                  onClick={(e) => { e.stopPropagation(); setSelectedId('logo'); }}
+                >
+                  {pdfConfig.logoImage ? (
+                    <img src={pdfConfig.logoImage} alt="Logo" className="max-w-full max-h-full object-contain" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-gray-300">
+                      <ImageIcon size={24} />
+                      <span className="text-[8px] font-bold uppercase tracking-widest">Logo PNG</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors opacity-0 group-hover:opacity-100 no-print flex items-center justify-center">
+                    <Settings2 size={14} className="text-gray-400" />
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Phone size={12} className="shrink-0" style={{ color: currentTheme.primary }} />
-                  <E id="cl_ph" selectedId={selectedId} setSelectedId={setSelectedId} value={data.client.phone} onChange={(v) => update("client.phone", v)} elementStyle={styles.cl_ph} style={{ fontWeight: 500, fontSize: "0.95em" }} />
-                </div>
-
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Mail size={12} className="shrink-0" style={{ color: currentTheme.primary }} />
-                  <E id="cl_em" selectedId={selectedId} setSelectedId={setSelectedId} value={data.client.email || "contact@client.fr"} onChange={(v) => update("client.email", v)} elementStyle={styles.cl_em} style={{ fontWeight: 500, fontSize: "0.95em" }} />
+                <div className="flex flex-col gap-0.5">
+                  <E id="c_name" selectedId={selectedId} setSelectedId={setSelectedId} value={data.company.name} onChange={(v) => update("company.name", v)} elementStyle={styles.c_name} style={{ fontSize: "1.7em", fontWeight: 900, color: currentTheme.text }} />
+                  <E id="c_tagline" selectedId={selectedId} setSelectedId={setSelectedId} value={data.company.tagline} onChange={(v) => update("company.tagline", v)} elementStyle={styles.c_tagline} style={{ fontSize: "0.9em", fontWeight: 600, color: currentTheme.primary }} className="mb-1" />
+                  <div className="flex flex-col gap-0.5 text-gray-400 mt-1">
+                    <div className="flex items-center gap-1.5"><MapPin size={11} style={{ color: currentTheme.primary }} /><E id="c_addr" selectedId={selectedId} setSelectedId={setSelectedId} value={data.company.address} onChange={(v) => update("company.address", v)} elementStyle={styles.c_addr} /></div>
+                    <div className="flex items-center gap-1.5"><Phone size={11} style={{ color: currentTheme.primary }} /><E id="c_ph" selectedId={selectedId} setSelectedId={setSelectedId} value={data.company.phone} onChange={(v) => update("company.phone", v)} elementStyle={styles.c_ph} /></div>
+                    <div className="flex items-center gap-1.5"><Mail size={11} style={{ color: currentTheme.primary }} /><E id="c_mail" selectedId={selectedId} setSelectedId={setSelectedId} value={data.company.email} onChange={(v) => update("company.email", v)} elementStyle={styles.c_mail} /></div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <div className="flex-1 flex flex-col mt-4">
-            <div 
-              className="grid grid-cols-[3em_1fr_4em_8em_9em] border-b-2 py-2 px-2 font-black text-[0.75em] uppercase tracking-[0.15em]"
-              style={{ borderColor: currentTheme.primary, color: currentTheme.text }}
-            >
-              <span>#</span>
-              <span>Description détaillée</span>
-              <span className="text-right">Qté</span>
-              <span className="text-right">Unit. HT</span>
-              <span className="text-right">Total HT</span>
-            </div>
-            {data.items.map((item, idx) => (
-              <div 
-                key={item.id} 
-                className="grid grid-cols-[3em_1fr_4em_8em_9em] items-start py-3 px-2 border-b border-gray-100 transition-colors hover:bg-gray-50/50"
-              >
-                <span 
-                  className="text-[0.78em] font-black inline-flex items-center justify-center w-6 h-6 rounded-full mt-0.5"
-                  style={{ color: currentTheme.primary, backgroundColor: `${currentTheme.primary}15` }}
-                >{(idx + 1).toString().padStart(2, '0')}</span>
-                <div className="flex flex-col pr-6">
-                  <E 
-                    id={`it_desc_${item.id}`} 
-                    selectedId={selectedId} 
-                    setSelectedId={setSelectedId} 
-                    value={item.description} 
-                    onChange={(v) => update(`items[${idx}].description`, v)} 
-                    elementStyle={styles[`it_desc_${item.id}`]} 
-                    style={{ fontSize: "1.1em", fontWeight: 800, color: "#1e293b", marginBottom: "2px" }} 
-                  />
-                  <E 
-                    id={`it_det_${item.id}`} 
-                    selectedId={selectedId} 
-                    setSelectedId={setSelectedId} 
-                    value={item.details} 
-                    onChange={(v) => update(`items[${idx}].details`, v)} 
-                    elementStyle={styles[`it_det_${item.id}`]} 
-                    multiline
-                    style={{ fontSize: "0.82em", color: "#64748b", lineHeight: "1.4" }} 
-                  />
-                </div>
-                <E 
-                  id={`it_qty_${item.id}`} 
-                  selectedId={selectedId} 
-                  setSelectedId={setSelectedId} 
-                  value={String(item.qty)} 
-                  onChange={(v) => update(`items[${idx}].qty`, v)} 
-                  elementStyle={styles[`it_qty_${item.id}`]} 
-                  style={{ textAlign: "right", fontWeight: 900, color: "#1e293b", fontSize: "1.1em" }} 
+              <div className="flex-shrink-0 flex flex-col items-end gap-3 pt-2">
+                <E
+                  id="doc_title"
+                  selectedId={selectedId}
+                  setSelectedId={setSelectedId}
+                  value={data.quote?.title || "ESTIMATION"}
+                  onChange={(v) => update("quote.title", v)}
+                  elementStyle={styles.doc_title}
+                  style={{ fontSize: "3.8em", fontWeight: 900, textAlign: "right", color: currentTheme.text, lineHeight: 0.8, letterSpacing: "-0.05em" }}
                 />
-                <div className="flex flex-col items-end">
-                  <E 
-                    id={`it_pr_${item.id}`} 
-                    selectedId={selectedId} 
-                    setSelectedId={setSelectedId} 
-                    value={fmt(item.unitPrice).replace(' €', '')} 
-                    onChange={(v) => update(`items[${idx}].unitPrice`, v.replace(/[^-0-9,.]/g, '').replace(',', '.'))} 
-                    elementStyle={styles[`it_pr_${item.id}`]} 
-                    style={{ textAlign: "right", color: "#475569", fontWeight: 600, fontSize: "1em" }} 
-                  />
-                  <span className="text-[0.65em] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">EUROS</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[1.2em] font-black tracking-tight" style={{ color: currentTheme.text }}>
-                    {fmt(item.qty * item.unitPrice)}
-                  </span>
+                <div className="flex gap-2">
+                  {[{ l: "Numéro", p: "quote.numero", v: data.quote.numero, id: "q_num" }, { l: "Date", p: "quote.date", v: data.quote.date, id: "q_date" }, { l: "Validité", p: "quote.validite", v: data.quote.validite, id: "q_val" }].map(box => (
+                    <div key={box.l} className="border border-gray-200 rounded-lg p-2 text-center min-w-[6.5em] bg-[#fafafa]">
+                      <div className="uppercase text-[0.72em] text-gray-400 font-bold tracking-wider mb-0.5">{box.l}</div>
+                      <E id={box.id} selectedId={selectedId} setSelectedId={setSelectedId} value={box.v} onChange={(v) => update(box.p, v)} elementStyle={styles[box.id]} style={{ fontSize: "0.88em", fontWeight: 700, color: "#1f2937" }} />
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="flex-1 flex flex-col gap-10 mt-8">
-            <div className="grid grid-cols-2 gap-8 items-stretch">
-              {/* Left Column: Technical Details */}
-              <div className={`space-y-4 flex flex-col ${!pdfConfig.showTechnical ? 'invisible' : ''}`}>
-                {pdfConfig.showTechnical && (
-                  <>
-                    <div className="flex items-center gap-2 pb-1.5 mb-2 border-b border-blue-100 shrink-0">
-                      <Cpu size={14} className="text-blue-500" />
-                      <span className="text-[0.75em] font-black uppercase tracking-widest text-slate-800">DÉTAILS TECHNIQUES</span>
-                    </div>
-                    
-                    <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 flex-1">
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                        {[ 
-                          { label: "SURFACE TOTALE:", key: "surface", id: "tech_s", icon: Maximize, color: "#3b82f6" },
-                          { label: "RÉSOLUTION:", key: "resolution", id: "tech_r", icon: Monitor, color: "#a855f7" },
-                          { label: "NOMBRE DE MODULES LED:", key: "modules", id: "tech_m", icon: Cpu, color: "#ec4899" },
-                          { label: "PUISSANCE MAXIMALE:", key: "puissanceMax", id: "tech_p", icon: Zap, color: "#22c55e" },
-                          { label: "PUISSANCE MOYENNE:", key: "puissanceMoy", id: "tech_pm", icon: Zap, color: "#3b82f6" },
-                          { label: "DISJONCTEUR RECOMMANDÉ:", key: "disjoncteur", id: "tech_d", icon: Zap, color: "#f97316" },
-                          { label: "TYPE DE PROJET:", key: "typeProjet", id: "tech_tp", icon: Truck, color: "#f97316" },
-                          { label: "ENVIRONNEMENT:", key: "environnement", id: "tech_env", icon: Sun, color: "#14b8a6" },
-                          { label: "DISTANCE DE VISIONNAGE:", key: "distance", id: "tech_dist", icon: Eye, color: "#06b6d4" },
-                          { label: "PIXEL PITCH:", key: "pitch", id: "tech_pitch", icon: Grid3X3, color: "#ef4444" }
-                        ].map((r, i) => (
-                          <div key={i} className="flex items-center gap-3">
-                            <div 
-                              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" 
-                              style={{ backgroundColor: `${r.color}10` }}
-                            >
-                              <r.icon size={15} style={{ color: r.color }} />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[0.5em] text-gray-400 font-bold tracking-wider uppercase">{r.label}</span>
-                              <div className="flex items-baseline gap-1">
-                                <E 
-                                  id={r.id} 
-                                  selectedId={selectedId} 
-                                  setSelectedId={setSelectedId} 
-                                  value={String(data.technical?.[r.key] || "-")} 
-                                  onChange={v => update(`technical.${r.key}`, v)} 
-                                  elementStyle={styles[r.id]} 
-                                  style={{ fontSize: "0.78em", fontWeight: 800, color: "#1e293b" }} 
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
+            </div>
+            <div className="bg-[#f8f9fc] border border-[#eef0f8] rounded-2xl p-5 flex gap-5 items-start mt-2 group/client transition-all hover:bg-slate-50">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 border-2 border-white shadow-sm" style={{ backgroundColor: `${currentTheme.primary}10`, color: currentTheme.primary }}>
+                <User size={24} strokeWidth={2.5} />
               </div>
+              <div className="flex-1 flex flex-col gap-0">
+                <span className="uppercase text-[0.72em] text-gray-400 font-black tracking-[0.1em]">Client Destinataire</span>
+                <E id="cl_name" selectedId={selectedId} setSelectedId={setSelectedId} value={data.client.name} onChange={(v) => update("client.name", v)} elementStyle={styles.cl_name} style={{ fontSize: "1.6em", fontWeight: 900, color: currentTheme.text, letterSpacing: "-0.02em", marginBottom: "1px" }} />
 
-              {/* Right Column: Recapitulatif */}
-              <div className="space-y-4 flex flex-col">
-                <div className="flex items-center gap-2 pb-1.5 mb-2 border-b border-orange-100 shrink-0">
-                  <BarChart3 size={14} className="text-orange-500" />
-                  <span className="text-[0.75em] font-black uppercase tracking-widest text-slate-800">RÉCAPITULATIF</span>
-                </div>
-                
-                <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-8 flex-1 flex flex-col justify-between">
-                  <div className="flex flex-col gap-5 px-1">
-                    {[ 
-                      ["Sous-total HT", data.summary.sousTotal, "sum_st"], 
-                      ["Installation", data.summary.installation, "sum_ins"], 
-                      ["Livraison", data.summary.livraison, "sum_liv"], 
-                    ].map(r => (
-                      <div key={r[0] as string} className="flex justify-between items-center text-[0.78em]">
-                        <span className="text-slate-500 font-medium">{r[0]}</span>
-                        <E 
-                          id={r[2] as string} 
-                          selectedId={selectedId} 
-                          setSelectedId={setSelectedId} 
-                          value={fmt(r[1])} 
-                          onChange={(v) => update(`summary.${(r[2] as string).replace('sum_','')}`, v.replace(/[^-0-9,.]/g, '').replace(',', '.'))} 
-                          elementStyle={styles[r[2] as string]} 
-                          style={{ fontWeight: 800, textAlign: "right", color: "#0f172a" }} 
-                        />
-                      </div>
-                    ))}
-
+                <div className="flex flex-col gap-1 mt-1">
+                  <div className="flex items-center gap-2 text-gray-500 overflow-hidden">
+                    <MapPin size={12} className="shrink-0" style={{ color: currentTheme.primary }} />
+                    <div className="flex gap-1 items-center truncate">
+                      <E id="cl_addr" selectedId={selectedId} setSelectedId={setSelectedId} value={data.client.address} onChange={(v) => update("client.address", v)} elementStyle={styles.cl_addr} style={{ fontWeight: 500, fontSize: "0.95em" }} />
+                      <span className="text-gray-300">|</span>
+                      <E id="cl_city" selectedId={selectedId} setSelectedId={setSelectedId} value={data.client.city} onChange={(v) => update("client.city", v)} elementStyle={styles.cl_city} style={{ fontWeight: 500, fontSize: "0.95em" }} />
+                    </div>
                   </div>
-                  
-                  <div className="mt-8 rounded-xl p-5 flex justify-between items-center text-white shadow-md mx-[-2px]" style={{ background: `linear-gradient(135deg, ${currentTheme.primary} 0%, ${currentTheme.primary}dd 100%)` }}>
-                    <div className="flex flex-col">
-                      <span className="text-[0.65em] font-black uppercase tracking-widest opacity-90">TOTAL</span>
-                      <span className="text-[1.1em] font-black uppercase tracking-tight">HT</span>
-                    </div>
-                    <E 
-                      id="total_val" 
-                      selectedId={selectedId} 
-                      setSelectedId={setSelectedId} 
-                      value={fmt(data.summary.totalTTC)} 
-                      onChange={(v) => update("summary.totalTTC", v.replace(/[^-0-9,.]/g, '').replace(',', '.'))} 
-                      elementStyle={styles.total_val} 
-                      style={{ fontSize: "1.6em", fontWeight: 900, textAlign: "right", color: "white", letterSpacing: "-0.04em" }} 
-                    />
 
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Phone size={12} className="shrink-0" style={{ color: currentTheme.primary }} />
+                    <E id="cl_ph" selectedId={selectedId} setSelectedId={setSelectedId} value={data.client.phone} onChange={(v) => update("client.phone", v)} elementStyle={styles.cl_ph} style={{ fontWeight: 500, fontSize: "0.95em" }} />
+                  </div>
+
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <Mail size={12} className="shrink-0" style={{ color: currentTheme.primary }} />
+                    <E id="cl_em" selectedId={selectedId} setSelectedId={setSelectedId} value={data.client.email || "contact@client.fr"} onChange={(v) => update("client.email", v)} elementStyle={styles.cl_em} style={{ fontWeight: 500, fontSize: "0.95em" }} />
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Legal / Notes - Side by Side */}
-            <div className="grid grid-cols-2 gap-8">
-              {pdfConfig.showInfo && (
-                <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 space-y-3 group transition-all">
-                  <div className="flex items-center gap-2 font-extrabold text-[0.78em] uppercase tracking-widest" style={{ color: currentTheme.primary }}>
-                    <Info size={14} className="stroke-[3]" />
-                    <span>Information</span>
-                  </div>
-                  <E id="inf" selectedId={selectedId} setSelectedId={setSelectedId} value={data.information} onChange={(v) => update("information", v)} elementStyle={styles.inf} multiline style={{ fontSize: "0.85em", color: "#64748b", lineHeight: "1.4", fontWeight: 500 }} />
-                </motion.div>
-              )}
-              {pdfConfig.showTerms && (
-                <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 space-y-3 group transition-all">
-                  <div className="flex items-center gap-2 font-extrabold text-[0.78em] uppercase tracking-widest" style={{ color: currentTheme.primary }}>
-                    <FileText size={14} className="stroke-[3]" />
-                    <span>Conditions de paiement</span>
-                  </div>
-                  <E id="tems" selectedId={selectedId} setSelectedId={setSelectedId} value={data.paymentTerms} onChange={(v) => update("paymentTerms", v)} elementStyle={styles.tems} multiline style={{ fontSize: "0.85em", color: "#64748b", lineHeight: "1.4", fontWeight: 500 }} />
-                </motion.div>
-              )}
-            </div>
-          </div>
-          
-          {pdfConfig.showBadges && (
-            <div className="mt-12 flex flex-wrap justify-center gap-4">
-              {(data.badges || []).map((badge, idx) => {
-                const BadgeIcon = { CheckSquare, Heart, Lock, Diamond }[badge.icon] || Info;
-                const colors = {
-                  CheckSquare: { bg: "#ecfdf5", icon: "#10b981", border: "#d1fae5" },
-                  Heart: { bg: "#eff6ff", icon: "#3b82f6", border: "#dbeafe" },
-                  Diamond: { bg: "#eff6ff", icon: "#3b82f6", border: "#dbeafe" },
-                  Lock: { bg: "#fff7ed", icon: "#f59e0b", border: "#ffedd5" }
-                };
-                const config = colors[badge.icon] || { bg: "#f8fafc", icon: "#64748b", border: "#f1f5f9" };
-                
-                return (
-                  <div 
-                    key={badge.id} 
-                    className="flex items-center gap-2 px-4 py-1.5 rounded-full border shadow-sm transition-all"
-                    style={{ backgroundColor: "white", borderColor: "#f1f5f9" }}
-                  >
-                    <BadgeIcon size={14} style={{ color: config.icon }} strokeWidth={3} />
-                    <E 
-                      id={`badge_${badge.id}`}
+            <div className="flex-1 flex flex-col mt-4">
+              <div
+                className="grid grid-cols-[3em_1fr_4em_8em_9em] border-b-2 py-2 px-2 font-black text-[0.75em] uppercase tracking-[0.15em]"
+                style={{ borderColor: currentTheme.primary, color: currentTheme.text }}
+              >
+                <span>#</span>
+                <span>Description détaillée</span>
+                <span className="text-right">Qté</span>
+                <span className="text-right">Unit. HT</span>
+                <span className="text-right">Total HT</span>
+              </div>
+              {data.items.map((item, idx) => (
+                <div
+                  key={item.id}
+                  className="grid grid-cols-[3em_1fr_4em_8em_9em] items-start py-3 px-2 border-b border-gray-100 transition-colors hover:bg-gray-50/50"
+                >
+                  <span
+                    className="text-[0.78em] font-black inline-flex items-center justify-center w-6 h-6 rounded-full mt-0.5"
+                    style={{ color: currentTheme.primary, backgroundColor: `${currentTheme.primary}15` }}
+                  >{(idx + 1).toString().padStart(2, '0')}</span>
+                  <div className="flex flex-col pr-6">
+                    <E
+                      id={`it_desc_${item.id}`}
                       selectedId={selectedId}
                       setSelectedId={setSelectedId}
-                      value={badge.text}
-                      onChange={(v) => update(`badges[${idx}].text`, v)}
-                      elementStyle={styles[`badge_${badge.id}`]}
-                      style={{ fontSize: "11px", fontWeight: 700, color: "#475569", whiteSpace: "nowrap" }}
+                      value={item.description}
+                      onChange={(v) => update(`items[${idx}].description`, v)}
+                      elementStyle={styles[`it_desc_${item.id}`]}
+                      style={{ fontSize: "1.1em", fontWeight: 800, color: "#1e293b", marginBottom: "2px" }}
+                    />
+                    <E
+                      id={`it_det_${item.id}`}
+                      selectedId={selectedId}
+                      setSelectedId={setSelectedId}
+                      value={item.details}
+                      onChange={(v) => update(`items[${idx}].details`, v)}
+                      elementStyle={styles[`it_det_${item.id}`]}
+                      multiline
+                      style={{ fontSize: "0.82em", color: "#64748b", lineHeight: "1.4" }}
                     />
                   </div>
-                );
-              })}
+                  <E
+                    id={`it_qty_${item.id}`}
+                    selectedId={selectedId}
+                    setSelectedId={setSelectedId}
+                    value={String(item.qty)}
+                    onChange={(v) => update(`items[${idx}].qty`, v)}
+                    elementStyle={styles[`it_qty_${item.id}`]}
+                    style={{ textAlign: "right", fontWeight: 900, color: "#1e293b", fontSize: "1.1em" }}
+                  />
+                  <div className="flex flex-col items-end">
+                    <E
+                      id={`it_pr_${item.id}`}
+                      selectedId={selectedId}
+                      setSelectedId={setSelectedId}
+                      value={fmt(item.unitPrice).replace(' €', '')}
+                      onChange={(v) => update(`items[${idx}].unitPrice`, v.replace(/[^-0-9,.]/g, '').replace(',', '.'))}
+                      elementStyle={styles[`it_pr_${item.id}`]}
+                      style={{ textAlign: "right", color: "#475569", fontWeight: 600, fontSize: "1em" }}
+                    />
+                    <span className="text-[0.65em] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">EUROS</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[1.2em] font-black tracking-tight" style={{ color: currentTheme.text }}>
+                      {fmt(item.qty * item.unitPrice)}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
-      </motion.div>
+
+            <div className="flex-1 flex flex-col gap-10 mt-8">
+              <div className="grid grid-cols-2 gap-8 items-stretch">
+                {/* Left Column: Technical Details */}
+                <div className={`space-y-4 flex flex-col ${!pdfConfig.showTechnical ? 'invisible' : ''}`}>
+                  {pdfConfig.showTechnical && (
+                    <>
+                      <div className="flex items-center gap-2 pb-1.5 mb-2 border-b border-blue-100 shrink-0">
+                        <Cpu size={14} className="text-blue-500" />
+                        <span className="text-[0.75em] font-black uppercase tracking-widest text-slate-800">DÉTAILS TECHNIQUES</span>
+                      </div>
+
+                      <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 flex-1">
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                          {[
+                            { label: "SURFACE TOTALE:", key: "surface", id: "tech_s", icon: Maximize, color: "#3b82f6" },
+                            { label: "RÉSOLUTION:", key: "resolution", id: "tech_r", icon: Monitor, color: "#a855f7" },
+                            { label: "NOMBRE DE MODULES LED:", key: "modules", id: "tech_m", icon: Cpu, color: "#ec4899" },
+                            { label: "PUISSANCE MAXIMALE:", key: "puissanceMax", id: "tech_p", icon: Zap, color: "#22c55e" },
+                            { label: "PUISSANCE MOYENNE:", key: "puissanceMoy", id: "tech_pm", icon: Zap, color: "#3b82f6" },
+                            { label: "DISJONCTEUR RECOMMANDÉ:", key: "disjoncteur", id: "tech_d", icon: Zap, color: "#f97316" },
+                            { label: "TYPE DE PROJET:", key: "typeProjet", id: "tech_tp", icon: Truck, color: "#f97316" },
+                            { label: "ENVIRONNEMENT:", key: "environnement", id: "tech_env", icon: Sun, color: "#14b8a6" },
+                            { label: "DISTANCE DE VISIONNAGE:", key: "distance", id: "tech_dist", icon: Eye, color: "#06b6d4" },
+                            { label: "PIXEL PITCH:", key: "pitch", id: "tech_pitch", icon: Grid3X3, color: "#ef4444" }
+                          ].map((r, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <div
+                                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                                style={{ backgroundColor: `${r.color}10` }}
+                              >
+                                <r.icon size={15} style={{ color: r.color }} />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[0.5em] text-gray-400 font-bold tracking-wider uppercase">{r.label}</span>
+                                <div className="flex items-baseline gap-1">
+                                  <E
+                                    id={r.id}
+                                    selectedId={selectedId}
+                                    setSelectedId={setSelectedId}
+                                    value={String(data.technical?.[r.key] || "-")}
+                                    onChange={v => update(`technical.${r.key}`, v)}
+                                    elementStyle={styles[r.id]}
+                                    style={{ fontSize: "0.78em", fontWeight: 800, color: "#1e293b" }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Right Column: Recapitulatif */}
+                <div className="space-y-4 flex flex-col">
+                  <div className="flex items-center gap-2 pb-1.5 mb-2 border-b border-orange-100 shrink-0">
+                    <BarChart3 size={14} className="text-orange-500" />
+                    <span className="text-[0.75em] font-black uppercase tracking-widest text-slate-800">RÉCAPITULATIF</span>
+                  </div>
+
+                  <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-8 flex-1 flex flex-col justify-between">
+                    <div className="flex flex-col gap-5 px-1">
+                      {[
+                        ["Sous-total HT", data.summary.sousTotal, "sum_st"],
+                        ["Installation", data.summary.installation, "sum_ins"],
+                        ["Livraison", data.summary.livraison, "sum_liv"],
+                      ].map(r => (
+                        <div key={r[0] as string} className="flex justify-between items-center text-[0.78em]">
+                          <span className="text-slate-500 font-medium">{r[0]}</span>
+                          <E
+                            id={r[2] as string}
+                            selectedId={selectedId}
+                            setSelectedId={setSelectedId}
+                            value={fmt(r[1])}
+                            onChange={(v) => update(`summary.${(r[2] as string).replace('sum_', '')}`, v.replace(/[^-0-9,.]/g, '').replace(',', '.'))}
+                            elementStyle={styles[r[2] as string]}
+                            style={{ fontWeight: 800, textAlign: "right", color: "#0f172a" }}
+                          />
+                        </div>
+                      ))}
+
+                    </div>
+
+                    <div className="mt-8 rounded-xl p-5 flex justify-between items-center text-white shadow-md mx-[-2px]" style={{ background: `linear-gradient(135deg, ${currentTheme.primary} 0%, ${currentTheme.primary}dd 100%)` }}>
+                      <div className="flex flex-col">
+                        <span className="text-[0.65em] font-black uppercase tracking-widest opacity-90">TOTAL</span>
+                        <span className="text-[1.1em] font-black uppercase tracking-tight">HT</span>
+                      </div>
+                      <E
+                        id="total_val"
+                        selectedId={selectedId}
+                        setSelectedId={setSelectedId}
+                        value={fmt(data.summary.totalTTC)}
+                        onChange={(v) => update("summary.totalTTC", v.replace(/[^-0-9,.]/g, '').replace(',', '.'))}
+                        elementStyle={styles.total_val}
+                        style={{ fontSize: "1.6em", fontWeight: 900, textAlign: "right", color: "white", letterSpacing: "-0.04em" }}
+                      />
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Legal / Notes - Side by Side */}
+              <div className="grid grid-cols-2 gap-8">
+                {pdfConfig.showInfo && (
+                  <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 space-y-3 group transition-all">
+                    <div className="flex items-center gap-2 font-extrabold text-[0.78em] uppercase tracking-widest" style={{ color: currentTheme.primary }}>
+                      <Info size={14} className="stroke-[3]" />
+                      <span>Information</span>
+                    </div>
+                    <E id="inf" selectedId={selectedId} setSelectedId={setSelectedId} value={data.information} onChange={(v) => update("information", v)} elementStyle={styles.inf} multiline style={{ fontSize: "0.85em", color: "#64748b", lineHeight: "1.4", fontWeight: 500 }} />
+                  </motion.div>
+                )}
+                {pdfConfig.showTerms && (
+                  <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 space-y-3 group transition-all">
+                    <div className="flex items-center gap-2 font-extrabold text-[0.78em] uppercase tracking-widest" style={{ color: currentTheme.primary }}>
+                      <FileText size={14} className="stroke-[3]" />
+                      <span>Conditions de paiement</span>
+                    </div>
+                    <E id="tems" selectedId={selectedId} setSelectedId={setSelectedId} value={data.paymentTerms} onChange={(v) => update("paymentTerms", v)} elementStyle={styles.tems} multiline style={{ fontSize: "0.85em", color: "#64748b", lineHeight: "1.4", fontWeight: 500 }} />
+                  </motion.div>
+                )}
+              </div>
+            </div>
+
+            {pdfConfig.showBadges && (
+              <div className="mt-12 flex flex-wrap justify-center gap-4">
+                {(data.badges || []).map((badge, idx) => {
+                  const BadgeIcon = { CheckSquare, Heart, Lock, Diamond }[badge.icon] || Info;
+                  const colors = {
+                    CheckSquare: { bg: "#ecfdf5", icon: "#10b981", border: "#d1fae5" },
+                    Heart: { bg: "#eff6ff", icon: "#3b82f6", border: "#dbeafe" },
+                    Diamond: { bg: "#eff6ff", icon: "#3b82f6", border: "#dbeafe" },
+                    Lock: { bg: "#fff7ed", icon: "#f59e0b", border: "#ffedd5" }
+                  };
+                  const config = colors[badge.icon] || { bg: "#f8fafc", icon: "#64748b", border: "#f1f5f9" };
+
+                  return (
+                    <div
+                      key={badge.id}
+                      className="flex items-center gap-2 px-4 py-1.5 rounded-full border shadow-sm transition-all"
+                      style={{ backgroundColor: "white", borderColor: "#f1f5f9" }}
+                    >
+                      <BadgeIcon size={14} style={{ color: config.icon }} strokeWidth={3} />
+                      <E
+                        id={`badge_${badge.id}`}
+                        selectedId={selectedId}
+                        setSelectedId={setSelectedId}
+                        value={badge.text}
+                        onChange={(v) => update(`badges[${idx}].text`, v)}
+                        elementStyle={styles[`badge_${badge.id}`]}
+                        style={{ fontSize: "11px", fontWeight: 700, color: "#475569", whiteSpace: "nowrap" }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
       </div>
 
       {/* TOOLBARS CONTEXTUELLES */}
@@ -1196,6 +1405,7 @@ export default function PixiaEditor() {
             logoConfig={pdfConfig}
             onUpdate={updatePdfConfig}
             onClose={() => setSelectedId(null)}
+            isMobile={isMobile}
           />
         )}
         {activeDrawer === 'background' && (
@@ -1204,6 +1414,7 @@ export default function PixiaEditor() {
             config={pdfConfig}
             onUpdate={updatePdfConfig}
             onClose={() => setSelectedId(null)}
+            isMobile={isMobile}
           />
         )}
         {activeDrawer === 'edit' && selectedId && (
@@ -1213,31 +1424,32 @@ export default function PixiaEditor() {
             onUpdate={(s) => updateStyle(selectedId, s)}
             onReset={() => resetStyles(selectedId)}
             onClose={() => setSelectedId(null)}
+            isMobile={isMobile}
           />
         )}
         {isMobile && activeDrawer === 'themes' && (
-            <motion.div
-                initial={{ opacity: 0, y: "100%" }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: "100%" }}
-                transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="no-print fixed bottom-0 left-0 right-0 z-[300] bg-white border-t border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-[32px] p-6 pb-10 flex flex-col"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto mb-6 shrink-0" />
-                <div className="text-sm font-black uppercase tracking-[0.2em] text-gray-300 mb-6 text-center">Choisir un Thème</div>
-                <div className="grid grid-cols-5 gap-4 overflow-y-auto max-h-[40vh] p-2">
-                    {THEMES.map(t => (
-                        <button 
-                            key={t.id} 
-                            onClick={() => { updatePdfConfig({ ...pdfConfig, themeId: t.id }); setActiveDrawer(null); }} 
-                            className={`aspect-square rounded-2xl border-4 transition-all ${pdfConfig.themeId === t.id ? 'border-indigo-600 scale-105 shadow-xl shadow-indigo-100' : 'border-gray-50'}`} 
-                            style={{ background: t.gradient }} 
-                        />
-                    ))}
-                </div>
-                <Button variant="ghost" className="mt-6 w-full rounded-2xl py-6 font-bold text-gray-400" onClick={() => setActiveDrawer(null)}>Fermer</Button>
-            </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="no-print fixed bottom-0 left-0 right-0 z-[300] bg-white border-t border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] rounded-t-[32px] p-6 pb-10 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto mb-8 shrink-0" />
+            <div className="text-sm font-black uppercase tracking-[0.2em] text-gray-300 mb-10 text-center">Choisir un Thème</div>
+            <div className="grid grid-cols-5 gap-4 overflow-y-auto max-h-[40vh] p-2">
+              {THEMES.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => { updatePdfConfig({ ...pdfConfig, themeId: t.id }); setActiveDrawer(null); }}
+                  className={`aspect-square rounded-[24px] border-4 transition-all ${pdfConfig.themeId === t.id ? 'border-indigo-600 scale-105 shadow-xl shadow-indigo-100' : 'border-gray-50'}`}
+                  style={{ background: t.gradient }}
+                />
+              ))}
+            </div>
+            <Button variant="ghost" className="mt-10 w-full rounded-[24px] py-7 font-bold text-gray-400 uppercase tracking-widest" onClick={() => setActiveDrawer(null)}>Fermer</Button>
+          </motion.div>
         )}
       </AnimatePresence>
     </main>

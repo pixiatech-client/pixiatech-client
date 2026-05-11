@@ -71,7 +71,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
   ];
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 min-h-screen text-gray-900">
+    <div className="flex flex-col lg:flex-row gap-8 min-h-screen text-gray-900 px-3 md:px-0">
       <div className="flex-1 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">

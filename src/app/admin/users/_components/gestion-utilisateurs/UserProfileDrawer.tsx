@@ -19,7 +19,6 @@ interface UserProfileDrawerProps {
 export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = false }: UserProfileDrawerProps) {
   const [formData, setFormData] = useState<Partial<User>>({});
   const [password, setPassword] = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +41,6 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
 
   useEffect(() => {
     if (isOpen) {
-      setCurrentPage(0);
       setErrors({});
     }
   }, [isOpen]);
@@ -110,136 +108,122 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md bg-white border-l border-gray-200 shadow-2xl z-[60] overflow-hidden flex flex-col transition-colors duration-500"
+            className="fixed right-0 top-0 h-full w-full max-w-md bg-white border-l border-gray-200 shadow-2xl z-[60] overflow-hidden flex flex-col"
           >
-            <motion.div
-              drag="y"
-              dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={0.2}
-              onDragEnd={(_e, info) => {
-                if (info.offset.y < -50 && currentPage === 0) setCurrentPage(1);
-                if (info.offset.y > 50 && currentPage === 1) setCurrentPage(0);
-              }}
-              animate={{ y: currentPage === 0 ? '0%' : '-100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-              className="h-full w-full flex flex-col cursor-grab active:cursor-grabbing"
-            >
-              {/* PAGE 1 */}
-              <div className="h-full w-full flex flex-col shrink-0 relative overflow-hidden">
-                {/* Header with Background */}
-                <div
-                  className={`relative h-48 w-full group cursor-pointer shrink-0 ${isAddMode ? 'bg-gradient-to-br from-blue-500 to-blue-700' : ''}`}
-                  onClick={() => bgInputRef.current?.click()}
-                >
-                  {!isAddMode && (
-                    <img
-                      src={formData.backgroundImage || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1000&auto=format&fit=crop'}
-                      alt="Profile Background"
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors" />
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onClose();
-                    }}
-                    className="absolute top-4 left-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-all"
-                  >
-                    <X size={20} />
-                  </button>
-
-                  {isUploading && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
-                      <div className="flex items-center gap-3 text-white">
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                        <span className="text-sm font-bold">Téléchargement...</span>
-                      </div>
-                    </div>
-                  )}
-                  <div className="absolute bottom-4 right-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-all flex items-center gap-2">
-                    <Camera size={20} />
-                    <span className="text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Changer l'arrière-plan</span>
-                  </div>
-                  <input
-                    ref={bgInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setIsUploading(true);
-                        try {
-                          const url = await uploadImage(file);
-                          setFormData({ ...formData, backgroundImage: url });
-                          toast.success('Image d\'arrière-plan téléchargée');
-                        } catch (err) {
-                          toast.error('Erreur lors du téléchargement');
-                        } finally {
-                          setIsUploading(false);
-                        }
-                      }
-                    }}
+            <form onSubmit={handleSubmit} className="h-full flex flex-col overflow-y-auto custom-scrollbar">
+              {/* HEADER IMAGE SECTION */}
+              <div
+                className={`relative h-48 w-full group cursor-pointer shrink-0 ${isAddMode ? 'bg-gradient-to-br from-blue-500 to-blue-700' : ''}`}
+                onClick={() => bgInputRef.current?.click()}
+              >
+                {!isAddMode && (
+                  <img
+                    src={formData.backgroundImage || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1000&auto=format&fit=crop'}
+                    alt="Profile Background"
+                    className="w-full h-full object-cover"
                   />
-                </div>
+                )}
+                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors" />
 
-                {/* Profile Info Section */}
-                <div className="px-6 -mt-12 relative flex-1 flex flex-col">
-                  <div className="flex justify-between items-end">
-                    <div
-                      className="relative inline-block group cursor-pointer"
-                      onClick={() => avatarInputRef.current?.click()}
-                    >
-                      <div className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden bg-gray-100 shadow-xl transition-colors">
-                        <img
-                          src={formData.avatar || (user?.avatar || 'https://picsum.photos/seed/new/100/100')}
-                          alt="Avatar"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="absolute bottom-0 right-0 p-1.5 bg-blue-600 text-white rounded-xl shadow-lg group-hover:scale-110 transition-transform">
-                        <Camera size={16} />
-                      </div>
-                      <input
-                        ref={avatarInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setIsUploading(true);
-                            try {
-                              const url = await uploadImage(file);
-                              setFormData({ ...formData, avatar: url });
-                              toast.success('Avatar téléchargé');
-                            } catch (err) {
-                              toast.error('Erreur lors du téléchargement');
-                            } finally {
-                              setIsUploading(false);
-                            }
-                          }
-                        }}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onClose(); }}
+                  className="absolute top-4 left-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-all"
+                >
+                  <X size={20} />
+                </button>
+
+                {isUploading && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
+                    <div className="flex items-center gap-3 text-white">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <span className="text-sm font-bold">Téléchargement...</span>
+                    </div>
+                  </div>
+                )}
+                <div className="absolute bottom-4 right-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-all flex items-center gap-2">
+                  <Camera size={20} />
+                  <span className="text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Changer l'arrière-plan</span>
+                </div>
+                <input
+                  ref={bgInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setIsUploading(true);
+                      try {
+                        const url = await uploadImage(file);
+                        setFormData({ ...formData, backgroundImage: url });
+                        toast.success('Image d\'arrière-plan téléchargée');
+                      } catch (err) {
+                        toast.error('Erreur lors du téléchargement');
+                      } finally {
+                        setIsUploading(false);
+                      }
+                    }
+                  }}
+                />
+              </div>
+
+              {/* CONTENT SECTION */}
+              <div className="px-6 -mt-12 pb-12 relative flex-1">
+                <div className="flex justify-between items-end mb-6">
+                  <div
+                    className="relative inline-block group cursor-pointer"
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    <div className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden bg-gray-100 shadow-xl transition-colors">
+                      <img
+                        src={formData.avatar || (user?.avatar || 'https://picsum.photos/seed/new/100/100')}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
                       />
                     </div>
+                    <div className="absolute bottom-0 right-0 p-1.5 bg-blue-600 text-white rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                      <Camera size={16} />
+                    </div>
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setIsUploading(true);
+                          try {
+                            const url = await uploadImage(file);
+                            setFormData({ ...formData, avatar: url });
+                            toast.success('Avatar téléchargé');
+                          } catch (err) {
+                            toast.error('Erreur lors du téléchargement');
+                          } finally {
+                            setIsUploading(false);
+                          }
+                        }
+                      }}
+                    />
                   </div>
+                </div>
 
-                  <div className="mt-4">
-                    <h2 className="text-2xl font-black uppercase tracking-tighter text-gray-900 leading-tight">
-                      {isAddMode ? 'AJOUTER UN NOUVEL UTILISATEUR' : 'MODIFIER L\'UTILISATEUR'}
-                    </h2>
-                    <p className="text-gray-500 text-sm font-medium">
-                      {isAddMode ? 'Créez un compte qui sera en attente de validation.' : 'Modifier les informations et le mot de passe'}
-                    </p>
-                  </div>
+                <div className="mb-8">
+                  <h2 className="text-2xl font-black uppercase tracking-tighter text-gray-900 leading-tight">
+                    {isAddMode ? 'AJOUTER UN NOUVEL UTILISATEUR' : 'MODIFIER L\'UTILISATEUR'}
+                  </h2>
+                  <p className="text-gray-500 text-sm font-medium">
+                    {isAddMode ? 'Créez un compte qui sera en attente de validation.' : 'Modifiez les informations et le mot de passe'}
+                  </p>
+                </div>
 
-                  <div className="mt-8 space-y-6 flex-1">
-                    {/* Informations Section */}
+                <div className="space-y-10">
+                  {/* BASIC INFO */}
+                  <div className="space-y-6">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
                       <UserCircle size={18} className="text-blue-500" />
-                      <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Informations</h3>
+                      <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Informations de base</h3>
                     </div>
 
                     <div className="space-y-2">
@@ -291,28 +275,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                         className="w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-bold bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                       />
                     </div>
-                  </div>
 
-                  {/* Swipe Up Icon */}
-                  <div className="py-6 flex justify-center">
-                    <div onClick={() => setCurrentPage(1)}>
-                      <SwipeIcon direction="up" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* PAGE 2 */}
-              <div className="h-full w-full flex flex-col shrink-0 px-6 py-8 relative overflow-hidden">
-                {/* Swipe Down Icon */}
-                <div className="pb-6 flex justify-center">
-                  <div onClick={() => setCurrentPage(0)}>
-                    <SwipeIcon direction="down" />
-                  </div>
-                </div>
-
-                <form onSubmit={handleSubmit} className="flex-1 flex flex-col space-y-8">
-                  <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
                         <FileText size={14} className="text-blue-400" />
@@ -325,19 +288,14 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                         className="w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-bold resize-none h-24 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                       />
                     </div>
+                  </div>
 
-                    {!isAddMode && (
-                      <div className="space-y-2">
-                        <label className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
-                          <Calendar size={14} className="text-amber-500" />
-                          INSCRIT LE
-                        </label>
-                        <div className="w-full px-4 py-3 border rounded-2xl font-bold bg-gray-50 border-gray-200 text-gray-500">
-                          {user && new Date(user.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        </div>
-                      </div>
-                    )}
-
+                  {/* ADMIN FIELDS */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                      <Shield size={18} className="text-indigo-500" />
+                      <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Rôles & Statut</h3>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <CustomSelect
                         label="Rôle"
@@ -359,51 +317,47 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                         isActive={true}
                       />
                     </div>
+                  </div>
 
-                    {/* Mot de passe Section */}
-                    <div className="space-y-6 pt-4">
-                      <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                        <Lock size={18} className="text-rose-500" />
-                        <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">MOT DE PASSE</h3>
-                      </div>
+                  {/* SECURITY */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                      <Lock size={18} className="text-rose-500" />
+                      <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Sécurité</h3>
+                    </div>
 
-                      <div className="space-y-2">
-                        <label className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
-                          <Lock size={14} className="text-rose-500" />
-                          {isAddMode ? 'MOT DE PASSE' : 'NOUVEAU MOT DE PASSE'}
-                        </label>
-                        <input
-                          type="password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-bold bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
+                        <Lock size={14} className="text-rose-500" />
+                        {isAddMode ? 'MOT DE PASSE' : 'NOUVEAU MOT DE PASSE'}
+                      </label>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-bold bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
+                      />
                     </div>
                   </div>
+                </div>
 
-                  <div className="mt-auto pt-6">
-                    <button
-                      type="submit"
-                      className="w-full py-4 bg-blue-600 hover:bg-black text-white rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-3 group active:scale-[0.98]"
-                    >
-                      <div className="w-6 h-6 border-2 border-white group-hover:border-blue-400 rounded-full flex items-center justify-center transition-all">
-                        {isAddMode ? (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="text-white group-hover:text-blue-400 transition-colors">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                          </svg>
-                        ) : (
-                          <Save size={12} className="text-white group-hover:text-blue-400 transition-colors" />
-                        )}
-                      </div>
-                      {isAddMode ? 'AJOUTER L\'UTILISATEUR' : 'SAUVEGARDER LES CHANGEMENTS'}
-                    </button>
-                  </div>
-                </form>
+                {/* SAVE BUTTON */}
+                <div className="mt-12">
+                  <button
+                    type="submit"
+                    className="w-full py-4 bg-blue-600 hover:bg-black text-white rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-3 group active:scale-[0.98]"
+                  >
+                    {isAddMode ? (
+                      <PlusCircle size={18} className="text-white transition-colors" />
+                    ) : (
+                      <Save size={18} className="text-white transition-colors" />
+                    )}
+                    {isAddMode ? 'Ajouter' : 'Sauvegarder'}
+                  </button>
+                </div>
               </div>
-            </motion.div>
+            </form>
           </motion.div>
         </>
       )}
@@ -411,24 +365,4 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
   );
 }
 
-const SwipeIcon = ({ direction }: { direction: 'up' | 'down' }) => (
-  <motion.div
-    animate={{ y: [0, direction === 'up' ? -5 : 5, 0] }}
-    transition={{ repeat: Infinity, duration: 1.5 }}
-    className="flex flex-col items-center gap-0.5 cursor-pointer"
-  >
-    {[1, 2, 3].map((i) => (
-      <svg
-        key={i}
-        width="24"
-        height="12"
-        viewBox="0 0 24 12"
-        fill="none"
-        className={`${direction === 'down' ? 'rotate-180' : ''}`}
-        style={{ opacity: 1 - (i - 1) * 0.3 }}
-      >
-        <path d="M2 10L12 2L22 10" stroke="#95d230" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ))}
-  </motion.div>
-);
+

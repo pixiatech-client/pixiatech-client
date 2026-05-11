@@ -442,7 +442,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   );
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 min-h-screen text-gray-900">
+    <div className="flex flex-col lg:flex-row gap-8 min-h-screen text-gray-900 px-3 md:px-0">
       <div className="flex-1 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>

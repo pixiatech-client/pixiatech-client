@@ -70,7 +70,6 @@ const DEFAULT_LOGO_CONFIG = {
 
 const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor, userProfile, roles, logout, toggleTheme, mainNavItems, secondaryNavItems, mode, setMode, activeSettingsSection, onSettingsSectionChange, isSettingsPage, role, onOpenAccountDrawer, initialSettings }: { children: React.ReactNode, pageTitle: string, pageSubtitle: string, headerColor: string, userProfile: any, roles: any[], logout: any, toggleTheme: any, mainNavItems: any[], secondaryNavItems: any[], mode: string, setMode: (theme: string) => void, activeSettingsSection?: SettingsSection, onSettingsSectionChange?: (section: SettingsSection) => void, isSettingsPage?: boolean, role?: UserRoleEnum, onOpenAccountDrawer?: () => void, initialSettings?: AppSettings | null }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   useEffect(() => {
     console.log('isProfileOpen changed:', isProfileOpen);
   }, [isProfileOpen]);
@@ -180,6 +179,8 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
     }
   };
 
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
 
@@ -213,7 +214,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSidebarState('hidden')}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -243,8 +244,8 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         <header className={cn(
           "px-6 py-4 sticky top-0 z-50 backdrop-blur-xl transition-all duration-300",
           "border-b border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]",
-          isDark 
-            ? "bg-zinc-900/40 from-zinc-900/40 to-zinc-900/10" 
+          isDark
+            ? "bg-zinc-900/40 from-zinc-900/40 to-zinc-900/10"
             : "bg-white/40 from-white/60 to-white/20",
           "bg-gradient-to-br flex-shrink-0"
         )}>
@@ -254,14 +255,16 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               {sidebarState === 'hidden' && (
                 <Button
                   variant="outline"
-                  size="default"
-                  onClick={() => {
-                    console.log('Mobile menu button clicked');
-                    setIsMobileMenuOpen(true);
-                  }}
+                  size={isSettingsPage ? "default" : "icon"}
+                  onClick={() => isSettingsPage ? setIsSettingsMenuOpen(true) : setSidebarState('expanded')}
                   className={cn(
-                    "group h-10 px-4 rounded-full border-0 shadow-sm transition-all duration-200",
-                    isSettingsPage ? "bg-black text-white hover:bg-zinc-800" : (isDark ? "bg-white/5 hover:bg-white/10 text-white" : "bg-white hover:bg-gray-100 text-gray-700")
+                    "group h-11 border-0 shadow-sm transition-all duration-200",
+                    isSettingsPage ? "px-4 rounded-xl mt-2" : "w-11 rounded-xl mt-1",
+                    isSettingsPage 
+                      ? "bg-black text-white hover:bg-zinc-800 shadow-lg" 
+                      : (isDark 
+                          ? "bg-white/5 hover:bg-black text-white hover:text-emerald-400" 
+                          : "bg-white hover:bg-black text-gray-700 hover:text-emerald-500")
                   )}
                 >
                   {isSettingsPage ? (
@@ -304,7 +307,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
             </div>
 
             <div className="flex items-center justify-end gap-3">
-              <Button variant="ghost" size="icon" onClick={toggleTheme} className={cn("group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex", isDark ? "bg-white/5 hover:bg-white/10" : "bg-white hover:bg-gray-100")}>
+              <Button variant="ghost" size="icon" onClick={toggleTheme} className={cn("group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex", isDark ? "bg-white/5 hover:bg-black" : "bg-white hover:bg-black")}>
                 <Sun className={cn("h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-amber-500 group-hover:text-amber-400")} />
                 <Moon className={cn("absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-indigo-400 group-hover:text-indigo-300")} />
                 <span className="sr-only">Toggle theme</span>
@@ -317,7 +320,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsChatPanelOpen(true)}
-                  className={cn("group h-11 w-11 rounded-xl shadow-sm transition-all duration-200", isDark ? "bg-white/5 hover:bg-white/10" : "bg-white hover:bg-gray-100")}
+                  className={cn("group h-11 w-11 rounded-xl shadow-sm transition-all duration-200", isDark ? "bg-white/5 hover:bg-black" : "bg-white hover:bg-black")}
                 >
                   <MessageSquare className={cn("h-5 w-5 transition-colors", isDark ? "text-gray-400 group-hover:text-blue-400" : "text-gray-400 group-hover:text-blue-500")} />
                 </Button>
@@ -353,8 +356,6 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                       )}
                     </div>
                   </button>
-
-
                 </div>
               )}
             </div>
@@ -363,102 +364,13 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
 
         <main className={cn(
           "flex-1 min-h-0",
-          pathname === '/admin/messages' 
-            ? "h-[calc(100vh-88px)] overflow-hidden p-4 md:p-6 w-full" 
-            : "px-0 py-4 md:px-6 md:py-6"
+          pathname === '/admin/messages'
+            ? "h-[calc(100vh-88px)] overflow-hidden p-4 md:p-6 w-full"
+            : "px-4 py-4 md:px-6 md:py-6"
         )} style={{ backgroundColor: typeof window !== 'undefined' && window.innerWidth < 768 ? '#ffffff' : '#E8F3EB' }}>
           {children}
         </main>
       </div>
-
-      {/* Mobile Bottom Menu Sheet */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] md:hidden"
-            />
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              drag="y"
-              dragConstraints={{ top: 0 }}
-              dragElastic={0.2}
-              onDragEnd={(e, info) => {
-                if (info.offset.y > 100) setIsMobileMenuOpen(false);
-              }}
-              className="fixed inset-x-0 bottom-0 z-[151] bg-white dark:bg-zinc-900 rounded-t-[32px] p-6 pb-10 md:hidden max-h-[90vh] flex flex-col"
-            >
-              <div className="w-12 h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full mx-auto mb-8 shrink-0 cursor-grab active:cursor-grabbing" />
-              
-              <div className="flex items-center justify-between mb-6 shrink-0">
-                <h2 className="text-xl font-bold dark:text-white">{isSettingsPage ? 'Configuration' : 'Navigation'}</h2>
-                <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)} className="rounded-full">
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 overflow-y-auto custom-scrollbar pr-1">
-                {(isSettingsPage ? [
-                  { id: 'general', label: 'GÉNÉRAL', icon: Settings, color: 'bg-blue-50 text-blue-600', route: '/admin/settings/general' },
-                  { id: 'images', label: 'IMAGES', icon: ImageIcon, color: 'bg-purple-50 text-purple-600', route: '/admin/settings/images' },
-                  { id: 'content', label: 'CONTENU', icon: FileText, color: 'bg-emerald-50 text-emerald-600', route: '/admin/settings/content' },
-                  { id: 'wizard', label: 'WIZARD', icon: Wand2, color: 'bg-indigo-50 text-indigo-600', route: '/admin/settings/wizard' },
-                  { id: 'livraison', label: 'LIVRAISON', icon: Truck, color: 'bg-cyan-50 text-cyan-600', route: '/admin/settings/livraison' },
-                  { id: 'main-doeuvre', label: 'MAIN D\'ŒUVRE', icon: HardHat, color: 'bg-orange-50 text-orange-600', route: '/admin/settings/main-doeuvre' },
-                  { id: 'pdf', label: 'PDF', icon: FileType, color: 'bg-slate-50 text-slate-600', route: '/admin/settings/pdf' },
-                  { id: 'emergency', label: 'URGENCE', icon: AlertTriangle, color: 'bg-red-50 text-red-600', route: '/admin/settings/emergency' },
-                ] : [
-                  { id: 'dashboard', label: 'TABLEAU DE BORD', icon: LayoutDashboard, color: 'bg-blue-100 text-blue-600', route: '/admin' },
-                  { id: 'estimations', label: 'ESTIMATIONS', icon: FileText, color: 'bg-orange-100 text-orange-600', route: '/admin/quote-requests' },
-                  { id: 'users', label: 'UTILISATEURS', icon: Users, color: 'bg-emerald-100 text-emerald-600', route: '/admin/users' },
-                  { id: 'produit', label: 'PRODUITS', icon: Package, color: 'bg-yellow-100 text-yellow-600', route: '/admin/produits' },
-                  { id: 'settings', label: 'PARAMÈTRES', icon: Settings, color: 'bg-fuchsia-100 text-fuchsia-600', route: '/admin/settings' },
-                ]).map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      if (isSettingsPage) {
-                        onSettingsSectionChange?.(item.id as any);
-                      } else {
-                        router.push(item.route);
-                      }
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="flex items-center gap-4 p-5 rounded-2xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all active:scale-[0.98] border border-gray-100 dark:border-white/5"
-                  >
-                    <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm", item.color)}>
-                      <item.icon className="w-7 h-7" />
-                    </div>
-                    <span className="font-black text-gray-800 dark:text-gray-200 tracking-wider text-sm uppercase">{item.label}</span>
-                  </button>
-                ))}
-
-                <div className="h-px bg-gray-100 dark:bg-zinc-800 my-4 shrink-0" />
-
-                <button
-                  onClick={() => {
-                    logout();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-4 p-5 rounded-2xl bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-all active:scale-[0.98] border border-rose-100/50 dark:border-rose-500/20"
-                >
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-rose-100 dark:bg-rose-500/20 text-rose-600">
-                    <LogOut className="w-7 h-7" />
-                  </div>
-                  <span className="font-black text-rose-600 tracking-wider uppercase">Se déconnecter</span>
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       <ChatPanel
         isOpen={isChatPanelOpen}
@@ -470,7 +382,6 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         initialChatId={activeChatId}
       />
 
-      {/* Profile Menu Drawer (Moved outside header to avoid backdrop-filter issues) */}
       <AnimatePresence>
         {isProfileOpen && userProfile && (
           <>
@@ -570,6 +481,90 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   </div>
                   <ChevronDown className="w-4 h-4 text-red-200 -rotate-90" />
                 </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isSettingsMenuOpen && isSettingsPage && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSettingsMenuOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-[70]"
+            />
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 h-full w-full max-w-[320px] bg-[#F8FAFC] z-[80] shadow-2xl flex flex-col border-l border-white/20"
+            >
+              <div className="p-4 flex items-center justify-between border-b border-gray-100 bg-white">
+                <h2 className="text-lg font-black uppercase tracking-tighter text-gray-900">Paramètres</h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsSettingsMenuOpen(false)}
+                  className="rounded-xl hover:bg-black hover:text-white transition-all h-8 w-8"
+                >
+                  <X size={18} />
+                </Button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
+                {[
+                  { id: 'general', label: 'Général', icon: Settings, color: 'text-blue-600', bg: 'bg-blue-100/80', href: '/admin/settings/general' },
+                  { id: 'images', label: 'Images', icon: ImageIcon, color: 'text-purple-600', bg: 'bg-purple-100/80', href: '/admin/settings/images' },
+                  { id: 'content', label: 'Contenu', icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-100/80', href: '/admin/settings/content' },
+                  { id: 'appearance', label: 'Apparence', icon: Palette, color: 'text-pink-600', bg: 'bg-pink-100/80', href: '/admin/settings/themes' },
+                  { id: 'wizard', label: 'Wizard', icon: Wand2, color: 'text-indigo-600', bg: 'bg-indigo-100/80', href: '/admin/settings/wizard' },
+                  { id: 'livraison', label: 'Livraison', icon: Truck, color: 'text-cyan-600', bg: 'bg-cyan-100/80', href: '/admin/settings/livraison' },
+                  { id: 'labor', label: 'Main d\'œuvre', icon: HardHat, color: 'text-orange-600', bg: 'bg-orange-100/80', href: '/admin/settings/main-doeuvre' },
+                  { id: 'pdf', label: 'PDF', icon: FileType, color: 'text-rose-600', bg: 'bg-rose-100/80', href: '/admin/settings/pdf' },
+                  { id: 'emergency', label: 'Urgence', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100/80', href: '/admin/settings/emergency' },
+                ].map((item) => (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    onClick={() => setIsSettingsMenuOpen(false)}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-2.5 rounded-2xl transition-all duration-300 group",
+                      pathname === item.href 
+                        ? "bg-[#0f1113] text-white shadow-xl translate-x-1" 
+                        : "bg-white text-gray-500 hover:bg-gray-50 border border-gray-100 hover:border-gray-200"
+                    )}
+                  >
+                    <div className={cn(
+                      "h-8 w-8 rounded-full flex items-center justify-center transition-all flex-shrink-0",
+                      pathname === item.href ? "bg-white/10" : item.bg
+                    )}>
+                      <item.icon className={cn(
+                        "w-4.5 h-4.5 transition-all duration-300",
+                        pathname === item.href ? "text-white scale-110" : item.color
+                      )} />
+                    </div>
+                    <span className="font-black uppercase tracking-wider text-[11px] md:text-xs">{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+
+              <div className="p-3 bg-white border-t border-gray-100 mt-auto">
+                <Button
+                  variant="outline"
+                  className="w-full rounded-2xl h-10 font-bold uppercase tracking-widest text-[10px] border-gray-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all gap-2"
+                  onClick={() => {
+                    setIsSettingsMenuOpen(false);
+                    setSidebarState('expanded');
+                  }}
+                >
+                  <LayoutDashboard size={14} />
+                  Menu Principal
+                </Button>
               </div>
             </motion.div>
           </>

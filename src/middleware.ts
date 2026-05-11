@@ -27,16 +27,19 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   // Security Headers for Production and Iframe Support
-  // 🔓 Added more origins for frame-ancestors to ensure the WordPress site isn't blocked
-  const csp = "frame-ancestors 'self' *;"; // Temporarily permissive for debugging
+  // 🔓 Permissive CSP and COOP for better support in internal browsers and iframes
+  const csp = "frame-ancestors 'self' *;"; 
   response.headers.set('Content-Security-Policy', csp);
-  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  
+  // Allow popups to communicate back even in restricted environments
+  response.headers.set('Cross-Origin-Opener-Policy', 'unsafe-none');
+  response.headers.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Referrer-Policy', 'no-referrer-when-downgrade');
   
   // CORS for credentials (needed for cookies in iframes)
   response.headers.set('Access-Control-Allow-Credentials', 'true');
-  // In an iframe context, we need to be careful with Origin
   const origin = request.headers.get('origin');
   if (origin) {
     response.headers.set('Access-Control-Allow-Origin', origin);
