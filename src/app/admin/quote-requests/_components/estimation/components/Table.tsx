@@ -691,37 +691,136 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 </div>
                 
                 <div className="flex items-center gap-1 shrink-0">
-                  <div className="flex items-center gap-1 bg-zinc-50 rounded-xl p-1" onClick={(e) => e.stopPropagation()}>
-                    {est.status === 'Archivé' ? (
+                  <div className="flex items-center gap-1 bg-zinc-50/50 rounded-xl p-1" onClick={(e) => e.stopPropagation()}>
+                    {isFournisseur ? (
                       <>
-                        {onToggleLock && (
-                          <button
-                            onClick={() => onToggleLock(est.id)}
-                            className={`p-2 rounded-lg transition-colors ${est.isLocked ? 'text-amber-500 hover:text-white hover:!bg-amber-500' : 'text-zinc-400 hover:text-white hover:!bg-zinc-400'}`}
-                            title={est.isLocked ? 'Désarchiver (déverrouiller)' : 'Archiver (verrouiller)'}
-                          >
-                            {est.isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                          </button>
+                        {est.status === 'Fournisseur' && (
+                          <>
+                            <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-amber-500 rounded-lg transition-colors" title="Lire instructions">
+                              <div className="relative">
+                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-[#95d230] animate-pulse' : ''}`} />
+                                {est.supplierNotes && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
+                              </div>
+                            </button>
+                            <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title="Ajouter Suivi (Colis)">
+                              <Package className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title="Expédier en livraison">
+                              <Truck className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => { setSelectedEstimation(est); setIsRefusalPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-red-500 rounded-lg transition-colors" title="Retourner au commercial">
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          </>
                         )}
-                        <button onClick={() => onRestore(est.id)} className="p-2 text-zinc-400 hover:text-white hover:!bg-emerald-500 rounded-lg transition-colors" title="Restaurer (→En attente)">
-                          <Undo2 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => setConfirmDeleteId(est.id)} className="p-2 text-zinc-400 hover:text-white hover:!bg-red-500 rounded-lg transition-colors" title="Corbeille">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {est.status === 'Livraison' && (
+                          <>
+                            <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title="Voir Suivi">
+                              <Package className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onMarkAsDelivered(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title="Terminer (Livré)">
+                              <ShieldCheck className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </>
                     ) : (
-                      <>
-                        <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-white hover:!bg-[#95d230] rounded-lg transition-colors" title="Éditer">
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-white hover:!bg-blue-500 rounded-lg transition-colors" title="Changer le statut">
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => setConfirmDeleteId(est.id)} className="p-2 text-zinc-400 hover:text-white hover:!bg-red-500 rounded-lg transition-colors" title="Corbeille">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
+                      <div className="flex items-center gap-0.5">
+                        {est.status === 'En attente' && (
+                          <>
+                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-[#95d230] rounded-lg transition-colors" title="Modifier">
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title="Valider (Traiter)">
+                              <Check className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {est.status === 'Traité' && (
+                          <>
+                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-[#95d230] rounded-lg transition-colors" title="Modifier">
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title="Transférer au fournisseur">
+                              <Send className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {est.status === 'Fournisseur' && (
+                          <>
+                            <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-amber-500 rounded-lg transition-colors" title="Lire instructions">
+                              <div className="relative">
+                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-[#95d230] animate-pulse' : ''}`} />
+                                {est.supplierNotes && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
+                              </div>
+                            </button>
+                            <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title="Ajouter Suivi (Colis)">
+                              <Package className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title="Expédier">
+                              <Truck className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => { setSelectedEstimation(est); setIsRefusalPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-red-500 rounded-lg transition-colors" title="Retourner">
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {est.status === 'Retourné' && (
+                          <>
+                            <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-amber-500 rounded-lg transition-colors" title="Voir motif refus">
+                              <div className="relative">
+                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-[#95d230] animate-pulse' : ''}`} />
+                                {est.supplierNotes && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
+                              </div>
+                            </button>
+                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-[#95d230] rounded-lg transition-colors" title="Modifier">
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title="Transférer à nouveau">
+                              <Send className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {est.status === 'Livraison' && (
+                          <>
+                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-[#95d230] rounded-lg transition-colors" title="Consulter">
+                              <PlusCircle className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title="Voir Suivi">
+                              <Package className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title="Archiver">
+                              <Archive className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {est.status === 'Corbeille' && (
+                          <button onClick={() => onRestore(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title="Restaurer">
+                            <Undo2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {est.status === 'Archivé' && (
+                          <>
+                            {onToggleLock && (
+                              <button
+                                onClick={() => onToggleLock(est.id)}
+                                className={`p-2 rounded-lg transition-colors ${est.isLocked ? 'text-amber-500 hover:bg-amber-50' : 'text-zinc-400 hover:bg-zinc-100'}`}
+                                title={est.isLocked ? 'Désarchiver (déverrouiller)' : 'Archiver (verrouiller)'}
+                              >
+                                {est.isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                              </button>
+                            )}
+                            <button onClick={() => onRestore(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title="Restaurer (retour En attente)">
+                              <Undo2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {est.status !== 'Archivé' && (est.status !== 'Livraison' || userRole === 'admin') && (
+                          <button onClick={() => setConfirmDeleteId(est.id)} className="p-2 text-zinc-400 hover:text-red-500 rounded-lg transition-colors" title={est.status === 'Corbeille' ? "Supprimer définitivement" : "Corbeille"}>
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                   <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform duration-300 ${expandedId === est.id ? 'rotate-180' : ''}`} />

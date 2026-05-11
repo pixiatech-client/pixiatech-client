@@ -61,7 +61,7 @@ export function QuoteRequestsTable() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
-  const [dialogAction, setDialogAction] = useState<{ type: 'trash' | 'delete' | 'restore' | 'deleteAll', ids?: string[] } | null>(null);
+  const [dialogAction, setDialogAction] = useState<{ type: 'trash' | 'delete' | 'restore' | 'deleteAll' | 'refuse', ids?: string[] } | null>(null);
   
   const [activeTab, setActiveTab] = useState<Status | 'delivery'>('pending');
   const [currentPage, setCurrentPage] = useState(1);
