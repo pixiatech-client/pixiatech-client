@@ -3,11 +3,11 @@
 import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { getSettings } from '@/app/admin/actions';
 import type { Settings as AppSettings } from '@/lib/types';
-import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X } from 'lucide-react';
+import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -23,6 +23,7 @@ const LaborContent = lazy(() => import('../../labor/page'));
 const PdfContent = lazy(() => import('../../pdf-settings/page'));
 const EmergencyContent = lazy(() => import('../emergency/page'));
 const AppearanceContent = lazy(() => import('../themes/page'));
+const MessagingContent = lazy(() => import('../messaging/page'));
 
 function LoadingFallback() {
     return (
@@ -46,6 +47,7 @@ const tabsConfig: TabItem[] = [
     { id: 'livraison', label: 'Livraison', icon: Truck },
     { id: 'main-doeuvre', label: 'Main d\'œuvre', icon: HardHat },
     { id: 'pdf', label: 'PDF', icon: FileType },
+    { id: 'messaging', label: 'Messagerie', icon: MessageSquare },
     { id: 'emergency', label: 'Urgence', icon: AlertTriangle },
 ];
 
@@ -111,6 +113,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <LaborContent />;
             case 'pdf':
                 return <PdfContent />;
+            case 'messaging':
+                return <MessagingContent />;
             case 'emergency':
                 return <EmergencyContent />;
             default:
@@ -151,6 +155,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                         tab.id === 'emergency' ? "bg-red-100/80 text-red-600" :
                                         tab.id === 'wizard' ? "bg-indigo-100/80 text-indigo-600" :
                                         tab.id === 'livraison' ? "bg-cyan-100/80 text-cyan-600" :
+                                        tab.id === 'messaging' ? "bg-blue-100/80 text-blue-600" :
                                         "bg-orange-100/80 text-orange-600"
                                     )}>
                                         <tab.icon className={cn(

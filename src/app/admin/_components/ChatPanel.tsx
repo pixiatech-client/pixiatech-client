@@ -74,7 +74,13 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
       : collection(db, 'users');
 
     return onSnapshot(q, (snap) => {
-      const u = snap.docs.map(d => ({ uid: d.id, ...d.data() }) as UserProfileChat);
+      let u = snap.docs.map(d => ({ uid: d.id, ...d.data() }) as UserProfileChat);
+      
+      // B2B Isolation: Suppliers cannot see other suppliers
+      if (currentUser.role === 'fournisseur') {
+        u = u.filter(user => user.role !== 'fournisseur' || user.uid === currentUser.uid);
+      }
+      
       setUsers(u);
     });
   }, [currentUser, isGuestMode]);
@@ -84,12 +90,17 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
     if (!currentUser?.uid) return;
     const q = query(
       collection(db, 'chats'),
-      where('participants', 'array-contains', currentUser.uid),
-      orderBy('lastMessageAt', 'desc')
+      where('participants', 'array-contains', currentUser.uid)
     );
     return onSnapshot(q, (snap) => {
-      const c = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Chat);
-      setChats(c);
+      const c = snap.docs.map(d => ({ id: d.id, ...d.data() } as Chat));
+      // Sort client-side to avoid index requirements
+      const sorted = c.sort((a, b) => {
+        const timeA = a.lastMessageAt?.toMillis?.() || 0;
+        const timeB = b.lastMessageAt?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+      setChats(sorted);
       
       // Auto-open discussion if guest and there's a chat
       if (isGuestMode && c.length > 0 && !activeChatId) {
@@ -120,6 +131,14 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
     if (existing) {
       setActiveChatId(existing.id);
       return existing.id;
+    }
+
+    const targetUser = users.find(u => u.uid === userId);
+    
+    // B2B Isolation: Prevent suppliers from chatting with each other
+    if (currentUser.role === 'fournisseur' && targetUser?.role === 'fournisseur' && currentUser.uid !== userId) {
+      console.error('B2B Isolation: Suppliers cannot communicate with each other');
+      return;
     }
 
     try {

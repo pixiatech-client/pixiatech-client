@@ -11,6 +11,7 @@ import { FirebaseClientProvider } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import { RoleProvider } from '@/contexts/RoleContext';
 
 export function LayoutProvider({
   children,
@@ -24,7 +25,8 @@ export function LayoutProvider({
 
   return (
     <FirebaseClientProvider>
-      <I18nProvider>
+      <RoleProvider>
+        <I18nProvider>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -59,6 +61,7 @@ export function LayoutProvider({
           />
         </ThemeProvider>
       </I18nProvider>
+      </RoleProvider>
     </FirebaseClientProvider>
   );
 }

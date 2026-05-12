@@ -36,7 +36,7 @@ import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 
 export type SidebarState = 'expanded' | 'compact' | 'hidden';
 export type SidebarTheme = 'light' | 'dark';
@@ -143,6 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [tempLogoConfig, setTempLogoConfig] = useState(logoConfig);
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>('settings');
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [settings, setSettings] = useState<any>(null);
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -160,6 +161,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       setUnreadMessages(count);
     });
   }, [firestore, user?.uid]);
+
+  useEffect(() => {
+    if (!firestore) return;
+    return onSnapshot(doc(firestore, 'settings', 'main'), (snap) => {
+      if (snap.exists()) {
+        setSettings(snap.data());
+      }
+    });
+  }, [firestore]);
 
   const activeView = useMemo(() => {
     // Check if on user's own profile page first (most specific)
@@ -294,9 +304,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   `;
 
-  const filteredItems = items.filter((item: any) =>
-    !item.roles || item.roles.includes(role)
-  );
+  const filteredItems = items.filter((item: any) => {
+    if (item.roles && !item.roles.includes(role)) return false;
+    
+    // Messaging visibility logic
+    if (item.id === 'messages') {
+      if (!settings?.messaging?.enabled) return false;
+      
+      // Admins always see messages
+      if (role === UserRole.ADMINISTRATEUR) return true;
+      
+      // Check commercial access
+      if (role === UserRole.COMMERCIAL && !settings?.messaging?.allowCommercialMessaging) {
+        return false;
+      }
+      
+      // Check supplier access
+      if (role === UserRole.FOURNISSEUR && !settings?.messaging?.allowSupplierMessaging) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
 
   return (
     <motion.aside

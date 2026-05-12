@@ -6,6 +6,7 @@ import { Check, CheckCheck, Video, Paperclip, Mic, Play, Pause, Share2, Trash2 }
 import { cn, formatTimestamp } from '@/lib/utils';
 import { Message } from '@/lib/types';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { useRoles } from '@/contexts/RoleContext';
 
 const TypewriterText = ({ content, isMine }: { content: string; isMine: boolean }) => {
   // Split by HTML tags, entities, or spaces, keeping the separators
@@ -58,6 +59,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const controls = useAnimation();
+  const { getRoleColor, getRoleName } = useRoles();
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -118,14 +120,14 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
             {!isMine && (msg.senderName || msg.senderRole) && (
               <div className="flex items-center gap-2 px-1">
                 {msg.senderRole && (
-                  <span className={cn(
-                    "text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full",
-                    msg.senderRole === 'admin' ? "bg-blue-500/20 text-blue-400" :
-                    msg.senderRole === 'bot' ? "bg-indigo-500/20 text-indigo-400" :
-                    msg.senderRole === 'prestataire' ? "bg-green-500/20 text-green-400" :
-                    "bg-orange-500/20 text-orange-400"
-                  )}>
-                    {msg.senderRole === 'prestataire' ? 'Fournisseur' : msg.senderRole === 'bot' ? 'Bot' : msg.senderRole}
+                  <span 
+                    className="text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-full"
+                    style={{ 
+                      backgroundColor: msg.senderRole === 'bot' ? 'rgba(99, 102, 241, 0.2)' : `${getRoleColor(msg.senderRole)}33`, 
+                      color: msg.senderRole === 'bot' ? '#818cf8' : getRoleColor(msg.senderRole) 
+                    }}
+                  >
+                    {msg.senderRole === 'bot' ? 'Bot' : getRoleName(msg.senderRole)}
                   </span>
                 )}
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{msg.senderName || 'Utilisateur'}</span>

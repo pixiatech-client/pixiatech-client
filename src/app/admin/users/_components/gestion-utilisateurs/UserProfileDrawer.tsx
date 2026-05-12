@@ -7,6 +7,8 @@ import { StatusBadge } from './StatusBadge';
 import { RoleBadge } from './RoleBadge';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { uploadImage } from '@/lib/uploadImage';
+import { useRoles } from '@/contexts/RoleContext';
+import { CreateRoleDrawer } from './CreateRoleDrawer';
 
 interface UserProfileDrawerProps {
   isOpen: boolean;
@@ -14,21 +16,26 @@ interface UserProfileDrawerProps {
   user: User | null;
   onSave: (updatedUser: User) => void;
   isAddMode?: boolean;
+  onRoleChanged?: () => void;
 }
 
-export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = false }: UserProfileDrawerProps) {
+export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = false, onRoleChanged }: UserProfileDrawerProps) {
   const [formData, setFormData] = useState<Partial<User>>({});
   const [password, setPassword] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
 
-  const roleOptions = [
-    { value: UserRole.ADMINISTRATEUR, label: 'Administrateur', color: '#a855f7', bgColor: '#f5f3ff' },
-    { value: UserRole.FOURNISSEUR, label: 'Fournisseur', color: '#3b82f6', bgColor: '#eff6ff' },
-    { value: UserRole.COMMERCIAL, label: 'Commercial', color: '#f59e0b', bgColor: '#fffbeb' },
-  ];
+  const { roles } = useRoles();
+
+  const roleOptions = roles.map(r => ({
+    value: r.id,
+    label: r.name,
+    color: r.color,
+    bgColor: r.color + '20' // 20% opacity for background
+  }));
 
   const statusOptions = [
     { value: UserStatus.APPROUVE, label: 'Approuvé', color: '#00a86b', bgColor: '#e6f7f1' },
@@ -57,7 +64,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
         email: '',
         phone: '',
         description: '',
-        role: UserRole.COMMERCIAL,
+        role: 'commercial',
         status: UserStatus.EN_ATTENTE,
         avatar: 'https://picsum.photos/seed/new/100/100',
         backgroundImage: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1000&auto=format&fit=crop',
@@ -90,6 +97,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
   if (!isOpen) return null;
 
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <>
@@ -292,9 +300,19 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
 
                   {/* ADMIN FIELDS */}
                   <div className="space-y-6">
-                    <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                      <Shield size={18} className="text-indigo-500" />
-                      <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Rôles & Statut</h3>
+                    <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                      <div className="flex items-center gap-2">
+                        <Shield size={18} className="text-indigo-500" />
+                        <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Rôles & Statut</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsCreateRoleOpen(true)}
+                        className="text-xs font-black uppercase tracking-widest text-blue-600 flex items-center gap-1 hover:text-blue-700 transition-colors bg-blue-50 px-3 py-1.5 rounded-full"
+                      >
+                        <PlusCircle size={14} />
+                        Ajouter un rôle
+                      </button>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <CustomSelect
@@ -362,6 +380,13 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
         </>
       )}
     </AnimatePresence>
+    
+    <CreateRoleDrawer 
+      isOpen={isCreateRoleOpen}
+      onClose={() => setIsCreateRoleOpen(false)}
+      onRoleCreated={() => { onRoleChanged?.(); }}
+    />
+    </>
   );
 }
 

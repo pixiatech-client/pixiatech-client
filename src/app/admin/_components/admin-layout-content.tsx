@@ -40,7 +40,7 @@ import { canAccessRoute } from '@/lib/permissions';
 import type { Theme, Settings as AppSettings, UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
-import { collection, orderBy, query } from 'firebase/firestore';
+import { collection, orderBy, query, doc, onSnapshot } from 'firebase/firestore';
 import { Sidebar, type SidebarState, type SidebarTheme, type SettingsSection } from './dashboard-new/Sidebar';
 import { UserRole as UserRoleEnum } from './dashboard-new/dashboard-new-types';
 import { NotificationBell } from './NotificationBell';
@@ -70,6 +70,8 @@ const DEFAULT_LOGO_CONFIG = {
 
 const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor, userProfile, roles, logout, toggleTheme, mainNavItems, secondaryNavItems, mode, setMode, activeSettingsSection, onSettingsSectionChange, isSettingsPage, role, onOpenAccountDrawer, initialSettings }: { children: React.ReactNode, pageTitle: string, pageSubtitle: string, headerColor: string, userProfile: any, roles: any[], logout: any, toggleTheme: any, mainNavItems: any[], secondaryNavItems: any[], mode: string, setMode: (theme: string) => void, activeSettingsSection?: SettingsSection, onSettingsSectionChange?: (section: SettingsSection) => void, isSettingsPage?: boolean, role?: UserRoleEnum, onOpenAccountDrawer?: () => void, initialSettings?: AppSettings | null }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [settings, setSettings] = useState<any>(null);
+  const firestore = useFirestore();
   useEffect(() => {
     console.log('isProfileOpen changed:', isProfileOpen);
   }, [isProfileOpen]);
@@ -110,6 +112,22 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
       setSidebarState('hidden');
     }
   }, [pathname]);
+
+  useEffect(() => {
+    if (!firestore) return;
+    const unsub = onSnapshot(doc(firestore, 'settings', 'main'), (snap) => {
+      if (snap.exists()) setSettings(snap.data());
+    });
+    return () => unsub();
+  }, [firestore]);
+
+  const canShowMessaging = useMemo(() => {
+    if (!settings?.messaging?.enabled) return false;
+    if (userProfile?.role === 'admin') return true;
+    if (userProfile?.role === 'commercial') return settings?.messaging?.allowCommercialMessaging;
+    if (userProfile?.role === 'fournisseur') return settings?.messaging?.allowSupplierMessaging;
+    return true;
+  }, [settings, userProfile]);
 
   const [sidebarTheme, setSidebarTheme] = useState<SidebarTheme>(() => {
     if (typeof window !== 'undefined') {
@@ -320,7 +338,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
 
               <NotificationBell isDark={isDark} userRole={userProfile?.role} />
 
-              {userProfile && (
+              {userProfile && canShowMessaging && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -531,6 +549,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   { id: 'livraison', label: 'Livraison', icon: Truck, color: 'text-cyan-600', bg: 'bg-cyan-100/80', href: '/admin/settings/livraison' },
                   { id: 'labor', label: 'Main d\'œuvre', icon: HardHat, color: 'text-orange-600', bg: 'bg-orange-100/80', href: '/admin/settings/main-doeuvre' },
                   { id: 'pdf', label: 'PDF', icon: FileType, color: 'text-rose-600', bg: 'bg-rose-100/80', href: '/admin/settings/pdf' },
+                  { id: 'messaging', label: 'Messagerie', icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-100/80', href: '/admin/settings/messaging' },
                   { id: 'emergency', label: 'Urgence', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100/80', href: '/admin/settings/emergency' },
                 ].map((item) => (
                   <Link

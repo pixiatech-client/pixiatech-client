@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { X, ChevronLeft, Shield, Check, CheckCheck, Trash2, Image, Video, Mic, AlertTriangle, Loader2 } from 'lucide-react';
+import { useRoles } from '@/contexts/RoleContext';
 import { doc, updateDoc, onSnapshot, collection, setDoc, getDoc, getDocs } from 'firebase/firestore';
 import { firestore as db } from '@/firebase/config';
 import { UserProfileChat as UserProfile, AdminSettings } from '@/lib/types';
@@ -235,6 +236,7 @@ export default function AdminPanel({ onClose, onBack, currentUser }: AdminPanelP
   const [settings, setSettings] = useState<AdminSettings>(defaultSettings);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const { getRoleColor, getRoleName } = useRoles();
 
   useEffect(() => {
     setLoading(true);
@@ -443,13 +445,14 @@ export default function AdminPanel({ onClose, onBack, currentUser }: AdminPanelP
                   <p className="font-bold text-white text-sm truncate">{user.displayName}</p>
                   <p className="text-xs text-white/40 truncate">{user.email}</p>
                 </div>
-                <span className={cn(
-                  "px-2 py-1 rounded-lg text-[10px] font-bold uppercase",
-                  user.role === 'admin' ? "bg-blue-500/20 text-blue-400" :
-                  user.role === 'prestataire' ? "bg-green-500/20 text-green-400" :
-                  "bg-orange-500/20 text-orange-400"
-                )}>
-                  {user.role}
+                <span 
+                  className="px-2 py-1 rounded-lg text-[10px] font-bold uppercase"
+                  style={{ 
+                    backgroundColor: `${getRoleColor(user.role)}33`, 
+                    color: getRoleColor(user.role) 
+                  }}
+                >
+                  {getRoleName(user.role)}
                 </span>
                 {user.role !== 'admin' && (
                   <button 

@@ -4,6 +4,7 @@ import React from 'react';
 import { User, LogOut, Shield, Bell, Settings, ChevronRight, Mail } from 'lucide-react';
 import { UserProfileChat as UserProfile } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useRoles } from '@/contexts/RoleContext';
 
 interface ProfileViewProps {
   user: UserProfile;
@@ -11,8 +12,15 @@ interface ProfileViewProps {
 }
 
 export default function ProfileView({ user, onLogout }: ProfileViewProps) {
+  const { getRoleName, getRoleColor } = useRoles();
+  const roleColor = getRoleColor(user.role);
+
   const stats = [
-    { label: 'Rôle', value: user.role.toUpperCase(), icon: <Shield size={16} className="text-blue-400" /> },
+    { 
+      label: 'Rôle', 
+      value: getRoleName(user.role).toUpperCase(), 
+      icon: <Shield size={16} style={{ color: roleColor }} /> 
+    },
     { label: 'Statut', value: user.isOnline ? 'En ligne' : 'Hors ligne', icon: <div className={cn("h-2 w-2 rounded-full", user.isOnline ? "bg-green-500" : "bg-gray-500")} /> },
   ];
 

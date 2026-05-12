@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, MoreVertical, Ban, Paperclip, Video, Mic, Send, Mail, Image as ImageIcon, Trash2, StopCircle, Play, Pause, Search, Shield, Users, ChevronLeft, Phone, MessageSquare, Settings, UserX, Bell, BellOff, Eye, EyeOff, ShieldOff, ChevronDown } from 'lucide-react';
-import { doc, updateDoc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp, getDoc, getDocs, deleteDoc, increment, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp, getDoc, getDocs, deleteDoc, increment, arrayUnion, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore as db, storage } from '@/firebase/config';
 import { UserProfileChat as UserProfile, Message, MessageType, Chat } from '@/lib/types';
@@ -37,6 +37,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
   const [recordingTime, setRecordingTime] = useState(0);
   const [unsubOtherUser, setUnsubOtherUser] = useState<(() => void) | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const isDeletingRef = useRef(false);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -312,9 +313,18 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
       limit(100)
     );
     const unsubscribe = onSnapshot(q, (snap) => {
+      // IMPORTANT : Ignore les snapshots pendant une suppression
+      if (isDeletingRef.current) return;
+
       const newMessages = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message)).reverse();
       setMessages(newMessages);
-      updateDoc(doc(db, 'chats', chatId), { [`unreadCount.${currentUser.uid}`]: 0 });
+      
+      // ✅ Vérifier l'existence avant d'update
+      getDoc(doc(db, 'chats', chatId)).then(chatSnap => {
+        if (chatSnap.exists()) {
+          updateDoc(doc(db, 'chats', chatId), { [`unreadCount.${currentUser.uid}`]: 0 });
+        }
+      }).catch(err => console.log("Chat probably deleted", err));
     });
 
     return () => {
@@ -399,15 +409,23 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
       variant: 'danger',
       onConfirm: async () => {
         try {
-          console.log("Starting history clearing for chat:", chatId);
-          const q = query(collection(db, 'chats', chatId, 'messages'));
-          const messagesSnapshot = await getDocs(q);
+          // ✅ Bloque temporairement le listener
+          isDeletingRef.current = true;
           
-          const deletePromises = messagesSnapshot.docs.map(mDoc => 
-            deleteDoc(doc(db, 'chats', chatId, 'messages', mDoc.id))
-          );
-          if (deletePromises.length > 0) {
-            await Promise.all(deletePromises);
+          // ✅ Vider l'état local immédiatement
+          setMessages([]);
+          setShowMenu(false);
+          setModalConfig(prev => ({ ...prev, isOpen: false }));
+
+          const messagesRef = collection(db, 'chats', chatId, 'messages');
+          const messagesSnapshot = await getDocs(messagesRef);
+          
+          if (!messagesSnapshot.empty) {
+            const batch = writeBatch(db);
+            messagesSnapshot.docs.forEach((mDoc) => {
+              batch.delete(mDoc.ref);
+            });
+            await batch.commit();
           }
           
           try {
@@ -415,21 +433,23 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
             const chatStorageRef = ref(storage, `chats/${chatId}`);
             const filesResult = await listAll(chatStorageRef);
             const storagePromises = filesResult.items.map(file => deleteObject(file));
-            if (storagePromises.length > 0) {
-              await Promise.all(storagePromises);
-            }
-          } catch (storageErr) {
+            if (storagePromises.length > 0) await Promise.all(storagePromises);
+          } catch (e) {
             console.log('No storage files to delete');
           }
           
           await updateDoc(doc(db, 'chats', chatId), {
-            lastMessage: 'Historique effacé',
+            lastMessage: '',
             lastMessageAt: serverTimestamp()
           });
 
-          setShowMenu(false);
+          // ✅ Petit délai pour laisser Firestore finir avant de reprendre onSnapshot
+          setTimeout(() => {
+            isDeletingRef.current = false;
+          }, 1000);
         } catch (err) {
           console.error('Error clearing history:', err);
+          isDeletingRef.current = false;
         }
       }
     });
@@ -497,17 +517,23 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
       variant: 'danger',
       onConfirm: async () => {
         try {
-          const q = query(collection(db, 'chats', chatId, 'messages'));
-          const messagesSnapshot = await getDocs(q);
+          const messagesRef = collection(db, 'chats', chatId, 'messages');
+          const messagesSnapshot = await getDocs(messagesRef);
           
-          const deletePromises = messagesSnapshot.docs.map(mDoc => 
-            deleteDoc(doc(db, 'chats', chatId, 'messages', mDoc.id))
-          );
-          await Promise.all(deletePromises);
-          await deleteDoc(doc(db, 'chats', chatId));
+          const batch = writeBatch(db);
+          messagesSnapshot.docs.forEach((mDoc) => {
+            batch.delete(mDoc.ref);
+          });
+          batch.delete(doc(db, 'chats', chatId));
+          
+          await batch.commit();
+          
+          // On ne ferme le modal et on ne revient en arrière QU'APRÈS la réussite
+          setModalConfig(prev => ({ ...prev, isOpen: false }));
           onBack();
         } catch (error) {
           console.error("Error deleting chat:", error);
+          setModalConfig(prev => ({ ...prev, isOpen: false }));
         }
       }
     });
@@ -517,15 +543,40 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
     setModalConfig({
       isOpen: true,
       title: "Supprimer le message",
-      message: "Voulez-vous vraiment supprimer ce message ? Cette action est irréversible.",
+      message: "Voulez-vous vraiment supprimer ce message ?",
       confirmText: "Supprimer",
       variant: 'danger',
       onConfirm: async () => {
+        setModalConfig(prev => ({ ...prev, isOpen: false }));
+
         try {
+          // ✅ Bloque temporairement le listener
+          isDeletingRef.current = true;
+
+          // ✅ Optimistic UI
+          setMessages(prev => prev.filter(m => m.id !== messageId));
+
+          // ✅ Supprime Firestore
           await deleteDoc(doc(db, 'chats', chatId, 'messages', messageId));
-          setModalConfig(prev => ({ ...prev, isOpen: false }));
+          
+          // Mise à jour lastMessage si c'était le dernier
+          const remaining = messages.filter(m => m.id !== messageId);
+          if (remaining.length === 0 || messages[messages.length - 1].id === messageId) {
+            const nextLastMessage = remaining.length > 0 ? remaining[remaining.length - 1] : null;
+            await updateDoc(doc(db, 'chats', chatId), {
+              lastMessage: nextLastMessage ? nextLastMessage.content : '',
+              lastMessageAt: nextLastMessage ? nextLastMessage.createdAt : serverTimestamp()
+            });
+          }
+
+          // ✅ Petit délai pour laisser Firestore finir
+          setTimeout(() => {
+            isDeletingRef.current = false;
+          }, 500);
+
         } catch (error) {
-          console.error("Error deleting message:", error);
+          console.error(error);
+          isDeletingRef.current = false;
         }
       }
     });
@@ -580,7 +631,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
                 <button 
                   onClick={handleBlockUser}
                   className={cn(
-                    "rounded-2xl flex items-center justify-center transition-all border",
+                    "rounded-2xl flex items-center justify-center transition-all flex-shrink-0 bg-[#0f1113] border border-white/5 shadow-xl",
                     isMobile ? "h-12 w-12" : "h-14 w-14",
                     isUserBlocked 
                       ? "bg-red-500/20 border-red-500/40 text-red-500" 

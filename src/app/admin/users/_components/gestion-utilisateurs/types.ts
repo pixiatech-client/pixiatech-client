@@ -1,8 +1,4 @@
-export enum UserRole {
-  ADMINISTRATEUR = 'Administrateur',
-  FOURNISSEUR = 'Fournisseur',
-  COMMERCIAL = 'Commercial',
-}
+export type UserRole = string;
 
 export enum UserStatus {
   APPROUVE = 'Approuvé',
@@ -18,6 +14,8 @@ export interface User {
   phone?: string;
   description?: string;
   role: UserRole;
+  roleName?: string;
+  roleColor?: string;
   status: UserStatus;
   avatar: string;
   backgroundImage?: string;

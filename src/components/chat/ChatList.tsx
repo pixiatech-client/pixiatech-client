@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Pin, MoreVertical, Image, Video, Mic, FileText, Settings, Mail, Trash2 } from 'lucide-react';
 import { motion, PanInfo, useMotionValue, useTransform, animate, useAnimation } from 'framer-motion';
 import { format } from 'date-fns';
 import { UserProfileChat as UserProfile, Chat } from '@/lib/types';
 import { cn, formatTimestamp } from '@/lib/utils';
 import { firestore as db } from '@/firebase/config';
-import { doc, getDoc, deleteDoc, collection, query, getDocs } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc, collection, query, getDocs, writeBatch, onSnapshot } from 'firebase/firestore';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { useRoles } from '@/contexts/RoleContext';
+import ConfirmModal from './ConfirmModal';
 
 interface ChatListProps {
   chats: Chat[];
@@ -36,7 +38,10 @@ export default function ChatList({
   const isMobile = useMediaQuery('(max-width: 1024px)');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSwipeId, setActiveSwipeId] = useState<string | null>(null);
+  const [chatToDelete, setChatToDelete] = useState<Chat | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { roles, getRoleName, getRoleColor } = useRoles();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -80,22 +85,26 @@ export default function ChatList({
   const groupedChats = sortedChats.reduce((acc, chat) => {
     const otherId = chat.participants.find(id => id !== currentUser.uid);
     const otherUser = allUsers.find(u => u.uid === otherId);
-    let role = otherUser?.role || 'autre';
-    if (role === 'fournisseur') role = 'prestataire';
-    if (!acc[role]) acc[role] = [];
-    acc[role].push(chat);
+    const roleId = otherUser?.role || 'autre';
+    if (!acc[roleId]) acc[roleId] = [];
+    acc[roleId].push(chat);
     return acc;
   }, {} as Record<string, Chat[]>);
 
-  const roleLabels: Record<string, string> = {
-    admin: 'Administrateurs',
-    prestataire: 'Fournisseurs',
-    commercial: 'Commerciaux',
-    autre: 'Autres',
-    fournisseur: 'Fournisseurs'
-  };
-
-  const roleOrder = ['admin', 'prestataire', 'commercial', 'autre'];
+  const roleOrder = useMemo(() => {
+    const activeRoleIds = Object.keys(groupedChats);
+    return activeRoleIds.sort((a, b) => {
+      const roleA = roles.find(r => r.id === a);
+      const roleB = roles.find(r => r.id === b);
+      
+      if (roleA?.isDefault && !roleB?.isDefault) return -1;
+      if (!roleA?.isDefault && roleB?.isDefault) return 1;
+      
+      const nameA = getRoleName(a);
+      const nameB = getRoleName(b);
+      return nameA.localeCompare(nameB);
+    });
+  }, [groupedChats, roles, getRoleName]);
 
   return (
     <div className={cn(
@@ -137,14 +146,9 @@ export default function ChatList({
             return (
               <div key={role} className="space-y-2">
                 <div className="px-4 flex items-center gap-2">
-                  <div className={cn(
-                    "h-1.5 w-1.5 rounded-full",
-                    role === 'admin' ? "bg-blue-500" :
-                    role === 'prestataire' ? "bg-green-500" :
-                    "bg-orange-500"
-                  )} />
+                  <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: getRoleColor(role) }} />
                   <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                    {roleLabels[role]}
+                    {getRoleName(role).endsWith('s') ? getRoleName(role) : `${getRoleName(role)}s`}
                   </h2>
                   <div className="flex-1 h-[1px] bg-gray-100 ml-2" />
                 </div>
@@ -161,21 +165,7 @@ export default function ChatList({
                         const otherId = chat.participants.find(id => id !== currentUser.uid);
                         if (otherId) onPinUser(otherId);
                       }}
-                      onDelete={async () => {
-                        if (window.confirm('Voulez-vous vraiment supprimer cette discussion ?')) {
-                          try {
-                            const q = query(collection(db, 'chats', chat.id, 'messages'));
-                            const messagesSnapshot = await getDocs(q);
-                            const deletePromises = messagesSnapshot.docs.map(mDoc => 
-                              deleteDoc(doc(db, 'chats', chat.id, 'messages', mDoc.id))
-                            );
-                            await Promise.all(deletePromises);
-                            await deleteDoc(doc(db, 'chats', chat.id));
-                          } catch (error) {
-                            console.error("Error deleting chat:", error);
-                          }
-                        }
-                      }}
+                      onDelete={() => setChatToDelete(chat)}
                       isMobile={isMobile}
                       isOpen={activeSwipeId === chat.id}
                       onSwipeOpen={() => setActiveSwipeId(chat.id)}
@@ -186,6 +176,40 @@ export default function ChatList({
             );
           })}
         </div>
+
+        <ConfirmModal
+          isOpen={!!chatToDelete}
+          onClose={() => setChatToDelete(null)}
+          onConfirm={async () => {
+            if (!chatToDelete) return;
+            setIsDeleting(true);
+            try {
+              const messagesRef = collection(db, 'chats', chatToDelete.id, 'messages');
+              const messagesSnapshot = await getDocs(messagesRef);
+              
+              const batch = writeBatch(db);
+              
+              // Delete all messages
+              messagesSnapshot.docs.forEach((mDoc) => {
+                batch.delete(mDoc.ref);
+              });
+              
+              // Delete the chat document itself
+              batch.delete(doc(db, 'chats', chatToDelete.id));
+              
+              await batch.commit();
+              console.log("Chat deleted successfully");
+            } catch (error) {
+              console.error("Error deleting chat:", error);
+            } finally {
+              setIsDeleting(false);
+              setChatToDelete(null);
+            }
+          }}
+          title="Supprimer la discussion"
+          message="Voulez-vous vraiment supprimer définitivement cette discussion ? Cette action est irréversible et supprimera tous les messages."
+          confirmText={isDeleting ? "Suppression..." : "Supprimer"}
+        />
       </div>
     </div>
   );
@@ -201,7 +225,7 @@ function SwipeableChat({ chat, isActive, onClick, currentUser, isPinned, onPin, 
   }, [isOpen, controls]);
 
   if (!isMobile) {
-    return <ChatItem chat={chat} isActive={isActive} onClick={onClick} currentUser={currentUser} isPinned={isPinned} onPin={onPin} />;
+    return <ChatItem chat={chat} isActive={isActive} onClick={onClick} currentUser={currentUser} isPinned={isPinned} onPin={onPin} onDelete={onDelete} />;
   }
 
   return (
@@ -258,7 +282,7 @@ function SwipeableChat({ chat, isActive, onClick, currentUser, isPinned, onPin, 
   );
 }
 
-function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin }: { chat: Chat, isActive: boolean, onClick: () => void, currentUser: UserProfile, isPinned: boolean, onPin: () => void }) {
+function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDelete }: { chat: Chat, isActive: boolean, onClick: () => void, currentUser: UserProfile, isPinned: boolean, onPin: () => void, onDelete?: () => void }) {
   const [otherUser, setOtherUser] = useState<UserProfile | null>(null);
   const unreadCount = chat.unreadCount[currentUser.uid] || 0;
   const isMobile = useMediaQuery('(max-width: 1024px)');
@@ -364,26 +388,19 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin }: { c
             {!isMobile && (
               <>
                 <button
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.stopPropagation();
-                    if (window.confirm('Voulez-vous vraiment supprimer cette discussion ?')) {
-                      try {
-                        const q = query(collection(db, 'chats', chat.id, 'messages'));
-                        const messagesSnapshot = await getDocs(q);
-                        const deletePromises = messagesSnapshot.docs.map(mDoc => 
-                          deleteDoc(doc(db, 'chats', chat.id, 'messages', mDoc.id))
-                        );
-                        await Promise.all(deletePromises);
-                        await deleteDoc(doc(db, 'chats', chat.id));
-                      } catch (error) {
-                        console.error("Error deleting chat:", error);
-                      }
-                    }
+                    if (onDelete) onDelete();
                   }}
-                  className="p-1 rounded-lg transition-all text-gray-300 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-500/10"
-                  title="Supprimer"
+                  className={cn(
+                    "h-8 w-8 rounded-xl flex items-center justify-center transition-all shadow-sm",
+                    isActive 
+                      ? "text-red-400 hover:bg-red-500/20" 
+                      : "text-gray-300 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-500/10 hover:shadow-red-500/10"
+                  )}
+                  title="Supprimer la discussion"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={16} />
                 </button>
                 <button
                   onClick={(e) => {

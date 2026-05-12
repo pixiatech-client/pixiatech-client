@@ -93,6 +93,13 @@
     transition: background-color 0.3s ease;
   }
 
+  /* Optimisation spécifique pour les écrans de PC portables (1024px à 1440px) */
+  @media screen and (min-width: 1024px) and (max-width: 1440px) {
+    html {
+      font-size: 85%; /* Équivaut à un zoom global de 85% pour Tailwind */
+    }
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
   }

@@ -69,10 +69,15 @@ const settingsSchema = z.object({
   hintBubble: hintBubbleSchema.optional(),
   lightThemeId: z.string().optional(),
   darkThemeId: z.string().optional(),
+  messaging: z.object({
+    enabled: z.boolean(),
+    allowCommercialMessaging: z.boolean(),
+    allowSupplierMessaging: z.boolean(),
+  }).optional(),
 });
 
 
-type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'hint-bubble';
+type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'hint-bubble' | 'messaging';
 type Language = 'fr' | 'en';
 type FormValues = z.infer<typeof settingsSchema>;
 
@@ -126,11 +131,12 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
   };
   
   const sectionLabels: Record<SettingsSection, string> = {
-      general: 'Configuration de l\'Estimation',
-      emergency: 'Arrêt d\'Urgence',
-      images: 'Images de l\'application',
-      content: 'Contenu des étapes',
+      general: 'Général',
+      emergency: 'Urgence',
+      images: 'Images',
+      content: 'Contenu',
       'hint-bubble': 'Bulle d\'Aide',
+      messaging: 'Messagerie',
   }
 
   return (
@@ -519,6 +525,90 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
               </div>
             </div>
           </div>
+        )}
+
+        {section === 'messaging' && (
+            <div className="space-y-8">
+                <div className="space-y-1 pb-6 border-b border-slate-100">
+                    <h3 className="text-lg font-black text-slate-900 tracking-tight">Configuration de la Messagerie</h3>
+                    <p className="text-sm font-medium text-slate-500">Gérez l'accès à la messagerie interne pour les différents rôles.</p>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
+                        <div className="space-y-1">
+                            <Label htmlFor="messaging.enabled" className="text-sm font-black text-slate-900">Activer la messagerie globale</Label>
+                            <p className="text-xs text-slate-500">Si désactivé, le chat ne sera plus visible ni accessible pour personne.</p>
+                        </div>
+                        <Controller
+                            control={form.control}
+                            name="messaging.enabled"
+                            render={({ field }) => (
+                                <Switch
+                                    id="messaging.enabled"
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                />
+                            )}
+                        />
+                    </div>
+
+                    <div className={cn(
+                        "grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-300",
+                        !form.watch('messaging.enabled') && "opacity-50 pointer-events-none grayscale"
+                    )}>
+                        <div className="space-y-4 p-6 rounded-2xl border border-slate-100 bg-white shadow-sm">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <Label htmlFor="messaging.allowCommercialMessaging" className="text-sm font-bold text-slate-900">Commerciaux</Label>
+                                    <p className="text-[11px] text-slate-500">Autoriser les commerciaux à utiliser le chat.</p>
+                                </div>
+                                <Controller
+                                    control={form.control}
+                                    name="messaging.allowCommercialMessaging"
+                                    render={({ field }) => (
+                                        <Switch
+                                            id="messaging.allowCommercialMessaging"
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    )}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 p-6 rounded-2xl border border-slate-100 bg-white shadow-sm">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <Label htmlFor="messaging.allowSupplierMessaging" className="text-sm font-bold text-slate-900">Fournisseurs</Label>
+                                    <p className="text-[11px] text-slate-500">Autoriser les fournisseurs à utiliser le chat.</p>
+                                </div>
+                                <Controller
+                                    control={form.control}
+                                    name="messaging.allowSupplierMessaging"
+                                    render={({ field }) => (
+                                        <Switch
+                                            id="messaging.allowSupplierMessaging"
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 flex gap-3">
+                        <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+                        <div className="space-y-1">
+                            <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">Note sur les rôles personnalisés</p>
+                            <p className="text-xs text-amber-700 leading-relaxed">
+                                Les rôles créés par clonage hériteront automatiquement de ces paramètres en fonction de leur modèle (Template) d'origine.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         )}
 
         <div className="pt-8 border-t border-slate-100">

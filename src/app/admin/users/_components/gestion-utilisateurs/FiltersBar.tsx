@@ -1,7 +1,8 @@
 import React from 'react';
 import { Search, Filter, LayoutGrid, List, UserPlus, Shield, Clock } from 'lucide-react';
-import { UserRole, UserStatus } from './types';
+import { UserStatus } from './types';
 import { CustomSelect } from '@/components/ui/custom-select';
+import { useRoles } from '@/contexts/RoleContext';
 
 interface FiltersBarProps {
   searchQuery: string;
@@ -26,11 +27,16 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
   viewMode,
   setViewMode,
 }) => {
+  const { roles } = useRoles();
+
   const roleOptions = [
     { value: '', label: 'Tous les Rôles' },
-    { value: UserRole.ADMINISTRATEUR, label: 'Administrateur', color: '#a855f7', bgColor: '#f5f3ff' },
-    { value: UserRole.FOURNISSEUR, label: 'Fournisseur', color: '#3b82f6', bgColor: '#eff6ff' },
-    { value: UserRole.COMMERCIAL, label: 'Commercial', color: '#f59e0b', bgColor: '#fffbeb' },
+    ...roles.map(r => ({
+      value: r.id,
+      label: r.name,
+      color: r.color,
+      bgColor: r.color + '20'
+    }))
   ];
 
   const statusOptions = [

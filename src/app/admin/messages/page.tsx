@@ -52,12 +52,17 @@ export default function MessagesPage() {
     if (!user?.uid) return;
     const q = query(
       collection(db, 'chats'),
-      where('participants', 'array-contains', user.uid),
-      orderBy('lastMessageAt', 'desc')
+      where('participants', 'array-contains', user.uid)
     );
     return onSnapshot(q, (snap) => {
-      const c = snap.docs.map(d => ({ id: d.id, ...d.data() }) as Chat);
-      setChats(c);
+      const c = snap.docs.map(d => ({ id: d.id, ...d.data() } as Chat));
+      // ✅ Sort on client-side to avoid missing index errors
+      const sorted = c.sort((a, b) => {
+        const timeA = a.lastMessageAt?.toMillis?.() || 0;
+        const timeB = b.lastMessageAt?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+      setChats(sorted);
     });
   }, [user?.uid]);
 

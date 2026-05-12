@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, User, Shield, MessageSquare, MoreVertical, Ban, BellOff, Trash2, CheckCircle2, UserX, EyeOff, Link2Off, X, Calendar, Info, Edit3, Eye, MessageCircle, UserMinus, Pin } from 'lucide-react';
 import { UserProfileChat as UserProfile } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -8,6 +8,7 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { firestore as db } from '@/firebase/config';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { useRoles } from '@/contexts/RoleContext';
 
 interface ContactListProps {
   users: UserProfile[];
@@ -41,6 +42,7 @@ export default function ContactList({
   const [editingReasonId, setEditingReasonId] = useState<string | null>(null);
   const [activeSwipeId, setActiveSwipeId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { roles, getRoleName, getRoleColor } = useRoles();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -82,22 +84,27 @@ export default function ContactList({
   });
 
   const groupedUsers = filteredUsers.reduce((acc, user) => {
-    let role = user.role || 'autre';
-    if (role === 'fournisseur') role = 'prestataire';
-    if (!acc[role]) acc[role] = [];
-    acc[role].push(user);
+    const roleId = user.role || 'autre';
+    if (!acc[roleId]) acc[roleId] = [];
+    acc[roleId].push(user);
     return acc;
   }, {} as Record<string, UserProfile[]>);
 
-  const roleLabels: Record<string, string> = {
-    admin: 'Administrateurs',
-    prestataire: 'Fournisseurs',
-    commercial: 'Commerciaux',
-    autre: 'Autres',
-    fournisseur: 'Fournisseurs'
-  };
-
-  const roleOrder = ['admin', 'prestataire', 'commercial', 'autre'];
+  // Dynamic role ordering: defaults first, then alphabetically
+  const roleOrder = useMemo(() => {
+    const activeRoleIds = Object.keys(groupedUsers);
+    return activeRoleIds.sort((a, b) => {
+      const roleA = roles.find(r => r.id === a);
+      const roleB = roles.find(r => r.id === b);
+      
+      if (roleA?.isDefault && !roleB?.isDefault) return -1;
+      if (!roleA?.isDefault && roleB?.isDefault) return 1;
+      
+      const nameA = getRoleName(a);
+      const nameB = getRoleName(b);
+      return nameA.localeCompare(nameB);
+    });
+  }, [groupedUsers, roles, getRoleName]);
 
   const toggleSelect = (userId: string, e?: React.MouseEvent) => {
     if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
@@ -261,12 +268,15 @@ export default function ContactList({
           {roleOrder.map(role => {
             const usersInRole = groupedUsers[role];
             if (!usersInRole || usersInRole.length === 0) return null;
+            const roleColor = getRoleColor(role);
+            const roleLabel = getRoleName(role).endsWith('s') ? getRoleName(role) : `${getRoleName(role)}s`;
+
             return (
               <div key={role} className="space-y-2">
                 {!isCollapsed && (
                   <div className="px-4 flex items-center gap-2">
-                    <div className={cn("h-1.5 w-1.5 rounded-full", role === 'admin' ? "bg-blue-500" : role === 'prestataire' ? "bg-green-500" : "bg-orange-500")} />
-                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{roleLabels[role]}</h2>
+                    <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: roleColor }} />
+                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">{roleLabel}</h2>
                     <div className="flex-1 h-[1px] bg-gray-100 ml-2" />
                   </div>
                 )}
@@ -414,6 +424,9 @@ function SwipeableContact({ user, currentUser, isSelected, onSelect, toggleSelec
 }
 
 function ContactItem({ user, currentUser, isMiniChat, isCollapsed, selectedUsers, onSelect, toggleSelect, contextMenuUser, setContextMenuUser }: any) {
+  const { getRoleColor, getRoleName } = useRoles();
+  const roleColor = getRoleColor(user.role);
+
   return (
     <div
       onClick={onSelect}
@@ -455,13 +468,13 @@ function ContactItem({ user, currentUser, isMiniChat, isCollapsed, selectedUsers
       <div className="relative">
         <div className={cn(
           "h-12 w-12 md:h-14 md:w-14 rounded-full border-2 p-0.5 transition-all duration-300 group-hover:scale-110",
-          currentUser.blockedUsers?.includes(user.uid) ? "border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]" :
-          user.blockedUsers?.includes(currentUser.uid) ? "border-gray-400 shadow-[0_0_10px_rgba(156,163,175,0.4)]" :
-          user.role === 'admin' ? "border-[#0078ff] shadow-[0_0_10px_rgba(0,120,255,0.4)]" :
-          user.role === 'prestataire' ? "border-[#a2ff00] shadow-[0_0_10px_rgba(162,255,0,0.4)]" :
-          "border-[#ff8400] shadow-[0_0_10px_rgba(255,132,0,0.4)]",
           isCollapsed && "h-10 w-10"
-        )}>
+        )} style={{ 
+          borderColor: currentUser.blockedUsers?.includes(user.uid) ? "#ef4444" : 
+                       user.blockedUsers?.includes(currentUser.uid) ? "#9ca3af" : roleColor,
+          boxShadow: `0 0 10px ${currentUser.blockedUsers?.includes(user.uid) ? "rgba(239,68,68,0.4)" : 
+                       user.blockedUsers?.includes(currentUser.uid) ? "rgba(156,163,175,0.4)" : roleColor + "66"}`
+        }}>
           <img 
             src={user.photoURL} 
             alt="" 
@@ -473,12 +486,10 @@ function ContactItem({ user, currentUser, isMiniChat, isCollapsed, selectedUsers
           />
         </div>
         {user.isOnline && !currentUser.blockedUsers?.includes(user.uid) && !user.blockedUsers?.includes(currentUser.uid) && (
-          <div className={cn(
-            "absolute -top-1 -right-1 h-4 w-4 rounded-full border-2 border-[#0f1113] shadow-[0_0_10px_rgba(0,0,0,0.5)]",
-            user.role === 'admin' ? "bg-[#0078ff]" :
-            user.role === 'prestataire' ? "bg-[#a2ff00]" :
-            "bg-[#ff8400]"
-          )}>
+          <div 
+            className="absolute -top-1 -right-1 h-4 w-4 rounded-full border-2 border-[#0f1113] shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+            style={{ backgroundColor: roleColor }}
+          >
             <div className="absolute inset-0 rounded-full animate-ping opacity-75 bg-inherit" />
           </div>
         )}
@@ -508,7 +519,7 @@ function ContactItem({ user, currentUser, isMiniChat, isCollapsed, selectedUsers
                 {user.isInDiscussion && <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />}
               </div>
               <div className="flex items-center gap-2">
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest group-hover:text-gray-400 transition-colors">{user.role}</p>
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest group-hover:text-gray-400 transition-colors">{getRoleName(user.role)}</p>
               </div>
             </div>
 

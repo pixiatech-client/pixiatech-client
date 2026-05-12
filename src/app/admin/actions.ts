@@ -140,9 +140,9 @@ async function ensureDefaultRoles() {
   const { adminDb } = getFirebaseAdmin();
   const rolesRef = adminDb.collection('roles');
   const rolesToEnsure = [
-    { id: 'admin', name: 'Admin', color: '#ef4444', isDefault: false },
+    { id: 'admin', name: 'Admin', color: '#ef4444', isDefault: true },
     { id: 'commercial', name: 'Commercial', color: '#3b82f6', isDefault: true },
-    { id: 'fournisseur', name: 'Fournisseur', color: '#f97316', isDefault: false },
+    { id: 'fournisseur', name: 'Fournisseur', color: '#f97316', isDefault: true },
   ];
 
   const batch = adminDb.batch();
@@ -395,6 +395,7 @@ const updateUserSchema = z.object({
   photoURL: z.string().url().or(z.literal('')).optional(),
   backgroundImage: z.string().url().or(z.literal('')).optional(),
   role: z.string().optional(),
+  roleTemplate: z.string().optional(),
   status: z.enum(['pending', 'approved', 'suspended']).optional(),
 });
 
@@ -436,6 +437,91 @@ export async function updateUser(data: unknown) {
     return { success: true };
   } catch (error: any) {
     console.error('Error updating user:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+const customRoleSchema = z.object({
+  name: z.string().min(1, 'Le nom est obligatoire'),
+  roleTemplate: z.enum(['admin', 'fournisseur', 'commercial']),
+  color: z.string().min(4),
+});
+
+export async function createCustomRole(data: unknown) {
+  const result = customRoleSchema.safeParse(data);
+  if (!result.success) return { success: false, error: 'Données invalides' };
+
+  const { name, roleTemplate, color } = result.data;
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Service indisponible.' };
+
+  try {
+    const roleId = `role_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now().toString().slice(-4)}`;
+    
+    await adminDb.collection('roles').doc(roleId).set({
+      name,
+      roleTemplate,
+      color,
+      isDefault: false,
+      createdAt: new Date(),
+    });
+
+    return { success: true, roleId };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateCustomRole(roleId: string, data: unknown) {
+  const result = customRoleSchema.safeParse(data);
+  if (!result.success) return { success: false, error: 'Données invalides' };
+
+  const { name, color } = result.data; // Only allow updating name and color
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Service indisponible.' };
+
+  try {
+    const roleRef = adminDb.collection('roles').doc(roleId);
+    const docSnap = await roleRef.get();
+    
+    if (!docSnap.exists) return { success: false, error: 'Rôle introuvable' };
+    if (docSnap.data()?.isDefault) return { success: false, error: 'Impossible de modifier un rôle par défaut' };
+
+    await roleRef.update({ name, color, updatedAt: new Date() });
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteCustomRole(roleId: string) {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Service indisponible.' };
+
+  try {
+    const roleRef = adminDb.collection('roles').doc(roleId);
+    const docSnap = await roleRef.get();
+
+    if (!docSnap.exists) return { success: false, error: 'Rôle introuvable' };
+    if (docSnap.data()?.isDefault) return { success: false, error: 'Impossible de supprimer un rôle par défaut' };
+
+    const roleData = docSnap.data()!;
+    // Fall back to the base template this role was cloned from, then 'commercial' as last resort
+    const fallbackRoleId: string = roleData.roleTemplate || 'commercial';
+
+    // Migrate all users with this role to the fallback role
+    const usersWithRole = await adminDb.collection('users').where('role', '==', roleId).get();
+    if (!usersWithRole.empty) {
+      const batch = adminDb.batch();
+      usersWithRole.docs.forEach(doc => {
+        batch.update(doc.ref, { role: fallbackRoleId, roleTemplate: fallbackRoleId });
+      });
+      await batch.commit();
+    }
+
+    await roleRef.delete();
+    return { success: true, migratedCount: usersWithRole.size };
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
@@ -2214,6 +2300,12 @@ const hintBubbleSchema = z.object({
   duration: z.coerce.number().optional(),
 });
 
+const messagingSchema = z.object({
+  enabled: z.boolean(),
+  allowCommercialMessaging: z.boolean(),
+  allowSupplierMessaging: z.boolean(),
+});
+
 const settingsSchema = z.object({
   defaultWidth: z.coerce.number().min(1, "La largeur doit être d'au moins 1"),
   defaultHeight: z.coerce.number().min(1, "La hauteur doit être d'au moins 1"),
@@ -2255,6 +2347,7 @@ const settingsSchema = z.object({
     color: z.string(),
     image: z.string().nullable(),
   }).optional(),
+  messaging: messagingSchema.optional(),
 });
 
 const wizardProjectTypeSettingSchema = z.object({

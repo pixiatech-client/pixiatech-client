@@ -5,7 +5,8 @@ export function usePermissions() {
   const { session, isLoading: isSessionLoading } = useSession();
   
   const user = session?.currentUser;
-  const role = (user?.role || 'commercial') as UserRole;
+  // Use roleTemplate if available, fallback to role, default to commercial
+  const role = (user?.roleTemplate || user?.role || 'commercial') as UserRole;
   const isImpersonating = session?.isImpersonating || false;
   const originalUser = session?.originalUser;
   

@@ -18,6 +18,7 @@ import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { UserProfileDrawer } from './UserProfileDrawer';
 import { UserTable } from './UserTable';
 import { User, UserRole as LocalUserRole, UserStatus } from './types';
+import { useRoles } from '@/contexts/RoleContext';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -47,14 +48,7 @@ export function UserManager() {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
-  // Roles
-  const rolesQuery = useMemoFirebase(
-    () => (firestore && auth.currentUser && !isUserLoading)
-      ? query(collection(firestore, 'roles'), orderBy('name'))
-      : null,
-    [firestore, auth.currentUser, isUserLoading]
-  );
-  const { data: roles } = useCollection<UserRole>(rolesQuery, { suppressPermissionError: true });
+  const { roles, getRoleName, getRoleColor, getRoleTemplate } = useRoles();
 
   const isAdmin = userProfile?.role === 'admin';
 
@@ -78,10 +72,7 @@ export function UserManager() {
 
   // Adapt Firebase UserProfile to local User type
   const adaptUser = useCallback((profile: UserProfile): User => {
-    const roleObj = roles?.find(r => r.id === profile.role);
-    const mappedRole = profile.role === 'admin' ? LocalUserRole.ADMINISTRATEUR
-      : profile.role === 'fournisseur' ? LocalUserRole.FOURNISSEUR
-      : LocalUserRole.COMMERCIAL;
+    const roleId = profile.role;
     const mappedStatus = profile.status === 'approved' ? UserStatus.APPROUVE
       : profile.status === 'pending' ? UserStatus.EN_ATTENTE
       : UserStatus.EN_ATTENTE;
@@ -90,7 +81,9 @@ export function UserManager() {
       name: profile.displayName || '',
       email: profile.email || '',
       phone: profile.phone,
-      role: mappedRole,
+      role: roleId,
+      roleName: getRoleName(roleId),
+      roleColor: getRoleColor(roleId),
       status: mappedStatus,
       avatar: profile.photoURL || '',
       backgroundImage: profile.backgroundImage || '',
@@ -99,7 +92,7 @@ export function UserManager() {
         ? profile.createdAt
         : profile.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
     };
-  }, [roles]);
+  }, [getRoleName, getRoleColor]);
 
   // Filtered users (client-side for search)
   const filteredUsers = useMemo(() => {
@@ -218,9 +211,8 @@ export function UserManager() {
         toast.success('Utilisateur créé avec succès.');
         await fetchUsers();
       } else {
-        const fbRole = data.role === LocalUserRole.ADMINISTRATEUR ? 'admin'
-          : data.role === LocalUserRole.FOURNISSEUR ? 'fournisseur'
-          : 'commercial';
+        const fbRole = data.role; // Now role is the ID directly
+        const fbRoleTemplate = getRoleTemplate(fbRole);
         const fbStatus = data.status === UserStatus.APPROUVE ? 'approved'
           : data.status === UserStatus.EN_ATTENTE ? 'pending'
           : data.status === UserStatus.SUSPENDU ? 'suspended'
@@ -233,6 +225,7 @@ export function UserManager() {
           photoURL: data.avatar,
           backgroundImage: data.backgroundImage,
           role: fbRole,
+          roleTemplate: fbRoleTemplate,
           status: fbStatus as any,
         });
 
@@ -244,6 +237,7 @@ export function UserManager() {
               photoURL: data.avatar,
               backgroundImage: data.backgroundImage,
               role: fbRole,
+              roleTemplate: fbRoleTemplate,
               status: fbStatus as any,
             }
           : u
@@ -360,6 +354,7 @@ export function UserManager() {
         user={selectedUser}
         onSave={handleSaveUser}
         isAddMode={isAddMode}
+        onRoleChanged={fetchUsers}
       />
 
       {/* Delete Modal */}

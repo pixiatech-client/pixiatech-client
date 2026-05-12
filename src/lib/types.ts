@@ -112,6 +112,12 @@ export type QuoteDetails = {
   taxRate?: number;
 };
 
+export type MessagingSettings = {
+  enabled: boolean;
+  allowCommercialMessaging: boolean;
+  allowSupplierMessaging: boolean;
+}
+
 export type HintBubbleSettings = {
   enabled: boolean;
   text: string;
@@ -163,6 +169,7 @@ export type Settings = {
     color: string;
     image: string | null;
   };
+  messaging?: MessagingSettings;
   performanceResetAt?: string;
 };
 
@@ -213,6 +220,8 @@ export type UserRole = {
   name: string;
   color: string;
   isDefault?: boolean;
+  roleTemplate?: string;
+  customPermissions?: Record<string, boolean>;
 };
 
 export type UserProfile = {
@@ -223,6 +232,7 @@ export type UserProfile = {
   photoURL?: string;
   backgroundImage?: string;
   role: string;
+  roleTemplate?: string;
   status: 'pending' | 'approved';
   createdAt: any; 
   originalAdminUid?: string;
