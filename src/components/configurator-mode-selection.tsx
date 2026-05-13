@@ -29,32 +29,32 @@ export function ConfiguratorModeSelection({ onSelectMode }: ConfiguratorModeSele
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -60 }}
           transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="w-full max-w-lg mx-auto flex flex-col items-center justify-center h-full p-4"
+          className="w-full max-w-xl ml-0 flex flex-col items-center justify-end h-full p-0 pb-2"
         >
-          <div className='text-center mb-10'>
+          <div className='text-center mb-8 w-full'>
             <h1 className='text-3xl font-bold tracking-tight'>{t('modeSelection.title')}</h1>
             <p className='text-muted-foreground mt-2'>{t('modeSelection.description')}</p>
           </div>
 
-          <div className="space-y-4 w-full">
+          <div className="space-y-6 w-full">
             {/* Configuration Guidée */}
             <motion.div
               onClick={() => handleSelect('wizard')}
               whileTap={{ scale: 0.98 }}
               className="group cursor-pointer"
             >
-              <div className="relative overflow-hidden rounded-[1.5rem] bg-black text-white p-4 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-black/30">
+              <div className="relative overflow-hidden rounded-[1.5rem] bg-black text-white p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-black/40">
                 {/* Lime accent glow */}
-                <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#c6ff00]/20 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute -top-10 -right-10 w-48 h-48 bg-[#c6ff00]/20 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative z-10 flex justify-between items-start">
                   <div>
-                    <h3 className="flex items-center gap-2 font-black text-lg text-white">
-                      <Zap className="w-5 h-5 text-[#c6ff00]" />
+                    <h3 className="flex items-center gap-3 font-black text-xl text-white">
+                      <Zap className="w-6 h-6 text-[#c6ff00]" />
                       {t('modeSelection.wizardTitle')}
                     </h3>
                     <p className="text-sm text-white/60 mt-1">{t('modeSelection.wizardDesc')}</p>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-[#c6ff00] transition-transform group-hover:translate-x-1 shrink-0" />
+                  <ArrowRight className="w-6 h-6 text-[#c6ff00] transition-transform group-hover:translate-x-2 shrink-0" />
                 </div>
               </div>
             </motion.div>
@@ -65,16 +65,16 @@ export function ConfiguratorModeSelection({ onSelectMode }: ConfiguratorModeSele
               whileTap={{ scale: 0.98 }}
               className="group cursor-pointer"
             >
-              <div className="relative overflow-hidden rounded-[1.5rem] border-2 border-slate-200 bg-white/60 backdrop-blur-sm p-4 transition-all duration-300 hover:scale-[1.02] hover:border-slate-400 hover:shadow-lg">
+              <div className="relative overflow-hidden rounded-[1.5rem] border-2 border-slate-200 bg-white/60 backdrop-blur-sm p-8 transition-all duration-300 hover:scale-[1.02] hover:border-blue-400 hover:bg-blue-50 hover:shadow-xl">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="flex items-center gap-2 font-black text-lg text-slate-900">
-                      <SlidersHorizontal className="w-5 h-5 text-slate-500" />
+                    <h3 className="flex items-center gap-3 font-black text-xl text-slate-900 transition-colors group-hover:text-blue-700">
+                      <SlidersHorizontal className="w-6 h-6 text-slate-500 transition-colors group-hover:text-blue-500" />
                       {t('modeSelection.manualTitle')}
                     </h3>
-                    <p className="text-sm text-slate-500 mt-1">{t('modeSelection.manualDesc')}</p>
+                    <p className="text-sm text-slate-500 mt-1 transition-colors group-hover:text-blue-600/70">{t('modeSelection.manualDesc')}</p>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-slate-400 transition-transform group-hover:translate-x-1 shrink-0" />
+                  <ArrowRight className="w-6 h-6 text-slate-400 transition-transform group-hover:translate-x-2 shrink-0 group-hover:text-blue-500" />
                 </div>
               </div>
             </motion.div>

@@ -36,6 +36,8 @@ import {
   Clock,
   Camera,
   Upload,
+  Settings2,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConfigState, INITIAL_STATE, ProjectType, Environment, ViewingDistance, PixelPitch } from '@/lib/configurator-wizard-types';
@@ -260,7 +262,11 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
   };
 
   const handleStepClick = (step: number) => {
-    setState(prev => ({ ...prev, step }));
+    if (step === 1) {
+      onBack();
+    } else {
+      setState(prev => ({ ...prev, step }));
+    }
   };
 
   return (
@@ -944,7 +950,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
 
 export function StepDimensions({ state, updateState, settings, setIsInteracting, t }: { state: ConfigState, updateState: any, settings: Settings, setIsInteracting?: (val: boolean) => void, t: any }) {
   return (
-    <div className="flex flex-col space-y-5 bg-transparent">
+    <div className="flex flex-col space-y-2 bg-transparent">
       <div className="w-full">
         <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 text-center">{t('wizard.dimensions.title')}</h2>
         <p className="text-center text-[12px] font-medium text-slate-500 italic mt-1">
@@ -954,7 +960,7 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting,
 
       {/* Preview */}
       <div className="flex justify-center">
-        <div className="relative w-full h-52 md:h-[320px] lg:h-[400px] xl:h-[450px] rounded-[2.5rem] p-[2px] bg-transparent overflow-hidden">
+        <div className="relative w-full h-44 md:h-[250px] lg:h-[280px] xl:h-[300px] rounded-[2.5rem] p-[2px] bg-transparent overflow-hidden">
           <div className="w-full h-full rounded-[2.3rem] overflow-hidden relative bg-transparent">
             <Preview
               width={state.width}
@@ -974,7 +980,7 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting,
         onPointerDown={(e) => { e.stopPropagation(); setIsInteracting?.(true); }}
         onPointerUp={() => setIsInteracting?.(false)}
         onPointerLeave={() => setIsInteracting?.(false)}
-        className="relative p-5 rounded-[2rem] bg-white/20 backdrop-blur-xl border border-white/40 shadow-xl space-y-5 before:absolute before:inset-0 before:rounded-[2rem] before:bg-gradient-to-br before:from-white/30 before:to-transparent before:opacity-50 before:pointer-events-none"
+        className="relative p-3 rounded-[2rem] bg-white/20 backdrop-blur-xl border border-white/40 shadow-xl space-y-3 before:absolute before:inset-0 before:rounded-[2rem] before:bg-gradient-to-br before:from-white/30 before:to-transparent before:opacity-50 before:pointer-events-none"
       >
         <div className="relative z-10 space-y-2">
           <div className="flex justify-between items-center">
@@ -1011,7 +1017,7 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting,
         </div>
       </div>
 
-      <div className="info-box p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+      <div className="info-box p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
         <div className="info-title flex items-center gap-2 text-slate-800">
           <Calculator className="w-5 h-5 text-orange-500" />
           <span>{t('wizard.dimensions.aspectRatio')}</span>
@@ -1026,7 +1032,7 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting,
         </div>
 
         {/* Configuration dalles */}
-        <div className="mt-6 pt-4 border-t border-blue-200/60">
+        <div className="mt-2 pt-2 border-t border-blue-200/60">
           {(() => {
             const DALLE_SIZE_M = 0.5;
             const dallesLargeur = Math.ceil(state.width / DALLE_SIZE_M);
@@ -1061,7 +1067,7 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
   };
 
   return (
-    <div className="flex flex-col space-y-6 bg-transparent">
+    <div className="flex flex-col space-y-4 bg-transparent">
       <div className="w-full">
         <h2 className="text-[24px] md:text-[28px] font-bold text-[#0f172a] leading-tight mb-2 text-center">{t('wizard.photo.title')}</h2>
         <p className="text-[14px] text-slate-600 leading-relaxed text-center">
@@ -1069,7 +1075,7 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
         </p>
       </div>
 
-      <div className="w-full max-w-2xl mx-auto h-72 md:h-[350px] lg:h-[300px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
+      <div className="w-full max-w-2xl mx-auto h-64 md:h-[300px] lg:h-[250px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
         <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative">
           <AnimatePresence mode="wait">
             {state.installationPhoto ? (
@@ -1101,8 +1107,8 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
       </div>
 
       <div>
-        <div className="p-5 md:p-8 border-2 border-dashed border-white/50 rounded-3xl bg-white/20 backdrop-blur-md flex flex-col items-center mb-8">
-          <div className="flex items-center gap-6 md:gap-10 mb-6">
+        <div className="p-4 md:p-6 border-2 border-dashed border-white/50 rounded-3xl bg-white/20 backdrop-blur-md flex flex-col items-center mb-4">
+          <div className="flex items-center gap-6 md:gap-8 mb-4">
             <label className="flex flex-col items-center gap-2 cursor-pointer group">
               <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-black group-hover:text-[#c6ff00] transition-all duration-300">
                 <Camera size={28} />
@@ -1296,6 +1302,7 @@ export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: Conf
 }
 
 export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, locale?: string }) {
+  const [showMoreDetails, setShowMoreDetails] = React.useState(false);
   const dateLocale = locale === 'en' ? enUS : fr;
   const area = state.width * state.height;
   const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
@@ -1308,14 +1315,14 @@ export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, 
 
   return (
     <div className="flex-1 flex flex-col bg-transparent relative scrollbar-hide">
-      <div className="w-full px-6 pt-2 pb-4">
+      <div className="w-full px-6 pt-2 pb-1">
         <h2 className="text-[24px] md:text-[28px] font-black text-[#0f172a] text-center">{t('wizard.summary.title')}</h2>
         <p className="text-center text-[12px] font-medium text-slate-500 italic mt-1">
           {t('wizard.summary.description')}
         </p>
       </div>
 
-      <div className="relative h-[280px] md:h-[400px] shrink-0 flex items-center justify-center overflow-hidden bg-transparent rounded-[2.5rem]">
+      <div className="relative h-[280px] md:h-[350px] shrink-0 flex items-center justify-center overflow-hidden bg-transparent rounded-[2.5rem]">
         <div className="relative w-full max-w-[300px] sm:max-w-[420px] aspect-[16/9] mt-0 z-10 ml-14" style={{ perspective: '1200px' }}>
           <div className="relative w-full h-full" style={{ transform: 'rotateY(15deg) rotateX(2deg)', transformStyle: 'preserve-3d' }}>
             <div className="absolute inset-0 bg-[#0f172a] border border-slate-700 shadow-2xl rounded-sm" style={{ transform: 'translateZ(-10px)' }}></div>
@@ -1325,14 +1332,14 @@ export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, 
               <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.3)_1px,transparent_1px)]" style={{ backgroundSize: '3px 3px' }}></div>
               <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/40 via-transparent to-purple-900/20 mix-blend-overlay"></div>
             </div>
-            <div className="absolute -bottom-10 left-0 right-0 flex items-center text-[#3b82f6] font-medium text-sm" style={{ transform: 'translateZ(10px)' }}>
+            <div className="absolute -bottom-10 left-0 right-0 flex items-center text-[#3b82f6] font-medium text-sm pb-4" style={{ transform: 'translateZ(10px)' }}>
               <div className="h-[2px] flex-1 bg-[#3b82f6]"></div>
-              <span className="whitespace-nowrap px-4 text-black md:text-white text-sm font-bold">{t('wizard.dimensions.width')} <span className="text-[#3b82f6] font-normal">{state.width.toFixed(2)} m</span></span>
+              <span className="whitespace-nowrap px-4 text-black text-sm font-bold">{t('wizard.dimensions.width')} <span className="text-[#3b82f6] font-normal">{state.width.toFixed(2)} m</span></span>
               <div className="h-[2px] flex-1 bg-[#3b82f6]"></div>
             </div>
             <div className="absolute -left-10 top-0 bottom-0 flex flex-col items-center text-[#3b82f6] font-medium text-sm" style={{ transform: 'translateZ(10px)' }}>
               <div className="w-[2px] flex-1 bg-[#3b82f6]"></div>
-              <span className="whitespace-nowrap py-4 text-black md:text-white text-sm font-bold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+              <span className="whitespace-nowrap py-4 text-black text-sm font-bold" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
                 {t('wizard.dimensions.height')} <span className="text-[#3b82f6] font-normal">{state.height.toFixed(2)} m</span>
               </span>
               <div className="w-[2px] flex-1 bg-[#3b82f6]"></div>
@@ -1341,11 +1348,11 @@ export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, 
         </div>
       </div>
 
-      <div className="bg-transparent p-4 sm:p-6 flex-1 relative z-20 flex flex-col items-center">
+      <div className="bg-transparent p-2 sm:p-3 flex-1 relative z-20 flex flex-col items-center">
         <div className="w-full">
-          <h4 className="text-[14px] font-black text-slate-400 uppercase tracking-widest mb-5 ml-1">{t('wizard.summary.technicalDetails')}</h4>
-          <div className="w-full p-4 sm:p-6 rounded-[2rem] bg-white/20 backdrop-blur-xl border border-white/30 shadow-xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <h4 className="text-[14px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">{t('wizard.summary.technicalDetails')}</h4>
+          <div className="w-full p-3 sm:p-4 rounded-[2rem] bg-white/20 backdrop-blur-xl border border-white/30 shadow-xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
               <DetailItem icon={<Maximize className="w-5 h-5 text-blue-500" />} iconBg="bg-blue-50" label={t('wizard.summary.area')} value={`${area.toFixed(2)} m²`} />
               <DetailItem icon={<Monitor className="w-5 h-5 text-purple-500" />} iconBg="bg-purple-50" label={t('wizard.summary.resolution')} value={`${resX} x ${resY} pixels`} />
               <DetailItem icon={<Cpu className="w-5 h-5 text-fuchsia-500" />} iconBg="bg-fuchsia-50" label={t('wizard.summary.modules')} value={modules.toString()} />
@@ -1353,20 +1360,47 @@ export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, 
               <DetailItem icon={<Zap className="w-5 h-5 text-sky-500" />} iconBg="bg-sky-50" label={t('wizard.summary.powerAvg')} value={`${powerAvg.toFixed(1)} kW`} />
               <DetailItem icon={<Zap className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label={t('wizard.summary.breaker')} value={`${amps}A ${t('wizard.summary.breakerType') || 'Tripolaire'}`} />
 
-              <div className="col-span-1 md:col-span-2 h-px bg-slate-100 my-2"></div>
+              <div className="col-span-1 md:col-span-3 h-px bg-slate-100 my-2"></div>
+            </div>
 
-              <DetailItem icon={<Truck className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label={t('wizard.summary.projectType')} value={state.projectType === 'location' ? t('configurator.rental') : t('configurator.sale')} />
-              <DetailItem icon={<Sun className="w-5 h-5 text-teal-500" />} iconBg="bg-teal-50" label={t('wizard.summary.environment')} value={state.environment === 'exterieur' ? t('configurator.outdoor') : state.environment === 'semi-exterieur' ? t('wizard.environment.semiOutdoorTitle') : t('configurator.indoor')} />
-              <DetailItem icon={<Eye className="w-5 h-5 text-cyan-500" />} iconBg="bg-cyan-50" label={t('wizard.summary.distance')} value={state.viewingDistance} />
-              <DetailItem icon={<Grid className="w-5 h-5 text-rose-500" />} iconBg="bg-rose-50" label={t('wizard.summary.pitch')} value={state.pixelPitch} />
+            {/* Accordion for More Details */}
+            <div className="w-full">
+              <button
+                onClick={() => setShowMoreDetails(!showMoreDetails)}
+                className="w-full flex items-center justify-between py-2 px-1 text-slate-500 hover:text-slate-800 transition-colors group"
+              >
+                <span className="text-[12px] font-bold uppercase tracking-widest flex items-center gap-2">
+                  <Settings2 className="w-4 h-4" />
+                  {showMoreDetails ? t('wizard.summary.lessDetails') || 'Moins de détails' : t('wizard.summary.moreDetails') || 'Plus de détails'}
+                </span>
+                <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", showMoreDetails ? "rotate-180" : "")} />
+              </button>
 
-              {state.projectType === 'location' && state.rentalStartDate && state.rentalEndDate && (
-                <>
-                  <div className="col-span-1 md:col-span-2 h-px bg-slate-100 my-2"></div>
-                  <DetailItem icon={<CalendarIcon className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.rentalPeriod')} value={`${format(new Date(state.rentalStartDate), 'dd/MM/yyyy', { locale: dateLocale })} - ${format(new Date(state.rentalEndDate), 'dd/MM/yyyy', { locale: dateLocale })}`} />
-                  <DetailItem icon={<Clock className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.hours')} value={`${state.rentalStartTime || '08:00'} ${t('wizard.rental.to')} ${state.rentalEndTime || '18:00'}`} />
-                </>
-              )}
+              <AnimatePresence>
+                {showMoreDetails && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4 pt-4 border-t border-slate-100 mt-2">
+                      <DetailItem icon={<Truck className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label={t('wizard.summary.projectType')} value={state.projectType === 'location' ? t('configurator.rental') : t('configurator.sale')} />
+                      <DetailItem icon={<Sun className="w-5 h-5 text-teal-500" />} iconBg="bg-teal-50" label={t('wizard.summary.environment')} value={state.environment === 'exterieur' ? t('configurator.outdoor') : state.environment === 'semi-exterieur' ? t('wizard.environment.semiOutdoorTitle') : t('configurator.indoor')} />
+                      <DetailItem icon={<Eye className="w-5 h-5 text-cyan-500" />} iconBg="bg-cyan-50" label={t('wizard.summary.distance')} value={state.viewingDistance} />
+                      <DetailItem icon={<Grid className="w-5 h-5 text-rose-500" />} iconBg="bg-rose-50" label={t('wizard.summary.pitch')} value={state.pixelPitch} />
+
+                      {state.projectType === 'location' && state.rentalStartDate && state.rentalEndDate && (
+                        <>
+                          <DetailItem icon={<CalendarIcon className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.rentalPeriod')} value={`${format(new Date(state.rentalStartDate), 'dd/MM/yyyy', { locale: dateLocale })} - ${format(new Date(state.rentalEndDate), 'dd/MM/yyyy', { locale: dateLocale })}`} />
+                          <DetailItem icon={<Clock className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.hours')} value={`${state.rentalStartTime || '08:00'} ${t('wizard.rental.to')} ${state.rentalEndTime || '18:00'}`} />
+                        </>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

@@ -178,6 +178,7 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(true);
   const router = useRouter();
 
  useEffect(() => {
@@ -631,12 +632,35 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
 
       <motion.div
         layout
-        className="relative w-full rounded-xl p-5 shadow-xl overflow-hidden text-gray-900 font-semibold bg-gradient-to-br from-pink-300 via-purple-300 to-blue-300 dark:from-pink-800 dark:via-purple-800 dark:to-blue-800"
+        initial={false}
+        animate={{ 
+            height: isSummaryExpanded ? 'auto' : '60px',
+        }}
+        className={cn(
+            "relative w-full rounded-xl shadow-xl overflow-hidden text-gray-900 font-semibold bg-gradient-to-br from-pink-300 via-purple-300 to-blue-300 dark:from-pink-800 dark:via-purple-800 dark:to-blue-800 transition-all duration-500",
+            isSummaryExpanded ? "p-5" : "p-0 cursor-pointer hover:opacity-95"
+        )}
         style={{ backgroundSize: "200% 200%" }}
+        onClick={() => !isSummaryExpanded && setIsSummaryExpanded(true)}
     >
         <div className="absolute inset-0 rounded-xl bg-white/10 dark:bg-black/20 backdrop-blur-sm pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent rotate-12 scale-150 pointer-events-none" />
-        <div className="relative z-10 space-y-4">
+        
+        {/* Toggle Button (Green Bar) */}
+        <div className="flex justify-center mb-4 relative z-30 pt-2">
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setIsSummaryExpanded(!isSummaryExpanded);
+                }}
+                className={cn(
+                    "w-32 h-2 rounded-full transition-all duration-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]",
+                    isSummaryExpanded ? "bg-green-500/40 hover:bg-green-500/60" : "bg-green-500 h-3 mt-4"
+                )}
+            />
+        </div>
+
+        <div className={cn("relative z-10 space-y-4", !isSummaryExpanded && "hidden")}>
             <div className="flex justify-between items-center text-right">
                 <div>
                     <p className="text-sm text-gray-700 dark:text-gray-300">Total Initial (HT)</p>

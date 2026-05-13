@@ -42,7 +42,7 @@ export default function Preview({
   }, []);
 
   const availableWidth = containerDimensions.width > 0 ? containerDimensions.width - 32 : 450;
-  const availableHeight = containerDimensions.height > 0 ? containerDimensions.height - 32 : 250;
+  const availableHeight = containerDimensions.height > 0 ? containerDimensions.height - 64 : 250;
 
   const HUMAN_HEIGHT_M = 1.8;
   const HUMAN_WIDTH_M = 0.5;
@@ -99,8 +99,8 @@ export default function Preview({
   const humanSrc = humanScaleImageUrl || "/images/human-silhouette.png"; // or "/silhouette.png" if the prompt specifically asked for it, but let's stick to "/images/human-silhouette.png" or "/silhouette.png"
 
   return (
-    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center p-4 rounded-lg bg-slate-100 border">
-      <div className="preview-screen" style={{ position: "relative", display: "inline-block" }}>
+    <div ref={containerRef} className="relative w-full h-full flex items-center justify-center pt-4 px-4 pb-10 rounded-lg bg-slate-100 border">
+      <div className="preview-screen" style={{ position: "relative", display: "inline-block", marginBottom: '12px' }}>
         {screenElement}
         
         {humanPosition === "side" && (

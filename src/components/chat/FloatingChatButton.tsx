@@ -10,6 +10,7 @@ import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WizardBotFlow } from '@/components/chat/WizardBotFlow';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { Product, Settings, LaborSettings, DeliverySettings, Locations } from '@/lib/types';
 
 interface FloatingChatButtonProps {
@@ -24,6 +25,7 @@ interface FloatingChatButtonProps {
 export function FloatingChatButton({ allProducts, settings, laborSettings, deliverySettings, locations, onHome }: FloatingChatButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const constraintsRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   return (
     <>
@@ -34,8 +36,13 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
         drag
         dragConstraints={constraintsRef}
         dragElastic={0.1}
-        dragMomentum={false}
-        className="fixed bottom-24 left-2 z-[101] md:bottom-20 md:left-auto md:right-8 pointer-events-auto touch-none"
+        dragMomentum={true}
+        whileHover={{ cursor: "grab", scale: 1.05 }}
+        whileDrag={{ cursor: "grabbing", scale: 1.1 }}
+        className={cn(
+          "fixed z-[101] pointer-events-auto touch-none",
+          isMobile ? "bottom-24 left-2" : "bottom-20 right-8"
+        )}
         style={{ touchAction: "none" }}
       >
         <motion.button
@@ -70,7 +77,8 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
                 <motion.img
                   src="/robot-avatar.png"
                   alt="Assistant"
-                  className="w-full h-full object-contain drop-shadow-2xl"
+                  draggable="false"
+                  className="w-full h-full object-contain drop-shadow-2xl select-none"
                   animate={{ y: [0, -8, 0] }}
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                 />

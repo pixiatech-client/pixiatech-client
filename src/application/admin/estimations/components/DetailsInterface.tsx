@@ -87,6 +87,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
   const [isReturnReasonOpen, setIsReturnReasonOpen] = useState(false);
 
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(true);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
   const [historyPage, setHistoryPage] = useState(1);
@@ -819,66 +820,99 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
           <AnimatePresence>
             {profile === 'client' && (
               <motion.div 
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className="p-12 border-t border-white/[0.08] bg-gradient-to-b from-black/80 to-black/60 backdrop-blur-3xl rounded-[2.5rem] mt-16 shadow-[0_-20px_80px_rgba(0,0,0,0.8)] relative overflow-hidden"
+                layout
+                initial={false}
+                animate={{ 
+                  height: isSummaryExpanded ? 'auto' : '60px',
+                  y: 0, 
+                  opacity: 1 
+                }}
+                className={cn(
+                  "border-t border-white/[0.08] bg-gradient-to-b from-black/80 to-black/60 backdrop-blur-3xl mt-16 shadow-[0_-20px_80px_rgba(0,0,0,0.8)] relative overflow-hidden transition-all duration-500",
+                  isSummaryExpanded ? "p-12 rounded-[2.5rem]" : "p-0 rounded-2xl cursor-pointer hover:bg-black/90"
+                )}
+                onClick={() => !isSummaryExpanded && setIsSummaryExpanded(true)}
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-[#6dff1d]/3 via-transparent to-[#24c7ff]/3 pointer-events-none" />
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                 
-                <div className="flex flex-col lg:flex-row items-end justify-between gap-12 relative">
-                  <div className="flex-1 bg-[#18181b] p-10 rounded-3xl border border-white/[0.05] w-full shadow-inner relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#3b82f6]/5 to-transparent pointer-events-none" />
-                    <div className="space-y-8 relative">
-                      <div className="flex justify-between items-end border-b border-white/[0.05] pb-8">
-                        <div className="flex flex-col gap-2">
-                          <span className="text-[9px] text-zinc-700 uppercase font-['JetBrains_Mono'] font-bold tracking-[0.3em]">Sous-total Net HT</span>
-                          <span className="text-4xl font-['Space_Grotesk'] font-black text-white tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
-                        </div>
-                        <div className="text-right flex flex-col items-end gap-2">
-                          <span className="text-[9px] text-zinc-700 uppercase font-['JetBrains_Mono'] font-bold tracking-[0.3em]">Hardware Tax (TVA)</span>
-                          <span className="font-['JetBrains_Mono'] text-2xl text-[#3b82f6] font-black">+{formatCurrency(calculations.tva)}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-6">
-                        <NumericControl 
-                          label="TVA (%)"
-                          unit="%"
-                          value={estimation.taxRate}
-                          onChange={(val) => setEstimation({...estimation, taxRate: val})}
-                          isEditMode={isEditMode}
-                        />
-                        <NumericControl 
-                          label="REMISE GLOBALE (%)"
-                          unit="%"
-                          value={estimation.globalDiscount}
-                          onChange={(val) => setEstimation({...estimation, globalDiscount: val})}
-                          isEditMode={isEditMode}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-right flex flex-col justify-end min-w-[350px] relative">
-                    <div className="absolute -top-12 right-0 w-64 h-64 bg-[#6dff1d]/10 rounded-full blur-[100px] pointer-events-none" />
-                    
-                    <div className="text-[#24c7ff] text-[11px] font-['Space_Grotesk'] font-bold uppercase mb-6 tracking-[0.8em] pr-4 relative">
-                      <span className="absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#24c7ff] rounded-full shadow-[0_0_10px_#24c7ff]" />
-                      À PAYER (TTC)
-                    </div>
-                    
-                    <div className="text-7xl font-['Space_Grotesk'] font-black tracking-tighter text-[#6dff1d] relative" style={{ textShadow: '0 0 40px rgba(109, 255, 29, 0.5), 0 0 80px rgba(109, 255, 29, 0.3), 0 0 120px rgba(109, 255, 29, 0.1)' }}>
-                      {formatCurrency(calculations.finalTotal)}
-                    </div>
-                    
-                    {estimation.globalDiscount > 0 && (
-                      <div className="text-[10px] text-[#6dff1d] font-['JetBrains_Mono'] font-bold mt-8 uppercase tracking-[0.3em] bg-[#6dff1d]/10 border border-[#6dff1d]/20 px-6 py-3 rounded-full w-fit ml-auto shadow-[0_0_30px_rgba(109,255,29,0.15)] relative">
-                        SAVINGS: {formatCurrency(calculations.totalTTC - calculations.finalTotal)}
-                      </div>
+                {/* Toggle Button (Green Bar) */}
+                <div className="flex justify-center mb-6 relative z-30">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsSummaryExpanded(!isSummaryExpanded);
+                    }}
+                    className={cn(
+                      "w-48 h-2 rounded-full transition-all duration-500 shadow-[0_0_15px_rgba(109,255,29,0.3)] hover:shadow-[0_0_25px_rgba(109,255,29,0.5)]",
+                      isSummaryExpanded ? "bg-[#6dff1d]/40" : "bg-[#6dff1d] h-3 mt-6"
                     )}
-                  </div>
+                  />
                 </div>
+
+                <AnimatePresence mode="wait">
+                  {isSummaryExpanded && (
+                    <motion.div
+                      key="summary-content"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      className="flex flex-col lg:flex-row items-end justify-between gap-12 relative"
+                    >
+                      <div className="flex-1 bg-[#18181b] p-10 rounded-3xl border border-white/[0.05] w-full shadow-inner relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#3b82f6]/5 to-transparent pointer-events-none" />
+                        <div className="space-y-8 relative">
+                          <div className="flex justify-between items-end border-b border-white/[0.05] pb-8">
+                            <div className="flex flex-col gap-2">
+                              <span className="text-[9px] text-zinc-700 uppercase font-['JetBrains_Mono'] font-bold tracking-[0.3em]">Sous-total Net HT</span>
+                              <span className="text-4xl font-['Space_Grotesk'] font-black text-white tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
+                            </div>
+                            <div className="text-right flex flex-col items-end gap-2">
+                              <span className="text-[9px] text-zinc-700 uppercase font-['JetBrains_Mono'] font-bold tracking-[0.3em]">Hardware Tax (TVA)</span>
+                              <span className="font-['JetBrains_Mono'] text-2xl text-[#3b82f6] font-black">+{formatCurrency(calculations.tva)}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-6">
+                            <NumericControl 
+                              label="TVA (%)"
+                              unit="%"
+                              value={estimation.taxRate}
+                              onChange={(val) => setEstimation({...estimation, taxRate: val})}
+                              isEditMode={isEditMode}
+                            />
+                            <NumericControl 
+                              label="REMISE GLOBALE (%)"
+                              unit="%"
+                              value={estimation.globalDiscount}
+                              onChange={(val) => setEstimation({...estimation, globalDiscount: val})}
+                              isEditMode={isEditMode}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right flex flex-col justify-end min-w-[350px] relative">
+                        <div className="absolute -top-12 right-0 w-64 h-64 bg-[#6dff1d]/10 rounded-full blur-[100px] pointer-events-none" />
+                        
+                        <div className="text-[#24c7ff] text-[11px] font-['Space_Grotesk'] font-bold uppercase mb-6 tracking-[0.8em] pr-4 relative">
+                          <span className="absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#24c7ff] rounded-full shadow-[0_0_10px_#24c7ff]" />
+                          À PAYER (TTC)
+                        </div>
+                        
+                        <div className="text-7xl font-['Space_Grotesk'] font-black tracking-tighter text-[#6dff1d] relative" style={{ textShadow: '0 0 40px rgba(109, 255, 29, 0.5), 0 0 80px rgba(109, 255, 29, 0.3), 0 0 120px rgba(109, 255, 29, 0.1)' }}>
+                          {formatCurrency(calculations.finalTotal)}
+                        </div>
+                        
+                        {estimation.globalDiscount > 0 && (
+                          <div className="text-[10px] text-[#6dff1d] font-['JetBrains_Mono'] font-bold mt-8 uppercase tracking-[0.3em] bg-[#6dff1d]/10 border border-[#6dff1d]/20 px-6 py-3 rounded-full w-fit ml-auto shadow-[0_0_30px_rgba(109,255,29,0.15)] relative">
+                            SAVINGS: {formatCurrency(calculations.totalTTC - calculations.finalTotal)}
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>

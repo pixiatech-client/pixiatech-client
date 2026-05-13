@@ -84,6 +84,7 @@ import {
 import { Product as GlobalProduct, ProductSpec } from '@/lib/types';
 import { villes } from '@/lib/data/villes';
 import { geminiService } from './services/geminiService';
+import { cn } from '@/lib/utils';
 import './details.css';
 
 // Mock initial data as fallback
@@ -138,6 +139,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
   // Interface Control States
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(true);
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>('');
@@ -1301,11 +1303,34 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                 {profile === 'client' && (
                   <motion.div
                     key="aura-footer"
-                    initial={{ y: 80, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    className="aura-footer-fixed hidden md:block"
+                    animate={{ 
+                      height: isSummaryExpanded ? 'auto' : '40px',
+                      y: 0,
+                      opacity: 1 
+                    }}
+                    className={cn(
+                      "aura-footer-fixed hidden md:block transition-all duration-500",
+                      !isSummaryExpanded && "cursor-pointer hover:bg-black/80 p-0"
+                    )}
+                    onClick={() => !isSummaryExpanded && setIsSummaryExpanded(true)}
                   >
-                    <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10 mb-8 emerald-neon-halo">
+                    {/* Toggle Button (Green Bar) */}
+                    <div className="flex justify-center relative z-50">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsSummaryExpanded(!isSummaryExpanded);
+                        }}
+                        className={cn(
+                          "w-48 h-2 rounded-full transition-all duration-500 shadow-[0_0_15px_rgba(109,255,29,0.3)] hover:shadow-[0_0_25px_rgba(109,255,29,0.5)]",
+                          isSummaryExpanded ? "bg-[#6dff1d]/40 mb-6" : "bg-[#6dff1d] h-3 mt-4"
+                        )}
+                        title={isSummaryExpanded ? "Réduire" : "Développer"}
+                      />
+                    </div>
+                    
+                    <div className={cn("transition-all duration-500", !isSummaryExpanded && "opacity-0 pointer-events-none hidden")}>
+                      <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10 mb-8 emerald-neon-halo">
                       <div className="flex-1 bg-white/[0.03] p-5 md:p-6 rounded-2xl border border-white/5 shadow-2xl w-full">
                         <div className="space-y-4">
                           <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b border-white/5 pb-4 gap-4 sm:gap-0">
@@ -1351,6 +1376,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         )}
                       </div>
                     </div>
+                  </div>
 
                     {isEditMode && (
                       <button
