@@ -960,17 +960,63 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="flex-1 min-w-0">
                               <span className="text-[9px] text-aura-accent font-black uppercase tracking-[0.3em] mb-2 block">Produit / Désignation</span>
                               {isEditMode ? (
-                                <input
-                                  value={p.name}
-                                  onChange={(e) => {
-                                    const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, name: e.target.value } : prod);
-                                    setEstimation({ ...estimation, products: newProducts });
+                                <CustomSelect
+                                  value={p.productId || ''}
+                                  placeholder="Sélectionner un produit..."
+                                  options={allProducts.map(prod => ({
+                                    id: prod.id,
+                                    label: prod.name,
+                                    image: prod.image || (prod as any).mainImage
+                                  }))}
+                                  onChange={(val) => {
+                                    const selectedProd = allProducts.find(prod => prod.id === val);
+                                    if (selectedProd) {
+                                      const newProducts = estimation.products.map(prod => prod.id === p.id ? { 
+                                        ...prod, 
+                                        productId: selectedProd.id,
+                                        name: selectedProd.name,
+                                        unitPrice: selectedProd.price || 0,
+                                        // Reset specs to selected product defaults if available
+                                        specs: allProductSpecs[selectedProd.id] 
+                                          ? Object.fromEntries(allProductSpecs[selectedProd.id].map(s => [s.key, s.value]))
+                                          : prod.specs
+                                      } : prod);
+                                      setEstimation({ ...estimation, products: newProducts });
+                                      addHistory(`Changement produit: ${selectedProd.name}`);
+                                    }
                                   }}
-                                  className="w-full bg-transparent border-b border-aura-accent/30 p-0 focus:ring-0 text-2xl font-display font-black text-white placeholder:opacity-20 uppercase"
-                                  placeholder="Nom du produit..."
+                                  renderOption={(opt) => (
+                                    <div className="flex items-center gap-4 py-1">
+                                      <div className="w-12 h-12 rounded-lg bg-white/5 overflow-hidden border border-white/10 shrink-0 shadow-lg">
+                                        {opt.image ? (
+                                          <img src={opt.image} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                          <div className="w-full h-full flex items-center justify-center text-aura-text-dim"><ImageIcon size={16} /></div>
+                                        )}
+                                      </div>
+                                      <span className="font-display font-black text-xs uppercase tracking-tight text-white">{opt.label}</span>
+                                    </div>
+                                  )}
                                 />
                               ) : (
-                                <div className="text-2xl font-display font-black text-white tracking-tighter uppercase">{p.name}</div>
+                                <div className="flex items-center gap-4 group">
+                                  {(() => {
+                                    const prodInfo = allProducts.find(pr => pr.id === (p.productId || p.id));
+                                    const img = prodInfo?.image || (prodInfo as any)?.mainImage;
+                                    return (
+                                      <>
+                                        <div className="w-16 h-16 rounded-2xl bg-white/5 overflow-hidden border border-white/10 shadow-2xl transition-transform duration-500 group-hover:scale-110">
+                                          {img ? (
+                                            <img src={img} alt="" className="w-full h-full object-cover" />
+                                          ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-aura-text-dim"><ImageIcon size={20} /></div>
+                                          )}
+                                        </div>
+                                        <div className="text-2xl md:text-3xl font-display font-black text-white tracking-tighter uppercase leading-none">{p.name}</div>
+                                      </>
+                                    );
+                                  })()}
+                                </div>
                               )}
                             </div>
                             {isEditMode && (
