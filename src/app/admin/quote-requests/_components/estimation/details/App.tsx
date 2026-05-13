@@ -173,34 +173,34 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         console.error("PDF element not found");
         return;
       }
-      
+
       // Wait for rendering
       await new Promise(resolve => setTimeout(resolve, 800));
-      
+
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pages = quoteContainer.querySelectorAll('.page-break-after');
       const targetPages = pages.length > 0 ? pages : [quoteContainer];
 
       for (let i = 0; i < targetPages.length; i++) {
         const page = targetPages[i] as HTMLElement;
-        const canvas = await html2canvas(page, { 
+        const canvas = await html2canvas(page, {
           scale: 3, // Premium quality
           useCORS: true,
           logging: false,
           allowTaint: true,
           backgroundColor: '#ffffff'
         });
-        
+
         const imgData = canvas.toDataURL('image/jpeg', 1.0);
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        
+
         if (i > 0) pdf.addPage();
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
       }
 
       const pdfBlob = pdf.output('blob');
-      
+
       // Auto-persist if missing
       if (estimation.id) {
         try {
@@ -418,10 +418,18 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
   const addProduct = () => {
     const newProduct: LocalProduct = {
       id: Math.random().toString(36).substr(2, 9),
+      productId: '',
       name: 'Nouvel Écran LED',
       quantity: 1,
+      width: 2.0, // Initialisation à 2m
+      height: 2.0, // Initialisation à 2m
       unitPrice: 0,
-      discount: 0
+      discount: 0,
+      specs: {
+        pixelPitch: '2.5',
+        environment: 'Intérieur',
+        projectType: 'Vente'
+      }
     };
     setEstimation(prev => ({
       ...prev,
@@ -608,21 +616,20 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         DOSSIER TECHNIQUE
                       </span>
                       {estimation.status && (
-                        <div className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${
-                          estimation.status === 'returned' ? 'bg-orange-500/20 border-orange-500/30 text-orange-400' :
-                          estimation.status === 'processed' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
-                          estimation.status === 'in_progress' ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' :
-                          estimation.status === 'sent' ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
-                          estimation.status === 'archived' ? 'bg-white/10 border-white/20 text-white/40' :
-                          'bg-amber-500/20 border-amber-500/30 text-amber-400'
-                        }`}>
-                          {estimation.status === 'returned' ? 'Retourné' : 
-                           estimation.status === 'processed' ? 'Approuvé' :
-                           estimation.status === 'in_progress' ? 'Envoyé au fournisseur' :
-                           estimation.status === 'sent' ? 'Envoyé' :
-                           estimation.status === 'archived' ? 'Archivé' :
-                           estimation.status === 'trashed' ? 'Corbeille' :
-                           estimation.status === 'pending' ? 'En cours' : estimation.status}
+                        <div className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${estimation.status === 'returned' ? 'bg-orange-500/20 border-orange-500/30 text-orange-400' :
+                            estimation.status === 'processed' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
+                              estimation.status === 'in_progress' ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' :
+                                estimation.status === 'sent' ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
+                                  estimation.status === 'archived' ? 'bg-white/10 border-white/20 text-white/40' :
+                                    'bg-amber-500/20 border-amber-500/30 text-amber-400'
+                          }`}>
+                          {estimation.status === 'returned' ? 'Retourné' :
+                            estimation.status === 'processed' ? 'Approuvé' :
+                              estimation.status === 'in_progress' ? 'Envoyé au fournisseur' :
+                                estimation.status === 'sent' ? 'Envoyé' :
+                                  estimation.status === 'archived' ? 'Archivé' :
+                                    estimation.status === 'trashed' ? 'Corbeille' :
+                                      estimation.status === 'pending' ? 'En cours' : estimation.status}
                         </div>
                       )}
                     </div>
@@ -663,7 +670,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         >
                           <Eraser size={14} /> <span className="hidden sm:inline">Désarchiver</span>
                         </button>
-                        
+
                         {estimation.status === 'archived' ? (
                           <button
                             onClick={async () => {
@@ -995,7 +1002,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                       const specsFromCatalog = catalogSpecs
                                         ? Object.fromEntries(catalogSpecs.map(s => [s.key, s.value]))
                                         : selectedProd.specs || {};
-                                      
+
                                       // Enrich with product-level fields
                                       const enrichedSpecs = {
                                         ...specsFromCatalog,
@@ -1333,144 +1340,117 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     </motion.section>
                   )}
                 </AnimatePresence>
+              </div>
 
-
-
-                {/* MOBILE ONLY FOOTER (In-flow to allow scrolling) */}
-                <AnimatePresence>
-                  {profile === 'client' && (
-                    <motion.div
-                      key="aura-footer-mobile"
-                      className="block md:hidden mt-8 mb-6 p-5 bg-white/[0.03] border border-aura-border rounded-2xl shadow-2xl mx-4"
-                    >
-                      <div className="flex justify-between items-end mb-4 pb-4 border-b border-white/5">
-                        <div>
-                          <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] block mb-1">Sous-total HT</span>
-                          <span className="text-xl font-display font-black text-white">{formatCurrency(calculations.subtotalHT)}</span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] block mb-1">TVA ({estimation.taxRate}%)</span>
-                          <span className="font-mono text-sm text-aura-accent font-bold">+{formatCurrency(calculations.tva)}</span>
-                        </div>
-                      </div>
-
-                      {isEditMode && (
-                        <div className="grid grid-cols-2 gap-3 mb-6">
-                          <NumericControl label="TVA (%)" value={estimation.taxRate} onChange={(val) => setEstimation({ ...estimation, taxRate: val })} />
-                          <NumericControl label="REMISE (%)" value={estimation.globalDiscount} onChange={(val) => setEstimation({ ...estimation, globalDiscount: val })} />
-                        </div>
-                      )}
-
-                      <div className="text-center pt-2 pb-2">
-                        <div className="text-[11px] uppercase font-black mb-1 tracking-[0.3em] text-aura-accent font-display">À Payer (TTC)</div>
-                        <div className="text-4xl font-display font-black neon-text-emerald">{formatCurrency(calculations.finalTotal)}</div>
-                        {estimation.globalDiscount > 0 && (
-                          <div className="text-[9px] text-emerald-400/80 font-bold mt-2 uppercase tracking-[0.2em]">Remise exceptionnelle appliquée</div>
-                        )}
-                      </div>
-
-                      {isEditMode && (
-                        <button
-                          onClick={() => { addHistory('Validation Modifications'); setIsEditMode(false); }}
-                          className="futuristic-btn-primary w-full mt-4 py-4 text-[10px]"
+              {/* FIXED FOOTER (OUTSIDE SCROLL AREA) */}
+              <AnimatePresence>
+                {profile === 'client' && (
+                  <motion.div
+                    key="aura-footer"
+                    initial={{ y: 80, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="aura-footer-fixed hidden md:block relative shrink-0 border-t border-white/10"
+                  >
+                    {/* Toggle Pill — floating on the border-top divider line, always visible */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
+                      <button
+                        onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                        className="group flex items-center gap-3 px-5 py-2.5 rounded-full border border-[#6dff1d]/30 bg-[#09090b] backdrop-blur-xl shadow-[0_0_20px_rgba(109,255,29,0.15)] hover:shadow-[0_0_35px_rgba(109,255,29,0.35)] hover:border-[#6dff1d]/60 transition-all duration-500 active:scale-95"
+                      >
+                        <motion.div
+                          animate={{ rotate: isSummaryExpanded ? 180 : 0 }}
+                          transition={{ duration: 0.4, ease: 'easeInOut' }}
                         >
-                          Approuver et Enregistrer
-                        </button>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                          <ChevronDown size={14} className="text-[#6dff1d]" />
+                        </motion.div>
+                        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#6dff1d]">
+                          Résumé Financier
+                        </span>
+                        <div className="w-px h-3 bg-[#6dff1d]/20" />
+                        <span className="text-[10px] font-black font-mono text-white/80 tracking-tight group-hover:text-white transition-colors">
+                          {formatCurrency(calculations.finalTotal)}
+                        </span>
+                      </button>
+                    </div>
 
-                  <AnimatePresence>
-                  {profile === 'client' && (
-                    <motion.div
-                      key="aura-footer"
-                      initial={{ y: 80, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      className="aura-footer-fixed hidden md:block relative"
-                    >
-                      {/* Toggle Pill — floating on the border-top divider line, always visible */}
-                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
-                        <button
-                          onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-                          className="group flex items-center gap-3 px-5 py-2.5 rounded-full border border-[#6dff1d]/30 bg-[#09090b] backdrop-blur-xl shadow-[0_0_20px_rgba(109,255,29,0.15)] hover:shadow-[0_0_35px_rgba(109,255,29,0.35)] hover:border-[#6dff1d]/60 transition-all duration-500 active:scale-95"
+                    {/* Collapsible Financial Summary */}
+                    <AnimatePresence initial={false}>
+                      {isSummaryExpanded && (
+                        <motion.div
+                          key="summary-body"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.4, ease: 'easeInOut' }}
+                          style={{ overflow: 'hidden' }}
                         >
-                          <motion.div
-                            animate={{ rotate: isSummaryExpanded ? 180 : 0 }}
-                            transition={{ duration: 0.4, ease: 'easeInOut' }}
-                          >
-                            <ChevronDown size={14} className="text-[#6dff1d]" />
-                          </motion.div>
-                          <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#6dff1d]">
-                            Résumé Financier
-                          </span>
-                          <div className="w-px h-3 bg-[#6dff1d]/20" />
-                          <span className="text-[10px] font-black font-mono text-white/80 tracking-tight group-hover:text-white transition-colors">
-                            {formatCurrency(calculations.finalTotal)}
-                          </span>
-                        </button>
-                      </div>
-
-                      {/* Collapsible Financial Summary */}
-                      <AnimatePresence initial={false}>
-                        {isSummaryExpanded && (
-                          <motion.div
-                            key="summary-body"
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.4, ease: 'easeInOut' }}
-                            style={{ overflow: 'hidden' }}
-                          >
-                            <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10 mb-8 emerald-neon-halo">
-                              <div className="flex-1 bg-white/[0.03] p-5 md:p-6 rounded-2xl border border-white/5 shadow-2xl w-full">
-                                <div className="space-y-4">
-                                  <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b border-white/5 pb-4 gap-4 sm:gap-0">
-                                    <div className="flex flex-col gap-1">
-                                      <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] font-display">Sous-total HT</span>
-                                      <span className="text-2xl font-display font-black text-white tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
-                                    </div>
-                                    <div className="text-left sm:text-right flex flex-col sm:items-end gap-1">
-                                      <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] font-display">TVA ({estimation.taxRate}%)</span>
-                                      <span className="font-mono text-base text-aura-accent font-bold">+{formatCurrency(calculations.tva)}</span>
-                                    </div>
+                          <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10 mb-8 emerald-neon-halo">
+                            <div className="flex-1 bg-white/[0.03] p-5 md:p-6 rounded-2xl border border-white/5 shadow-2xl w-full">
+                              <div className="space-y-4">
+                                <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b border-white/5 pb-4 gap-4 sm:gap-0">
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] font-display">Sous-total HT</span>
+                                    <span className="text-2xl font-display font-black text-white tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
                                   </div>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <NumericControl label="TVA (%)" unit="%" value={estimation.taxRate} onChange={(val) => setEstimation({ ...estimation, taxRate: val })} />
-                                    <NumericControl label="REMISE GLOBALE (%)" unit="%" value={estimation.globalDiscount} onChange={(val) => setEstimation({ ...estimation, globalDiscount: val })} />
+                                  <div className="text-left sm:text-right flex flex-col sm:items-end gap-1">
+                                    <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] font-display">TVA ({estimation.taxRate}%)</span>
+                                    <span className="font-mono text-base text-aura-accent font-bold">+{formatCurrency(calculations.tva)}</span>
                                   </div>
                                 </div>
-                              </div>
-                              <div className="text-left md:text-right flex flex-col justify-end min-w-0 md:min-w-[220px] flex-shrink-0 relative">
-                                <div className="absolute -inset-4 bg-emerald-500/10 blur-[40px] rounded-full pointer-events-none hidden md:block" />
-                                <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">À Payer (TTC)</div>
-                                <div className="text-4xl sm:text-5xl md:text-6xl font-display font-black tracking-tighter neon-text-emerald relative z-10 truncate">
-                                  {formatCurrency(calculations.finalTotal)}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <NumericControl label="TVA (%)" unit="%" value={estimation.taxRate} onChange={(val) => setEstimation({ ...estimation, taxRate: val })} />
+                                  <NumericControl label="REMISE GLOBALE (%)" unit="%" value={estimation.globalDiscount} onChange={(val) => setEstimation({ ...estimation, globalDiscount: val })} />
                                 </div>
-                                {estimation.globalDiscount > 0 && (
-                                  <div className="text-[10px] text-emerald-400/80 font-bold mt-2 uppercase tracking-[0.2em] font-display relative z-10">
-                                    Remise exceptionnelle appliquée
-                                  </div>
-                                )}
                               </div>
                             </div>
-                            {isEditMode && (
-                              <button
-                                onClick={() => { addHistory('Validation Modifications'); setIsEditMode(false); }}
-                                className="futuristic-btn-primary w-full group"
-                              >
-                                Approuver et Enregistrer le Dossier
-                                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                              </button>
-                            )}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-              </div>
+                            <div className="text-left md:text-right flex flex-col justify-end min-w-0 md:min-w-[220px] flex-shrink-0 relative">
+                              <div className="absolute -inset-4 bg-emerald-500/10 blur-[40px] rounded-full pointer-events-none hidden md:block" />
+                              <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">À Payer (TTC)</div>
+                              <div className="text-4xl sm:text-5xl md:text-6xl font-display font-black tracking-tighter neon-text-emerald relative z-10 truncate">
+                                {formatCurrency(calculations.finalTotal)}
+                              </div>
+                              {estimation.globalDiscount > 0 && (
+                                <div className="text-[10px] text-emerald-400/80 font-bold mt-2 uppercase tracking-[0.2em] font-display relative z-10">
+                                  Remise exceptionnelle appliquée
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {isEditMode && (
+                            <button
+                              onClick={async () => {
+                                setIsAiLoading(true);
+                                try {
+                                  addHistory('Validation Modifications et Sauvegarde');
+                                  // Actual DB Save
+                                  await updateQuoteStatus(initialEstimation.id, {
+                                    products: estimation.products.map(p => ({
+                                      ...p,
+                                      productName: p.name,
+                                      lineTotal: (p.quantity || 1) * (p.unitPrice || 0)
+                                    })),
+                                    taxRate: estimation.taxRate,
+                                    globalDiscount: estimation.globalDiscount,
+                                    client: estimation.client
+                                  } as any);
+                                  setIsEditMode(false);
+                                } catch (err) {
+                                  console.error("Erreur sauvegarde:", err);
+                                } finally {
+                                  setIsAiLoading(false);
+                                }
+                              }}
+                              className="futuristic-btn-primary w-full group py-4 flex items-center justify-center gap-3"
+                            >
+                              {isAiLoading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 size={18} /> Approuver et Sauvegarder Définitivement</>}
+                            </button>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           </div>
         )}
@@ -1690,7 +1670,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         }}
       >
         {pdfSettings && estimation && (
-          <QuotePDF 
+          <QuotePDF
             id="quote-pdf-view-admin-inner"
             request={{
               ...estimation,
@@ -1704,12 +1684,12 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                 productName: p.name || 'Produit',
                 lineTotal: (p.quantity * p.unitPrice) * (1 - (p.discount || 0) / 100)
               }))
-            } as any} 
-            settings={pdfSettings} 
-            selectedCity={null} 
-            globalSettings={{ isDeliveryStepEnabled: true, isInstallationStepEnabled: true } as any} 
-            allProducts={allProducts} 
-            specs={allProductSpecs} 
+            } as any}
+            settings={pdfSettings}
+            selectedCity={null}
+            globalSettings={{ isDeliveryStepEnabled: true, isInstallationStepEnabled: true } as any}
+            allProducts={allProducts}
+            specs={allProductSpecs}
           />
         )}
       </div>

@@ -46,18 +46,31 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
     const livraison = request.deliveryCost || 0;
     const totalHT = sousTotal + installation + livraison;
     
-    // Technical Data calculations
+    // Technical Data calculations (Aggregated)
     const totalArea = products.reduce((sum, p) => sum + ((p.width || 0) * (p.height || 0) * (p.quantity || 1)), 0);
-    const firstProduct = products[0];
-    const productSpecs = firstProduct && specs ? (specs[firstProduct.productId] || specs[firstProduct.id]) : null;
+    const totalModules = products.reduce((sum, p) => sum + (Math.ceil((p.width || 0) / 0.5) * Math.ceil((p.height || 0) / 0.5) * (p.quantity || 1)), 0);
     
-    const environment = firstProduct?.productType === 'indoor' ? 'Intérieur' 
-                      : firstProduct?.productType === 'outdoor' ? 'Extérieur' 
-                      : firstProduct?.productType === 'showcase' ? 'Vitrine' 
-                      : 'Intérieur';
+    // Check if we have multiple different environments or pitches
+    const environments = Array.from(new Set(products.map(p => 
+        p.productType === 'indoor' ? 'Intérieur' 
+        : p.productType === 'outdoor' ? 'Extérieur' 
+        : p.productType === 'showcase' ? 'Vitrine' 
+        : 'Intérieur'
+    )));
+    
+    const pitches = Array.from(new Set(products.map(p => {
+        const prodSpecs = specs ? (specs[p.productId] || specs[p.id]) : null;
+        return prodSpecs?.find(s => s.key.toLowerCase().includes('pitch'))?.value || 'P2.5';
+    })));
 
-    const getSpec = (key: string) => productSpecs?.find(s => s.key.toLowerCase().includes(key.toLowerCase()))?.value;
-    const pitch = getSpec('pitch') || 'P2.5 mm';
+    const environment = environments.length > 1 ? 'Mixte' : (environments[0] || 'Intérieur');
+    const pitch = pitches.length > 1 ? pitches.join(' / ') : (pitches[0] || 'P2.5 mm');
+    
+    // Electrical calculations
+    const isOutdoor = environments.some(e => e === 'Extérieur');
+    const powerMax = totalArea * (isOutdoor ? 0.8 : 0.6); // kW
+    const powerAvg = powerMax * 0.35;
+    const amps = Math.ceil((powerMax * 1000) / 230 / 3);
 
     const baseSpecs = [
         { label: "SURFACE TOTALE:", value: `${totalArea.toFixed(2)} m²`, icon: Maximize, color: "#3b82f6" },
@@ -65,22 +78,13 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
         { label: "ENVIRONNEMENT:", value: environment, icon: Sun, color: "#14b8a6" },
     ];
 
-    const dynamicSpecs = productSpecs ? productSpecs.slice(0, 7).map((s, i) => {
-        const colors = ["#8b5cf6", "#ec4899", "#f59e0b", "#0ea5e9", "#f97316", "#06b6d4", "#6366f1"];
-        const icons = [Monitor, Grid3X3, Zap, Activity, Zap, Eye, Cpu];
-        return {
-            label: s.key.toUpperCase() + ":",
-            value: s.value,
-            icon: icons[i % icons.length],
-            color: colors[i % colors.length]
-        };
-    }) : [
-        { label: "RÉSOLUTION:", value: "1920 x 1080 px", icon: Monitor, color: "#8b5cf6" },
-        { label: "NOMBRE DE MODULES LED:", value: `${Math.ceil(totalArea * 16)} modules`, icon: Grid3X3, color: "#ec4899" },
-        { label: "PUISSANCE MAXIMALE:", value: `${Math.ceil(totalArea * 600)} W`, icon: Zap, color: "#f59e0b" },
-        { label: "PUISSANCE MOYENNE:", value: `${Math.ceil(totalArea * 200)} W`, icon: Activity, color: "#0ea5e9" },
-        { label: "DISJONCTEUR RECOMMANDÉ:", value: "25A triphasé", icon: Zap, color: "#f97316" },
-        { label: "DISTANCE DE VISIONNAGE:", value: "3m - 15m", icon: Eye, color: "#06b6d4" },
+    const dynamicSpecs = [
+        { label: "RÉSOLUTION GLOBALE:", value: products.length > 1 ? "Multi-résolutions" : "Standard", icon: Monitor, color: "#8b5cf6" },
+        { label: "NOMBRE DE MODULES LED:", value: `${totalModules} modules`, icon: Grid3X3, color: "#ec4899" },
+        { label: "PUISSANCE MAXIMALE:", value: `${powerMax.toFixed(1)} kW`, icon: Zap, color: "#f59e0b" },
+        { label: "PUISSANCE MOYENNE:", value: `${powerAvg.toFixed(1)} kW`, icon: Activity, color: "#0ea5e9" },
+        { label: "DISJONCTEUR RECOMMANDÉ:", value: `${amps}A Tripolaire`, icon: Zap, color: "#f97316" },
+        { label: "DISTANCE DE VISIONNAGE:", value: "Optimale", icon: Eye, color: "#06b6d4" },
         { label: "PIXEL PITCH:", value: pitch, icon: Cpu, color: "#6366f1" }
     ];
 
