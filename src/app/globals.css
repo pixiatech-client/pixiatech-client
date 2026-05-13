@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
+    --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -545,9 +545,7 @@ body.dark-theme {
 }
 
 body.light-theme {
-  background: linear-gradient(245deg, #f1f5f9, #f3f6ff, #eaf3ff, #e7ebf2);
-  background-size: 400% 400%;
-  animation: gradient-flow 25s ease-in-out infinite;
+  background: #ffffff;
 }
 
 @keyframes gradient-flow {

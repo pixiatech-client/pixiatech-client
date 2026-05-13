@@ -797,7 +797,7 @@ export function QuoteBuilder({
                         <Stepper currentStep={currentStep} onStepClick={handleStepClick} steps={visibleSteps} />
                     </div>
                 )}
-                <Card className="w-full flex-grow flex flex-col rounded-xl overflow-hidden shadow-lg">
+                <Card className="w-full h-[480px] flex flex-col rounded-xl overflow-hidden shadow-lg">
                     <CardContent className="p-0 relative h-full flex items-center justify-center bg-slate-100 rounded-xl overflow-hidden">
                         <AnimatePresence mode="wait">
                         <motion.div
