@@ -942,23 +942,42 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                 <section className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2">
-                      <Box size={14} /> {profile === 'supplier' ? 'Dossier Technique Produit' : 'Lignes de Produits'}
-                    </h3>
+                    <div className="flex items-center gap-4">
+                      <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2">
+                        <Box size={14} /> {profile === 'supplier' ? 'Dossier Technique Produit' : 'Lignes de Produits'}
+                      </h3>
+                      {estimation.products.length > 0 && (
+                        <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] font-black text-white/40 uppercase tracking-widest">
+                          {estimation.products.length} {estimation.products.length > 1 ? 'Produits' : 'Produit'}
+                        </span>
+                      )}
+                    </div>
                     {isEditMode && (
-                      <button onClick={addProduct} className="text-[10px] font-bold text-aura-accent flex items-center gap-1 hover:text-white transition-colors">
-                        <Plus size={12} /> Ajouter Ligne
+                      <button onClick={addProduct} className="h-10 px-6 rounded-xl bg-aura-accent/10 border border-aura-accent/30 text-[10px] font-bold text-aura-accent flex items-center gap-2 hover:bg-aura-accent hover:text-white transition-all shadow-lg active:scale-95">
+                        <Plus size={14} /> Ajouter Ligne
                       </button>
                     )}
                   </div>
 
                   <div className="space-y-6">
-                    {estimation.products.map((p) => (
-                      <div key={p.id} className="glass-card overflow-hidden transition-all duration-300 border border-white/5 hover:border-aura-accent/30 group">
+                    {estimation.products.map((p, index) => (
+                      <div key={p.id} className="glass-card overflow-hidden transition-all duration-300 border border-white/5 hover:border-aura-accent/30 group relative">
+                        {/* Line Number Badge */}
+                        <div className="absolute top-0 right-0 p-8 pointer-events-none opacity-10 group-hover:opacity-20 transition-opacity">
+                          <span className="text-7xl font-display font-black text-white tracking-tighter">
+                            {(index + 1).toString().padStart(2, '0')}
+                          </span>
+                        </div>
+
                         <div className="p-8">
                           <div className="flex items-center justify-between gap-4 mb-8">
                             <div className="flex-1 min-w-0">
-                              <span className="text-[9px] text-aura-accent font-black uppercase tracking-[0.3em] mb-2 block">Produit / Désignation</span>
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="px-1.5 py-0.5 rounded bg-aura-accent text-white text-[8px] font-black uppercase tracking-widest">
+                                  Produit {(index + 1).toString().padStart(2, '0')}
+                                </span>
+                                <span className="text-[9px] text-aura-accent/60 font-black uppercase tracking-[0.3em]">Produit / Désignation</span>
+                              </div>
                               {isEditMode ? (
                                 <CustomSelect
                                   value={p.productId || ''}
@@ -971,15 +990,34 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   onChange={(val) => {
                                     const selectedProd = allProducts.find(prod => prod.id === val);
                                     if (selectedProd) {
-                                      const newProducts = estimation.products.map(prod => prod.id === p.id ? { 
-                                        ...prod, 
+                                      // Build specs from allProductSpecs first, then fallback to product.specs
+                                      const catalogSpecs = allProductSpecs[selectedProd.id];
+                                      const specsFromCatalog = catalogSpecs
+                                        ? Object.fromEntries(catalogSpecs.map(s => [s.key, s.value]))
+                                        : selectedProd.specs || {};
+                                      
+                                      // Enrich with product-level fields
+                                      const enrichedSpecs = {
+                                        ...specsFromCatalog,
+                                        pixelPitch: selectedProd.pitch || specsFromCatalog.pixelPitch || 'N/A',
+                                        environment: selectedProd.environment || specsFromCatalog.environment || 'N/A',
+                                        visionDistance: selectedProd.distance || specsFromCatalog.visionDistance || 'N/A',
+                                        projectType: specsFromCatalog.projectType || 'Vente',
+                                      };
+
+                                      // Determine best price: pricePerTile > salePricePerSqM > 0
+                                      const unitPrice = selectedProd.pricePerTile || selectedProd.salePricePerSqM || 0;
+
+                                      const newProducts = estimation.products.map(prod => prod.id === p.id ? {
+                                        ...prod,
                                         productId: selectedProd.id,
                                         name: selectedProd.name,
-                                        unitPrice: selectedProd.price || 0,
-                                        // Reset specs to selected product defaults if available
-                                        specs: allProductSpecs[selectedProd.id] 
-                                          ? Object.fromEntries(allProductSpecs[selectedProd.id].map(s => [s.key, s.value]))
-                                          : prod.specs
+                                        unitPrice,
+                                        tileWidth: selectedProd.tileWidth || prod.tileWidth || 0,
+                                        tileHeight: selectedProd.tileHeight || prod.tileHeight || 0,
+                                        pricePerTile: selectedProd.pricePerTile || prod.pricePerTile || 0,
+                                        dimensionsEnabled: selectedProd.hasDimensions ?? prod.dimensionsEnabled,
+                                        specs: enrichedSpecs,
                                       } : prod);
                                       setEstimation({ ...estimation, products: newProducts });
                                       addHistory(`Changement produit: ${selectedProd.name}`);
@@ -1343,99 +1381,96 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   )}
                 </AnimatePresence>
 
+                  <AnimatePresence>
+                  {profile === 'client' && (
+                    <motion.div
+                      key="aura-footer"
+                      initial={{ y: 80, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      className="aura-footer-fixed hidden md:block relative"
+                    >
+                      {/* Toggle Pill — floating on the border-top divider line, always visible */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
+                        <button
+                          onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                          className="group flex items-center gap-3 px-5 py-2.5 rounded-full border border-[#6dff1d]/30 bg-[#09090b] backdrop-blur-xl shadow-[0_0_20px_rgba(109,255,29,0.15)] hover:shadow-[0_0_35px_rgba(109,255,29,0.35)] hover:border-[#6dff1d]/60 transition-all duration-500 active:scale-95"
+                        >
+                          <motion.div
+                            animate={{ rotate: isSummaryExpanded ? 180 : 0 }}
+                            transition={{ duration: 0.4, ease: 'easeInOut' }}
+                          >
+                            <ChevronDown size={14} className="text-[#6dff1d]" />
+                          </motion.div>
+                          <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#6dff1d]">
+                            Résumé Financier
+                          </span>
+                          <div className="w-px h-3 bg-[#6dff1d]/20" />
+                          <span className="text-[10px] font-black font-mono text-white/80 tracking-tight group-hover:text-white transition-colors">
+                            {formatCurrency(calculations.finalTotal)}
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Collapsible Financial Summary */}
+                      <AnimatePresence initial={false}>
+                        {isSummaryExpanded && (
+                          <motion.div
+                            key="summary-body"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.4, ease: 'easeInOut' }}
+                            style={{ overflow: 'hidden' }}
+                          >
+                            <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10 mb-8 emerald-neon-halo">
+                              <div className="flex-1 bg-white/[0.03] p-5 md:p-6 rounded-2xl border border-white/5 shadow-2xl w-full">
+                                <div className="space-y-4">
+                                  <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b border-white/5 pb-4 gap-4 sm:gap-0">
+                                    <div className="flex flex-col gap-1">
+                                      <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] font-display">Sous-total HT</span>
+                                      <span className="text-2xl font-display font-black text-white tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
+                                    </div>
+                                    <div className="text-left sm:text-right flex flex-col sm:items-end gap-1">
+                                      <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] font-display">TVA ({estimation.taxRate}%)</span>
+                                      <span className="font-mono text-base text-aura-accent font-bold">+{formatCurrency(calculations.tva)}</span>
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <NumericControl label="TVA (%)" unit="%" value={estimation.taxRate} onChange={(val) => setEstimation({ ...estimation, taxRate: val })} />
+                                    <NumericControl label="REMISE GLOBALE (%)" unit="%" value={estimation.globalDiscount} onChange={(val) => setEstimation({ ...estimation, globalDiscount: val })} />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-left md:text-right flex flex-col justify-end min-w-0 md:min-w-[220px] flex-shrink-0 relative">
+                                <div className="absolute -inset-4 bg-emerald-500/10 blur-[40px] rounded-full pointer-events-none hidden md:block" />
+                                <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">À Payer (TTC)</div>
+                                <div className="text-4xl sm:text-5xl md:text-6xl font-display font-black tracking-tighter neon-text-emerald relative z-10 truncate">
+                                  {formatCurrency(calculations.finalTotal)}
+                                </div>
+                                {estimation.globalDiscount > 0 && (
+                                  <div className="text-[10px] text-emerald-400/80 font-bold mt-2 uppercase tracking-[0.2em] font-display relative z-10">
+                                    Remise exceptionnelle appliquée
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {isEditMode && (
+                              <button
+                                onClick={() => { addHistory('Validation Modifications'); setIsEditMode(false); }}
+                                className="futuristic-btn-primary w-full group"
+                              >
+                                Approuver et Enregistrer le Dossier
+                                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                              </button>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
               </div>
-
-              <AnimatePresence>
-                {profile === 'client' && (
-                  <motion.div
-                    key="aura-footer"
-                    animate={{ 
-                      height: isSummaryExpanded ? 'auto' : '40px',
-                      y: 0,
-                      opacity: 1 
-                    }}
-                    className={cn(
-                      "aura-footer-fixed hidden md:block transition-all duration-500",
-                      !isSummaryExpanded && "cursor-pointer hover:bg-black/80 p-0"
-                    )}
-                    onClick={() => !isSummaryExpanded && setIsSummaryExpanded(true)}
-                  >
-                    {/* Toggle Button (Green Bar) */}
-                    <div className="flex justify-center relative z-50">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsSummaryExpanded(!isSummaryExpanded);
-                        }}
-                        className={cn(
-                          "w-48 h-2 rounded-full transition-all duration-500 shadow-[0_0_15px_rgba(109,255,29,0.3)] hover:shadow-[0_0_25px_rgba(109,255,29,0.5)]",
-                          isSummaryExpanded ? "bg-[#6dff1d]/40 mb-6" : "bg-[#6dff1d] h-3 mt-4"
-                        )}
-                        title={isSummaryExpanded ? "Réduire" : "Développer"}
-                      />
-                    </div>
-                    
-                    <div className={cn("transition-all duration-500", !isSummaryExpanded && "opacity-0 pointer-events-none hidden")}>
-                      <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10 mb-8 emerald-neon-halo">
-                      <div className="flex-1 bg-white/[0.03] p-5 md:p-6 rounded-2xl border border-white/5 shadow-2xl w-full">
-                        <div className="space-y-4">
-                          <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b border-white/5 pb-4 gap-4 sm:gap-0">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] font-display">Sous-total HT</span>
-                              <span className="text-2xl font-display font-black text-white tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
-                            </div>
-                            <div className="text-left sm:text-right flex flex-col sm:items-end gap-1">
-                              <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] font-display">TVA ({estimation.taxRate}%)</span>
-                              <span className="font-mono text-base text-aura-accent font-bold">+{formatCurrency(calculations.tva)}</span>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <NumericControl
-                              label="TVA (%)"
-                              unit="%"
-                              value={estimation.taxRate}
-                              onChange={(val) => setEstimation({ ...estimation, taxRate: val })}
-                            />
-                            <NumericControl
-                              label="REMISE GLOBALE (%)"
-                              unit="%"
-                              value={estimation.globalDiscount}
-                              onChange={(val) => setEstimation({ ...estimation, globalDiscount: val })}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-left md:text-right flex flex-col justify-end min-w-0 md:min-w-[220px] flex-shrink-0 relative">
-                        {/* Floating Neon Halo Decoration */}
-                        <div className="absolute -inset-4 bg-emerald-500/10 blur-[40px] rounded-full pointer-events-none hidden md:block" />
-
-                        <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">À Payer (TTC)</div>
-                        <div className="text-4xl sm:text-5xl md:text-6xl font-display font-black tracking-tighter neon-text-emerald relative z-10 truncate">
-                          {formatCurrency(calculations.finalTotal)}
-                        </div>
-                        {estimation.globalDiscount > 0 && (
-                          <div className="text-[10px] text-emerald-400/80 font-bold mt-2 uppercase tracking-[0.2em] font-display relative z-10">
-                            Remise exceptionnelle appliquée
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                    {isEditMode && (
-                      <button
-                        onClick={() => { addHistory('Validation Modifications'); setIsEditMode(false); }}
-                        className="futuristic-btn-primary w-full group"
-                      >
-                        Approuver et Enregistrer le Dossier
-                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                      </button>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </motion.div>
           </div>
         )}
