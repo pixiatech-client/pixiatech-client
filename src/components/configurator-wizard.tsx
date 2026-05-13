@@ -58,12 +58,12 @@ import { ProductNotFound, ProductNotFoundProps } from './ProductNotFound';
 
 // --- Wizard Component ---
 interface ConfiguratorWizardProps {
-    onComplete: (product: ConfiguredProduct) => void;
-    onBack: () => void;
-    allProducts: Product[];
-    settings: Settings;
-    wizardSettings: WizardSettings;
-    initialStep?: number;
+  onComplete: (product: ConfiguredProduct) => void;
+  onBack: () => void;
+  allProducts: Product[];
+  settings: Settings;
+  wizardSettings: WizardSettings;
+  initialStep?: number;
 }
 
 function HorizontalStepper({ currentStep, onStepClick, isMobile, t }: { currentStep: number, onStepClick: (step: number) => void, isMobile: boolean, t: any }) {
@@ -79,7 +79,7 @@ function HorizontalStepper({ currentStep, onStepClick, isMobile, t }: { currentS
       {steps.map((step, index) => {
         const isActive = currentStep >= step.id;
         const isPast = currentStep > step.id;
-        
+
         return (
           <React.Fragment key={step.id}>
             <button
@@ -92,8 +92,8 @@ function HorizontalStepper({ currentStep, onStepClick, isMobile, t }: { currentS
             >
               <div className={cn(
                 "w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-500 border-2 z-10",
-                isActive 
-                  ? "bg-black border-black text-white shadow-[0_0_20px_rgba(0,0,0,0.2)] scale-110" 
+                isActive
+                  ? "bg-black border-black text-white shadow-[0_0_20px_rgba(0,0,0,0.2)] scale-110"
                   : isPast
                     ? "bg-white border-black text-black"
                     : "bg-gray-50 border-gray-100 text-gray-300"
@@ -117,8 +117,8 @@ function HorizontalStepper({ currentStep, onStepClick, isMobile, t }: { currentS
 export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, wizardSettings, initialStep = 1 }: ConfiguratorWizardProps) {
   const { t, locale } = useI18n();
   const [state, setState] = useState<ConfigState>(() => ({
-      ...INITIAL_STATE,
-      step: initialStep
+    ...INITIAL_STATE,
+    step: initialStep
   }));
   const { userProfile } = useUser();
   const isMobile = useIsMobile();
@@ -137,28 +137,28 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
   useEffect(() => {
     if (wizardSettings) {
       const urls: string[] = [];
-      
+
       // Project types images
       const locationImg = wizardSettings.projectTypes?.location?.imageUrl;
       const venteImg = wizardSettings.projectTypes?.vente?.imageUrl;
-      
+
       if (locationImg) urls.push(locationImg);
       if (venteImg) urls.push(venteImg);
-      
+
       // Environment images
       const indoorImg = wizardSettings.environments?.interieur?.imageUrl;
       const semiOutdoorImg = wizardSettings.environments?.['semi-exterieur']?.imageUrl;
       const outdoorImg = wizardSettings.environments?.exterieur?.imageUrl;
-      
+
       if (indoorImg) urls.push(indoorImg);
       if (semiOutdoorImg) urls.push(semiOutdoorImg);
       if (outdoorImg) urls.push(outdoorImg);
-      
+
       // Pixel pitch images
       wizardSettings.pixelPitches?.forEach(pp => {
         if (pp.imageUrl) urls.push(pp.imageUrl);
       });
-      
+
       // Viewing distance images
       wizardSettings.viewingDistances?.forEach(vd => {
         if (vd.imageUrl) urls.push(vd.imageUrl);
@@ -181,92 +181,92 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
 
   const nextStep = useCallback(() => {
     setState(prev => {
-        if (prev.step === 8) {
-            if (!prev.selectedProduct) return prev; // Prevent completion without selection
+      if (prev.step === 8) {
+        if (!prev.selectedProduct) return prev; // Prevent completion without selection
 
-            const matchingProduct = allProducts.find(p => 
-                p.availableFor.includes((prev.projectType === 'vente' ? 'sale' : 'rental') as 'sale' | 'rental') &&
-                p.type.includes(prev.environment as any)
-            );
+        const matchingProduct = allProducts.find(p =>
+          p.availableFor.includes((prev.projectType === 'vente' ? 'sale' : 'rental') as 'sale' | 'rental') &&
+          p.type.includes(prev.environment as any)
+        );
 
-            // Use the explicitly selected product from Step 8, fallback to matching product
-            const productId = prev.selectedProduct !== null ? String(prev.selectedProduct) : (matchingProduct?.id ?? allProducts[0]?.id ?? 'fallback-product-id');
-            const isRental = prev.projectType === 'location';
-            
-            const rentalPeriod = isRental && prev.rentalStartDate && prev.rentalEndDate
-                ? { from: new Date(prev.rentalStartDate), to: new Date(prev.rentalEndDate) }
-                : isRental ? { from: new Date(), to: new Date() } : undefined;
+        // Use the explicitly selected product from Step 8, fallback to matching product
+        const productId = prev.selectedProduct !== null ? String(prev.selectedProduct) : (matchingProduct?.id ?? allProducts[0]?.id ?? 'fallback-product-id');
+        const isRental = prev.projectType === 'location';
 
-            const envMap: Record<string, 'indoor' | 'outdoor' | 'showcase'> = {
-                'interieur': 'indoor',
-                'semi-exterieur': 'showcase',
-                'exterieur': 'outdoor'
-            };
+        const rentalPeriod = isRental && prev.rentalStartDate && prev.rentalEndDate
+          ? { from: new Date(prev.rentalStartDate), to: new Date(prev.rentalEndDate) }
+          : isRental ? { from: new Date(), to: new Date() } : undefined;
 
-            const configuredProduct: ConfiguredProduct = {
-                id: `config_${Date.now()}`,
-                productId: productId,
-                productType: envMap[prev.environment] || 'indoor',
-                width: prev.width,
-                height: prev.height,
-                quantity: prev.quantity || 1,
-                transactionType: prev.projectType === 'vente' ? 'sale' : 'rental',
-                rentalDuration: 1,
-                rentalUnit: 'day',
-                rentalPeriod: rentalPeriod,
-                rentalDate: isRental && prev.rentalStartDate ? new Date(prev.rentalStartDate) : undefined,
-                rentalStartTime: isRental ? prev.rentalStartTime || '08:00' : undefined,
-                rentalEndTime: isRental ? prev.rentalEndTime || '18:00' : undefined,
-                installationPhoto: prev.installationPhoto || undefined,
-            };
-            onComplete(configuredProduct);
-            return prev;
-        }
-        setDirection(1);
-        return { ...prev, step: Math.min(prev.step + 1, 8) };
+        const envMap: Record<string, 'indoor' | 'outdoor' | 'showcase'> = {
+          'interieur': 'indoor',
+          'semi-exterieur': 'showcase',
+          'exterieur': 'outdoor'
+        };
+
+        const configuredProduct: ConfiguredProduct = {
+          id: `config_${Date.now()}`,
+          productId: productId,
+          productType: envMap[prev.environment] || 'indoor',
+          width: prev.width,
+          height: prev.height,
+          quantity: prev.quantity || 1,
+          transactionType: prev.projectType === 'vente' ? 'sale' : 'rental',
+          rentalDuration: 1,
+          rentalUnit: 'day',
+          rentalPeriod: rentalPeriod,
+          rentalDate: isRental && prev.rentalStartDate ? new Date(prev.rentalStartDate) : undefined,
+          rentalStartTime: isRental ? prev.rentalStartTime || '08:00' : undefined,
+          rentalEndTime: isRental ? prev.rentalEndTime || '18:00' : undefined,
+          installationPhoto: prev.installationPhoto || undefined,
+        };
+        onComplete(configuredProduct);
+        return prev;
+      }
+      setDirection(1);
+      return { ...prev, step: Math.min(prev.step + 1, 8) };
     });
   }, [allProducts, onComplete]);
 
   useEffect(() => {
     if (state.step === 1 && wizardSettings?.projectTypes) {
-        const { vente, location } = wizardSettings.projectTypes;
-        if (vente && location) {
-            // Check if exactly one is enabled
-            if (vente.enabled && !location.enabled) {
-                updateState({ projectType: 'vente' });
-                nextStep();
-            } else if (!vente.enabled && location.enabled) {
-                updateState({ projectType: 'location' });
-                nextStep();
-            }
+      const { vente, location } = wizardSettings.projectTypes;
+      if (vente && location) {
+        // Check if exactly one is enabled
+        if (vente.enabled && !location.enabled) {
+          updateState({ projectType: 'vente' });
+          nextStep();
+        } else if (!vente.enabled && location.enabled) {
+          updateState({ projectType: 'location' });
+          nextStep();
         }
+      }
     }
   }, [wizardSettings?.projectTypes, state.step, updateState, nextStep]);
 
   const prevStep = () => {
-      if (state.step === 1) {
-          onBack();
-      } else if (state.step === 2 && 
-                 wizardSettings?.projectTypes?.vente && 
-                 wizardSettings?.projectTypes?.location && 
-                 ((wizardSettings.projectTypes.vente.enabled && !wizardSettings.projectTypes.location.enabled) || 
-                  (!wizardSettings.projectTypes.vente.enabled && wizardSettings.projectTypes.location.enabled))) {
-          // If step 1 was automatically skipped, pressing back on step 2 should trigger onBack
-          onBack();
-      } else {
-          setDirection(-1);
-          setState(prev => ({ ...prev, step: Math.max(prev.step - 1, 1) }));
-      }
+    if (state.step === 1) {
+      onBack();
+    } else if (state.step === 2 &&
+      wizardSettings?.projectTypes?.vente &&
+      wizardSettings?.projectTypes?.location &&
+      ((wizardSettings.projectTypes.vente.enabled && !wizardSettings.projectTypes.location.enabled) ||
+        (!wizardSettings.projectTypes.vente.enabled && wizardSettings.projectTypes.location.enabled))) {
+      // If step 1 was automatically skipped, pressing back on step 2 should trigger onBack
+      onBack();
+    } else {
+      setDirection(-1);
+      setState(prev => ({ ...prev, step: Math.max(prev.step - 1, 1) }));
+    }
   };
-  
+
   const handleStepClick = (step: number) => {
     setState(prev => ({ ...prev, step }));
   };
 
   return (
-    <div className="flex flex-col md:flex-row flex-1 bg-white h-[100dvh] overflow-hidden">
+    <div className="flex flex-col md:flex-row flex-1 bg-white h-full overflow-hidden">
       <div className="flex-1 flex flex-col min-w-0 h-full relative">
-        <main 
+        <main
           ref={mainRef}
           className="flex-1 overflow-y-auto flex flex-col bg-white relative scrollbar-hide overflow-x-hidden overscroll-contain"
         >
@@ -276,8 +276,8 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
               initial={{ opacity: 0, x: direction >= 0 ? 20 : -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: direction >= 0 ? -20 : 20 }}
-              transition={{ 
-                duration: 0.4, 
+              transition={{
+                duration: 0.4,
                 ease: [0.22, 1, 0.36, 1]
               }}
               style={{ willChange: 'transform, opacity' }}
@@ -293,21 +293,21 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
                 const startY = (window as any).touchStartY || 0;
                 const deltaX = touch.clientX - startX;
                 const deltaY = touch.clientY - startY;
-                
+
                 if (Math.abs(deltaX) > 80 && Math.abs(deltaY) < 50) {
                   if (deltaX < 0) nextStep();
                   else prevStep();
                 }
               }}
             >
-              <div className="w-full max-w-[1600px] flex-1 flex flex-col pt-0 pb-44">
-                <HorizontalStepper 
-                  currentStep={state.step} 
-                  onStepClick={handleStepClick} 
-                  isMobile={isMobile} 
+              <div className="w-full max-w-5xl mx-auto flex-col pt-0 pb-6">
+                <HorizontalStepper
+                  currentStep={state.step}
+                  onStepClick={handleStepClick}
+                  isMobile={isMobile}
                   t={t}
                 />
-                <div className="flex-1">
+                <div>
                   {renderStep(state, updateState, userProfile, wizardSettings, settings, allProducts, setIsInteracting, t, locale)}
                 </div>
               </div>
@@ -388,7 +388,7 @@ export function StepProjectType({ state, updateState, wizardSettings, t }: { sta
   };
 
   return (
-    <div className="flex flex-col flex-1 space-y-6 bg-transparent">
+    <div className="flex flex-col space-y-6 bg-transparent">
       <div className="w-full">
         <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 leading-tight mb-2 text-center">{t('wizard.projectType.title')}</h2>
         <p className="text-center text-[12px] font-medium text-slate-500 italic">
@@ -396,7 +396,7 @@ export function StepProjectType({ state, updateState, wizardSettings, t }: { sta
         </p>
       </div>
 
-      <div className="w-full max-w-4xl mx-auto h-72 md:h-[450px] lg:h-[400px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
+      <div className="w-full h-72 md:h-[350px] lg:h-[300px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
         <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative">
           <AnimatePresence mode="wait">
             <motion.img
@@ -417,45 +417,45 @@ export function StepProjectType({ state, updateState, wizardSettings, t }: { sta
 
       <div className="w-full">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          
+
           {projectTypes?.location?.enabled && (
-          <div
-            onClick={() => updateState({ projectType: 'location' })}
-            className={cn(
-              "group relative p-6 rounded-2xl border-2 transition-all duration-300 cursor-pointer text-center overflow-hidden bg-white/40 backdrop-blur-md hover:shadow-xl hover:-translate-y-1 flex flex-col items-center justify-center min-h-[220px]",
-              state.projectType === 'location' ? 'border-blue-500' : 'border-border hover:border-blue-400'
-            )}
-          >
-            <CalendarIcon className={cn("w-12 h-12 mb-3 text-muted-foreground transition-colors", state.projectType !== 'location' && "group-hover:text-blue-500")} />
-            <h3 className={cn("font-bold text-lg text-foreground transition-colors", state.projectType !== 'location' && "group-hover:text-blue-500")}>{t('configurator.rental')}</h3>
-            <p className="text-sm text-muted-foreground mt-1">{t('wizard.projectType.rentalDesc')}</p>
-             <div className="absolute top-4 right-4">
-              {state.projectType === 'location' 
-                ? <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center"><Check className="w-4 h-4" /></div>
-                : <div className="w-6 h-6 rounded-full border-2 border-slate-300 group-hover:border-blue-400" />
-              }
+            <div
+              onClick={() => updateState({ projectType: 'location' })}
+              className={cn(
+                "group relative p-4 rounded-2xl border-2 transition-all duration-300 cursor-pointer text-center overflow-hidden bg-white/40 backdrop-blur-md hover:shadow-xl hover:-translate-y-1 flex flex-col items-center justify-center min-h-[160px]",
+                state.projectType === 'location' ? 'border-blue-500' : 'border-border hover:border-blue-400'
+              )}
+            >
+              <CalendarIcon className={cn("w-12 h-12 mb-3 text-muted-foreground transition-colors", state.projectType !== 'location' && "group-hover:text-blue-500")} />
+              <h3 className={cn("font-bold text-lg text-foreground transition-colors", state.projectType !== 'location' && "group-hover:text-blue-500")}>{t('configurator.rental')}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{t('wizard.projectType.rentalDesc')}</p>
+              <div className="absolute top-4 right-4">
+                {state.projectType === 'location'
+                  ? <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center"><Check className="w-4 h-4" /></div>
+                  : <div className="w-6 h-6 rounded-full border-2 border-slate-300 group-hover:border-blue-400" />
+                }
+              </div>
             </div>
-          </div>
           )}
 
           {projectTypes?.vente?.enabled && (
-          <div
-            onClick={() => updateState({ projectType: 'vente' })}
-            className={cn(
-              "group relative p-6 rounded-2xl border-2 transition-all duration-300 cursor-pointer text-center overflow-hidden bg-white/40 backdrop-blur-md hover:shadow-xl hover:-translate-y-1 flex flex-col items-center justify-center min-h-[220px]",
-              state.projectType === 'vente' ? 'border-green-500' : 'border-border hover:border-green-400'
-            )}
-          >
-            <ShoppingCart className={cn("w-12 h-12 mb-3 text-muted-foreground transition-colors", state.projectType !== 'vente' && "group-hover:text-green-500")} />
-            <h3 className={cn("font-bold text-lg text-foreground transition-colors", state.projectType !== 'vente' && "group-hover:text-green-500")}>{t('configurator.sale')}</h3>
-            <p className="text-sm text-muted-foreground mt-1">{t('wizard.projectType.saleDesc')}</p>
-            <div className="absolute top-4 right-4">
-              {state.projectType === 'vente' 
-                ? <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center"><Check className="w-4 h-4" /></div>
-                : <div className="w-6 h-6 rounded-full border-2 border-slate-300 group-hover:border-green-400" />
-              }
+            <div
+              onClick={() => updateState({ projectType: 'vente' })}
+              className={cn(
+                "group relative p-4 rounded-2xl border-2 transition-all duration-300 cursor-pointer text-center overflow-hidden bg-white/40 backdrop-blur-md hover:shadow-xl hover:-translate-y-1 flex flex-col items-center justify-center min-h-[160px]",
+                state.projectType === 'vente' ? 'border-green-500' : 'border-border hover:border-green-400'
+              )}
+            >
+              <ShoppingCart className={cn("w-12 h-12 mb-3 text-muted-foreground transition-colors", state.projectType !== 'vente' && "group-hover:text-green-500")} />
+              <h3 className={cn("font-bold text-lg text-foreground transition-colors", state.projectType !== 'vente' && "group-hover:text-green-500")}>{t('configurator.sale')}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{t('wizard.projectType.saleDesc')}</p>
+              <div className="absolute top-4 right-4">
+                {state.projectType === 'vente'
+                  ? <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center"><Check className="w-4 h-4" /></div>
+                  : <div className="w-6 h-6 rounded-full border-2 border-slate-300 group-hover:border-green-400" />
+                }
+              </div>
             </div>
-          </div>
           )}
         </div>
       </div>
@@ -466,89 +466,89 @@ export function StepProjectType({ state, updateState, wizardSettings, t }: { sta
 export function StepEnvironment({ state, updateState, wizardSettings, t }: { state: ConfigState, updateState: any, wizardSettings: WizardSettings, t: any }) {
   const environments = wizardSettings?.environments;
   const envs = [
-    { 
-      id: 'interieur', 
-      title: t('wizard.environment.indoorTitle'), 
+    {
+      id: 'interieur',
+      title: t('wizard.environment.indoorTitle'),
       icon: (
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="24" y="24" width="24" height="24" fill="#e0f2fe"/>
-          <path d="M12 24L32 12L52 24V56H12V24Z" stroke="#475569" strokeWidth="2" strokeLinejoin="round"/>
-          <path d="M12 24L24 32V56" stroke="#475569" strokeWidth="2" strokeLinejoin="round"/>
-          <path d="M52 24L40 32V56" stroke="#475569" strokeWidth="2" strokeLinejoin="round"/>
-          <path d="M24 32H40" stroke="#475569" strokeWidth="2" strokeLinejoin="round"/>
-          <path d="M32 12V20" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <circle cx="32" cy="24" r="4" stroke="#475569" strokeWidth="2"/>
-          <path d="M14 40H20V56H14V40Z" stroke="#475569" strokeWidth="2" strokeLinejoin="round"/>
-          <path d="M8 56H56" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
+          <rect x="24" y="24" width="24" height="24" fill="#e0f2fe" />
+          <path d="M12 24L32 12L52 24V56H12V24Z" stroke="#475569" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M12 24L24 32V56" stroke="#475569" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M52 24L40 32V56" stroke="#475569" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M24 32H40" stroke="#475569" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M32 12V20" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="32" cy="24" r="4" stroke="#475569" strokeWidth="2" />
+          <path d="M14 40H20V56H14V40Z" stroke="#475569" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M8 56H56" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
       subIcon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="5" stroke="#64748b" strokeWidth="1.5"/>
-          <path d="M12 3V5M12 19V21M3 12H5M19 12H21M5.636 5.636L7.05 7.05M16.95 16.95L18.364 18.364M5.636 18.364L7.05 16.95M16.95 7.05L18.364 5.636" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="12" cy="12" r="5" stroke="#64748b" strokeWidth="1.5" />
+          <path d="M12 3V5M12 19V21M3 12H5M19 12H21M5.636 5.636L7.05 7.05M16.95 16.95L18.364 18.364M5.636 18.364L7.05 16.95M16.95 7.05L18.364 5.636" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       ),
-      sub: t('wizard.environment.brightnessLow'), 
+      sub: t('wizard.environment.brightnessLow'),
       desc: t('wizard.environment.indoorDesc'),
       image: environments?.interieur?.imageUrl || 'https://picsum.photos/seed/led-interior-lobby/800/1200',
       caption: 'Simulation: ' + t('wizard.environment.indoorTitle') + ', Lobby'
     },
-    { 
-      id: 'semi-exterieur', 
-      title: t('wizard.environment.semiOutdoorTitle'), 
+    {
+      id: 'semi-exterieur',
+      title: t('wizard.environment.semiOutdoorTitle'),
       icon: (
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="20" cy="16" r="6" stroke="#475569" strokeWidth="2"/>
-          <path d="M20 6V8M20 24V26M10 16H12M28 16H30M13 9L14.5 10.5M25.5 21.5L27 23M13 23L14.5 21.5M25.5 10.5L27 9" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M36 24C36 20.6863 38.6863 18 42 18C44.887 18 47.3006 20.0407 47.8826 22.7554C48.2415 22.6841 48.6154 22.6452 49 22.6452C52.3137 22.6452 55 25.3315 55 28.6452C55 31.9589 52.3137 34.6452 49 34.6452H38C34.6863 34.6452 32 31.9589 32 28.6452C32 26.2366 33.4187 24.1593 35.4241 23.2107" fill="#e0f2fe" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M40 38L38 42M46 38L44 42M52 38L50 42" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M12 28L52 40" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M16 29V56" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M48 39V56" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M24 48H40" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M32 48V56" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M22 56V44H26" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M42 56V44H38" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M8 56H56" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
+          <circle cx="20" cy="16" r="6" stroke="#475569" strokeWidth="2" />
+          <path d="M20 6V8M20 24V26M10 16H12M28 16H30M13 9L14.5 10.5M25.5 21.5L27 23M13 23L14.5 21.5M25.5 10.5L27 9" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <path d="M36 24C36 20.6863 38.6863 18 42 18C44.887 18 47.3006 20.0407 47.8826 22.7554C48.2415 22.6841 48.6154 22.6452 49 22.6452C52.3137 22.6452 55 25.3315 55 28.6452C55 31.9589 52.3137 34.6452 49 34.6452H38C34.6863 34.6452 32 31.9589 32 28.6452C32 26.2366 33.4187 24.1593 35.4241 23.2107" fill="#e0f2fe" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M40 38L38 42M46 38L44 42M52 38L50 42" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <path d="M12 28L52 40" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <path d="M16 29V56" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <path d="M48 39V56" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <path d="M24 48H40" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <path d="M32 48V56" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <path d="M22 56V44H26" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M42 56V44H38" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M8 56H56" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
       subIcon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 7A5 5 0 0 0 12 17V7Z" fill="#64748b"/>
-          <circle cx="12" cy="12" r="5" stroke="#64748b" strokeWidth="1.5"/>
-          <path d="M12 3V5M12 19V21M3 12H5M19 12H21M5.636 5.636L7.05 7.05M16.95 16.95L18.364 18.364M5.636 18.364L7.05 16.95M16.95 7.05L18.364 5.636" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round"/>
+          <path d="M12 7A5 5 0 0 0 12 17V7Z" fill="#64748b" />
+          <circle cx="12" cy="12" r="5" stroke="#64748b" strokeWidth="1.5" />
+          <path d="M12 3V5M12 19V21M3 12H5M19 12H21M5.636 5.636L7.05 7.05M16.95 16.95L18.364 18.364M5.636 18.364L7.05 16.95M16.95 7.05L18.364 5.636" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       ),
-      sub: t('wizard.environment.brightnessMedium'), 
+      sub: t('wizard.environment.brightnessMedium'),
       desc: t('wizard.environment.semiOutdoorDesc'),
       image: environments?.['semi-exterieur']?.imageUrl || 'https://picsum.photos/seed/led-atrium/800/1200',
       caption: 'Simulation: ' + t('wizard.environment.semiOutdoorTitle') + ', Atrium'
     },
-    { 
-      id: 'exterieur', 
-      title: t('wizard.environment.outdoorTitle'), 
+    {
+      id: 'exterieur',
+      title: t('wizard.environment.outdoorTitle'),
       icon: (
         <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="16" cy="16" r="5" stroke="#475569" strokeWidth="2"/>
-          <path d="M16 7V9M16 23V25M7 16H9M23 16H25M9.5 9.5L11 11M21 21L22.5 22.5M9.5 22.5L11 21M21 11L22.5 9.5" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M36 20C36 17.2386 38.2386 15 41 15C43.406 15 45.4172 16.6994 45.9022 18.9628C46.2012 18.9034 46.5128 18.871 46.8333 18.871C49.5948 18.871 51.8333 21.1095 51.8333 23.871C51.8333 26.6324 49.5948 28.871 46.8333 28.871H37.6667C34.9052 28.871 32.6667 26.6324 32.6667 23.871C32.6667 21.8638 34.0203 20.1327 35.8576 19.434" fill="#e0f2fe" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M40 32L38 36M46 32L44 36" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <circle cx="16" cy="40" r="6" fill="#e0f2fe" stroke="#475569" strokeWidth="2"/>
-          <path d="M16 46V56" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <circle cx="48" cy="40" r="6" fill="#e0f2fe" stroke="#475569" strokeWidth="2"/>
-          <path d="M48 46V56" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <rect x="24" y="36" width="16" height="12" fill="#e0f2fe" stroke="#475569" strokeWidth="2" strokeLinejoin="round"/>
-          <path d="M28 48V56M36 48V56" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M8 56H56" stroke="#475569" strokeWidth="2" strokeLinecap="round"/>
+          <circle cx="16" cy="16" r="5" stroke="#475569" strokeWidth="2" />
+          <path d="M16 7V9M16 23V25M7 16H9M23 16H25M9.5 9.5L11 11M21 21L22.5 22.5M9.5 22.5L11 21M21 11L22.5 9.5" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <path d="M36 20C36 17.2386 38.2386 15 41 15C43.406 15 45.4172 16.6994 45.9022 18.9628C46.2012 18.9034 46.5128 18.871 46.8333 18.871C49.5948 18.871 51.8333 21.1095 51.8333 23.871C51.8333 26.6324 49.5948 28.871 46.8333 28.871H37.6667C34.9052 28.871 32.6667 26.6324 32.6667 23.871C32.6667 21.8638 34.0203 20.1327 35.8576 19.434" fill="#e0f2fe" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M40 32L38 36M46 32L44 36" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="16" cy="40" r="6" fill="#e0f2fe" stroke="#475569" strokeWidth="2" />
+          <path d="M16 46V56" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="48" cy="40" r="6" fill="#e0f2fe" stroke="#475569" strokeWidth="2" />
+          <path d="M48 46V56" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <rect x="24" y="36" width="16" height="12" fill="#e0f2fe" stroke="#475569" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M28 48V56M36 48V56" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
+          <path d="M8 56H56" stroke="#475569" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
       subIcon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="5" fill="#64748b" stroke="#64748b" strokeWidth="1.5"/>
-          <path d="M12 3V5M12 19V21M3 12H5M19 12H21M5.636 5.636L7.05 7.05M16.95 16.95L18.364 18.364M5.636 18.364L7.05 16.95M16.95 7.05L18.364 5.636" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="12" cy="12" r="5" fill="#64748b" stroke="#64748b" strokeWidth="1.5" />
+          <path d="M12 3V5M12 19V21M3 12H5M19 12H21M5.636 5.636L7.05 7.05M16.95 16.95L18.364 18.364M5.636 18.364L7.05 16.95M16.95 7.05L18.364 5.636" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       ),
-      sub: t('wizard.environment.brightnessHigh'), 
+      sub: t('wizard.environment.brightnessHigh'),
       desc: t('wizard.environment.outdoorDesc'),
       image: environments?.exterieur?.imageUrl || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=90&w=2000',
       caption: 'Simulation: ' + t('wizard.environment.outdoorTitle') + ', Urban Façade'
@@ -556,8 +556,8 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
   ];
 
   const currentEnv = envs.find(e => e.id === state.environment) || envs[0];
-  
-    const selectionColors = {
+
+  const selectionColors = {
     interieur: {
       border: 'border-[#82c4e6]',
       bg: 'bg-[#eaf4fc]',
@@ -579,15 +579,15 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
   };
 
   return (
-    <div className="flex flex-col flex-1 space-y-6 bg-transparent">
+    <div className="flex flex-col space-y-4 bg-transparent">
       <div className="w-full">
         <h2 className="text-[24px] md:text-[28px] font-bold text-black leading-tight mb-2 text-center">{t('wizard.environment.title')}</h2>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* Left: Image Preview */}
         <div className="space-y-4">
-          <div className="w-full h-72 md:h-[500px] lg:h-[550px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
+          <div className="w-full max-w-[320px] ml-auto h-72 md:h-[450px] lg:h-[520px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
             <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative">
               <AnimatePresence mode="wait">
                 <motion.img
@@ -605,25 +605,25 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
               </AnimatePresence>
             </div>
           </div>
-          <p className="text-center lg:text-left text-[15px] font-medium text-slate-500 px-4">
+          <p className="text-center lg:text-center text-[15px] font-medium text-slate-500 px-4 max-w-[320px] ml-auto">
             {currentEnv.caption}
           </p>
         </div>
 
         {/* Right: Selection */}
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-3">
           {envs.map((env) => {
             const isSelected = state.environment === env.id;
             const colors = selectionColors[env.id as keyof typeof selectionColors];
 
             return (
-              <div 
+              <div
                 key={env.id}
                 onClick={() => updateState({ environment: env.id as Environment })}
                 className={cn(
-                  "p-5 rounded-2xl border-2 transition-all duration-300 cursor-pointer flex flex-col relative group",
-                  isSelected 
-                    ? `${colors.border} ${colors.bg} shadow-sm` 
+                  "p-4 rounded-2xl border-2 transition-all duration-300 cursor-pointer flex flex-col relative group",
+                  isSelected
+                    ? `${colors.border} ${colors.bg} shadow-sm`
                     : `border-slate-200 bg-white/40 backdrop-blur-md hover:shadow-lg hover:-translate-y-1 ${colors.hoverBorder}`
                 )}
               >
@@ -632,7 +632,7 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
                     <Check className="w-4 h-4 text-white" strokeWidth={3} />
                   </div>
                 )}
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex justify-between items-start mb-2">
                   <div className="w-16 h-16 flex items-center justify-center shrink-0">
                     {env.icon}
                   </div>
@@ -680,7 +680,7 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
   };
 
   return (
-    <div className="flex flex-col flex-1 space-y-6 bg-transparent">
+    <div className="flex flex-col space-y-4 bg-transparent">
       <div className="w-full">
         <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 leading-tight mb-2 text-center">{t('wizard.viewingDistance.title')}</h2>
         <p className="text-center text-[12px] font-medium text-slate-500 italic">
@@ -688,10 +688,10 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* Left: Image Preview */}
         <div className="space-y-4">
-          <div className="w-full h-72 md:h-[500px] lg:h-[550px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
+          <div className="w-full max-w-[300px] ml-auto h-72 md:h-[350px] lg:h-[480px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
             <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative group">
               <img
                 src={mainImage}
@@ -709,14 +709,14 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
               )}
             </div>
           </div>
-          <p className="text-center lg:text-left text-[12px] font-medium text-slate-500 italic px-4">
+          <p className="text-center lg:text-center text-[12px] font-medium text-slate-500 italic px-4 max-w-[300px] ml-auto">
             {t('wizard.summary.simulation')}: {state.environment === 'exterieur' ? t('configurator.outdoor') : state.environment === 'semi-exterieur' ? t('wizard.environment.semiOutdoorTitle') : t('configurator.indoor')}, {state.projectType === 'location' ? t('configurator.rental') : t('configurator.sale')}
           </p>
         </div>
 
         {/* Right: Selection */}
-        <div className="w-full space-y-4">
-          <div className="space-y-6 py-2">
+        <div className="w-full space-y-3">
+          <div className="space-y-3 py-1">
             {/* Small Buttons Grid */}
             <div className="grid grid-cols-2 gap-3">
               {viewingDistances.map((d) => (
@@ -725,8 +725,8 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
                   onClick={() => updateState({ viewingDistance: d.value })}
                   className={cn(
                     "group py-4 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
-                    state.viewingDistance === d.value 
-                      ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]" 
+                    state.viewingDistance === d.value
+                      ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]"
                       : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
                   )}
                 >
@@ -743,7 +743,7 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
 
             {/* Distance Illustration */}
             <div className="flex flex-col items-center justify-center py-6 bg-white/20 backdrop-blur-md rounded-[2rem] border border-white/30">
-              <div className="relative w-full max-w-[280px] aspect-[4/3]">
+              <div className="relative w-full max-w-[220px] aspect-[4/3]">
                 <svg viewBox="0 0 300 220" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                   {/* Floor with hatching */}
                   <line x1="20" y1="200" x2="280" y2="200" stroke="#334155" strokeWidth="1.5" />
@@ -806,7 +806,7 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
             </div>
 
             {/* Info Box */}
-            <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl flex gap-3 items-start border border-white/20">
+            <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl flex gap-3 items-start border border-white/20 mb-10">
               <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
               <p className="text-[10px] text-slate-600 leading-relaxed">
                 {t('wizard.viewingDistance.infoBox')}
@@ -842,7 +842,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
   const brightness = state.environment === 'exterieur' ? '5500 nits' : state.environment === 'semi-exterieur' ? '3500 nits' : '1200 nits';
 
   return (
-    <div className="flex flex-col flex-1 space-y-6 bg-transparent">
+    <div className="flex flex-col space-y-4 bg-transparent">
       <div className="w-full">
         <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 leading-tight mb-2 text-center">{t('wizard.pixelPitch.title')}</h2>
         <div className="center flex justify-center items-center gap-2">
@@ -851,14 +851,14 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* Left: Image Preview */}
         <div className="space-y-4">
-          <div className="w-full h-72 md:h-[500px] lg:h-[550px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
+          <div className="w-full max-w-[300px] ml-auto h-72 md:h-[350px] lg:h-[480px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
             <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative group">
-              <img 
-                src={mainImage} 
-                alt="LED Content" 
+              <img
+                src={mainImage}
+                alt="LED Content"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
                 loading="eager"
@@ -873,14 +873,14 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
               <div className="absolute inset-0 bg-blue-500/10 mix-blend-overlay pointer-events-none" />
             </div>
           </div>
-          <p className="text-center lg:text-left text-xs text-slate-500 leading-relaxed px-4">
+          <p className="text-center lg:text-center text-xs text-slate-500 leading-relaxed px-4 max-w-[300px] ml-auto">
             {t('wizard.pixelPitch.description')}
           </p>
         </div>
 
         {/* Right: Selection */}
         <div className="w-full space-y-4">
-          <div className="space-y-6 py-2">
+          <div className="space-y-3 py-1">
             {/* Small Buttons Grid */}
             <div className="grid grid-cols-2 gap-3">
               {pixelPitches.map((p) => (
@@ -888,9 +888,9 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
                   <button
                     onClick={() => updateState({ pixelPitch: p.value })}
                     className={cn(
-                      "group w-full py-4 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
-                      state.pixelPitch === p.value 
-                        ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]" 
+                      "group w-full py-3 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
+                      state.pixelPitch === p.value
+                        ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]"
                         : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
                     )}
                   >
@@ -912,7 +912,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
             </div>
 
             {/* Technical Details Section */}
-            <div className="pt-6 border-t border-slate-100 space-y-4">
+            <div className="pt-4 border-t border-slate-100 space-y-3">
               <h3 className="text-sm font-black text-slate-900 mb-2">{t('wizard.pixelPitch.technicalDetails')}</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-3 p-3 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30">
@@ -944,7 +944,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
 
 export function StepDimensions({ state, updateState, settings, setIsInteracting, t }: { state: ConfigState, updateState: any, settings: Settings, setIsInteracting?: (val: boolean) => void, t: any }) {
   return (
-    <div className="flex flex-col flex-1 space-y-5 bg-transparent">
+    <div className="flex flex-col space-y-5 bg-transparent">
       <div className="w-full">
         <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 text-center">{t('wizard.dimensions.title')}</h2>
         <p className="text-center text-[12px] font-medium text-slate-500 italic mt-1">
@@ -954,7 +954,7 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting,
 
       {/* Preview */}
       <div className="flex justify-center">
-        <div className="relative w-full h-52 md:h-[380px] lg:h-[500px] xl:h-[600px] rounded-[2.5rem] p-[2px] bg-transparent overflow-hidden">
+        <div className="relative w-full h-52 md:h-[320px] lg:h-[400px] xl:h-[450px] rounded-[2.5rem] p-[2px] bg-transparent overflow-hidden">
           <div className="w-full h-full rounded-[2.3rem] overflow-hidden relative bg-transparent">
             <Preview
               width={state.width}
@@ -970,7 +970,7 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting,
       </div>
 
       {/* Sliders */}
-      <div 
+      <div
         onPointerDown={(e) => { e.stopPropagation(); setIsInteracting?.(true); }}
         onPointerUp={() => setIsInteracting?.(false)}
         onPointerLeave={() => setIsInteracting?.(false)}
@@ -985,9 +985,9 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting,
               <button onClick={() => updateState({ width: Math.min(20, state.width + 0.5) })} className="p-1 hover:bg-white rounded-lg shadow-sm transition-all"><ChevronRight className="w-4 h-4" /></button>
             </div>
           </div>
-          <input 
-            type="range" min="0.5" max="20" step="0.5" 
-            value={state.width} 
+          <input
+            type="range" min="0.5" max="20" step="0.5"
+            value={state.width}
             onChange={(e) => updateState({ width: parseFloat(e.target.value) })}
             className="w-full h-2 bg-slate-200/60 rounded-lg appearance-none cursor-pointer accent-[#c6ff00]"
           />
@@ -1002,9 +1002,9 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting,
               <button onClick={() => updateState({ height: Math.min(12, state.height + 0.5) })} className="p-1 hover:bg-white rounded-lg shadow-sm transition-all"><ChevronRight className="w-4 h-4" /></button>
             </div>
           </div>
-          <input 
-            type="range" min="0.5" max="12" step="0.5" 
-            value={state.height} 
+          <input
+            type="range" min="0.5" max="12" step="0.5"
+            value={state.height}
             onChange={(e) => updateState({ height: parseFloat(e.target.value) })}
             className="w-full h-2 bg-slate-200/60 rounded-lg appearance-none cursor-pointer accent-[#c6ff00]"
           />
@@ -1019,7 +1019,7 @@ export function StepDimensions({ state, updateState, settings, setIsInteracting,
         <div className="info-value text-primary mb-3">
           {t('wizard.dimensions.calculated')} : {calculateRatio(state.width, state.height)}
         </div>
-        
+
         <div className="info-note text-blue-600/80 uppercase">
           <Info className="w-4 h-4 shrink-0" />
           <span>{t('wizard.dimensions.note')}</span>
@@ -1061,7 +1061,7 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
   };
 
   return (
-    <div className="flex flex-col flex-1 space-y-6 bg-transparent">
+    <div className="flex flex-col space-y-6 bg-transparent">
       <div className="w-full">
         <h2 className="text-[24px] md:text-[28px] font-bold text-[#0f172a] leading-tight mb-2 text-center">{t('wizard.photo.title')}</h2>
         <p className="text-[14px] text-slate-600 leading-relaxed text-center">
@@ -1069,7 +1069,7 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
         </p>
       </div>
 
-      <div className="w-full max-w-2xl mx-auto h-72 md:h-[400px] lg:h-[350px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
+      <div className="w-full max-w-2xl mx-auto h-72 md:h-[350px] lg:h-[300px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
         <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative">
           <AnimatePresence mode="wait">
             {state.installationPhoto ? (
@@ -1091,11 +1091,11 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 bg-[#1a202c] flex items-center justify-center"
               >
-              <div className="w-[75%] h-[75%] bg-white shadow-[0_0_60px_rgba(255,255,255,0.9)]" />
-              <div className="absolute left-0 top-0 bottom-0 w-[12%] bg-gradient-to-r from-black/80 to-transparent" />
-              <div className="absolute right-0 top-0 bottom-0 w-[12%] bg-gradient-to-l from-black/80 to-transparent" />
-            </motion.div>
-          )}
+                <div className="w-[75%] h-[75%] bg-white shadow-[0_0_60px_rgba(255,255,255,0.9)]" />
+                <div className="absolute left-0 top-0 bottom-0 w-[12%] bg-gradient-to-r from-black/80 to-transparent" />
+                <div className="absolute right-0 top-0 bottom-0 w-[12%] bg-gradient-to-l from-black/80 to-transparent" />
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </div>
@@ -1141,158 +1141,158 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
 }
 
 export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: ConfigState, updateState: any, t: any }) {
-    const handleDateChange = (range: DateRange | undefined) => {
-        if (range?.from) {
-            updateState({ rentalStartDate: range.from.toISOString() });
-        }
-        if (range?.to) {
-            updateState({ rentalEndDate: range.to.toISOString() });
-        }
+  const handleDateChange = (range: DateRange | undefined) => {
+    if (range?.from) {
+      updateState({ rentalStartDate: range.from.toISOString() });
     }
-    
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const url = URL.createObjectURL(file);
-            updateState({ installationPhoto: url });
-        }
-    };
+    if (range?.to) {
+      updateState({ rentalEndDate: range.to.toISOString() });
+    }
+  }
 
-    const startDate = state.rentalStartDate ? new Date(state.rentalStartDate) : undefined;
-    const endDate = state.rentalEndDate ? new Date(state.rentalEndDate) : undefined;
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      updateState({ installationPhoto: url });
+    }
+  };
 
-    return (
-        <div className="flex flex-col flex-1 p-0 space-y-6 bg-transparent">
-            <div className="w-full px-6 pt-2">
-                <h2 className="text-[24px] md:text-[28px] font-bold text-[#0f172a] leading-tight mb-2 text-center">{t('wizard.rental.title')}</h2>
-                <p className="text-center text-[12px] font-medium text-slate-500 italic">
-                    {t('wizard.rental.description')}
-                </p>
-            </div>
+  const startDate = state.rentalStartDate ? new Date(state.rentalStartDate) : undefined;
+  const endDate = state.rentalEndDate ? new Date(state.rentalEndDate) : undefined;
 
-            <div className="px-6">
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <Label>{t('wizard.rental.datesLabel')}</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal",
-                                            !startDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {startDate && endDate ? (
-                                            <>
-                                                {format(startDate, "dd LLL, y")} -{" "}
-                                                {format(endDate, "dd LLL, y")}
-                                            </>
-                                        ) : (
-                                            <span>{t('wizard.rental.pickRange')}</span>
-                                        )}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        selected={{ from: startDate, to: endDate }}
-                                        onSelect={handleDateChange}
-                                        numberOfMonths={1}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                        <div>
-                            <Label>{t('wizard.rental.hoursLabel')}</Label>
-                            <div className="flex items-center gap-2">
-                                <Select value={state.rentalStartTime || '08:00'} onValueChange={(value) => updateState({ rentalStartTime: value })}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(hour => (
-                                            <SelectItem key={hour} value={hour}>{hour}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <span className="text-muted-foreground">{t('wizard.rental.to')}</span>
-                                <Select value={state.rentalEndTime || '18:00'} onValueChange={(value) => updateState({ rentalEndTime: value })}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                         {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(hour => (
-                                            <SelectItem key={hour} value={hour}>{hour}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className="flex flex-col flex-1 p-0 space-y-6 bg-transparent">
+      <div className="w-full px-6 pt-2">
+        <h2 className="text-[24px] md:text-[28px] font-bold text-[#0f172a] leading-tight mb-2 text-center">{t('wizard.rental.title')}</h2>
+        <p className="text-center text-[12px] font-medium text-slate-500 italic">
+          {t('wizard.rental.description')}
+        </p>
+      </div>
 
-            <div className="pt-6 border-t">
-                <h3 className="text-xl font-bold text-[#0f172a] leading-tight mb-3">{t('wizard.photo.title')} ({t('wizard.photo.optional') || 'Optionnel'})</h3>
-                 <div className="w-full h-48 md:h-64 relative rounded-xl overflow-hidden shadow-inner bg-slate-900 shrink-0">
-                    <AnimatePresence mode="wait">
-                    {state.installationPhoto ? (
-                        <motion.img
-                        key="uploaded"
-                        src={state.installationPhoto}
-                        alt="Installation"
-                        initial={{ opacity: 0, scale: 1.05 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4 }}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        />
-                    ) : (
-                        <motion.div
-                        key="placeholder"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-[#1a202c] flex items-center justify-center"
-                        >
-                        <div className="w-[75%] h-[75%] bg-white shadow-[0_0_60px_rgba(255,255,255,0.9)]" />
-                        <div className="absolute left-0 top-0 bottom-0 w-[12%] bg-gradient-to-r from-black/80 to-transparent" />
-                        <div className="absolute right-0 top-0 bottom-0 w-[12%] bg-gradient-to-l from-black/80 to-transparent" />
-                        </motion.div>
+      <div className="px-6">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>{t('wizard.rental.datesLabel')}</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
                     )}
-                    </AnimatePresence>
-                </div>
-                <div className="p-8 border-2 border-dashed border-slate-200 rounded-3xl bg-[#f4f6f9] flex flex-col items-center mt-8">
-                    <div className="flex items-center gap-10 mb-6">
-                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
-                            <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-black group-hover:text-[#c6ff00] transition-all duration-300">
-                                <Camera size={28} />
-                            </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">{t('wizard.photo.camera')}</span>
-                            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageUpload} />
-                        </label>
-
-                        <div className="w-px h-12 bg-slate-200" />
-
-                        <label className="flex flex-col items-center gap-2 cursor-pointer group">
-                            <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-black group-hover:text-[#c6ff00] transition-all duration-300">
-                                <Upload size={28} />
-                            </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">{t('wizard.photo.gallery')}</span>
-                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                        </label>
-                    </div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 text-center">
-                        {state.installationPhoto ? t('wizard.photo.change') : t('wizard.photo.add')}
-                    </p>
-                </div>
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate && endDate ? (
+                      <>
+                        {format(startDate, "dd LLL, y")} -{" "}
+                        {format(endDate, "dd LLL, y")}
+                      </>
+                    ) : (
+                      <span>{t('wizard.rental.pickRange')}</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    selected={{ from: startDate, to: endDate }}
+                    onSelect={handleDateChange}
+                    numberOfMonths={1}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
+            <div>
+              <Label>{t('wizard.rental.hoursLabel')}</Label>
+              <div className="flex items-center gap-2">
+                <Select value={state.rentalStartTime || '08:00'} onValueChange={(value) => updateState({ rentalStartTime: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(hour => (
+                      <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-muted-foreground">{t('wizard.rental.to')}</span>
+                <Select value={state.rentalEndTime || '18:00'} onValueChange={(value) => updateState({ rentalEndTime: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(hour => (
+                      <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      </div>
+
+      <div className="pt-6 border-t">
+        <h3 className="text-xl font-bold text-[#0f172a] leading-tight mb-3">{t('wizard.photo.title')} ({t('wizard.photo.optional') || 'Optionnel'})</h3>
+        <div className="w-full h-48 md:h-64 relative rounded-xl overflow-hidden shadow-inner bg-slate-900 shrink-0">
+          <AnimatePresence mode="wait">
+            {state.installationPhoto ? (
+              <motion.img
+                key="uploaded"
+                src={state.installationPhoto}
+                alt="Installation"
+                initial={{ opacity: 0, scale: 1.05 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <motion.div
+                key="placeholder"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-[#1a202c] flex items-center justify-center"
+              >
+                <div className="w-[75%] h-[75%] bg-white shadow-[0_0_60px_rgba(255,255,255,0.9)]" />
+                <div className="absolute left-0 top-0 bottom-0 w-[12%] bg-gradient-to-r from-black/80 to-transparent" />
+                <div className="absolute right-0 top-0 bottom-0 w-[12%] bg-gradient-to-l from-black/80 to-transparent" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        <div className="p-8 border-2 border-dashed border-slate-200 rounded-3xl bg-[#f4f6f9] flex flex-col items-center mt-8">
+          <div className="flex items-center gap-10 mb-6">
+            <label className="flex flex-col items-center gap-2 cursor-pointer group">
+              <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-black group-hover:text-[#c6ff00] transition-all duration-300">
+                <Camera size={28} />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">{t('wizard.photo.camera')}</span>
+              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageUpload} />
+            </label>
+
+            <div className="w-px h-12 bg-slate-200" />
+
+            <label className="flex flex-col items-center gap-2 cursor-pointer group">
+              <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 group-hover:bg-black group-hover:text-[#c6ff00] transition-all duration-300">
+                <Upload size={28} />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">{t('wizard.photo.gallery')}</span>
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            </label>
+          </div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 text-center">
+            {state.installationPhoto ? t('wizard.photo.change') : t('wizard.photo.add')}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, locale?: string }) {
@@ -1346,29 +1346,29 @@ export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, 
           <h4 className="text-[14px] font-black text-slate-400 uppercase tracking-widest mb-5 ml-1">{t('wizard.summary.technicalDetails')}</h4>
           <div className="w-full p-4 sm:p-6 rounded-[2rem] bg-white/20 backdrop-blur-xl border border-white/30 shadow-xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <DetailItem icon={<Maximize className="w-5 h-5 text-blue-500" />} iconBg="bg-blue-50" label={t('wizard.summary.area')} value={`${area.toFixed(2)} m²`} />
-            <DetailItem icon={<Monitor className="w-5 h-5 text-purple-500" />} iconBg="bg-purple-50" label={t('wizard.summary.resolution')} value={`${resX} x ${resY} pixels`} />
-            <DetailItem icon={<Cpu className="w-5 h-5 text-fuchsia-500" />} iconBg="bg-fuchsia-50" label={t('wizard.summary.modules')} value={modules.toString()} />
-            <DetailItem icon={<Zap className="w-5 h-5 text-green-500" />} iconBg="bg-green-50" label={t('wizard.summary.powerMax')} value={`${powerMax.toFixed(1)} kW`} />
-            <DetailItem icon={<Zap className="w-5 h-5 text-sky-500" />} iconBg="bg-sky-50" label={t('wizard.summary.powerAvg')} value={`${powerAvg.toFixed(1)} kW`} />
-            <DetailItem icon={<Zap className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label={t('wizard.summary.breaker')} value={`${amps}A ${t('wizard.summary.breakerType') || 'Tripolaire'}`} />
-            
-            <div className="col-span-1 md:col-span-2 h-px bg-slate-100 my-2"></div>
-            
-            <DetailItem icon={<Truck className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label={t('wizard.summary.projectType')} value={state.projectType === 'location' ? t('configurator.rental') : t('configurator.sale')} />
-            <DetailItem icon={<Sun className="w-5 h-5 text-teal-500" />} iconBg="bg-teal-50" label={t('wizard.summary.environment')} value={state.environment === 'exterieur' ? t('configurator.outdoor') : state.environment === 'semi-exterieur' ? t('wizard.environment.semiOutdoorTitle') : t('configurator.indoor')} />
-            <DetailItem icon={<Eye className="w-5 h-5 text-cyan-500" />} iconBg="bg-cyan-50" label={t('wizard.summary.distance')} value={state.viewingDistance} />
-            <DetailItem icon={<Grid className="w-5 h-5 text-rose-500" />} iconBg="bg-rose-50" label={t('wizard.summary.pitch')} value={state.pixelPitch} />
-            
-            {state.projectType === 'location' && state.rentalStartDate && state.rentalEndDate && (
-              <>
-                <div className="col-span-1 md:col-span-2 h-px bg-slate-100 my-2"></div>
-                <DetailItem icon={<CalendarIcon className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.rentalPeriod')} value={`${format(new Date(state.rentalStartDate), 'dd/MM/yyyy', { locale: dateLocale })} - ${format(new Date(state.rentalEndDate), 'dd/MM/yyyy', { locale: dateLocale })}`} />
-                <DetailItem icon={<Clock className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.hours')} value={`${state.rentalStartTime || '08:00'} ${t('wizard.rental.to')} ${state.rentalEndTime || '18:00'}`} />
-              </>
-            )}
+              <DetailItem icon={<Maximize className="w-5 h-5 text-blue-500" />} iconBg="bg-blue-50" label={t('wizard.summary.area')} value={`${area.toFixed(2)} m²`} />
+              <DetailItem icon={<Monitor className="w-5 h-5 text-purple-500" />} iconBg="bg-purple-50" label={t('wizard.summary.resolution')} value={`${resX} x ${resY} pixels`} />
+              <DetailItem icon={<Cpu className="w-5 h-5 text-fuchsia-500" />} iconBg="bg-fuchsia-50" label={t('wizard.summary.modules')} value={modules.toString()} />
+              <DetailItem icon={<Zap className="w-5 h-5 text-green-500" />} iconBg="bg-green-50" label={t('wizard.summary.powerMax')} value={`${powerMax.toFixed(1)} kW`} />
+              <DetailItem icon={<Zap className="w-5 h-5 text-sky-500" />} iconBg="bg-sky-50" label={t('wizard.summary.powerAvg')} value={`${powerAvg.toFixed(1)} kW`} />
+              <DetailItem icon={<Zap className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label={t('wizard.summary.breaker')} value={`${amps}A ${t('wizard.summary.breakerType') || 'Tripolaire'}`} />
+
+              <div className="col-span-1 md:col-span-2 h-px bg-slate-100 my-2"></div>
+
+              <DetailItem icon={<Truck className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label={t('wizard.summary.projectType')} value={state.projectType === 'location' ? t('configurator.rental') : t('configurator.sale')} />
+              <DetailItem icon={<Sun className="w-5 h-5 text-teal-500" />} iconBg="bg-teal-50" label={t('wizard.summary.environment')} value={state.environment === 'exterieur' ? t('configurator.outdoor') : state.environment === 'semi-exterieur' ? t('wizard.environment.semiOutdoorTitle') : t('configurator.indoor')} />
+              <DetailItem icon={<Eye className="w-5 h-5 text-cyan-500" />} iconBg="bg-cyan-50" label={t('wizard.summary.distance')} value={state.viewingDistance} />
+              <DetailItem icon={<Grid className="w-5 h-5 text-rose-500" />} iconBg="bg-rose-50" label={t('wizard.summary.pitch')} value={state.pixelPitch} />
+
+              {state.projectType === 'location' && state.rentalStartDate && state.rentalEndDate && (
+                <>
+                  <div className="col-span-1 md:col-span-2 h-px bg-slate-100 my-2"></div>
+                  <DetailItem icon={<CalendarIcon className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.rentalPeriod')} value={`${format(new Date(state.rentalStartDate), 'dd/MM/yyyy', { locale: dateLocale })} - ${format(new Date(state.rentalEndDate), 'dd/MM/yyyy', { locale: dateLocale })}`} />
+                  <DetailItem icon={<Clock className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label={t('wizard.summary.hours')} value={`${state.rentalStartTime || '08:00'} ${t('wizard.rental.to')} ${state.rentalEndTime || '18:00'}`} />
+                </>
+              )}
+            </div>
           </div>
-        </div>
         </div>
       </div>
     </div>
@@ -1392,19 +1392,19 @@ function DetailItem({ icon, iconBg = "bg-slate-100", label, value }: { icon: Rea
 export function StepFinal({ state, updateState, products, settings, t, locale, hideBackButton }: { state: ConfigState, updateState: any, products?: Product[], settings: Settings, t: any, locale: string, hideBackButton?: boolean }) {
   const area = state.width * state.height;
   const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
-  
+
   const filteredProducts = (products || []).filter(p => {
     if (!p.pitch && !p.distance) return true;
     const productPitch = p.pitch ? parseFloat(String(p.pitch).replace('P', '')) : null;
     if (productPitch !== null) {
-        const diff = Math.abs(productPitch - pitchValue);
-        if (diff > 1.5) return false;
+      const diff = Math.abs(productPitch - pitchValue);
+      if (diff > 1.5) return false;
     }
     return true;
   });
 
   const hasMatchingProducts = filteredProducts.length > 0;
-  
+
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     const aPitch = a.pitch ? parseFloat(String(a.pitch).replace('P', '')) || 999 : 999;
     const bPitch = b.pitch ? parseFloat(String(b.pitch).replace('P', '')) || 999 : 999;
@@ -1422,13 +1422,13 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
 
       <div className="flex-1 p-0 scrollbar-hide px-6">
         {!hasMatchingProducts && (
-           <ProductNotFound 
-              onReset={() => updateState({ step: 1 })}
-              onBack={() => updateState({ step: 7 })}
-              pitch={state.pixelPitch}
-              environment={state.environment === 'exterieur' ? t('configurator.outdoor') : state.environment === 'semi-exterieur' ? t('wizard.environment.semiOutdoorTitle') : t('configurator.indoor')}
-              hideBackButton={hideBackButton}
-           />
+          <ProductNotFound
+            onReset={() => updateState({ step: 1 })}
+            onBack={() => updateState({ step: 7 })}
+            pitch={state.pixelPitch}
+            environment={state.environment === 'exterieur' ? t('configurator.outdoor') : state.environment === 'semi-exterieur' ? t('wizard.environment.semiOutdoorTitle') : t('configurator.indoor')}
+            hideBackButton={hideBackButton}
+          />
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
@@ -1438,15 +1438,15 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
             const quantity = state.quantity || 1;
             let unitPrice = 0;
             if (state.projectType === 'vente') {
-                unitPrice = (product.salePricePerSqM || 0) * area;
+              unitPrice = (product.salePricePerSqM || 0) * area;
             } else {
-                unitPrice = (product.rentalPricePerDay || 0) * area;
+              unitPrice = (product.rentalPricePerDay || 0) * area;
             }
             const totalPrice = unitPrice * quantity;
 
             return (
-              <div 
-                key={product.id} 
+              <div
+                key={product.id}
                 className={cn(
                   "group cursor-pointer transition-all duration-500",
                   isSelected ? "opacity-100" : "opacity-90 hover:opacity-100"
@@ -1457,15 +1457,15 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                   "relative aspect-square bg-gray-50 rounded-2xl border transition-all duration-500 overflow-hidden mb-4",
                   isSelected ? "border-[#c6ff00] border-4 shadow-2xl shadow-black/10 scale-[1.02]" : "border-gray-100 group-hover:border-gray-300"
                 )}>
-                  <img 
-                    src={product.imageUrl || product.image || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=90&w=1200"} 
+                  <img
+                    src={product.imageUrl || product.image || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=90&w=1200"}
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
-                  
+
                   <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
                     {product.videoUrl && (
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); window.open(product.videoUrl, '_blank'); }}
                         className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-black hover:text-white transition-all"
                       >
@@ -1473,7 +1473,7 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                       </button>
                     )}
                     {product.productUrl && (
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); window.open(product.productUrl, '_blank'); }}
                         className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-black hover:text-white transition-all"
                       >
@@ -1503,35 +1503,35 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                   <div className="pt-2">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('wizard.products.priceLabel')}</p>
                     {settings.isPriceHidden && totalPrice > 0 ? (
-                        <div className="flex flex-col">
-                            <span className="text-lg font-black text-black/30 animate-pulse blur-[2px] select-none">{t('configurator.estimating')}</span>
-                        </div>
+                      <div className="flex flex-col">
+                        <span className="text-lg font-black text-black/30 animate-pulse blur-[2px] select-none">{t('configurator.estimating')}</span>
+                      </div>
                     ) : (
-                        <>
-                            <p className="text-lg font-black text-slate-900">
-                                {totalPrice > 0 ? `${totalPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} €` : t('wizard.products.onEstimate') || 'Sur estimation'}
-                            </p>
-                            {quantity > 1 && (
-                                <p className="text-[10px] font-bold text-slate-400 italic">
-                                    {t('wizard.products.perUnit', { price: unitPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US') })}
-                                </p>
-                            )}
-                        </>
+                      <>
+                        <p className="text-lg font-black text-slate-900">
+                          {totalPrice > 0 ? `${totalPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} €` : t('wizard.products.onEstimate') || 'Sur estimation'}
+                        </p>
+                        {quantity > 1 && (
+                          <p className="text-[10px] font-bold text-slate-400 italic">
+                            {t('wizard.products.perUnit', { price: unitPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US') })}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
-                  
+
                   {isSelected && (
                     <div className="mt-4 flex items-center justify-between bg-gray-50 p-2 rounded-xl border border-gray-100">
                       <span className="font-black uppercase tracking-[0.1em] text-[9px] ml-2 text-gray-400">{t('wizard.products.quantity')}</span>
                       <div className="flex items-center gap-3">
-                        <button 
+                        <button
                           onClick={(e) => { e.stopPropagation(); updateState({ quantity: Math.max(1, (state.quantity || 1) - 1) }) }}
                           className="w-8 h-8 rounded-full bg-[#c6ff00] text-black flex items-center justify-center transition-all active:scale-90"
                         >
                           <ChevronLeft size={14} strokeWidth={3} />
                         </button>
                         <span className="font-black text-xs w-4 text-center">{state.quantity || 1}</span>
-                        <button 
+                        <button
                           onClick={(e) => { e.stopPropagation(); updateState({ quantity: (state.quantity || 1) + 1 }) }}
                           className="w-8 h-8 rounded-full bg-[#c6ff00] text-black flex items-center justify-center transition-all active:scale-90"
                         >
@@ -1543,12 +1543,12 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                 </div>
 
                 {/* Action Button */}
-                <button 
+                <button
                   onClick={(e) => { e.stopPropagation(); updateState({ selectedProduct: product.id }) }}
                   className={cn(
                     "w-full mt-6 h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center transition-all active:scale-95 shadow-sm",
-                    isSelected 
-                      ? "bg-black text-[#c6ff00] shadow-2xl shadow-black/20" 
+                    isSelected
+                      ? "bg-black text-[#c6ff00] shadow-2xl shadow-black/20"
                       : "bg-white/40 backdrop-blur-md text-black border border-gray-100 hover:bg-black hover:text-[#c6ff00] hover:shadow-2xl hover:shadow-black/10"
                   )}
                 >
@@ -1569,13 +1569,13 @@ function calculateRatio(w: number, h: number): string {
   const common = gcd(Math.round(w * 100), Math.round(h * 100));
   const rw = Math.round(w * 100) / common;
   const rh = Math.round(h * 100) / common;
-  
+
   // Common ratios detection
   const ratio = w / h;
-  if (Math.abs(ratio - 16/9) < 0.05) return "16:9 (HD)";
-  if (Math.abs(ratio - 4/3) < 0.05) return "4:3 (Standard)";
-  if (Math.abs(ratio - 21/9) < 0.05) return "21:9 (Ultrawide)";
+  if (Math.abs(ratio - 16 / 9) < 0.05) return "16:9 (HD)";
+  if (Math.abs(ratio - 4 / 3) < 0.05) return "4:3 (Standard)";
+  if (Math.abs(ratio - 21 / 9) < 0.05) return "21:9 (Ultrawide)";
   if (Math.abs(ratio - 1) < 0.05) return "1:1";
-  
+
   return `${rw}:${rh}`;
 }

@@ -43,7 +43,7 @@ export function ConfiguratorModeSelection({ onSelectMode }: ConfiguratorModeSele
               whileTap={{ scale: 0.98 }}
               className="group cursor-pointer"
             >
-              <div className="relative overflow-hidden rounded-[1.5rem] bg-black text-white p-6 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-black/30">
+              <div className="relative overflow-hidden rounded-[1.5rem] bg-black text-white p-4 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-black/30">
                 {/* Lime accent glow */}
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#c6ff00]/20 rounded-full blur-2xl pointer-events-none" />
                 <div className="relative z-10 flex justify-between items-start">
@@ -65,7 +65,7 @@ export function ConfiguratorModeSelection({ onSelectMode }: ConfiguratorModeSele
               whileTap={{ scale: 0.98 }}
               className="group cursor-pointer"
             >
-              <div className="relative overflow-hidden rounded-[1.5rem] border-2 border-slate-200 bg-white/60 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-[1.02] hover:border-slate-400 hover:shadow-lg">
+              <div className="relative overflow-hidden rounded-[1.5rem] border-2 border-slate-200 bg-white/60 backdrop-blur-sm p-4 transition-all duration-300 hover:scale-[1.02] hover:border-slate-400 hover:shadow-lg">
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="flex items-center gap-2 font-black text-lg text-slate-900">
