@@ -57,7 +57,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
             exit={{ opacity: 0 }}
             onClick={onClose}
             style={{ opacity }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[110] lg:hidden"
+            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[110] 2xl:hidden"
           />
 
           {/* Floating Pill Modal with Drag to Close */}
@@ -75,7 +75,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: '100%', opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-6 left-4 right-4 z-[120] bg-white dark:bg-[#111111] rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-zinc-200 dark:border-white/10 flex flex-col overflow-hidden lg:hidden max-h-[80vh]"
+            className="fixed bottom-6 left-4 right-4 z-[120] bg-white dark:bg-[#111111] rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-zinc-200 dark:border-white/10 flex flex-col overflow-hidden 2xl:hidden max-h-[80vh]"
           >
             {/* Drag Handle Area */}
             <div className="w-full flex justify-center py-4 cursor-grab active:cursor-grabbing">

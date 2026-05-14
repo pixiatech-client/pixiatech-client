@@ -291,7 +291,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const sidebarClasses = `
-    fixed lg:sticky top-0 z-[1000] h-screen transition-colors duration-300 flex flex-col
+    admin-sidebar fixed lg:sticky top-0 z-[1000] min-h-screen transition-colors duration-300 flex flex-col
     ${isDark ? 'bg-[#141414] text-white border-white/5' : 'bg-white text-gray-900 border-gray-200'}
     border-r overflow-hidden
   `;
@@ -339,7 +339,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className={sidebarClasses}
     >
-      <div className={`${isCompact ? 'w-20' : 'w-64'} h-full flex flex-col transition-all duration-300`}>
+      <div className={`${isCompact ? 'w-20' : 'w-64'} flex-1 flex flex-col transition-all duration-300`}>
         {/* Header / Logo */}
         <div className="p-6 flex items-center justify-between relative group/logo">
           <AnimatePresence mode="wait">
@@ -668,10 +668,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               );
             })}
           </Reorder.Group>
-        </div>
-
-        {/* Footer Actions */}
-        <div className={`p-4 border-t ${isDark ? 'border-white/5' : 'border-gray-100'} space-y-4`}>
+          {/* Footer Actions (moved inside scroll container) */}
+          <div className={`mt-6 pt-4 border-t ${isDark ? 'border-white/5' : 'border-gray-100'} space-y-4`}>
           {/* Theme Toggle */}
           <div className={`flex ${isCompact ? 'flex-col' : 'flex-row'} items-center gap-2 p-1 rounded-xl ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
             <div className="relative flex-1 w-full">
@@ -806,6 +804,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </button>
           </div>
+        </div>
         </div>
       </div>
     </motion.aside>

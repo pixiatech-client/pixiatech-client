@@ -96,7 +96,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
   }, [activeTab, tabCounts]);
 
   return (
-    <div className="hidden lg:flex justify-center mb-6">
+    <div className="hidden 2xl:flex justify-center mb-6">
       <div 
         ref={containerRef}
         className="relative flex items-center gap-3 bg-white p-2 rounded-2xl border border-zinc-200 shadow-sm w-fit"

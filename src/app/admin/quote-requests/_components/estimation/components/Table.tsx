@@ -74,7 +74,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
             {onOpenMobileDrawer && (
               <button
                 onClick={onOpenMobileDrawer}
-                className="h-full flex lg:hidden items-center gap-2 px-3 bg-white border-y border-r border-zinc-200 text-xs font-bold uppercase tracking-wide text-zinc-600 transition-all hover:bg-zinc-50"
+                className="h-full flex 2xl:hidden items-center gap-2 px-3 bg-white border-y border-r border-zinc-200 text-xs font-bold uppercase tracking-wide text-zinc-600 transition-all hover:bg-zinc-50"
               >
                 Statuts
                 <div className="w-1.5 h-1.5 rounded-full bg-[#95d230]" />
@@ -310,20 +310,20 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             </div>
 
             {/* Numéro & Ref */}
-            <div className="w-44 px-4 flex items-center gap-3">
+            <div className="w-32 px-3 flex items-center gap-3">
               <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-white' : 'group-hover:text-white text-zinc-900'}`}>
                 {est.number}
               </span>
             </div>
 
             {/* Client */}
-            <div className="flex-1 px-4 flex flex-col justify-center min-w-0">
-              <div className="flex items-center gap-2">
+            <div className="flex-1 px-3 flex flex-col justify-center min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
                 <span className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'group-hover:text-white text-zinc-900'}`}>
                   {est.client}
                 </span>
                 {est.emailVerified && (
-                  <span title="Email vérifié" className="flex items-center">
+                  <span title="Email vérifié" className="flex items-center shrink-0">
                     <ShieldCheck className="w-3.5 h-3.5 text-[#95d230]" />
                   </span>
                 )}
@@ -345,10 +345,10 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             </div>
 
             {/* Statut */}
-            <div className="w-40 px-4 flex items-center">
+            <div className="w-32 px-2 flex items-center">
               <button
                 onClick={(e) => { e.stopPropagation(); onStatusClick(est.id); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all shadow-sm"
                 style={{
                   backgroundColor: isSelected ? 'rgba(255,255,255,0.1)' : config.bg,
                   color: isSelected ? '#95d230' : config.text,
@@ -361,7 +361,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             </div>
 
             {/* Heure / Date */}
-            <div className="w-40 px-4 flex flex-col justify-center">
+            <div className="w-28 px-3 flex flex-col justify-center">
               <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-white' : 'group-hover:text-white text-zinc-900'}`}>
                 {est.time || '--:--'}
               </span>
@@ -378,9 +378,9 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
             {/* Price Column Hidden for Supplier (Except in specific tabs if needed) */}
             {!isFournisseur && (
-              <div className="w-40 px-4 flex flex-col items-end justify-center">
+              <div className="w-36 px-3 flex flex-col items-start justify-center">
                 <span className={`text-[8px] font-black uppercase tracking-[0.2em] mb-0.5 ${isSelected ? 'text-zinc-600' : 'group-hover:text-zinc-600 text-zinc-300'}`}>PRIX TOTAL</span>
-                <span className={`font-black text-lg tracking-tighter ${isSelected ? 'text-[#95d230]' : 'group-hover:text-[#95d230] text-zinc-900'}`}>
+                <span className={`font-black text-lg tracking-tighter whitespace-nowrap ${isSelected ? 'text-[#95d230]' : 'group-hover:text-[#95d230] text-zinc-900'}`}>
                   {Math.max(est.totalClient, 0.01).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
               </div>
@@ -388,7 +388,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
             {/* Email Verification Icon */}
             {!isFournisseur && (
-              <div className="w-28 px-4 flex items-center justify-center">
+              <div className="hidden 2xl:flex w-28 px-4 items-center justify-center">
                 {(est.status === 'En attente' || est.status === 'Traité') && (
                   <span title={est.emailVerified ? 'Email validé' : 'Email non confirmé'} className="flex items-center">
                     <Mail 
@@ -402,7 +402,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             )}
 
             {/* Action Column - State Machine Logic */}
-            <div className="w-40 px-4 flex items-center justify-end gap-1 mr-4" onClick={(e) => e.stopPropagation()}>
+            <div className="w-32 px-3 flex items-center justify-end gap-1 mr-2" onClick={(e) => e.stopPropagation()}>
               {isFournisseur ? (
                 <>
                   {est.status === 'Fournisseur' && (
@@ -990,7 +990,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
     <div className="flex flex-col gap-3">
       {/* HEADER PC */}
       <div className="hidden md:flex items-center px-8 py-4 bg-black rounded-2xl border border-zinc-800 text-[10px] font-black text-white uppercase tracking-[0.15em] mb-4">
-        <div className="w-12 mr-4 flex items-center justify-center">
+        <div className="w-12 mr-2 flex items-center justify-center">
           <input
             type="checkbox"
             checked={isAllSelected}
@@ -998,38 +998,38 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
             className="rounded-sm border-white bg-white text-black focus:ring-0 cursor-pointer w-4 h-4"
           />
         </div>
-        <div className="w-12 flex items-center justify-center">
+        <div className="w-8 flex items-center justify-center">
           <Paperclip className="w-4 h-4 text-[#95d230]" />
         </div>
-        <div className="w-44 px-4 flex items-center gap-2.5">
+        <div className="w-32 px-3 flex items-center gap-2.5">
           <PlusCircle className="w-4 h-4 text-[#95d230]" />
           NUMERO
         </div>
-        <div className="flex-1 px-4 flex items-center gap-2.5">
+        <div className="flex-1 px-3 flex items-center gap-2.5">
           <User className="w-4 h-4 text-[#95d230]" />
           CLIENT
         </div>
-        <div className="w-40 px-4 flex items-center gap-2.5">
+        <div className="w-32 px-2 flex items-center gap-2.5">
           <Clock className="w-4 h-4 text-[#95d230]" />
           STATUT
         </div>
-        <div className="w-40 px-4 flex items-center gap-2.5">
+        <div className="w-28 px-3 flex items-center gap-2.5">
           <RotateCcw className="w-4 h-4 text-[#95d230]" />
           HEURE / DATE
         </div>
         {!isFournisseur && (
-          <div className="w-40 px-4 flex items-center justify-end gap-2 font-black tracking-widest">
+          <div className="w-36 px-3 flex items-center justify-start gap-2 font-black tracking-widest">
             <DollarSign className="w-4 h-4 text-[#95d230] shrink-0" />
             <span>PRIX</span>
           </div>
         )}
         {!isFournisseur && (
-          <div className="w-28 px-4 flex items-center justify-center gap-2 font-black tracking-widest">
+          <div className="hidden 2xl:flex w-28 px-4 items-center justify-center gap-2 font-black tracking-widest">
             <Mail className="w-4 h-4 text-[#95d230] shrink-0" />
             <span>EMAIL</span>
           </div>
         )}
-        <div className="w-40 px-4 flex items-center justify-end gap-2 mr-4 font-black tracking-widest">
+        <div className="w-32 px-3 mr-2 flex items-center justify-end gap-2 font-black tracking-widest">
           <MoreVertical className="w-4 h-4 text-[#95d230] shrink-0" />
           <span>ACTION</span>
         </div>
