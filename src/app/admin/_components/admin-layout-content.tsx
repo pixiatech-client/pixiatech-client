@@ -30,6 +30,8 @@ import {
   Truck,
   HardHat,
   FileType,
+  Calculator,
+  LogIn,
 } from 'lucide-react';
 import Link from 'next/link';
 import { logout, getThemes, updateSettings, getSettings, updateUser, type UserRole, getUsers, saveSidebarConfig } from '@/app/admin/actions';
@@ -47,6 +49,7 @@ import { NotificationBell } from './NotificationBell';
 import { ChatPanel } from './ChatPanel';
 import { SettingsContent } from '../settings/_components/settings-content';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FloatingCalculator } from './FloatingCalculator';
 
 const mapRoleToUserRoleEnum = (role: string | undefined): UserRoleEnum => {
   switch (role) {
@@ -206,6 +209,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
   useEffect(() => {
     const handleOpenChat = (e: any) => {
@@ -228,7 +232,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   const isExpanded = sidebarState === 'expanded';
 
   return (
-    <div id="admin-root" className="relative flex h-screen w-full text-gray-900 overflow-hidden" style={{ backgroundColor: '#E8F3EB' }}>
+    <div id="admin-root" className="relative flex min-h-screen w-full text-gray-900 overflow-hidden" style={{ backgroundColor: '#E8F3EB' }}>
       {/* Mobile Overlay */}
       <AnimatePresence>
         {sidebarState !== 'hidden' && (
@@ -305,13 +309,12 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 size="icon"
                 className={cn(
                   "group h-11 w-11 rounded-xl border-0 shadow-sm transition-all duration-200 hidden md:inline-flex",
-                  isDark ? "bg-white/5 hover:bg-white/10" : "bg-white hover:bg-gray-100"
+                  isDark ? "bg-white/5 hover:bg-black" : "bg-white hover:bg-black"
                 )}
-                asChild
+                onClick={() => router.back()}
+                title="Page précédente"
               >
-                <Link href="/">
-                  <ArrowLeft className={cn("h-5 w-5 transition-colors duration-200", isDark ? "text-gray-400 group-hover:text-white" : "text-gray-400 group-hover:text-gray-700")} />
-                </Link>
+                <ArrowLeft className="h-5 w-5 transition-all duration-200 text-gray-400 group-hover:text-emerald-400 group-hover:-translate-x-0.5" />
               </Button>
               <div>
                 <h1 className={cn(
@@ -330,14 +333,33 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
             </div>
 
             <div className="flex items-center justify-end gap-3">
-              <Button variant="ghost" size="icon" onClick={toggleTheme} className={cn("group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex", isDark ? "bg-white/5 hover:bg-black" : "bg-white hover:bg-black")}>
-                <Sun className={cn("h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-amber-500 group-hover:text-amber-400")} />
-                <Moon className={cn("absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-indigo-400 group-hover:text-indigo-300")} />
-                <span className="sr-only">Toggle theme</span>
+
+              {/* ── 1. Calculatrice flottante ── */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsCalculatorOpen(prev => !prev)}
+                title="Calculatrice"
+                className={cn(
+                  "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
+                  isCalculatorOpen
+                    ? "bg-black text-white"
+                    : (isDark ? "bg-white/5 hover:bg-black" : "bg-white hover:bg-black")
+                )}
+              >
+                <Calculator className={cn(
+                  "h-5 w-5 transition-colors",
+                  isCalculatorOpen
+                    ? "text-indigo-400"
+                    : (isDark ? "text-gray-400 group-hover:text-indigo-400" : "text-gray-500 group-hover:text-indigo-400")
+                )} />
+                <span className="sr-only">Calculatrice</span>
               </Button>
 
+              {/* ── 2. Notifications ── */}
               <NotificationBell isDark={isDark} userRole={userProfile?.role} />
 
+              {/* ── 3. Messagerie ── */}
               {userProfile && canShowMessaging && (
                 <Button
                   variant="ghost"
@@ -349,13 +371,20 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 </Button>
               )}
 
-              {userProfile?.role === 'admin' && (
-                <Button variant="ghost" size="icon" className={cn("group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex", isDark ? "bg-white/5 hover:bg-white/10" : "bg-white hover:bg-gray-100")} asChild>
-                  <Link href="/admin/settings">
-                    <Settings className={cn("h-5 w-5 transition-colors", isDark ? "text-gray-400 group-hover:text-blue-400" : "text-gray-400 group-hover:text-blue-500")} />
-                  </Link>
-                </Button>
-              )}
+              {/* ── 4. Aller au site front-end (icône exit rouge) ── */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => window.open('https://app.pixiatech.com', '_blank', 'noopener,noreferrer')}
+                title="Aller au site"
+                className={cn(
+                  "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
+                  isDark ? "bg-white/5 hover:bg-black" : "bg-white hover:bg-black"
+                )}
+              >
+                <LogIn className="h-5 w-5 text-red-500 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-red-400" />
+                <span className="sr-only">Aller au site</span>
+              </Button>
 
               <div className={cn("h-9 w-px mx-1 hidden sm:block", isDark ? "bg-white/10" : "bg-gray-200")} />
 
@@ -394,6 +423,13 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
           {children}
         </main>
       </div>
+
+      {/* ── Calculatrice flottante (toujours au premier plan, draggable) ── */}
+      <FloatingCalculator
+        isOpen={isCalculatorOpen}
+        onClose={() => setIsCalculatorOpen(false)}
+        isDark={isDark}
+      />
 
       <ChatPanel
         isOpen={isChatPanelOpen}

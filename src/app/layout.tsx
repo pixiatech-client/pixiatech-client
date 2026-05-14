@@ -8,6 +8,14 @@ export const metadata: Metadata = {
   description: 'Générez des estimations pour des écrans LED',
 };
 
+// Viewport séparé pour Next.js 14+ — empêche le navigateur de compenser
+// lui-même le DPI Windows (notre CSS zoom gère ça proprement)
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

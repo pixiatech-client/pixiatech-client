@@ -366,7 +366,7 @@ export function QuoteRequestsTable() {
                 </div>
             </div>
 
-            <div className="overflow-hidden">
+            <div className="overflow-x-auto custom-scrollbar">
                 <div className="border-0">
                 <Table>
                     <TableHeader className="bg-slate-50/50">
@@ -452,7 +452,7 @@ export function QuoteRequestsTable() {
                                     </Tooltip>
                                 </TooltipProvider>
                                 <span className={cn(
-                                    "font-bold text-slate-900 group-hover:text-blue-600 transition-colors", 
+                                    "font-bold text-slate-900 group-hover:text-blue-600 transition-colors whitespace-nowrap", 
                                     !req.isRead && status === 'pending' && "text-blue-600"
                                 )}>
                                     {req.client.companyName}
@@ -480,7 +480,7 @@ export function QuoteRequestsTable() {
                                 <Badge 
                                     variant="outline" 
                                     className={cn(
-                                        "rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border shadow-sm transition-all",
+                                        "rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border shadow-sm transition-all whitespace-nowrap",
                                         status === 'pending' ? 'bg-amber-400 border-amber-300 text-white hover:bg-amber-500' : 
                                         status === 'processed' ? 'bg-emerald-400 border-emerald-300 text-white hover:bg-emerald-500' :
                                         status === 'in_progress' ? 'bg-cyan-400 border-cyan-300 text-white hover:bg-cyan-500' :
@@ -522,7 +522,7 @@ export function QuoteRequestsTable() {
                         </TableCell>
                         <TableCell className="text-right pr-6">
                             <div className="flex flex-col items-end">
-                                <span className="text-lg font-black text-slate-900 tracking-tight">{formatCurrency(req.totalQuote)}</span>
+                                <span className="text-lg font-black text-slate-900 tracking-tight whitespace-nowrap">{formatCurrency(req.totalQuote)}</span>
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">HT</span>
                             </div>
                         </TableCell>

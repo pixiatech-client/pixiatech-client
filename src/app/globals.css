@@ -86,18 +86,97 @@
   * {
     @apply border-border;
   }
+  /* ===== RESET GLOBAL ===== */
+  html,
+  body,
+  #__next,
+  #root,
+  #admin-root {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
-    overflow-x: hidden;
     transition: background-color 0.3s ease;
   }
 
-  /* Optimisation spécifique pour les écrans de PC portables (1024px à 1440px) */
-  @media screen and (min-width: 1024px) and (max-width: 1440px) {
+  /* ═══════════════════════════════════════════════════════════════════════════
+   *  PROFILS D'APPAREILS — Tableau de compatibilité
+   * ═══════════════════════════════════════════════════════════════════════════
+   *
+   *  [1] 📱 TÉLÉPHONE      < 768px          → Pas de zoom (mobile natif)
+   *  [2] 📟 TABLETTE       768px – 1024px   → Pas de zoom (rendu OK)
+   *  [3] 📓 MINI BOOK      1024px – 1280px  → zoom: 0.82  ← CORRECTIF ACTIF
+   *  [4] 💻 PC PORTABLE    1280px – 1600px  → zoom: 0.85  ← CORRECTIF ACTIF
+   *  [5] 🖥️  PC BUREAU      > 1600px         → Pas de zoom (grands écrans)
+   *
+   *  Raison des zooms : Windows recommande 120 % de mise à l'échelle sur les
+   *  laptops. Sans correction, l'app paraît trop grande au zoom navigateur
+   *  par défaut (100 %). Le zoom CSS compense : 1 / 1.20 ≈ 83 %.
+   *  min-height empêche la bande blanche en bas (zoom réduit la hauteur CSS).
+   * ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* [1] Téléphone ─────────────────────────────── < 768px ─── Pas de zoom */
+  /* [2] Tablette ──────────────────────────── 768–1024px ─── Pas de zoom */
+
+  /* [3] Mini Book ─────────────────────── 1024px – 1280px ─── zoom: 0.82 */
+  @media screen and (min-width: 1024px) and (max-width: 1279px) {
     html {
-      font-size: 85%; /* Équivaut à un zoom global de 85% pour Tailwind */
+      zoom: 0.82;
     }
+    body {
+      min-height: calc(100dvh / 0.82);
+    }
+    #admin-root, .admin-sidebar {
+      width: 100%;
+      max-width: 100%;
+      min-height: calc(100dvh / 0.82);
+    }
+    #admin-root {
+      overflow: hidden;
+    }
+  }
+
+  /* [4] PC Portable / Laptop ──────────── 1280px – 1600px ─── zoom: 0.85 */
+  @media screen and (min-width: 1280px) and (max-width: 1600px) {
+    html {
+      zoom: 0.85;
+    }
+    body {
+      min-height: calc(100dvh / 0.85);
+    }
+    #admin-root, .admin-sidebar {
+      width: 100%;
+      max-width: 100%;
+      min-height: calc(100dvh / 0.85);
+    }
+    #admin-root {
+      overflow: hidden;
+    }
+  }
+
+  /* [5] PC Bureau ──────────────────────────── > 1600px ─── Pas de zoom */
+
+  /* ===== TABLEAUX / CARTES ===== */
+  .table-wrapper,
+  .card-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    box-sizing: border-box;
+  }
+
+  /* ===== FIX ESPACE BLANC BAS ===== */
+  main,
+  .layout,
+  .dashboard-content {
+    min-height: inherit;
+    box-sizing: border-box;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
