@@ -354,7 +354,15 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         const totalTiles = tilesPerWidth * tilesPerHeight;
         unitPrice = totalTiles * (p.pricePerTile || 0);
       }
-      const lineTotal = (p.quantity || 0) * unitPrice;
+      const lineBaseTotal = (p.quantity || 0) * unitPrice;
+      
+      // Facteur Location
+      let durationFactor = 1;
+      if (p.transactionType === 'rental') {
+        durationFactor = p.rentalDuration || 1;
+      }
+      
+      const lineTotal = lineBaseTotal * durationFactor;
       const discounted = lineTotal * (1 - (p.discount || 0) / 100);
       return acc + discounted;
     }, 0);
@@ -416,26 +424,30 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
   };
 
   const addProduct = () => {
+    const lastProduct = estimation.products[estimation.products.length - 1];
     const newProduct: LocalProduct = {
       id: Math.random().toString(36).substr(2, 9),
-      productId: '',
-      name: 'Nouvel Écran LED',
+      productId: lastProduct?.productId || '',
+      name: lastProduct?.name || 'Nouvel Écran LED',
       quantity: 1,
-      width: 2.0, // Initialisation à 2m
-      height: 2.0, // Initialisation à 2m
-      unitPrice: 0,
+      width: lastProduct?.width || 2.0,
+      height: lastProduct?.height || 2.0,
+      unitPrice: lastProduct?.unitPrice || 0,
       discount: 0,
+      transactionType: lastProduct?.transactionType || 'sale',
+      rentalUnit: lastProduct?.rentalUnit || 'day',
+      rentalDuration: lastProduct?.rentalDuration || 1,
       specs: {
-        pixelPitch: '2.5',
-        environment: 'Intérieur',
-        projectType: 'Vente'
+        pixelPitch: (lastProduct?.specs?.pixelPitch as string) || '2.5',
+        environment: (lastProduct?.specs?.environment as string) || 'Intérieur',
+        projectType: (lastProduct?.specs?.projectType as string) || 'Vente'
       }
     };
     setEstimation(prev => ({
       ...prev,
       products: [...prev.products, newProduct]
     }));
-    addHistory('Ajout nouveau produit');
+    addHistory('Ajout nouveau produit (Héritage dimensions)');
   };
 
   const formatCurrency = (val: number) => {
@@ -1063,6 +1075,40 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   })()}
                                 </div>
                               )}
+                              
+                              {/* VENTE / LOCATION TOGGLE */}
+                              {isEditMode && (
+                                <div className="mt-4 flex items-center gap-2">
+                                  <div className="flex p-1 bg-black/40 border border-white/5 rounded-xl">
+                                    <button
+                                      onClick={() => {
+                                        const newProducts = estimation.products.map(prod => prod.id === p.id ? { 
+                                          ...prod, 
+                                          transactionType: 'sale',
+                                          specs: { ...prod.specs, projectType: 'Vente' }
+                                        } : prod);
+                                        setEstimation({ ...estimation, products: newProducts as any });
+                                      }}
+                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.transactionType !== 'rental' ? 'bg-aura-accent text-white shadow-lg' : 'text-aura-text-dim hover:text-white'}`}
+                                    >
+                                      Vente
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        const newProducts = estimation.products.map(prod => prod.id === p.id ? { 
+                                          ...prod, 
+                                          transactionType: 'rental',
+                                          specs: { ...prod.specs, projectType: 'Location' }
+                                        } : prod);
+                                        setEstimation({ ...estimation, products: newProducts as any });
+                                      }}
+                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.transactionType === 'rental' ? 'bg-aura-accent text-white shadow-lg' : 'text-aura-text-dim hover:text-white'}`}
+                                    >
+                                      Location
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             {isEditMode && (
                               <button
@@ -1074,7 +1120,29 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             )}
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end">
+                            {isEditMode && (
+                              <>
+                                <NumericControl
+                                  label="Largeur (m)"
+                                  value={p.width || 0}
+                                  unit="m"
+                                  onChange={(val) => {
+                                    const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, width: val } : prod);
+                                    setEstimation({ ...estimation, products: newProducts });
+                                  }}
+                                />
+                                <NumericControl
+                                  label="Hauteur (m)"
+                                  value={p.height || 0}
+                                  unit="m"
+                                  onChange={(val) => {
+                                    const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, height: val } : prod);
+                                    setEstimation({ ...estimation, products: newProducts });
+                                  }}
+                                />
+                              </>
+                            )}
                             <NumericControl
                               label="Quantité"
                               value={p.quantity}
@@ -1084,28 +1152,155 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               }}
                             />
                             {profile === 'client' && (
-                              <>
-                                <NumericControl
-                                  label="Prix Unitaire (€)"
-                                  unit="€"
-                                  value={p.unitPrice}
-                                  onChange={(val) => {
-                                    const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, unitPrice: val } : prod);
-                                    setEstimation({ ...estimation, products: newProducts });
-                                  }}
-                                />
-                                <NumericControl
-                                  label="Remise (%)"
-                                  unit="%"
-                                  value={p.discount || 0}
-                                  onChange={(val) => {
-                                    const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, discount: val } : prod);
-                                    setEstimation({ ...estimation, products: newProducts });
-                                  }}
-                                />
-                              </>
+                              <NumericControl
+                                label="Prix Unitaire (€)"
+                                unit="€"
+                                value={p.unitPrice}
+                                onChange={(val) => {
+                                  const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, unitPrice: val } : prod);
+                                  setEstimation({ ...estimation, products: newProducts });
+                                }}
+                              />
                             )}
                           </div>
+
+                          {/* RENTAL OPTIONS */}
+                          <AnimatePresence>
+                            {isEditMode && p.transactionType === 'rental' && (
+                              <motion.div 
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="mt-6 pt-6 border-t border-white/5 space-y-4 overflow-hidden"
+                              >
+                                <div className="flex items-center gap-4">
+                                  <div className="flex p-1 bg-black/40 border border-white/5 rounded-xl">
+                                    <button
+                                      onClick={() => {
+                                        const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'day' } : prod);
+                                        setEstimation({ ...estimation, products: newProducts as any });
+                                      }}
+                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.rentalUnit !== 'hour' ? 'bg-aura-accent text-white shadow-lg' : 'text-aura-text-dim hover:text-white'}`}
+                                    >
+                                      Période (Jours)
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'hour' } : prod);
+                                        setEstimation({ ...estimation, products: newProducts as any });
+                                      }}
+                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.rentalUnit === 'hour' ? 'bg-aura-accent text-white shadow-lg' : 'text-aura-text-dim hover:text-white'}`}
+                                    >
+                                      Jour précis (Heures)
+                                    </button>
+                                  </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
+                                  {p.rentalUnit !== 'hour' ? (
+                                    <>
+                                      <div className="space-y-1">
+                                        <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Du</span>
+                                        <input 
+                                          type="date"
+                                          className="neon-input w-full py-2 bg-white/5 font-mono text-xs"
+                                          value={p.rentalPeriod?.from ? new Date(p.rentalPeriod.from).toISOString().split('T')[0] : ''}
+                                          onChange={(e) => {
+                                            const from = new Date(e.target.value);
+                                            const to = p.rentalPeriod?.to ? new Date(p.rentalPeriod.to) : from;
+                                            const diff = Math.max(1, Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+                                            const newProducts = estimation.products.map(prod => prod.id === p.id ? { 
+                                              ...prod, 
+                                              rentalPeriod: { from, to },
+                                              rentalDuration: diff
+                                            } : prod);
+                                            setEstimation({ ...estimation, products: newProducts as any });
+                                          }}
+                                        />
+                                      </div>
+                                      <div className="space-y-1">
+                                        <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Au</span>
+                                        <input 
+                                          type="date"
+                                          className="neon-input w-full py-2 bg-white/5 font-mono text-xs"
+                                          value={p.rentalPeriod?.to ? new Date(p.rentalPeriod.to).toISOString().split('T')[0] : ''}
+                                          onChange={(e) => {
+                                            const to = new Date(e.target.value);
+                                            const from = p.rentalPeriod?.from ? new Date(p.rentalPeriod.from) : to;
+                                            const diff = Math.max(1, Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+                                            const newProducts = estimation.products.map(prod => prod.id === p.id ? { 
+                                              ...prod, 
+                                              rentalPeriod: { from, to },
+                                              rentalDuration: diff
+                                            } : prod);
+                                            setEstimation({ ...estimation, products: newProducts as any });
+                                          }}
+                                        />
+                                      </div>
+                                      <NumericControl
+                                        label="Durée (Jours)"
+                                        value={p.rentalDuration || 1}
+                                        onChange={(val) => {
+                                          const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalDuration: Math.max(1, val) } : prod);
+                                          setEstimation({ ...estimation, products: newProducts });
+                                        }}
+                                      />
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="space-y-1">
+                                        <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Le</span>
+                                        <input 
+                                          type="date"
+                                          className="neon-input w-full py-2 bg-white/5 font-mono text-xs"
+                                          value={p.rentalDate ? new Date(p.rentalDate).toISOString().split('T')[0] : ''}
+                                          onChange={(e) => {
+                                            const date = new Date(e.target.value);
+                                            const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalDate: date } : prod);
+                                            setEstimation({ ...estimation, products: newProducts as any });
+                                          }}
+                                        />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <div className="space-y-1 flex-1">
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Début</span>
+                                          <input 
+                                            type="time"
+                                            className="neon-input w-full py-2 bg-white/5 font-mono text-xs"
+                                            value={p.rentalStartTime || '09:00'}
+                                            onChange={(e) => {
+                                              const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalStartTime: e.target.value } : prod);
+                                              setEstimation({ ...estimation, products: newProducts as any });
+                                            }}
+                                          />
+                                        </div>
+                                        <div className="space-y-1 flex-1">
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Fin</span>
+                                          <input 
+                                            type="time"
+                                            className="neon-input w-full py-2 bg-white/5 font-mono text-xs"
+                                            value={p.rentalEndTime || '18:00'}
+                                            onChange={(e) => {
+                                              const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalEndTime: e.target.value } : prod);
+                                              setEstimation({ ...estimation, products: newProducts as any });
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                      <NumericControl
+                                        label="Durée (Heures)"
+                                        value={p.rentalDuration || 1}
+                                        onChange={(val) => {
+                                          const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalDuration: Math.max(1, val) } : prod);
+                                          setEstimation({ ...estimation, products: newProducts });
+                                        }}
+                                      />
+                                    </>
+                                  )}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
 
                           <div className="mt-8 pt-6 border-t border-white/5 flex items-end justify-between">
                             <div className="space-y-1">

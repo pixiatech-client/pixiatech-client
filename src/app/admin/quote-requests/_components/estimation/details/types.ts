@@ -24,6 +24,13 @@ export interface Product {
   dimensionsEnabled?: boolean;
   width?: number;
   height?: number;
+  transactionType?: 'sale' | 'rental';
+  rentalUnit?: 'day' | 'hour';
+  rentalDuration?: number;
+  rentalPeriod?: { from: Date; to: Date };
+  rentalDate?: Date;
+  rentalStartTime?: string;
+  rentalEndTime?: string;
   specs?: Record<string, string | number>;
 }
 
