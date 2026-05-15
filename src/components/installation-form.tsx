@@ -49,7 +49,7 @@ export function InstallationForm({
     const shouldAnimatePrice = settings.isPriceHidden && totalQuote > 0;
 
     return (
-        <Card className="w-full max-w-lg shadow-lg flex flex-col h-full bg-card rounded-xl mb-32">
+        <Card className="w-full max-w-lg shadow-lg flex flex-col bg-card rounded-xl min-h-[600px]">
             <CardHeader>
                 <div className="flex items-center gap-4">
                     {!hideFooter && (
@@ -69,7 +69,7 @@ export function InstallationForm({
                 <RadioGroup 
                     defaultValue={includeInstallation ? 'yes' : 'no'}
                     onValueChange={(value) => setIncludeInstallation(value === 'yes')}
-                    className="space-y-4"
+                    className="space-y-4 flex-grow"
                 >
                     <Label
                       htmlFor="installation-yes"

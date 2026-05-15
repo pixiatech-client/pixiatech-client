@@ -54,6 +54,22 @@
     --aura-accent: #3b82f6;
     --aura-success: #10b981;
     --aura-text-dim: #a1a1aa;
+    
+    /* Theme Customization System */
+    --theme-card-bg: #ffffff;
+    --theme-hover-bg: #f3f4f6;
+    --theme-active-bg: #e5e7eb;
+    --theme-text-primary: #111827;
+    --theme-text-secondary: #4b5563;
+    --theme-icon: #4b5563;
+    --theme-sidebar-bg: #ffffff;
+    --theme-app-bg: #f9fafb;
+    --theme-btn-primary-bg: #000000;
+    --theme-btn-primary-text: #ffffff;
+    --theme-btn-primary-hover: #333333;
+    --theme-btn-secondary-bg: #f1f5f9;
+    --theme-btn-secondary-text: #0f172a;
+    --theme-btn-secondary-hover: #e2e8f0;
   }
 
   .dark {

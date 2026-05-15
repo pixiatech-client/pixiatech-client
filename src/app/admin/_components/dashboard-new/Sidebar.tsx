@@ -57,6 +57,7 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   laborSub: '/admin/settings/main-doeuvre',
   pdfSub: '/admin/settings/pdf',
   emergencySub: '/admin/settings/emergency',
+  personalizationSub: '/admin/settings/personalization',
   produit: '/admin/produits',
   messages: '/admin/messages',
   notifications: '/admin/notification',
@@ -78,11 +79,12 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/settings/main-doeuvre': 'laborSub',
   '/admin/settings/pdf': 'pdfSub',
   '/admin/settings/emergency': 'emergencySub',
+  '/admin/settings/personalization': 'personalizationSub',
   '/admin/messages': 'messages',
   '/admin/notification': 'notifications',
 };
 
-export type SettingsSection = 'general' | 'images' | 'content' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'hint-bubble';
+export type SettingsSection = 'general' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'hint-bubble';
 
 interface SidebarProps {
   state: SidebarState;
@@ -292,15 +294,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const sidebarClasses = `
     admin-sidebar fixed lg:sticky top-0 z-[1000] min-h-screen transition-colors duration-300 flex flex-col
-    ${isDark ? 'bg-[#141414] text-white border-white/5' : 'bg-white text-gray-900 border-gray-200'}
+    bg-theme-sidebar-bg text-theme-sidebar-text border-theme-sidebar-border
     border-r overflow-hidden
   `;
 
   const itemClasses = (isActive: boolean) => `
     w-full relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group
     ${isActive
-      ? 'bg-black text-white shadow-lg'
-      : 'text-gray-500 dark:text-gray-400 hover:bg-black hover:text-white'
+      ? 'bg-theme-sidebar-active-bg text-theme-sidebar-active-text shadow-lg'
+      : 'text-theme-sidebar-text opacity-70 hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
     }
   `;
 
@@ -637,6 +639,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           'labor-sub': 'main-doeuvre',
                           'pdf-sub': 'pdf',
                           'emergency-sub': 'emergency',
+                          'personalization-sub': 'personalization',
                         };
                         const isSubItemActive = selectedSettingsSection === subItemToSection[subItem.id];
 
@@ -644,8 +647,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           <button
                             key={subItem.id}
                             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isSubItemActive
-                              ? 'bg-black text-white'
-                              : 'text-gray-500 dark:text-gray-400 hover:bg-black hover:text-white'
+                              ? 'bg-theme-sidebar-active-bg text-theme-sidebar-active-text'
+                              : 'text-theme-sidebar-text opacity-70 hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
                               }`}
                             onClick={(e) => {
                               e.stopPropagation();

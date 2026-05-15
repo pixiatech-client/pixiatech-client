@@ -77,16 +77,16 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
                 className="h-full flex 2xl:hidden items-center gap-2 px-3 bg-white border-y border-r border-zinc-200 text-xs font-bold uppercase tracking-wide text-zinc-600 transition-all hover:bg-zinc-50"
               >
                 Statuts
-                <div className="w-1.5 h-1.5 rounded-full bg-[#95d230]" />
+                <div className="w-1.5 h-1.5 rounded-full bg-theme-sidebar-active-bg" />
               </button>
             )}
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="h-full flex items-center gap-2 px-3 bg-zinc-100 border-y border-r border-zinc-200 rounded-r-lg text-xs font-bold uppercase tracking-wide hover:bg-black hover:text-white transition-all group"
+              className="h-full flex items-center gap-2 px-3 bg-zinc-100 border-y border-r border-zinc-200 rounded-r-lg text-xs font-bold uppercase tracking-wide hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all group"
             >
-              <Filter className="w-3.5 h-3.5 text-zinc-400 group-hover:text-[#95d230]" />
+              <Filter className="w-3.5 h-3.5 text-zinc-400 group-hover:text-theme-sidebar-active-text" />
               <span className="hidden sm:inline">Filtres</span>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isFilterOpen ? 'rotate-180' : ''} group-hover:text-[#95d230]`} />
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isFilterOpen ? 'rotate-180' : ''} group-hover:text-theme-sidebar-active-text`} />
             </button>
 
             <AnimatePresence>
@@ -101,7 +101,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={() => setIsFilterOpen(false)}
-                    className="fixed inset-0 bg-black/60 z-[100] md:hidden"
+                    className="fixed inset-0 bg-theme-sidebar-active-bg/60 z-[100] md:hidden"
                   />
                   <motion.div
                     initial={{ y: '100%', opacity: 0 }}
@@ -117,7 +117,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
                         <button
                           key={item.label}
                           onClick={() => setIsFilterOpen(false)}
-                          className="w-full flex items-center gap-3 px-4 py-4 md:px-4 md:py-2.5 hover:bg-zinc-100 md:hover:bg-black text-sm md:text-xs font-bold uppercase tracking-wide text-zinc-600 md:hover:text-white transition-all text-left group rounded-xl md:rounded-none"
+                          className="w-full flex items-center gap-3 px-4 py-4 md:px-4 md:py-2.5 hover:bg-zinc-100 md:hover:bg-theme-sidebar-active-bg text-sm md:text-xs font-bold uppercase tracking-wide text-zinc-600 md:hover:text-theme-sidebar-active-text transition-all text-left group rounded-xl md:rounded-none"
                         >
                           <item.icon className="w-5 h-5 md:w-3.5 md:h-3.5 transition-colors" style={{ color: item.color }} />
                           {item.label}
@@ -134,7 +134,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
         {activeTab === 'Corbeille' && isAdmin && onEmptyTrash && (
           <button
             onClick={onEmptyTrash}
-            className="h-11 flex items-center gap-2 px-3 sm:px-4 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 rounded-xl text-xs font-bold uppercase tracking-wide transition-all shrink-0 shadow-sm"
+            className="h-11 flex items-center gap-2 px-3 sm:px-4 bg-red-50 hover:bg-red-600 text-red-600 hover:text-theme-sidebar-active-text border border-red-200 rounded-xl text-xs font-bold uppercase tracking-wide transition-all shrink-0 shadow-sm"
           >
             <Trash2 className="w-4 h-4" />
             <span className="hidden sm:inline">Vider la corbeille</span>
@@ -257,14 +257,14 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             layout
             className={`hidden md:flex relative overflow-hidden items-center px-8 py-4 rounded-2xl border transition-all duration-300 mb-3 group cursor-pointer hover:-translate-y-1 hover:shadow-2xl ${
               isSelected 
-                ? (est.status === 'Corbeille' ? 'bg-[#b20000] border-[#b20000] text-white' : 'bg-black border-black text-white')
+                ? (est.status === 'Corbeille' ? 'bg-[#b20000] border-[#b20000] text-theme-sidebar-active-text' : 'bg-theme-sidebar-active-bg border-theme-sidebar-active-bg text-theme-sidebar-active-text')
                 : est.isReturned 
                   ? 'bg-red-50 border-red-200 text-red-900' 
                   : est.status === 'Corbeille'
-                    ? 'bg-[#fff1f2] border-[#fecdd3] text-[#b20000] hover:bg-[#b20000] hover:border-[#b20000] hover:text-white transition-colors duration-300'
+                    ? 'bg-[#fff1f2] border-[#fecdd3] text-[#b20000] hover:bg-[#b20000] hover:border-[#b20000] hover:text-theme-sidebar-active-text transition-colors duration-300'
                   : est.status === 'Archivé'
-                    ? 'bg-zinc-50 border-zinc-200 text-zinc-500 opacity-60 grayscale hover:opacity-100 hover:bg-zinc-900 hover:border-zinc-800 hover:text-white hover:grayscale-0'
-                    : 'bg-white border-zinc-100 hover:bg-zinc-900 hover:border-zinc-800 text-zinc-900 shadow-sm'
+                    ? 'bg-zinc-50 border-zinc-200 text-zinc-500 opacity-60 grayscale hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
+                    : 'bg-white border-zinc-100 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
             }`}
             onClick={() => onEdit(est.id)}
           >
@@ -276,7 +276,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 onChange={() => onSelect(est.id)}
                 className={`w-5 h-5 rounded border-2 transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-[#95d230] border-[#95d230] text-black focus:ring-[#95d230]'
+                    ? 'bg-theme-sidebar-active-bg border-theme-sidebar-active-bg text-theme-sidebar-active-text focus:ring-theme-sidebar-active-bg'
                     : 'bg-zinc-100 border-zinc-200 text-zinc-900 focus:ring-zinc-900'
                 }`}
               />
@@ -311,7 +311,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
             {/* Numéro & Ref */}
             <div className="w-32 px-3 flex items-center gap-3">
-              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-white' : 'group-hover:text-white text-zinc-900'}`}>
+              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900'}`}>
                 {est.number}
               </span>
             </div>
@@ -319,12 +319,12 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             {/* Client */}
             <div className="flex-1 px-3 flex flex-col justify-center min-w-0">
               <div className="flex items-center gap-2 min-w-0">
-                <span className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'group-hover:text-white text-zinc-900'}`}>
+                <span className={`font-bold text-sm truncate ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900'}`}>
                   {est.client}
                 </span>
                 {est.emailVerified && (
                   <span title="Email vérifié" className="flex items-center shrink-0">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#95d230]" />
+                    <ShieldCheck className="w-3.5 h-3.5 text-theme-sidebar-active-text" />
                   </span>
                 )}
               </div>
@@ -334,8 +334,8 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                   onClick={(e) => e.stopPropagation()}
                   className={`px-2 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1 transition-all ${
                     isSelected 
-                      ? 'bg-zinc-800 text-zinc-300 hover:bg-[#95d230] hover:text-black' 
-                      : 'bg-zinc-100 text-zinc-500 group-hover:bg-zinc-800 group-hover:text-zinc-400 hover:!bg-[#95d230] hover:!text-black'
+                      ? 'bg-zinc-800 text-zinc-300 hover:bg-theme-sidebar-active-bg hover:text-black' 
+                      : 'bg-zinc-100 text-zinc-500 group-hover:bg-zinc-800 group-hover:text-zinc-400 hover:!bg-theme-sidebar-active-bg hover:!text-black'
                   }`}
                 >
                   <Phone className="w-2.5 h-2.5" />
@@ -362,16 +362,16 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
             {/* Heure / Date */}
             <div className="w-28 px-3 flex flex-col justify-center">
-              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-white' : 'group-hover:text-white text-zinc-900'}`}>
+              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900'}`}>
                 {est.time || '--:--'}
               </span>
               <span className={`text-[10px] font-medium ${isSelected ? 'text-zinc-500' : 'group-hover:text-zinc-500 text-zinc-400'}`}>
                 {est.date || '--/--/----'}
               </span>
               {est.trackingNumber && (
-                <div className="mt-1 flex items-center gap-1.5 bg-[#95d230]/10 px-1.5 py-0.5 rounded w-max">
-                  <Package className="w-3 h-3 text-[#95d230]" />
-                  <span className="text-[9px] font-bold text-[#95d230] tracking-tighter">{est.trackingNumber}</span>
+                <div className="mt-1 flex items-center gap-1.5 bg-theme-sidebar-active-bg/10 px-1.5 py-0.5 rounded w-max">
+                  <Package className="w-3 h-3 text-theme-sidebar-active-text" />
+                  <span className="text-[9px] font-bold text-theme-sidebar-active-text tracking-tighter">{est.trackingNumber}</span>
                 </div>
               )}
             </div>
@@ -380,7 +380,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             {!isFournisseur && (
               <div className="w-36 px-3 flex flex-col items-start justify-center">
                 <span className={`text-[8px] font-black uppercase tracking-[0.2em] mb-0.5 ${isSelected ? 'text-zinc-600' : 'group-hover:text-zinc-600 text-zinc-300'}`}>PRIX TOTAL</span>
-                <span className={`font-black text-lg tracking-tighter whitespace-nowrap ${isSelected ? 'text-[#95d230]' : 'group-hover:text-[#95d230] text-zinc-900'}`}>
+                <span className={`font-black text-lg tracking-tighter whitespace-nowrap ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900'}`}>
                   {Math.max(est.totalClient, 0.01).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
               </div>
@@ -409,11 +409,11 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     <>
                       <button 
                         onClick={() => onViewMessage(est.id)}
-                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-amber-500'}`}
+                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-amber-500'}`}
                         title="Lire instructions"
                       >
                          <div className="relative">
-                           <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-[#95d230] animate-pulse' : ''}`} />
+                           <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
                            {est.supplierNotes && (
                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />
                            )}
@@ -421,21 +421,21 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       </button>
                       <button 
                         onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }}
-                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
+                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
                         title="Ajouter Suivi (Colis)"
                       >
                          <Package className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => onStatusClick(est.id)}
-                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`}
+                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`}
                         title="Expédier en livraison"
                       >
                          <Truck className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => { setSelectedEstimation(est); setIsRefusalPanelOpen(true); }}
-                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-red-500/20 text-white/40 hover:text-red-500' : 'hover:bg-red-50 text-zinc-400 group-hover:hover:bg-red-500/20 group-hover:hover:text-red-500'}`}
+                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-red-500/20 text-theme-sidebar-active-text/40 hover:text-red-500' : 'hover:bg-red-50 text-zinc-400 group-hover:hover:bg-red-500/20 group-hover:hover:text-red-500'}`}
                         title="Retourner au commercial"
                       >
                          <RotateCcw className="w-4 h-4" />
@@ -446,14 +446,14 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     <>
                       <button 
                         onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }}
-                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
+                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
                         title="Voir Suivi"
                       >
                          <Package className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => onMarkAsDelivered(est.id)}
-                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`}
+                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`}
                         title="Terminer (Livré)"
                       >
                          <ShieldCheck className="w-4 h-4" />
@@ -465,78 +465,78 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 <div className="flex items-center gap-0.5">
                   {est.status === 'En attente' && (
                     <>
-                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-[#95d230]'}`} title="Modifier">
+                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title="Modifier">
                          <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title="Valider (Traiter)">
+                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title="Valider (Traiter)">
                          <Check className="w-4 h-4" />
                       </button>
                     </>
                   )}
                   {est.status === 'Traité' && (
                     <>
-                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-[#95d230]'}`} title="Modifier">
+                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title="Modifier">
                          <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title="Transférer au fournisseur">
+                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title="Transférer au fournisseur">
                          <Send className="w-4 h-4" />
                       </button>
                     </>
                   )}
                   {est.status === 'Fournisseur' && (
                     <>
-                      <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-amber-500'}`} title="Lire instructions">
+                      <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-amber-500'}`} title="Lire instructions">
                          <div className="relative">
-                           <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-[#95d230] animate-pulse' : ''}`} />
+                           <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
                            {est.supplierNotes && (
                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />
                            )}
                          </div>
                       </button>
-                      <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title="Ajouter Suivi (Colis)">
+                      <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title="Ajouter Suivi (Colis)">
                          <Package className="w-4 h-4" />
                       </button>
-                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title="Expédier">
+                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title="Expédier">
                          <Truck className="w-4 h-4" />
                       </button>
-                      <button onClick={() => { setSelectedEstimation(est); setIsRefusalPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-red-500/20 text-white/40 hover:text-red-500' : 'hover:bg-red-50 text-zinc-400 group-hover:hover:bg-red-500/20 group-hover:hover:text-red-500'}`} title="Retourner">
+                      <button onClick={() => { setSelectedEstimation(est); setIsRefusalPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-red-500/20 text-theme-sidebar-active-text/40 hover:text-red-500' : 'hover:bg-red-50 text-zinc-400 group-hover:hover:bg-red-500/20 group-hover:hover:text-red-500'}`} title="Retourner">
                          <RotateCcw className="w-4 h-4" />
                       </button>
                     </>
                   )}
                   {est.status === 'Retourné' && (
                     <>
-                      <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-[#95d230]'}`} title="Voir motif refus">
+                      <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title="Voir motif refus">
                          <div className="relative">
-                           <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-[#95d230] animate-pulse' : ''}`} />
+                           <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
                            {est.supplierNotes && (
                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />
                            )}
                          </div>
                       </button>
-                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-[#95d230]'}`} title="Modifier">
+                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title="Modifier">
                          <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title="Transférer à nouveau">
+                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title="Transférer à nouveau">
                          <Send className="w-4 h-4" />
                       </button>
                     </>
                   )}
                   {est.status === 'Livraison' && (
                     <>
-                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-[#95d230]'}`} title="Consulter">
+                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title="Consulter">
                          <PlusCircle className="w-4 h-4" />
                       </button>
-                      <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title="Voir Suivi">
+                      <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title="Voir Suivi">
                          <Package className="w-4 h-4" />
                       </button>
-                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title="Archiver">
+                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title="Archiver">
                          <Archive className="w-4 h-4" />
                       </button>
                     </>
                   )}
                   {est.status === 'Corbeille' && (
-                    <button onClick={() => onRestore(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title="Restaurer">
+                    <button onClick={() => onRestore(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title="Restaurer">
                        <Undo2 className="w-4 h-4" />
                     </button>
                   )}
@@ -548,20 +548,20 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                           className={`p-2 rounded-xl transition-all ${
                             est.isLocked
                               ? (isSelected ? 'hover:bg-white/10 text-amber-400 hover:text-amber-300' : 'hover:bg-amber-50 text-amber-500 group-hover:hover:bg-amber-500/20 group-hover:hover:text-amber-400')
-                              : (isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-zinc-300')
+                              : (isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-zinc-300')
                           }`}
                           title={est.isLocked ? 'Désarchiver (déverrouiller)' : 'Archiver (verrouiller)'}
                         >
                           {est.isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                         </button>
                       )}
-                      <button onClick={() => onRestore(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-white/60 hover:text-white' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title="Restaurer (retour En attente)">
+                      <button onClick={() => onRestore(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title="Restaurer (retour En attente)">
                          <Undo2 className="w-4 h-4" />
                       </button>
                     </>
                   )}
                   {est.status !== 'Archivé' && (est.status !== 'Livraison' || userRole === 'admin') && (
-                    <button onClick={() => setConfirmDeleteId(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-red-500/20 text-white/40 hover:text-red-500' : 'hover:bg-red-50 text-zinc-400 group-hover:hover:bg-red-500/20 group-hover:hover:text-red-500'}`} title={est.status === 'Corbeille' ? "Supprimer définitivement" : "Corbeille"}>
+                    <button onClick={() => setConfirmDeleteId(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-red-500/20 text-theme-sidebar-active-text/40 hover:text-red-500' : 'hover:bg-red-50 text-zinc-400 group-hover:hover:bg-red-500/20 group-hover:hover:text-red-500'}`} title={est.status === 'Corbeille' ? "Supprimer définitivement" : "Corbeille"}>
                        <Trash2 className="w-4 h-4" />
                     </button>
                   )}
@@ -582,17 +582,17 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                      <AlertTriangle className="w-5 h-5 text-white" />
+                      <AlertTriangle className="w-5 h-5 text-theme-sidebar-active-text" />
                     </div>
                     <div>
-                      <h4 className="text-white font-bold text-sm">{activeTab === 'Corbeille' ? 'Supprimer définitivement ?' : 'Mettre à la corbeille ?'}</h4>
+                      <h4 className="text-theme-sidebar-active-text font-bold text-sm">{activeTab === 'Corbeille' ? 'Supprimer définitivement ?' : 'Mettre à la corbeille ?'}</h4>
                       <p className="text-red-100 text-[10px] uppercase font-bold tracking-wider">{activeTab === 'Corbeille' ? 'Action irréversible' : 'Action réversible'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                      className="px-4 py-2 text-xs font-bold text-white hover:bg-white/10 rounded-xl transition-colors"
+                      className="px-4 py-2 text-xs font-bold text-theme-sidebar-active-text hover:bg-white/10 rounded-xl transition-colors"
                     >
                       Annuler
                     </button>
@@ -616,7 +616,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
           <motion.div
             layout
             className={`md:hidden group relative flex flex-col rounded-2xl border transition-all duration-300 overflow-hidden mb-3 shadow-sm ${
-              est.isReturned ? 'bg-[#fff1f2] border-[#fecdd3]' : est.status === 'Corbeille' ? 'bg-[#fff1f2] border-[#fecdd3]' : activeTab === 'Archivé' && est.isLocked ? 'bg-zinc-100 border-zinc-300 opacity-60 grayscale' : 'bg-white border-zinc-100 hover:border-black'
+              est.isReturned ? 'bg-[#fff1f2] border-[#fecdd3]' : est.status === 'Corbeille' ? 'bg-[#fff1f2] border-[#fecdd3]' : activeTab === 'Archivé' && est.isLocked ? 'bg-zinc-100 border-zinc-300 opacity-60 grayscale' : 'bg-white border-zinc-100 hover:border-theme-sidebar-active-bg'
             } ${
               isSelected ? (est.status === 'Corbeille' ? 'border-[#b20000] ring-2 ring-[#b20000] ring-offset-1' : 'border-[#1447e6] ring-2 ring-[#1447e6] ring-offset-1') : ''
             }`}
@@ -634,7 +634,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       onChange={() => onSelect(est.id)}
                       className={`w-5 h-5 rounded border-2 cursor-pointer transition-all ${
                         isSelected
-                          ? 'bg-[#95d230] border-[#95d230] text-black focus:ring-[#95d230]'
+                          ? 'bg-theme-sidebar-active-bg border-theme-sidebar-active-bg text-theme-sidebar-active-text focus:ring-theme-sidebar-active-bg'
                           : 'bg-zinc-100 border-zinc-200 text-zinc-900 focus:ring-zinc-900'
                       }`}
                     />
@@ -698,7 +698,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                           <>
                             <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-amber-500 rounded-lg transition-colors" title="Lire instructions">
                               <div className="relative">
-                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-[#95d230] animate-pulse' : ''}`} />
+                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
                                 {est.supplierNotes && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
                               </div>
                             </button>
@@ -728,7 +728,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       <div className="flex items-center gap-0.5">
                         {est.status === 'En attente' && (
                           <>
-                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-[#95d230] rounded-lg transition-colors" title="Modifier">
+                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-theme-sidebar-active-text rounded-lg transition-colors" title="Modifier">
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title="Valider (Traiter)">
@@ -738,7 +738,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                         )}
                         {est.status === 'Traité' && (
                           <>
-                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-[#95d230] rounded-lg transition-colors" title="Modifier">
+                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-theme-sidebar-active-text rounded-lg transition-colors" title="Modifier">
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title="Transférer au fournisseur">
@@ -750,7 +750,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                           <>
                             <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-amber-500 rounded-lg transition-colors" title="Lire instructions">
                               <div className="relative">
-                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-[#95d230] animate-pulse' : ''}`} />
+                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
                                 {est.supplierNotes && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
                               </div>
                             </button>
@@ -769,11 +769,11 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                           <>
                             <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-amber-500 rounded-lg transition-colors" title="Voir motif refus">
                               <div className="relative">
-                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-[#95d230] animate-pulse' : ''}`} />
+                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
                                 {est.supplierNotes && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
                               </div>
                             </button>
-                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-[#95d230] rounded-lg transition-colors" title="Modifier">
+                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-theme-sidebar-active-text rounded-lg transition-colors" title="Modifier">
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title="Transférer à nouveau">
@@ -783,7 +783,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                         )}
                         {est.status === 'Livraison' && (
                           <>
-                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-[#95d230] rounded-lg transition-colors" title="Consulter">
+                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-theme-sidebar-active-text rounded-lg transition-colors" title="Consulter">
                               <PlusCircle className="w-4 h-4" />
                             </button>
                             <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title="Voir Suivi">
@@ -872,17 +872,17 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 shrink-0 rounded-xl bg-white/20 flex items-center justify-center">
-                      <AlertTriangle className="w-5 h-5 text-white" />
+                      <AlertTriangle className="w-5 h-5 text-theme-sidebar-active-text" />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="text-white font-bold text-sm truncate">{activeTab === 'Corbeille' ? 'Supprimer définitivement ?' : 'Mettre à la corbeille ?'}</h4>
+                      <h4 className="text-theme-sidebar-active-text font-bold text-sm truncate">{activeTab === 'Corbeille' ? 'Supprimer définitivement ?' : 'Mettre à la corbeille ?'}</h4>
                       <p className="text-red-100 text-[10px] uppercase font-bold tracking-wider">{activeTab === 'Corbeille' ? 'Action irréversible' : 'Action réversible'}</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                      className="px-4 py-2.5 text-xs font-bold text-white hover:bg-white/10 rounded-xl transition-colors"
+                      className="px-4 py-2.5 text-xs font-bold text-theme-sidebar-active-text hover:bg-white/10 rounded-xl transition-colors"
                     >
                       Annuler
                     </button>
@@ -989,7 +989,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
   return (
     <div className="flex flex-col gap-3">
       {/* HEADER PC */}
-      <div className="hidden md:flex items-center px-8 py-4 bg-black rounded-2xl border border-zinc-800 text-[10px] font-black text-white uppercase tracking-[0.15em] mb-4">
+      <div className="hidden md:flex items-center px-8 py-4 bg-theme-sidebar-active-bg rounded-2xl border border-zinc-800 text-[10px] font-black text-theme-sidebar-active-text uppercase tracking-[0.15em] mb-4">
         <div className="w-12 mr-2 flex items-center justify-center">
           <input
             type="checkbox"
@@ -999,38 +999,38 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
           />
         </div>
         <div className="w-8 flex items-center justify-center">
-          <Paperclip className="w-4 h-4 text-[#95d230]" />
+          <Paperclip className="w-4 h-4 text-theme-sidebar-active-text" />
         </div>
         <div className="w-32 px-3 flex items-center gap-2.5">
-          <PlusCircle className="w-4 h-4 text-[#95d230]" />
+          <PlusCircle className="w-4 h-4 text-theme-sidebar-active-text" />
           NUMERO
         </div>
         <div className="flex-1 px-3 flex items-center gap-2.5">
-          <User className="w-4 h-4 text-[#95d230]" />
+          <User className="w-4 h-4 text-theme-sidebar-active-text" />
           CLIENT
         </div>
         <div className="w-32 px-2 flex items-center gap-2.5">
-          <Clock className="w-4 h-4 text-[#95d230]" />
+          <Clock className="w-4 h-4 text-theme-sidebar-active-text" />
           STATUT
         </div>
         <div className="w-28 px-3 flex items-center gap-2.5">
-          <RotateCcw className="w-4 h-4 text-[#95d230]" />
+          <RotateCcw className="w-4 h-4 text-theme-sidebar-active-text" />
           HEURE / DATE
         </div>
         {!isFournisseur && (
           <div className="w-36 px-3 flex items-center justify-start gap-2 font-black tracking-widest">
-            <DollarSign className="w-4 h-4 text-[#95d230] shrink-0" />
+            <DollarSign className="w-4 h-4 text-theme-sidebar-active-text shrink-0" />
             <span>PRIX</span>
           </div>
         )}
         {!isFournisseur && (
           <div className="hidden 2xl:flex w-28 px-4 items-center justify-center gap-2 font-black tracking-widest">
-            <Mail className="w-4 h-4 text-[#95d230] shrink-0" />
+            <Mail className="w-4 h-4 text-theme-sidebar-active-text shrink-0" />
             <span>EMAIL</span>
           </div>
         )}
         <div className="w-32 px-3 mr-2 flex items-center justify-end gap-2 font-black tracking-widest">
-          <MoreVertical className="w-4 h-4 text-[#95d230] shrink-0" />
+          <MoreVertical className="w-4 h-4 text-theme-sidebar-active-text shrink-0" />
           <span>ACTION</span>
         </div>
       </div>
@@ -1049,7 +1049,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                 initial={{ y: 100, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 100, opacity: 0 }}
-                className="fixed bottom-0 md:bottom-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 md:right-auto bg-black text-white px-4 md:px-6 py-4 md:py-3 md:rounded-2xl shadow-2xl z-50 flex flex-wrap items-center justify-between gap-3 md:gap-6 border-t md:border border-white/10 backdrop-blur-xl md:w-max"
+                className="fixed bottom-0 md:bottom-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 md:right-auto bg-theme-sidebar-active-bg text-theme-sidebar-active-text px-4 md:px-6 py-4 md:py-3 md:rounded-2xl shadow-2xl z-50 flex flex-wrap items-center justify-between gap-3 md:gap-6 border-t md:border border-white/10 backdrop-blur-xl md:w-max"
               >
                 <div className="flex items-center gap-3 border-r border-white/10 pr-3 md:pr-6 shrink-0">
                   {bulkProgress ? (
@@ -1064,22 +1064,22 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                             className="transition-all duration-300"
                           />
                         </svg>
-                        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-[#95d230]">
+                        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-theme-sidebar-active-text">
                           {bulkProgress.remaining}
                         </span>
                       </div>
                       <div className="flex flex-col shrink-0">
-                        <span className="text-[8px] font-bold uppercase tracking-wider text-white/40">En cours</span>
+                        <span className="text-[8px] font-bold uppercase tracking-wider text-theme-sidebar-active-text/40">En cours</span>
                         <span className="text-xs font-bold uppercase tracking-wide">{bulkProgress.total - bulkProgress.remaining}/{bulkProgress.total}</span>
                       </div>
                     </div>
                   ) : (
                     <>
-                      <div className="w-8 h-8 bg-[#95d230] rounded-lg flex shrink-0 items-center justify-center text-black font-black text-sm">
+                      <div className="w-8 h-8 bg-theme-sidebar-active-bg rounded-lg flex shrink-0 items-center justify-center text-black font-black text-sm">
                         {selectedIds.size}
                       </div>
                       <div className="flex flex-col shrink-0">
-                        <span className="text-[8px] font-bold uppercase tracking-wider text-white/40">Estimations</span>
+                        <span className="text-[8px] font-bold uppercase tracking-wider text-theme-sidebar-active-text/40">Estimations</span>
                         <span className="text-xs font-bold uppercase tracking-wide">Sélectionnées</span>
                       </div>
                     </>
@@ -1090,7 +1090,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                   {activeTab === 'Corbeille' && (
                     <button
                       onClick={onBulkRestore}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-[#95d230] hover:bg-[#a6e636] text-black rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all shrink-0"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-theme-sidebar-active-bg hover:bg-[#a6e636] text-black rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all shrink-0"
                     >
                       <Undo2 className="w-3.5 h-3.5" />
                       Restaurer tout
@@ -1108,9 +1108,9 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                   {activeTab === 'Traité' && (
                     <button
                       onClick={onBulkStatusClick}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-black hover:bg-[#1447e6] text-white rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all group border border-white/10 shrink-0"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-theme-sidebar-active-bg hover:bg-[#1447e6] text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all group border border-white/10 shrink-0"
                     >
-                      <Send className="w-3.5 h-3.5 text-[#1447e6] group-hover:text-white transition-colors" />
+                      <Send className="w-3.5 h-3.5 text-[#1447e6] group-hover:text-theme-sidebar-active-text transition-colors" />
                       Transférer
                     </button>
                   )}
@@ -1120,7 +1120,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                         setRefusalForm({ subject: '', message: '' });
                         setIsRefusalPanelOpen(true);
                       }}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all shrink-0"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-red-500 hover:bg-red-600 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all shrink-0"
                     >
                       <Undo2 className="w-3.5 h-3.5" />
                       Refuser
@@ -1129,7 +1129,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                   {activeTab === 'Livraison' && (
                     <button
                       onClick={onBulkStatusClick}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all shrink-0"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all shrink-0"
                     >
                       <Archive className="w-3.5 h-3.5" />
                       Archiver
@@ -1138,7 +1138,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                   {activeTab === 'Archivé' && (
                     <button
                       onClick={onBulkRestore}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all shrink-0"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all shrink-0"
                     >
                       <Undo2 className="w-3.5 h-3.5" />
                       Désarchiver
@@ -1147,9 +1147,9 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                   {!isFournisseur && (
                     <button
                       onClick={() => setIsBulkConfirming(true)}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-red-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all group shrink-0"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-red-600 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all group shrink-0"
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-red-500 group-hover:text-white transition-colors" />
+                      <Trash2 className="w-3.5 h-3.5 text-red-500 group-hover:text-theme-sidebar-active-text transition-colors" />
                       <span>Supprimer</span>
                     </button>
                   )}
@@ -1165,16 +1165,16 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                       className="absolute inset-0 bg-red-600 rounded-2xl flex items-center justify-between px-6 z-[60]"
                     >
                       <div className="flex items-center gap-3">
-                        <AlertTriangle className="w-5 h-5 text-white" />
+                        <AlertTriangle className="w-5 h-5 text-theme-sidebar-active-text" />
                         <div>
-                          <h4 className="text-white font-bold text-xs uppercase tracking-tight">Supprimer {selectedIds.size} estimation(s) ?</h4>
+                          <h4 className="text-theme-sidebar-active-text font-bold text-xs uppercase tracking-tight">Supprimer {selectedIds.size} estimation(s) ?</h4>
                           <p className="text-red-100 text-[8px] uppercase font-bold tracking-widest">{activeTab === 'Corbeille' ? 'Action irréversible' : 'Action réversible'}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setIsBulkConfirming(false)}
-                          className="px-4 py-2 text-[10px] font-bold text-white hover:bg-white/10 rounded-xl transition-colors uppercase"
+                          className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:bg-white/10 rounded-xl transition-colors uppercase"
                         >
                           Annuler
                         </button>
@@ -1249,14 +1249,14 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsTrackingPanelOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-theme-sidebar-active-bg/60 backdrop-blur-sm"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-[400px] bg-black h-full shadow-2xl flex flex-col border-l border-white/10"
+              className="relative w-[400px] bg-theme-sidebar-active-bg h-full shadow-2xl flex flex-col border-l border-white/10"
             >
               <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900">
                 <div className="flex items-center gap-3">
@@ -1264,7 +1264,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                     <Package className="w-4 h-4 text-black" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-white tracking-tight uppercase">Suivi</h2>
+                    <h2 className="text-base font-bold text-theme-sidebar-active-text tracking-tight uppercase">Suivi</h2>
                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">{selectedEstimation.number}</p>
                   </div>
                 </div>
@@ -1273,7 +1273,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                 </button>
               </div>
 
-              <div className="flex-1 p-4 space-y-6 bg-black">
+              <div className="flex-1 p-4 space-y-6 bg-theme-sidebar-active-bg">
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide ml-3">Numéro de suivi</label>
                   <div className="relative">
@@ -1283,7 +1283,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                       value={trackingForm.number}
                       onChange={(e) => setTrackingForm({ ...trackingForm, number: e.target.value })}
                       placeholder="Ex: FR123456789"
-                      className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-white"
+                      className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-theme-sidebar-active-text"
                     />
                   </div>
                 </div>
@@ -1297,7 +1297,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                         type="date"
                         value={trackingForm.deliveryDate}
                         onChange={(e) => setTrackingForm({ ...trackingForm, deliveryDate: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-white"
+                        className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-theme-sidebar-active-text"
                       />
                     </div>
                   </div>
@@ -1309,7 +1309,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                         type="date"
                         value={trackingForm.receiptDate}
                         onChange={(e) => setTrackingForm({ ...trackingForm, receiptDate: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-white"
+                        className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-theme-sidebar-active-text"
                       />
                     </div>
                   </div>
@@ -1317,7 +1317,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
               </div>
 
               <div className="p-4 bg-zinc-900 border-t border-white/10 flex gap-3">
-                <button onClick={() => setIsTrackingPanelOpen(false)} className="flex-1 py-2.5 bg-black border border-white/10 text-white rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-white/5 transition-all">
+                <button onClick={() => setIsTrackingPanelOpen(false)} className="flex-1 py-2.5 bg-theme-sidebar-active-bg border border-white/10 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-white/5 transition-all">
                   Annuler
                 </button>
                 <button
@@ -1327,7 +1327,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                       setIsTrackingPanelOpen(false);
                     }
                   }}
-                  className="flex-1 py-2.5 bg-[#1447e6] text-white rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-blue-500 transition-all"
+                  className="flex-1 py-2.5 bg-[#1447e6] text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-blue-500 transition-all"
                 >
                   Enregistrer
                 </button>
@@ -1346,22 +1346,22 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsRefusalPanelOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-theme-sidebar-active-bg/60 backdrop-blur-sm"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-[400px] bg-black h-full shadow-2xl flex flex-col border-l border-white/10"
+              className="relative w-[400px] bg-theme-sidebar-active-bg h-full shadow-2xl flex flex-col border-l border-white/10"
             >
               <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
-                    <XCircle className="w-4 h-4 text-white" />
+                    <XCircle className="w-4 h-4 text-theme-sidebar-active-text" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-white tracking-tight uppercase">Refuser</h2>
+                    <h2 className="text-base font-bold text-theme-sidebar-active-text tracking-tight uppercase">Refuser</h2>
                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">
                       {selectedEstimation ? selectedEstimation.number : `${selectedIds.size} Estimations`}
                     </p>
@@ -1372,7 +1372,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                 </button>
               </div>
 
-              <div className="flex-1 p-4 space-y-6 bg-black overflow-y-auto">
+              <div className="flex-1 p-4 space-y-6 bg-theme-sidebar-active-bg overflow-y-auto">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide ml-3">Motif du refus</label>
@@ -1403,7 +1403,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                         onClick={() => setRefusalForm({ ...refusalForm, subject: reason })}
                         className={`p-3 rounded-lg border text-left transition-all font-bold uppercase tracking-wide text-[10px] ${
                           refusalForm.subject === reason
-                            ? 'bg-red-500 border-red-500 text-white'
+                            ? 'bg-red-500 border-red-500 text-theme-sidebar-active-text'
                             : 'bg-zinc-900 border-white/10 text-zinc-400 hover:border-white/20'
                         }`}
                       >
@@ -1458,13 +1458,13 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                     value={refusalForm.message}
                     onChange={(e) => setRefusalForm({ ...refusalForm, message: e.target.value })}
                     placeholder="Expliquez la raison du refus..."
-                    className="w-full p-3 bg-zinc-900 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none h-28 text-xs font-medium text-white"
+                    className="w-full p-3 bg-zinc-900 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none h-28 text-xs font-medium text-theme-sidebar-active-text"
                   />
                 </div>
               </div>
 
               <div className="p-4 bg-zinc-900 border-t border-white/10 flex gap-3">
-                <button onClick={() => setIsRefusalPanelOpen(false)} className="flex-1 py-2.5 bg-black border border-white/10 text-white rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-white/5 transition-all">
+                <button onClick={() => setIsRefusalPanelOpen(false)} className="flex-1 py-2.5 bg-theme-sidebar-active-bg border border-white/10 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-white/5 transition-all">
                   Annuler
                 </button>
                 <button
@@ -1479,7 +1479,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                     }
                   }}
                   disabled={!refusalForm.subject || (refusalForm.subject === 'Autre raison' && !refusalForm.message)}
-                  className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-red-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex-1 py-2.5 bg-red-600 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-red-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   Confirmer le refus
                 </button>

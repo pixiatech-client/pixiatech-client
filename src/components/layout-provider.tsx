@@ -13,6 +13,8 @@ import { useEffect } from 'react';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { RoleProvider } from '@/contexts/RoleContext';
 
+import { DynamicThemeProvider } from '@/contexts/DynamicThemeContext';
+
 export function LayoutProvider({
   children,
 }: Readonly<{
@@ -33,18 +35,20 @@ export function LayoutProvider({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex flex-col bg-background min-h-dvh">
-            {!isAdminPage && !isEmbedPage && <Header />}
-            <main
-              className={cn(
-                'flex-1 flex items-start justify-center w-full',
-                !isAdminPage && !isQuotePage && !isEmbedPage && 'p-4 md:p-6'
-              )}
-            >
-              {children}
-            </main>
-            {/* FloatingChatButton removed from here to be moved to the landing page specifically */}
-          </div>
+          <DynamicThemeProvider>
+            <div className="flex flex-col bg-background min-h-dvh">
+              {!isAdminPage && !isEmbedPage && <Header />}
+              <main
+                className={cn(
+                  'flex-1 flex items-start justify-center w-full',
+                  !isAdminPage && !isQuotePage && !isEmbedPage && 'p-4 md:p-6'
+                )}
+              >
+                {children}
+              </main>
+              {/* FloatingChatButton removed from here to be moved to the landing page specifically */}
+            </div>
+          </DynamicThemeProvider>
           <ShadcnToaster />
           <SonnerToaster 
             position="bottom-right" 

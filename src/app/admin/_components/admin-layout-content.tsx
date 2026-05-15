@@ -132,13 +132,21 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
     return true;
   }, [settings, userProfile]);
 
-  const [sidebarTheme, setSidebarTheme] = useState<SidebarTheme>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('sidebar-theme');
-      if (saved === 'light' || saved === 'dark') return saved;
+  const [sidebarTheme, setSidebarTheme] = useState<SidebarTheme>((mode as SidebarTheme) || 'light');
+
+  useEffect(() => {
+    if (mode && (mode === 'light' || mode === 'dark')) {
+      setSidebarTheme(mode as SidebarTheme);
     }
-    return (mode as SidebarTheme) || 'light';
-  });
+  }, [mode]);
+
+  const handleSetTheme = (newTheme: SidebarTheme) => {
+    setSidebarTheme(newTheme);
+    setMode(newTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebar-theme', newTheme);
+    }
+  };
 
   const [logoConfig, setLogoConfig] = useState(() => {
     if (initialSettings?.logoConfig) return initialSettings.logoConfig;
@@ -232,7 +240,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   const isExpanded = sidebarState === 'expanded';
 
   return (
-    <div id="admin-root" className="relative flex min-h-screen w-full text-gray-900 overflow-hidden" style={{ backgroundColor: '#E8F3EB' }}>
+    <div id="admin-root" className="relative flex min-h-screen w-full text-gray-900 overflow-hidden" style={{ backgroundColor: 'var(--theme-page-bg)' }}>
       {/* Mobile Overlay */}
       <AnimatePresence>
         {sidebarState !== 'hidden' && (
@@ -250,7 +258,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         state={sidebarState}
         setState={setSidebarState}
         theme={sidebarTheme}
-        setTheme={setSidebarTheme}
+        setTheme={handleSetTheme}
         role={role}
         logoConfig={logoConfig}
         setLogoConfig={setLogoConfig}
@@ -269,11 +277,8 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
 
       <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar relative">
         <header className={cn(
-          "px-6 py-4 sticky top-0 z-50 backdrop-blur-xl transition-all duration-300",
-          "border-b border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]",
-          isDark
-            ? "bg-zinc-900/40 from-zinc-900/40 to-zinc-900/10"
-            : "bg-white/40 from-white/60 to-white/20",
+          "px-4 py-4 md:px-8 border-b border-white/5 backdrop-blur-md sticky top-0 z-[40]",
+          "bg-theme-nav-bg text-theme-nav-text",
           "bg-gradient-to-br flex-shrink-0"
         )}>
           <div className="absolute inset-0 bg-white/10 dark:bg-black/10 -z-10" />
@@ -318,9 +323,8 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               </Button>
               <div>
                 <h1 className={cn(
-                  "text-3xl font-bold tracking-tight leading-tight transition-colors duration-200 hidden md:block",
-                  headerColor
-                )}>
+                  "text-3xl font-bold tracking-tight leading-tight transition-colors duration-200 hidden md:block"
+                )} style={{ color: 'var(--theme-nav-text)' }}>
                   {pageTitle}
                 </h1>
                 <p className={cn(
@@ -419,7 +423,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
           pathname === '/admin/messages'
             ? "h-[calc(100vh-88px)] overflow-hidden p-4 md:p-6 w-full"
             : "px-4 py-4 md:px-6 md:py-6"
-        )} style={{ backgroundColor: typeof window !== 'undefined' && window.innerWidth < 768 ? '#ffffff' : '#E8F3EB' }}>
+        )} style={{ backgroundColor: 'var(--theme-page-bg)' }}>
           {children}
         </main>
       </div>
@@ -581,6 +585,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   { id: 'images', label: 'Images', icon: ImageIcon, color: 'text-purple-600', bg: 'bg-purple-100/80', href: '/admin/settings/images' },
                   { id: 'content', label: 'Contenu', icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-100/80', href: '/admin/settings/content' },
                   { id: 'appearance', label: 'Apparence', icon: Palette, color: 'text-pink-600', bg: 'bg-pink-100/80', href: '/admin/settings/themes' },
+                  { id: 'personalization', label: 'Personnalisation', icon: Palette, color: 'text-pink-600', bg: 'bg-pink-100/80', href: '/admin/settings/personalization' },
                   { id: 'wizard', label: 'Wizard', icon: Wand2, color: 'text-indigo-600', bg: 'bg-indigo-100/80', href: '/admin/settings/wizard' },
                   { id: 'livraison', label: 'Livraison', icon: Truck, color: 'text-cyan-600', bg: 'bg-cyan-100/80', href: '/admin/settings/livraison' },
                   { id: 'labor', label: 'Main d\'œuvre', icon: HardHat, color: 'text-orange-600', bg: 'bg-orange-100/80', href: '/admin/settings/main-doeuvre' },
@@ -639,7 +644,7 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { theme: mode, setTheme: setMode } = useTheme();
+  const { resolvedTheme: mode, setTheme: setMode } = useTheme();
 
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [themes, setThemes] = useState<Theme[]>([]);

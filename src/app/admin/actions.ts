@@ -397,6 +397,7 @@ const updateUserSchema = z.object({
   role: z.string().optional(),
   roleTemplate: z.string().optional(),
   status: z.enum(['pending', 'approved', 'suspended']).optional(),
+  themeSettings: z.any().optional(),
 });
 
 export async function updateUser(data: unknown) {

@@ -14,9 +14,9 @@ interface SummaryCardProps {
 
 export const SummaryCard: React.FC<SummaryCardProps> = ({ total, selectedCount, isAdmin, onResync }) => {
   return (
-    <div className="flex items-center gap-3 bg-black px-4 py-3 rounded-xl shadow-sm border border-zinc-800 w-full md:w-auto md:min-w-[150px]">
+    <div className="flex items-center gap-3 bg-theme-sidebar-active-bg px-4 py-3 rounded-xl shadow-sm border border-white/10 w-full md:w-auto md:min-w-[150px]">
       <div className="relative group">
-        <div className={`p-1.5 rounded-lg transition-colors ${isAdmin && onResync ? 'bg-zinc-900 group-hover:bg-[#95d230]/20' : 'bg-zinc-900'}`}>
+        <div className={`p-1.5 rounded-lg transition-colors ${isAdmin && onResync ? 'bg-white/10 group-hover:bg-white/20' : 'bg-white/10'}`}>
           {isAdmin && onResync ? (
             <button 
               onClick={(e) => {
@@ -26,10 +26,10 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ total, selectedCount, 
               title="Recalculer les statistiques"
               className="flex items-center justify-center"
             >
-              <Calculator className="w-4 h-4 text-[#95d230] group-hover:scale-110 transition-transform" />
+              <Calculator className="w-4 h-4 text-theme-sidebar-active-text group-hover:scale-110 transition-transform" />
             </button>
           ) : (
-            <Calculator className="w-4 h-4 text-[#95d230]" />
+            <Calculator className="w-4 h-4 text-theme-sidebar-active-text" />
           )}
         </div>
       </div>
@@ -37,7 +37,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ total, selectedCount, 
         <span className="text-[7px] uppercase tracking-[0.15em] text-zinc-500 font-bold leading-none mb-0.5">
           {selectedCount > 0 ? `SÉLECTION (${selectedCount})` : 'TOTAL'}
         </span>
-        <span className="text-sm font-black text-[#95d230] leading-none tracking-tight truncate">
+        <span className="text-sm font-black text-theme-sidebar-active-text leading-none tracking-tight truncate">
           {total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
         </span>
       </div>
@@ -103,7 +103,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
       >
         {/* Animated sliding background */}
         <motion.div
-          className="absolute top-2 bottom-2 rounded-xl bg-black shadow-lg z-0"
+          className="absolute top-2 bottom-2 rounded-xl bg-theme-sidebar-active-bg shadow-lg z-0"
           animate={{
             left: indicatorStyle.left,
             width: indicatorStyle.width,
@@ -133,7 +133,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
                 relative flex items-center gap-2.5 px-6 py-3 text-xs font-bold uppercase tracking-[0.05em]
                 transition-all duration-300 rounded-xl z-10 group whitespace-nowrap
                 ${isActive 
-                  ? 'text-white cursor-default' 
+                  ? 'text-theme-sidebar-active-text cursor-default' 
                   : 'text-zinc-500 hover:text-black hover:bg-zinc-100'
                 }
               `}

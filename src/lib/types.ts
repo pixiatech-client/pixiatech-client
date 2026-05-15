@@ -224,6 +224,28 @@ export type UserRole = {
   customPermissions?: Record<string, boolean>;
 };
 
+export type ThemeSettings = {
+  cardBg: string;
+  cardBorder: string;
+  cardText: string;
+  btnPrimaryBg: string;
+  btnPrimaryText: string;
+  btnPrimaryHover: string;
+  btnSecondaryBg: string;
+  btnSecondaryText: string;
+  btnSecondaryHover: string;
+  accentPrimary: string;
+  pageBg: string;
+  navBg: string;
+  sidebarBg: string;
+  sidebarText: string;
+  sidebarBorder: string;
+  sidebarActiveBg: string;
+  sidebarActiveText: string;
+  navBg: string;
+  navText: string;
+}
+
 export type UserProfile = {
   uid: string;
   email: string;
@@ -236,6 +258,7 @@ export type UserProfile = {
   status: 'pending' | 'approved';
   createdAt: any; 
   originalAdminUid?: string;
+  themeSettings?: ThemeSettings;
 };
 
 export type NotificationFirestore = {

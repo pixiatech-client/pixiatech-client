@@ -799,7 +799,7 @@ export function QuoteBuilder({
                                     <Stepper currentStep={currentStep} onStepClick={handleStepClick} steps={visibleSteps} />
                                 </div>
                             )}
-                            <Card className="w-full h-[320px] flex flex-col rounded-xl overflow-hidden shadow-lg">
+                            <Card className="w-full flex-1 flex flex-col rounded-xl overflow-hidden">
                                 <CardContent className="p-0 relative h-full flex items-center justify-center bg-slate-100 rounded-xl overflow-hidden">
                                     <AnimatePresence mode="wait">
                                         <motion.div
@@ -808,7 +808,7 @@ export function QuoteBuilder({
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
                                             transition={{ duration: 0.5 }}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full"
                                         >
                                             {renderPreviewContent()}
                                         </motion.div>
@@ -851,21 +851,24 @@ export function QuoteBuilder({
                     </AnimatePresence>
                 </div>
             </div>
+            {getOriginalStep(currentStep) > 1 && !isSuccess && (
+                <div className="w-full flex justify-center mt-8">
+                    <FloatingFooterNav
+                        onBack={handleBack}
+                        onNext={handleNext}
+                        nextLabel={getOriginalStep(currentStep) === 4 ? t('quoteForm.submit') : t('common.next')}
+                        nextDisabled={
+                            (getOriginalStep(currentStep) === 2 && !selectedCityId) ||
+                            (getOriginalStep(currentStep) === 4 && (!isQuoteFormValid || isSubmitting))
+                        }
+                        isLoading={isSubmitting}
+                        className="mt-0"
+                    />
+                </div>
+            )}
             <AnimatePresence>
                 {showMediaPreviewMobile && <MobileImageModal />}
             </AnimatePresence>
-            {getOriginalStep(currentStep) > 1 && !isSuccess && (
-                <FloatingFooterNav
-                    onBack={handleBack}
-                    onNext={handleNext}
-                    nextLabel={getOriginalStep(currentStep) === 4 ? t('quoteForm.submit') : t('common.next')}
-                    nextDisabled={
-                        (getOriginalStep(currentStep) === 2 && !selectedCityId) ||
-                        (getOriginalStep(currentStep) === 4 && (!isQuoteFormValid || isSubmitting))
-                    }
-                    isLoading={isSubmitting}
-                />
-            )}
             {initialSettings.isWizardBotEnabled !== false && activeMode === 'selection' && (
                 <FloatingChatButton
                     allProducts={allProducts}

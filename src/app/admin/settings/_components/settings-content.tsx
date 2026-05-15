@@ -7,7 +7,7 @@ import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck,
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -22,8 +22,8 @@ const LivraisonContent = lazy(() => import('../../_components/delivery-redirect'
 const LaborContent = lazy(() => import('../../labor/page'));
 const PdfContent = lazy(() => import('../../pdf-settings/page'));
 const EmergencyContent = lazy(() => import('../emergency/page'));
-const AppearanceContent = lazy(() => import('../themes/page'));
 const MessagingContent = lazy(() => import('../messaging/page'));
+const PersonalizationContent = lazy(() => import('../personalization/page'));
 
 function LoadingFallback() {
     return (
@@ -43,12 +43,14 @@ const tabsConfig: TabItem[] = [
     { id: 'general', label: 'Général', icon: Settings },
     { id: 'images', label: 'Images', icon: ImageIcon },
     { id: 'content', label: 'Contenu', icon: FileText },
+    { id: 'personalization', label: 'Personnalisation', icon: Palette },
     { id: 'wizard', label: 'Wizard', icon: Wand2 },
     { id: 'livraison', label: 'Livraison', icon: Truck },
     { id: 'main-doeuvre', label: 'Main d\'œuvre', icon: HardHat },
     { id: 'pdf', label: 'PDF', icon: FileType },
     { id: 'messaging', label: 'Messagerie', icon: MessageSquare },
     { id: 'emergency', label: 'Urgence', icon: AlertTriangle },
+    { id: 'hint-bubble', label: 'Bulles d\'aide', icon: MessageSquare },
 ];
 
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
@@ -117,6 +119,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <MessagingContent />;
             case 'emergency':
                 return <EmergencyContent />;
+            case 'personalization':
+                return <PersonalizationContent />;
             default:
                 return <GeneralContent />;
         }
@@ -139,28 +143,28 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                     value={tab.id}
                                     className={cn(
                                         "w-auto lg:w-full flex items-center justify-start gap-3 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-2xl text-[10px] md:text-sm font-black uppercase tracking-wider transition-all duration-300 flex-shrink-0",
-                                        "border border-gray-100",
-                                        "data-[state=active]:bg-[#0f1113] data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-xl",
-                                        "data-[state=inactive]:bg-white data-[state=inactive]:text-gray-500",
-                                        "hover:bg-gray-50 hover:scale-[1.02]"
+                                        "border border-gray-100 shadow-sm",
+                                        "data-[state=active]:bg-theme-sidebar-active-bg data-[state=active]:text-theme-sidebar-active-text data-[state=active]:border-transparent data-[state=active]:shadow-xl",
+                                        "data-[state=inactive]:bg-white data-[state=inactive]:text-gray-500 hover:bg-gray-50 hover:scale-[1.02]"
                                     )}
+                                    style={isSelected ? { backgroundColor: 'var(--theme-sidebar-active-bg)', color: 'var(--theme-sidebar-active-text)' } : {}}
                                 >
                                     <div className={cn(
                                         "h-8 w-8 md:h-10 md:w-10 rounded-full flex items-center justify-center transition-all flex-shrink-0",
-                                        isSelected ? "bg-white/10" :
+                                        isSelected ? "bg-white/20" :
                                         tab.id === 'general' ? "bg-blue-100/80 text-blue-600" :
                                         tab.id === 'images' ? "bg-purple-100/80 text-purple-600" :
                                         tab.id === 'content' ? "bg-emerald-100/80 text-emerald-600" :
-                                        tab.id === 'appearance' ? "bg-pink-100/80 text-pink-600" :
                                         tab.id === 'emergency' ? "bg-red-100/80 text-red-600" :
                                         tab.id === 'wizard' ? "bg-indigo-100/80 text-indigo-600" :
                                         tab.id === 'livraison' ? "bg-cyan-100/80 text-cyan-600" :
                                         tab.id === 'messaging' ? "bg-blue-100/80 text-blue-600" :
+                                        tab.id === 'personalization' ? "bg-pink-100/80 text-pink-600" :
                                         "bg-orange-100/80 text-orange-600"
                                     )}>
                                         <tab.icon className={cn(
                                             "w-5 h-5 transition-all duration-300",
-                                            isSelected && "text-white scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+                                            isSelected ? "text-white scale-110" : ""
                                         )} />
                                     </div>
                                     <span className="mt-0.5">{tab.label}</span>

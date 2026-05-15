@@ -171,7 +171,7 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
   const shouldAnimatePrice = settings.isPriceHidden && quoteDetails.totalQuote > 0;
 
   return (
-    <Card className="w-full max-w-lg shadow-lg bg-card flex flex-col h-full rounded-xl mb-32">
+    <Card className="w-full max-w-lg shadow-lg bg-card flex flex-col rounded-xl min-h-[600px]">
         <CardHeader>
             <div className="flex items-center gap-4">
                 {!hideFooter && (

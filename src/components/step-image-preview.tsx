@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Image from 'next/image';
@@ -40,7 +38,7 @@ export function StepImagePreview({ imageUrl, title }: StepImagePreviewProps) {
                             loop
                             muted
                             playsInline
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                         />
                     ) : (
                         <Image
@@ -48,7 +46,7 @@ export function StepImagePreview({ imageUrl, title }: StepImagePreviewProps) {
                             alt={displayTitle || 'Aperçu'}
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            className="object-cover"
+                            className="object-contain p-6"
                             quality={100}
                             priority
                         />

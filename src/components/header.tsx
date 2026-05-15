@@ -70,8 +70,8 @@ export function Header() {
 
         <div className="w-1/3 flex justify-end items-center gap-2">
             <Button variant="outline" size="icon" onClick={toggleTheme} className="group hover:bg-black">
-              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-yellow-500 group-hover:text-yellow-400 group-hover:drop-shadow-[0_0_5px_rgba(250,204,21,0.8)]" />
-              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-blue-500 group-hover:text-blue-400 group-hover:drop-shadow-[0_0_5px_rgba(96,165,250,0.8)]" />
+              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-yellow-500 group-hover:text-yellow-400" />
+              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-blue-500 group-hover:text-blue-400" />
               <span className="sr-only">Toggle theme</span>
             </Button>
            <Button variant="outline" size="icon" onClick={toggleLocale} className="group hover:bg-black w-12">

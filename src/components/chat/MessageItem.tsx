@@ -7,6 +7,7 @@ import { cn, formatTimestamp } from '@/lib/utils';
 import { Message } from '@/lib/types';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useRoles } from '@/contexts/RoleContext';
+import { useI18n } from '@/lib/i18n';
 
 const TypewriterText = ({ content, isMine }: { content: string; isMine: boolean }) => {
   // Split by HTML tags, entities, or spaces, keeping the separators
@@ -60,6 +61,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const controls = useAnimation();
   const { getRoleColor, getRoleName } = useRoles();
+  const { t } = useI18n();
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -130,7 +132,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
                     {msg.senderRole === 'bot' ? 'Bot' : getRoleName(msg.senderRole)}
                   </span>
                 )}
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{msg.senderName || 'Utilisateur'}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{msg.senderName || t('common.user')}</span>
               </div>
             )}
           <div
@@ -241,7 +243,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
 
             {msg.type === 'summary' && msg.summaryData && (
               <div className="w-full min-w-[280px] bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-2">
-                <h3 className="text-[#0078ff] font-bold text-lg mb-3 border-b border-slate-100 pb-2">Résumé du projet</h3>
+                <h3 className="text-[#0078ff] font-bold text-lg mb-3 border-b border-slate-100 pb-2">{t('common.projectSummary')}</h3>
                 <div className="flex flex-col gap-2">
                   {Object.entries(msg.summaryData).map(([key, value]) => (
                     <div key={key} className="flex items-center justify-between">
@@ -294,7 +296,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-500/10 transition-colors text-left"
               >
                 <Trash2 size={16} />
-                <span className="text-xs font-black uppercase tracking-wider">Supprimer</span>
+                <span className="text-xs font-black uppercase tracking-wider">{t('common.delete')}</span>
               </button>
             </motion.div>
           </>

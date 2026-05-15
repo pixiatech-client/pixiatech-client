@@ -95,7 +95,7 @@ export function DeliveryForm({ onBack, onNext, deliverySettings, onLocationChang
     }
 
     return (
-        <Card className="w-full max-w-lg shadow-lg flex flex-col h-full bg-card rounded-xl mb-32">
+        <Card className="w-full max-w-lg shadow-lg flex flex-col bg-card rounded-xl min-h-[600px]">
             <CardHeader>
                 <div className="flex items-center gap-4">
                     {!hideFooter && (
@@ -112,7 +112,7 @@ export function DeliveryForm({ onBack, onNext, deliverySettings, onLocationChang
                 </div>
             </CardHeader>
             <CardContent className="space-y-6 flex-grow flex flex-col">
-                <div className="space-y-4">
+                <div className="space-y-4 flex-grow">
                     <Label className="text-muted-foreground font-semibold block text-center uppercase tracking-wider text-sm">{t('delivery.inputLabel')}</Label>
                     <Combobox
                         items={cityOptions}
