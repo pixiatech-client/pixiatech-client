@@ -97,9 +97,9 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
 
         <button
           onClick={onAddUser}
-          className="ml-auto md:ml-0 bg-blue-600 hover:bg-black text-white px-6 py-3.5 rounded-2xl text-sm font-bold transition-all flex items-center gap-3 shadow-lg shadow-blue-500/20 active:scale-[0.98] group"
+          className="ml-auto md:ml-0 bg-theme-sidebar-active-bg text-theme-sidebar-active-text px-6 py-3.5 rounded-2xl text-sm font-bold transition-all flex items-center gap-3 shadow-lg hover:opacity-90 active:scale-[0.98] group"
         >
-          <UserPlus size={18} className="transition-colors group-hover:text-blue-400" />
+          <UserPlus size={18} className="transition-colors group-hover:text-theme-sidebar-active-text/80" />
           Ajouter un Utilisateur
         </button>
       </div>

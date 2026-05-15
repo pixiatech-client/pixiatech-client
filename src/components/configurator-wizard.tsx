@@ -1214,11 +1214,11 @@ export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: Conf
                 </PopoverContent>
               </Popover>
             </div>
-            <div>
-              <Label>{t('wizard.rental.hoursLabel')}</Label>
-              <div className="flex items-center gap-2">
+            <div className="flex items-end gap-2">
+              <div className="flex-1 space-y-1.5">
+                <Label>{t('wizard.rental.startTime')}</Label>
                 <Select value={state.rentalStartTime || '08:00'} onValueChange={(value) => updateState({ rentalStartTime: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1227,9 +1227,16 @@ export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: Conf
                     ))}
                   </SelectContent>
                 </Select>
-                <span className="text-muted-foreground">{t('wizard.rental.to')}</span>
+              </div>
+              
+              <div className="pb-2.5 font-medium text-slate-400">
+                {t('wizard.rental.to')}
+              </div>
+
+              <div className="flex-1 space-y-1.5">
+                <Label>{t('wizard.rental.endTime')}</Label>
                 <Select value={state.rentalEndTime || '18:00'} onValueChange={(value) => updateState({ rentalEndTime: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

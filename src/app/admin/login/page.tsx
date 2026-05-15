@@ -408,7 +408,7 @@ export default function LoginPage() {
               <div className="border-b border-slate-100 bg-slate-50/80 px-6 pb-6 pt-8 sm:px-8">
                 <div className="mb-6 flex justify-center">
                   <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-slate-900 shadow-lg shadow-slate-200">
-                    <KeyRound className="h-9 w-9 text-[#a3e635]" />
+                    <KeyRound className="h-9 w-9 text-theme-sidebar-active-bg" />
                   </div>
                 </div>
 
@@ -523,7 +523,7 @@ export default function LoginPage() {
                       <button
                         type="submit"
                         disabled={isLoggingIn || isSigningOut}
-                        className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-theme-sidebar-active-bg text-sm font-bold text-theme-sidebar-active-text shadow-lg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 transition-all"
                       >
                         {isLoggingIn || isSigningOut ? (
                           <>
@@ -639,7 +639,7 @@ export default function LoginPage() {
                       <button
                         type="submit"
                         disabled={isSigningUp}
-                        className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-theme-sidebar-active-bg text-sm font-bold text-theme-sidebar-active-text shadow-lg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 transition-all"
                       >
                         {isSigningUp ? (
                           <>
@@ -705,7 +705,7 @@ export default function LoginPage() {
                       <button
                         type="submit"
                         disabled={isSavingGoogleProfile}
-                        className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-black disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-theme-sidebar-active-bg text-sm font-bold text-theme-sidebar-active-text shadow-lg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 transition-all"
                       >
                         {isSavingGoogleProfile ? (
                           <>

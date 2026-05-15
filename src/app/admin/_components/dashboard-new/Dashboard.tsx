@@ -530,7 +530,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                 {filteredQuotes.length > 0 ? filteredQuotes.slice(0, 4).map((quote) => (
-                  <tr key={quote.id} className="group hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                  <tr key={quote.id} className="group hover:bg-theme-sidebar-active-bg/10 transition-colors">
                     <td className="py-4">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] ${isDark ? 'bg-white/5 text-white' : 'bg-gray-100 text-gray-900 group-hover:bg-zinc-800 group-hover:text-white'} transition-colors`}>

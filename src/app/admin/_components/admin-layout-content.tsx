@@ -73,7 +73,7 @@ const DEFAULT_LOGO_CONFIG = {
 
 const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor, userProfile, roles, logout, toggleTheme, mainNavItems, secondaryNavItems, mode, setMode, activeSettingsSection, onSettingsSectionChange, isSettingsPage, role, onOpenAccountDrawer, initialSettings }: { children: React.ReactNode, pageTitle: string, pageSubtitle: string, headerColor: string, userProfile: any, roles: any[], logout: any, toggleTheme: any, mainNavItems: any[], secondaryNavItems: any[], mode: string, setMode: (theme: string) => void, activeSettingsSection?: SettingsSection, onSettingsSectionChange?: (section: SettingsSection) => void, isSettingsPage?: boolean, role?: UserRoleEnum, onOpenAccountDrawer?: () => void, initialSettings?: AppSettings | null }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<any>(initialSettings);
   const firestore = useFirestore();
   useEffect(() => {
     console.log('isProfileOpen changed:', isProfileOpen);
@@ -163,17 +163,18 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
     return DEFAULT_LOGO_CONFIG;
   });
 
-  // Sync logoConfig when settings are loaded
+  // Sync logoConfig when settings are loaded or changed in real-time
   useEffect(() => {
-    if (initialSettings?.logoConfig) {
-      const config = { ...initialSettings.logoConfig };
+    const currentSettings = settings || initialSettings;
+    if (currentSettings?.logoConfig) {
+      const config = { ...currentSettings.logoConfig };
       if (config.text === 'ASSISTANT ESTIMATION') {
         config.text = 'BOT LUMI';
         config.letter = 'B';
       }
       setLogoConfig(config);
     }
-  }, [initialSettings?.logoConfig]);
+  }, [settings?.logoConfig, initialSettings?.logoConfig]);
 
   const handleSaveLogo = async (newConfig: any) => {
     if (userProfile?.role === 'admin') {
@@ -295,8 +296,8 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     isSettingsPage 
                       ? "bg-black text-white hover:bg-zinc-800 shadow-lg" 
                       : (isDark 
-                          ? "bg-white/5 hover:bg-black text-white hover:text-emerald-400" 
-                          : "bg-white hover:bg-black text-gray-700 hover:text-emerald-500")
+                          ? "bg-white/5 hover:bg-theme-sidebar-active-bg text-white hover:text-emerald-400" 
+                          : "bg-white hover:bg-theme-sidebar-active-bg text-gray-700 hover:text-emerald-500")
                   )}
                 >
                   {isSettingsPage ? (
@@ -314,7 +315,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 size="icon"
                 className={cn(
                   "group h-11 w-11 rounded-xl border-0 shadow-sm transition-all duration-200 hidden md:inline-flex",
-                  isDark ? "bg-white/5 hover:bg-black" : "bg-white hover:bg-black"
+                  isDark ? "bg-white/5 hover:bg-theme-sidebar-active-bg" : "bg-white hover:bg-theme-sidebar-active-bg"
                 )}
                 onClick={() => router.back()}
                 title="Page précédente"
@@ -348,7 +349,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
                   isCalculatorOpen
                     ? "bg-black text-white"
-                    : (isDark ? "bg-white/5 hover:bg-black" : "bg-white hover:bg-black")
+                    : (isDark ? "bg-white/5 hover:bg-theme-sidebar-active-bg" : "bg-white hover:bg-theme-sidebar-active-bg")
                 )}
               >
                 <Calculator className={cn(
@@ -369,7 +370,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsChatPanelOpen(true)}
-                  className={cn("group h-11 w-11 rounded-xl shadow-sm transition-all duration-200", isDark ? "bg-white/5 hover:bg-black" : "bg-white hover:bg-black")}
+                  className={cn("group h-11 w-11 rounded-xl shadow-sm transition-all duration-200", isDark ? "bg-white/5 hover:bg-theme-sidebar-active-bg" : "bg-white hover:bg-theme-sidebar-active-bg")}
                 >
                   <MessageSquare className={cn("h-5 w-5 transition-colors", isDark ? "text-gray-400 group-hover:text-blue-400" : "text-gray-400 group-hover:text-blue-500")} />
                 </Button>
@@ -383,7 +384,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 title="Aller au site"
                 className={cn(
                   "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
-                  isDark ? "bg-white/5 hover:bg-black" : "bg-white hover:bg-black"
+                  isDark ? "bg-white/5 hover:bg-theme-sidebar-active-bg" : "bg-white hover:bg-theme-sidebar-active-bg"
                 )}
               >
                 <LogIn className="h-5 w-5 text-red-500 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-red-400" />
@@ -573,7 +574,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsSettingsMenuOpen(false)}
-                  className="rounded-xl hover:bg-black hover:text-white transition-all h-8 w-8"
+                  className="rounded-xl hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all h-8 w-8"
                 >
                   <X size={18} />
                 </Button>
@@ -600,7 +601,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     className={cn(
                       "w-full flex items-center gap-3 p-2.5 rounded-2xl transition-all duration-300 group",
                       pathname === item.href 
-                        ? "bg-[#0f1113] text-white shadow-xl translate-x-1" 
+                        ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text shadow-xl translate-x-1" 
                         : "bg-white text-gray-500 hover:bg-gray-50 border border-gray-100 hover:border-gray-200"
                     )}
                   >

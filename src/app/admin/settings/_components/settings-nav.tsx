@@ -39,13 +39,13 @@ export function SettingsNav() {
                 href={tab.href}
                 className={cn(
                   "relative w-full flex justify-center font-bold px-4 py-2 text-[11px] uppercase tracking-widest items-center gap-2.5 z-20 transition-all duration-300",
-                  isActive ? "text-white" : "text-slate-500 hover:text-slate-900"
+                  isActive ? "text-theme-sidebar-active-text" : "text-slate-500 hover:text-slate-900"
                 )}
               >
                 {isActive && (
                     <motion.span
                         layoutId="settings-nav-bubble"
-                        className="absolute inset-0 z-10 bg-slate-900 rounded-lg shadow-lg"
+                        className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-lg shadow-lg"
                         transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                 )}

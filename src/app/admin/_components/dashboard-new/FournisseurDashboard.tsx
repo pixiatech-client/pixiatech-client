@@ -136,7 +136,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
             <Link
               key={action.label}
               href={action.href}
-              className="group flex items-center gap-4 bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:bg-black hover:border-zinc-800 transition-all"
+              className="group flex items-center gap-4 bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:bg-theme-sidebar-active-bg hover:border-zinc-800 transition-all"
             >
               <div className={`w-12 h-12 rounded-xl ${action.bg} flex items-center justify-center transition-colors`}>
                 <action.icon className={`w-6 h-6 ${action.color}`} />
@@ -171,7 +171,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                 {recentEstimations.map((quote) => (
-                  <tr key={quote.id} className="group hover:bg-black transition-colors">
+                  <tr key={quote.id} className="group hover:bg-theme-sidebar-active-bg/10 transition-colors">
                     <td className="py-4">
                       <span className="text-sm font-semibold group-hover:text-white transition-colors">{quote.id}</span>
                     </td>

@@ -168,6 +168,7 @@ const registerSchema = z.object({
   password: z.string().min(6),
   displayName: z.string().min(2),
   phone: z.string().min(1, 'Le téléphone est obligatoire'),
+  description: z.string().optional(),
 });
 
 function formatPhoneNumber(phone?: string): string | undefined {
@@ -252,6 +253,7 @@ export async function registerUser(data: unknown) {
       email,
       displayName,
       phone: phone || '',
+      description: result.data.description || '',
       role: assignedRole,
       status: status as 'pending' | 'approved',
       createdAt: FieldValue.serverTimestamp(),
@@ -392,6 +394,7 @@ const updateUserSchema = z.object({
   displayName: z.string().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
+  description: z.string().optional(),
   photoURL: z.string().url().or(z.literal('')).optional(),
   backgroundImage: z.string().url().or(z.literal('')).optional(),
   role: z.string().optional(),
@@ -434,6 +437,9 @@ export async function updateUser(data: unknown) {
 
     // Update Firestore document
     await adminDb.collection('users').doc(uid).update(updateData);
+
+    revalidatePath('/admin/users');
+    revalidatePath('/admin', 'layout');
 
     return { success: true };
   } catch (error: any) {

@@ -333,13 +333,13 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="w-full py-4 bg-blue-600 hover:bg-black text-white rounded-2xl font-bold uppercase tracking-widest text-sm transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-3 group active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full py-4 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-2xl font-bold uppercase tracking-widest text-sm transition-all shadow-xl flex items-center justify-center gap-3 group active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed hover:opacity-90"
                   >
-                    <div className="w-6 h-6 border-2 border-white group-hover:border-blue-400 rounded-full flex items-center justify-center transition-all">
+                    <div className="w-6 h-6 border-2 border-theme-sidebar-active-text/30 group-hover:border-theme-sidebar-active-text rounded-full flex items-center justify-center transition-all">
                       {isAddMode ? (
-                        <PlusCircle size={12} className="text-white group-hover:text-blue-400 transition-colors" />
+                        <PlusCircle size={12} className="text-current" />
                       ) : (
-                        <Save size={12} className="text-white group-hover:text-blue-400 transition-colors" />
+                        <Save size={12} className="text-current" />
                       )}
                     </div>
                     {isSaving ? 'ENREGISTREMENT...' : (isAddMode ? 'AJOUTER L\'UTILISATEUR' : 'SAUVEGARDER LES CHANGEMENTS')}

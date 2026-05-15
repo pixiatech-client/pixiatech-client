@@ -149,7 +149,7 @@ export function UserProfileForm({ user, onUpdate }: UserProfileFormProps) {
         <button
           type="submit"
           disabled={form.formState.isSubmitting}
-          className="px-8 py-3.5 bg-blue-600 hover:bg-black text-white rounded-2xl text-sm font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center gap-3 active:scale-[0.98] disabled:opacity-60"
+          className="px-8 py-3.5 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-2xl text-sm font-bold transition-all shadow-lg hover:opacity-90 flex items-center gap-3 active:scale-[0.98] disabled:opacity-60"
         >
           <Save size={16} />
           {form.formState.isSubmitting ? 'Sauvegarde...' : 'Sauvegarder les changements'}

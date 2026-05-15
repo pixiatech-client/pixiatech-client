@@ -87,6 +87,7 @@ export function UserManager() {
       status: mappedStatus,
       avatar: profile.photoURL || '',
       backgroundImage: profile.backgroundImage || '',
+      description: profile.description || '',
       lastLogin: new Date().toISOString(),
       createdAt: typeof profile.createdAt === 'string'
         ? profile.createdAt
@@ -222,6 +223,7 @@ export function UserManager() {
           uid: data.id,
           displayName: data.name,
           phone: data.phone,
+          description: data.description,
           photoURL: data.avatar,
           backgroundImage: data.backgroundImage,
           role: fbRole,
@@ -234,6 +236,7 @@ export function UserManager() {
               ...u,
               displayName: data.name,
               phone: data.phone,
+              description: data.description,
               photoURL: data.avatar,
               backgroundImage: data.backgroundImage,
               role: fbRole,

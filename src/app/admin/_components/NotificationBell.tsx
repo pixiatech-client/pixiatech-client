@@ -104,7 +104,7 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
     <div className="relative" onMouseLeave={() => setIsOpen(false)}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`group relative p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-black' : 'bg-white hover:bg-black'} shadow-sm border border-transparent hover:border-gray-800 dark:hover:border-white/10`}
+        className={`group relative p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-theme-sidebar-active-bg' : 'bg-white hover:bg-theme-sidebar-active-bg'} shadow-sm border border-transparent hover:border-gray-800 dark:hover:border-white/10`}
       >
         <Bell className={`w-5 h-5 transition-colors ${isDark ? 'text-gray-400 group-hover:text-rose-400' : 'text-gray-500 group-hover:text-rose-500'}`} />
         {unreadCount > 0 && (
@@ -153,7 +153,7 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
                           updateDoc(doc(firestore, 'notifications', notif.id), { read: true });
                         }
                       }}
-                      className="flex items-start gap-4 p-5 hover:bg-gray-50 dark:hover:bg-white/5 transition-all border-b border-gray-50 dark:border-white/5 last:border-0 relative group"
+                      className="flex items-start gap-4 p-5 hover:bg-theme-sidebar-active-bg/10 dark:hover:bg-white/5 transition-all border-b border-gray-50 dark:border-white/5 last:border-0 relative group"
                     >
                       <div className={`p-2.5 rounded-2xl ${isDark ? 'bg-white/5' : 'bg-gray-50'} transition-colors group-hover:bg-white dark:group-hover:bg-white/10`}>
                         {getIcon(notif.type)}

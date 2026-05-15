@@ -103,9 +103,11 @@
         },
         "rental": {
             "title": "Période de location",
-            "description": "Configurez vos dates et horaires pour une estimation précise.",
+            "description": "Configurez vos dates et horaires d'événement pour une estimation précise.",
             "datesLabel": "Dates de location",
             "hoursLabel": "Horaires",
+            "startTime": "Heure du début",
+            "endTime": "Heure de fin",
             "to": "à",
             "pickRange": "Choisissez une plage de dates"
         },

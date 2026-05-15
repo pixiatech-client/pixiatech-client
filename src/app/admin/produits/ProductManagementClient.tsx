@@ -26,8 +26,18 @@ import {
 // --- Helper to identify if a URL is a video ---
 const isVideoUrl = (url: string | undefined | null): boolean => {
   if (!url) return false;
+  if (url.startsWith('data:video/') || url.startsWith('blob:')) return true;
   const cleanUrl = url.split('?')[0];
-  return /\.(mp4|webm|mov|ogg|ogv)/i.test(cleanUrl);
+  const isDirectVideo = /\.(mp4|webm|mov|ogg|ogv)/i.test(cleanUrl);
+  const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+  return isDirectVideo || isYouTube;
+};
+
+const getYouTubeId = (url: string | undefined | null): string | null => {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
 };
 
 // --- Helper to safely get image URL (Prioritize pure images for thumbnails) ---
@@ -313,7 +323,7 @@ const ProductListItem = ({
         boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.15)"
       }}
       className={cn(
-        "bg-white border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-slate-900 hover:border-slate-800 hover:-translate-y-1 hover:shadow-2xl",
+        "bg-white border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:-translate-y-1 hover:shadow-2xl",
         selectedIds.includes(product.id) ? "border-blue-500 ring-1 ring-blue-500" : "border-slate-200"
       )}
     >
@@ -365,7 +375,7 @@ const ProductListItem = ({
 
       <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
         <div className="md:col-span-2">
-          <h3 className="font-bold text-slate-900 group-hover/product:text-white transition-colors truncate">{product.name}</h3>
+          <h3 className="font-bold text-slate-900 group-hover/product:text-theme-sidebar-active-text transition-colors truncate">{product.name}</h3>
           <div className="flex items-center gap-2 mt-1">
             <span className={cn(
               "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md transition-colors",
@@ -391,7 +401,7 @@ const ProductListItem = ({
                      return product.type;
                    })() : 'Non défini')}
             </span>
-            <span className="text-xs text-slate-500 group-hover/product:text-white/40">
+            <span className="text-xs text-slate-500 group-hover/product:text-theme-sidebar-active-text/50">
               {Array.isArray(product.mode) 
                 ? product.mode.map((m: string) => m.charAt(0).toUpperCase() + m.slice(1)).join(' & ') 
                 : (product.mode ? product.mode.charAt(0).toUpperCase() + product.mode.slice(1) : '')}
@@ -401,12 +411,12 @@ const ProductListItem = ({
 
         <div className="hidden md:flex flex-col gap-1">
           <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/30">Pitch</span>
-          <span className="text-sm font-medium text-slate-700 group-hover/product:text-white">{product.pitch || '—'}</span>
+          <span className="text-sm font-medium text-slate-700 group-hover/product:text-theme-sidebar-active-text">{product.pitch || '—'}</span>
         </div>
 
         <div className="hidden md:flex flex-col gap-1">
           <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/30">Distance</span>
-          <span className="text-sm font-medium text-slate-700 group-hover/product:text-white">{product.distance || '—'}</span>
+          <span className="text-sm font-medium text-slate-700 group-hover/product:text-theme-sidebar-active-text">{product.distance || '—'}</span>
         </div>
 
         <div className="hidden md:flex flex-col gap-1 items-center">
@@ -839,7 +849,7 @@ const AISettingsSheet = ({
               </button>
               <button 
                 onClick={() => { onSave(localSettings); onClose(); }}
-                className="flex-[2] bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-black transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
+                className="flex-[2] bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
               >
                 <Save className="w-4 h-4" /> Sauvegarder
               </button>
@@ -1262,7 +1272,7 @@ const CaracteristiquesPage = ({
                   />
                   <label 
                     htmlFor="custom-icon-upload"
-                    className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-black hover:text-white transition-all text-sm font-bold text-slate-600 group"
+                    className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all text-sm font-bold text-slate-600 group"
                   >
                     <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Téléverser une icône
                   </label>
@@ -1319,7 +1329,7 @@ const CaracteristiquesPage = ({
                   setIsSaving(false);
                   toast({ title: "Synchronisation", description: "Les réglages Pixiatech et le Wizard ont été synchronisés." });
                 }}
-                className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-black hover:text-[#a3e635] transition-all shadow-sm group mr-2"
+                className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-sm group mr-2"
                 title="Rétablir les réglages Pixiatech"
               >
                 <RefreshCw className="w-5 h-5 transition-colors group-hover:text-[#a3e635]" />
@@ -1330,7 +1340,7 @@ const CaracteristiquesPage = ({
                   setCharPage(prev => Math.max(prev - 1, 1));
                 }}
                 disabled={charPage === 1}
-                className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-black hover:text-[#0078ff] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
+                className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
               >
                 <ChevronLeft className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
               </button>
@@ -1340,7 +1350,7 @@ const CaracteristiquesPage = ({
                   setCharPage(prev => Math.min(prev + 1, totalCharPages));
                 }}
                 disabled={charPage === totalCharPages || totalCharPages === 0}
-                className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-black hover:text-[#0078ff] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
+                className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
               >
                 <ChevronRight className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
               </button>
@@ -1367,7 +1377,7 @@ const CaracteristiquesPage = ({
                         "bg-white border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all cursor-pointer group relative overflow-hidden",
                         editingId === char.id 
                           ? "border-blue-500 ring-1 ring-blue-500" 
-                          : "border-slate-200 hover:bg-black hover:border-black",
+                          : "border-slate-200 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg",
                         (char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && !editingId && "bg-orange-50/50 border-orange-100"
                       )}
                       onClick={() => handleEdit(char)}
@@ -1649,7 +1659,7 @@ const CaracteristiquesPage = ({
               <button 
                 onClick={handleSave}
                 disabled={!name.trim() || variants.every(v => !v.value.trim()) || !user || isSaving}
-                className="bg-black text-white px-8 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
+                className="bg-theme-sidebar-active-bg text-theme-sidebar-active-text px-8 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
               >
                 {isSaving ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -1673,13 +1683,13 @@ const CaracteristiquesPage = ({
                   <button
                     onClick={handleSave}
                     disabled={isSaving || !name.trim() || variants.every(v => !v.value.trim()) || !user}
-                    className="flex-1 h-12 bg-black rounded-[18px] flex items-center px-6 transition-all group shadow-lg overflow-hidden relative disabled:opacity-50"
+                    className="flex-1 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-[18px] flex items-center px-6 transition-all group shadow-lg overflow-hidden relative disabled:opacity-50"
                   >
-                    <span className="relative z-10 text-white font-black uppercase tracking-[0.3em] text-[10px] ml-2">
+                    <span className="relative z-10 font-black uppercase tracking-[0.3em] text-[10px] ml-2">
                       {editingId ? 'Enregistrer' : 'Ajouter'}
                     </span>
                     <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center">
-                      {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-white" />}
+                      {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-current" />}
                     </div>
                   </button>
                 </div>
@@ -1843,7 +1853,7 @@ const ProduitPage = ({
                   }}
                   className={cn(
                     "h-10 rounded-xl flex items-center justify-center gap-3 font-bold transition-all border",
-                    mode.includes('vente') ? "bg-black text-white border-black shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                    mode.includes('vente') ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                   )}
                 >
                   <ShoppingCart className={cn("w-5 h-5", mode.includes('vente') ? "text-[#c6ff00]" : "text-slate-300")} />
@@ -1859,7 +1869,7 @@ const ProduitPage = ({
                   }}
                   className={cn(
                     "h-10 rounded-xl flex items-center justify-center gap-3 font-bold transition-all border",
-                    mode.includes('location') ? "bg-black text-white border-black shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                    mode.includes('location') ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                   )}
                 >
                   <Calendar className={cn("w-5 h-5", mode.includes('location') ? "text-purple-400" : "text-slate-300")} />
@@ -1888,7 +1898,7 @@ const ProduitPage = ({
                     }}
                     className={cn(
                       "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                      environment.includes(item.id as any) ? "bg-black text-white border-black shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                      environment.includes(item.id as any) ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                     )}
                   >
                     <item.icon className={cn("w-4 h-4", environment.includes(item.id as any) ? item.color : "text-slate-300")} />
@@ -1904,8 +1914,8 @@ const ProduitPage = ({
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Spécifications Techniques</label>
                 {totalSpecPages > 1 && (
                   <div className="flex items-center gap-2">
-                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.max(prev - 1, 1)); }} disabled={specPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-black hover:text-white disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
-                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.min(prev + 1, totalSpecPages)); }} disabled={specPage === totalSpecPages} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-black hover:text-white disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.max(prev - 1, 1)); }} disabled={specPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
+                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.min(prev + 1, totalSpecPages)); }} disabled={specPage === totalSpecPages} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
                   </div>
                 )}
               </div>
@@ -2087,8 +2097,29 @@ const ProduitPage = ({
                 {mediaType === 'photo' ? (
                   <img src={previewSrc} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
                 ) : (
-                  <div className="w-full h-full bg-slate-900 flex items-center justify-center">
-                    <Video className="w-16 h-16 text-white/20" />
+                  <div className="w-full h-full bg-slate-900 flex items-center justify-center relative">
+                    {getYouTubeId(previewSrc) ? (
+                      <iframe
+                        className="w-full h-full"
+                        src={`https://www.youtube.com/embed/${getYouTubeId(previewSrc)}`}
+                        title="YouTube video player"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    ) : (previewSrc && isVideoUrl(previewSrc)) ? (
+                      <video 
+                        key={previewSrc}
+                        src={previewSrc} 
+                        controls 
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center gap-3">
+                        <Video className="w-16 h-16 text-white/20" />
+                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Aucune vidéo</p>
+                      </div>
+                    )}
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -2153,12 +2184,45 @@ const ProduitPage = ({
                   accept={mediaType === 'photo' ? 'image/*' : 'video/*'} 
                 />
                 <input type="file" ref={pdfInputRef} onChange={handlePdfChange} className="hidden" accept="application/pdf" />
-                <div onClick={triggerPdfUpload} className="border-2 border-dashed border-slate-200 rounded-[2rem] p-6 md:p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-all cursor-pointer group">
-                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-50 transition-colors">
-                    <Plus className="w-8 h-8 text-slate-300 group-hover:text-blue-500" />
+                <div onClick={triggerPdfUpload} className={cn(
+                  "border-2 border-dashed rounded-[2rem] p-6 md:p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group",
+                  (pdfUrl || uploadedPdf) 
+                    ? "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50" 
+                    : "border-slate-200 hover:bg-slate-50"
+                )}>
+                  <div className={cn(
+                    "w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors",
+                    (pdfUrl || uploadedPdf) ? "bg-emerald-100" : "bg-slate-50 group-hover:bg-blue-50"
+                  )}>
+                    {(pdfUrl || uploadedPdf) ? (
+                      <Check className="w-8 h-8 text-emerald-600" />
+                    ) : (
+                      <Plus className="w-8 h-8 text-slate-300 group-hover:text-blue-500" />
+                    )}
                   </div>
-                  <span className="text-xs font-black text-slate-900 uppercase tracking-widest mb-1">Ajouter la fiche produit (PDF)</span>
-                  <span className="text-[9px] text-slate-400 uppercase tracking-widest">Fiche technique officielle</span>
+                  <span className="text-xs font-black text-slate-900 uppercase tracking-widest mb-1">
+                    {(pdfUrl || uploadedPdf) ? 'Fiche technique présente' : 'Ajouter la fiche produit (PDF)'}
+                  </span>
+                  <span className="text-[9px] text-slate-400 uppercase tracking-widest">
+                    {(pdfUrl || uploadedPdf) ? (uploadedPdf ? uploadedPdf.name : 'Fichier enregistré') : 'Fiche technique officielle'}
+                  </span>
+                  
+                  {(pdfUrl || uploadedPdf) && (
+                    <div className="flex gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
+                      <button 
+                        onClick={() => window.open(uploadedPdf ? URL.createObjectURL(uploadedPdf) : pdfUrl, '_blank')}
+                        className="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-600 hover:text-white transition-all"
+                      >
+                        Voir le PDF
+                      </button>
+                      <button 
+                        onClick={() => { setPdfUrl(''); setUploadedPdf(null); }}
+                        className="px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2167,9 +2231,9 @@ const ProduitPage = ({
                 <button 
                   onClick={handleSaveProduct}
                   disabled={isSaving || !productName}
-                  className="w-full h-10 bg-black text-white rounded-xl font-black uppercase tracking-[0.2em] text-xs hover:shadow-2xl hover:shadow-black/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  className="w-full h-10 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl font-black uppercase tracking-[0.2em] text-xs hover:shadow-2xl hover:shadow-black/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
-                  {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus className="w-5 h-5 text-[#c6ff00]" />}
+                  {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus className="w-5 h-5 text-theme-sidebar-active-text" />}
                   {editingProduct ? 'Enregistrer les modifications' : 'Ajouter au catalogue'}
                 </button>
                 <button 
@@ -2315,13 +2379,13 @@ const ProduitPage = ({
               <button
                 onClick={handleSaveProduct}
                 disabled={isSaving || !productName}
-                className="flex-1 h-12 bg-black rounded-[18px] flex items-center px-6 transition-all group shadow-lg overflow-hidden relative disabled:opacity-50"
+                className="flex-1 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-[18px] flex items-center px-6 transition-all group shadow-lg overflow-hidden relative disabled:opacity-50"
               >
-                <span className="relative z-10 text-white font-black uppercase tracking-[0.3em] text-[10px] ml-2">
+                <span className="relative z-10 font-black uppercase tracking-[0.3em] text-[10px] ml-2">
                   {editingProduct ? 'Enregistrer' : 'Ajouter'}
                 </span>
                 <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center">
-                  {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-white" />}
+                  {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-current" />}
                 </div>
               </button>
             </div>
@@ -2447,9 +2511,9 @@ const GestionProduits = ({
           </div>
           <button 
             onClick={onAddProduct}
-            className="flex items-center gap-3 px-6 h-10 bg-black text-white rounded-xl text-sm font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg active:scale-[0.98] shrink-0"
+            className="flex items-center gap-3 px-6 h-10 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl text-sm font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg active:scale-[0.98] shrink-0"
           >
-            <Plus className="w-5 h-5 text-[#a3e635]" />
+            <Plus className="w-5 h-5" />
             <span>Ajouter un produit</span>
           </button>
         </div>
@@ -2524,7 +2588,7 @@ const GestionProduits = ({
               onClick={() => setIsFilterOpen(true)}
               className={cn(
                 "h-12 px-5 rounded-[20px] flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all active:scale-90 border",
-                filterType !== 'all' ? "bg-black text-[#c6ff00] border-black shadow-lg" : "bg-slate-50 text-slate-900 border-slate-100"
+                filterType !== 'all' ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-slate-50 text-slate-900 border-slate-100"
               )}
             >
               <Filter className="w-4 h-4" />
@@ -2536,7 +2600,7 @@ const GestionProduits = ({
             onClick={() => setIsSortOpen(true)}
             className={cn(
               "h-12 px-5 rounded-[20px] flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all active:scale-90 border",
-              sortBy !== 'manual' ? "bg-black text-[#c6ff00] border-black shadow-lg" : "bg-slate-50 text-slate-900 border-slate-100"
+              sortBy !== 'manual' ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-slate-50 text-slate-900 border-slate-100"
             )}
           >
             <ArrowUpDown className="w-4 h-4" />
@@ -2580,14 +2644,14 @@ const GestionProduits = ({
               {/* Capsule principale — Ajouter un produit (style SUIVANT) */}
               <button
                 onClick={onAddProduct}
-                className="flex-1 h-12 bg-black rounded-[18px] flex items-center px-6 transition-all duration-300 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] active:scale-[0.98] shadow-lg overflow-hidden relative"
+                className="flex-1 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-[18px] flex items-center px-6 transition-all duration-300 group hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] active:scale-[0.98] shadow-lg overflow-hidden relative"
               >
-                <div className="absolute inset-0 bg-black group-hover:bg-gray-900 transition-colors duration-300" />
-                <span className="relative z-10 text-white font-black uppercase tracking-[0.3em] text-[10px] ml-2 transition-colors duration-300 group-hover:text-[#c6ff00]">
+                <div className="absolute inset-0 bg-theme-sidebar-active-bg opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
+                <span className="relative z-10 font-black uppercase tracking-[0.3em] text-[10px] ml-2 transition-colors duration-300">
                   Ajouter un produit
                 </span>
-                <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center transition-all duration-300 group-hover:bg-[#c6ff00] group-hover:scale-105">
-                  <Plus size={14} strokeWidth={3} className="text-white group-hover:text-black transition-colors duration-300" />
+                <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:scale-105">
+                  <Plus size={14} strokeWidth={3} className="text-current" />
                 </div>
               </button>
 
@@ -2600,7 +2664,7 @@ const GestionProduits = ({
                     setIsActionsOpen(true);
                   }
                 }}
-                className="w-12 h-12 rounded-[16px] bg-black text-white flex items-center justify-center transition-all duration-300 hover:bg-[#c6ff00] hover:text-black hover:shadow-[0_0_20px_rgba(198,255,0,0.4)] active:scale-90 shadow-lg shrink-0"
+                className="w-12 h-12 rounded-[16px] bg-theme-sidebar-active-bg text-theme-sidebar-active-text flex items-center justify-center transition-all duration-300 hover:opacity-90 hover:shadow-[0_0_20px_rgba(0,0,0,0.2)] active:scale-90 shadow-lg shrink-0"
               >
                 <MoreVertical size={20} strokeWidth={3} />
               </button>
@@ -2738,7 +2802,7 @@ const GestionProduits = ({
             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover/empty:bg-black/5 transition-colors"><Package className="w-10 h-10 text-slate-300" /></div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">Aucun produit</h3>
             <p className="text-slate-500 font-medium mb-8">Commencez par créer votre premier produit</p>
-            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-black transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>Créer un produit</span></button>
+            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>Créer un produit</span></button>
           </div>
         )}
       </div>
@@ -3663,6 +3727,13 @@ export default function ProductManagementClient() {
       
       setPhotoUrl(getSafeImageUrl(editingProduct) || '');
       setVideoUrl(editingProduct.videoUrl || '');
+      
+      // Auto-switch media type if video exists
+      if (editingProduct.videoUrl) {
+        setMediaType('video');
+      } else {
+        setMediaType('photo');
+      }
 
       // Handle PDF (Fiche Technique) - restore saved URL
       setPdfUrl(editingProduct.pdfUrl || '');
@@ -3873,7 +3944,7 @@ export default function ProductManagementClient() {
                       <button 
                         type="submit"
                         disabled={isAuthenticating}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
                       >
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -3951,7 +4022,7 @@ export default function ProductManagementClient() {
                     <button 
                       type="submit"
                       disabled={isAuthenticating}
-                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
                     >
                       {isAuthenticating ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -4031,7 +4102,7 @@ export default function ProductManagementClient() {
                       <button 
                         type="submit"
                         disabled={isAuthenticating}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
                       >
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -4081,17 +4152,17 @@ export default function ProductManagementClient() {
                     onClick={() => handlePageChange(tab.id as any)}
                     className={cn(
                       "relative flex-1 md:flex-none flex items-center justify-center gap-2 md:gap-3 px-2 md:px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-tighter md:tracking-widest",
-                      isActive ? "text-white" : "text-slate-400 hover:text-slate-700"
+                      isActive ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
                     )}
                   >
                     {isActive && (
                       <motion.span
                         layoutId="nav-bubble"
-                        className="absolute inset-0 z-10 bg-black rounded-xl shadow-lg border border-black"
+                        className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
                         transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                       />
                     )}
-                    <tab.icon className={cn("w-4 h-4 z-20 transition-colors", isActive ? "text-[#c6ff00]" : "text-slate-400")} />
+                    <tab.icon className={cn("w-4 h-4 z-20 transition-colors", isActive ? "text-theme-sidebar-active-text" : "text-slate-400")} />
                     <span className="z-20 hidden md:inline-block whitespace-nowrap">{tab.label}</span>
                   </button>
                 );
@@ -4277,7 +4348,7 @@ export default function ProductManagementClient() {
                     setSelectedChars(prev => [...prev, { id: newChar.id, value: newChar.options[0] }]);
                     setAiSuggestion(null);
                   }}
-                  className="flex-1 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-black transition-colors shadow-lg shadow-blue-600/20"
+                  className="flex-1 py-3.5 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl font-bold hover:opacity-90 transition-colors shadow-lg"
                 >
                   Oui, ajouter
                 </button>
@@ -4348,7 +4419,7 @@ export default function ProductManagementClient() {
                           className={cn(
                             "flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left group",
                             isSelected 
-                              ? "bg-black border-black shadow-xl" 
+                              ? "bg-theme-sidebar-active-bg border-theme-sidebar-active-bg shadow-xl" 
                               : "bg-slate-50 border-slate-100 hover:border-slate-200 hover:bg-white"
                           )}
                         >
@@ -4356,19 +4427,19 @@ export default function ProductManagementClient() {
                             "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
                             isSelected ? "bg-white/10" : "bg-white shadow-sm"
                           )}>
-                            <Icon className={cn("w-6 h-6", isSelected ? "text-[#c6ff00]" : "text-slate-400")} />
+                            <Icon className={cn("w-6 h-6", isSelected ? "text-theme-sidebar-active-text" : "text-slate-400")} />
                           </div>
                           <div>
-                            <div className={cn("text-xs font-black uppercase tracking-widest mb-0.5", isSelected ? "text-white" : "text-slate-900")}>
+                            <div className={cn("text-xs font-black uppercase tracking-widest mb-0.5", isSelected ? "text-theme-sidebar-active-text" : "text-slate-900")}>
                               {char.name}
                             </div>
-                            <div className={cn("text-[10px] font-bold", isSelected ? "text-white/40" : "text-slate-400")}>
+                            <div className={cn("text-[10px] font-bold", isSelected ? "text-theme-sidebar-active-text/40" : "text-slate-400")}>
                               {char.options.length} options disponibles
                             </div>
                           </div>
                           {isSelected && (
-                            <div className="ml-auto w-6 h-6 bg-[#c6ff00] rounded-full flex items-center justify-center shadow-lg">
-                              <Check className="w-4 h-4 text-black" />
+                            <div className="ml-auto w-6 h-6 bg-theme-sidebar-active-bg rounded-full flex items-center justify-center shadow-lg border border-white/20">
+                              <Check className="w-4 h-4 text-theme-sidebar-active-text" />
                             </div>
                           )}
                         </button>
@@ -4401,9 +4472,9 @@ export default function ProductManagementClient() {
                       setShowCharPanel(false);
                       setTempSelectedChars([]);
                     }}
-                    className="px-8 h-12 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-black/20 hover:bg-slate-800 transition-all disabled:opacity-30 flex items-center gap-2"
+                    className="px-8 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-black/20 hover:opacity-90 transition-all disabled:opacity-30 flex items-center gap-2"
                   >
-                    <Plus className="w-4 h-4 text-[#c6ff00]" /> Ajouter à la fiche
+                    <Plus className="w-4 h-4 text-theme-sidebar-active-text" /> Ajouter à la fiche
                   </button>
                 </div>
               </div>

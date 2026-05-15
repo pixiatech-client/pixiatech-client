@@ -103,9 +103,11 @@
         },
         "rental": {
             "title": "Rental period",
-            "description": "Set your dates and times for an accurate estimate.",
+            "description": "Set your event dates and times for an accurate estimate.",
             "datesLabel": "Rental dates",
             "hoursLabel": "Hours",
+            "startTime": "Start time",
+            "endTime": "End time",
             "to": "to",
             "pickRange": "Choose a date range"
         },

@@ -286,8 +286,8 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                                     <p className="text-[10px] text-gray-500">{opt.description}</p>
                                   </div>
                                 </div>
-                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${template === opt.value ? 'border-blue-500' : 'border-gray-600'}`}>
-                                  {template === opt.value && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${template === opt.value ? 'border-theme-sidebar-active-bg' : 'border-gray-600'}`}>
+                                  {template === opt.value && <div className="w-2 h-2 rounded-full bg-theme-sidebar-active-bg" />}
                                 </div>
                               </div>
                             ))}
@@ -319,7 +319,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                         <button
                           type="submit"
                           disabled={isSubmitting || !name || !template}
-                          className="w-full py-3.5 bg-white text-black hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed rounded-2xl font-black uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-2"
+                          className="w-full py-3.5 bg-theme-sidebar-active-bg text-theme-sidebar-active-text hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed rounded-2xl font-black uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-2"
                         >
                           {isSubmitting ? (
                             <Loader2 size={16} className="animate-spin" />

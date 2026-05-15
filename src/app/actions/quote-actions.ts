@@ -137,6 +137,9 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
     }
   });
 
+  console.log(`[Email] Preparing to send to: ${recipientEmail}`);
+  console.log(`[Email] Using baseUrl: ${safeBaseUrl}`);
+
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; text-align: center; padding: 40px; background-color: #f4f4f4; border-radius: 20px;">
       <div style="background-color: white; padding: 40px; border-radius: 30px; max-width: 500px; margin: 0 auto; shadow: 0 10px 25px rgba(0,0,0,0.05);">
@@ -157,17 +160,23 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `"PixiaTech" <${process.env.SMTP_USER}>`,
-    to: recipientEmail,
-    subject: t.email.subject,
-    html: emailHtml,
-    attachments: [{
-      filename: 'logo.png',
-      path: logoSource,
-      cid: 'pixiatech-logo' // Same CID value as in the html img src
-    }]
-  });
+  try {
+    const result = await transporter.sendMail({
+      from: `"PixiaTech" <${process.env.SMTP_USER}>`,
+      to: recipientEmail,
+      subject: t.email.subject,
+      html: emailHtml,
+      attachments: [{
+        filename: 'logo.png',
+        path: logoSource,
+        cid: 'pixiatech-logo' // Same CID value as in the html img src
+      }]
+    });
+    console.log(`[Email] Sent successfully! MessageId: ${result.messageId}`);
+  } catch (error) {
+    console.error(`[Email] Error sending email to ${recipientEmail}:`, error);
+    throw error; // Re-throw to be caught by createQuoteRequest
+  }
 }
 
 async function createQuoteDocument(
@@ -300,10 +309,14 @@ export async function createQuoteRequest(userId: string, formData: FormValues, q
 
     if (id) {
         if (emailVerificationEnabled) {
-            // Trigger email sending in background (don't await)
-            // Note: In some serverless environments, this might need a more robust solution like a queue, 
-            // but for immediate UI responsiveness as requested, we fire and forget.
-            sendQuoteEmail(formData.email, token, quoteDetails.lang || 'fr').catch(e => console.error("Background email error:", e));
+            try {
+                await sendQuoteEmail(formData.email, token, quoteDetails.lang || 'fr');
+            } catch (e) {
+                console.error("Critical email error:", e);
+                // On peut décider de retourner une erreur ici ou de laisser l'utilisateur voir le message de succès
+                // Pour le débug, on va retourner l'erreur
+                return { id, success: false, requiresVerification: true, error: "Erreur lors de l'envoi de l'email de confirmation. Veuillez vérifier la configuration SMTP." };
+            }
         }
         return { id, success: true, requiresVerification: emailVerificationEnabled };
     }

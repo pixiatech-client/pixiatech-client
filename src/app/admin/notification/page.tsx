@@ -187,7 +187,7 @@ function NotificationPage() {
                           onClick={() => setActiveCategory(filter.id)}
                           className={`group flex items-center justify-between rounded-xl px-4 py-2.5 text-sm font-bold transition-all whitespace-nowrap lg:whitespace-normal ${
                             isActive 
-                              ? "bg-black text-white shadow-lg" 
+                              ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text shadow-lg" 
                               : "text-gray-600 hover:bg-white hover:shadow-sm"
                           }`}
                         >
@@ -247,7 +247,7 @@ function NotificationPage() {
                           <Link 
                             href={notif.href || '#'}
                             onClick={() => !notif.read && markAsRead(notif.id)}
-                            className="text-xs font-black uppercase tracking-widest text-blue-600 hover:text-black transition-colors"
+                            className="text-xs font-black uppercase tracking-widest text-blue-600 hover:text-theme-sidebar-active-bg transition-colors"
                           >
                             Détails
                           </Link>

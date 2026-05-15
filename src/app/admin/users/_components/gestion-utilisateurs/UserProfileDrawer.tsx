@@ -136,7 +136,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onClose(); }}
-                  className="absolute top-4 left-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-all"
+                  className="absolute top-4 left-4 p-2 bg-black/20 hover:bg-theme-sidebar-active-bg backdrop-blur-md rounded-full text-white transition-all"
                 >
                   <X size={20} />
                 </button>
@@ -149,7 +149,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                     </div>
                   </div>
                 )}
-                <div className="absolute bottom-4 right-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-all flex items-center gap-2">
+                <div className="absolute bottom-4 right-4 p-2 bg-black/20 hover:bg-theme-sidebar-active-bg backdrop-blur-md rounded-full text-white transition-all flex items-center gap-2">
                   <Camera size={20} />
                   <span className="text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Changer l'arrière-plan</span>
                 </div>
@@ -364,12 +364,12 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                 <div className="mt-12">
                   <button
                     type="submit"
-                    className="w-full py-4 bg-blue-600 hover:bg-black text-white rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-3 group active:scale-[0.98]"
+                    className="w-full py-4 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-2xl font-black uppercase tracking-widest text-sm transition-all shadow-xl hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-3 group"
                   >
                     {isAddMode ? (
-                      <PlusCircle size={18} className="text-white transition-colors" />
+                      <PlusCircle size={18} className="text-current" />
                     ) : (
-                      <Save size={18} className="text-white transition-colors" />
+                      <Save size={18} className="text-current" />
                     )}
                     {isAddMode ? 'Ajouter' : 'Sauvegarder'}
                   </button>

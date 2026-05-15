@@ -358,8 +358,12 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           <span class="font-bold">Du ${formattedStart} au ${formattedEnd}</span>
         </div>
         <div class="flex items-center gap-2">
-          <span class="opacity-70">Horaires:</span>
-          <span class="font-bold">${configState.rentalStartTime || '08:00'} à ${configState.rentalEndTime || '18:00'}</span>
+          <span class="opacity-70">${t('bot.startTime')}:</span>
+          <span class="font-bold">${configState.rentalStartTime || '08:00'}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="opacity-70">${t('bot.endTime')}:</span>
+          <span class="font-bold">${configState.rentalEndTime || '18:00'}</span>
         </div>
       </div>
     `;
