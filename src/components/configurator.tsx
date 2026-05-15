@@ -363,7 +363,7 @@ export function Configurator({
   }
   
   return (
-    <Card className="w-full max-w-lg shadow-lg flex flex-col h-full rounded-xl">
+    <Card className="w-full max-w-lg shadow-lg flex flex-col rounded-xl">
       <CardContent className="space-y-3 pt-6 flex flex-col relative">
         <div className="space-y-2 px-2">
           <Label className="text-muted-foreground font-semibold block text-center uppercase tracking-wider text-sm">

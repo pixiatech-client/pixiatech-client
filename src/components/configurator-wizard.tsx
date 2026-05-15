@@ -270,11 +270,11 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
   };
 
   return (
-    <div className="flex flex-col md:flex-row flex-1 bg-white h-full overflow-hidden">
+    <div className="flex flex-col md:flex-row flex-1 bg-white md:h-full md:overflow-hidden">
       <div className="flex-1 flex flex-col min-w-0 h-full relative">
         <main
           ref={mainRef}
-          className="flex-1 overflow-y-auto flex flex-col bg-white relative scrollbar-hide overflow-x-hidden overscroll-contain"
+          className="flex-1 md:overflow-y-auto flex flex-col bg-white relative scrollbar-hide overflow-x-hidden"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div

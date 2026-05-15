@@ -320,7 +320,7 @@ export function SuccessView({ quoteId, onNewQuote, initialEmail }: SuccessViewPr
   }
 
   return (
-    <div className="w-full min-h-screen flex items-center justify-center p-4 bg-[#FAFAFA] font-sans overflow-hidden pb-8 lg:pb-[20vh]">
+    <div className="w-full min-h-screen flex items-center justify-center p-4 bg-[#FAFAFA] font-sans pb-8 lg:pb-[20vh]">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
