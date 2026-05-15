@@ -7,7 +7,7 @@ import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck,
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -24,6 +24,7 @@ const PdfContent = lazy(() => import('../../pdf-settings/page'));
 const EmergencyContent = lazy(() => import('../emergency/page'));
 const MessagingContent = lazy(() => import('../messaging/page'));
 const PersonalizationContent = lazy(() => import('../personalization/page'));
+const ThemesContent = lazy(() => import('../themes/page'));
 
 function LoadingFallback() {
     return (
@@ -44,6 +45,7 @@ const tabsConfig: TabItem[] = [
     { id: 'images', label: 'Images', icon: ImageIcon },
     { id: 'content', label: 'Contenu', icon: FileText },
     { id: 'personalization', label: 'Personnalisation', icon: Palette },
+    { id: 'appearance', label: 'Apparence', icon: Palette },
     { id: 'wizard', label: 'Wizard', icon: Wand2 },
     { id: 'livraison', label: 'Livraison', icon: Truck },
     { id: 'main-doeuvre', label: 'Main d\'œuvre', icon: HardHat },
@@ -121,6 +123,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <EmergencyContent />;
             case 'personalization':
                 return <PersonalizationContent />;
+            case 'appearance':
+                return <ThemesContent />;
             default:
                 return <GeneralContent />;
         }

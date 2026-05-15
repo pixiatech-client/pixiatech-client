@@ -76,6 +76,18 @@
     --theme-btn-secondary-hover: #e2e8f0;
   }
 
+     /* Admin specific overrides to respect dynamic theme */
+     #admin-root .bg-white:not(.static-white) {
+       background-color: var(--theme-card-bg) !important;
+     }
+     #admin-root .border-gray-100,
+     #admin-root .border-gray-200,
+     #admin-root .border-slate-200,
+     #admin-root .border-zinc-200 {
+       border-color: var(--theme-card-border) !important;
+     }
+  }
+
   .dark {
     --background: 0 0% 5%;
     --foreground: 210 40% 98%;
@@ -100,7 +112,6 @@
      /* Admin specific */
     --admin-background: 0 0% 5%;
   }
-}
 
 @layer base {
   * {

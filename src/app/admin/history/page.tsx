@@ -150,7 +150,7 @@ useEffect(() => {
 
     if (isLoading) {
         return (
-            <Card>
+            <Card className="bg-theme-card border-theme-card-border text-theme-card-text">
                 <CardHeader>
                     <CardTitle>Historique des activités</CardTitle>
                     <CardDescription>Chargement de l’historique…</CardDescription>
@@ -163,7 +163,7 @@ useEffect(() => {
     }
     
     return (
-     <Card>
+     <Card className="bg-theme-card border-theme-card-border text-theme-card-text">
       <CardHeader>
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <div>
@@ -216,29 +216,29 @@ useEffect(() => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="border rounded-lg">
+        <div className="border border-theme-card-border rounded-2xl overflow-hidden shadow-inner bg-theme-app/50">
             <ScrollArea className="h-[60vh]">
                 {paginatedHistory.length > 0 ? (
                     paginatedHistory.map((entry, index) => (
-                        <div key={index} className="grid grid-cols-[auto_1fr_auto] items-start gap-4 p-4 border-b last:border-b-0">
-                            <Avatar className="h-10 w-10">
+                        <div key={index} className="grid grid-cols-[auto_1fr_auto] items-start gap-4 p-5 border-b border-theme-card-border last:border-b-0 hover:bg-theme-hover transition-colors">
+                            <Avatar className="h-10 w-10 border border-theme-card-border shadow-sm">
                                 <AvatarImage src={entry.userPhotoUrl} />
-                                <AvatarFallback>{entry.userName.charAt(0)}</AvatarFallback>
+                                <AvatarFallback className="bg-theme-app text-theme-text">{entry.userName.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="text-sm">
-                                <p>
-                                    <span className="font-semibold">{entry.userName}</span>
-                                    <span className="text-muted-foreground"> a modifié le statut de </span>
-                                    <Link href={`/admin/quotes/${entry.quoteId}`} className="font-semibold text-primary hover:underline">
+                                <p className="text-theme-card-text">
+                                    <span className="font-bold">{entry.userName}</span>
+                                    <span className="opacity-60"> a modifié le statut de </span>
+                                    <Link href={`/admin/quotes/${entry.quoteId}`} className="font-bold text-aura-accent hover:underline">
                                        l'estimation {entry.quoteName}
                                     </Link>
-                                    <span className="text-muted-foreground"> vers </span>
-                                    <span className="font-semibold">{translateStatus(entry.details)}</span>.
+                                    <span className="opacity-60"> vers </span>
+                                    <span className="font-bold">{translateStatus(entry.details)}</span>.
                                 </p>
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger>
-                                            <p className="text-xs text-muted-foreground cursor-help">
+                                            <p className="text-[10px] font-bold uppercase tracking-widest text-theme-card-text/40 mt-1 cursor-help">
                                                 {formatDistanceToNow(new Date(entry.timestamp), { addSuffix: true, locale: fr })}
                                             </p>
                                         </TooltipTrigger>
@@ -248,9 +248,9 @@ useEffect(() => {
                                     </Tooltip>
                                  </TooltipProvider>
                             </div>
-                            <div className="text-right text-xs text-muted-foreground">
+                            <div className="text-right text-[10px] font-bold uppercase tracking-tighter text-theme-card-text/50">
                                 <p>{format(new Date(entry.timestamp), 'dd/MM/yyyy')}</p>
-                                <p className="font-medium">{format(new Date(entry.timestamp), 'HH:mm')}</p>
+                                <p className="text-theme-card-text/80">{format(new Date(entry.timestamp), 'HH:mm')}</p>
                             </div>
                         </div>
                     ))

@@ -237,20 +237,21 @@ export type ThemeSettings = {
   accentPrimary: string;
   pageBg: string;
   navBg: string;
+  navText: string;
   sidebarBg: string;
   sidebarText: string;
   sidebarBorder: string;
+  sidebarAccent: string;
   sidebarActiveBg: string;
   sidebarActiveText: string;
-  navBg: string;
-  navText: string;
-}
+};
 
 export type UserProfile = {
   uid: string;
   email: string;
   displayName: string;
   phone?: string;
+  description?: string;
   photoURL?: string;
   backgroundImage?: string;
   role: string;

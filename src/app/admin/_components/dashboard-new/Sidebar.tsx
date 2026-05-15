@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
@@ -84,7 +86,7 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/notification': 'notifications',
 };
 
-export type SettingsSection = 'general' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'hint-bubble';
+export type SettingsSection = 'general' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'hint-bubble' | 'messaging';
 
 interface SidebarProps {
   state: SidebarState;
@@ -295,7 +297,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const sidebarClasses = `
     admin-sidebar fixed lg:sticky top-0 z-[1000] min-h-screen transition-colors duration-300 flex flex-col
     bg-theme-sidebar-bg text-theme-sidebar-text border-theme-sidebar-border
-    border-r overflow-hidden
+    border-r
   `;
 
   const itemClasses = (isActive: boolean) => `
@@ -339,8 +341,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
         x: isHidden ? '-100%' : 0
       }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className={sidebarClasses}
+      className={`${sidebarClasses} ${isHidden ? 'overflow-hidden pointer-events-none' : 'overflow-visible pointer-events-auto'}`}
     >
+      {/* Floating Sidebar Controls (Stacked with matching theme backgrounds - No shadows, No borders) */}
+      {!isHidden && (
+        <div className="absolute right-[-18px] top-[195px] flex flex-col gap-3 z-[101]">
+          {/* Hide Button Container */}
+          <div className="p-1 rounded-full bg-theme-sidebar-bg">
+            <button
+              onClick={hideSidebar}
+              onMouseEnter={() => setHoveredItem('control-hide')}
+              onMouseLeave={() => setHoveredItem(null)}
+              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-white hover:bg-gray-50'
+              } active:scale-95 group relative`}
+              title="Masquer le menu"
+            >
+              <EyeOff className={`w-3.5 h-3.5 transition-all duration-300 text-amber-500/80 ${
+                hoveredItem === 'control-hide' ? 'text-amber-500' : ''
+              }`} />
+            </button>
+          </div>
+
+          {/* Reduce/Expand Button Container */}
+          <div className="p-1 rounded-full bg-theme-sidebar-bg">
+            <button
+              onClick={toggleState}
+              onMouseEnter={() => setHoveredItem('control-state')}
+              onMouseLeave={() => setHoveredItem(null)}
+              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-white hover:bg-gray-50'
+              } active:scale-95 group relative`}
+              title={isCompact ? "Agrandir le menu" : "Réduire le menu"}
+            >
+              {isCompact ? (
+                <ChevronRight className={`w-3.5 h-3.5 transition-all duration-300 text-blue-500/80 ${
+                  hoveredItem === 'control-state' ? 'text-blue-500' : ''
+                }`} />
+              ) : (
+                <ChevronLeft className={`w-3.5 h-3.5 transition-all duration-300 text-blue-500/80 ${
+                  hoveredItem === 'control-state' ? 'text-blue-500' : ''
+                }`} />
+              )}
+            </button>
+          </div>
+        </div>
+      )}
       <div className={`${isCompact ? 'w-20' : 'w-64'} flex-1 flex flex-col transition-all duration-300`}>
         {/* Header / Logo */}
         <div className="p-6 flex items-center justify-between relative group/logo">
@@ -673,118 +719,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </Reorder.Group>
           {/* Footer Actions (moved inside scroll container) */}
           <div className={`mt-6 pt-4 border-t ${isDark ? 'border-white/5' : 'border-gray-100'} space-y-4`}>
-          {/* Theme Toggle */}
-          <div className={`flex ${isCompact ? 'flex-col' : 'flex-row'} items-center gap-2 p-1 rounded-xl ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
-            <div className="relative flex-1 w-full">
-              <button
-                onClick={() => setTheme('light')}
-                onMouseEnter={() => setHoveredItem('theme-light')}
-                onMouseLeave={() => setHoveredItem(null)}
-                className={`w-full flex items-center justify-center py-2 rounded-lg transition-all group ${theme === 'light'
-                  ? 'bg-white text-yellow-500 shadow-sm'
-                  : 'text-gray-400 hover:text-yellow-500 hover:bg-yellow-50/10'
-                  }`}
-              >
-                <Sun className={`w-4 h-4 transition-all duration-300 ${theme === 'light' || hoveredItem === 'theme-light'
-                  ? 'drop-shadow-[0_0_8px_rgba(234,179,8,0.6)] text-yellow-500'
-                  : ''
-                  }`} />
-              </button>
-              {isCompact && hoveredItem === 'theme-light' && (
-                <motion.div
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 20 }}
-                  className={`absolute left-full ml-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap z-[100] shadow-xl ${isDark ? 'bg-white text-black' : 'bg-black text-white'
-                    }`}
-                >
-                  Mode Clair
-                  <div className={`absolute left-[-4px] top-1/2 -translate-y-1/2 border-y-[6px] border-y-transparent border-r-[6px] ${isDark ? 'border-r-white' : 'border-r-black'
-                    }`} />
-                </motion.div>
-              )}
-            </div>
-            <div className="relative flex-1 w-full">
-              <button
-                onClick={() => setTheme('dark')}
-                onMouseEnter={() => setHoveredItem('theme-dark')}
-                onMouseLeave={() => setHoveredItem(null)}
-                className={`w-full flex items-center justify-center py-2 rounded-lg transition-all group ${theme === 'dark'
-                  ? 'bg-[#1a1a1a] text-blue-400 shadow-sm'
-                  : 'text-gray-400 hover:text-blue-400 hover:bg-blue-50/10'
-                  }`}
-              >
-                <Moon className={`w-4 h-4 transition-all duration-300 ${theme === 'dark' || hoveredItem === 'theme-dark'
-                  ? 'drop-shadow-[0_0_8px_rgba(96,165,250,0.6)] text-blue-400'
-                  : ''
-                  }`} />
-              </button>
-              {isCompact && hoveredItem === 'theme-dark' && (
-                <motion.div
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 20 }}
-                  className={`absolute left-full ml-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap z-[100] shadow-xl ${isDark ? 'bg-white text-black' : 'bg-black text-white'
-                    }`}
-                >
-                  Mode Sombre
-                  <div className={`absolute left-[-4px] top-1/2 -translate-y-1/2 border-y-[6px] border-y-transparent border-r-[6px] ${isDark ? 'border-r-white' : 'border-r-black'
-                    }`} />
-                </motion.div>
-              )}
-            </div>
-          </div>
+          {/* Theme/Controls Section Empty as per personalization request */}
 
-          {/* State Toggle & Hide Buttons */}
           <div className="flex flex-col gap-2">
-            <button
-              onClick={toggleState}
-              onMouseEnter={() => isCompact && setHoveredItem('expand-toggle')}
-              onMouseLeave={() => setHoveredItem(null)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-blue-600 hover:bg-blue-50'
-                }`}
-            >
-              {isCompact ? (
-                <>
-                  <ChevronRight className="w-4 h-4 mx-auto" />
-                  {/* Tooltip for Expand */}
-                  {hoveredItem === 'expand-toggle' && (
-                    <motion.div
-                      initial={{ opacity: 0, x: 10 }}
-                      animate={{ opacity: 1, x: 20 }}
-                      className={`absolute left-full ml-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap z-[100] shadow-xl ${isDark ? 'bg-white text-black' : 'bg-black text-white'
-                        }`}
-                    >
-                      Agrandir le menu
-                    </motion.div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <ChevronLeft className="w-4 h-4" />
-                  <span>Réduire le menu</span>
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={hideSidebar}
-              onMouseEnter={() => isCompact && setHoveredItem('hide-toggle')}
-              onMouseLeave={() => setHoveredItem(null)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-semibold group hover:bg-gray-100 text-gray-500`}
-            >
-              <EyeOff className={`${isCompact ? 'w-4 h-4 mx-auto' : 'w-4 h-4'} transition-colors duration-200 group-hover:text-gray-700`} />
-              {!isCompact && <span>Masquer le menu</span>}
-
-              {isCompact && hoveredItem === 'hide-toggle' && (
-                <motion.div
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 20 }}
-                  className={`absolute left-full ml-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap z-[100] shadow-xl bg-gray-800 text-white`}
-                >
-                  Masquer le menu
-                  <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 border-y-[6px] border-y-transparent border-r-[6px] border-r-gray-800" />
-                </motion.div>
-              )}
-            </button>
+            {/* Old State Toggle & Hide Buttons Removed */}
+          </div>
 
             <button
               onClick={onLogout}
@@ -807,7 +746,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </button>
           </div>
-        </div>
         </div>
       </div>
     </motion.aside>

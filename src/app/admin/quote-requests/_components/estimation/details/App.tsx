@@ -596,7 +596,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-white flex flex-col font-sans selection:bg-aura-accent selection:text-white">
+    <div className="min-h-screen bg-transparent text-slate-900 flex flex-col font-sans selection:bg-aura-accent selection:text-white">
       <AnimatePresence>
         {isDrawerOpen && (
           <div className="fixed inset-0 z-[100] flex justify-end">
@@ -605,26 +605,26 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleClose}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-[900px] bg-aura-bg flex flex-col overflow-hidden shadow-[-20px_0_80px_rgba(0,0,0,0.5)] border-l border-aura-border"
+              className="relative w-full max-w-[900px] bg-white flex flex-col overflow-hidden shadow-[-20px_0_80px_rgba(0,0,0,0.15)] border-l border-slate-200"
             >
-              <div className="h-20 md:h-24 border-b border-aura-border flex items-center justify-between px-4 md:px-8 bg-black/60 sticky top-0 z-20 backdrop-blur-xl">
+              <div className="h-20 md:h-24 border-b border-slate-200 flex items-center justify-between px-4 md:px-8 bg-white/90 sticky top-0 z-20 backdrop-blur-xl">
                 <div className="flex items-center gap-2 md:gap-4">
-                  <button onClick={handleClose} className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-white/5 border border-transparent hover:border-aura-border rounded-xl text-aura-text-dim transition-all group shrink-0">
+                  <button onClick={handleClose} className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center hover:bg-slate-50 border border-transparent hover:border-slate-200 rounded-xl text-slate-400 transition-all group shrink-0">
                     <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
                   </button>
                   <div>
-                    <h2 className="text-lg md:text-xl font-display font-bold text-white tracking-tight uppercase truncate max-w-[120px] md:max-w-none">
+                    <h2 className="text-lg md:text-xl font-display font-bold text-slate-900 tracking-tight uppercase truncate max-w-[120px] md:max-w-none">
                       Estimation
                     </h2>
                     <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-[9px] md:text-[10px] text-aura-text-dim font-bold uppercase tracking-widest truncate">
+                      <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">
                         DOSSIER TECHNIQUE
                       </span>
                       {estimation.status && (
@@ -632,7 +632,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             estimation.status === 'processed' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
                               estimation.status === 'in_progress' ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' :
                                 estimation.status === 'sent' ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
-                                  estimation.status === 'archived' ? 'bg-white/10 border-white/20 text-white/40' :
+                                  estimation.status === 'archived' ? 'bg-slate-100 border-slate-200 text-slate-400' :
                                     'bg-amber-500/20 border-amber-500/30 text-amber-400'
                           }`}>
                           {estimation.status === 'returned' ? 'Retourné' :
@@ -662,14 +662,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     {userProfile?.role !== 'supplier' && (
                       <button
                         onClick={() => setIsHistoryPanelOpen(true)}
-                        className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-white/5 border border-aura-border text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all text-white flex items-center gap-1.5 md:gap-2"
+                        className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-slate-100 border border-slate-200 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all text-slate-900 flex items-center gap-1.5 md:gap-2"
                       >
                         <HistoryIcon size={14} className="text-aura-accent" /> <span className="hidden sm:inline">Historique</span>
                       </button>
                     )}
 
                     {(estimation.status === 'archived' || estimation.status === 'trashed') && userProfile?.role !== 'supplier' && (
-                      <div className="flex items-center gap-2 pr-2 border-r border-white/10">
+                      <div className="flex items-center gap-2 pr-2 border-r border-slate-200">
                         <button
                           onClick={async () => {
                             if (!initialEstimation?.id) return;
@@ -717,11 +717,11 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     )}
 
                     {profile === 'client' && userProfile?.role !== 'supplier' && (
-                      <div className="flex items-center gap-1 md:gap-2 pl-1 md:pl-2 border-l border-white/10">
+                      <div className="flex items-center gap-1 md:gap-2 pl-1 md:pl-2 border-l border-slate-200">
                         <button
                           onClick={() => setIsEditMode(!isEditMode)}
                           disabled={estimation.status === 'archived' || estimation.status === 'trashed'}
-                          className={`h-9 md:h-11 px-3 md:px-4 rounded-xl border text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 md:gap-2 ${isEditMode ? 'bg-amber-500/20 border-amber-500/50 text-amber-500' : 'bg-white/5 border-aura-border text-aura-text-dim hover:text-white'} ${(estimation.status === 'archived' || estimation.status === 'trashed') ? 'opacity-30 cursor-not-allowed' : ''}`}
+                          className={`h-9 md:h-11 px-3 md:px-4 rounded-xl border text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 md:gap-2 ${isEditMode ? 'bg-amber-500/10 border-amber-500/30 text-amber-600' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-900'} ${(estimation.status === 'archived' || estimation.status === 'trashed') ? 'opacity-30 cursor-not-allowed' : ''}`}
                         >
                           <Pencil size={14} /> <span className="hidden sm:inline">{isEditMode ? 'Quitter' : 'Éditer'}</span>
                         </button>
@@ -729,7 +729,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         <button
                           onClick={handleDownloadPdf}
                           disabled={isPdfLoading}
-                          className="w-9 h-9 md:w-11 md:h-11 rounded-xl bg-white/5 border border-aura-border hover:bg-white/10 transition-all text-white flex items-center justify-center disabled:opacity-50"
+                          className="w-9 h-9 md:w-11 md:h-11 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all text-slate-900 flex items-center justify-center disabled:opacity-50"
                         >
                           {isPdfLoading ? <Loader2 size={14} className="animate-spin text-aura-accent" /> : <Download size={14} className="text-aura-accent md:w-4 md:h-4" />}
                         </button>
@@ -760,20 +760,20 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                 <div className="space-y-4 md:space-y-6 w-full">
                   <div className="flex justify-center w-full">
-                    <div className="flex p-1 bg-black/40 border border-aura-border rounded-xl shadow-2xl w-full sm:w-auto">
+                    <div className="flex p-1 bg-slate-100 border border-slate-200 rounded-xl shadow-sm w-full sm:w-auto">
                       {userProfile?.role !== 'supplier' && (
                         <button
                           onClick={() => { setProfile('client'); addHistory('Switch Profil: Client'); }}
-                          className={`flex-1 sm:flex-none px-2 sm:px-8 py-2 md:py-2.5 rounded-lg text-[9px] md:text-xs font-bold uppercase transition-all tracking-widest flex justify-center items-center gap-1.5 md:gap-2 ${profile === 'client' ? 'bg-aura-accent text-white shadow-lg' : 'text-aura-text-dim hover:text-white'}`}
+                          className={`flex-1 sm:flex-none px-2 sm:px-8 py-2 md:py-2.5 rounded-lg text-[9px] md:text-xs font-bold uppercase transition-all tracking-widest flex justify-center items-center gap-1.5 md:gap-2 ${profile === 'client' ? 'bg-white text-slate-900 shadow-md border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                         >
-                          <User size={14} /> <span className="truncate">Profil Client</span>
+                          <User size={14} className={profile === 'client' ? "text-aura-accent" : ""} /> <span className="truncate">Profil Client</span>
                         </button>
                       )}
                       <button
                         onClick={() => { setProfile('supplier'); addHistory('Switch Profil: Fournisseur (Vérification)'); }}
-                        className={`flex-1 sm:flex-none px-2 sm:px-8 py-2 md:py-2.5 rounded-lg text-[9px] md:text-xs font-bold uppercase transition-all tracking-widest flex justify-center items-center gap-1.5 md:gap-2 ${profile === 'supplier' ? 'bg-aura-accent text-white shadow-lg' : 'text-aura-text-dim hover:text-white'}`}
+                        className={`flex-1 sm:flex-none px-2 sm:px-8 py-2 md:py-2.5 rounded-lg text-[9px] md:text-xs font-bold uppercase transition-all tracking-widest flex justify-center items-center gap-1.5 md:gap-2 ${profile === 'supplier' ? 'bg-white text-slate-900 shadow-md border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                       >
-                        <Truck size={14} /> <span className="truncate">Profil Fournisseur</span>
+                        <Truck size={14} className={profile === 'supplier' ? "text-aura-accent" : ""} /> <span className="truncate">Profil Fournisseur</span>
                       </button>
                     </div>
                   </div>
@@ -790,60 +790,60 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2">
                         <User size={14} /> INFORMATIONS DU DOSSIER
                       </h3>
-                      <div className="glass-card p-6 grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                      <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 grid grid-cols-1 md:grid-cols-2 gap-6 relative">
                         <div className="space-y-1">
-                          <span className="text-[10px] text-aura-text-dim font-bold uppercase tracking-widest">Nom du Client</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Nom du Client</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
                             value={estimation.client.name}
                             onChange={(e) => updateClient('name', e.target.value)}
-                            className="neon-input w-full py-2 bg-white/5 font-display font-black uppercase"
+                            className="neon-input w-full py-2 bg-slate-50 border-slate-200 text-slate-900 font-display font-black uppercase"
                           />
                         </div>
                         <div className="space-y-1">
-                          <span className="text-[10px] text-aura-text-dim font-bold uppercase tracking-widest">N° Estimation</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">N° Estimation</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
                             value={estimation.id || ''}
                             onChange={() => { }}
-                            className="neon-input w-full py-2 bg-white/5 font-mono font-bold uppercase cursor-not-allowed"
+                            className="neon-input w-full py-2 bg-slate-50 border-slate-200 text-slate-900 font-mono font-bold uppercase cursor-not-allowed"
                           />
                         </div>
                         <div className="space-y-1">
-                          <span className="text-[10px] text-aura-text-dim font-bold uppercase tracking-widest">Email</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Email</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
                             value={estimation.client.email}
                             onChange={(e) => updateClient('email', e.target.value)}
-                            className="neon-input w-full py-2 bg-white/5 font-mono"
+                            className="neon-input w-full py-2 bg-slate-50 border-slate-200 text-slate-900 font-mono"
                           />
                         </div>
                         <div className="space-y-1">
-                          <span className="text-[10px] text-aura-text-dim font-bold uppercase tracking-widest">Téléphone</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Téléphone</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
                             value={estimation.client.phone}
                             onChange={(e) => updateClient('phone', e.target.value)}
-                            className="neon-input w-full py-2 bg-white/5 font-mono font-bold"
+                            className="neon-input w-full py-2 bg-slate-50 border-slate-200 text-slate-900 font-mono font-bold"
                           />
                         </div>
                         <div className="md:col-span-2 space-y-1">
-                          <span className="text-[10px] text-aura-text-dim font-bold uppercase tracking-widest">Adresse de livraison</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Adresse de livraison</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
                             value={estimation.client.address || ''}
                             onChange={(e) => updateClient('address', e.target.value)}
-                            className="neon-input w-full py-2 bg-white/5 uppercase"
+                            className="neon-input w-full py-2 bg-slate-50 border-slate-200 text-slate-900 uppercase"
                           />
                         </div>
 
-                        <div className="md:col-span-2 pt-6 mt-4 border-t border-white/5 space-y-4">
-                          <div className="flex flex-wrap gap-6 bg-black/40 p-4 rounded-xl border border-white/5">
+                        <div className="md:col-span-2 pt-6 mt-4 border-t border-slate-200 space-y-4">
+                          <div className="flex flex-wrap gap-6 bg-slate-100 p-4 rounded-xl border border-slate-200">
                             <label className="flex items-center gap-3 cursor-pointer group">
                               <div className="relative inline-flex items-center h-5 w-10">
                                 <input
@@ -852,9 +852,9 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   checked={estimation.hideCommentsFromSupplier}
                                   onChange={() => setEstimation({ ...estimation, hideCommentsFromSupplier: !estimation.hideCommentsFromSupplier })}
                                 />
-                                <div className="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-aura-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 transition-all duration-300"></div>
+                                <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-aura-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 transition-all duration-300"></div>
                               </div>
-                              <span className="text-[9px] font-bold uppercase tracking-widest text-aura-text-dim group-hover:text-white transition-colors uppercase">Masquer notes au fournisseur</span>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Masquer notes au fournisseur</span>
                             </label>
 
                             <label className="flex items-center gap-3 cursor-pointer group">
@@ -865,9 +865,9 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   checked={estimation.hidePhotoFromSupplier}
                                   onChange={() => setEstimation({ ...estimation, hidePhotoFromSupplier: !estimation.hidePhotoFromSupplier })}
                                 />
-                                <div className="w-10 h-5 bg-white/10 rounded-full peer peer-checked:bg-aura-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 transition-all duration-300"></div>
+                                <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-aura-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 transition-all duration-300"></div>
                               </div>
-                              <span className="text-[9px] font-bold uppercase tracking-widest text-aura-text-dim group-hover:text-white transition-colors uppercase">Masquer photo au fournisseur</span>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Masquer photo au fournisseur</span>
                             </label>
                           </div>
                         </div>
@@ -887,8 +887,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2">
                         <ImageIcon size={14} /> PHOTO DU LIEU
                       </h3>
-                      <div className="glass-card p-6 relative group">
-                        <div className="relative h-[300px] rounded-2xl overflow-hidden border border-white/10 group/img bg-white/5">
+                      <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 relative group">
+                        <div className="relative h-[300px] rounded-2xl overflow-hidden border border-slate-200 group/img bg-slate-100">
                           {estimation.client.sitePhoto ? (
                             <>
                               <img
@@ -900,7 +900,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover/img:opacity-100 transition-opacity">
                                 <button
                                   onClick={() => setFullscreenPhoto(estimation.client.sitePhoto!)}
-                                  className="w-10 h-10 flex items-center justify-center bg-black/60 backdrop-blur rounded-xl text-white border border-white/10 hover:bg-aura-accent transition-all hover:scale-110 shadow-2xl"
+                                  className="w-10 h-10 flex items-center justify-center bg-white/90 backdrop-blur rounded-xl text-slate-900 border border-slate-200 hover:bg-aura-accent hover:text-white transition-all hover:scale-110 shadow-xl"
                                 >
                                   <Maximize2 size={18} />
                                 </button>
@@ -910,7 +910,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                       setEstimation({ ...estimation, client: { ...estimation.client, sitePhoto: undefined } });
                                       addHistory("Suppression photo du site");
                                     }}
-                                    className="w-10 h-10 flex items-center justify-center bg-red-500/80 backdrop-blur rounded-xl text-white border border-red-500/20 hover:bg-red-600 transition-all hover:scale-110 shadow-2xl"
+                                    className="w-10 h-10 flex items-center justify-center bg-red-500/10 backdrop-blur rounded-xl text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition-all hover:scale-110 shadow-xl"
                                   >
                                     <Trash2 size={18} />
                                   </button>
@@ -918,8 +918,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </div>
                             </>
                           ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-aura-text-dim text-xs gap-3">
-                              <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center border border-dashed border-white/10">
+                            <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 text-xs gap-3">
+                              <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center border border-dashed border-slate-200">
                                 <ImageIcon size={32} />
                               </div>
                               <span className="font-bold uppercase tracking-widest opacity-50 text-[10px]">Aucun visuel disponible</span>
@@ -936,20 +936,20 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     <motion.section
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="p-6 glass-card bg-aura-accent/5 border-aura-accent/20"
+                      className="p-6 bg-slate-50 border border-slate-200 rounded-[2rem]"
                     >
                       <h4 className="text-[10px] font-bold text-aura-accent uppercase mb-2 flex items-center gap-2">
                         <StickyNote size={12} /> NOTES DU CLIENT
                       </h4>
                       {estimation.client.notes && (
-                        <p className="text-xs text-white/90 italic leading-relaxed whitespace-pre-wrap mb-4">{estimation.client.notes}</p>
+                        <p className="text-xs text-slate-700 italic leading-relaxed whitespace-pre-wrap mb-4">{estimation.client.notes}</p>
                       )}
                       {profile === 'client' && isEditMode && (
-                        <div className={`${estimation.client.notes ? 'mt-4 pt-4 border-t border-white/5' : ''}`}>
+                        <div className={`${estimation.client.notes ? 'mt-4 pt-4 border-t border-slate-200' : ''}`}>
                           <textarea
                             value={estimation.client.notes || ''}
                             onChange={(e) => updateClient('notes', e.target.value)}
-                            className="neon-input w-full bg-black/40 p-4 text-xs resize-none"
+                            className="neon-input w-full bg-slate-100 p-4 text-xs resize-none text-slate-900"
                             rows={4}
                             placeholder="Écrivez vos notes ici..."
                           />
@@ -966,7 +966,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         <Box size={14} /> {profile === 'supplier' ? 'Dossier Technique Produit' : 'Lignes de Produits'}
                       </h3>
                       {estimation.products.length > 0 && (
-                        <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] font-black text-white/40 uppercase tracking-widest">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[9px] font-black text-slate-400 uppercase tracking-widest">
                           {estimation.products.length} {estimation.products.length > 1 ? 'Produits' : 'Produit'}
                         </span>
                       )}
@@ -980,10 +980,10 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                   <div className="space-y-6">
                     {estimation.products.map((p, index) => (
-                      <div key={p.id} className="glass-card overflow-hidden transition-all duration-300 border border-white/5 hover:border-aura-accent/30 group relative">
+                      <div key={p.id} className="bg-slate-50 border border-slate-200 rounded-[2.5rem] overflow-hidden transition-all duration-300 hover:border-aura-accent/30 group relative">
                         {/* Line Number Badge */}
-                        <div className="absolute top-0 right-0 p-8 pointer-events-none opacity-10 group-hover:opacity-20 transition-opacity">
-                          <span className="text-7xl font-display font-black text-white tracking-tighter">
+                        <div className="absolute top-0 right-0 p-8 pointer-events-none opacity-5 group-hover:opacity-10 transition-opacity">
+                          <span className="text-7xl font-display font-black text-slate-900 tracking-tighter">
                             {(index + 1).toString().padStart(2, '0')}
                           </span>
                         </div>
@@ -995,7 +995,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 <span className="px-1.5 py-0.5 rounded bg-aura-accent text-white text-[8px] font-black uppercase tracking-widest">
                                   Produit {(index + 1).toString().padStart(2, '0')}
                                 </span>
-                                <span className="text-[9px] text-aura-accent/60 font-black uppercase tracking-[0.3em]">Produit / Désignation</span>
+                                <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.3em]">Produit / Désignation</span>
                               </div>
                               {isEditMode ? (
                                 <CustomSelect
@@ -1044,14 +1044,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   }}
                                   renderOption={(opt) => (
                                     <div className="flex items-center gap-4 py-1">
-                                      <div className="w-12 h-12 rounded-lg bg-white/5 overflow-hidden border border-white/10 shrink-0 shadow-lg">
+                                      <div className="w-12 h-12 rounded-lg bg-slate-50 overflow-hidden border border-slate-200 shrink-0 shadow-sm">
                                         {opt.image ? (
                                           <img src={opt.image} alt="" className="w-full h-full object-cover" />
                                         ) : (
-                                          <div className="w-full h-full flex items-center justify-center text-aura-text-dim"><ImageIcon size={16} /></div>
+                                          <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon size={16} /></div>
                                         )}
                                       </div>
-                                      <span className="font-display font-black text-xs uppercase tracking-tight text-white">{opt.label}</span>
+                                      <span className="font-display font-black text-xs uppercase tracking-tight text-slate-900">{opt.label}</span>
                                     </div>
                                   )}
                                 />
@@ -1062,14 +1062,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                     const img = prodInfo?.image || (prodInfo as any)?.mainImage;
                                     return (
                                       <>
-                                        <div className="w-16 h-16 rounded-2xl bg-white/5 overflow-hidden border border-white/10 shadow-2xl transition-transform duration-500 group-hover:scale-110">
+                                        <div className="w-16 h-16 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200 shadow-sm transition-transform duration-500 group-hover:scale-110">
                                           {img ? (
                                             <img src={img} alt="" className="w-full h-full object-cover" />
                                           ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-aura-text-dim"><ImageIcon size={20} /></div>
+                                            <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageIcon size={20} /></div>
                                           )}
                                         </div>
-                                        <div className="text-2xl md:text-3xl font-display font-black text-white tracking-tighter uppercase leading-none">{p.name}</div>
+                                        <div className="text-2xl md:text-3xl font-display font-black text-slate-900 tracking-tighter uppercase leading-none">{p.name}</div>
                                       </>
                                     );
                                   })()}
@@ -1079,7 +1079,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               {/* VENTE / LOCATION TOGGLE */}
                               {isEditMode && (
                                 <div className="mt-4 flex items-center gap-2">
-                                  <div className="flex p-1 bg-black/40 border border-white/5 rounded-xl">
+                                  <div className="flex p-1 bg-slate-100 border border-slate-200 rounded-xl">
                                     <button
                                       onClick={() => {
                                         const newProducts = estimation.products.map(prod => prod.id === p.id ? { 
@@ -1089,7 +1089,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         } : prod);
                                         setEstimation({ ...estimation, products: newProducts as any });
                                       }}
-                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.transactionType !== 'rental' ? 'bg-aura-accent text-white shadow-lg' : 'text-aura-text-dim hover:text-white'}`}
+                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.transactionType !== 'rental' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
                                       Vente
                                     </button>
@@ -1102,7 +1102,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         } : prod);
                                         setEstimation({ ...estimation, products: newProducts as any });
                                       }}
-                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.transactionType === 'rental' ? 'bg-aura-accent text-white shadow-lg' : 'text-aura-text-dim hover:text-white'}`}
+                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.transactionType === 'rental' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
                                       Location
                                     </button>
@@ -1174,13 +1174,13 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 className="mt-6 pt-6 border-t border-white/5 space-y-4 overflow-hidden"
                               >
                                 <div className="flex items-center gap-4">
-                                  <div className="flex p-1 bg-black/40 border border-white/5 rounded-xl">
+                                  <div className="flex p-1 bg-slate-100 border border-slate-200 rounded-xl">
                                     <button
                                       onClick={() => {
                                         const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'day' } : prod);
                                         setEstimation({ ...estimation, products: newProducts as any });
                                       }}
-                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.rentalUnit !== 'hour' ? 'bg-aura-accent text-white shadow-lg' : 'text-aura-text-dim hover:text-white'}`}
+                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.rentalUnit !== 'hour' ? 'bg-aura-accent text-white shadow-lg' : 'text-slate-500 hover:text-slate-900'}`}
                                     >
                                       Période (Jours)
                                     </button>
@@ -1189,7 +1189,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'hour' } : prod);
                                         setEstimation({ ...estimation, products: newProducts as any });
                                       }}
-                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.rentalUnit === 'hour' ? 'bg-aura-accent text-white shadow-lg' : 'text-aura-text-dim hover:text-white'}`}
+                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.rentalUnit === 'hour' ? 'bg-aura-accent text-white shadow-lg' : 'text-slate-500 hover:text-slate-900'}`}
                                     >
                                       Jour précis (Heures)
                                     </button>
@@ -1203,7 +1203,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Du</span>
                                         <input 
                                           type="date"
-                                          className="neon-input w-full py-2 bg-white/5 font-mono text-xs"
+                                          className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
                                           value={p.rentalPeriod?.from ? new Date(p.rentalPeriod.from).toISOString().split('T')[0] : ''}
                                           onChange={(e) => {
                                             const from = new Date(e.target.value);
@@ -1222,7 +1222,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Au</span>
                                         <input 
                                           type="date"
-                                          className="neon-input w-full py-2 bg-white/5 font-mono text-xs"
+                                          className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
                                           value={p.rentalPeriod?.to ? new Date(p.rentalPeriod.to).toISOString().split('T')[0] : ''}
                                           onChange={(e) => {
                                             const to = new Date(e.target.value);
@@ -1252,7 +1252,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Le</span>
                                         <input 
                                           type="date"
-                                          className="neon-input w-full py-2 bg-white/5 font-mono text-xs"
+                                          className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
                                           value={p.rentalDate ? new Date(p.rentalDate).toISOString().split('T')[0] : ''}
                                           onChange={(e) => {
                                             const date = new Date(e.target.value);
@@ -1266,7 +1266,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                           <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Début</span>
                                           <input 
                                             type="time"
-                                            className="neon-input w-full py-2 bg-white/5 font-mono text-xs"
+                                            className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
                                             value={p.rentalStartTime || '09:00'}
                                             onChange={(e) => {
                                               const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalStartTime: e.target.value } : prod);
@@ -1278,7 +1278,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                           <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Fin</span>
                                           <input 
                                             type="time"
-                                            className="neon-input w-full py-2 bg-white/5 font-mono text-xs"
+                                            className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
                                             value={p.rentalEndTime || '18:00'}
                                             onChange={(e) => {
                                               const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalEndTime: e.target.value } : prod);
@@ -1302,21 +1302,21 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             )}
                           </AnimatePresence>
 
-                          <div className="mt-8 pt-6 border-t border-white/5 flex items-end justify-between">
+                          <div className="mt-8 pt-6 border-t border-slate-200 flex items-end justify-between">
                             <div className="space-y-1">
-                              <span className="text-[13px] text-aura-text-dim font-bold uppercase tracking-widest block">Référence Article</span>
-                              <div className="text-sm font-display font-black text-white/90 uppercase tracking-tight">{p.productId || 'N/A'}</div>
+                              <span className="text-[13px] text-slate-400 font-bold uppercase tracking-widest block">Référence Article</span>
+                              <div className="text-sm font-display font-black text-slate-900 uppercase tracking-tight">{p.productId || 'N/A'}</div>
                             </div>
                             {profile === 'client' && (
                               <div className="text-right">
-                                <span className="text-[10px] text-aura-text-dim font-bold uppercase tracking-widest block mb-1">Total pour cette ligne</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1">Total pour cette ligne</span>
                                 <div className="flex items-center gap-3 justify-end">
                                   {(p.discount || 0) > 0 && (
                                     <span className="text-sm text-red-500/40 line-through font-mono">
                                       {formatCurrency(p.quantity * p.unitPrice)}
                                     </span>
                                   )}
-                                  <span className="text-3xl font-display font-black text-white tracking-tighter">
+                                  <span className="text-3xl font-display font-black text-slate-900 tracking-tighter">
                                     {formatCurrency((p.quantity * p.unitPrice) * (1 - (p.discount || 0) / 100))}
                                   </span>
                                 </div>
@@ -1326,7 +1326,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         </div>
 
                         <div className="px-8 pb-8">
-                          <div className="bg-black rounded-3xl border border-white/5 overflow-hidden shadow-2xl">
+                          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
                             <div className="p-8 pb-0 flex items-center justify-between mb-8">
                               <h4 className="text-[11px] font-black text-aura-accent uppercase tracking-[0.3em] flex items-center gap-3">
                                 <Settings size={16} /> Spécifications Techniques
@@ -1451,21 +1451,21 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         <Truck size={14} /> LOGISTIQUE & SERVICES
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="glass-card p-6 space-y-4">
+                        <div className="bg-slate-50 border border-slate-200 p-6 rounded-[2rem] space-y-4">
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Truck size={20} /></div>
                               <div>
-                                <div className="text-xs font-bold uppercase">LIVRAISON</div>
-                                <div className="text-[10px] text-aura-text-dim uppercase">Ville: <b>{estimation.deliveryCity || 'Non spécifiée'}</b></div>
+                                <div className="text-xs font-bold uppercase text-slate-900">LIVRAISON</div>
+                                <div className="text-[10px] text-slate-400 uppercase">Ville: <b className="text-slate-900">{estimation.deliveryCity || 'Non spécifiée'}</b></div>
                               </div>
                             </div>
                             <span className="text-lg font-bold font-mono text-aura-accent">{formatCurrency(calculations.deliveryTotal)}</span>
                           </div>
                           {isEditMode && (
-                            <div className="space-y-6 pt-6 border-t border-aura-border">
+                            <div className="space-y-6 pt-6 border-t border-slate-200">
                               <div className="space-y-1.5 flex-1 min-w-0">
-                                <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Ville de Destination</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Ville de Destination</span>
                                 <CustomSelect
                                   placeholder="Choisir une ville..."
                                   value={estimation.deliveryCity || ''}
@@ -1492,24 +1492,24 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           )}
                         </div>
 
-                        <div className="glass-card p-6 space-y-4">
+                        <div className="bg-slate-50 border border-slate-200 p-6 rounded-[2rem] space-y-4">
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Wrench size={20} /></div>
                               <div>
-                                <div className="text-xs font-bold uppercase">Main d'œuvre</div>
-                                <div className="text-aura-text-dim uppercase">Installation experte</div>
+                                <div className="text-xs font-bold uppercase text-slate-900">Main d'œuvre</div>
+                                <div className="text-slate-400 uppercase">Installation experte</div>
                               </div>
                             </div>
                             <span className="text-lg font-bold font-mono text-aura-accent">{formatCurrency(calculations.laborTotal)}</span>
                           </div>
                           {isEditMode && (
-                            <div className="space-y-4 pt-4 border-t border-aura-border">
-                              <div className="py-4 border-b border-white/5 mb-2">
-                                <div className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] leading-relaxed">
+                            <div className="space-y-4 pt-4 border-t border-slate-200">
+                              <div className="py-4 border-b border-slate-200 mb-2">
+                                <div className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] leading-relaxed">
                                   Pour une surface totale de <span className="text-aura-accent">{calculations.totalArea.toFixed(2)} m²</span>
                                 </div>
-                                <div className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] leading-relaxed">
+                                <div className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] leading-relaxed">
                                   votre projet nécessite <span className="text-aura-accent">{calculations.techniciansCount}</span> technicien(s).
                                 </div>
                               </div>
@@ -1544,25 +1544,25 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     key="aura-footer"
                     initial={{ y: 80, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="aura-footer-fixed hidden md:block relative shrink-0 border-t border-white/10"
+                    className="aura-footer-fixed hidden md:block relative shrink-0 border-t border-slate-200"
                   >
                     {/* Toggle Pill — floating on the border-top divider line, always visible */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
                       <button
                         onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-                        className="group flex items-center gap-3 px-5 py-2.5 rounded-full border border-[#6dff1d]/30 bg-[#09090b] backdrop-blur-xl shadow-[0_0_20px_rgba(109,255,29,0.15)] hover:shadow-[0_0_35px_rgba(109,255,29,0.35)] hover:border-[#6dff1d]/60 transition-all duration-500 active:scale-95"
+                        className="group flex items-center gap-3 px-5 py-2.5 rounded-full border border-slate-200 bg-white backdrop-blur-xl shadow-lg hover:shadow-xl hover:border-slate-300 transition-all duration-500 active:scale-95"
                       >
                         <motion.div
                           animate={{ rotate: isSummaryExpanded ? 180 : 0 }}
                           transition={{ duration: 0.4, ease: 'easeInOut' }}
                         >
-                          <ChevronDown size={14} className="text-[#6dff1d]" />
+                          <ChevronDown size={14} className="text-slate-900" />
                         </motion.div>
-                        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#6dff1d]">
+                        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-900">
                           Résumé Financier
                         </span>
-                        <div className="w-px h-3 bg-[#6dff1d]/20" />
-                        <span className="text-[10px] font-black font-mono text-white/80 tracking-tight group-hover:text-white transition-colors">
+                        <div className="w-px h-3 bg-slate-200" />
+                        <span className="text-[10px] font-black font-mono text-slate-700 tracking-tight group-hover:text-slate-900 transition-colors">
                           {formatCurrency(calculations.finalTotal)}
                         </span>
                       </button>
@@ -1580,15 +1580,15 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           style={{ overflow: 'hidden' }}
                         >
                           <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10 mb-8 emerald-neon-halo">
-                            <div className="flex-1 bg-white/[0.03] p-5 md:p-6 rounded-2xl border border-white/5 shadow-2xl w-full">
+                            <div className="flex-1 bg-slate-100 p-5 md:p-6 rounded-2xl border border-slate-200 shadow-sm w-full">
                               <div className="space-y-4">
-                                <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b border-white/5 pb-4 gap-4 sm:gap-0">
+                                <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b border-slate-200 pb-4 gap-4 sm:gap-0">
                                   <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] font-display">Sous-total HT</span>
-                                    <span className="text-2xl font-display font-black text-white tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
+                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] font-display">Sous-total HT</span>
+                                    <span className="text-2xl font-display font-black text-slate-900 tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
                                   </div>
                                   <div className="text-left sm:text-right flex flex-col sm:items-end gap-1">
-                                    <span className="text-[10px] text-aura-text-dim uppercase font-black tracking-[0.2em] font-display">TVA ({estimation.taxRate}%)</span>
+                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] font-display">TVA ({estimation.taxRate}%)</span>
                                     <span className="font-mono text-base text-aura-accent font-bold">+{formatCurrency(calculations.tva)}</span>
                                   </div>
                                 </div>
@@ -1662,36 +1662,36 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              className="w-full max-w-2xl bg-aura-card border border-aura-accent/30 rounded-[2rem] flex flex-col overflow-hidden shadow-[0_0_100px_rgba(59,130,246,0.2)]"
+              className="w-full max-w-2xl bg-white border border-slate-200 rounded-[2rem] flex flex-col overflow-hidden shadow-2xl"
             >
-              <div className="p-8 border-b border-aura-border flex items-center justify-between bg-aura-accent/5">
+              <div className="p-8 border-b border-slate-200 flex items-center justify-between bg-slate-50">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-aura-accent flex items-center justify-center text-white">
                     <Sparkles size={24} />
                   </div>
-                  <h2 className="text-2xl font-display font-bold uppercase">{aiResult.title}</h2>
+                  <h2 className="text-2xl font-display font-bold uppercase text-slate-900">{aiResult.title}</h2>
                 </div>
-                <button onClick={() => setAiResult(null)} className="w-10 h-10 hover:bg-white/5 rounded-full flex items-center justify-center"><X size={20} /></button>
+                <button onClick={() => setAiResult(null)} className="w-10 h-10 hover:bg-slate-100 rounded-full flex items-center justify-center"><X size={20} /></button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-10">
-                <div className="prose prose-invert max-w-none">
-                  <p className="text-aura-text-dim leading-relaxed whitespace-pre-wrap font-mono text-sm bg-white/5 p-6 rounded-2xl border border-white/5">
+              <div className="flex-1 overflow-y-auto p-10 bg-white">
+                <div className="prose max-w-none">
+                  <p className="text-slate-600 leading-relaxed whitespace-pre-wrap font-mono text-sm bg-slate-50 p-6 rounded-2xl border border-slate-200">
                     {aiResult.content}
                   </p>
                 </div>
               </div>
 
-              <div className="p-8 bg-black/40 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-white/5">
+              <div className="p-8 bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4 border-t border-slate-200">
                 <div className="flex items-center gap-3">
-                  <button onClick={() => shareTranslatedText('whatsapp', aiResult.content)} className="px-6 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+                  <button onClick={() => shareTranslatedText('whatsapp', aiResult.content)} className="px-6 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
                     <MessageCircle size={14} /> WhatsApp
                   </button>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => { if (aiResult) { navigator.clipboard.writeText(aiResult.content); addHistory('Copie résultat IA'); } }}
-                    className="px-6 py-3 rounded-xl bg-white/5 border border-aura-border text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
+                    className="px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
                   >
                     Copier
                   </button>
@@ -1787,14 +1787,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 35, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 w-full max-w-4xl z-[800] bg-aura-card flex flex-col border-l border-aura-border shadow-2xl"
+            className="fixed right-0 top-0 bottom-0 w-full max-w-4xl z-[800] bg-white flex flex-col border-l border-slate-200 shadow-2xl"
           >
-            <div className="p-8 border-b border-aura-border flex items-center justify-between bg-black/40 h-24">
+            <div className="p-8 border-b border-slate-200 flex items-center justify-between bg-slate-50 h-24">
               <div className="flex items-center gap-4">
                 <button onClick={() => setIsHistoryPanelOpen(false)} className="w-10 h-10 hover:bg-aura-accent hover:text-white rounded-xl flex items-center justify-center transition-all bg-aura-accent/10 text-aura-accent"><ChevronLeft size={24} /></button>
                 <div>
-                  <h2 className="text-2xl font-display font-black uppercase tracking-tighter">Historique</h2>
-                  <div className="text-[10px] text-aura-text-dim uppercase font-bold tracking-widest mt-0.5">Dossier: {estimation.id}</div>
+                  <h2 className="text-2xl font-display font-black uppercase tracking-tighter text-slate-900">Historique</h2>
+                  <div className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Dossier: {estimation.id}</div>
                 </div>
               </div>
               <button onClick={() => setIsHistoryPanelOpen(false)} className="w-12 h-12 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-aura-accent hover:scale-110">
@@ -1810,38 +1810,38 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   key={entry.id}
                   className="relative pl-12 border-l border-aura-accent/20 pb-10 last:pb-0"
                 >
-                  <div className="absolute left-[-21px] top-0 w-10 h-10 rounded-full border-2 border-aura-accent/30 bg-aura-card overflow-hidden z-10 shadow-lg">
+                  <div className="absolute left-[-21px] top-0 w-10 h-10 rounded-full border-2 border-slate-200 bg-white overflow-hidden z-10 shadow-sm">
                     {entry.userPhoto ? (
                       <img src={entry.userPhoto} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-aura-accent/10 text-aura-accent text-xs font-bold">
+                      <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-600 text-xs font-bold">
                         {entry.user?.[0]?.toUpperCase()}
                       </div>
                     )}
                   </div>
-                  <div className="flex justify-between items-start mb-1 text-[10px] font-mono text-aura-text-dim uppercase">
+                  <div className="flex justify-between items-start mb-1 text-[10px] font-mono text-slate-400 uppercase">
                     <span>{new Date(entry.timestamp).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                    <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 uppercase tracking-widest">{entry.user}</span>
+                    <span className="px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 uppercase tracking-widest">{entry.user}</span>
                   </div>
-                  <div className="text-lg font-bold text-white/90 tracking-tight leading-snug uppercase">{entry.action}</div>
+                  <div className="text-lg font-bold text-slate-800 tracking-tight leading-snug uppercase">{entry.action}</div>
                 </motion.div>
               ))}
             </div>
 
-            <div className="p-8 border-t border-aura-border bg-black/40 flex justify-between items-center">
-              <div className="text-[10px] text-aura-text-dim font-bold uppercase tracking-[0.2em]">Page {historyPage} sur {Math.ceil(estimation.history.length / itemsPerPage)}</div>
+            <div className="p-8 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Page {historyPage} sur {Math.ceil(estimation.history.length / itemsPerPage)}</div>
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setHistoryPage(prev => Math.max(1, prev - 1))}
                   disabled={historyPage === 1}
-                  className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-aura-accent hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none"
+                  className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center hover:bg-aura-accent hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none shadow-sm"
                 >
                   <ChevronLeft size={20} />
                 </button>
                 <button
                   onClick={() => setHistoryPage(prev => Math.min(Math.ceil(estimation.history.length / itemsPerPage), prev + 1))}
                   disabled={historyPage === Math.ceil(estimation.history.length / itemsPerPage)}
-                  className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-aura-accent hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none"
+                  className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center hover:bg-aura-accent hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none shadow-sm"
                 >
                   <ChevronRight size={20} />
                 </button>
@@ -1923,16 +1923,16 @@ function CustomSelect({
     <div className="relative" ref={containerRef}>
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="custom-select-trigger"
+        className="custom-select-trigger bg-slate-50 border border-slate-200 hover:border-aura-accent/50 transition-all"
       >
         <div className="flex items-center gap-3 overflow-hidden">
           {selectedOption ? (
-            renderOption ? renderOption(selectedOption) : <span className="uppercase text-xs font-bold truncate">{selectedOption.label || selectedOption.displayName || selectedOption.name || selectedOption}</span>
+            renderOption ? renderOption(selectedOption) : <span className="uppercase text-xs font-bold truncate text-slate-900">{selectedOption.label || selectedOption.displayName || selectedOption.name || selectedOption}</span>
           ) : (
-            <span className="text-aura-text-dim uppercase text-[10px] font-bold">{placeholder}</span>
+            <span className="text-slate-400 uppercase text-[10px] font-bold">{placeholder}</span>
           )}
         </div>
-        <ChevronDown size={14} className={`text-aura-text-dim transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown size={14} className={`text-slate-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
       <AnimatePresence>
@@ -1941,7 +1941,7 @@ function CustomSelect({
             initial={{ opacity: 0, scale: 0.95, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="absolute top-full left-0 right-0 z-[600] bg-[#1c1c1e] border border-aura-border rounded-xl shadow-2xl overflow-hidden mt-2 p-1"
+            className="absolute top-full left-0 right-0 z-[600] bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden mt-2 p-1"
           >
             <div className="max-h-64 overflow-y-auto custom-sidebar-scroll">
               {options.map((opt) => {
@@ -1953,7 +1953,7 @@ function CustomSelect({
                       onChange(optId);
                       setIsOpen(false);
                     }}
-                    className={`custom-select-option rounded-lg ${value === optId ? 'bg-aura-accent/10 border-aura-accent/20' : 'border-transparent'}`}
+                    className={`custom-select-option rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors ${value === optId ? 'bg-slate-50 border-slate-200 text-aura-accent' : 'border-transparent'}`}
                   >
                     {renderOption ? renderOption(opt) : <span className="uppercase text-[10px] font-bold">{opt.label || opt.displayName || opt.name || opt}</span>}
                   </div>
@@ -1970,11 +1970,11 @@ function CustomSelect({
 function NumericControl({ value, onChange, label, unit = "" }: { value: number, onChange: (val: number) => void, label: string, unit?: string }) {
   return (
     <div className="space-y-1 flex-1 min-w-0">
-      <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">{label}</span>
-      <div className="flex items-center bg-black/40 border border-aura-border rounded-xl p-1 group focus-within:border-aura-accent shadow-inner">
+      <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">{label}</span>
+      <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-1 group focus-within:border-aura-accent shadow-sm transition-all">
         <button
           onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-10 h-10 rounded-lg bg-white/5 hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-aura-text-dim shadow-lg active:scale-95 border border-white/5"
+          className="w-10 h-10 rounded-lg bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200"
         >
           <Minus size={14} />
         </button>
@@ -1983,13 +1983,13 @@ function NumericControl({ value, onChange, label, unit = "" }: { value: number, 
             type="number"
             value={isNaN(value) ? 0 : value}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="bg-transparent border-none p-0 focus:ring-0 text-center font-display font-black text-2xl w-full text-white appearance-none no-arrows"
+            className="bg-transparent border-none p-0 focus:ring-0 text-center font-display font-black text-2xl w-full text-slate-900 appearance-none no-arrows"
           />
           {unit && <span className="text-base font-display font-black text-aura-accent min-w-[1ch]">{unit}</span>}
         </div>
         <button
           onClick={() => onChange(value + 1)}
-          className="w-10 h-10 rounded-lg bg-white/5 hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-aura-text-dim shadow-lg active:scale-95 border border-white/5"
+          className="w-10 h-10 rounded-lg bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200"
         >
           <Plus size={14} />
         </button>
@@ -2001,12 +2001,12 @@ function NumericControl({ value, onChange, label, unit = "" }: { value: number, 
 function TechnicalSpec({ icon, label, value, colorClass = "text-aura-accent", bgColorClass = "bg-aura-accent/10" }: { icon: React.ReactNode, label: string, value: string, colorClass?: string, bgColorClass?: string }) {
   return (
     <div className="flex items-center gap-4 group">
-      <div className={`w-12 h-12 rounded-2xl ${bgColorClass} flex items-center justify-center ${colorClass} transition-all duration-500 group-hover:scale-110 shadow-lg border border-white/5`}>
+      <div className={`w-12 h-12 rounded-2xl ${bgColorClass} flex items-center justify-center ${colorClass} transition-all duration-500 group-hover:scale-110 shadow-sm border border-slate-200`}>
         {icon}
       </div>
       <div className="flex flex-col">
-        <div className="text-[10px] text-aura-text-dim uppercase font-black tracking-widest mb-0.5">{label}</div>
-        <div className="text-sm font-display font-black text-white/90 uppercase tracking-tight">{value}</div>
+        <div className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-0.5">{label}</div>
+        <div className="text-sm font-display font-black text-slate-800 uppercase tracking-tight">{value}</div>
       </div>
     </div>
   );

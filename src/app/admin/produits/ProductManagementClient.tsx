@@ -199,31 +199,50 @@ const MobileProductCard = React.memo(({
           {product.name}
         </h3>
 
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex flex-wrap justify-center gap-2">
-            {Array.isArray(product.mode) && product.mode.includes('vente') && (
-              <div className="flex items-center gap-2 bg-black px-5 py-2.5 rounded-lg border border-white/10 shadow-lg">
-                <ShoppingCart className="w-4 h-4 text-[#c6ff00]" />
-                <span className="text-[10px] font-black text-white uppercase tracking-widest">Vente</span>
-              </div>
-            )}
-            {Array.isArray(product.mode) && product.mode.includes('location') && (
-              <div className="flex items-center gap-2 bg-slate-900 px-5 py-2.5 rounded-lg border border-white/5 shadow-lg">
-                <Calendar className="w-4 h-4 text-purple-400" />
-                <span className="text-[10px] font-black text-white uppercase tracking-widest">Location</span>
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {/* Mode Badges */}
+            {Array.from(new Set((Array.isArray(product.mode) ? product.mode : [product.mode]).filter(Boolean))).map((m: any, idx: number) => {
+              const val = String(m).toLowerCase();
+              let label = m;
+              let colors = "bg-emerald-50 text-emerald-700 border-emerald-100";
+              if (val.includes('vente') || val.includes('sale')) { label = 'Achat'; colors = "bg-emerald-50 text-emerald-700 border-emerald-100"; }
+              else if (val.includes('location') || val.includes('rental')) { label = 'Location'; colors = "bg-violet-50 text-violet-700 border-violet-100"; }
+              return (
+                <div key={`mode-${idx}`} className={cn("px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest", colors)}>
+                  {label}
+                </div>
+              );
+            })}
+
+            {/* Screen Type Badge */}
+            {product.screenType && (
+              <div className={cn(
+                "px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest",
+                product.screenType === 'curved' ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-slate-50 text-slate-500 border-slate-100"
+              )}>
+                {product.screenType === 'curved' ? 'Incurvé' : 'Plat'}
               </div>
             )}
           </div>
 
-          <div className="flex flex-wrap justify-center gap-2">
-            {(Array.isArray(product.type) ? product.type : [product.type]).map((t: string) => (
-              <div key={t} className="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-lg border border-slate-200">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                  {t === 'interieur' ? 'Intérieur' : t === 'exterieur' ? 'Extérieur' : 'Semi-Extérieur'}
-                </span>
-              </div>
-            ))}
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {/* Environment Badges */}
+            {Array.from(new Set((Array.isArray(product.type) ? product.type : [product.type]).filter(Boolean))).map((t: any, idx: number) => {
+              const val = String(t).toLowerCase();
+              let label = t;
+              let colors = "bg-slate-50 text-slate-500 border-slate-100";
+              
+              if (val.includes('interieur') || val.includes('indoor')) { label = 'Intérieur'; colors = "bg-purple-50 text-purple-700 border-purple-100"; }
+              else if (val.includes('exterieur') || val.includes('outdoor')) { label = 'Extérieur'; colors = "bg-orange-50 text-orange-700 border-orange-100"; }
+              else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = 'Vitrine'; colors = "bg-cyan-50 text-cyan-700 border-cyan-100"; }
+              
+              return (
+                <div key={`type-${idx}`} className={cn("px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest", colors)}>
+                  {label}
+                </div>
+              );
+            })}
           </div>
         </div>
         
@@ -323,8 +342,8 @@ const ProductListItem = ({
         boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.15)"
       }}
       className={cn(
-        "bg-white border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:-translate-y-1 hover:shadow-2xl dark:bg-white/5 dark:border-white/10 dark:hover:bg-theme-sidebar-active-bg",
-        selectedIds.includes(product.id) ? "border-blue-500 ring-1 ring-blue-500" : "border-slate-200 dark:border-white/10"
+        "bg-theme-card border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:-translate-y-1 hover:shadow-2xl dark:bg-theme-card/5 dark:border-theme-card-border",
+        selectedIds.includes(product.id) ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg" : "border-theme-card-border"
       )}
     >
       <div className="flex items-center gap-3 shrink-0">
@@ -343,7 +362,7 @@ const ProductListItem = ({
           {selectedIds.includes(product.id) && <Check className="w-3 h-3" />}
         </button>
         <div 
-          className="text-slate-300 group-hover:text-[#a3e635] transition-colors cursor-grab active:cursor-grabbing p-1"
+          className="text-slate-300 group-hover/product:text-[#a3e635] transition-colors cursor-grab active:cursor-grabbing p-1"
           onPointerDown={(e) => dragControls.start(e)}
         >
           <GripVertical className="w-5 h-5" />
@@ -375,53 +394,66 @@ const ProductListItem = ({
 
       <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
         <div className="md:col-span-2">
-          <h3 className="font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-theme-sidebar-active-text transition-colors truncate">{product.name}</h3>
-          <div className="flex items-center gap-2 mt-1">
-            <span className={cn(
-              "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md transition-colors",
-              (Array.isArray(product.type) ? product.type[0] : product.type) === 'interieur' ? "bg-[#f3e8ff] text-[#6b21a8]" :
-              (Array.isArray(product.type) ? product.type[0] : product.type) === 'exterieur' ? "bg-[#ffedd5] text-[#9a3412]" :
-              "bg-blue-100 text-blue-700"
-            )}>
-              {Array.isArray(product.type) 
-                 ? product.type.map((t: string) => {
-                     const val = t.toLowerCase();
-                     if (val === 'interieur' || val === 'indoor' || val === 'interior') return 'Intérieur';
-                     if (val === 'exterieur' || val === 'outdoor' || val === 'exterior') return 'Extérieur';
-                     if (val === 'semi-exterieur' || val === 'semi-outdoor' || val === 'semi-exterior') return 'Semi-extérieur';
-                     if (val === 'vitrine' || val === 'showcase') return 'Vitrine';
-                     return t;
-                   }).join(' & ')
-                 : (product.type ? (() => {
-                     const val = String(product.type).toLowerCase();
-                     if (val === 'interieur' || val === 'indoor' || val === 'interior') return 'Intérieur';
-                     if (val === 'exterieur' || val === 'outdoor' || val === 'exterior') return 'Extérieur';
-                     if (val === 'semi-exterieur' || val === 'semi-outdoor' || val === 'semi-exterior') return 'Semi-extérieur';
-                     if (val === 'vitrine' || val === 'showcase') return 'Vitrine';
-                     return product.type;
-                   })() : 'Non défini')}
-            </span>
-            <span className="text-xs text-slate-500 group-hover/product:text-theme-sidebar-active-text/50">
-              {Array.isArray(product.mode) 
-                ? product.mode.map((m: string) => m.charAt(0).toUpperCase() + m.slice(1)).join(' & ') 
-                : (product.mode ? product.mode.charAt(0).toUpperCase() + product.mode.slice(1) : '')}
-            </span>
+          <h3 className="font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-slate-900 transition-colors truncate">{product.name}</h3>
+          <div className="flex flex-wrap items-center gap-2 mt-1.5">
+            {/* Environment Badges */}
+            {Array.from(new Set((Array.isArray(product.type) ? product.type : [product.type]).filter(Boolean))).map((t: any, idx: number) => {
+              const val = String(t).toLowerCase();
+              let label = t;
+              let colors = "bg-slate-100 text-slate-600";
+              
+              if (val.includes('interieur') || val.includes('indoor')) { label = 'Intérieur'; colors = "bg-purple-100 text-purple-700 border-purple-200"; }
+              else if (val.includes('exterieur') || val.includes('outdoor')) { label = 'Extérieur'; colors = "bg-orange-100 text-orange-700 border-orange-200"; }
+              else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = 'Vitrine'; colors = "bg-cyan-100 text-cyan-700 border-cyan-200"; }
+              
+              return (
+                <span key={`type-${idx}`} className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors", colors)}>
+                  {label}
+                </span>
+              );
+            })}
+
+            {/* Mode Badges */}
+            {Array.from(new Set((Array.isArray(product.mode) ? product.mode : [product.mode]).filter(Boolean))).map((m: any, idx: number) => {
+              const val = String(m).toLowerCase();
+              let label = m;
+              let colors = "bg-slate-100 text-slate-600";
+              
+              if (val.includes('vente') || val.includes('sale')) { label = 'Achat'; colors = "bg-emerald-100 text-emerald-700 border-emerald-200"; }
+              else if (val.includes('location') || val.includes('rental')) { label = 'Location'; colors = "bg-violet-100 text-violet-700 border-violet-200"; }
+              
+              return (
+                <span key={`mode-${idx}`} className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors", colors)}>
+                  {label}
+                </span>
+              );
+            })}
+
+            {/* Screen Type Badge */}
+            {product.screenType && (
+              <span className={cn(
+                "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors",
+                product.screenType === 'curved' ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-slate-100 text-slate-500 border-slate-200"
+              )}>
+                {product.screenType === 'curved' ? 'Incurvé' : 'Plat'}
+              </span>
+            )}
           </div>
         </div>
 
         <div className="hidden md:flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/30">Pitch</span>
-          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-theme-sidebar-active-text">{product.pitch || '—'}</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">Pitch</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-slate-900">{product.pitch || '—'}</span>
         </div>
 
         <div className="hidden md:flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/30">Distance</span>
-          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-theme-sidebar-active-text">{product.distance || '—'}</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">Distance</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-slate-900">{product.distance || '—'}</span>
         </div>
 
         <div className="hidden md:flex flex-col gap-1 items-center">
-          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/30">Vente /m²</span>
-          <span className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-[#a3e635] transition-colors duration-300">
+          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">Vente /m²</span>
+          <span className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-slate-900 transition-colors duration-300">
             {product.salePricePerSqM || product.price || '—'}
           </span>
         </div>
@@ -1214,7 +1246,7 @@ const CaracteristiquesPage = ({
 
   return (
     <div className="w-full pb-32 md:pb-0">
-      <div className="bg-transparent md:bg-white md:border md:border-slate-200 md:rounded-[3rem] p-0 md:p-10 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
+      <div className="bg-transparent md:bg-theme-card md:border md:border-theme-card-border md:rounded-[3rem] p-0 md:p-10 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
       <AnimatePresence>
         {showIconPicker && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -1374,10 +1406,10 @@ const CaracteristiquesPage = ({
                     <div 
                       key={char.id} 
                       className={cn(
-                        "bg-white border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all cursor-pointer group relative overflow-hidden",
+                        "bg-theme-card border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all cursor-pointer group relative overflow-hidden",
                         editingId === char.id 
-                          ? "border-blue-500 ring-1 ring-blue-500" 
-                          : "border-slate-200 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg",
+                          ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg" 
+                          : "border-theme-card-border hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg",
                         (char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && !editingId && "bg-orange-50/50 border-orange-100"
                       )}
                       onClick={() => handleEdit(char)}
@@ -1429,7 +1461,7 @@ const CaracteristiquesPage = ({
 
         {/* Right column: Form */}
         <div className="lg:col-span-7 flex flex-col space-y-6">
-          <div className="bg-transparent md:bg-white border-none md:border border-slate-200 rounded-2xl p-0 md:p-6 shadow-none md:shadow-sm relative overflow-hidden">
+          <div className="bg-transparent md:bg-theme-card border-none md:border border-theme-card-border rounded-2xl p-0 md:p-6 shadow-none md:shadow-sm relative overflow-hidden">
             <AnimatePresence>
               {isSaved && (
                 <motion.div 
@@ -1798,7 +1830,7 @@ const ProduitPage = ({
 
   return (
     <div className="w-full pb-32 md:pb-0">
-      <div className="bg-transparent md:bg-white md:border md:border-slate-200 md:rounded-[3rem] p-0 md:p-6 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
+      <div className="bg-transparent md:bg-theme-card md:border md:border-theme-card-border md:rounded-[3rem] p-0 md:p-6 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           
           {/* Left Column: Technical Specs & Core Settings */}
@@ -1969,7 +2001,7 @@ const ProduitPage = ({
                       if (!charDef) return null;
                       const Icon = getIcon(charDef.iconName);
                       return (
-                        <div key={sc.id} className="bg-[#0f172a] text-white rounded-2xl p-4 flex flex-col justify-between shadow-xl relative group border border-white/5">
+                        <div key={sc.id} className="bg-theme-card text-theme-card-text rounded-2xl p-4 flex flex-col justify-between shadow-xl relative group border border-theme-card-border">
                           <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                             <button onClick={(e) => { e.stopPropagation(); setCharacteristics(characteristics.map((c: any) => c.id === sc.id ? { ...c, isPinned: !c.isPinned } : c)); }} className={cn("p-1.5 rounded-lg transition-colors", charDef.isPinned ? "text-[#a3e635] bg-[#a3e635]/10" : "text-slate-500 hover:text-[#a3e635]")}>
                               <Pin className="w-4 h-4" />
@@ -3766,20 +3798,37 @@ export default function ProductManagementClient() {
       setProductName(editingProduct.name);
       
       // Handle mode (convert from old string format if necessary)
+      let initialModes: any[] = [];
       if (Array.isArray(editingProduct.mode)) {
-        setMode(editingProduct.mode);
+        initialModes = editingProduct.mode;
       } else if (editingProduct.mode === 'les deux') {
-        setMode(['vente', 'location']);
-      } else {
-        setMode([editingProduct.mode as 'vente' | 'location']);
+        initialModes = ['vente', 'location'];
+      } else if (editingProduct.mode) {
+        initialModes = [editingProduct.mode];
       }
+      
+      // Reverse map DB values to UI labels
+      setMode(initialModes.map(m => {
+        if (m === 'sale') return 'vente';
+        if (m === 'rental') return 'location';
+        return m;
+      }));
 
       // Handle environment (convert from old string format if necessary)
+      let initialTypes: any[] = [];
       if (Array.isArray(editingProduct.type)) {
-        setEnvironment(editingProduct.type);
-      } else {
-        setEnvironment([editingProduct.type as 'interieur' | 'exterieur' | 'semi-exterieur']);
+        initialTypes = editingProduct.type;
+      } else if (editingProduct.type) {
+        initialTypes = [editingProduct.type];
       }
+      
+      // Reverse map DB values to UI labels
+      setEnvironment(initialTypes.map(e => {
+        if (e === 'indoor') return 'interieur';
+        if (e === 'outdoor') return 'exterieur';
+        if (e === 'showcase') return 'semi-exterieur';
+        return e;
+      }));
 
       setPrixVente((editingProduct.price || '').toString().replace(/ /g, '').replace('€', ''));
       
@@ -4216,7 +4265,7 @@ export default function ProductManagementClient() {
   }
   
   return (
-    <div className="min-h-screen bg-transparent md:bg-[#f8f9fa] font-sans text-slate-900">
+    <div className="min-h-screen bg-transparent font-sans text-slate-900">
       <main className="min-h-screen transition-all duration-300">
         <div className="max-w-[1400px] mx-auto p-0 md:p-8">
           <div className="flex items-center justify-between mb-8">

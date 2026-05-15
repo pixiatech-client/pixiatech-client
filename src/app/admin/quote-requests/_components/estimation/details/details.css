@@ -1,12 +1,12 @@
-/* Aura Design System Tokens */
+/* Aura Design System Tokens - Montclair Light Mode */
 :root {
-  --aura-bg: #09090b;
-  --aura-card: #09090b;
-  --aura-border: #27272a;
+  --aura-bg: #ffffff;
+  --aura-card: #ffffff;
+  --aura-border: #e2e8f0;
   --aura-accent: #3b82f6;
-  --aura-accent-glow: rgba(59, 130, 246, 0.5);
+  --aura-accent-glow: rgba(59, 130, 246, 0.2);
   --aura-success: #10b981;
-  --aura-text-dim: #a1a1aa;
+  --aura-text-dim: #64748b;
 }
 
 /* Base Utility */
@@ -23,12 +23,11 @@
 }
 
 .neon-input {
-  background-color: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid var(--aura-border) !important;
+  background-color: white !important;
+  border: 1px solid #e2e8f0 !important;
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
   transition: all 0.2s;
-  color: white;
 }
 
 .neon-input:focus {
@@ -76,13 +75,13 @@
   letter-spacing: 0.1em;
   font-size: 0.75rem;
   transition: all 0.3s;
-  border: 1px solid var(--aura-border) !important;
-  background-color: rgba(255, 255, 255, 0.03) !important;
-  color: white !important;
+  border: 1px solid #e2e8f0 !important;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
 }
 
 .futuristic-btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: #f1f5f9 !important;
   border-color: var(--aura-accent) !important;
 }
 
@@ -90,8 +89,8 @@
 .aura-footer-fixed {
   padding: 2rem;
   padding-top: 2.5rem;
-  border-top: 1px solid var(--aura-border);
-  background-color: rgba(9, 9, 11, 0.9);
+  border-top: 1px solid #e2e8f0;
+  background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(24px);
   position: relative;
   z-index: 50;
@@ -116,8 +115,8 @@
 }
 
 .neon-text-emerald {
-  color: #6dff1d;
-  text-shadow: 0 0 10px rgba(109, 255, 29, 0.4), 0 0 20px rgba(109, 255, 29, 0.2);
+  color: #059669;
+  text-shadow: none;
 }
 
 /* Scrollbar */
@@ -137,8 +136,8 @@
 
 /* Payment Step Row Hover Effect */
 .payment-step-row {
-  background-color: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

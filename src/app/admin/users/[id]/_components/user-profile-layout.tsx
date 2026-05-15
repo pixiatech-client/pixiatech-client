@@ -53,7 +53,7 @@ export function UserProfileLayout({ user: initialUser }: UserProfileLayoutProps)
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white border border-gray-200 rounded-[2rem] p-6 flex flex-col items-center text-center sticky top-24 shadow-sm"
+            className="bg-theme-card border border-theme-card-border rounded-[2rem] p-6 flex flex-col items-center text-center sticky top-24 shadow-xl"
           >
             <div className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden bg-gray-100 shadow-xl mb-4">
               <img
@@ -62,7 +62,7 @@ export function UserProfileLayout({ user: initialUser }: UserProfileLayoutProps)
                 className="w-full h-full object-cover"
               />
             </div>
-            <h2 className="text-xl font-bold text-gray-900">{user.displayName}</h2>
+            <h2 className="text-xl font-bold text-theme-card-text">{user.displayName}</h2>
             <p className="text-sm text-gray-400 mt-1">Inscrit le {creationDate}</p>
 
             <div className="flex items-center gap-2 mt-4">
@@ -114,10 +114,10 @@ export function UserProfileLayout({ user: initialUser }: UserProfileLayoutProps)
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white border border-gray-200 rounded-[2rem] shadow-sm"
+            className="bg-theme-card border border-theme-card-border rounded-[2rem] shadow-xl"
           >
             <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-theme-card-text">
                 {activeTab === 'personal' ? 'Informations Personnelles' : 'Connexion & Mot de passe'}
               </h2>
               <p className="text-sm text-gray-400 mt-1">

@@ -88,7 +88,8 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
       if (window.innerWidth < 768) return 'hidden';
       if (window.innerWidth < 1024) return 'compact';
       const saved = localStorage.getItem('sidebar-state');
-      if (saved === 'expanded' || saved === 'compact' || saved === 'hidden') return saved;
+      // Never restore 'hidden' from localStorage - hidden is a temporary state
+      if (saved === 'expanded' || saved === 'compact') return saved;
     }
     return 'expanded';
   });
@@ -101,13 +102,21 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
       } else if (window.innerWidth < 1024) {
         setSidebarState('compact');
       } else {
-        setSidebarState('expanded');
+        // Only auto-expand if currently hidden (from a resize), not if user manually hid it
+        setSidebarState(prev => prev === 'hidden' ? 'expanded' : prev);
       }
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Save sidebar state to localStorage (only non-hidden states)
+  useEffect(() => {
+    if (sidebarState !== 'hidden') {
+      localStorage.setItem('sidebar-state', sidebarState);
+    }
+  }, [sidebarState]);
 
   // Close sidebar on mobile when navigating to a new page
   useEffect(() => {
@@ -241,7 +250,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   const isExpanded = sidebarState === 'expanded';
 
   return (
-    <div id="admin-root" className="relative flex min-h-screen w-full text-gray-900 dark:text-white overflow-hidden" style={{ backgroundColor: isDark ? '#09090b' : 'var(--theme-page-bg)' }}>
+    <div id="admin-root" className="relative flex min-h-screen w-full text-theme-text bg-theme-app">
       {/* Mobile Overlay */}
       <AnimatePresence>
         {sidebarState !== 'hidden' && (
@@ -286,41 +295,48 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 flex-grow">
               {sidebarState === 'hidden' && (
+                <button
+                  type="button"
+                  onClick={() => { setSidebarState('expanded'); }}
+                  style={{ zIndex: 50 }}
+                  className={cn(
+                    "group flex items-center justify-center h-11 w-11 rounded-xl mt-1 border-0 shadow-sm transition-all duration-200 cursor-pointer",
+                    isDark 
+                      ? "bg-white/10 hover:bg-theme-sidebar-active-bg text-white hover:text-emerald-400" 
+                      : "bg-white hover:bg-theme-sidebar-active-bg text-gray-700 hover:text-emerald-500"
+                  )}
+                  aria-label="Afficher le menu"
+                >
+                  <Menu className="h-5 w-5 pointer-events-none" />
+                </button>
+              )}
+              {isSettingsPage && (
                 <Button
                   variant="outline"
-                  size={isSettingsPage ? "default" : "icon"}
-                  onClick={() => isSettingsPage ? setIsSettingsMenuOpen(true) : setSidebarState('expanded')}
+                  size="default"
+                  onClick={() => setIsSettingsMenuOpen(true)}
                   className={cn(
-                    "group h-11 border-0 shadow-sm transition-all duration-200",
-                    isSettingsPage ? "px-4 rounded-xl mt-2" : "w-11 rounded-xl mt-1",
-                    isSettingsPage 
-                      ? "bg-black text-white hover:bg-zinc-800 shadow-lg" 
-                      : (isDark 
-                          ? "bg-white/5 hover:bg-theme-sidebar-active-bg text-white hover:text-emerald-400" 
-                          : "bg-white hover:bg-theme-sidebar-active-bg text-gray-700 hover:text-emerald-500")
+                    "group h-11 px-4 rounded-xl mt-2 border-0 shadow-lg transition-all duration-200 lg:hidden",
+                    "bg-black text-white hover:bg-zinc-800"
                   )}
                 >
-                  {isSettingsPage ? (
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">MENU</span>
-                    </div>
-                  ) : (
-                    <Menu className="h-5 w-5" />
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">MENU</span>
+                  </div>
                 </Button>
               )}
               <Button
                 variant="outline"
                 size="icon"
                 className={cn(
-                  "group h-11 w-11 rounded-xl border-0 shadow-sm transition-all duration-200 hidden md:inline-flex",
+                  "group h-11 w-11 rounded-xl border-0 shadow-sm transition-all duration-200",
                   isDark ? "bg-white/5 hover:bg-theme-sidebar-active-bg" : "bg-white hover:bg-theme-sidebar-active-bg"
                 )}
                 onClick={() => router.back()}
                 title="Page précédente"
               >
-                <ArrowLeft className="h-5 w-5 transition-all duration-200 text-gray-400 group-hover:text-emerald-400 group-hover:-translate-x-0.5" />
+                <ChevronDown className="h-5 w-5 transition-all duration-200 text-gray-500 group-hover:text-emerald-500 rotate-90" />
               </Button>
               <div>
                 <h1 className={cn(
@@ -376,19 +392,22 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 </Button>
               )}
 
-              {/* ── 4. Aller au site front-end (icône exit rouge) ── */}
+              {/* ── 4. Accéder au site front-end (icône Globe) ── */}
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => window.open('https://app.pixiatech.com', '_blank', 'noopener,noreferrer')}
-                title="Aller au site"
+                onClick={() => router.push('/')}
+                title="Accéder au site"
                 className={cn(
                   "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
                   isDark ? "bg-white/5 hover:bg-theme-sidebar-active-bg" : "bg-white hover:bg-theme-sidebar-active-bg"
                 )}
               >
-                <LogIn className="h-5 w-5 text-red-500 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-red-400" />
-                <span className="sr-only">Aller au site</span>
+                <Globe className={cn(
+                  "h-5 w-5 transition-colors",
+                  isDark ? "text-gray-400 group-hover:text-emerald-400" : "text-gray-400 group-hover:text-emerald-500"
+                )} />
+                <span className="sr-only">Accéder au site</span>
               </Button>
 
               <div className={cn("h-9 w-px mx-1 hidden sm:block", isDark ? "bg-white/10" : "bg-gray-200")} />
@@ -420,11 +439,11 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         </header>
 
         <main className={cn(
-          "flex-1 min-h-0",
+          "flex-1 min-h-0 bg-theme-app",
           pathname === '/admin/messages'
             ? "h-[calc(100vh-88px)] overflow-hidden p-4 md:p-6 w-full"
             : "px-4 py-4 md:px-6 md:py-6"
-        )} style={{ backgroundColor: isDark ? '#09090b' : 'var(--theme-page-bg)' }}>
+        )}>
           {children}
         </main>
       </div>

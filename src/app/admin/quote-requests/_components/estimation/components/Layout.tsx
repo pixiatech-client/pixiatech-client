@@ -99,7 +99,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
     <div className="hidden 2xl:flex justify-center mb-6">
       <div 
         ref={containerRef}
-        className="relative flex items-center gap-3 bg-white p-2 rounded-2xl border border-zinc-200 shadow-sm w-fit"
+        className="relative flex items-center gap-3 bg-theme-card p-2 rounded-2xl border border-theme-card-border shadow-sm w-fit"
       >
         {/* Animated sliding background */}
         <motion.div

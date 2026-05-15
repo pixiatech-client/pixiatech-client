@@ -1227,7 +1227,7 @@ return filtered;
      }, [activeTab, clearCache]);
 
   return (
-    <div className="min-h-screen px-3 py-4 md:p-6 overflow-x-hidden" style={{ backgroundColor: '#E8F3EB' }}>
+    <div className="min-h-screen px-3 py-4 md:p-6 overflow-x-hidden bg-transparent">
       <div className="max-w-7xl mx-auto w-full">
         <TabNavigation
           activeTab={activeTab}

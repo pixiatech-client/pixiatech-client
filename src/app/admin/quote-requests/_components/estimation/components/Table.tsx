@@ -51,12 +51,12 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
       <div className="flex items-center gap-3 w-full flex-1">
         <div className="relative flex-1 flex items-stretch h-11 overflow-hidden">
           {onSelectAll && (
-            <div className="md:hidden flex items-center px-3 bg-white border border-zinc-200 rounded-l-lg border-r-0 shadow-sm shrink-0">
+            <div className="md:hidden flex items-center px-3 bg-theme-card border border-theme-card-border rounded-l-lg border-r-0 shadow-sm shrink-0">
               <input
                 type="checkbox"
                 checked={isAllSelected}
                 onChange={onSelectAll}
-                className="w-4 h-4 rounded border-2 transition-all cursor-pointer accent-black"
+                className="w-4 h-4 rounded border-2 transition-all cursor-pointer accent-theme-sidebar-active-bg"
               />
             </div>
           )}
@@ -67,14 +67,14 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
               placeholder="Rechercher..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className={`w-full h-full pl-10 pr-2 bg-white border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-zinc-400 transition-all ${onSelectAll ? 'md:rounded-l-lg rounded-l-none' : 'rounded-l-lg'}`}
+              className={`w-full h-full pl-10 pr-2 bg-theme-card border border-theme-card-border text-theme-card-text text-sm focus:outline-none focus:ring-2 focus:ring-theme-sidebar-active-bg/20 focus:border-theme-sidebar-active-bg transition-all ${onSelectAll ? 'md:rounded-l-lg rounded-l-none' : 'rounded-l-lg'}`}
             />
           </div>
           <div className="relative flex shrink-0">
             {onOpenMobileDrawer && (
               <button
                 onClick={onOpenMobileDrawer}
-                className="h-full flex 2xl:hidden items-center gap-2 px-3 bg-white border-y border-r border-zinc-200 text-xs font-bold uppercase tracking-wide text-zinc-600 transition-all hover:bg-zinc-50"
+                className="h-full flex 2xl:hidden items-center gap-2 px-3 bg-theme-card border-y border-r border-theme-card-border text-xs font-bold uppercase tracking-wide text-theme-card-text transition-all hover:bg-theme-hover"
               >
                 Statuts
                 <div className="w-1.5 h-1.5 rounded-full bg-theme-sidebar-active-bg" />
@@ -108,7 +108,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: '100%', opacity: 0 }}
                     transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                    className="fixed inset-x-0 bottom-0 pb-safe pt-2 bg-white rounded-t-3xl shadow-[0_-8px_30px_rgb(0,0,0,0.15)] z-[101] md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:w-52 md:bg-white md:border md:border-zinc-200 md:rounded-xl md:shadow-lg md:z-50 md:pb-0 md:pt-0"
+                    className="fixed inset-x-0 bottom-0 pb-safe pt-2 bg-theme-card rounded-t-3xl shadow-[0_-8px_30px_rgb(0,0,0,0.15)] z-[101] md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 md:w-52 md:bg-theme-card md:border md:border-theme-card-border md:rounded-xl md:shadow-lg md:z-50 md:pb-0 md:pt-0"
                   >
                     <div className="w-12 h-1.5 bg-zinc-200 rounded-full mx-auto mb-4 md:hidden" />
                     <div className="p-4 md:p-1">
@@ -117,7 +117,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
                         <button
                           key={item.label}
                           onClick={() => setIsFilterOpen(false)}
-                          className="w-full flex items-center gap-3 px-4 py-4 md:px-4 md:py-2.5 hover:bg-zinc-100 md:hover:bg-theme-sidebar-active-bg text-sm md:text-xs font-bold uppercase tracking-wide text-zinc-600 md:hover:text-theme-sidebar-active-text transition-all text-left group rounded-xl md:rounded-none"
+                          className="w-full flex items-center gap-3 px-4 py-4 md:px-4 md:py-2.5 hover:bg-theme-hover md:hover:bg-theme-sidebar-active-bg text-sm md:text-xs font-bold uppercase tracking-wide text-theme-card-text md:hover:text-theme-sidebar-active-text transition-all text-left group rounded-xl md:rounded-none"
                         >
                           <item.icon className="w-5 h-5 md:w-3.5 md:h-3.5 transition-colors" style={{ color: item.color }} />
                           {item.label}
@@ -257,14 +257,14 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             layout
             className={`hidden md:flex relative overflow-hidden items-center px-8 py-4 rounded-2xl border transition-all duration-300 mb-3 group cursor-pointer hover:-translate-y-1 hover:shadow-2xl ${
               isSelected 
-                ? (est.status === 'Corbeille' ? 'bg-[#b20000] border-[#b20000] text-theme-sidebar-active-text' : 'bg-theme-sidebar-active-bg border-theme-sidebar-active-bg text-theme-sidebar-active-text')
+                ? (est.status === 'Corbeille' ? 'bg-red-600 border-red-600 text-white' : 'bg-theme-sidebar-active-bg border-theme-sidebar-active-bg text-theme-sidebar-active-text')
                 : est.isReturned 
                   ? 'bg-red-50 border-red-200 text-red-900' 
                   : est.status === 'Corbeille'
-                    ? 'bg-[#fff1f2] border-[#fecdd3] text-[#b20000] hover:bg-[#b20000] hover:border-[#b20000] hover:text-theme-sidebar-active-text transition-colors duration-300'
+                    ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors duration-300'
                   : est.status === 'Archivé'
-                    ? 'bg-zinc-50 border-zinc-200 text-zinc-500 opacity-60 grayscale hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text dark:bg-white/5 dark:border-white/10 dark:text-zinc-400'
-                    : 'bg-white border-zinc-100 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text dark:bg-white/5 dark:border-white/10 dark:hover:bg-theme-sidebar-active-bg'
+                    ? 'bg-theme-app/50 border-theme-card-border text-theme-card-text/40 opacity-60 grayscale hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
+                    : 'bg-theme-card border-theme-card-border hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
             }`}
             onClick={() => onEdit(est.id)}
           >
@@ -334,8 +334,8 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                   onClick={(e) => e.stopPropagation()}
                   className={`px-2 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1 transition-all ${
                     isSelected 
-                      ? 'bg-zinc-800 text-zinc-300 hover:bg-theme-sidebar-active-bg hover:text-black' 
-                      : 'bg-zinc-100 text-zinc-500 group-hover:bg-zinc-800 group-hover:text-zinc-400 hover:!bg-theme-sidebar-active-bg hover:!text-black dark:bg-zinc-800 dark:text-zinc-400'
+                      ? 'bg-theme-app text-theme-card-text/60 hover:bg-theme-sidebar-active-bg hover:text-black' 
+                      : 'bg-theme-app/50 text-theme-card-text/40 group-hover:bg-theme-app group-hover:text-theme-card-text/60 hover:!bg-theme-sidebar-active-bg hover:!text-black'
                   }`}
                 >
                   <Phone className="w-2.5 h-2.5" />
@@ -616,13 +616,13 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
           <motion.div
             layout
             className={`md:hidden group relative flex flex-col rounded-2xl border transition-all duration-300 overflow-hidden mb-3 shadow-sm ${
-              est.isReturned ? 'bg-[#fff1f2] border-[#fecdd3]' : est.status === 'Corbeille' ? 'bg-[#fff1f2] border-[#fecdd3]' : activeTab === 'Archivé' && est.isLocked ? 'bg-zinc-100 border-zinc-300 opacity-60 grayscale dark:bg-white/5 dark:border-white/10' : 'bg-white border-zinc-100 hover:border-theme-sidebar-active-bg dark:bg-white/5 dark:border-white/10'
+              est.isReturned ? 'bg-red-50 border-red-200' : est.status === 'Corbeille' ? 'bg-red-50 border-red-200' : activeTab === 'Archivé' && est.isLocked ? 'bg-theme-app/50 border-theme-card-border opacity-60 grayscale' : 'bg-theme-card border-theme-card-border hover:border-theme-sidebar-active-bg'
             } ${
-              isSelected ? (est.status === 'Corbeille' ? 'border-[#b20000] ring-2 ring-[#b20000] ring-offset-1' : 'border-[#1447e6] ring-2 ring-[#1447e6] ring-offset-1') : ''
+              isSelected ? (est.status === 'Corbeille' ? 'border-red-600 ring-2 ring-red-600 ring-offset-1' : 'border-theme-sidebar-active-bg ring-2 ring-theme-sidebar-active-bg ring-offset-1') : ''
             }`}
           >
             <div 
-              className="flex flex-col p-5 cursor-pointer hover:bg-zinc-50/50 transition-colors w-full"
+              className="flex flex-col p-5 cursor-pointer hover:bg-theme-hover transition-colors w-full"
               onClick={() => setExpandedId(expandedId === est.id ? null : est.id)}
             >
               <div className="flex items-center justify-between w-full gap-3">
@@ -635,7 +635,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       className={`w-5 h-5 rounded border-2 cursor-pointer transition-all ${
                         isSelected
                           ? 'bg-theme-sidebar-active-bg border-theme-sidebar-active-bg text-theme-sidebar-active-text focus:ring-theme-sidebar-active-bg'
-                          : 'bg-zinc-100 border-zinc-200 text-zinc-900 focus:ring-zinc-900'
+                          : 'bg-theme-app border-theme-card-border text-theme-card-text focus:ring-theme-sidebar-active-bg'
                       }`}
                     />
                   </div>
