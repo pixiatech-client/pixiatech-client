@@ -25,8 +25,8 @@ TabsContent.displayName = TabsPrimitive.Content.displayName
 
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { activeTab?: string }
->(({ className, children, activeTab: activeTabProp, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { activeTab?: string; hideBubble?: boolean }
+>(({ className, children, activeTab: activeTabProp, hideBubble = false, ...props }, ref) => {
   const [internalActiveTab, setInternalActiveTab] = React.useState(
     (React.Children.toArray(children)[0] as React.ReactElement).props.value
   );
@@ -55,7 +55,7 @@ const TabsList = React.forwardRef<
         
         return (
           <div className="relative w-full">
-            {isChildActive && (
+            {isChildActive && !hideBubble && (
               <motion.div
                 layoutId="tabs-bubble"
                 className={cn(

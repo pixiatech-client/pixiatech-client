@@ -134,7 +134,10 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                     onValueChange={(value) => handleSectionChange(value as SettingsSection)}
                     orientation="vertical"
                 >
-                    <TabsList className="flex flex-row lg:flex-col gap-2 md:gap-3 bg-transparent p-0 h-auto w-full items-stretch overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 px-4 md:px-0">
+                    <TabsList 
+                        hideBubble
+                        className="flex flex-row lg:flex-col gap-2 md:gap-3 bg-transparent p-0 h-auto w-full items-stretch overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 px-4 md:px-0"
+                    >
                         {tabsConfig.map((tab) => {
                             const isSelected = currentSection === tab.id;
                             return (

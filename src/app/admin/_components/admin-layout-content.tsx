@@ -241,7 +241,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   const isExpanded = sidebarState === 'expanded';
 
   return (
-    <div id="admin-root" className="relative flex min-h-screen w-full text-gray-900 overflow-hidden" style={{ backgroundColor: 'var(--theme-page-bg)' }}>
+    <div id="admin-root" className="relative flex min-h-screen w-full text-gray-900 dark:text-white overflow-hidden" style={{ backgroundColor: isDark ? '#09090b' : 'var(--theme-page-bg)' }}>
       {/* Mobile Overlay */}
       <AnimatePresence>
         {sidebarState !== 'hidden' && (
@@ -424,7 +424,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
           pathname === '/admin/messages'
             ? "h-[calc(100vh-88px)] overflow-hidden p-4 md:p-6 w-full"
             : "px-4 py-4 md:px-6 md:py-6"
-        )} style={{ backgroundColor: 'var(--theme-page-bg)' }}>
+        )} style={{ backgroundColor: isDark ? '#09090b' : 'var(--theme-page-bg)' }}>
           {children}
         </main>
       </div>

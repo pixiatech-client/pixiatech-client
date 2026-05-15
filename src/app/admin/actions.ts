@@ -1394,6 +1394,24 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
     }
   }
 
+  // Prepare list of users to notify (Admins + Commercial in charge)
+  const getTargetUsers = async () => {
+    const targets = new Set<string>();
+    // 1. Add the commercial in charge
+    if (quoteData?.userId) targets.add(quoteData.userId);
+    // 2. Add the person who last treated it (if different)
+    if (quoteData?.treatedBy) targets.add(quoteData.treatedBy);
+    // 3. Add all approved admins
+    const adminsSnap = await adminDb.collection('users')
+      .where('role', '==', 'admin')
+      .where('status', '==', 'approved')
+      .get();
+    adminsSnap.forEach(doc => targets.add(doc.id));
+    // 4. Remove the person who is making the change
+    targets.delete(adminUser.uid);
+    return Array.from(targets);
+  };
+
   // Clean up $undefined serialization artifacts
   const updatePayload: Record<string, any> = {};
   Object.keys(data).forEach(key => {
@@ -1409,6 +1427,9 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
 
   if (data.status) {
     let details = `Statut changé vers ${translateStatus(data.status)}`;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR');
+    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
     if (data.status === 'in_progress' && data.supplierId) {
       const supplier = await getUser(data.supplierId);
@@ -1419,101 +1440,108 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
       }
       
       // Notify the supplier
-      if (supplier) {
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('fr-FR');
-        const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        
+      if (supplier && supplier.uid !== adminUser.uid) {
         notifications.push({
           userId: supplier.uid,
           type: 'estimation_sent',
           title: 'Nouvelle estimation reçue',
-          description: `Le devis N°${quoteId.substring(0, 8)} pour le client ${quoteData?.client?.companyName || 'Client'} vous a été transmise par ${adminUser.displayName || 'un commercial'} le ${dateStr} à ${timeStr}.`,
+          description: `Le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}) vous a été transmis le ${dateStr} à ${timeStr}.`,
           href: `/admin/quotes/${quoteId}`,
           read: false,
           createdAt: FieldValue.serverTimestamp(),
           quoteRequestId: quoteId
         });
 
-        // Add background email notification
         if (supplier.email) {
-           const quoteNumber = quoteData?.number || quoteId.substring(0, 8);
-           const clientName = quoteData?.client?.companyName || 'Client';
-           sendSupplierEmail(supplier.email, quoteNumber, clientName, data.supplierNotes).catch(console.error);
+          const quoteNumber = quoteData?.number || quoteId.substring(0, 8);
+          const clientName = quoteData?.client?.companyName || 'Client';
+          sendSupplierEmail(supplier.email, quoteNumber, clientName, data.supplierNotes).catch(console.error);
         }
       }
-      
-      // Notify admin that estimation was sent to supplier
-      if (quoteData?.userId) {
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('fr-FR');
-        const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
-        notifications.push({
-          userId: quoteData.userId,
-          type: 'estimation_sent',
-          title: 'Estimation transmise au fournisseur',
-          description: `Le devis N°${quoteId.substring(0, 8)} pour le client ${quoteData?.client?.companyName || 'Client'} a été transmis par ${adminUser.displayName || 'un commercial'} à ${supplier?.displayName || 'un fournisseur'} le ${dateStr} à ${timeStr}.`,
-          href: `/admin/quotes/${quoteId}`,
-          read: false,
-          createdAt: FieldValue.serverTimestamp(),
-          quoteRequestId: quoteId,
-          supplierId: data.supplierId
-        });
-      }
     }
-    
-    // When supplier rejects an estimation
-    if (data.status === 'in_progress' && data.supplierNotes && data.supplierNotes.toLowerCase().includes('reject')) {
-      if (quoteData?.userId) {
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('fr-FR');
-        const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-        const currentSupplier = data.supplierId ? await getUser(data.supplierId) : null;
-
+    // NEW: Handle "returned" (when supplier sends back the price)
+    if (data.status === 'returned') {
+      const targets = await getTargetUsers();
+      targets.forEach(uid => {
         notifications.push({
-          userId: quoteData.userId,
-          type: 'estimation_rejected',
-          title: 'Estimation refusée',
-          description: `Le fournisseur ${currentSupplier?.displayName || ''} a refusé le devis N°${quoteId.substring(0, 8)} pour le client ${quoteData?.client?.companyName || 'Client'} le ${dateStr} à ${timeStr}.`,
+          userId: uid,
+          type: 'estimation',
+          title: 'Estimation complétée par le fournisseur',
+          description: `Le fournisseur a renvoyé ses prix pour le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}).`,
           href: `/admin/quotes/${quoteId}`,
           read: false,
           createdAt: FieldValue.serverTimestamp(),
           quoteRequestId: quoteId
         });
-      }
+      });
     }
-    
-    // When supplier creates an order (delivery status)
-    if (data.status === 'delivered' && quoteData?.supplierId) {
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('fr-FR');
-      const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-      notifications.push({
-        userId: quoteData.userId,
-        type: 'order_created',
-        title: 'Commande créée',
-        description: `Le fournisseur a validé et créé une commande pour le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}) le ${dateStr} à ${timeStr}.`,
-        href: `/admin/quotes/${quoteId}`,
-        read: false,
-        createdAt: FieldValue.serverTimestamp(),
-        quoteRequestId: quoteId,
-        supplierId: quoteData.supplierId
+    // NEW: Handle "sent" (Delivery in progress)
+    if (data.status === 'sent') {
+      const targets = await getTargetUsers();
+      targets.forEach(uid => {
+        notifications.push({
+          userId: uid,
+          type: 'delivery',
+          title: 'Estimation en cours de livraison',
+          description: `Le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}) est passé en statut livraison.`,
+          href: `/admin/quotes/${quoteId}`,
+          read: false,
+          createdAt: FieldValue.serverTimestamp(),
+          quoteRequestId: quoteId
+        });
+      });
+    }
+
+    // When supplier rejects an estimation
+    if (data.status === 'in_progress' && data.supplierNotes && data.supplierNotes.toLowerCase().includes('reject')) {
+      const targets = await getTargetUsers();
+      targets.forEach(uid => {
+        notifications.push({
+          userId: uid,
+          type: 'estimation_rejected',
+          title: 'Estimation refusée',
+          description: `Le fournisseur a refusé le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}).`,
+          href: `/admin/quotes/${quoteId}`,
+          read: false,
+          createdAt: FieldValue.serverTimestamp(),
+          quoteRequestId: quoteId
+        });
       });
     }
     
-    // Notify commercial when quote is processed or delivered
-    if ((data.status === 'processed' || data.status === 'delivered') && quoteData?.userId) {
-      notifications.push({
-        userId: quoteData.userId,
-        type: 'estimation',
-        title: `Devis ${data.status === 'processed' ? 'traité' : 'livré'}`,
-        description: `Votre devis pour ${quoteData?.client?.companyName || 'Client'} a été ${data.status === 'processed' ? 'traité' : 'livré'}`,
-        href: `/admin/quotes/${quoteId}`,
-        read: false,
-        createdAt: FieldValue.serverTimestamp()
+    // When supplier creates an order (delivered status in system)
+    if (data.status === 'delivered') {
+      const targets = await getTargetUsers();
+      targets.forEach(uid => {
+        notifications.push({
+          userId: uid,
+          type: 'order_created',
+          title: 'Commande validée par le fournisseur',
+          description: `Une commande a été créée pour le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}).`,
+          href: `/admin/quotes/${quoteId}`,
+          read: false,
+          createdAt: FieldValue.serverTimestamp(),
+          quoteRequestId: quoteId
+        });
+      });
+    }
+    
+    // Default notifications for other status changes (processed, etc.)
+    if (['processed', 'delivered'].includes(data.status)) {
+      const targets = await getTargetUsers();
+      targets.forEach(uid => {
+        notifications.push({
+          userId: uid,
+          type: 'estimation',
+          title: `Devis ${data.status === 'processed' ? 'traité' : 'livré'}`,
+          description: `Le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}) a été marqué comme ${data.status === 'processed' ? 'traité' : 'livré'}.`,
+          href: `/admin/quotes/${quoteId}`,
+          read: false,
+          createdAt: FieldValue.serverTimestamp(),
+          quoteRequestId: quoteId
+        });
       });
     }
 

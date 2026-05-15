@@ -263,8 +263,8 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                   : est.status === 'Corbeille'
                     ? 'bg-[#fff1f2] border-[#fecdd3] text-[#b20000] hover:bg-[#b20000] hover:border-[#b20000] hover:text-theme-sidebar-active-text transition-colors duration-300'
                   : est.status === 'Archivé'
-                    ? 'bg-zinc-50 border-zinc-200 text-zinc-500 opacity-60 grayscale hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
-                    : 'bg-white border-zinc-100 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
+                    ? 'bg-zinc-50 border-zinc-200 text-zinc-500 opacity-60 grayscale hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text dark:bg-white/5 dark:border-white/10 dark:text-zinc-400'
+                    : 'bg-white border-zinc-100 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text dark:bg-white/5 dark:border-white/10 dark:hover:bg-theme-sidebar-active-bg'
             }`}
             onClick={() => onEdit(est.id)}
           >
@@ -311,7 +311,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
             {/* Numéro & Ref */}
             <div className="w-32 px-3 flex items-center gap-3">
-              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900'}`}>
+              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900 dark:text-zinc-100'}`}>
                 {est.number}
               </span>
             </div>
@@ -319,7 +319,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             {/* Client */}
             <div className="flex-1 px-3 flex flex-col justify-center min-w-0">
               <div className="flex items-center gap-2 min-w-0">
-                <span className={`font-bold text-sm truncate ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900'}`}>
+                <span className={`font-bold text-sm truncate ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900 dark:text-zinc-100'}`}>
                   {est.client}
                 </span>
                 {est.emailVerified && (
@@ -335,7 +335,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                   className={`px-2 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1 transition-all ${
                     isSelected 
                       ? 'bg-zinc-800 text-zinc-300 hover:bg-theme-sidebar-active-bg hover:text-black' 
-                      : 'bg-zinc-100 text-zinc-500 group-hover:bg-zinc-800 group-hover:text-zinc-400 hover:!bg-theme-sidebar-active-bg hover:!text-black'
+                      : 'bg-zinc-100 text-zinc-500 group-hover:bg-zinc-800 group-hover:text-zinc-400 hover:!bg-theme-sidebar-active-bg hover:!text-black dark:bg-zinc-800 dark:text-zinc-400'
                   }`}
                 >
                   <Phone className="w-2.5 h-2.5" />
@@ -362,7 +362,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
             {/* Heure / Date */}
             <div className="w-28 px-3 flex flex-col justify-center">
-              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900'}`}>
+              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900 dark:text-zinc-100'}`}>
                 {est.time || '--:--'}
               </span>
               <span className={`text-[10px] font-medium ${isSelected ? 'text-zinc-500' : 'group-hover:text-zinc-500 text-zinc-400'}`}>
@@ -380,7 +380,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             {!isFournisseur && (
               <div className="w-36 px-3 flex flex-col items-start justify-center">
                 <span className={`text-[8px] font-black uppercase tracking-[0.2em] mb-0.5 ${isSelected ? 'text-zinc-600' : 'group-hover:text-zinc-600 text-zinc-300'}`}>PRIX TOTAL</span>
-                <span className={`font-black text-lg tracking-tighter whitespace-nowrap ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900'}`}>
+                <span className={`font-black text-lg tracking-tighter whitespace-nowrap ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900 dark:text-zinc-100'}`}>
                   {Math.max(est.totalClient, 0.01).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
               </div>
@@ -616,7 +616,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
           <motion.div
             layout
             className={`md:hidden group relative flex flex-col rounded-2xl border transition-all duration-300 overflow-hidden mb-3 shadow-sm ${
-              est.isReturned ? 'bg-[#fff1f2] border-[#fecdd3]' : est.status === 'Corbeille' ? 'bg-[#fff1f2] border-[#fecdd3]' : activeTab === 'Archivé' && est.isLocked ? 'bg-zinc-100 border-zinc-300 opacity-60 grayscale' : 'bg-white border-zinc-100 hover:border-theme-sidebar-active-bg'
+              est.isReturned ? 'bg-[#fff1f2] border-[#fecdd3]' : est.status === 'Corbeille' ? 'bg-[#fff1f2] border-[#fecdd3]' : activeTab === 'Archivé' && est.isLocked ? 'bg-zinc-100 border-zinc-300 opacity-60 grayscale dark:bg-white/5 dark:border-white/10' : 'bg-white border-zinc-100 hover:border-theme-sidebar-active-bg dark:bg-white/5 dark:border-white/10'
             } ${
               isSelected ? (est.status === 'Corbeille' ? 'border-[#b20000] ring-2 ring-[#b20000] ring-offset-1' : 'border-[#1447e6] ring-2 ring-[#1447e6] ring-offset-1') : ''
             }`}
@@ -660,7 +660,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
                   <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-black text-zinc-900 text-base tracking-tighter truncate">{est.client}</span>
+                      <span className="font-black text-zinc-900 dark:text-zinc-100 text-base tracking-tighter truncate">{est.client}</span>
                       <Mail className={`w-3.5 h-3.5 shrink-0 ${est.emailVerified ? 'text-emerald-500' : 'text-red-500'}`} />
                     </div>
                     <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{est.number}</span>
@@ -685,7 +685,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
               <div className="flex items-center justify-between gap-4 w-full">
                 <div className="flex flex-col">
                    <span className="text-[8px] text-zinc-400 font-black uppercase tracking-[0.2em] mb-0.5">MONTANT TOTAL</span>
-                   <span className="font-black text-zinc-900 text-lg tracking-tighter">
+                   <span className="font-black text-zinc-900 dark:text-zinc-100 text-lg tracking-tighter">
                      {est.totalClient.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                    </span>
                 </div>

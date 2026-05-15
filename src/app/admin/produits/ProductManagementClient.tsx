@@ -323,8 +323,8 @@ const ProductListItem = ({
         boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.15)"
       }}
       className={cn(
-        "bg-white border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:-translate-y-1 hover:shadow-2xl",
-        selectedIds.includes(product.id) ? "border-blue-500 ring-1 ring-blue-500" : "border-slate-200"
+        "bg-white border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:-translate-y-1 hover:shadow-2xl dark:bg-white/5 dark:border-white/10 dark:hover:bg-theme-sidebar-active-bg",
+        selectedIds.includes(product.id) ? "border-blue-500 ring-1 ring-blue-500" : "border-slate-200 dark:border-white/10"
       )}
     >
       <div className="flex items-center gap-3 shrink-0">
@@ -375,7 +375,7 @@ const ProductListItem = ({
 
       <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
         <div className="md:col-span-2">
-          <h3 className="font-bold text-slate-900 group-hover/product:text-theme-sidebar-active-text transition-colors truncate">{product.name}</h3>
+          <h3 className="font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-theme-sidebar-active-text transition-colors truncate">{product.name}</h3>
           <div className="flex items-center gap-2 mt-1">
             <span className={cn(
               "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md transition-colors",
@@ -411,17 +411,17 @@ const ProductListItem = ({
 
         <div className="hidden md:flex flex-col gap-1">
           <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/30">Pitch</span>
-          <span className="text-sm font-medium text-slate-700 group-hover/product:text-theme-sidebar-active-text">{product.pitch || '—'}</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-theme-sidebar-active-text">{product.pitch || '—'}</span>
         </div>
 
         <div className="hidden md:flex flex-col gap-1">
           <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/30">Distance</span>
-          <span className="text-sm font-medium text-slate-700 group-hover/product:text-theme-sidebar-active-text">{product.distance || '—'}</span>
+          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-theme-sidebar-active-text">{product.distance || '—'}</span>
         </div>
 
         <div className="hidden md:flex flex-col gap-1 items-center">
           <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/30">Vente /m²</span>
-          <span className="text-sm font-bold text-slate-900 group-hover/product:text-[#a3e635] transition-colors duration-300">
+          <span className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-[#a3e635] transition-colors duration-300">
             {product.salePricePerSqM || product.price || '—'}
           </span>
         </div>
@@ -1776,7 +1776,9 @@ const ProduitPage = ({
   isAnalyzing,
   analysisProgress,
   pdfError,
-  setIsAISettingsOpen
+  setIsAISettingsOpen,
+  screenType,
+  setScreenType
 }: any) => {
   const [specPage, setSpecPage] = useState(1);
   const [prevSpecPage, setPrevSpecPage] = useState(1);
@@ -1796,21 +1798,21 @@ const ProduitPage = ({
 
   return (
     <div className="w-full pb-32 md:pb-0">
-      <div className="bg-transparent md:bg-white md:border md:border-slate-200 md:rounded-[3rem] p-0 md:p-10 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="bg-transparent md:bg-white md:border md:border-slate-200 md:rounded-[3rem] p-0 md:p-6 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           
           {/* Left Column: Technical Specs & Core Settings */}
-          <div className="lg:col-span-5 flex flex-col space-y-8 lg:border-r lg:border-slate-100 lg:pr-8">
+          <div className="lg:col-span-5 flex flex-col space-y-3 lg:border-r lg:border-slate-100 lg:pr-8">
             
             {/* 1. Nom du produit */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Nom du produit</label>
               <input 
                 type="text" 
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
                 placeholder="Nom Du Produits" 
-                className="w-full border-2 border-slate-100 rounded-2xl px-6 py-4 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white transition-all"
+                className="w-full border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white transition-all"
               />
             </div>
 
@@ -1840,9 +1842,9 @@ const ProduitPage = ({
             </div>
 
             {/* Desktop Only: Mode de commercialisation */}
-            <div className="hidden md:block space-y-3">
+            <div className="hidden md:block space-y-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Mode de commercialisation</label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <button 
                   onClick={() => {
                     setMode((prev: string[]) => 
@@ -1878,8 +1880,38 @@ const ProduitPage = ({
               </div>
             </div>
 
+            {/* Desktop Only: Type d'écran */}
+            <div className="hidden md:block space-y-1.5">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Type d'écran</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  onClick={() => setScreenType('flat')}
+                  className={cn(
+                    "h-10 rounded-xl flex items-center justify-center gap-3 font-bold transition-all border",
+                    screenType === 'flat' ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                  )}
+                >
+                  <Monitor className={cn("w-5 h-5", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-300")} />
+                  <span>Écran Plat</span>
+                </button>
+                <button 
+                  onClick={() => setScreenType('curved')}
+                  className={cn(
+                    "h-10 rounded-xl flex items-center justify-center gap-3 font-bold transition-all border",
+                    screenType === 'curved' ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                  )}
+                >
+                  <svg className={cn("w-5 h-5", screenType === 'curved' ? "text-blue-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 17C2 17 4 15 12 15C20 15 22 17 22 17V7C22 7 20 5 12 5C4 5 2 7 2 7V17Z" />
+                    <path d="M12 15V19M10 19H14" />
+                  </svg>
+                  <span>Écran Incurvé</span>
+                </button>
+              </div>
+            </div>
+
             {/* Desktop Only: Environnement */}
-            <div className="hidden md:block space-y-3">
+            <div className="hidden md:block space-y-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Environnement</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
@@ -1909,8 +1941,8 @@ const ProduitPage = ({
             </div>
 
             {/* Technical Specs Grid */}
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between mb-2">
+            <div className="space-y-3 pt-1">
+              <div className="flex items-center justify-between mb-1">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Spécifications Techniques</label>
                 {totalSpecPages > 1 && (
                   <div className="flex items-center gap-2">
@@ -1937,16 +1969,16 @@ const ProduitPage = ({
                       if (!charDef) return null;
                       const Icon = getIcon(charDef.iconName);
                       return (
-                        <div key={sc.id} className="bg-[#0f172a] text-white rounded-2xl p-5 flex flex-col justify-between shadow-xl relative group border border-white/5">
-                          <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <div key={sc.id} className="bg-[#0f172a] text-white rounded-2xl p-4 flex flex-col justify-between shadow-xl relative group border border-white/5">
+                          <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                             <button onClick={(e) => { e.stopPropagation(); setCharacteristics(characteristics.map((c: any) => c.id === sc.id ? { ...c, isPinned: !c.isPinned } : c)); }} className={cn("p-1.5 rounded-lg transition-colors", charDef.isPinned ? "text-[#a3e635] bg-[#a3e635]/10" : "text-slate-500 hover:text-[#a3e635]")}>
                               <Pin className="w-4 h-4" />
                             </button>
                             {!['Distance de visionnage', 'Pixel pitch'].includes(charDef.name) && (
-                              <button onClick={() => setSelectedChars((prev: any[]) => prev.filter(c => c.id !== sc.id))} className="p-1.5 text-slate-500 hover:text-red-500 rounded-lg"><X className="w-4 h-4" /></button>
+                              <button onClick={() => setSelectedChars((prev: any[]) => prev.filter(c => c.id !== sc.id))} className="p-1 text-slate-500 hover:text-red-500 rounded-lg"><X className="w-4 h-4" /></button>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 mb-3 pr-6 cursor-pointer active:opacity-60 transition-opacity" onClick={() => {
+                          <div className="flex items-center gap-2 mb-2 pr-6 cursor-pointer active:opacity-60 transition-opacity" onClick={() => {
                             // If we want to open the select, we would need a way to trigger CustomSelect.
                             // Since CustomSelect doesn't expose a ref, we'll just make the area look interactive.
                             // Most users will naturally click the select box below if the header feels like part of it.
@@ -1994,44 +2026,44 @@ const ProduitPage = ({
               </div>
               
               <div className="relative z-10 flex flex-col h-full">
-                <div className="flex items-center gap-3 mb-10">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-cyan-400/10 rounded-xl flex items-center justify-center border border-cyan-400/20">
                     <Tag className="w-5 h-5 text-cyan-400 transform -rotate-90" />
                   </div>
                   <h3 className="text-2xl font-black text-white uppercase tracking-tight">Tarification</h3>
                 </div>
 
-                <div className="space-y-10 flex-1">
+                <div className="space-y-4 flex-1">
                   
                   {/* Prix de Vente (Teal Box like screenshot) */}
-                  <div className="bg-cyan-950/40 p-6 rounded-2xl border border-cyan-500/20 relative group overflow-hidden">
+                  <div className="bg-cyan-950/40 p-4 rounded-2xl border border-cyan-500/20 relative group overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-transparent pointer-events-none" />
-                    <label className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-3 block">Prix de vente (€)</label>
+                    <label className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1.5 block">Prix de vente (€)</label>
                     <NumberInput 
                       value={prixVente} 
                       onChange={setPrixVente} 
                       placeholder="Ex: 1200" 
                       isDark 
                     />
-                    <div className="text-[9px] text-cyan-400/40 mt-2 font-medium italic tracking-tight">Prix public conseillé par m².</div>
+                    <div className="text-[9px] text-cyan-400/40 mt-1 font-medium italic tracking-tight">Prix public conseillé par m².</div>
                   </div>
 
                   {/* Surface Minimum */}
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Surface Minimum Requise (M²)</label>
                     <NumberInput 
                       value={surfaceMinRequise || surface.toString()} 
                       onChange={(val) => { setSurfaceMinRequise(val); setSurface(parseFloat(val) || 0); }} 
                       isDark 
                     />
-                    <p className="text-[9px] text-slate-500 mt-2 px-1 leading-relaxed">Définit la surface minimale pour le calcul du devis.</p>
+                    <p className="text-[9px] text-slate-500 mt-1 px-1 leading-relaxed">Définit la surface minimale pour le calcul du devis.</p>
                   </div>
 
-                  <div className="h-px bg-slate-800/50 my-2" />
+                  <div className="h-px bg-slate-800/50 my-0.5" />
 
                   {/* Dalles Management */}
-                  <div className="space-y-6">
-                    <div className="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50">
+                  <div className="space-y-3">
+                    <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
                       <div className="flex justify-between items-center mb-4">
                         <div className="pr-4">
                           <div className="text-xs font-black text-white uppercase tracking-tight">Gérer les dimensions et le prix par dalle</div>
@@ -2086,16 +2118,20 @@ const ProduitPage = ({
           </div>
 
           {/* Right Column: Media & Actions */}
-          <div className="lg:col-span-4 flex flex-col space-y-6">
+          <div className="lg:col-span-4 flex flex-col space-y-3">
             
             {/* Media Preview Box */}
-            <div className="space-y-4">
+            <div className="space-y-2">
               <div 
-                onClick={triggerUpload}
-                className="w-full h-72 bg-slate-50 rounded-[2.5rem] overflow-hidden relative shadow-inner border-2 border-slate-100 group cursor-pointer"
+                className="w-full h-72 bg-slate-50 rounded-[2.5rem] overflow-hidden relative shadow-inner border-2 border-slate-100 group"
               >
                 {mediaType === 'photo' ? (
-                  <img src={previewSrc} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
+                  <div className="w-full h-full cursor-pointer" onClick={triggerUpload}>
+                    <img src={previewSrc} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="px-6 py-3 bg-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl">Remplacer la photo</div>
+                    </div>
+                  </div>
                 ) : (
                   <div className="w-full h-full bg-slate-900 flex items-center justify-center relative">
                     {getYouTubeId(previewSrc) ? (
@@ -2120,17 +2156,23 @@ const ProduitPage = ({
                         <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Aucune vidéo</p>
                       </div>
                     )}
+                    
+                    {/* Floating Replace Button for Video (so it doesn't block controls) */}
+                    <button 
+                      onClick={triggerUpload}
+                      className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-md text-slate-900 rounded-xl shadow-xl border border-white/20 opacity-0 group-hover:opacity-100 transition-all active:scale-95 flex items-center gap-2 z-30"
+                    >
+                      <RefreshCw className="w-4 h-4 text-blue-500" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Remplacer la vidéo</span>
+                    </button>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="px-6 py-3 bg-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl">Remplacer</div>
-                </div>
-                <div className="absolute top-6 left-6 px-4 py-2 bg-black/60 backdrop-blur-md text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10">Aperçu du média</div>
+                <div className="absolute top-4 left-4 px-4 py-2 bg-black/60 backdrop-blur-md text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 z-20 pointer-events-none">Aperçu du média</div>
               </div>
 
               {/* Media Settings Card */}
-              <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-6 space-y-5">
-                <div className="space-y-3">
+              <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3">
+                <div className="space-y-1.5">
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Type de média visuel</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button onClick={() => setMediaType('photo')} className={cn("h-10 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all border", mediaType === 'photo' ? "bg-black text-white border-black" : "bg-slate-50 text-slate-500 border-slate-200")}>
@@ -2142,7 +2184,7 @@ const ProduitPage = ({
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-1.5">
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Lien du média (URL)</label>
                   <div className="flex gap-2">
                     <input type="text" value={currentMediaUrl} onChange={handleUrlChange} placeholder="data:image/..." className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900" />
@@ -2154,7 +2196,7 @@ const ProduitPage = ({
             </div>
 
             {/* Fiche Technique Card */}
-            <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-6 space-y-6 flex-1 flex flex-col shadow-none md:shadow-sm">
+            <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3 flex-1 flex flex-col shadow-none md:shadow-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
@@ -2321,6 +2363,40 @@ const ProduitPage = ({
                           <Calendar className={cn("w-4 h-4", mode.includes('location') ? "text-purple-400" : "text-slate-400")} />
                         </div>
                         <span className="text-xs font-black uppercase tracking-widest">Location</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Type d'écran (Mobile) */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Type d'écran</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={() => setScreenType('flat')}
+                        className={cn(
+                          "w-full h-12 rounded-xl flex items-center px-4 gap-3 transition-all duration-300 relative overflow-hidden group",
+                          screenType === 'flat' ? "bg-black text-white" : "bg-slate-100 text-slate-400"
+                        )}
+                      >
+                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", screenType === 'flat' ? "bg-white/10" : "bg-slate-200")}>
+                          <Monitor className={cn("w-4 h-4", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-400")} />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Plat</span>
+                      </button>
+                      <button 
+                        onClick={() => setScreenType('curved')}
+                        className={cn(
+                          "w-full h-12 rounded-xl flex items-center px-4 gap-3 transition-all duration-300 relative overflow-hidden group",
+                          screenType === 'curved' ? "bg-black text-white" : "bg-slate-100 text-slate-400"
+                        )}
+                      >
+                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", screenType === 'curved' ? "bg-white/10" : "bg-slate-200")}>
+                          <svg className={cn("w-4 h-4", screenType === 'curved' ? "text-blue-400" : "text-slate-400")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M2 17C2 17 4 15 12 15C20 15 22 17 22 17V7C22 7 20 5 12 5C4 5 2 7 2 7V17Z" />
+                            <path d="M12 15V19M10 19H14" />
+                          </svg>
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Incurvé</span>
                       </button>
                     </div>
                   </div>
@@ -3210,6 +3286,7 @@ export default function ProductManagementClient() {
 
   const [mode, setMode] = useState<('vente' | 'location')[]>(['vente']);
   const [environment, setEnvironment] = useState<('interieur' | 'exterieur' | 'semi-exterieur')[]>(['exterieur']);
+  const [screenType, setScreenType] = useState<'flat' | 'curved'>('flat');
   const [surface, setSurface] = useState<number>(9.00);
   const [mediaType, setMediaType] = useState<'photo' | 'video'>('photo');
   const [dimensionsEnabled, setDimensionsEnabled] = useState(false);
@@ -3378,6 +3455,8 @@ export default function ProductManagementClient() {
         tileHeight: Number(hauteurDalle || '0'),
         pricePerTile: Number(prixDalle || '0'),
         dimensionsEnabled: !!dimensionsEnabled,
+        screenType: screenType || 'flat',
+        updatedAt: new Date().toISOString(),
         hasDimensions: !!dimensionsEnabled,
         prixLocationHeure: String(prixLocationHeure || '0'),
         prixLocationJour: String(prixLocationJour || '0'),
@@ -3748,12 +3827,14 @@ export default function ProductManagementClient() {
       setHauteurDalle(editingProduct.tileHeight?.toString() || editingProduct.hauteurDalle || '50');
       setPrixDalle(editingProduct.pricePerTile?.toString() || editingProduct.prixDalle || '20');
       setDimensionsEnabled(!!(editingProduct.dimensionsEnabled || editingProduct.hasDimensions));
+      setScreenType(editingProduct.screenType || 'flat');
       setSurface(parseFloat(editingProduct.surfaceMinRequise || '0') || 9.00);
     } else {
       // Reset form
       setProductName('');
       setMode(['vente']);
       setEnvironment(['exterieur']);
+      setScreenType('flat');
       setPrixVente('1250');
       
       // Reset technical/pricing specs
@@ -4299,6 +4380,8 @@ export default function ProductManagementClient() {
                   analysisProgress={analysisProgress}
                   pdfError={pdfError}
                   setIsAISettingsOpen={setIsAISettingsOpen}
+                  screenType={screenType}
+                  setScreenType={setScreenType}
                 />
               </motion.div>
             )}

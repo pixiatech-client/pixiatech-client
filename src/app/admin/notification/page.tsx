@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { MessageSquare, FileText, Users, Truck, Send, XCircle, ShoppingCart, Archive, ArchiveRestore, CheckCircle2, Settings, Bell, Trash2, Mail, Clock } from 'lucide-react';
+import { toast as sonnerToast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, orderBy, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
@@ -63,17 +64,17 @@ function NotificationPage() {
       case 'messages':
         return notifications.filter(n => n.type === 'message');
       case 'system':
-        return notifications.filter(n => ['system', 'estimation', 'estimation_sent', 'estimation_rejected', 'order_created', 'estimation_archived', 'estimation_unarchived'].includes(n.type));
+        return notifications.filter(n => ['system', 'estimation', 'delivery', 'estimation_sent', 'estimation_rejected', 'order_created', 'estimation_archived', 'estimation_unarchived'].includes(n.type));
       default:
         return notifications;
     }
   }, [notifications, activeCategory]);
 
   const unreadCounts = useMemo(() => ({
-    all: notifications.length,
+    all: notifications.filter(n => !n.read).length,
     unread: notifications.filter(n => !n.read).length,
-    messages: notifications.filter(n => n.type === 'message').length,
-    system: notifications.filter(n => ['system', 'estimation', 'estimation_sent', 'estimation_rejected', 'order_created', 'estimation_archived', 'estimation_unarchived'].includes(n.type)).length,
+    messages: notifications.filter(n => n.type === 'message' && !n.read).length,
+    system: notifications.filter(n => ['system', 'estimation', 'delivery', 'estimation_sent', 'estimation_rejected', 'order_created', 'estimation_archived', 'estimation_unarchived'].includes(n.type) && !n.read).length,
   }), [notifications]);
 
   const getIcon = (type: string) => {
@@ -101,16 +102,21 @@ function NotificationPage() {
   };
 
   const handleMarkAllAsRead = async () => {
-    if (!firestore || notifications.length === 0) return;
+    if (!firestore || unreadCounts.unread === 0) return;
     setIsLoading(true);
     try {
       const batch = writeBatch(firestore);
-      notifications.filter(n => !n.read).forEach(n => {
+      const unreadNotifs = notifications.filter(n => !n.read);
+      
+      unreadNotifs.forEach(n => {
         batch.update(doc(firestore, 'notifications', n.id), { read: true });
       });
+      
       await batch.commit();
-    } catch (error) {
+      sonnerToast.success(`${unreadNotifs.length} notifications marquées comme lues`);
+    } catch (error: any) {
       console.error('Error marking all as read:', error);
+      sonnerToast.error('Erreur lors du marquage comme lu: ' + error.message);
     }
     setIsLoading(false);
   };
@@ -121,6 +127,41 @@ function NotificationPage() {
       await deleteDoc(doc(firestore, 'notifications', id));
     } catch (error) {
       console.error('Error deleting notification:', error);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!firestore || !notifications || notifications.length === 0) {
+      sonnerToast.error("Aucune notification à supprimer");
+      return;
+    }
+    
+    if (!window.confirm(`Voulez-vous vraiment supprimer TOUTES vos notifications (${notifications.length}) ? Cette action est irréversible.`)) return;
+    
+    setIsLoading(true);
+    try {
+      // Process in chunks of 500 (Firestore batch limit)
+      const chunks = [];
+      for (let i = 0; i < notifications.length; i += 500) {
+        chunks.push(notifications.slice(i, i + 500));
+      }
+      
+      for (const chunk of chunks) {
+        const batch = writeBatch(firestore);
+        chunk.forEach(notif => {
+          if (notif.id) {
+            batch.delete(doc(firestore, 'notifications', notif.id));
+          }
+        });
+        await batch.commit();
+      }
+      
+      sonnerToast.success(`${notifications.length} notifications supprimées avec succès`);
+    } catch (error: any) {
+      console.error('Erreur lors de la suppression groupée:', error);
+      sonnerToast.error('Erreur lors de la suppression : ' + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -147,12 +188,12 @@ function NotificationPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#E8F3EB] font-sans text-gray-900">
+    <div className="min-h-screen font-sans" style={{ backgroundColor: 'var(--theme-page-bg)', color: 'var(--theme-sidebar-text)' }}>
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-10">
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 hidden md:block">Notifications</h1>
-            <p className="mt-1 text-sm text-gray-500 hidden md:block">Restez informé des dernières activités de votre plateforme.</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight hidden md:block" style={{ color: 'var(--theme-sidebar-text)' }}>Notifications</h1>
+            <p className="mt-1 text-sm opacity-60 hidden md:block">Restez informé des dernières activités de votre plateforme.</p>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
             <button 
@@ -163,6 +204,14 @@ function NotificationPage() {
               <CheckCircle2 className="h-4 w-4" />
               <span className="hidden sm:inline">Marquer tout comme lu</span>
               <span className="sm:hidden">Tout lire</span>
+            </button>
+            <button 
+              onClick={handleDeleteAll}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-600 px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-lg transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Effacer tout</span>
+              <span className="sm:hidden">Tout effacer</span>
             </button>
           </div>
         </div>
