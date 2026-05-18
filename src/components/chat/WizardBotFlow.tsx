@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronDown, ArrowRight, ArrowLeft, MapPin, Loader2, Grid, Calendar as CalendarIcon, Clock, Bot, Video, Download, Info } from 'lucide-react';
+import { X, ChevronDown, ArrowRight, ArrowLeft, MapPin, Loader2, Grid, Calendar as CalendarIcon, Clock, Bot, Video, Download, Info, Layers } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Calendar } from "@/components/ui/calendar";
@@ -17,6 +17,7 @@ import { ConfigState, INITIAL_STATE } from '@/lib/configurator-wizard-types';
 import { StepDimensions, StepSummary, StepFinal } from '@/components/configurator-wizard';
 import { ProductNotFound } from '@/components/ProductNotFound';
 import { SuccessView } from '@/components/success-view';
+import { ProductComparator } from '@/components/product-comparator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createQuoteRequest } from '@/app/actions/quote-actions';
@@ -86,6 +87,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const [currentProductIndex, setCurrentProductIndex] = useState(0);
   const [errorCount, setErrorCount] = useState(0);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [showComparator, setShowComparator] = useState(false);
 
   const [deliveryCityId, setDeliveryCityId] = useState('');
   const [includeInstallation, setIncludeInstallation] = useState<boolean | null>(null);
@@ -953,7 +955,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             }
 
                             return (
-                              <motion.div
+                              <>
+                                <motion.div
                                 key={currentProduct.id}
                                 initial={{ x: 40, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
@@ -1066,7 +1069,24 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                     </Button>
                                   </div>
                                 </div>
-                              </motion.div>
+                                </motion.div>
+                                {matchingProducts.length > 1 && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.3 }}
+                                    className="mt-3 flex justify-center"
+                                  >
+                                    <button
+                                      onClick={() => setShowComparator(true)}
+                                      title="Comparer tous les produits correspondants côte à côte"
+                                      className="px-5 py-2 bg-white/90 backdrop-blur text-slate-700 border border-slate-200 rounded-full text-[11px] font-bold uppercase tracking-widest hover:bg-black hover:text-white hover:border-black transition-all shadow-sm flex items-center gap-2"
+                                    >
+                                      <Layers className="w-3.5 h-3.5" /> Comparer ces {matchingProducts.length} produits
+                                    </button>
+                                  </motion.div>
+                                )}
+                              </>
                             );
                           })()}
                         </AnimatePresence>
@@ -1410,6 +1430,30 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           </AnimatePresence>
         </>
       )}
+      <AnimatePresence>
+        {showComparator && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] bg-white flex flex-col"
+          >
+            <ProductComparator
+              products={matchingProducts}
+              configState={configState}
+              selectedProductId={configState.selectedProduct || undefined}
+              onSelect={(id) => {
+                setConfigState(prev => ({ ...prev, selectedProduct: id }));
+                setShowComparator(false);
+                pushUserMessage('Ce produit me convient');
+                handleProductSelected(id);
+              }}
+              onClose={() => setShowComparator(false)}
+              locale={locale}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

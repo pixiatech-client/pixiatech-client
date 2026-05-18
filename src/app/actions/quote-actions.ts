@@ -16,10 +16,20 @@ import { Timestamp } from 'firebase-admin/firestore';
 type Locale = 'fr' | 'en';
 const translations = { fr, en };
 
+import { validatePhone } from '@/lib/phone-validation';
+
 const formSchema = z.object({
   companyName: z.string().min(1, "Le nom de l'entreprise est requis"),
   email: z.string().email('Adresse e-mail invalide'),
-  phone: z.string().min(1, 'Le numéro de téléphone est requis'),
+  phone: z.string().min(1, 'Le numéro de téléphone est requis').superRefine((val, ctx) => {
+    const result = validatePhone(val);
+    if (!result.isValid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: result.error || "Numéro de téléphone invalide",
+      });
+    }
+  }),
   address: z.string().min(1, "L'adresse est requise"),
   notes: z.string().optional(),
   termsAccepted: z.boolean().refine(val => val === true, {
@@ -124,10 +134,13 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
   const logoSource = pdfSettings.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Flogo.png?alt=media&token=8544c77c-6554-46c5-ac33-0c464c8d50d0';
   const t = translations[lang] || translations.fr;
 
+  const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
+  const isSecure = smtpPort === 465;
+
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: 465,
-    secure: true,
+    port: smtpPort,
+    secure: isSecure,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,

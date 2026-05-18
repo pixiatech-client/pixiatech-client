@@ -18,7 +18,9 @@
         "humanSilhouette": "Human silhouette",
         "projectSummary": "Project Summary",
         "delete": "Delete",
-        "user": "User"
+        "user": "User",
+        "select": "Select",
+        "selected": "Selected"
     },
     "header": {
         "login": "Login"

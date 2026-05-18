@@ -57,6 +57,7 @@ import Link from 'next/link';
 import { preloadImages } from '@/lib/image-preload';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ProductNotFound, ProductNotFoundProps } from './ProductNotFound';
+import { ProductComparator } from './product-comparator';
 
 // --- Wizard Component ---
 interface ConfiguratorWizardProps {
@@ -379,7 +380,7 @@ function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigSta
     case 1: return <StepProjectType state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
     case 2: return <StepEnvironment state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
     case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} />;
-    case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} />;
+    case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} locale={locale} />;
     case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} t={t} />;
     case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} t={t} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
     case 7: return <StepSummary state={state} t={t} locale={locale} />;
@@ -827,7 +828,7 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
   );
 }
 
-export function StepPixelPitch({ state, updateState, userProfile, wizardSettings, t }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, t: any }) {
+export function StepPixelPitch({ state, updateState, userProfile, wizardSettings, t, locale = 'fr' }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, t: any, locale?: string }) {
   const allPitches = wizardSettings?.pixelPitches || [];
   const uniquePitches = Array.from(new Map(allPitches.map(p => [p.value, p])).values());
   const pixelPitches = uniquePitches;
@@ -848,6 +849,23 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
   const resX = Math.round((state.width * 1000) / pitchValue);
   const resY = Math.round((state.height * 1000) / pitchValue);
   const brightness = state.environment === 'exterieur' ? '5500 nits' : state.environment === 'semi-exterieur' ? '3500 nits' : '1200 nits';
+
+  const marketingEquivalents: Record<string, string> = {
+    'P1': 'Ultra HD / Retina',
+    'P1.2': '4K+ Premium',
+    'P1.5': '4K Premium',
+    'P2': 'Full HD+ / 2K',
+    'P2.5': 'Full HD',
+    'P3': 'HD+',
+    'P4': 'HD',
+    'P5': 'HD Outdoor',
+    'P6': 'HD Large Format',
+    'P8': 'Affichage urbain',
+    'P10': 'Billboard LED',
+    'P16': 'Very Large Display',
+    'P18': 'Very Large Display',
+    'P19': 'Very Large Display'
+  };
 
   return (
     <div className="flex flex-col space-y-4 bg-transparent">
@@ -902,7 +920,20 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
                         : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
                     )}
                   >
-                    <span>{p.value}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>{p.value}</span>
+                      {marketingEquivalents[p.value] && (
+                        <>
+                          <span className="opacity-50">•</span>
+                          <span className={cn(
+                            "text-[10px] normal-case tracking-normal font-bold",
+                            state.pixelPitch === p.value ? "text-[#c6ff00]" : "text-slate-400"
+                          )}>
+                            {marketingEquivalents[p.value]}
+                          </span>
+                        </>
+                      )}
+                    </div>
                     <div className={cn(
                       "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0",
                       state.pixelPitch === p.value ? "border-[#c6ff00] bg-[#c6ff00] text-black" : "border-slate-200 group-hover:border-black"
@@ -912,7 +943,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
                   </button>
                   {p.recommended && (
                     <span className="absolute -top-2.5 right-2 bg-blue-500 text-[10px] text-white px-2 py-0.5 rounded-full font-medium shadow-sm z-20">
-                      {t('wizard.pixelPitch.recommended')}
+                      {locale === 'fr' ? 'Recommandé' : 'Recommended'}
                     </span>
                   )}
                 </div>
@@ -1454,6 +1485,9 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
     return Math.abs(aPitch - pitchValue) - Math.abs(bPitch - pitchValue);
   });
 
+  const [showComparator, setShowComparator] = useState(false);
+  const [compareProductIds, setCompareProductIds] = useState<string[]>([]);
+
   return (
     <div className="bg-transparent font-sans flex flex-col">
       <div className="w-full p-6 text-center">
@@ -1461,6 +1495,31 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
         <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mt-2">
           {t('wizard.products.config')} {state.pixelPitch} • {area.toFixed(2)}m²
         </p>
+        
+        {sortedProducts.length > 1 && (
+          <div className="relative group/tooltip inline-block mt-4">
+            <button
+              disabled={compareProductIds.length < 2}
+              onClick={() => setShowComparator(true)}
+              className={cn(
+                "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 mx-auto border",
+                compareProductIds.length < 2
+                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                  : "bg-black text-white hover:bg-[#c6ff00] hover:text-black border-black hover:border-[#c6ff00] active:scale-95 cursor-pointer"
+              )}
+            >
+              <Layers className="w-4 h-4" /> 
+              <span>{locale === 'fr' ? 'Comparer les produits' : 'Compare products'} ({compareProductIds.length})</span>
+            </button>
+
+            {compareProductIds.length < 2 && (
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest py-2 px-3 rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-all duration-300 text-center z-50">
+                {locale === 'fr' ? 'Veuillez sélectionner au moins 2 produits pour pouvoir les comparer' : 'Please select at least 2 products to compare them'}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 pointer-events-none" />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 p-0 scrollbar-hide px-6">
@@ -1500,6 +1559,40 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                   "relative aspect-square bg-gray-50 rounded-2xl border transition-all duration-500 overflow-hidden mb-4",
                   isSelected ? "border-[#c6ff00] border-4 shadow-2xl shadow-black/10 scale-[1.02]" : "border-gray-100 group-hover:border-gray-300"
                 )}>
+                  {/* Comparer Checkbox */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCompareProductIds(prev => {
+                        if (prev.includes(product.id)) {
+                          return prev.filter(id => id !== product.id);
+                        } else {
+                          return [...prev, product.id];
+                        }
+                      });
+                    }}
+                    className={cn(
+                      "absolute top-4 left-4 z-20 px-3 py-1.5 rounded-xl backdrop-blur-md flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider transition-all duration-300 border shadow-md",
+                      compareProductIds.includes(product.id)
+                        ? "bg-[#c6ff00] text-black border-[#c6ff00] scale-105"
+                        : "bg-white/80 hover:bg-white text-slate-700 border-slate-200"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-3.5 h-3.5 rounded flex items-center justify-center border transition-all",
+                      compareProductIds.includes(product.id)
+                        ? "border-black bg-black text-[#c6ff00]"
+                        : "border-slate-300 bg-white text-transparent"
+                    )}>
+                      <Check size={10} strokeWidth={4} />
+                    </div>
+                    <span>
+                      {compareProductIds.includes(product.id)
+                        ? (locale === 'fr' ? 'Sélectionné' : 'Selected')
+                        : (locale === 'fr' ? 'Comparer' : 'Compare')}
+                    </span>
+                  </button>
+
                   <img
                     src={product.imageUrl || product.image || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=90&w=1200"}
                     alt={product.name}
@@ -1595,17 +1688,39 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                       : "bg-white/40 backdrop-blur-md text-black border border-gray-100 hover:bg-black hover:text-[#c6ff00] hover:shadow-2xl hover:shadow-black/10"
                   )}
                 >
-                  {isSelected ? t('wizard.products.selected') : t('wizard.products.select')}
+                  {isSelected ? t('common.selected') || "Sélectionné" : t('common.select') || "Sélectionner"}
                 </button>
               </div>
             );
           })}
         </div>
       </div>
+
+      <AnimatePresence>
+        {showComparator && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] bg-white flex flex-col"
+          >
+            <ProductComparator
+              products={sortedProducts.filter(p => compareProductIds.includes(p.id))}
+              configState={state}
+              selectedProductId={state.selectedProduct || undefined}
+              onSelect={(id) => {
+                updateState({ selectedProduct: id });
+                setShowComparator(false);
+              }}
+              onClose={() => setShowComparator(false)}
+              locale={locale}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
-
 // --- Helpers ---
 function calculateRatio(w: number, h: number): string {
   const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);

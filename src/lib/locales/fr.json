@@ -18,7 +18,9 @@
         "humanSilhouette": "Silhouette d'un homme",
         "projectSummary": "Résumé du projet",
         "delete": "Supprimer",
-        "user": "Utilisateur"
+        "user": "Utilisateur",
+        "select": "Sélectionner",
+        "selected": "Sélectionné"
     },
     "header": {
         "login": "Se connecter"
