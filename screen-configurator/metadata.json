@@ -1,0 +1,6 @@
+{
+  "name": "PixiaTech Screen Configurator",
+  "description": "Professional LED screen dimension and curvature configurator with 3D preview.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
