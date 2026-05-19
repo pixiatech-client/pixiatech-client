@@ -41,7 +41,7 @@ export function LayoutProvider({
               <main
                 className={cn(
                   'flex-1 flex items-start justify-center w-full',
-                  !isAdminPage && !isQuotePage && !isEmbedPage && 'p-4 md:p-6'
+                  !isAdminPage && !isQuotePage && !isEmbedPage && 'px-4 pb-4 pt-1 md:px-6 md:pb-6 md:pt-2'
                 )}
               >
                 {children}

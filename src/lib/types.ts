@@ -137,6 +137,7 @@ export type Settings = {
   maxRentalHeight?: number;
   maxProductsPerQuote?: number;
   previewScreenImageUrl?: string;
+  previewScreenVideoUrl?: string;
   previewHumanScaleImageUrl?: string;
   technicianImageUrl?: string;
   deliveryImageUrl?: string;

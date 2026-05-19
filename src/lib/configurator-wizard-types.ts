@@ -22,6 +22,11 @@ export interface ConfigState {
   rentalStartTime: string | null;
   rentalEndTime: string | null;
   quantity: number;
+  isCurved: boolean;
+  curveLeft: number;
+  curveRight: number;
+  envColor: string;
+  gridColor: string;
 }
 
 export const INITIAL_STATE: ConfigState = {
@@ -42,4 +47,9 @@ export const INITIAL_STATE: ConfigState = {
   rentalStartTime: '08:00',
   rentalEndTime: '18:00',
   quantity: 1,
+  isCurved: false,
+  curveLeft: 0,
+  curveRight: 0,
+  envColor: '#f8fafc',
+  gridColor: '#e2e8f0',
 };

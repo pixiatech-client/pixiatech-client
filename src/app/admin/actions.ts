@@ -3,6 +3,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import { exec } from 'child_process';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -2350,6 +2351,7 @@ const settingsSchema = z.object({
   maxRentalHeight: z.coerce.number().min(1).optional(),
   maxProductsPerQuote: z.coerce.number().min(1, 'Doit être au moins 1').optional(),
   previewScreenImageUrl: z.string().optional(),
+  previewScreenVideoUrl: z.string().optional(),
   previewHumanScaleImageUrl: z.string().optional(),
   technicianImageUrl: z.string().optional(),
   deliveryImageUrl: z.string().optional(),
@@ -2498,6 +2500,22 @@ export async function updateSettings(data: unknown) {
   const { adminDb } = getFirebaseAdmin();
   try {
     await adminDb.collection('settings').doc(SETTINGS_DOC_ID).set(result.data, { merge: true });
+
+    // Check if a YouTube URL is configured
+    const videoUrl = result.data.previewScreenVideoUrl || result.data.previewScreenImageUrl;
+    const isYouTube = videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'));
+    if (isYouTube) {
+      console.log('[updateSettings] Detected YouTube URL, triggering download...');
+      const scriptPath = path.join(process.cwd(), 'scratch', 'download_youtube.py');
+      exec(`python "${scriptPath}" "${videoUrl}"`, (error, stdout, stderr) => {
+        if (error) {
+          console.error('[updateSettings] Error running download_youtube.py:', error);
+        } else {
+          console.log('[updateSettings] download_youtube.py output:', stdout);
+        }
+      });
+    }
+
     revalidatePath('/admin/settings', 'layout');
     revalidatePath('/');
     return { success: true };

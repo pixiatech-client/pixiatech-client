@@ -44,6 +44,7 @@ import { ConfigState, INITIAL_STATE, ProjectType, Environment, ViewingDistance, 
 import { Button } from './ui/button';
 import { ConfiguredProduct, Product, Settings, UserProfile, WizardSettings } from '@/lib/types';
 import Preview from './preview';
+import StepDimensionsOriginal from './StepDimensions';
 import { Label } from './ui/label';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -78,7 +79,7 @@ function HorizontalStepper({ currentStep, onStepClick, isMobile, t }: { currentS
   ];
 
   return (
-    <div className="flex items-center justify-center gap-2 md:gap-4 mb-8 w-full py-2">
+    <div className="flex items-center justify-center gap-2 md:gap-4 mb-2 w-full py-2">
       {steps.map((step, index) => {
         const isActive = currentStep >= step.id;
         const isPast = currentStep > step.id;
@@ -307,7 +308,10 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
                 }
               }}
             >
-              <div className="w-full max-w-5xl mx-auto flex-col pt-0 pb-6">
+              <div className={cn(
+                "w-full mx-auto flex-col pt-0 pb-6 transition-all duration-500",
+                state.step === 5 ? "max-w-[1550px] px-6" : (state.step === 1 ? "max-w-7xl px-4" : "max-w-5xl")
+              )}>
                 <HorizontalStepper
                   currentStep={state.step}
                   onStepClick={handleStepClick}
@@ -318,7 +322,7 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
                   {renderStep(state, updateState, userProfile, wizardSettings, settings, allProducts, setIsInteracting, t, locale)}
                 </div>
                 
-                <footer className="p-4 md:p-6 bg-transparent mt-10">
+                <footer className="p-4 md:p-6 bg-transparent mt-4">
                   <div className="relative p-1.5 bg-black/20 backdrop-blur-md border border-white/50 rounded-[24px] pointer-events-auto w-full max-w-[650px] mx-auto before:absolute before:inset-0 before:rounded-[24px] before:bg-gradient-to-br before:from-white/60 before:via-transparent before:to-transparent before:opacity-70 before:pointer-events-none after:absolute after:inset-0 after:rounded-[24px] after:bg-gradient-to-tl after:from-white/30 after:via-transparent after:to-transparent after:opacity-50 after:pointer-events-none">
                     <div className="relative z-10 flex items-center gap-2 w-full">
                       {/* Bouton Retour */}
@@ -981,113 +985,8 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
   );
 }
 
-export function StepDimensions({ state, updateState, settings, setIsInteracting, t }: { state: ConfigState, updateState: any, settings: Settings, setIsInteracting?: (val: boolean) => void, t: any }) {
-  return (
-    <div className="flex flex-col space-y-2 bg-transparent">
-      <div className="w-full">
-        <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 text-center">{t('wizard.dimensions.title')}</h2>
-        <p className="text-center text-[12px] font-medium text-slate-500 italic mt-1">
-          {t('wizard.dimensions.description')}
-        </p>
-      </div>
-
-      {/* Preview */}
-      <div className="flex justify-center">
-        <div className="relative w-full h-44 md:h-[250px] lg:h-[280px] xl:h-[300px] rounded-[2.5rem] p-[2px] bg-transparent overflow-hidden">
-          <div className="w-full h-full rounded-[2.3rem] overflow-hidden relative bg-transparent">
-            <Preview
-              width={state.width}
-              height={state.height}
-              screenImageUrl={settings.previewScreenImageUrl}
-              humanScaleImageUrl={settings.previewHumanScaleImageUrl}
-              noAnimation={true}
-              humanPosition={'side'}
-              fixedHuman={true}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Sliders */}
-      <div
-        onPointerDown={(e) => { e.stopPropagation(); setIsInteracting?.(true); }}
-        onPointerUp={() => setIsInteracting?.(false)}
-        onPointerLeave={() => setIsInteracting?.(false)}
-        className="relative p-3 rounded-[2rem] bg-white/20 backdrop-blur-xl border border-white/40 shadow-xl space-y-3 before:absolute before:inset-0 before:rounded-[2rem] before:bg-gradient-to-br before:from-white/30 before:to-transparent before:opacity-50 before:pointer-events-none"
-      >
-        <div className="relative z-10 space-y-2">
-          <div className="flex justify-between items-center">
-            <Label className="font-bold text-slate-800">{t('wizard.dimensions.width')}</Label>
-            <div className="flex items-center gap-2 bg-slate-50/80 backdrop-blur-sm rounded-xl p-1 border border-slate-200">
-              <button onClick={() => updateState({ width: Math.max(0.5, state.width - 0.5) })} className="p-1 hover:bg-white rounded-lg shadow-sm transition-all"><ChevronLeft className="w-4 h-4" /></button>
-              <span className="w-12 text-center font-black text-sm">{state.width.toFixed(2)}</span>
-              <button onClick={() => updateState({ width: Math.min(20, state.width + 0.5) })} className="p-1 hover:bg-white rounded-lg shadow-sm transition-all"><ChevronRight className="w-4 h-4" /></button>
-            </div>
-          </div>
-          <input
-            type="range" min="0.5" max="20" step="0.5"
-            value={state.width}
-            onChange={(e) => updateState({ width: parseFloat(e.target.value) })}
-            className="w-full h-2 bg-slate-200/60 rounded-lg appearance-none cursor-pointer accent-[#c6ff00]"
-          />
-        </div>
-
-        <div className="relative z-10 space-y-2">
-          <div className="flex justify-between items-center">
-            <Label className="font-bold text-slate-800">{t('wizard.dimensions.height')}</Label>
-            <div className="flex items-center gap-2 bg-slate-50/80 backdrop-blur-sm rounded-xl p-1 border border-slate-200">
-              <button onClick={() => updateState({ height: Math.max(0.5, state.height - 0.5) })} className="p-1 hover:bg-white rounded-lg shadow-sm transition-all"><ChevronLeft className="w-4 h-4" /></button>
-              <span className="w-12 text-center font-black text-sm">{state.height.toFixed(2)}</span>
-              <button onClick={() => updateState({ height: Math.min(12, state.height + 0.5) })} className="p-1 hover:bg-white rounded-lg shadow-sm transition-all"><ChevronRight className="w-4 h-4" /></button>
-            </div>
-          </div>
-          <input
-            type="range" min="0.5" max="12" step="0.5"
-            value={state.height}
-            onChange={(e) => updateState({ height: parseFloat(e.target.value) })}
-            className="w-full h-2 bg-slate-200/60 rounded-lg appearance-none cursor-pointer accent-[#c6ff00]"
-          />
-        </div>
-      </div>
-
-      <div className="info-box p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
-        <div className="info-title flex items-center gap-2 text-slate-800">
-          <Calculator className="w-5 h-5 text-orange-500" />
-          <span>{t('wizard.dimensions.aspectRatio')}</span>
-        </div>
-        <div className="info-value text-primary mb-3">
-          {t('wizard.dimensions.calculated')} : {calculateRatio(state.width, state.height)}
-        </div>
-
-        <div className="info-note text-blue-600/80 uppercase">
-          <Info className="w-4 h-4 shrink-0" />
-          <span>{t('wizard.dimensions.note')}</span>
-        </div>
-
-        {/* Configuration dalles */}
-        <div className="mt-2 pt-2 border-t border-blue-200/60">
-          {(() => {
-            const DALLE_SIZE_M = 0.5;
-            const dallesLargeur = Math.ceil(state.width / DALLE_SIZE_M);
-            const dallesHauteur = Math.ceil(state.height / DALLE_SIZE_M);
-            const totalDalles = dallesLargeur * dallesHauteur;
-            return (
-              <>
-                <div className="info-title flex items-center gap-2 text-slate-800" style={{ marginTop: 0 }}>
-                  <Grid className="w-5 h-5 text-orange-500" />
-                  <span>{t('wizard.dimensions.tileConfig')}</span>
-                </div>
-                <div className="info-note text-blue-700">
-                  <Info className="w-4 h-4 shrink-0" />
-                  <span dangerouslySetInnerHTML={{ __html: t('wizard.dimensions.tileCount', { count: totalDalles, w: dallesLargeur, h: dallesHauteur }) }} />
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      </div>
-    </div>
-  );
+export function StepDimensions(props: any) {
+  return <StepDimensionsOriginal {...props} />;
 }
 
 export function StepInstallationPhoto({ state, updateState, t }: { state: ConfigState, updateState: any, t: any }) {

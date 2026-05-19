@@ -27,18 +27,27 @@ export function StepImagePreview({ imageUrl, title }: StepImagePreviewProps) {
 
     return (
         <div 
-            className="relative w-full h-full flex items-center justify-center bg-white overflow-hidden"
+            className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden"
         >
             {imageUrl ? (
                 <>
                     {isVideo ? (
                         <video
+                            ref={(el) => {
+                                if (el) {
+                                    el.muted = true;
+                                    el.playsInline = true;
+                                    el.play().catch(err => {
+                                        console.warn("Autoplay failed or was blocked: ", err);
+                                    });
+                                }
+                            }}
                             src={imageUrl}
                             autoPlay
                             loop
                             muted
                             playsInline
-                            className="w-full h-full object-contain"
+                            className="w-full h-full object-cover"
                         />
                     ) : (
                         <Image

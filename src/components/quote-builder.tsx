@@ -770,7 +770,7 @@ export function QuoteBuilder({
     return (
         <>
             <div className={cn(
-                "grid items-stretch w-full mx-auto max-w-[1200px] transition-filter duration-300 gap-12",
+                "grid items-stretch w-full mx-auto max-w-[1400px] px-4 transition-filter duration-300 gap-12",
                 (isSuccess || (activeMode === 'wizard' && getOriginalStep(currentStep) === 1) || !showPreview)
                     ? "grid-cols-1" 
                     : "lg:grid-cols-2",
@@ -792,7 +792,7 @@ export function QuoteBuilder({
                 </div>
 
                 {showPreview && (
-                    <div className="hidden lg:flex lg:flex-col lg:items-stretch lg:gap-8 w-full max-w-xl ml-auto">
+                    <div className="hidden lg:flex lg:flex-col lg:items-stretch lg:gap-8 w-full max-w-2xl ml-auto">
                         <div className="lg:sticky lg:top-28 flex flex-col gap-8 h-full">
                             {!(getOriginalStep(currentStep) === 1 && activeMode === 'wizard') && (
                                 <div className="flex justify-center w-full">
@@ -829,7 +829,7 @@ export function QuoteBuilder({
                     </div>
                 )}
 
-                <div className={cn("relative w-full h-full lg:flex items-stretch justify-start", isMobile ? "hidden" : "flex")}>
+                <div className={cn("relative w-full h-full lg:flex items-stretch justify-center", isMobile ? "hidden" : "flex")}>
                     <HintBubble
                         visible={isHintBubbleVisible}
                         onHide={() => setIsHintBubbleVisible(false)}
@@ -843,8 +843,8 @@ export function QuoteBuilder({
                             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                             className="w-full flex h-full justify-center"
                         >
-                            {/* Contrainte de largeur pour garder la même largeur de contenu sur toutes les étapes */}
-                            <div className="w-full max-w-[900px]">
+                            {/* Contrainte de largeur conditionnelle : le wizard gère sa propre largeur */}
+                            <div className={activeMode === 'wizard' ? "w-full" : "w-full max-w-[900px]"}>
                                 {renderStepContent()}
                             </div>
                         </motion.div>

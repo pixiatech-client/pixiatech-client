@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['framer-motion'],
+  transpilePackages: ['framer-motion', 'three'],
   experimental: {
     serverActions: {
       bodySizeLimit: '4.5mb',

@@ -80,8 +80,16 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
         accept="image/*,video/*"
       />
       {value && (
-        <div className="relative w-28 h-20 shrink-0 rounded-md overflow-hidden border">
-           <Image src={value} alt="Aperçu" fill className="object-cover" />
+        <div className="relative w-28 h-20 shrink-0 rounded-md overflow-hidden border bg-slate-900 flex items-center justify-center">
+           {value.includes('youtube.com') || value.includes('youtu.be') ? (
+             <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-white text-[10px] p-2 text-center font-bold">
+               Lien YouTube
+             </div>
+           ) : value.match(/\.(mp4|webm|ogg|mov)(\?|$)/i) || value.includes('Devis%20Ecran') || value.includes('.mp4') ? (
+             <video src={value} className="w-full h-full object-cover" muted playsInline autoPlay loop />
+           ) : (
+             <img src={value} alt="Aperçu" className="w-full h-full object-cover" />
+           )}
         </div>
       )}
     </div>

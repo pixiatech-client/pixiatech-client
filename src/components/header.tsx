@@ -58,7 +58,7 @@ export function Header() {
   }
 
   return (
-    <header className="bg-card/80 border-b backdrop-blur-sm p-4 h-[81px]">
+    <header className="bg-card/80 border-b backdrop-blur-sm px-4 py-2 h-[56px] flex items-center">
       <div className="container mx-auto flex justify-between items-center">
         <div className="w-1/3">
           <LoginButton />

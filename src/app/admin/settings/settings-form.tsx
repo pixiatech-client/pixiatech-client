@@ -44,6 +44,7 @@ const settingsSchema = z.object({
   maxRentalHeight: z.coerce.number().min(1).optional(),
   maxProductsPerQuote: z.coerce.number().min(1, 'Doit être au moins 1').optional(),
   previewScreenImageUrl: z.string().optional(),
+  previewScreenVideoUrl: z.string().optional(),
   previewHumanScaleImageUrl: z.string().optional(),
   technicianImageUrl: z.string().optional(),
   deliveryImageUrl: z.string().optional(),
@@ -413,6 +414,10 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
             <div className="space-y-2">
                 <Label>Image de l'écran (URL)</Label>
                 <Controller name="previewScreenImageUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
+            </div>
+            <div className="space-y-2">
+                <Label>Dimensions de l'écran (Vidéo URL)</Label>
+                <Controller name="previewScreenVideoUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
             </div>
             <div className="space-y-2">
                 <Label>Image de l'échelle humaine (URL)</Label>
