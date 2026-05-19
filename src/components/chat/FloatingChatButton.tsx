@@ -41,7 +41,7 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
         whileDrag={{ cursor: "grabbing", scale: 1.1 }}
         className={cn(
           "fixed z-[101] pointer-events-auto touch-none",
-          isMobile ? "bottom-24 left-2" : "bottom-20 right-8"
+          isMobile ? "bottom-24 left-2" : "bottom-[38%] right-8"
         )}
         style={{ touchAction: "none" }}
       >

@@ -770,13 +770,13 @@ export function QuoteBuilder({
     return (
         <>
             <div className={cn(
-                "grid items-stretch w-full mx-auto max-w-[1400px] px-4 transition-filter duration-300 gap-12",
+                "grid items-stretch w-full mx-auto max-w-[1400px] lg:px-4 transition-filter duration-300 gap-12",
                 (isSuccess || (activeMode === 'wizard' && getOriginalStep(currentStep) === 1) || !showPreview)
                     ? "grid-cols-1" 
                     : "lg:grid-cols-2",
                 showMediaPreviewMobile && "lg:blur-none blur-md pointer-events-none"
             )}>
-                <div className={cn("flex flex-col gap-8 w-full lg:hidden relative", isMobile && "w-full max-w-lg mx-auto")}>
+                <div className="flex flex-col gap-8 w-full lg:hidden relative">
                     <HintBubble
                         visible={isHintBubbleVisible}
                         onHide={() => setIsHintBubbleVisible(false)}
@@ -844,7 +844,10 @@ export function QuoteBuilder({
                             className="w-full flex h-full justify-center"
                         >
                             {/* Contrainte de largeur conditionnelle : le wizard gère sa propre largeur */}
-                            <div className={activeMode === 'wizard' ? "w-full" : "w-full max-w-[900px]"}>
+                            <div className={cn(
+                                "w-full",
+                                activeMode === 'wizard' ? "w-full" : "max-w-[900px] h-full flex flex-col justify-end"
+                            )}>
                                 {renderStepContent()}
                             </div>
                         </motion.div>

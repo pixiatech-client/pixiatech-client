@@ -15,6 +15,7 @@ interface Screen3DProps {
   isDarkMode: boolean;
   setIsDarkMode: (val: boolean) => void;
   videoUrl?: string;
+  t: any;
 }
 
 function Dalle({ position, args, texture, uvOffset, uvScale, isPlaying }: { position: [number, number, number], args: [number, number], texture: THREE.Texture | null, uvOffset: [number, number], uvScale: [number, number], isPlaying: boolean }) {
@@ -381,30 +382,32 @@ export default function ScreenViewer(props: Screen3DProps) {
   const controlsRef = React.useRef<any>(null);
 
   React.useEffect(() => {
-    if (controlsRef.current) {
-      const maxDim = Math.max(props.width, props.height);
-      const zoomBase = maxDim * 1.5;
-      const heightOffset = props.height * 0.45;
+    const updateCamera = () => {
+      if (controlsRef.current) {
+        const maxDim = Math.max(props.width, props.height);
+        const zoomBase = maxDim * 1.1;
+        const heightOffset = props.height / 2;
 
-      if (!isCurved) {
-        controlsRef.current.object.position.set(zoomBase * 0.6, zoomBase * 0.35, zoomBase * 0.9);
+        // Position camera to the left (-x) to make the left edge appear taller
+        controlsRef.current.object.position.set(-zoomBase * 0.5, zoomBase * 0.3, zoomBase * 0.95);
         controlsRef.current.target.set(0, heightOffset, 0);
-      } else {
-        controlsRef.current.object.position.set(zoomBase * 0.7, zoomBase * 0.45, zoomBase * 1.0);
-        controlsRef.current.target.set(0, heightOffset, 0);
+        
+        controlsRef.current.update();
       }
-      
-      controlsRef.current.update();
-    }
-  }, [isCurved, props.width, props.height]);
+    };
+
+    updateCamera();
+    const timer = setTimeout(updateCamera, 100);
+    return () => clearTimeout(timer);
+  }, []);
   
   const currentEnv = isDarkMode ? "#020617" : envColor;
   const currentGrid = isDarkMode ? "#1e293b" : gridColor;
 
   return (
     <div className="w-full h-full rounded-[2.5rem] overflow-hidden relative shadow-inner group" style={{ background: currentEnv }}>
-      <Canvas shadows gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ background: currentEnv }}>
-        <PerspectiveCamera makeDefault position={[14, 8, 20]} fov={40} />
+      <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ background: currentEnv }}>
+        <PerspectiveCamera makeDefault position={[22, 12, 32]} fov={35} />
         <OrbitControls 
           ref={controlsRef}
           enablePan={true} 
@@ -414,9 +417,9 @@ export default function ScreenViewer(props: Screen3DProps) {
           maxPolarAngle={Math.PI / 1.5}
         />
         
-        <ambientLight intensity={isDarkMode ? 0.4 : 1} />
-        <directionalLight position={[10, 20, 10]} intensity={isDarkMode ? 0.8 : 1.5} castShadow />
-        <pointLight position={[-15, 10, 15]} intensity={isDarkMode ? 1.5 : 1} color="#c6ff00" />
+        <ambientLight intensity={isDarkMode ? 0.4 : 1.2} />
+        <directionalLight position={[10, 20, 10]} intensity={isDarkMode ? 0.8 : 1.5} castShadow shadow-mapSize={[1024, 1024]} />
+        <pointLight position={[-15, 10, 15]} intensity={isDarkMode ? 1.5 : 0.8} color="#c6ff00" />
         
         <Suspense fallback={null}>
           <Screen {...props} isDarkMode={isDarkMode} />
@@ -426,36 +429,36 @@ export default function ScreenViewer(props: Screen3DProps) {
           <gridHelper args={[100, 100, currentGrid, currentGrid]} />
           <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
             <planeGeometry args={[100, 100]} />
-            <shadowMaterial transparent opacity={isDarkMode ? 0.3 : 0.15} />
+            <shadowMaterial transparent opacity={isDarkMode ? 0.3 : 0.05} />
           </mesh>
         </group>
         
         <Suspense fallback={null}>
-          <Environment preset={isDarkMode ? "night" : "studio"} />
+          <Environment preset={isDarkMode ? "night" : "studio"} environmentIntensity={0.8} />
         </Suspense>
         
-        <ContactShadows resolution={1024} scale={20} blur={2} opacity={isDarkMode ? 0.6 : 0.2} far={1.5} color="#000000" />
+        <ContactShadows resolution={1024} scale={30} blur={2.5} opacity={isDarkMode ? 0.8 : 0.3} far={2.5} color="#000000" />
       </Canvas>
 
-      <div className="absolute top-8 left-8 flex flex-col gap-1 pointer-events-none">
-        <span className={`text-[10px] uppercase tracking-[0.4em] font-black transition-colors duration-300 ${isDarkMode ? "text-[#c6ff00]" : "text-slate-500"}`}>Simulateur 3D</span>
-        <div className={`h-0.5 w-16 rounded-full transition-colors duration-300 ${isDarkMode ? "bg-[#c6ff00]/40" : "bg-slate-300"}`} />
+      <div className="absolute top-3 left-3 sm:top-8 sm:left-8 flex flex-col gap-1 pointer-events-none">
+        <span className={`text-[8px] sm:text-[10px] uppercase tracking-[0.4em] font-black transition-colors duration-300 ${isDarkMode ? "text-[#c6ff00]" : "text-slate-500"}`}>{props.t('wizard.dimensions.simulator3D')}</span>
+        <div className={`h-0.5 w-10 sm:w-16 rounded-full transition-colors duration-300 ${isDarkMode ? "bg-[#c6ff00]/40" : "bg-slate-300"}`} />
       </div>
 
-      <div className="absolute top-8 right-8">
+      <div className="absolute top-3 right-3 sm:top-8 sm:right-8">
         <button 
           onClick={() => setIsDarkMode(!isDarkMode)}
-          className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+          className={`w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 ${
             isDarkMode 
             ? "bg-slate-900/80 backdrop-blur-md border border-white/10 text-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.2)]" 
             : "bg-white/80 backdrop-blur-md border border-white/50 text-orange-400 shadow-xl"
           }`}
         >
-          {isDarkMode ? <Moon className="w-6 h-6 fill-blue-400/20" /> : <Sun className="w-6 h-6 fill-orange-400/20" />}
+          {isDarkMode ? <Moon className="w-4 h-4 sm:w-6 sm:h-6 fill-blue-400/20" /> : <Sun className="w-4 h-4 sm:w-6 sm:h-6 fill-orange-400/20" />}
         </button>
       </div>
 
-      <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-10 px-12 py-6 backdrop-blur-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-full border transition-all duration-700 pointer-events-none opacity-0 group-hover:opacity-100 translate-y-6 group-hover:translate-y-0 ${
+      <div className={`hidden xl:flex absolute bottom-8 left-1/2 -translate-x-1/2 items-center gap-10 px-12 py-6 backdrop-blur-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-full border transition-all duration-700 pointer-events-none opacity-0 group-hover:opacity-100 translate-y-6 group-hover:translate-y-0 ${
         isDarkMode 
         ? "bg-slate-950/95 border-white/10 text-white" 
         : "bg-white/95 border-slate-200 text-slate-900"
@@ -465,8 +468,8 @@ export default function ScreenViewer(props: Screen3DProps) {
             <MouseIcon highlight="left" isDarkMode={isDarkMode} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] leading-none mb-1 opacity-40">Souris Gauche</span>
-            <span className="text-xs font-black uppercase tracking-tight">Déplacer</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] leading-none mb-1 opacity-40">{props.t('wizard.dimensions.mouseLeft')}</span>
+            <span className="text-xs font-black uppercase tracking-tight">{props.t('wizard.dimensions.move')}</span>
           </div>
         </div>
         
@@ -477,8 +480,8 @@ export default function ScreenViewer(props: Screen3DProps) {
             <MouseIcon highlight="right" isDarkMode={isDarkMode} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] leading-none mb-1 opacity-40">Souris Droit</span>
-            <span className="text-xs font-black uppercase tracking-tight">Tourner</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] leading-none mb-1 opacity-40">{props.t('wizard.dimensions.mouseRight')}</span>
+            <span className="text-xs font-black uppercase tracking-tight">{props.t('wizard.dimensions.rotate')}</span>
           </div>
         </div>
         
@@ -489,8 +492,8 @@ export default function ScreenViewer(props: Screen3DProps) {
             <MouseIcon highlight="wheel" isDarkMode={isDarkMode} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] leading-none mb-1 opacity-40">Molette</span>
-            <span className="text-xs font-black uppercase tracking-tight">Zoomer</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] leading-none mb-1 opacity-40">{props.t('wizard.dimensions.mouseWheel')}</span>
+            <span className="text-xs font-black uppercase tracking-tight">{props.t('wizard.dimensions.zoom')}</span>
           </div>
         </div>
       </div>

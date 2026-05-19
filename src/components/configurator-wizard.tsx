@@ -600,7 +600,7 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* Left: Image Preview */}
         <div className="space-y-4">
-          <div className="w-full max-w-[320px] ml-auto h-72 md:h-[450px] lg:h-[520px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
+          <div className="w-full lg:max-w-[320px] lg:ml-auto h-72 md:h-[450px] lg:h-[520px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
             <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative">
               <AnimatePresence mode="wait">
                 <motion.img
@@ -618,7 +618,7 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
               </AnimatePresence>
             </div>
           </div>
-          <p className="text-center lg:text-center text-[15px] font-medium text-slate-500 px-4 max-w-[320px] ml-auto">
+          <p className="text-center text-[15px] font-medium text-slate-500 px-4 w-full lg:max-w-[320px] lg:ml-auto">
             {currentEnv.caption}
           </p>
         </div>
@@ -704,7 +704,7 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* Left: Image Preview */}
         <div className="space-y-4">
-          <div className="w-full max-w-[300px] ml-auto h-72 md:h-[350px] lg:h-[480px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
+          <div className="w-full lg:max-w-[300px] lg:ml-auto h-72 md:h-[350px] lg:h-[480px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
             <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative group">
               <img
                 src={mainImage}
@@ -722,7 +722,7 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
               )}
             </div>
           </div>
-          <p className="text-center lg:text-center text-[12px] font-medium text-slate-500 italic px-4 max-w-[300px] ml-auto">
+          <p className="text-center text-[12px] font-medium text-slate-500 italic px-4 w-full lg:max-w-[300px] lg:ml-auto">
             {t('wizard.summary.simulation')}: {state.environment === 'exterieur' ? t('configurator.outdoor') : state.environment === 'semi-exterieur' ? t('wizard.environment.semiOutdoorTitle') : t('configurator.indoor')}, {state.projectType === 'location' ? t('configurator.rental') : t('configurator.sale')}
           </p>
         </div>
@@ -884,7 +884,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* Left: Image Preview */}
         <div className="space-y-4">
-          <div className="w-full max-w-[300px] ml-auto h-72 md:h-[350px] lg:h-[480px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
+          <div className="w-full lg:max-w-[300px] lg:ml-auto h-72 md:h-[350px] lg:h-[480px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
             <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative group">
               <img
                 src={mainImage}
@@ -903,7 +903,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
               <div className="absolute inset-0 bg-blue-500/10 mix-blend-overlay pointer-events-none" />
             </div>
           </div>
-          <p className="text-center lg:text-center text-xs text-slate-500 leading-relaxed px-4 max-w-[300px] ml-auto">
+          <p className="text-center text-xs text-slate-500 leading-relaxed px-4 w-full lg:max-w-[300px] lg:ml-auto">
             {t('wizard.pixelPitch.description')}
           </p>
         </div>
@@ -1432,7 +1432,7 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
           />
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 pb-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 pb-2">
           {sortedProducts.map((product) => {
             const isSelected = state.selectedProduct === product.id;
             const area = state.width * state.height;

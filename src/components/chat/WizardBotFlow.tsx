@@ -441,16 +441,37 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     else if (value === '10-20m') { minPitch = 8; maxPitch = 16; }
     else if (value === '+20m') { minPitch = 16; maxPitch = 99; }
 
+    const marketingEquivalents: Record<string, string> = {
+      'P1': 'Ultra HD / Retina',
+      'P1.2': '4K+ Premium',
+      'P1.5': '4K Premium',
+      'P2': 'Full HD+ / 2K',
+      'P2.5': 'Full HD',
+      'P3': 'HD+',
+      'P4': 'HD',
+      'P5': 'HD Outdoor',
+      'P6': 'HD Large Format',
+      'P8': 'Affichage urbain',
+      'P10': 'Billboard LED',
+      'P16': 'Very Large Display',
+      'P18': 'Very Large Display',
+      'P19': 'Very Large Display'
+    };
+
+    const formatPitchLabel = (pitch: string) => {
+      return marketingEquivalents[pitch] ? `${pitch} • ${marketingEquivalents[pitch]}` : pitch;
+    };
+
     const pitches: MessageOption[] = (wizardSettings?.pixelPitches ?? [])
       .filter(p => {
         const val = parseFloat(p.value.replace('P', ''));
         return val >= minPitch && val <= maxPitch;
       })
-      .map(p => ({ label: p.value, value: p.value, imageUrl: p.imageUrl }));
+      .map(p => ({ label: formatPitchLabel(p.value), value: p.value, imageUrl: p.imageUrl }));
 
     if (pitches.length === 0) {
       // Fallback to all if none match
-      pitches.push(...(wizardSettings?.pixelPitches ?? []).map(p => ({ label: p.value, value: p.value, imageUrl: p.imageUrl })));
+      pitches.push(...(wizardSettings?.pixelPitches ?? []).map(p => ({ label: formatPitchLabel(p.value), value: p.value, imageUrl: p.imageUrl })));
     }
 
     if (!pitches.find(p => p.value === 'Je ne sais pas')) pitches.push({ label: 'Je ne sais pas', value: 'Je ne sais pas' });
@@ -900,7 +921,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                   {/* ── Steps ── */}
                   {step === STEP.DIMENSIONS && !isTyping && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-                      <StepDimensions state={configState} updateState={(u) => setConfigState(prev => ({ ...prev, ...u }))} settings={settings} t={t} />
+                      <StepDimensions state={configState} updateState={(u) => setConfigState(prev => ({ ...prev, ...u }))} settings={settings} t={t} isInChat={true} />
                       <div className="px-6 pb-6">
                         <Button onClick={handleDimensionsSubmit} disabled={!configState.width || !configState.height} className="w-full h-14 font-black rounded-xl bg-black hover:bg-[#B3E140] text-white hover:text-black uppercase tracking-wider text-xs shadow-xl active:scale-95 transition-all">
                           Confirmer les dimensions <ArrowRight size={16} className="ml-2" />

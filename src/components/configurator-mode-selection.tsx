@@ -29,7 +29,7 @@ export function ConfiguratorModeSelection({ onSelectMode }: ConfiguratorModeSele
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -60 }}
           transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="w-full max-w-xl ml-0 flex flex-col items-center justify-end p-0 pb-2"
+          className="w-full max-w-xl ml-0 flex flex-col items-center justify-end p-0 pb-2 h-full"
         >
           <div className='text-center mb-8 w-full'>
             <h1 className='text-3xl font-bold tracking-tight'>{t('modeSelection.title')}</h1>
