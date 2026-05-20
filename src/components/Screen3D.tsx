@@ -568,8 +568,8 @@ function Screen({
         />
         
         <DimensionLine 
-          start={new THREE.Vector3(-R_360 - 0.4, 0, 0)} 
-          end={new THREE.Vector3(-R_360 - 0.4, height, 0)} 
+          start={new THREE.Vector3(-R_360 - 0.02, 0, 0)} 
+          end={new THREE.Vector3(-R_360 - 0.02, height, 0)} 
           label={`HAUTEUR: ${height.toFixed(2)} M`} 
           color="#1e293b"
           isDarkMode={isDarkMode}
@@ -754,67 +754,69 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
         </button>
       </div>
 
-      <AnimatePresence>
-        {showHelp && (
-          <motion.div
-            initial={{ opacity: 0, y: 15, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 15, scale: 0.95 }}
-            transition={{ duration: 0.25 }}
-            className={`absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center gap-4 sm:gap-6 px-4 py-2 sm:px-6 sm:py-3.5 backdrop-blur-md shadow-xl rounded-2xl sm:rounded-full border z-[90] [transform:translateZ(0)] max-w-[95%] shrink-0 select-none ${
-              isDarkMode 
-              ? "bg-slate-950/90 border-white/10 text-white" 
-              : "bg-white/90 border-slate-200 text-slate-900"
-            }`}
-          >
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex-shrink-0 scale-65 sm:scale-75">
-                <MouseIcon highlight="left" isDarkMode={isDarkMode} />
+      <div className="absolute bottom-3 sm:bottom-6 left-0 right-0 flex justify-center pointer-events-none z-[90]">
+        <AnimatePresence>
+          {showHelp && (
+            <motion.div
+              initial={{ opacity: 0, y: 15, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 15, scale: 0.95 }}
+              transition={{ duration: 0.25 }}
+              className={`flex items-center justify-center gap-4 sm:gap-6 px-4 py-2 sm:px-6 sm:py-3.5 backdrop-blur-md shadow-xl rounded-2xl sm:rounded-full border [transform:translateZ(0)] max-w-[95%] shrink-0 select-none pointer-events-auto ${
+                isDarkMode 
+                ? "bg-slate-950/90 border-white/10 text-white" 
+                : "bg-white/90 border-slate-200 text-slate-900"
+              }`}
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex-shrink-0 scale-65 sm:scale-75">
+                  <MouseIcon highlight="left" isDarkMode={isDarkMode} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 opacity-40">
+                    {props.t('wizard.dimensions.mouseLeft')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-tight">
+                    {props.t('wizard.dimensions.move')}
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 opacity-40">
-                  {props.t('wizard.dimensions.mouseLeft')}
-                </span>
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-tight">
-                  {props.t('wizard.dimensions.move')}
-                </span>
+              
+              <div className={`w-px h-5 sm:h-6 ${isDarkMode ? "bg-white/10" : "bg-slate-200"}`} />
+              
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex-shrink-0 scale-65 sm:scale-75">
+                  <MouseIcon highlight="right" isDarkMode={isDarkMode} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 opacity-40">
+                    {props.t('wizard.dimensions.mouseRight')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-tight">
+                    {props.t('wizard.dimensions.rotate')}
+                  </span>
+                </div>
               </div>
-            </div>
-            
-            <div className={`w-px h-5 sm:h-6 ${isDarkMode ? "bg-white/10" : "bg-slate-200"}`} />
-            
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex-shrink-0 scale-65 sm:scale-75">
-                <MouseIcon highlight="right" isDarkMode={isDarkMode} />
+              
+              <div className={`w-px h-5 sm:h-6 ${isDarkMode ? "bg-white/10" : "bg-slate-200"}`} />
+              
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex-shrink-0 scale-65 sm:scale-75">
+                  <MouseIcon highlight="wheel" isDarkMode={isDarkMode} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 opacity-40">
+                    {props.t('wizard.dimensions.mouseWheel')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-tight">
+                    {props.t('wizard.dimensions.zoom')}
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 opacity-40">
-                  {props.t('wizard.dimensions.mouseRight')}
-                </span>
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-tight">
-                  {props.t('wizard.dimensions.rotate')}
-                </span>
-              </div>
-            </div>
-            
-            <div className={`w-px h-5 sm:h-6 ${isDarkMode ? "bg-white/10" : "bg-slate-200"}`} />
-            
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex-shrink-0 scale-65 sm:scale-75">
-                <MouseIcon highlight="wheel" isDarkMode={isDarkMode} />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 opacity-40">
-                  {props.t('wizard.dimensions.mouseWheel')}
-                </span>
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-tight">
-                  {props.t('wizard.dimensions.zoom')}
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
