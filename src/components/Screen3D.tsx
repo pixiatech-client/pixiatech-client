@@ -257,7 +257,7 @@ function DimensionLine({
       <Html 
         position={[(start.x + end.x) / 2, ((start.y + end.y) / 2) + 0.05, (start.z + end.z) / 2]} 
         center
-        occlude={occlude ? 'blending' : undefined}
+        occlude={occlude ? true : undefined}
       >
         <div className={`px-2.5 py-1 backdrop-blur-md border rounded-lg text-[10px] font-black whitespace-nowrap shadow-md italic tracking-wide uppercase transition-all hover:scale-105 ${
           isDarkMode 
@@ -509,7 +509,7 @@ function Screen({
           label={`HAUTEUR: ${height.toFixed(2)} M`} 
           color="#1e293b"
           isDarkMode={isDarkMode}
-          occlude={true}
+          occlude={false}
         />
       </group>
     );
@@ -568,12 +568,12 @@ function Screen({
         />
         
         <DimensionLine 
-          start={new THREE.Vector3(-R_360 - 0.02, 0, 0)} 
-          end={new THREE.Vector3(-R_360 - 0.02, height, 0)} 
+          start={new THREE.Vector3(-R_360 - 0.12, 0, 0)} 
+          end={new THREE.Vector3(-R_360 - 0.12, height, 0)} 
           label={`HAUTEUR: ${height.toFixed(2)} M`} 
           color="#1e293b"
           isDarkMode={isDarkMode}
-          occlude={true}
+          occlude={false}
         />
       </group>
     );
@@ -630,6 +630,7 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
   const controlsRef = React.useRef<any>(null);
   const [showHelp, setShowHelp] = React.useState(false);
   const [controlsEnabled, setControlsEnabled] = React.useState(true);
+  const [isHovering, setIsHovering] = React.useState(false);
 
   const lastModeRef = React.useRef<string>("");
   const propsRef = React.useRef({ diameter, width: props.width, height: props.height, cabinetAngle });
@@ -685,7 +686,12 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
   const currentGrid = isDarkMode ? "#1e293b" : gridColor;
 
   return (
-    <div className="w-full h-full rounded-[2.5rem] overflow-hidden relative shadow-inner group" style={{ background: currentEnv }}>
+    <div 
+      className="w-full h-full rounded-[2.5rem] overflow-hidden relative shadow-inner group" 
+      style={{ background: currentEnv }}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
       <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ background: currentEnv, position: 'relative', zIndex: 0 }}>
         <PerspectiveCamera makeDefault position={[22, 12, 32]} fov={35} />
         <OrbitControls 
@@ -756,7 +762,7 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
 
       <div className="absolute bottom-3 sm:bottom-6 left-0 right-0 flex justify-center pointer-events-none z-[90]">
         <AnimatePresence>
-          {showHelp && (
+          {showHelp && isHovering && (
             <motion.div
               initial={{ opacity: 0, y: 15, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}

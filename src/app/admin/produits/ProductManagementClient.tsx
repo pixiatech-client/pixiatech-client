@@ -219,9 +219,10 @@ const MobileProductCard = React.memo(({
             {product.screenType && (
               <div className={cn(
                 "px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest",
+                product.screenType === '360' ? "bg-purple-50 text-purple-700 border-purple-100" :
                 product.screenType === 'curved' ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-slate-50 text-slate-500 border-slate-100"
               )}>
-                {product.screenType === 'curved' ? 'Incurvé' : 'Plat'}
+                {product.screenType === '360' ? '360°' : product.screenType === 'curved' ? 'Incurvé' : 'Plat'}
               </div>
             )}
           </div>
@@ -433,9 +434,10 @@ const ProductListItem = ({
             {product.screenType && (
               <span className={cn(
                 "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors",
+                product.screenType === '360' ? "bg-purple-100 text-purple-700 border-purple-200" :
                 product.screenType === 'curved' ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-slate-100 text-slate-500 border-slate-200"
               )}>
-                {product.screenType === 'curved' ? 'Incurvé' : 'Plat'}
+                {product.screenType === '360' ? '360°' : product.screenType === 'curved' ? 'Incurvé' : 'Plat'}
               </span>
             )}
           </div>
@@ -1915,29 +1917,42 @@ const ProduitPage = ({
             {/* Desktop Only: Type d'écran */}
             <div className="hidden md:block space-y-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Type d'écran</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setScreenType('flat')}
                   className={cn(
-                    "h-10 rounded-xl flex items-center justify-center gap-3 font-bold transition-all border",
+                    "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
                     screenType === 'flat' ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                   )}
                 >
-                  <Monitor className={cn("w-5 h-5", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-300")} />
-                  <span>Écran Plat</span>
+                  <Monitor className={cn("w-4 h-4", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-300")} />
+                  <span>Plat</span>
                 </button>
                 <button
                   onClick={() => setScreenType('curved')}
                   className={cn(
-                    "h-10 rounded-xl flex items-center justify-center gap-3 font-bold transition-all border",
+                    "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
                     screenType === 'curved' ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                   )}
                 >
-                  <svg className={cn("w-5 h-5", screenType === 'curved' ? "text-blue-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className={cn("w-4 h-4", screenType === 'curved' ? "text-blue-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M2 17C2 17 4 15 12 15C20 15 22 17 22 17V7C22 7 20 5 12 5C4 5 2 7 2 7V17Z" />
                     <path d="M12 15V19M10 19H14" />
                   </svg>
-                  <span>Écran Incurvé</span>
+                  <span>Incurvé</span>
+                </button>
+                <button
+                  onClick={() => setScreenType('360')}
+                  className={cn(
+                    "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
+                    screenType === '360' ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                  )}
+                >
+                  <svg className={cn("w-4 h-4", screenType === '360' ? "text-purple-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <ellipse cx="12" cy="5" rx="9" ry="3" />
+                    <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" />
+                  </svg>
+                  <span>360°</span>
                 </button>
               </div>
             </div>
@@ -2402,33 +2417,48 @@ const ProduitPage = ({
                   {/* Type d'écran (Mobile) */}
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Type d'écran</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => setScreenType('flat')}
                         className={cn(
-                          "w-full h-12 rounded-xl flex items-center px-4 gap-3 transition-all duration-300 relative overflow-hidden group",
+                          "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
                           screenType === 'flat' ? "bg-black text-white" : "bg-slate-100 text-slate-400"
                         )}
                       >
-                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", screenType === 'flat' ? "bg-white/10" : "bg-slate-200")}>
-                          <Monitor className={cn("w-4 h-4", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-400")} />
+                        <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'flat' ? "bg-white/10" : "bg-slate-200")}>
+                          <Monitor className={cn("w-3.5 h-3.5", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-400")} />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest">Plat</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest truncate">Plat</span>
                       </button>
                       <button
                         onClick={() => setScreenType('curved')}
                         className={cn(
-                          "w-full h-12 rounded-xl flex items-center px-4 gap-3 transition-all duration-300 relative overflow-hidden group",
+                          "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
                           screenType === 'curved' ? "bg-black text-white" : "bg-slate-100 text-slate-400"
                         )}
                       >
-                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", screenType === 'curved' ? "bg-white/10" : "bg-slate-200")}>
-                          <svg className={cn("w-4 h-4", screenType === 'curved' ? "text-blue-400" : "text-slate-400")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'curved' ? "bg-white/10" : "bg-slate-200")}>
+                          <svg className={cn("w-3.5 h-3.5", screenType === 'curved' ? "text-blue-400" : "text-slate-400")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M2 17C2 17 4 15 12 15C20 15 22 17 22 17V7C22 7 20 5 12 5C4 5 2 7 2 7V17Z" />
                             <path d="M12 15V19M10 19H14" />
                           </svg>
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest">Incurvé</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest truncate">Incurvé</span>
+                      </button>
+                      <button
+                        onClick={() => setScreenType('360')}
+                        className={cn(
+                          "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
+                          screenType === '360' ? "bg-black text-white" : "bg-slate-100 text-slate-400"
+                        )}
+                      >
+                        <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === '360' ? "bg-white/10" : "bg-slate-200")}>
+                          <svg className={cn("w-3.5 h-3.5", screenType === '360' ? "text-purple-400" : "text-slate-400")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <ellipse cx="12" cy="5" rx="9" ry="3" />
+                            <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" />
+                          </svg>
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-widest truncate">360°</span>
                       </button>
                     </div>
                   </div>

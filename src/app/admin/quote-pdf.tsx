@@ -66,6 +66,14 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
     const environment = environments.length > 1 ? 'Mixte' : (environments[0] || 'Intérieur');
     const pitch = pitches.length > 1 ? pitches.join(' / ') : (pitches[0] || 'P2.5 mm');
     
+    // Determine screen shape
+    const shapes = Array.from(new Set(products.map(p => 
+        p.is360 || p.screenLayout === 'cylindrical' ? '360°' 
+        : p.isCurved || p.screenLayout === 'curved' ? 'Incurvé' 
+        : 'Plat'
+    )));
+    const shape = shapes.length > 1 ? 'Mixte' : (shapes[0] || 'Plat');
+    
     // Electrical calculations
     const isOutdoor = environments.some(e => e === 'Extérieur');
     const powerMax = totalArea * (isOutdoor ? 0.8 : 0.6); // kW
@@ -79,7 +87,8 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
     ];
 
     const dynamicSpecs = [
-        { label: "RÉSOLUTION GLOBALE:", value: products.length > 1 ? "Multi-résolutions" : "Standard", icon: Monitor, color: "#8b5cf6" },
+        { label: "FORME D'ÉCRAN:", value: shape, icon: Monitor, color: "#8b5cf6" },
+        { label: "RÉSOLUTION GLOBALE:", value: products.length > 1 ? "Multi-résolutions" : "Standard", icon: Grid3X3, color: "#a855f7" },
         { label: "NOMBRE DE MODULES LED:", value: `${totalModules} modules`, icon: Grid3X3, color: "#ec4899" },
         { label: "PUISSANCE MAXIMALE:", value: `${powerMax.toFixed(1)} kW`, icon: Zap, color: "#f59e0b" },
         { label: "PUISSANCE MOYENNE:", value: `${powerAvg.toFixed(1)} kW`, icon: Activity, color: "#0ea5e9" },

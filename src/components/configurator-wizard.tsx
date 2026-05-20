@@ -222,6 +222,14 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
           rentalStartTime: isRental ? prev.rentalStartTime || '08:00' : undefined,
           rentalEndTime: isRental ? prev.rentalEndTime || '18:00' : undefined,
           installationPhoto: prev.installationPhoto || undefined,
+          // Screen layout data from StepDimensions
+          screenLayout: prev.is360 ? 'cylindrical' : prev.isCurved ? 'curved' : 'flat',
+          isCurved: prev.isCurved,
+          is360: prev.is360,
+          diameter: prev.is360 ? prev.diameter : undefined,
+          cabinetAngle: prev.cabinetAngle,
+          curveLeft: prev.isCurved ? prev.curveLeft : undefined,
+          curveRight: prev.isCurved ? prev.curveRight : undefined,
         };
         onComplete(configuredProduct);
         return prev;

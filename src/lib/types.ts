@@ -60,6 +60,8 @@ export type ProductSpec = {
   value: string;
 }
 
+export type ScreenLayout = 'flat' | 'curved' | 'cylindrical';
+
 export type ConfiguredProduct = {
   id: string; 
   productId: string;
@@ -83,6 +85,14 @@ export type ConfiguredProduct = {
   nombreEcrans?: number;
   dimensionsEnabled?: boolean;
   installationPhoto?: string;
+  // Screen layout fields
+  screenLayout?: ScreenLayout;
+  isCurved?: boolean;
+  is360?: boolean;
+  diameter?: number;
+  cabinetAngle?: number;
+  curveLeft?: number;
+  curveRight?: number;
 };
 
 export type QuoteDetails = {
@@ -110,6 +120,12 @@ export type QuoteDetails = {
   lang: 'fr' | 'en';
   sitePhoto?: string;
   taxRate?: number;
+  // Screen layout propagated from wizard
+  screenLayout?: ScreenLayout;
+  isCurved?: boolean;
+  is360?: boolean;
+  diameter?: number;
+  cabinetAngle?: number;
 };
 
 export type MessagingSettings = {
