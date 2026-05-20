@@ -290,23 +290,6 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
               }}
               style={{ willChange: 'transform, opacity' }}
               className="flex-1 flex flex-col items-start p-0"
-              onTouchStart={(e) => {
-                const touch = e.touches[0];
-                (window as any).touchStartX = touch.clientX;
-                (window as any).touchStartY = touch.clientY;
-              }}
-              onTouchEnd={(e) => {
-                const touch = e.changedTouches[0];
-                const startX = (window as any).touchStartX || 0;
-                const startY = (window as any).touchStartY || 0;
-                const deltaX = touch.clientX - startX;
-                const deltaY = touch.clientY - startY;
-
-                if (Math.abs(deltaX) > 80 && Math.abs(deltaY) < 50) {
-                  if (deltaX < 0) nextStep();
-                  else prevStep();
-                }
-              }}
             >
               <div className={cn(
                 "w-full mx-auto flex-col pt-0 pb-6 transition-all duration-500",
