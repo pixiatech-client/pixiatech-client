@@ -3,9 +3,9 @@ import { GoogleGenAI } from "@google/genai";
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-import { 
+import {
   Activity, Cpu, Layers, Smartphone, Tv,
-  Package, FileText, Search, Plus, ShoppingCart, Calendar, 
+  Package, FileText, Search, Plus, ShoppingCart, Calendar,
   Monitor, Sun, Store, Eye, Grid, ChevronLeft, ChevronDown, ChevronUp,
   ChevronRight, Zap, Maximize, SunMedium, PlusCircle, Camera, Image as ImageIcon,
   Video, Play, Upload, Trash2, ArrowLeft, ArrowRight, Link as LinkIcon, Tag, ChevronsUpDown, AlertTriangle,
@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { Pagination } from '@/components/ui/Pagination';
 import { CustomSelect } from '@/components/ui/custom-select';
 import useEmblaCarousel from 'embla-carousel-react';
-import { 
+import {
   auth, db, storage, googleProvider, signInWithPopup, signOut, onAuthStateChanged, User,
   signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence,
   collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, query, where, orderBy, addDoc, updateDoc,
@@ -43,7 +43,7 @@ const getYouTubeId = (url: string | undefined | null): string | null => {
 // --- Helper to safely get image URL (Prioritize pure images for thumbnails) ---
 const getSafeImageUrl = (product: any) => {
   if (!product) return null;
-  
+
   // 1. Check common pure image fields first
   const fields = ['image', 'imageUrl', 'photo', 'photoUrl'];
   for (const field of fields) {
@@ -63,34 +63,34 @@ const getSafeImageUrl = (product: any) => {
     if (typeof img === 'string') return img;
     if (img && typeof img === 'object' && img.url) return img.url;
   }
-  
+
   return null;
 };
 
 // --- Mobile Product Card Component ---
 // --- Optimized Mobile Product Card ---
-const MobileProductCard = React.memo(({ 
-  product, 
-  onEdit, 
-  onDuplicate, 
-  onDelete, 
-  isDeleting, 
+const MobileProductCard = React.memo(({
+  product,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  isDeleting,
   setDeletingId,
   onOpenActions,
   isActive
 }: any) => {
   const imageUrl = getSafeImageUrl(product);
-  
+
   // Extract key chars for badges
   const pitchChar = product.selectedChars?.find((c: any) => c.name === 'Pixel pitch' || c.id === 'char-1');
   const distanceChar = product.selectedChars?.find((c: any) => c.name === 'Distance de visionnage' || c.id === 'char-0');
-  
+
   return (
     <div className="w-full bg-transparent flex flex-col gap-6 relative transition-all duration-300">
       {/* Image Section - Only this part scales */}
-      <motion.div 
+      <motion.div
         onClick={() => onEdit(product)}
-        animate={{ 
+        animate={{
           scale: isActive ? 1 : 0.85,
           opacity: isActive ? 1 : 0.6
         }}
@@ -101,7 +101,7 @@ const MobileProductCard = React.memo(({
       >
         <AnimatePresence mode="wait">
           {isDeleting ? (
-            <motion.div 
+            <motion.div
               key="delete-overlay"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -113,20 +113,20 @@ const MobileProductCard = React.memo(({
                 <AlertTriangle className="w-8 h-8 text-white" />
               </div>
               <h4 className="text-white font-black text-lg mb-1 leading-tight uppercase">Supprimer ?</h4>
-              
+
               <div className="flex items-center gap-4 w-full mt-8">
-                <button 
+                <button
                   onClick={(e) => { e.stopPropagation(); setDeletingId(null); }}
                   className="flex-1 py-4 text-[10px] font-black text-white bg-white/10 rounded-2xl uppercase tracking-widest active:bg-white/20"
                 >
                   Non
                 </button>
-                <button 
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
                     console.log("Mobile Delete Triggered for", product.id);
-                    onDelete(product.id); 
-                    setDeletingId(null); 
+                    onDelete(product.id);
+                    setDeletingId(null);
                   }}
                   className="flex-1 py-4 text-[10px] font-black text-red-600 bg-white rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 transition-transform"
                 >
@@ -135,7 +135,7 @@ const MobileProductCard = React.memo(({
               </div>
             </motion.div>
           ) : (
-            <motion.div 
+            <motion.div
               key="image-content"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -149,7 +149,7 @@ const MobileProductCard = React.memo(({
                   <Package className="w-16 h-16 text-slate-300" />
                 </div>
               )}
-              
+
               {/* Tap to Edit Overlay for Mobile */}
               <div className="absolute inset-0 bg-black/20 opacity-0 group-active:opacity-100 transition-opacity flex items-center justify-center md:hidden">
                 <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center">
@@ -172,7 +172,7 @@ const MobileProductCard = React.memo(({
               {/* Media Icons */}
               <div className="absolute top-6 right-6 flex flex-col gap-3">
                 {product.videoUrl && (
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); window.open(product.videoUrl, '_blank'); }}
                     className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-slate-900 shadow-xl border border-white/20 active:scale-90 transition-all"
                   >
@@ -180,7 +180,7 @@ const MobileProductCard = React.memo(({
                   </button>
                 )}
                 {product.pdfUrl && (
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); window.open(product.pdfUrl, '_blank'); }}
                     className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-slate-900 shadow-xl border border-white/20 active:scale-90 transition-all"
                   >
@@ -232,11 +232,11 @@ const MobileProductCard = React.memo(({
               const val = String(t).toLowerCase();
               let label = t;
               let colors = "bg-slate-50 text-slate-500 border-slate-100";
-              
+
               if (val.includes('interieur') || val.includes('indoor')) { label = 'Intérieur'; colors = "bg-purple-50 text-purple-700 border-purple-100"; }
               else if (val.includes('exterieur') || val.includes('outdoor')) { label = 'Extérieur'; colors = "bg-orange-50 text-orange-700 border-orange-100"; }
               else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = 'Vitrine'; colors = "bg-cyan-50 text-cyan-700 border-cyan-100"; }
-              
+
               return (
                 <div key={`type-${idx}`} className={cn("px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest", colors)}>
                   {label}
@@ -245,7 +245,7 @@ const MobileProductCard = React.memo(({
             })}
           </div>
         </div>
-        
+
         <div className="text-3xl font-black text-slate-900 tracking-tighter mt-2">
           {product.salePricePerSqM || product.price || '—'}
         </div>
@@ -260,14 +260,14 @@ const ProductActionsDrawer = ({ isOpen, onClose, product, onEdit, onDuplicate, o
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] md:hidden"
           />
-          <motion.div 
+          <motion.div
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -292,7 +292,7 @@ const ProductActionsDrawer = ({ isOpen, onClose, product, onEdit, onDuplicate, o
                   <div className="w-8 h-1 bg-[#c6ff00] mt-2" />
                 </div>
               )}
-              
+
               {children || (
                 <div className="grid grid-cols-1 gap-3">
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => { onEdit(product); onClose(); }} className="w-full flex items-center gap-4 p-4 bg-slate-50 rounded-xl text-slate-900 active:bg-black active:text-white transition-all">
@@ -317,28 +317,28 @@ const ProductActionsDrawer = ({ isOpen, onClose, product, onEdit, onDuplicate, o
   );
 };
 
-const ProductListItem = ({ 
-  product, 
-  selectedIds, 
-  toggleSelect, 
-  onEditProduct, 
-  onDuplicateProduct, 
+const ProductListItem = ({
+  product,
+  selectedIds,
+  toggleSelect,
+  onEditProduct,
+  onDuplicateProduct,
   onDeleteProduct,
   setDeletingId,
   deletingId
 }: any) => {
   const dragControls = useDragControls();
-  
+
   return (
-    <Reorder.Item 
-      key={product.id} 
+    <Reorder.Item
+      key={product.id}
       value={product}
       dragListener={false}
       dragControls={dragControls}
-      whileDrag={{ 
-        scale: 1.02, 
-        backgroundColor: "rgb(255, 255, 255)", 
-        zIndex: 100, 
+      whileDrag={{
+        scale: 1.02,
+        backgroundColor: "rgb(255, 255, 255)",
+        zIndex: 100,
         boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.15)"
       }}
       className={cn(
@@ -347,7 +347,7 @@ const ProductListItem = ({
       )}
     >
       <div className="flex items-center gap-3 shrink-0">
-        <button 
+        <button
           onClick={(e) => {
             e.stopPropagation();
             toggleSelect(product.id);
@@ -361,23 +361,23 @@ const ProductListItem = ({
         >
           {selectedIds.includes(product.id) && <Check className="w-3 h-3" />}
         </button>
-        <div 
+        <div
           className="text-slate-300 group-hover/product:text-[#a3e635] transition-colors cursor-grab active:cursor-grabbing p-1"
           onPointerDown={(e) => dragControls.start(e)}
         >
           <GripVertical className="w-5 h-5" />
         </div>
       </div>
-      
+
       <div className="w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 shadow-sm border border-slate-100 flex items-center justify-center relative group-hover/product:border-slate-800 transition-colors">
         {getSafeImageUrl(product) ? (
-          <img 
-            src={getSafeImageUrl(product)!} 
-            alt={product.name} 
+          <img
+            src={getSafeImageUrl(product)!}
+            alt={product.name}
             className="w-full h-full object-cover"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
-              target.style.display = 'none'; 
+              target.style.display = 'none';
             }}
           />
         ) : isVideoUrl(product.videoUrl) ? (
@@ -387,7 +387,7 @@ const ProductListItem = ({
         )}
         {isVideoUrl(product.videoUrl) && getSafeImageUrl(product) && (
           <div className="absolute bottom-1 right-1 bg-black/60 rounded-md p-0.5 backdrop-blur-sm">
-             <Video className="w-3 h-3 text-white" />
+            <Video className="w-3 h-3 text-white" />
           </div>
         )}
       </div>
@@ -401,11 +401,11 @@ const ProductListItem = ({
               const val = String(t).toLowerCase();
               let label = t;
               let colors = "bg-slate-100 text-slate-600";
-              
+
               if (val.includes('interieur') || val.includes('indoor')) { label = 'Intérieur'; colors = "bg-purple-100 text-purple-700 border-purple-200"; }
               else if (val.includes('exterieur') || val.includes('outdoor')) { label = 'Extérieur'; colors = "bg-orange-100 text-orange-700 border-orange-200"; }
               else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = 'Vitrine'; colors = "bg-cyan-100 text-cyan-700 border-cyan-200"; }
-              
+
               return (
                 <span key={`type-${idx}`} className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors", colors)}>
                   {label}
@@ -418,10 +418,10 @@ const ProductListItem = ({
               const val = String(m).toLowerCase();
               let label = m;
               let colors = "bg-slate-100 text-slate-600";
-              
+
               if (val.includes('vente') || val.includes('sale')) { label = 'Achat'; colors = "bg-emerald-100 text-emerald-700 border-emerald-200"; }
               else if (val.includes('location') || val.includes('rental')) { label = 'Location'; colors = "bg-violet-100 text-violet-700 border-violet-200"; }
-              
+
               return (
                 <span key={`mode-${idx}`} className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors", colors)}>
                   {label}
@@ -460,23 +460,23 @@ const ProductListItem = ({
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        <button 
+        <button
           onClick={(e) => { e.stopPropagation(); onEditProduct(product); }}
-          className="p-2 text-slate-400 hover:text-[#a3e635] transition-colors" 
+          className="p-2 text-slate-400 hover:text-[#a3e635] transition-colors"
           title="Modifier"
         >
           <Edit2 className="w-4 h-4" />
         </button>
-        <button 
+        <button
           onClick={(e) => { e.stopPropagation(); onDuplicateProduct(product); }}
-          className="p-2 text-blue-500 hover:text-blue-400 transition-colors" 
+          className="p-2 text-blue-500 hover:text-blue-400 transition-colors"
           title="Dupliquer"
         >
           <Copy className="w-4 h-4" />
         </button>
-        <button 
+        <button
           onClick={(e) => { e.stopPropagation(); setDeletingId(product.id); }}
-          className="p-2 text-slate-400 hover:text-red-500 transition-colors" 
+          className="p-2 text-slate-400 hover:text-red-500 transition-colors"
           title="Supprimer"
         >
           <Trash2 className="w-4 h-4" />
@@ -485,7 +485,7 @@ const ProductListItem = ({
 
       <AnimatePresence>
         {deletingId === product.id && (
-          <motion.div 
+          <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
@@ -502,13 +502,13 @@ const ProductListItem = ({
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => setDeletingId(null)}
                 className="px-4 py-2 text-xs font-bold text-white hover:bg-white/10 rounded-xl transition-colors"
               >
                 Annuler
               </button>
-              <button 
+              <button
                 onClick={() => {
                   onDeleteProduct(product.id);
                   setDeletingId(null);
@@ -563,18 +563,18 @@ const NumberInput = ({ value, onChange, placeholder, className, isDark, compact 
 
   return (
     <div className="relative">
-      <input 
-        type="number" 
+      <input
+        type="number"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
           "w-full rounded-xl font-bold focus:outline-none transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
-          isDark 
-            ? "bg-[#1a1f2e] border border-blue-500/30 text-white focus:border-cyan-400" 
+          isDark
+            ? "bg-[#1a1f2e] border border-blue-500/30 text-white focus:border-cyan-400"
             : "bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-slate-900 focus:bg-white",
           compact ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm",
           className
-        )} 
+        )}
         placeholder={placeholder}
       />
       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
@@ -590,16 +590,16 @@ const NumberInput = ({ value, onChange, placeholder, className, isDark, compact 
 };
 
 // --- Composant Paramètres IA ---
-const AISettingsSheet = ({ 
-  isOpen, 
-  onClose, 
-  settings, 
-  onSave 
-}: { 
-  isOpen: boolean, 
-  onClose: () => void, 
-  settings: AISettings, 
-  onSave: (s: AISettings) => void 
+const AISettingsSheet = ({
+  isOpen,
+  onClose,
+  settings,
+  onSave
+}: {
+  isOpen: boolean,
+  onClose: () => void,
+  settings: AISettings,
+  onSave: (s: AISettings) => void
 }) => {
   const [localSettings, setLocalSettings] = useState<AISettings>(settings);
   const [models, setModels] = useState<string[]>([]);
@@ -678,14 +678,14 @@ const AISettingsSheet = ({
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60]"
           />
-          <motion.div 
+          <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
@@ -702,7 +702,7 @@ const AISettingsSheet = ({
                   <p className="text-xs text-slate-500">Paramètres d'analyse et d'extraction</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={onClose}
                 className="p-2 hover:bg-slate-200 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
               >
@@ -722,7 +722,7 @@ const AISettingsSheet = ({
                     <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Analyse automatique</div>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => setLocalSettings(prev => ({ ...prev, enabled: !prev.enabled }))}
                   className={cn(
                     "w-12 h-6 rounded-full transition-all relative",
@@ -749,8 +749,8 @@ const AISettingsSheet = ({
                         onClick={() => handleProviderChange(p)}
                         className={cn(
                           "py-2.5 rounded-xl text-xs font-bold border transition-all capitalize",
-                          localSettings.provider === p 
-                            ? "bg-slate-900 text-white border-slate-900 shadow-md" 
+                          localSettings.provider === p
+                            ? "bg-slate-900 text-white border-slate-900 shadow-md"
                             : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
                         )}
                       >
@@ -766,7 +766,7 @@ const AISettingsSheet = ({
                     <ShieldCheck className="w-3 h-3" /> Clé API
                   </label>
                   <div className="relative">
-                    <input 
+                    <input
                       type={showApiKey ? "text" : "password"}
                       value={localSettings.apiKey}
                       onChange={e => setLocalSettings(prev => ({ ...prev, apiKey: e.target.value }))}
@@ -774,7 +774,7 @@ const AISettingsSheet = ({
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-12 text-sm font-medium focus:outline-none focus:border-slate-900 transition-colors"
                       placeholder={`Entrez votre clé ${localSettings.provider}`}
                     />
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setShowApiKey(!showApiKey)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
@@ -808,11 +808,11 @@ const AISettingsSheet = ({
                 {/* Paramètres Avancés */}
                 <div className="pt-4 border-t border-slate-100 space-y-6">
                   <h3 className="text-sm font-bold text-slate-900">Paramètres Avancés</h3>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Max Tokens</label>
-                      <input 
+                      <input
                         type="number"
                         value={localSettings.maxTokens}
                         onChange={e => setLocalSettings(prev => ({ ...prev, maxTokens: parseInt(e.target.value) }))}
@@ -821,7 +821,7 @@ const AISettingsSheet = ({
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Taille PDF (MB)</label>
-                      <input 
+                      <input
                         type="number"
                         value={localSettings.pdfMaxSize}
                         onChange={e => setLocalSettings(prev => ({ ...prev, pdfMaxSize: parseInt(e.target.value) }))}
@@ -840,7 +840,7 @@ const AISettingsSheet = ({
                         <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Caractéristiques</div>
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setLocalSettings(prev => ({ ...prev, autoCreateCharacteristics: !prev.autoCreateCharacteristics }))}
                       className={cn(
                         "w-12 h-6 rounded-full transition-all relative",
@@ -858,14 +858,14 @@ const AISettingsSheet = ({
             </div>
 
             <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex gap-3">
-              <button 
+              <button
                 onClick={handleTest}
                 disabled={!localSettings.enabled || !localSettings.apiKey || testStatus === 'testing'}
                 className={cn(
                   "flex-1 py-3.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2",
                   testStatus === 'success' ? "bg-green-100 text-green-700" :
-                  testStatus === 'error' ? "bg-red-100 text-red-700" :
-                  "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                    testStatus === 'error' ? "bg-red-100 text-red-700" :
+                      "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
                 )}
               >
                 {testStatus === 'testing' ? (
@@ -879,7 +879,7 @@ const AISettingsSheet = ({
                 )}
                 {testStatus === 'testing' ? 'Test...' : testStatus === 'success' ? 'Connexion OK' : testStatus === 'error' ? 'Erreur' : 'Tester l\'IA'}
               </button>
-              <button 
+              <button
                 onClick={() => { onSave(localSettings); onClose(); }}
                 className="flex-[2] bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
               >
@@ -895,7 +895,7 @@ const AISettingsSheet = ({
 
 // Icône Minus manquante dans les imports, on la recrée ici ou on l'importe
 const Minus = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14" /></svg>
 );
 
 const ICON_LIBRARY = [
@@ -935,14 +935,14 @@ const slideVariants = {
 };
 
 // --- Composant CaracteristiquesPage ---
-const CaracteristiquesPage = ({ 
-  onBack, 
-  characteristics, 
+const CaracteristiquesPage = ({
+  onBack,
+  characteristics,
   setCharacteristics,
   user
-}: { 
-  onBack: () => void, 
-  characteristics: any[], 
+}: {
+  onBack: () => void,
+  characteristics: any[],
   setCharacteristics: React.Dispatch<React.SetStateAction<any[]>>,
   user: any
 }) => {
@@ -1059,7 +1059,7 @@ const CaracteristiquesPage = ({
       return;
     }
     setIsSaving(true);
-    
+
     try {
       const processedVariants = variants.map((v) => {
         return {
@@ -1095,7 +1095,7 @@ const CaracteristiquesPage = ({
         try {
           const wizardRef = doc(db, "settings", "wizard");
           const wizardSnap = await getDoc(wizardRef);
-          
+
           if (wizardSnap.exists()) {
             if (name === 'Pixel pitch') {
               const pixelPitches = processedVariants.map(v => ({
@@ -1131,7 +1131,7 @@ const CaracteristiquesPage = ({
 
   const handleSeedExamples = () => {
     setIsSaving(true);
-    
+
     const examples = [
       {
         id: 'char-luminosite',
@@ -1227,7 +1227,7 @@ const CaracteristiquesPage = ({
       });
       return newList;
     });
-    
+
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
     setIsSaving(false);
@@ -1247,490 +1247,490 @@ const CaracteristiquesPage = ({
   return (
     <div className="w-full pb-32 md:pb-0">
       <div className="bg-transparent md:bg-theme-card md:border md:border-theme-card-border md:rounded-[3rem] p-0 md:p-10 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
-      <AnimatePresence>
-        {showIconPicker && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowIconPicker(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-3xl p-6 w-full max-w-md relative z-10 shadow-2xl border border-slate-200"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-slate-900">Choisir une icône</h3>
-                <button onClick={() => setShowIconPicker(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                  <X className="w-5 h-5 text-slate-500" />
-                </button>
-              </div>
-              <div className="grid grid-cols-4 gap-4">
-                {ICON_LIBRARY.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.name}
-                      onClick={() => {
-                        setSelectedIcon(Icon);
-                        setCustomIcon(null);
-                        setShowIconPicker(false);
-                      }}
-                      className={cn(
-                        "flex flex-col items-center gap-2 p-4 rounded-2xl transition-all border-2",
-                        selectedIcon === Icon 
-                          ? "bg-blue-50 border-blue-500 text-blue-600" 
-                          : "bg-slate-50 border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100"
-                      )}
-                    >
-                      <Icon className="w-6 h-6" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">{item.name}</span>
-                    </button>
-                  );
-                })}
-                {/* Upload Custom Icon Option */}
-                <div className="col-span-4 mt-4 pt-4 border-t border-slate-100">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Ou téléverser une icône personnalisée</label>
-                  <input 
-                    type="file" 
-                    id="custom-icon-upload"
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={handleCustomIconUpload}
-                  />
-                  <label 
-                    htmlFor="custom-icon-upload"
-                    className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all text-sm font-bold text-slate-600 group"
-                  >
-                    <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Téléverser une icône
-                  </label>
+        <AnimatePresence>
+          {showIconPicker && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowIconPicker(false)}
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="bg-white rounded-3xl p-6 w-full max-w-md relative z-10 shadow-2xl border border-slate-200"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-slate-900">Choisir une icône</h3>
+                  <button onClick={() => setShowIconPicker(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                    <X className="w-5 h-5 text-slate-500" />
+                  </button>
                 </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                <div className="grid grid-cols-4 gap-4">
+                  {ICON_LIBRARY.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.name}
+                        onClick={() => {
+                          setSelectedIcon(Icon);
+                          setCustomIcon(null);
+                          setShowIconPicker(false);
+                        }}
+                        className={cn(
+                          "flex flex-col items-center gap-2 p-4 rounded-2xl transition-all border-2",
+                          selectedIcon === Icon
+                            ? "bg-blue-50 border-blue-500 text-blue-600"
+                            : "bg-slate-50 border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100"
+                        )}
+                      >
+                        <Icon className="w-6 h-6" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{item.name}</span>
+                      </button>
+                    );
+                  })}
+                  {/* Upload Custom Icon Option */}
+                  <div className="col-span-4 mt-4 pt-4 border-t border-slate-100">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Ou téléverser une icône personnalisée</label>
+                    <input
+                      type="file"
+                      id="custom-icon-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleCustomIconUpload}
+                    />
+                    <label
+                      htmlFor="custom-icon-upload"
+                      className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all text-sm font-bold text-slate-600 group"
+                    >
+                      <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Téléverser une icône
+                    </label>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left column: List of characteristics */}
-        <div className="lg:col-span-5 flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Tag className="w-4 h-4 text-slate-500" /> Caractéristiques disponibles ({characteristics.length})
-            </h3>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={async () => {
-                  setIsSaving(true);
-                  const coreNames = ['Pixel pitch', 'Distance de visionnage', 'Puissance maximale'];
-                  for (const name of coreNames) {
-                    if (!characteristics.some(c => c.name === name)) {
-                      const defaultChar = MOCK_CHARACTERISTICS.find(c => c.name === name);
-                      if (defaultChar) {
-                        const { id: charId, ...data } = defaultChar;
-                        const finalId = charId || `char-${name.replace(/\s+/g, '-').toLowerCase()}`;
-                        
-                        // Seed characteristic collection
-                        await setDoc(doc(db, "characteristics", finalId), { 
-                          ...data, 
-                          uid: user?.uid || 'system', 
-                          locked: true, 
-                          isPinned: true 
-                        });
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left column: List of characteristics */}
+          <div className="lg:col-span-5 flex flex-col space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Tag className="w-4 h-4 text-slate-500" /> Caractéristiques disponibles ({characteristics.length})
+              </h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    setIsSaving(true);
+                    const coreNames = ['Pixel pitch', 'Distance de visionnage', 'Puissance maximale'];
+                    for (const name of coreNames) {
+                      if (!characteristics.some(c => c.name === name)) {
+                        const defaultChar = MOCK_CHARACTERISTICS.find(c => c.name === name);
+                        if (defaultChar) {
+                          const { id: charId, ...data } = defaultChar;
+                          const finalId = charId || `char-${name.replace(/\s+/g, '-').toLowerCase()}`;
 
-                        // --- BRIDGE SYNC ON SEED ---
-                        if (name === 'Pixel pitch' || name === 'Distance de visionnage') {
-                          const wizardRef = doc(db, "settings", "wizard");
-                          if (name === 'Pixel pitch') {
-                            await updateDoc(wizardRef, { 
-                              pixelPitches: data.variants.map((v: any) => ({ ...v, id: String(v.id) })) 
-                            });
-                          } else {
-                            await updateDoc(wizardRef, { 
-                              viewingDistances: data.variants.map((v: any) => ({ ...v, id: String(v.id) })) 
-                            });
+                          // Seed characteristic collection
+                          await setDoc(doc(db, "characteristics", finalId), {
+                            ...data,
+                            uid: user?.uid || 'system',
+                            locked: true,
+                            isPinned: true
+                          });
+
+                          // --- BRIDGE SYNC ON SEED ---
+                          if (name === 'Pixel pitch' || name === 'Distance de visionnage') {
+                            const wizardRef = doc(db, "settings", "wizard");
+                            if (name === 'Pixel pitch') {
+                              await updateDoc(wizardRef, {
+                                pixelPitches: data.variants.map((v: any) => ({ ...v, id: String(v.id) }))
+                              });
+                            } else {
+                              await updateDoc(wizardRef, {
+                                viewingDistances: data.variants.map((v: any) => ({ ...v, id: String(v.id) }))
+                              });
+                            }
                           }
                         }
                       }
                     }
-                  }
-                  setIsSaving(false);
-                  toast({ title: "Synchronisation", description: "Les réglages Pixiatech et le Wizard ont été synchronisés." });
-                }}
-                className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-sm group mr-2"
-                title="Rétablir les réglages Pixiatech"
-              >
-                <RefreshCw className="w-5 h-5 transition-colors group-hover:text-[#a3e635]" />
-              </button>
-              <button 
-                onClick={() => {
-                  setPrevCharPage(charPage);
-                  setCharPage(prev => Math.max(prev - 1, 1));
-                }}
-                disabled={charPage === 1}
-                className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
-              >
-                <ChevronLeft className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
-              </button>
-              <button 
-                onClick={() => {
-                  setPrevCharPage(charPage);
-                  setCharPage(prev => Math.min(prev + 1, totalCharPages));
-                }}
-                disabled={charPage === totalCharPages || totalCharPages === 0}
-                className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
-              >
-                <ChevronRight className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
-              </button>
-            </div>
-          </div>
-          <div className="relative overflow-hidden min-h-[400px]">
-            <AnimatePresence mode="popLayout" initial={false} custom={charDirection}>
-              <motion.div
-                key={charPage}
-                custom={charDirection}
-                variants={slideVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                className="space-y-3"
-              >
-                {paginatedChars.map(char => {
-                  const Icon = getIcon(char.iconName);
-                  return (
-                    <div 
-                      key={char.id} 
-                      className={cn(
-                        "bg-theme-card border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all cursor-pointer group relative overflow-hidden",
-                        editingId === char.id 
-                          ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg" 
-                          : "border-theme-card-border hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg",
-                        (char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && !editingId && "bg-orange-50/50 border-orange-100"
-                      )}
-                      onClick={() => handleEdit(char)}
-                    >
-                      {char.locked && (
-                        <div className="absolute top-0 right-0 p-1 bg-orange-500 text-white rounded-bl-xl z-10">
-                          <Lock className="w-3 h-3" />
-                        </div>
-                      )}
-                      <div className="flex items-center gap-4">
-                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center bg-slate-50 transition-colors group-hover:bg-white/10", char.color)}>
-                          {char.customIcon ? (
-                            <img src={char.customIcon} alt={char.name} className="w-6 h-6 object-contain" />
-                          ) : (
-                            Icon && <Icon className="w-5 h-5" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-slate-900 group-hover:text-white transition-colors">{char.name}</h3>
-                            {char.locked && <Lock className="w-3 h-3 text-orange-500 group-hover:text-orange-400" />}
-                          </div>
-                          <p className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors truncate max-w-[150px]">{char.options.join(', ')}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {!char.locked && !['Pixel pitch', 'Distance de visionnage'].includes(char.name) && (
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); handleDelete(char.id); }} 
-                            className="p-2 text-slate-400 group-hover:text-white hover:!text-red-500 hover:bg-white/10 rounded-lg transition-colors"
-                            title="Supprimer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                        {(char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && (
-                          <div className="p-2 text-slate-300 group-hover:text-white/20 cursor-not-allowed" title="Caractéristique système (Verrouillée)">
-                            <Trash2 className="w-4 h-4" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Right column: Form */}
-        <div className="lg:col-span-7 flex flex-col space-y-6">
-          <div className="bg-transparent md:bg-theme-card border-none md:border border-theme-card-border rounded-2xl p-0 md:p-6 shadow-none md:shadow-sm relative overflow-hidden">
-            <AnimatePresence>
-              {isSaved && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center"
+                    setIsSaving(false);
+                    toast({ title: "Synchronisation", description: "Les réglages Pixiatech et le Wizard ont été synchronisés." });
+                  }}
+                  className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-sm group mr-2"
+                  title="Rétablir les réglages Pixiatech"
                 >
-                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
-                    <Check className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">Caractéristique enregistrée !</h3>
-                  <p className="text-slate-500 text-sm mb-8 max-w-sm">
-                    La caractéristique "{name}" a été {editingId ? 'modifiée' : 'ajoutée'} avec succès.
-                  </p>
-                  <div className="flex items-center gap-4">
-                    <button 
-                      onClick={handleReset}
-                      className="px-6 h-10 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" /> Créer une nouvelle
-                    </button>
-                    <button 
-                      onClick={() => setIsSaved(false)}
-                      className="px-6 h-10 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2 group"
-                    >
-                      <Edit2 className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Continuer l'édition
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <h3 className="text-sm font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <Settings2 className="w-4 h-4 text-slate-500" /> 
-              {editingId ? 'Modifier la caractéristique' : 'Créer une caractéristique'}
-            </h3>
-
-            <div className="space-y-6">
-              {/* Icône et Nom */}
-              <div className="flex flex-col sm:flex-row gap-6">
-                <div className="shrink-0">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Icône</label>
-                  <button 
-                    onClick={() => setShowIconPicker(true)}
-                    className={cn(
-                      "w-16 h-16 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center hover:bg-slate-100 hover:border-slate-300 transition-all shadow-sm",
-                      selectedColor
-                    )}
-                  >
-                    {customIcon ? (
-                      <img src={customIcon} alt="Custom Icon" className="w-8 h-8 object-contain" />
-                    ) : (
-                      selectedIcon && React.createElement(selectedIcon, { className: "w-8 h-8" })
-                    )}
-                  </button>
-                </div>
-                <div className="flex-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nom de la caractéristique</label>
-                  <input 
-                    type="text" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={editingId && ['Pixel pitch', 'Distance de visionnage'].includes(characteristics.find(c => c.id === editingId)?.name)}
-                    placeholder="Ex: Distance de visionnage, Pixel pitch..." 
-                    className={cn(
-                      "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all",
-                      editingId && ['Pixel pitch', 'Distance de visionnage'].includes(characteristics.find(c => c.id === editingId)?.name) && "opacity-60 cursor-not-allowed"
-                    )}
-                  />
-                </div>
-              </div>
-
-              {/* Options Additionnelles : Verrouillage & Épinglage */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className={cn("p-2 rounded-xl bg-white shadow-sm border border-slate-200", isLocked ? "text-orange-500" : "text-slate-400")}>
-                      {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-slate-900">Verrouiller</div>
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider">Empêcher suppression</div>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setIsLocked(!isLocked)}
-                    className={cn(
-                      "w-10 h-5 rounded-full transition-all relative shrink-0",
-                      isLocked ? "bg-orange-500" : "bg-slate-200"
-                    )}
-                  >
-                    <div className={cn(
-                      "absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all shadow-sm",
-                      isLocked ? "left-[22px]" : "left-0.5"
-                    )} />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className={cn("p-2 rounded-xl bg-white shadow-sm border border-slate-200", isPinned ? "text-[#a3e635]" : "text-slate-400")}>
-                      <Pin className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-slate-900">Épingler</div>
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider">Ajout par défaut</div>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setIsPinned(!isPinned)}
-                    className={cn(
-                      "w-10 h-5 rounded-full transition-all relative shrink-0",
-                      isPinned ? "bg-[#a3e635]" : "bg-slate-200"
-                    )}
-                  >
-                    <div className={cn(
-                      "absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all shadow-sm",
-                      isPinned ? "left-[22px]" : "left-0.5"
-                    )} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Palette de couleurs */}
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">Couleur de l'icône</label>
-                <div className="flex flex-wrap gap-3">
-                  {colors.map((color) => (
-                    <button
-                      key={color.class}
-                      onClick={() => setSelectedColor(color.class)}
-                      className={cn(
-                        "w-8 h-8 rounded-full transition-all border-2 flex items-center justify-center",
-                        selectedColor === color.class ? "border-slate-900 scale-110" : "border-transparent hover:scale-105"
-                      )}
-                      title={color.name}
-                    >
-                      <div className={cn("w-5 h-5 rounded-full shadow-inner", color.bg)} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Variantes */}
-              <div>
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">Variantes de la caractéristique</label>
-                
-                <div className="space-y-3">
-                  {variants.map((variant) => (
-                    <div key={variant.id} className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                      <div className="flex-1">
-                        <input 
-                          type="text" 
-                          value={variant.value}
-                          onChange={(e) => updateVariant(variant.id, 'value', e.target.value)}
-                          placeholder="Ex: 2 mètres, 4 mètres..." 
-                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all" 
-                        />
-                      </div>
-                      
-                      {/* Image Upload for Variant */}
-                      <div className="shrink-0 relative group">
-                        <input 
-                          type="file" 
-                          id={`variant-image-${variant.id}`}
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(variant.id, e)}
-                        />
-                        <label 
-                          htmlFor={`variant-image-${variant.id}`}
-                          className={cn(
-                            "flex items-center justify-center w-10 h-10 rounded-lg border border-dashed cursor-pointer transition-colors overflow-hidden",
-                            variant.image ? "border-slate-300 bg-slate-100" : "border-slate-300 hover:border-slate-400 hover:bg-slate-100 text-slate-400"
-                          )}
-                          title="Ajouter une image/icône"
-                        >
-                          {variant.image ? (
-                            <img src={variant.image.url} alt="Variant" className="w-full h-full object-cover" />
-                          ) : (
-                            <Camera className="w-4 h-4" />
-                          )}
-                        </label>
-                        {variant.image && (
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              updateVariant(variant.id, 'image', null);
-                            }}
-                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
-
-                      <button 
-                        onClick={() => removeVariant(variant.id)}
-                        disabled={variants.length === 1}
-                        className="shrink-0 p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-400"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <button 
-                  onClick={addVariant}
-                  className="mt-4 w-full h-10 bg-white border border-slate-200 border-dashed rounded-xl text-slate-600 font-black text-[10px] uppercase tracking-widest hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                  <RefreshCw className="w-5 h-5 transition-colors group-hover:text-[#a3e635]" />
+                </button>
+                <button
+                  onClick={() => {
+                    setPrevCharPage(charPage);
+                    setCharPage(prev => Math.max(prev - 1, 1));
+                  }}
+                  disabled={charPage === 1}
+                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
                 >
-                  <Plus className="w-4 h-4" /> Ajouter une variante
+                  <ChevronLeft className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
+                </button>
+                <button
+                  onClick={() => {
+                    setPrevCharPage(charPage);
+                    setCharPage(prev => Math.min(prev + 1, totalCharPages));
+                  }}
+                  disabled={charPage === totalCharPages || totalCharPages === 0}
+                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
+                >
+                  <ChevronRight className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
                 </button>
               </div>
             </div>
-            
-            {/* Desktop Action Buttons */}
-            <div className="hidden md:flex mt-8 pt-6 border-t border-slate-100 items-center gap-3">
-              <button 
-                onClick={handleReset}
-                className="px-6 h-10 bg-white border border-transparent text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900 hover:border-slate-200 transition-all flex items-center gap-2"
-              >
-                <PlusCircle className="w-4 h-4" /> Nouveau
-              </button>
-              <div className="flex-1" />
-              <button 
-                onClick={handleSave}
-                disabled={!name.trim() || variants.every(v => !v.value.trim()) || !user || isSaving}
-                className="bg-theme-sidebar-active-bg text-theme-sidebar-active-text px-8 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
-              >
-                {isSaving ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 group-hover:text-[#a3e635] group-hover:drop-shadow-[0_0_8px_rgba(163,230,53,0.8)] transition-all" />
-                )}
-                <span>{isSaving ? 'Enregistrement...' : (editingId ? 'Mettre à jour' : 'Enregistrer')}</span>
-              </button>
+            <div className="relative overflow-hidden min-h-[400px]">
+              <AnimatePresence mode="popLayout" initial={false} custom={charDirection}>
+                <motion.div
+                  key={charPage}
+                  custom={charDirection}
+                  variants={slideVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                  className="space-y-3"
+                >
+                  {paginatedChars.map(char => {
+                    const Icon = getIcon(char.iconName);
+                    return (
+                      <div
+                        key={char.id}
+                        className={cn(
+                          "bg-theme-card border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all cursor-pointer group relative overflow-hidden",
+                          editingId === char.id
+                            ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg"
+                            : "border-theme-card-border hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg",
+                          (char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && !editingId && "bg-orange-50/50 border-orange-100"
+                        )}
+                        onClick={() => handleEdit(char)}
+                      >
+                        {char.locked && (
+                          <div className="absolute top-0 right-0 p-1 bg-orange-500 text-white rounded-bl-xl z-10">
+                            <Lock className="w-3 h-3" />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-4">
+                          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center bg-slate-50 transition-colors group-hover:bg-white/10", char.color)}>
+                            {char.customIcon ? (
+                              <img src={char.customIcon} alt={char.name} className="w-6 h-6 object-contain" />
+                            ) : (
+                              Icon && <Icon className="w-5 h-5" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-slate-900 group-hover:text-white transition-colors">{char.name}</h3>
+                              {char.locked && <Lock className="w-3 h-3 text-orange-500 group-hover:text-orange-400" />}
+                            </div>
+                            <p className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors truncate max-w-[150px]">{char.options.join(', ')}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {!char.locked && !['Pixel pitch', 'Distance de visionnage'].includes(char.name) && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDelete(char.id); }}
+                              className="p-2 text-slate-400 group-hover:text-white hover:!text-red-500 hover:bg-white/10 rounded-lg transition-colors"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                          {(char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && (
+                            <div className="p-2 text-slate-300 group-hover:text-white/20 cursor-not-allowed" title="Caractéristique système (Verrouillée)">
+                              <Trash2 className="w-4 h-4" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </motion.div>
+              </AnimatePresence>
             </div>
+          </div>
 
-            {/* Mobile Action Buttons (Style FloatingFooterNav) */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-[90] p-4 pointer-events-none">
-              <div className="relative p-1.5 bg-black/20 backdrop-blur-md border border-white/50 rounded-[24px] shadow-2xl pointer-events-auto">
-                <div className="relative z-10 flex items-center gap-2 w-full">
-                  <button
-                    onClick={onBack}
-                    className="w-12 h-12 rounded-[16px] bg-black text-white flex items-center justify-center transition-all hover:bg-[#c6ff00] hover:text-black shadow-lg shrink-0"
+          {/* Right column: Form */}
+          <div className="lg:col-span-7 flex flex-col space-y-6">
+            <div className="bg-transparent md:bg-theme-card border-none md:border border-theme-card-border rounded-2xl p-0 md:p-6 shadow-none md:shadow-sm relative overflow-hidden">
+              <AnimatePresence>
+                {isSaved && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center"
                   >
-                    <ChevronLeft size={20} strokeWidth={3} />
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving || !name.trim() || variants.every(v => !v.value.trim()) || !user}
-                    className="flex-1 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-[18px] flex items-center px-6 transition-all group shadow-lg overflow-hidden relative disabled:opacity-50"
-                  >
-                    <span className="relative z-10 font-black uppercase tracking-[0.3em] text-[10px] ml-2">
-                      {editingId ? 'Enregistrer' : 'Ajouter'}
-                    </span>
-                    <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center">
-                      {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-current" />}
+                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
+                      <Check className="w-8 h-8" />
                     </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">Caractéristique enregistrée !</h3>
+                    <p className="text-slate-500 text-sm mb-8 max-w-sm">
+                      La caractéristique "{name}" a été {editingId ? 'modifiée' : 'ajoutée'} avec succès.
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={handleReset}
+                        className="px-6 h-10 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" /> Créer une nouvelle
+                      </button>
+                      <button
+                        onClick={() => setIsSaved(false)}
+                        className="px-6 h-10 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2 group"
+                      >
+                        <Edit2 className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Continuer l'édition
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <h3 className="text-sm font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <Settings2 className="w-4 h-4 text-slate-500" />
+                {editingId ? 'Modifier la caractéristique' : 'Créer une caractéristique'}
+              </h3>
+
+              <div className="space-y-6">
+                {/* Icône et Nom */}
+                <div className="flex flex-col sm:flex-row gap-6">
+                  <div className="shrink-0">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Icône</label>
+                    <button
+                      onClick={() => setShowIconPicker(true)}
+                      className={cn(
+                        "w-16 h-16 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center hover:bg-slate-100 hover:border-slate-300 transition-all shadow-sm",
+                        selectedColor
+                      )}
+                    >
+                      {customIcon ? (
+                        <img src={customIcon} alt="Custom Icon" className="w-8 h-8 object-contain" />
+                      ) : (
+                        selectedIcon && React.createElement(selectedIcon, { className: "w-8 h-8" })
+                      )}
+                    </button>
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nom de la caractéristique</label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      disabled={editingId && ['Pixel pitch', 'Distance de visionnage'].includes(characteristics.find(c => c.id === editingId)?.name)}
+                      placeholder="Ex: Distance de visionnage, Pixel pitch..."
+                      className={cn(
+                        "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all",
+                        editingId && ['Pixel pitch', 'Distance de visionnage'].includes(characteristics.find(c => c.id === editingId)?.name) && "opacity-60 cursor-not-allowed"
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Options Additionnelles : Verrouillage & Épinglage */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className={cn("p-2 rounded-xl bg-white shadow-sm border border-slate-200", isLocked ? "text-orange-500" : "text-slate-400")}>
+                        {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900">Verrouiller</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Empêcher suppression</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsLocked(!isLocked)}
+                      className={cn(
+                        "w-10 h-5 rounded-full transition-all relative shrink-0",
+                        isLocked ? "bg-orange-500" : "bg-slate-200"
+                      )}
+                    >
+                      <div className={cn(
+                        "absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all shadow-sm",
+                        isLocked ? "left-[22px]" : "left-0.5"
+                      )} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className={cn("p-2 rounded-xl bg-white shadow-sm border border-slate-200", isPinned ? "text-[#a3e635]" : "text-slate-400")}>
+                        <Pin className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900">Épingler</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Ajout par défaut</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsPinned(!isPinned)}
+                      className={cn(
+                        "w-10 h-5 rounded-full transition-all relative shrink-0",
+                        isPinned ? "bg-[#a3e635]" : "bg-slate-200"
+                      )}
+                    >
+                      <div className={cn(
+                        "absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all shadow-sm",
+                        isPinned ? "left-[22px]" : "left-0.5"
+                      )} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Palette de couleurs */}
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">Couleur de l'icône</label>
+                  <div className="flex flex-wrap gap-3">
+                    {colors.map((color) => (
+                      <button
+                        key={color.class}
+                        onClick={() => setSelectedColor(color.class)}
+                        className={cn(
+                          "w-8 h-8 rounded-full transition-all border-2 flex items-center justify-center",
+                          selectedColor === color.class ? "border-slate-900 scale-110" : "border-transparent hover:scale-105"
+                        )}
+                        title={color.name}
+                      >
+                        <div className={cn("w-5 h-5 rounded-full shadow-inner", color.bg)} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Variantes */}
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">Variantes de la caractéristique</label>
+
+                  <div className="space-y-3">
+                    {variants.map((variant) => (
+                      <div key={variant.id} className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={variant.value}
+                            onChange={(e) => updateVariant(variant.id, 'value', e.target.value)}
+                            placeholder="Ex: 2 mètres, 4 mètres..."
+                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+                          />
+                        </div>
+
+                        {/* Image Upload for Variant */}
+                        <div className="shrink-0 relative group">
+                          <input
+                            type="file"
+                            id={`variant-image-${variant.id}`}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(variant.id, e)}
+                          />
+                          <label
+                            htmlFor={`variant-image-${variant.id}`}
+                            className={cn(
+                              "flex items-center justify-center w-10 h-10 rounded-lg border border-dashed cursor-pointer transition-colors overflow-hidden",
+                              variant.image ? "border-slate-300 bg-slate-100" : "border-slate-300 hover:border-slate-400 hover:bg-slate-100 text-slate-400"
+                            )}
+                            title="Ajouter une image/icône"
+                          >
+                            {variant.image ? (
+                              <img src={variant.image.url} alt="Variant" className="w-full h-full object-cover" />
+                            ) : (
+                              <Camera className="w-4 h-4" />
+                            )}
+                          </label>
+                          {variant.image && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                updateVariant(variant.id, 'image', null);
+                              }}
+                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => removeVariant(variant.id)}
+                          disabled={variants.length === 1}
+                          className="shrink-0 p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={addVariant}
+                    className="mt-4 w-full h-10 bg-white border border-slate-200 border-dashed rounded-xl text-slate-600 font-black text-[10px] uppercase tracking-widest hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" /> Ajouter une variante
                   </button>
+                </div>
+              </div>
+
+              {/* Desktop Action Buttons */}
+              <div className="hidden md:flex mt-8 pt-6 border-t border-slate-100 items-center gap-3">
+                <button
+                  onClick={handleReset}
+                  className="px-6 h-10 bg-white border border-transparent text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900 hover:border-slate-200 transition-all flex items-center gap-2"
+                >
+                  <PlusCircle className="w-4 h-4" /> Nouveau
+                </button>
+                <div className="flex-1" />
+                <button
+                  onClick={handleSave}
+                  disabled={!name.trim() || variants.every(v => !v.value.trim()) || !user || isSaving}
+                  className="bg-theme-sidebar-active-bg text-theme-sidebar-active-text px-8 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
+                >
+                  {isSaving ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 group-hover:text-[#a3e635] group-hover:drop-shadow-[0_0_8px_rgba(163,230,53,0.8)] transition-all" />
+                  )}
+                  <span>{isSaving ? 'Enregistrement...' : (editingId ? 'Mettre à jour' : 'Enregistrer')}</span>
+                </button>
+              </div>
+
+              {/* Mobile Action Buttons (Style FloatingFooterNav) */}
+              <div className="md:hidden fixed bottom-0 left-0 right-0 z-[90] p-4 pointer-events-none">
+                <div className="relative p-1.5 bg-black/20 backdrop-blur-md border border-white/50 rounded-[24px] shadow-2xl pointer-events-auto">
+                  <div className="relative z-10 flex items-center gap-2 w-full">
+                    <button
+                      onClick={onBack}
+                      className="w-12 h-12 rounded-[16px] bg-black text-white flex items-center justify-center transition-all hover:bg-[#c6ff00] hover:text-black shadow-lg shrink-0"
+                    >
+                      <ChevronLeft size={20} strokeWidth={3} />
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={isSaving || !name.trim() || variants.every(v => !v.value.trim()) || !user}
+                      className="flex-1 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-[18px] flex items-center px-6 transition-all group shadow-lg overflow-hidden relative disabled:opacity-50"
+                    >
+                      <span className="relative z-10 font-black uppercase tracking-[0.3em] text-[10px] ml-2">
+                        {editingId ? 'Enregistrer' : 'Ajouter'}
+                      </span>
+                      <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center">
+                        {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-current" />}
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 };
@@ -1832,25 +1832,25 @@ const ProduitPage = ({
     <div className="w-full pb-32 md:pb-0">
       <div className="bg-transparent md:bg-theme-card md:border md:border-theme-card-border md:rounded-[3rem] p-0 md:p-6 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          
+
           {/* Left Column: Technical Specs & Core Settings */}
           <div className="lg:col-span-5 flex flex-col space-y-3 lg:border-r lg:border-slate-100 lg:pr-8">
-            
+
             {/* 1. Nom du produit */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Nom du produit</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
-                placeholder="Nom Du Produits" 
+                placeholder="Nom Du Produits"
                 className="w-full border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white transition-all"
               />
             </div>
 
             {/* Mobile Only: Premium Config Trigger */}
             <div className="md:hidden space-y-2">
-              <button 
+              <button
                 onClick={() => setIsPricingMediaOpen(true)}
                 className="w-full py-6 bg-[#f8fafc] text-slate-900 rounded-[2.5rem] flex flex-col items-center justify-center gap-3 border-2 border-slate-200 shadow-sm active:scale-95 transition-all group relative overflow-hidden"
               >
@@ -1877,10 +1877,10 @@ const ProduitPage = ({
             <div className="hidden md:block space-y-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Mode de commercialisation</label>
               <div className="grid grid-cols-2 gap-2">
-                <button 
+                <button
                   onClick={() => {
-                    setMode((prev: string[]) => 
-                      prev.includes('vente') 
+                    setMode((prev: string[]) =>
+                      prev.includes('vente')
                         ? (prev.length > 1 ? prev.filter(m => m !== 'vente') : prev)
                         : [...prev, 'vente']
                     );
@@ -1893,10 +1893,10 @@ const ProduitPage = ({
                   <ShoppingCart className={cn("w-5 h-5", mode.includes('vente') ? "text-[#c6ff00]" : "text-slate-300")} />
                   <span>Vente</span>
                 </button>
-                <button 
+                <button
                   onClick={() => {
-                    setMode((prev: string[]) => 
-                      prev.includes('location') 
+                    setMode((prev: string[]) =>
+                      prev.includes('location')
                         ? (prev.length > 1 ? prev.filter(m => m !== 'location') : prev)
                         : [...prev, 'location']
                     );
@@ -1916,7 +1916,7 @@ const ProduitPage = ({
             <div className="hidden md:block space-y-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Type d'écran</label>
               <div className="grid grid-cols-2 gap-2">
-                <button 
+                <button
                   onClick={() => setScreenType('flat')}
                   className={cn(
                     "h-10 rounded-xl flex items-center justify-center gap-3 font-bold transition-all border",
@@ -1926,7 +1926,7 @@ const ProduitPage = ({
                   <Monitor className={cn("w-5 h-5", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-300")} />
                   <span>Écran Plat</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setScreenType('curved')}
                   className={cn(
                     "h-10 rounded-xl flex items-center justify-center gap-3 font-bold transition-all border",
@@ -1951,11 +1951,11 @@ const ProduitPage = ({
                   { id: 'semi-exterieur', label: 'Semi-extérieur', icon: Store, color: 'text-purple-400' },
                   { id: 'exterieur', label: 'Extérieur', icon: Sun, color: 'text-yellow-400' }
                 ].map((item) => (
-                  <button 
+                  <button
                     key={item.id}
                     onClick={() => {
-                      setEnvironment((prev: string[]) => 
-                        prev.includes(item.id as any) 
+                      setEnvironment((prev: string[]) =>
+                        prev.includes(item.id as any)
                           ? (prev.length > 1 ? prev.filter(e => e !== item.id) : prev)
                           : [...prev, item.id]
                       );
@@ -1983,7 +1983,7 @@ const ProduitPage = ({
                   </div>
                 )}
               </div>
-              
+
               <div className="relative min-h-[200px]">
                 <AnimatePresence mode="popLayout" initial={false} custom={specDirection}>
                   <motion.div
@@ -2019,7 +2019,7 @@ const ProduitPage = ({
                               {charDef.customIcon ? (
                                 <img src={charDef.customIcon} alt={charDef.name} className="w-4 h-4 object-contain" />
                               ) : (
-                                <Icon className="w-4 h-4" /> 
+                                <Icon className="w-4 h-4" />
                               )}
                             </div>
                             <span className="text-slate-300 text-[11px] font-bold uppercase tracking-tight">{charDef.name}</span>
@@ -2039,11 +2039,11 @@ const ProduitPage = ({
               </div>
 
               <div className="relative mt-3">
-                <button 
+                <button
                   onClick={() => { setTempSelectedChars([]); setShowCharPanel(true); }}
                   className="w-full h-10 bg-white hover:bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all border border-slate-200 border-dashed hover:border-slate-400"
                 >
-                  <PlusCircle className="w-4 h-4 text-[#a3e635]" /> 
+                  <PlusCircle className="w-4 h-4 text-[#a3e635]" />
                   <span>Ajouter une caractéristique</span>
                 </button>
               </div>
@@ -2056,7 +2056,7 @@ const ProduitPage = ({
               <div className="absolute top-0 right-0 p-8 opacity-5">
                 <Tag className="w-24 h-24 text-white transform -rotate-12" />
               </div>
-              
+
               <div className="relative z-10 flex flex-col h-full">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-cyan-400/10 rounded-xl flex items-center justify-center border border-cyan-400/20">
@@ -2066,16 +2066,16 @@ const ProduitPage = ({
                 </div>
 
                 <div className="space-y-4 flex-1">
-                  
+
                   {/* Prix de Vente (Teal Box like screenshot) */}
                   <div className="bg-cyan-950/40 p-4 rounded-2xl border border-cyan-500/20 relative group overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-transparent pointer-events-none" />
                     <label className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1.5 block">Prix de vente (€)</label>
-                    <NumberInput 
-                      value={prixVente} 
-                      onChange={setPrixVente} 
-                      placeholder="Ex: 1200" 
-                      isDark 
+                    <NumberInput
+                      value={prixVente}
+                      onChange={setPrixVente}
+                      placeholder="Ex: 1200"
+                      isDark
                     />
                     <div className="text-[9px] text-cyan-400/40 mt-1 font-medium italic tracking-tight">Prix public conseillé par m².</div>
                   </div>
@@ -2083,10 +2083,10 @@ const ProduitPage = ({
                   {/* Surface Minimum */}
                   <div className="space-y-2">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Surface Minimum Requise (M²)</label>
-                    <NumberInput 
-                      value={surfaceMinRequise || surface.toString()} 
-                      onChange={(val) => { setSurfaceMinRequise(val); setSurface(parseFloat(val) || 0); }} 
-                      isDark 
+                    <NumberInput
+                      value={surfaceMinRequise || surface.toString()}
+                      onChange={(val) => { setSurfaceMinRequise(val); setSurface(parseFloat(val) || 0); }}
+                      isDark
                     />
                     <p className="text-[9px] text-slate-500 mt-1 px-1 leading-relaxed">Définit la surface minimale pour le calcul du devis.</p>
                   </div>
@@ -2101,7 +2101,7 @@ const ProduitPage = ({
                           <div className="text-xs font-black text-white uppercase tracking-tight">Gérer les dimensions et le prix par dalle</div>
                           <div className="text-[9px] text-slate-500 mt-1 leading-tight">Activez cette option pour calculer le prix selon les dimensions des dalles.</div>
                         </div>
-                        <button 
+                        <button
                           onClick={() => setDimensionsEnabled(!dimensionsEnabled)}
                           className={cn("w-12 h-6 rounded-full relative transition-all duration-300 shrink-0", dimensionsEnabled ? "bg-[#c6ff00]" : "bg-slate-700")}
                         >
@@ -2151,10 +2151,10 @@ const ProduitPage = ({
 
           {/* Right Column: Media & Actions */}
           <div className="lg:col-span-4 flex flex-col space-y-3">
-            
+
             {/* Media Preview Box */}
             <div className="space-y-2">
-              <div 
+              <div
                 className="w-full h-72 bg-slate-50 rounded-[2.5rem] overflow-hidden relative shadow-inner border-2 border-slate-100 group"
               >
                 {mediaType === 'photo' ? (
@@ -2176,10 +2176,10 @@ const ProduitPage = ({
                         allowFullScreen
                       ></iframe>
                     ) : (previewSrc && isVideoUrl(previewSrc)) ? (
-                      <video 
+                      <video
                         key={previewSrc}
-                        src={previewSrc} 
-                        controls 
+                        src={previewSrc}
+                        controls
                         className="w-full h-full object-contain"
                       />
                     ) : (
@@ -2188,9 +2188,9 @@ const ProduitPage = ({
                         <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Aucune vidéo</p>
                       </div>
                     )}
-                    
+
                     {/* Floating Replace Button for Video (so it doesn't block controls) */}
-                    <button 
+                    <button
                       onClick={triggerUpload}
                       className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-md text-slate-900 rounded-xl shadow-xl border border-white/20 opacity-0 group-hover:opacity-100 transition-all active:scale-95 flex items-center gap-2 z-30"
                     >
@@ -2221,7 +2221,7 @@ const ProduitPage = ({
                   <div className="flex gap-2">
                     <input type="text" value={currentMediaUrl} onChange={handleUrlChange} placeholder="data:image/..." className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900" />
                     <button onClick={triggerUpload} className="p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100 shadow-sm active:scale-95 transition-all"><Upload className="w-4 h-4" /></button>
-                    <button onClick={() => { if(mediaType === 'photo') { setPhotoUrl(''); setUploadedPhoto(null); } else { setVideoUrl(''); setUploadedVideo(null); } }} className="p-3 bg-red-50 text-red-600 rounded-xl border border-red-100 shadow-sm active:scale-95 transition-all"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => { if (mediaType === 'photo') { setPhotoUrl(''); setUploadedPhoto(null); } else { setVideoUrl(''); setUploadedVideo(null); } }} className="p-3 bg-red-50 text-red-600 rounded-xl border border-red-100 shadow-sm active:scale-95 transition-all"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
               </div>
@@ -2250,18 +2250,18 @@ const ProduitPage = ({
               </div>
 
               <div className="flex-1 flex flex-col justify-center">
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
-                  className="hidden" 
-                  accept={mediaType === 'photo' ? 'image/*' : 'video/*'} 
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept={mediaType === 'photo' ? 'image/*' : 'video/*'}
                 />
                 <input type="file" ref={pdfInputRef} onChange={handlePdfChange} className="hidden" accept="application/pdf" />
                 <div onClick={triggerPdfUpload} className={cn(
                   "border-2 border-dashed rounded-[2rem] p-6 md:p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group",
-                  (pdfUrl || uploadedPdf) 
-                    ? "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50" 
+                  (pdfUrl || uploadedPdf)
+                    ? "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50"
                     : "border-slate-200 hover:bg-slate-50"
                 )}>
                   <div className={cn(
@@ -2280,16 +2280,16 @@ const ProduitPage = ({
                   <span className="text-[9px] text-slate-400 uppercase tracking-widest">
                     {(pdfUrl || uploadedPdf) ? (uploadedPdf ? uploadedPdf.name : 'Fichier enregistré') : 'Fiche technique officielle'}
                   </span>
-                  
+
                   {(pdfUrl || uploadedPdf) && (
                     <div className="flex gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
-                      <button 
+                      <button
                         onClick={() => window.open(uploadedPdf ? URL.createObjectURL(uploadedPdf) : pdfUrl, '_blank')}
                         className="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-600 hover:text-white transition-all"
                       >
                         Voir le PDF
                       </button>
-                      <button 
+                      <button
                         onClick={() => { setPdfUrl(''); setUploadedPdf(null); }}
                         className="px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all"
                       >
@@ -2302,7 +2302,7 @@ const ProduitPage = ({
 
               {/* Action Buttons */}
               <div className="pt-6 space-y-3 mt-auto">
-                <button 
+                <button
                   onClick={handleSaveProduct}
                   disabled={isSaving || !productName}
                   className="w-full h-10 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl font-black uppercase tracking-[0.2em] text-xs hover:shadow-2xl hover:shadow-black/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
@@ -2310,7 +2310,7 @@ const ProduitPage = ({
                   {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus className="w-5 h-5 text-theme-sidebar-active-text" />}
                   {editingProduct ? 'Enregistrer les modifications' : 'Ajouter au catalogue'}
                 </button>
-                <button 
+                <button
                   onClick={() => { setEditingProduct(null); setActivePage('gestion'); }}
                   className="w-full h-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] hover:text-slate-900 transition-colors border border-transparent hover:border-slate-200 rounded-xl"
                 >
@@ -2354,15 +2354,15 @@ const ProduitPage = ({
                 </div>
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-6 pb-20">
-                  
+
                   {/* Mode de commercialisation */}
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Mode de commercialisation</label>
                     <div className="grid grid-cols-1 gap-2">
-                      <button 
+                      <button
                         onClick={() => {
-                          setMode((prev: string[]) => 
-                            prev.includes('vente') 
+                          setMode((prev: string[]) =>
+                            prev.includes('vente')
                               ? (prev.length > 1 ? prev.filter(m => m !== 'vente') : prev)
                               : [...prev, 'vente']
                           );
@@ -2378,10 +2378,10 @@ const ProduitPage = ({
                         <span className="text-xs font-black uppercase tracking-widest">Vente</span>
                       </button>
 
-                      <button 
+                      <button
                         onClick={() => {
-                          setMode((prev: string[]) => 
-                            prev.includes('location') 
+                          setMode((prev: string[]) =>
+                            prev.includes('location')
                               ? (prev.length > 1 ? prev.filter(m => m !== 'location') : prev)
                               : [...prev, 'location']
                           );
@@ -2403,7 +2403,7 @@ const ProduitPage = ({
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Type d'écran</label>
                     <div className="grid grid-cols-2 gap-2">
-                      <button 
+                      <button
                         onClick={() => setScreenType('flat')}
                         className={cn(
                           "w-full h-12 rounded-xl flex items-center px-4 gap-3 transition-all duration-300 relative overflow-hidden group",
@@ -2415,7 +2415,7 @@ const ProduitPage = ({
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-widest">Plat</span>
                       </button>
-                      <button 
+                      <button
                         onClick={() => setScreenType('curved')}
                         className={cn(
                           "w-full h-12 rounded-xl flex items-center px-4 gap-3 transition-all duration-300 relative overflow-hidden group",
@@ -2442,11 +2442,11 @@ const ProduitPage = ({
                         { id: 'semi-exterieur', label: 'Semi-extérieur', icon: Store, color: 'text-purple-400' },
                         { id: 'exterieur', label: 'Extérieur', icon: Sun, color: 'text-yellow-400' }
                       ].map((item) => (
-                        <button 
+                        <button
                           key={item.id}
                           onClick={() => {
-                            setEnvironment((prev: string[]) => 
-                              prev.includes(item.id as any) 
+                            setEnvironment((prev: string[]) =>
+                              prev.includes(item.id as any)
                                 ? (prev.length > 1 ? prev.filter(e => e !== item.id) : prev)
                                 : [...prev, item.id]
                             );
@@ -2499,20 +2499,20 @@ const ProduitPage = ({
             </div>
           </div>
         </div>
-    </div>
+      </div>
     </div>
   );
 };
 
-const GestionProduits = ({ 
-  products, 
-  setProducts, 
-  onAddProduct, 
-  onEditProduct, 
-  onDuplicateProduct, 
+const GestionProduits = ({
+  products,
+  setProducts,
+  onAddProduct,
+  onEditProduct,
+  onDuplicateProduct,
   onDeleteProduct,
   onBulkDelete
-}: { 
+}: {
   products: any[];
   setProducts: (products: any[]) => void;
   onAddProduct: () => void;
@@ -2536,8 +2536,8 @@ const GestionProduits = ({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [emblaRef, emblaApi] = useEmblaCarousel({ 
-    align: 'center', 
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'center',
     containScroll: false,
     dragFree: false
   });
@@ -2601,7 +2601,7 @@ const GestionProduits = ({
     <div className="w-full space-y-6">
       <div className="hidden md:flex bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex-row gap-4 items-center justify-between">
         <div className="flex items-center gap-4 w-auto">
-          <button 
+          <button
             onClick={toggleSelectAll}
             className={cn("w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all", selectedIds.length === paginatedProducts.length && paginatedProducts.length > 0 ? "bg-blue-600 border-blue-600 text-white" : "border-slate-200 hover:border-blue-400")}
           >
@@ -2609,15 +2609,15 @@ const GestionProduits = ({
           </button>
           <div className="relative w-80">
             <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text" 
-              placeholder="Rechercher un produit..." 
+            <input
+              type="text"
+              placeholder="Rechercher un produit..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 h-10 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all"
             />
           </div>
-          <button 
+          <button
             onClick={onAddProduct}
             className="flex items-center gap-3 px-6 h-10 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl text-sm font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg active:scale-[0.98] shrink-0"
           >
@@ -2625,13 +2625,13 @@ const GestionProduits = ({
             <span>Ajouter un produit</span>
           </button>
         </div>
-        
+
         <div className="flex items-center gap-3 w-auto">
           {selectedIds.length > 0 && (
             <div className="flex items-center gap-2">
               <AnimatePresence mode="wait">
                 {showBulkConfirm ? (
-                  <motion.div 
+                  <motion.div
                     key="confirm"
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -2685,14 +2685,14 @@ const GestionProduits = ({
       <div className="md:hidden sticky top-4 z-40 px-2 mb-10">
         <div className="bg-white/90 backdrop-blur-xl rounded-[28px] border border-slate-100 shadow-xl p-2 flex items-center justify-between gap-2">
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={() => setIsSearchOpen(true)}
               className="w-12 h-12 bg-slate-50 text-slate-900 rounded-[20px] flex items-center justify-center active:scale-90 transition-all border border-slate-100"
             >
               <Search className="w-5 h-5" />
             </button>
 
-            <button 
+            <button
               onClick={() => setIsFilterOpen(true)}
               className={cn(
                 "h-12 px-5 rounded-[20px] flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all active:scale-90 border",
@@ -2704,7 +2704,7 @@ const GestionProduits = ({
             </button>
           </div>
 
-          <button 
+          <button
             onClick={() => setIsSortOpen(true)}
             className={cn(
               "h-12 px-5 rounded-[20px] flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all active:scale-90 border",
@@ -2721,11 +2721,11 @@ const GestionProduits = ({
         <div className="overflow-hidden pb-32" ref={emblaRef}>
           <div className="flex">
             {paginatedProducts.map((product, index) => (
-              <div 
-                key={product.id} 
+              <div
+                key={product.id}
                 className="flex-[0_0_96%] min-w-0 pl-4"
               >
-                <MobileProductCard 
+                <MobileProductCard
                   product={product}
                   onEdit={onEditProduct}
                   onDuplicate={onDuplicateProduct}
@@ -2795,7 +2795,7 @@ const GestionProduits = ({
 
       <ProductActionsDrawer isOpen={isSortOpen} onClose={() => setIsSortOpen(false)} title="Trier la liste">
         <div className="grid grid-cols-1 gap-3">
-          {[ { value: 'manual', label: 'Ordre Manuel', icon: GripVertical }, { value: 'name', label: 'Par Nom', icon: FileText }, { value: 'price', label: 'Par Prix', icon: Zap }, { value: 'date', label: 'Par Date', icon: Calendar } ].map((opt) => (
+          {[{ value: 'manual', label: 'Ordre Manuel', icon: GripVertical }, { value: 'name', label: 'Par Nom', icon: FileText }, { value: 'price', label: 'Par Prix', icon: Zap }, { value: 'date', label: 'Par Date', icon: Calendar }].map((opt) => (
             <button key={opt.value} onClick={() => { setSortBy(opt.value as any); setIsSortOpen(false); }} className={cn("w-full flex items-center justify-between p-5 rounded-2xl transition-all", sortBy === opt.value ? "bg-black text-white" : "bg-slate-50 text-slate-600")}>
               <div className="flex items-center gap-4"><opt.icon className="w-6 h-6" /> <span className="text-lg font-black uppercase tracking-widest">{opt.label}</span></div>
               {sortBy === opt.value && <Check className="w-5 h-5 text-[#c6ff00]" />}
@@ -2807,7 +2807,7 @@ const GestionProduits = ({
       {/* TikTok Style Search Overlay */}
       <AnimatePresence>
         {isSearchOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: '100%' }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: '100%' }}
@@ -2827,7 +2827,7 @@ const GestionProduits = ({
 
             <div className="p-6 border-b border-slate-100">
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   onClick={() => setIsSearchOpen(false)}
                   className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-900"
                 >
@@ -2835,10 +2835,10 @@ const GestionProduits = ({
                 </button>
                 <div className="flex-1 relative">
                   <Search className="w-6 h-6 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                  <input 
+                  <input
                     autoFocus
-                    type="text" 
-                    placeholder="Rechercher un produit..." 
+                    type="text"
+                    placeholder="Rechercher un produit..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-14 pr-6 py-4 bg-slate-100 border-2 border-transparent focus:border-black rounded-[1.5rem] text-lg font-black uppercase tracking-widest transition-all"
@@ -2852,26 +2852,26 @@ const GestionProduits = ({
               {products
                 .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
                 .map(p => (
-                <button 
-                  key={p.id}
-                  onClick={() => {
-                    const idx = filteredProducts.findIndex(item => item.id === p.id);
-                    if (idx !== -1 && emblaApi) {
-                      emblaApi.scrollTo(idx);
-                      setIsSearchOpen(false);
-                    }
-                  }}
-                  className="w-full flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-200 transition-all text-left"
-                >
-                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-slate-100">
-                    <img src={getSafeImageUrl(p)} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="font-black text-slate-900 uppercase tracking-tighter">{p.name}</p>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase">{p.price || '—'}</p>
-                  </div>
-                </button>
-              ))}
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      const idx = filteredProducts.findIndex(item => item.id === p.id);
+                      if (idx !== -1 && emblaApi) {
+                        emblaApi.scrollTo(idx);
+                        setIsSearchOpen(false);
+                      }
+                    }}
+                    className="w-full flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-transparent hover:border-slate-200 transition-all text-left"
+                  >
+                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-slate-100">
+                      <img src={getSafeImageUrl(p)} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-900 uppercase tracking-tighter">{p.name}</p>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase">{p.price || '—'}</p>
+                    </div>
+                  </button>
+                ))}
               {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
                 <div className="py-20 text-center">
                   <Package className="w-16 h-16 text-slate-200 mx-auto mb-4" />
@@ -2879,9 +2879,9 @@ const GestionProduits = ({
                 </div>
               )}
             </div>
-            
+
             <div className="p-6 pb-12 bg-slate-50 border-t border-slate-100">
-              <button 
+              <button
                 onClick={() => setIsSearchOpen(false)}
                 className="w-full py-5 bg-black text-white rounded-[2rem] font-black uppercase tracking-[0.3em] shadow-2xl"
               >
@@ -2978,7 +2978,7 @@ const MOCK_CHARACTERISTICS = [
       { id: 'pp12', value: 'P18', recommended: false },
       { id: 'pp13', value: 'P19', recommended: false }
     ],
-    options: ['P1.2', 'P1.5', 'P2', 'P2.5', 'P3', 'P4', 'P5', 'P6', 'P8', 'P10', 'P16', 'P18', 'P19'],
+    options: ['P1.2', 'P1.5', 'P2', 'P2.5', 'P3', 'P4', 'P5', 'P6', 'P8', 'P10', 'P16'],
     locked: true,
     isPinned: true,
     uid: 'mock-user-123'
@@ -2997,7 +2997,7 @@ const MOCK_CHARACTERISTICS = [
     locked: false,
     isPinned: true,
     uid: 'mock-user-123'
-  },
+  }
   {
     id: 'char-3',
     name: 'Indice de protection',
@@ -3205,7 +3205,7 @@ export default function ProductManagementClient() {
   const handleFirestoreError = (error: any, action: string, collection: string) => {
     console.error(`Firestore error ${action} ${collection}:`, error);
     let message = `Erreur lors de l'accès à ${collection}.`;
-    
+
     if (error.code === 'permission-denied') {
       message = `Accès refusé à ${collection}. Vérifiez vos droits Firestore (Projet: ${auth.app.options.projectId})`;
     } else if (error.code === 'unavailable') {
@@ -3245,7 +3245,7 @@ export default function ProductManagementClient() {
             if (val === 'rental' || val === 'location') return 'rental';
             return val;
           });
-        
+
         // Normalize environment types for UI (English keys for translation)
         const normalizedType = (Array.isArray(data.type) ? data.type : [data.type || 'indoor'])
           .map((t: string) => {
@@ -3255,9 +3255,9 @@ export default function ProductManagementClient() {
             if (val === 'showcase' || val === 'semi-exterieur' || val === 'vitrine') return 'showcase';
             return val;
           });
-        
-        return { 
-          id: doc.id, 
+
+        return {
+          id: doc.id,
           ...data,
           mode: normalizedMode,
           environment: normalizedType,
@@ -3271,11 +3271,11 @@ export default function ProductManagementClient() {
     const qChars = query(collection(db, "characteristics"), orderBy("name", "asc"));
     const unsubChars = onSnapshot(qChars, async (snapshot) => {
       const chars = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
+
       // Auto-seeding core characteristics if missing
       const coreNames = ['Pixel pitch', 'Distance de visionnage', 'Puissance maximale'];
       const missingNames = coreNames.filter(name => !chars.some((c: any) => c.name === name));
-      
+
       if (missingNames.length > 0) {
         // Use a static flag to prevent multiple seeding calls in the same session
         if (!(window as any)._isSeeding) {
@@ -3286,11 +3286,11 @@ export default function ProductManagementClient() {
               const { id: charId, ...data } = defaultChar;
               try {
                 // Use setDoc with fixed ID for core characteristics
-                await setDoc(doc(db, "characteristics", charId || `char-${name.replace(/\s+/g, '-').toLowerCase()}`), { 
-                  ...data, 
-                  uid: user?.uid || 'system', 
-                  locked: true, 
-                  isPinned: true 
+                await setDoc(doc(db, "characteristics", charId || `char-${name.replace(/\s+/g, '-').toLowerCase()}`), {
+                  ...data,
+                  uid: user?.uid || 'system',
+                  locked: true,
+                  isPinned: true
                 });
               } catch (e) {
                 console.error("Seeding failed", e);
@@ -3300,7 +3300,7 @@ export default function ProductManagementClient() {
           (window as any)._isSeeding = false;
         }
       }
-      
+
       setCharacteristics(chars);
     }, (error) => handleFirestoreError(error, 'fetching', 'characteristics'));
 
@@ -3313,7 +3313,7 @@ export default function ProductManagementClient() {
   const [selectedChars, setSelectedChars] = useState<any[]>([]);
   const [showCharPanel, setShowCharPanel] = useState(false);
   const [tempSelectedChars, setTempSelectedChars] = useState<string[]>([]);
-  
+
   const availableChars = characteristics.filter(c => !selectedChars.some(sc => sc.id === c.id));
 
   const [mode, setMode] = useState<('vente' | 'location')[]>(['vente']);
@@ -3322,7 +3322,7 @@ export default function ProductManagementClient() {
   const [surface, setSurface] = useState<number>(9.00);
   const [mediaType, setMediaType] = useState<'photo' | 'video'>('photo');
   const [dimensionsEnabled, setDimensionsEnabled] = useState(false);
-  
+
   // Media State
   const [photoUrl, setPhotoUrl] = useState('');
   const [uploadedPhoto, setUploadedPhoto] = useState<File | null>(null);
@@ -3352,7 +3352,7 @@ export default function ProductManagementClient() {
     if (e && typeof e !== 'string') {
       e.preventDefault();
     }
-    
+
     const loginEmail = typeof e === 'string' ? e : email;
     const loginPassword = typeof e === 'string' ? maybePassword : password;
 
@@ -3467,7 +3467,7 @@ export default function ProductManagementClient() {
         }),
         price: (prixVente || '0') + ' €',
         image: finalPhotoUrl || '',
-        videoUrl: finalVideoUrl || '', 
+        videoUrl: finalVideoUrl || '',
         pdfUrl: finalPdfUrl || '',
         pitch: String(selectedChars.find(c => {
           const charDef = characteristics.find(cd => cd.id === c.id);
@@ -3508,20 +3508,20 @@ export default function ProductManagementClient() {
       if (editingProduct) {
         console.log("Updating product:", editingProduct.id, productData);
         await updateDoc(doc(db, "products", editingProduct.id), productData);
-        toast({ 
-          title: "Produit mis à jour", 
+        toast({
+          title: "Produit mis à jour",
           description: `${productName} a été modifié avec succès.`,
           variant: "success"
         });
       } else {
         await addDoc(collection(db, "products"), productData);
-        toast({ 
-          title: "Produit ajouté", 
+        toast({
+          title: "Produit ajouté",
           description: `${productName} a été ajouté au catalogue.`,
           variant: "success"
         });
       }
-      
+
       setActivePage('gestion');
       setEditingProduct(null);
       setUploadedPhoto(null);
@@ -3530,8 +3530,8 @@ export default function ProductManagementClient() {
       setVideoUrl('');
     } catch (error: any) {
       console.error('Error saving product:', error);
-      toast({ 
-        title: "Erreur de sauvegarde", 
+      toast({
+        title: "Erreur de sauvegarde",
         description: error.message || "Une erreur est survenue lors de l'enregistrement.",
         variant: "destructive"
       });
@@ -3564,7 +3564,7 @@ export default function ProductManagementClient() {
     }
   };
 
-  const handleActivateV2 = async () => {};
+  const handleActivateV2 = async () => { };
   const handleSaveSettings = (newSettings: any) => {
     setAiSettings(newSettings);
   };
@@ -3609,9 +3609,9 @@ export default function ProductManagementClient() {
       reader.onload = async () => {
         try {
           const base64Data = (reader.result as string).split(',')[1];
-          
+
           setAnalysisProgress(30);
-          
+
           const prompt = `Analyse cette fiche technique d'écran LED. 
           Extrais les informations suivantes au format JSON :
           {
@@ -3642,7 +3642,7 @@ export default function ProductManagementClient() {
                   ]
                 }
               ],
-              config: { 
+              config: {
                 responseMimeType: "application/json",
                 maxOutputTokens: aiSettings.maxTokens
               }
@@ -3654,7 +3654,7 @@ export default function ProductManagementClient() {
           }
 
           setAnalysisProgress(90);
-          
+
           // Fill fields
           if (data.name) setProductName(data.name);
           if (data.brightness) {
@@ -3781,8 +3781,8 @@ export default function ProductManagementClient() {
   const currentMediaUrl = mediaType === 'photo' ? photoUrl : videoUrl;
   const currentUploadedFile = mediaType === 'photo' ? uploadedPhoto : uploadedVideo;
 
-  const previewSrc = currentUploadedFile 
-    ? URL.createObjectURL(currentUploadedFile) 
+  const previewSrc = currentUploadedFile
+    ? URL.createObjectURL(currentUploadedFile)
     : (currentMediaUrl || (mediaType === 'photo' ? "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1000" : ""));
 
   // Pricing State
@@ -3791,12 +3791,12 @@ export default function ProductManagementClient() {
   const [prixLocationJour, setPrixLocationJour] = useState<string>('');
   const [surfaceMaxLocation, setSurfaceMaxLocation] = useState<string>('');
   const [surfaceMinRequise, setSurfaceMinRequise] = useState<string>('0');
-  
+
   // Pre-fill form when editing
   useEffect(() => {
     if (editingProduct) {
       setProductName(editingProduct.name);
-      
+
       // Handle mode (convert from old string format if necessary)
       let initialModes: any[] = [];
       if (Array.isArray(editingProduct.mode)) {
@@ -3806,7 +3806,7 @@ export default function ProductManagementClient() {
       } else if (editingProduct.mode) {
         initialModes = [editingProduct.mode];
       }
-      
+
       // Reverse map DB values to UI labels
       setMode(initialModes.map(m => {
         if (m === 'sale') return 'vente';
@@ -3821,7 +3821,7 @@ export default function ProductManagementClient() {
       } else if (editingProduct.type) {
         initialTypes = [editingProduct.type];
       }
-      
+
       // Reverse map DB values to UI labels
       setEnvironment(initialTypes.map(e => {
         if (e === 'indoor') return 'interieur';
@@ -3831,7 +3831,7 @@ export default function ProductManagementClient() {
       }));
 
       setPrixVente((editingProduct.price || '').toString().replace(/ /g, '').replace('€', ''));
-      
+
       // Handle selected characteristics
       if (editingProduct.selectedChars && Array.isArray(editingProduct.selectedChars)) {
         setSelectedChars(editingProduct.selectedChars);
@@ -3852,10 +3852,10 @@ export default function ProductManagementClient() {
         }
         setSelectedChars(initialChars);
       }
-      
+
       setPhotoUrl(getSafeImageUrl(editingProduct) || '');
       setVideoUrl(editingProduct.videoUrl || '');
-      
+
       // Auto-switch media type if video exists
       if (editingProduct.videoUrl) {
         setMediaType('video');
@@ -3885,7 +3885,7 @@ export default function ProductManagementClient() {
       setEnvironment(['exterieur']);
       setScreenType('flat');
       setPrixVente('1250');
-      
+
       // Reset technical/pricing specs
       setPrixLocationHeure('');
       setPrixLocationJour('');
@@ -3899,16 +3899,16 @@ export default function ProductManagementClient() {
 
       // Set pinned characteristics by default for new products
       const pinnedChars = characteristics.filter(c => c.isPinned).map(c => ({ id: c.id, value: c.options[0] }));
-      
+
       // Force add Distance de visionnage and Pixel pitch for new products (required characteristics)
       const requiredCharNames = ['Distance de visionnage', 'Pixel pitch'];
       const existingIds = pinnedChars.map(c => c.id);
-      const requiredChars = characteristics.filter(c => 
+      const requiredChars = characteristics.filter(c =>
         requiredCharNames.includes(c.name) && !existingIds.includes(c.id)
       );
       const allChars = [...pinnedChars, ...requiredChars.map(c => ({ id: c.id, value: c.options[0] }))];
-      
-      setSelectedChars(allChars); 
+
+      setSelectedChars(allChars);
       setPhotoUrl('');
       setVideoUrl('');
       setPdfUrl('');
@@ -3937,7 +3937,7 @@ export default function ProductManagementClient() {
   if (!isAuthReady) {
     return (
       <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
-        <motion.div 
+        <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full"
@@ -3954,14 +3954,14 @@ export default function ProductManagementClient() {
         <div className="absolute top-0 -right-4 w-72 h-72 bg-[#a3e635] rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000" />
         <div className="absolute -bottom-8 left-20 w-72 h-72 bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md relative z-10"
         >
           {/* Logo & Header */}
           <div className="text-center mb-8">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.8, rotate: -10 }}
               animate={{ scale: 1, rotate: 0 }}
               className="w-20 h-20 bg-white shadow-2xl shadow-blue-500/20 rounded-3xl flex items-center justify-center mx-auto mb-6 relative group overflow-hidden"
@@ -3990,16 +3990,16 @@ export default function ProductManagementClient() {
                   </div>
 
                   <div className="space-y-4">
-                    <button 
+                    <button
                       onClick={handleLogin}
                       disabled={isAuthenticating}
                       className="w-full py-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center gap-3 font-bold text-slate-700 hover:bg-slate-100 transition-all group"
                     >
                       <svg className="w-5 h-5" viewBox="0 0 24 24">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                       </svg>
                       Continuer avec Google
                     </button>
@@ -4014,11 +4014,11 @@ export default function ProductManagementClient() {
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Email professionnel</label>
                         <div className="relative">
                           <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                          <input 
-                            type="email" 
+                          <input
+                            type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="admin@pixiatech.com" 
+                            placeholder="admin@pixiatech.com"
                             className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                           />
                         </div>
@@ -4026,9 +4026,9 @@ export default function ProductManagementClient() {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between ml-1">
                           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mot de passe</label>
-                          <button 
-                            type="button" 
-                            onClick={() => setAuthView('forgot-password')} 
+                          <button
+                            type="button"
+                            onClick={() => setAuthView('forgot-password')}
                             className="text-[10px] font-bold text-blue-600 hover:text-blue-700"
                           >
                             Oublié ?
@@ -4036,14 +4036,14 @@ export default function ProductManagementClient() {
                         </div>
                         <div className="relative">
                           <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                          <input 
-                            type={showPassword ? "text" : "password"} 
+                          <input
+                            type={showPassword ? "text" : "password"}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••" 
+                            placeholder="••••••••"
                             className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
                           />
-                          <button 
+                          <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
                             className="p-2 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
@@ -4061,17 +4061,17 @@ export default function ProductManagementClient() {
                       )}
 
                       <div className="flex items-center gap-2 py-1">
-                        <input 
-                          type="checkbox" 
-                          id="remember" 
+                        <input
+                          type="checkbox"
+                          id="remember"
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.target.checked)}
-                          className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" 
+                          className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                         />
                         <label htmlFor="remember" className="text-xs text-slate-500 font-medium cursor-pointer">Maintenir la session ouverte</label>
                       </div>
 
-                      <button 
+                      <button
                         type="submit"
                         disabled={isAuthenticating}
                         className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
@@ -4086,8 +4086,8 @@ export default function ProductManagementClient() {
 
                     <p className="text-center text-xs text-slate-500 font-medium">
                       Pas encore de compte ?{' '}
-                      <button 
-                        onClick={() => setAuthView('signup')} 
+                      <button
+                        onClick={() => setAuthView('signup')}
                         className="text-blue-600 font-bold hover:underline"
                       >
                         Créer un accès
@@ -4115,11 +4115,11 @@ export default function ProductManagementClient() {
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Email professionnel</label>
                       <div className="relative">
                         <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                        <input 
-                          type="email" 
+                        <input
+                          type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          placeholder="votre@email.com" 
+                          placeholder="votre@email.com"
                           className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                           required
                         />
@@ -4130,11 +4130,11 @@ export default function ProductManagementClient() {
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Mot de passe</label>
                       <div className="relative">
                         <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                        <input 
-                          type="password" 
+                        <input
+                          type="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Minimum 8 caractères" 
+                          placeholder="Minimum 8 caractères"
                           className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
                           required
                           minLength={8}
@@ -4149,7 +4149,7 @@ export default function ProductManagementClient() {
                       </div>
                     )}
 
-                    <button 
+                    <button
                       type="submit"
                       disabled={isAuthenticating}
                       className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
@@ -4164,8 +4164,8 @@ export default function ProductManagementClient() {
 
                   <p className="text-center text-xs text-slate-500 font-medium">
                     Déjà un compte ?{' '}
-                    <button 
-                      onClick={() => setAuthView('login')} 
+                    <button
+                      onClick={() => setAuthView('login')}
                       className="text-blue-600 font-bold hover:underline"
                     >
                       Se connecter
@@ -4188,7 +4188,7 @@ export default function ProductManagementClient() {
                   </div>
 
                   {resetEmailSent ? (
-                    <motion.div 
+                    <motion.div
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       className="bg-green-50 border border-green-100 rounded-3xl p-6 text-center"
@@ -4198,7 +4198,7 @@ export default function ProductManagementClient() {
                       </div>
                       <h4 className="text-sm font-bold text-green-800 mb-1">Email envoyé !</h4>
                       <p className="text-xs text-green-600 mb-6">Vérifiez votre boîte de réception pour les instructions.</p>
-                      <button 
+                      <button
                         onClick={() => { setResetEmailSent(false); setAuthView('login'); }}
                         className="text-xs font-bold text-slate-900 hover:underline"
                       >
@@ -4211,11 +4211,11 @@ export default function ProductManagementClient() {
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Email associé au compte</label>
                         <div className="relative">
                           <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                          <input 
-                            type="email" 
+                          <input
+                            type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="votre@email.com" 
+                            placeholder="votre@email.com"
                             className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             required
                           />
@@ -4229,7 +4229,7 @@ export default function ProductManagementClient() {
                         </div>
                       )}
 
-                      <button 
+                      <button
                         type="submit"
                         disabled={isAuthenticating}
                         className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
@@ -4241,7 +4241,7 @@ export default function ProductManagementClient() {
                         )}
                       </button>
 
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setAuthView('login')}
                         className="w-full py-3 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
@@ -4263,7 +4263,7 @@ export default function ProductManagementClient() {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-transparent font-sans text-slate-900">
       <main className="min-h-screen transition-all duration-300">
@@ -4312,7 +4312,7 @@ export default function ProductManagementClient() {
                 transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
                 className="w-full"
               >
-                <GestionProduits 
+                <GestionProduits
                   products={products}
                   setProducts={setProducts}
                   onAddProduct={() => { setEditingProduct(null); setActivePage('produit'); }}
@@ -4335,8 +4335,8 @@ export default function ProductManagementClient() {
                 transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
                 className="w-full"
               >
-                <CaracteristiquesPage 
-                  onBack={() => handlePageChange('produit')} 
+                <CaracteristiquesPage
+                  onBack={() => handlePageChange('produit')}
                   characteristics={characteristics}
                   setCharacteristics={setCharacteristics}
                   user={user}
@@ -4355,7 +4355,7 @@ export default function ProductManagementClient() {
                 transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
                 className="w-full"
               >
-                <ProduitPage 
+                <ProduitPage
                   editingProduct={editingProduct}
                   setEditingProduct={setEditingProduct}
                   productName={productName}
@@ -4436,184 +4436,184 @@ export default function ProductManagementClient() {
             )}
           </AnimatePresence>
 
-      <AnimatePresence>
-        {aiSuggestion && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-3xl p-8 w-full max-w-md relative z-10 shadow-2xl border border-slate-200 text-center"
-            >
-              <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Zap className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">Nouvelle caractéristique détectée !</h3>
-              <p className="text-slate-500 mb-6">
-                L'IA a détecté une caractéristique : <span className="font-bold text-slate-900">"{aiSuggestion.name}"</span>. 
-                Voulez-vous l'ajouter avec les variantes suivantes : <span className="italic">{aiSuggestion.variants.join(', ')}</span> ?
-              </p>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setAiSuggestion(null)}
-                  className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+          <AnimatePresence>
+            {aiSuggestion && (
+              <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  className="bg-white rounded-3xl p-8 w-full max-w-md relative z-10 shadow-2xl border border-slate-200 text-center"
                 >
-                  Ignorer
-                </button>
-                <button 
-                  onClick={() => {
-                    const newChar = {
-                      id: Date.now(),
-                      name: aiSuggestion.name,
-                      options: aiSuggestion.variants,
-                      icon: Settings2,
-                      color: 'text-blue-400',
-                      border: 'focus:border-blue-400'
-                    };
-                    setCharacteristics(prev => [...prev, newChar]);
-                    setSelectedChars(prev => [...prev, { id: newChar.id, value: newChar.options[0] }]);
-                    setAiSuggestion(null);
-                  }}
-                  className="flex-1 py-3.5 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl font-bold hover:opacity-90 transition-colors shadow-lg"
+                  <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Zap className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Nouvelle caractéristique détectée !</h3>
+                  <p className="text-slate-500 mb-6">
+                    L'IA a détecté une caractéristique : <span className="font-bold text-slate-900">"{aiSuggestion.name}"</span>.
+                    Voulez-vous l'ajouter avec les variantes suivantes : <span className="italic">{aiSuggestion.variants.join(', ')}</span> ?
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setAiSuggestion(null)}
+                      className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
+                    >
+                      Ignorer
+                    </button>
+                    <button
+                      onClick={() => {
+                        const newChar = {
+                          id: Date.now(),
+                          name: aiSuggestion.name,
+                          options: aiSuggestion.variants,
+                          icon: Settings2,
+                          color: 'text-blue-400',
+                          border: 'focus:border-blue-400'
+                        };
+                        setCharacteristics(prev => [...prev, newChar]);
+                        setSelectedChars(prev => [...prev, { id: newChar.id, value: newChar.options[0] }]);
+                        setAiSuggestion(null);
+                      }}
+                      className="flex-1 py-3.5 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl font-bold hover:opacity-90 transition-colors shadow-lg"
+                    >
+                      Oui, ajouter
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          <AISettingsSheet
+            isOpen={isAISettingsOpen}
+            onClose={() => setIsAISettingsOpen(false)}
+            settings={aiSettings}
+            onSave={handleSaveSettings}
+          />
+
+          <AnimatePresence>
+            {showCharPanel && (
+              <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setShowCharPanel(false)}
+                  className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 40 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 40 }}
+                  className="bg-white rounded-[2.5rem] w-full max-w-2xl relative z-10 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
                 >
-                  Oui, ajouter
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <AISettingsSheet 
-        isOpen={isAISettingsOpen}
-        onClose={() => setIsAISettingsOpen(false)}
-        settings={aiSettings}
-        onSave={handleSaveSettings}
-      />
-
-      <AnimatePresence>
-        {showCharPanel && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowCharPanel(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 40 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="bg-white rounded-[2.5rem] w-full max-w-2xl relative z-10 shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
-            >
-              {/* Header */}
-              <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Ajouter des caractéristiques</h3>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">SÉLECTIONNEZ LES ÉLÉMENTS À AJOUTER À LA FICHE</p>
-                </div>
-                <button onClick={() => setShowCharPanel(false)} className="p-3 bg-white hover:bg-slate-100 rounded-2xl transition-colors shadow-sm">
-                  <X className="w-5 h-5 text-slate-500" />
-                </button>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto p-8">
-                {availableChars.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                      <Settings2 className="w-8 h-8 text-slate-200" />
+                  {/* Header */}
+                  <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div>
+                      <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Ajouter des caractéristiques</h3>
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">SÉLECTIONNEZ LES ÉLÉMENTS À AJOUTER À LA FICHE</p>
                     </div>
-                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Toutes les caractéristiques sont déjà ajoutées</p>
+                    <button onClick={() => setShowCharPanel(false)} className="p-3 bg-white hover:bg-slate-100 rounded-2xl transition-colors shadow-sm">
+                      <X className="w-5 h-5 text-slate-500" />
+                    </button>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {availableChars.map((char: any) => {
-                      const isSelected = tempSelectedChars.includes(char.id);
-                      const Icon = getIcon(char.iconName);
-                      return (
-                        <button
-                          key={char.id}
-                          onClick={() => {
-                            setTempSelectedChars(prev => 
-                              prev.includes(char.id) 
-                                ? prev.filter(id => id !== char.id) 
-                                : [...prev, char.id]
-                            );
-                          }}
-                          className={cn(
-                            "flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left group",
-                            isSelected 
-                              ? "bg-theme-sidebar-active-bg border-theme-sidebar-active-bg shadow-xl" 
-                              : "bg-slate-50 border-slate-100 hover:border-slate-200 hover:bg-white"
-                          )}
-                        >
-                          <div className={cn(
-                            "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
-                            isSelected ? "bg-white/10" : "bg-white shadow-sm"
-                          )}>
-                            <Icon className={cn("w-6 h-6", isSelected ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                          </div>
-                          <div>
-                            <div className={cn("text-xs font-black uppercase tracking-widest mb-0.5", isSelected ? "text-theme-sidebar-active-text" : "text-slate-900")}>
-                              {char.name}
-                            </div>
-                            <div className={cn("text-[10px] font-bold", isSelected ? "text-theme-sidebar-active-text/40" : "text-slate-400")}>
-                              {char.options.length} options disponibles
-                            </div>
-                          </div>
-                          {isSelected && (
-                            <div className="ml-auto w-6 h-6 bg-theme-sidebar-active-bg rounded-full flex items-center justify-center shadow-lg border border-white/20">
-                              <Check className="w-4 h-4 text-theme-sidebar-active-text" />
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
 
-              {/* Footer */}
-              <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  {tempSelectedChars.length} sélectionnée(s)
-                </div>
-                <div className="flex gap-3">
-                  <button 
-                    onClick={() => setShowCharPanel(false)}
-                    className="px-6 h-12 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900 transition-colors"
-                  >
-                    Annuler
-                  </button>
-                  <button 
-                    disabled={tempSelectedChars.length === 0}
-                    onClick={() => {
-                      const newChars = tempSelectedChars.map(id => {
-                        const char = characteristics.find(c => c.id === id);
-                        return { id: char.id, value: char.options[0] };
-                      });
-                      setSelectedChars(prev => [...prev, ...newChars]);
-                      setShowCharPanel(false);
-                      setTempSelectedChars([]);
-                    }}
-                    className="px-8 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-black/20 hover:opacity-90 transition-all disabled:opacity-30 flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4 text-theme-sidebar-active-text" /> Ajouter à la fiche
-                  </button>
-                </div>
+                  {/* Content */}
+                  <div className="flex-1 overflow-y-auto p-8">
+                    {availableChars.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                          <Settings2 className="w-8 h-8 text-slate-200" />
+                        </div>
+                        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Toutes les caractéristiques sont déjà ajoutées</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {availableChars.map((char: any) => {
+                          const isSelected = tempSelectedChars.includes(char.id);
+                          const Icon = getIcon(char.iconName);
+                          return (
+                            <button
+                              key={char.id}
+                              onClick={() => {
+                                setTempSelectedChars(prev =>
+                                  prev.includes(char.id)
+                                    ? prev.filter(id => id !== char.id)
+                                    : [...prev, char.id]
+                                );
+                              }}
+                              className={cn(
+                                "flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left group",
+                                isSelected
+                                  ? "bg-theme-sidebar-active-bg border-theme-sidebar-active-bg shadow-xl"
+                                  : "bg-slate-50 border-slate-100 hover:border-slate-200 hover:bg-white"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
+                                isSelected ? "bg-white/10" : "bg-white shadow-sm"
+                              )}>
+                                <Icon className={cn("w-6 h-6", isSelected ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                              </div>
+                              <div>
+                                <div className={cn("text-xs font-black uppercase tracking-widest mb-0.5", isSelected ? "text-theme-sidebar-active-text" : "text-slate-900")}>
+                                  {char.name}
+                                </div>
+                                <div className={cn("text-[10px] font-bold", isSelected ? "text-theme-sidebar-active-text/40" : "text-slate-400")}>
+                                  {char.options.length} options disponibles
+                                </div>
+                              </div>
+                              {isSelected && (
+                                <div className="ml-auto w-6 h-6 bg-theme-sidebar-active-bg rounded-full flex items-center justify-center shadow-lg border border-white/20">
+                                  <Check className="w-4 h-4 text-theme-sidebar-active-text" />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      {tempSelectedChars.length} sélectionnée(s)
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowCharPanel(false)}
+                        className="px-6 h-12 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900 transition-colors"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        disabled={tempSelectedChars.length === 0}
+                        onClick={() => {
+                          const newChars = tempSelectedChars.map(id => {
+                            const char = characteristics.find(c => c.id === id);
+                            return { id: char.id, value: char.options[0] };
+                          });
+                          setSelectedChars(prev => [...prev, ...newChars]);
+                          setShowCharPanel(false);
+                          setTempSelectedChars([]);
+                        }}
+                        className="px-8 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-black/20 hover:opacity-90 transition-all disabled:opacity-30 flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4 text-theme-sidebar-active-text" /> Ajouter à la fiche
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+            )}
+          </AnimatePresence>
         </div>
       </main>
     </div>
