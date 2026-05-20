@@ -2997,7 +2997,7 @@ const MOCK_CHARACTERISTICS = [
     locked: false,
     isPinned: true,
     uid: 'mock-user-123'
-  }
+  },
   {
     id: 'char-3',
     name: 'Indice de protection',
