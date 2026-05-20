@@ -6,7 +6,8 @@ import {
   Info,
   Grid,
   Layout as LayoutIcon,
-  RotateCcw
+  RotateCcw,
+  Circle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
@@ -26,6 +27,9 @@ interface ConfigState {
   isCurved: boolean;
   curveLeft: number;
   curveRight: number;
+  is360: boolean;
+  diameter: number;
+  cabinetAngle: number;
   envColor: string;
   gridColor: string;
 }
@@ -78,6 +82,29 @@ export default function StepDimensions({
     return `${rW}:${rH}`;
   };
 
+  const handleUpdateState = (updates: Partial<ConfigState>) => {
+    const nextState = { ...state, ...updates };
+    
+    if (nextState.is360) {
+      const angle = nextState.cabinetAngle !== undefined ? nextState.cabinetAngle : (state.cabinetAngle || 0);
+      if (angle !== 0) {
+        const absAngle = Math.abs(angle);
+        const theta = (absAngle * Math.PI) / 180;
+        const computedD = 0.5 / Math.sin(theta / 2);
+        const modulesX = 360 / absAngle;
+        updates.diameter = Number(computedD.toFixed(2));
+        updates.width = modulesX * 0.5;
+      } else {
+        // Auto: Calculate modulesX and sync width
+        const d = nextState.diameter !== undefined ? nextState.diameter : (state.diameter || 1.0);
+        const modulesX = Math.round((Math.PI * d) / 0.5);
+        updates.width = modulesX * 0.5;
+      }
+    }
+    
+    updateState(updates);
+  };
+
   return (
     <div className={`flex flex-col space-y-4 bg-transparent w-full mx-auto ${
       isInChat 
@@ -109,46 +136,56 @@ export default function StepDimensions({
           <div className="flex flex-col gap-5 relative lg:bg-white lg:rounded-3xl lg:p-8 lg:shadow-xl lg:border-[4px] lg:border-white lg:overflow-hidden lg:h-full px-3 py-4">
             <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
 
-            {/* Flat vs Curved Toggle */}
+            {/* Flat vs Curved vs 360 Toggle */}
             <div className="space-y-3 relative z-10">
               <label className="text-[11px] uppercase tracking-wider font-bold ml-2 text-slate-600">
                 Configuration de l'Écran
               </label>
-              <div className="p-1 bg-slate-900/5 backdrop-blur-md rounded-2xl border border-slate-900/10 flex gap-1">
+              <div className="p-1 bg-slate-900/5 backdrop-blur-md rounded-xl border border-slate-900/10 flex gap-1">
                 <button
                   type="button"
-                  onClick={() => updateState({ isCurved: false, curveLeft: 0, curveRight: 0 })}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 font-bold text-xs ${!state.isCurved
+                  onClick={() => handleUpdateState({ isCurved: false, is360: false, curveLeft: 0, curveRight: 0, width: 12.0, height: 6.5 })}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all duration-300 font-bold text-[10px] sm:text-xs ${!state.isCurved && !state.is360
                       ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
                       : 'text-slate-400 hover:bg-white/50'
                     }`}
                 >
-                  <LayoutIcon className="w-4 h-4" />
+                  <LayoutIcon className="w-3 h-3" />
                   {t('wizard.dimensions.flat')}
                 </button>
                 <button
                   type="button"
-                  onClick={() => updateState({ isCurved: true })}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 font-bold text-xs ${state.isCurved
+                  onClick={() => handleUpdateState({ isCurved: true, is360: false, width: 12.0, height: 6.5 })}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all duration-300 font-bold text-[10px] sm:text-xs ${state.isCurved && !state.is360
                       ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
                       : 'text-slate-400 hover:bg-white/50'
                     }`}
                 >
-                  <RotateCcw className="w-4 h-4 rotate-45" />
+                  <RotateCcw className="w-3.5 h-3.5 rotate-45" />
                   {t('wizard.dimensions.curved')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleUpdateState({ isCurved: false, is360: true, height: 2.5, diameter: 1.0, curveLeft: 0, curveRight: 0 })}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all duration-300 font-bold text-[10px] sm:text-xs ${state.is360
+                      ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                      : 'text-slate-400 hover:bg-white/50'
+                    }`}
+                >
+                  <Circle className="w-3 h-3" />
+                  {t('wizard.dimensions.360') || '360°'}
                 </button>
               </div>
             </div>
 
             {/* Dimension Sliders Wrapper */}
             <div className="flex flex-col">
-              {/* Toggle Button (Mobile only, when curved) */}
-              {state.isCurved && !isDesktop && (
+              {/* Toggle Button (Mobile only, when curved or 360) */}
+              {(state.isCurved || state.is360) && !isDesktop && (
                 <button 
                   type="button"
                   onClick={() => setIsDimensionsExpanded(!isDimensionsExpanded)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-white border-2 border-red-500 rounded-xl text-slate-700 font-bold text-xs uppercase tracking-wider transition-all hover:bg-slate-50"
-                  style={{ borderColor: '#e2e8f0' }} /* Overriding the red border from debug/user request just to be safe, using slate-200 */
+                  className="w-full flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-700 font-bold text-xs uppercase tracking-wider transition-all hover:bg-slate-50"
                 >
                   <span className="flex items-center gap-2">
                     <LayoutIcon className="w-4 h-4" />
@@ -160,8 +197,8 @@ export default function StepDimensions({
 
               {/* Dimension Sliders (Accordion) */}
               <div className={`grid transition-[grid-template-rows,opacity,margin,transform] duration-500 ease-in-out origin-top ${
-                (!state.isCurved || isDesktop || isDimensionsExpanded) 
-                  ? "grid-rows-[1fr] opacity-100 scale-y-100 " + (state.isCurved && !isDesktop ? "mt-4" : "mt-0")
+                (!(state.isCurved || state.is360) || isDesktop || isDimensionsExpanded) 
+                  ? "grid-rows-[1fr] opacity-100 scale-y-100 " + ((state.isCurved || state.is360) && !isDesktop ? "mt-4" : "mt-0")
                   : "grid-rows-[0fr] opacity-0 scale-y-95 mt-0"
               }`}>
               <div
@@ -171,125 +208,263 @@ export default function StepDimensions({
                 className="overflow-hidden"
               >
                 <div className="space-y-5 pb-1">
+                  {state.is360 ? (
+                    <>
+                      {/* Cabinet Angle Selector */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">
+                          Angle du Cabinet
+                        </label>
+                        <div className="grid grid-cols-5 gap-1 bg-slate-900/5 p-1 rounded-lg border border-slate-900/10">
+                          {[
+                            { value: -30, label: "-30°" },
+                            { value: -15, label: "-15°" },
+                            { value: 0, label: "Auto" },
+                            { value: 15, label: "+15°" },
+                            { value: 30, label: "+30°" }
+                          ].map((opt) => (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => handleUpdateState({ cabinetAngle: opt.value })}
+                              className={`py-1 rounded-md text-[9px] sm:text-[10px] font-bold transition-all ${
+                                state.cabinetAngle === opt.value
+                                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                                  : "text-slate-400 hover:bg-white/50"
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Standard Diameter Buttons */}
+                      <div className={`space-y-2 transition-all duration-300 ${state.cabinetAngle !== 0 ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+                        <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">
+                          Diamètres Standards
+                        </label>
+                        <div className="flex gap-2">
+                          {[1.0, 1.2, 1.5].map((d) => (
+                            <button
+                              key={d}
+                              type="button"
+                              disabled={state.cabinetAngle !== 0}
+                              onClick={() => handleUpdateState({ diameter: d })}
+                              className={`flex-1 py-1 rounded-lg border text-[10px] sm:text-xs font-bold transition-all ${
+                                Math.abs((state.diameter || 1.0) - d) < 0.05
+                                  ? "bg-black text-[#c6ff00] border-black shadow-md"
+                                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                              }`}
+                            >
+                               {d.toFixed(1)} M
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Diameter Slider */}
+                      <div className="space-y-3 relative">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-500 ml-2">
+                            {t('wizard.dimensions.diameterTotal') || 'Diamètre Total (m)'}
+                          </span>
+                          <div className={`flex items-center bg-white rounded-full border border-slate-200 px-2 py-0.5 shadow-sm transition-all duration-300 ${state.cabinetAngle !== 0 ? "opacity-50 pointer-events-none" : ""}`}>
+                            <button
+                              type="button"
+                              disabled={state.cabinetAngle !== 0}
+                              onClick={() => handleUpdateState({ diameter: Math.max(1.0, (state.diameter || 1.0) - 0.1) })}
+                              className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
+                            >
+                              <ChevronLeft className="w-3.5 h-3.5" />
+                            </button>
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="1.0"
+                              max="3.0"
+                              disabled={state.cabinetAngle !== 0}
+                              value={state.diameter || 1.0}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value);
+                                if (!isNaN(val)) handleUpdateState({ diameter: Math.min(3.0, Math.max(1.0, val)) });
+                              }}
+                              className="w-10 sm:w-16 text-center text-sm sm:text-base font-black text-slate-800 bg-transparent border-none appearance-none focus:outline-none focus:ring-0"
+                            />
+                            <button
+                              type="button"
+                              disabled={state.cabinetAngle !== 0}
+                              onClick={() => handleUpdateState({ diameter: Math.min(3.0, (state.diameter || 1.0) + 0.1) })}
+                              className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
+                            >
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className={`relative group px-2 transition-all duration-300 ${state.cabinetAngle !== 0 ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+                          <input
+                            type="range" min="1.0" max="3.0" step="0.1"
+                            disabled={state.cabinetAngle !== 0}
+                            value={state.diameter || 1.0}
+                            onChange={(e) => handleUpdateState({ diameter: parseFloat(e.target.value) })}
+                            className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-[#c6ff00]"
+                          />
+                        </div>
+                        {state.cabinetAngle !== 0 && (
+                          <div className="text-[10px] text-teal-600 font-bold ml-2">
+                            Verrouillé par l'angle du cabinet ({state.cabinetAngle > 0 ? "+" : ""}{state.cabinetAngle}°)
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Standard Height Buttons */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">
+                          Hauteurs Standards
+                        </label>
+                        <div className="flex gap-2">
+                          {[2.5, 3.0].map((h) => (
+                            <button
+                              key={h}
+                              type="button"
+                              onClick={() => handleUpdateState({ height: h })}
+                              className={`flex-1 py-1 rounded-lg border text-[10px] sm:text-xs font-bold transition-all ${
+                                Math.abs(state.height - h) < 0.05
+                                  ? "bg-black text-[#c6ff00] border-black shadow-md"
+                                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                              }`}
+                            >
+                              {h.toFixed(1)} M
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    /* Width Slider */
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-500 ml-2">{t('wizard.dimensions.widthTotal')}</span>
+                        <div className="flex items-center bg-white rounded-full border border-slate-200 px-2 py-0.5 shadow-sm">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateState({ width: Math.max(0.5, state.width - 0.5) })}
+                            className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
+                          >
+                            <ChevronLeft className="w-3.5 h-3.5" />
+                          </button>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0.5"
+                            max={maxWidth}
+                            value={state.width}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value);
+                              if (!isNaN(val)) handleUpdateState({ width: Math.min(maxWidth, Math.max(0.5, val)) });
+                            }}
+                            className="w-10 sm:w-16 text-center text-sm sm:text-base font-black text-slate-800 bg-transparent border-none appearance-none focus:outline-none focus:ring-0"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateState({ width: Math.min(maxWidth, state.width + 0.5) })}
+                            className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="relative group px-2">
+                        <input
+                          type="range" min="0.5" max={maxWidth} step="0.5"
+                          value={state.width}
+                          onChange={(e) => handleUpdateState({ width: parseFloat(e.target.value) })}
+                          className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-[#c6ff00]"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Height Slider (Used for both normal and 360 modes) */}
                   <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-500 ml-2">{t('wizard.dimensions.widthTotal')}</span>
-                  <div className="flex items-center bg-white rounded-full border border-slate-200 px-2 py-0.5 shadow-sm">
-                    <button
-                      type="button"
-                      onClick={() => updateState({ width: Math.max(0.5, state.width - 0.5) })}
-                      className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                    </button>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.5"
-                      max={maxWidth}
-                      value={state.width}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        if (!isNaN(val)) updateState({ width: Math.min(maxWidth, Math.max(0.5, val)) });
-                      }}
-                      className="w-12 sm:w-20 text-center text-base sm:text-lg font-black text-slate-800 bg-transparent border-none appearance-none focus:outline-none focus:ring-0"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updateState({ width: Math.min(maxWidth, state.width + 0.5) })}
-                      className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
-                    >
-                      <ChevronRight className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                    </button>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-500 ml-2">
+                        {state.is360 ? (t('wizard.dimensions.heightStandard') || 'Hauteur (m)') : t('wizard.dimensions.heightTotal')}
+                      </span>
+                      <div className="flex items-center bg-white rounded-full border border-slate-200 px-2 py-0.5 shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateState({ height: Math.max(0.5, state.height - 0.5) })}
+                          className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.5"
+                          max={maxHeight}
+                          value={state.height}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            if (!isNaN(val)) handleUpdateState({ height: Math.min(maxHeight, Math.max(0.5, val)) });
+                          }}
+                          className="w-10 sm:w-16 text-center text-sm sm:text-base font-black text-slate-800 bg-transparent border-none appearance-none focus:outline-none focus:ring-0"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateState({ height: Math.min(maxHeight, state.height + 0.5) })}
+                          className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="relative group px-2">
+                      <input
+                        type="range" min="0.5" max={maxHeight} step="0.5"
+                        value={state.height}
+                        onChange={(e) => handleUpdateState({ height: parseFloat(e.target.value) })}
+                        className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-[#c6ff00]"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="relative group px-2">
-                  <input
-                    type="range" min="0.5" max={maxWidth} step="0.5"
-                    value={state.width}
-                    onChange={(e) => updateState({ width: parseFloat(e.target.value) })}
-                    className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-[#c6ff00]"
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-500 ml-2">{t('wizard.dimensions.heightTotal')}</span>
-                  <div className="flex items-center bg-white rounded-full border border-slate-200 px-2 py-0.5 shadow-sm">
-                    <button
-                      type="button"
-                      onClick={() => updateState({ height: Math.max(0.5, state.height - 0.5) })}
-                      className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                    </button>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.5"
-                      max={maxHeight}
-                      value={state.height}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        if (!isNaN(val)) updateState({ height: Math.min(maxHeight, Math.max(0.5, val)) });
-                      }}
-                      className="w-12 sm:w-20 text-center text-base sm:text-lg font-black text-slate-800 bg-transparent border-none appearance-none focus:outline-none focus:ring-0"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updateState({ height: Math.min(maxHeight, state.height + 0.5) })}
-                      className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
-                    >
-                      <ChevronRight className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-                    </button>
-                  </div>
-                </div>
-                <div className="relative group px-2">
-                  <input
-                    type="range" min="0.5" max={maxHeight} step="0.5"
-                    value={state.height}
-                    onChange={(e) => updateState({ height: parseFloat(e.target.value) })}
-                    className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-[#c6ff00]"
-                  />
-                </div>
-              </div>
-
-              {/* Color Controls (Enabled in light mode, disabled in dark mode) */}
-              <div className={`grid grid-cols-2 gap-4 pt-2 transition-all duration-500 ${isDarkMode ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">{t('wizard.dimensions.bgDecor')}</label>
-                  <div className="flex items-center gap-3 p-2 bg-white/50 rounded-2xl border border-slate-200">
-                    <input
-                      type="color"
-                      value={state.envColor}
-                      onChange={(e) => updateState({ envColor: e.target.value })}
-                      disabled={isDarkMode}
-                      className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 bg-transparent overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-lg"
-                    />
-                    <span className="text-[10px] font-mono text-slate-400 uppercase">{state.envColor}</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">{t('wizard.dimensions.groundLines')}</label>
-                  <div className="flex items-center gap-3 p-2 bg-white/50 rounded-2xl border border-slate-200">
-                    <input
-                      type="color"
-                      value={state.gridColor}
-                      onChange={(e) => updateState({ gridColor: e.target.value })}
-                      disabled={isDarkMode}
-                      className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 bg-transparent overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-lg"
-                    />
-                    <span className="text-[10px] font-mono text-slate-400 uppercase">{state.gridColor}</span>
+                  {/* Color Controls (Enabled in light mode, disabled in dark mode) */}
+                  <div className={`grid grid-cols-2 gap-4 pt-2 transition-all duration-500 ${isDarkMode ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">{t('wizard.dimensions.bgDecor')}</label>
+                      <div className="flex items-center gap-3 p-2 bg-white/50 rounded-2xl border border-slate-200">
+                        <input
+                          type="color"
+                          value={state.envColor}
+                          onChange={(e) => handleUpdateState({ envColor: e.target.value })}
+                          disabled={isDarkMode}
+                          className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 bg-transparent overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-lg"
+                        />
+                        <span className="text-[10px] font-mono text-slate-400 uppercase">{state.envColor}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">{t('wizard.dimensions.groundLines')}</label>
+                      <div className="flex items-center gap-3 p-2 bg-white/50 rounded-2xl border border-slate-200">
+                        <input
+                          type="color"
+                          value={state.gridColor}
+                          onChange={(e) => handleUpdateState({ gridColor: e.target.value })}
+                          disabled={isDarkMode}
+                          className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 bg-transparent overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-lg"
+                        />
+                        <span className="text-[10px] font-mono text-slate-400 uppercase">{state.gridColor}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Curvature Controls (Conditional) */}
+          {/* Curvature Controls (Conditional) */}
             <AnimatePresence mode="wait">
               {state.isCurved && (
                 <motion.div
@@ -313,7 +488,7 @@ export default function StepDimensions({
                     <input
                       type="range" min="-30" max="30" step="1"
                       value={state.curveLeft}
-                      onChange={(e) => updateState({ curveLeft: parseInt(e.target.value) })}
+                      onChange={(e) => handleUpdateState({ curveLeft: parseInt(e.target.value) })}
                       className="w-full h-1.5 bg-slate-300/50 rounded-full appearance-none cursor-pointer accent-[#c6ff00]"
                     />
                   </div>
@@ -328,7 +503,7 @@ export default function StepDimensions({
                     <input
                       type="range" min="-30" max="30" step="1"
                       value={state.curveRight}
-                      onChange={(e) => updateState({ curveRight: parseInt(e.target.value) })}
+                      onChange={(e) => handleUpdateState({ curveRight: parseInt(e.target.value) })}
                       className="w-full h-1.5 bg-slate-300/50 rounded-full appearance-none cursor-pointer accent-[#c6ff00]"
                     />
                   </div>
@@ -399,14 +574,17 @@ export default function StepDimensions({
             style={{
               height: !isDesktop && !isInChat ? '280px' : undefined,
               minHeight: isInChat
-                ? (state.isCurved ? '280px' : '200px')
-                : (isDesktop ? (state.isCurved ? '680px' : 'auto') : '280px'),
+                ? ((state.isCurved || state.is360) ? '280px' : '200px')
+                : (isDesktop ? ((state.isCurved || state.is360) ? '680px' : 'auto') : '280px'),
             }}
           >
             <ScreenViewer
               width={state.width}
               height={state.height}
               isCurved={state.isCurved}
+              is360={state.is360}
+              diameter={state.diameter}
+              cabinetAngle={state.cabinetAngle}
               curveLeft={state.curveLeft}
               curveRight={state.curveRight}
               envColor={state.envColor}

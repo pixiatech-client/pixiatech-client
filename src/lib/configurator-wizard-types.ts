@@ -25,6 +25,9 @@ export interface ConfigState {
   isCurved: boolean;
   curveLeft: number;
   curveRight: number;
+  is360: boolean;
+  diameter: number;
+  cabinetAngle: number;
   envColor: string;
   gridColor: string;
 }
@@ -50,6 +53,9 @@ export const INITIAL_STATE: ConfigState = {
   isCurved: false,
   curveLeft: 0,
   curveRight: 0,
+  is360: false,
+  diameter: 1.0,
+  cabinetAngle: 0,
   envColor: '#f8fafc',
   gridColor: '#e2e8f0',
 };

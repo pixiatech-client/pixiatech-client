@@ -2,12 +2,15 @@ import React, { useRef, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useVideoTexture, OrbitControls, PerspectiveCamera, Environment, ContactShadows, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { Monitor, Grid, Layout as LayoutIcon, Settings, RotateCcw, Layout, Sun, Moon } from "lucide-react";
+import { Monitor, Grid, Layout as LayoutIcon, Settings, RotateCcw, Layout, Sun, Moon, HelpCircle } from "lucide-react";
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Screen3DProps {
   width: number;
   height: number;
   isCurved: boolean;
+  is360?: boolean;
+  diameter?: number;
   curveLeft: number;
   curveRight: number;
   envColor: string;
@@ -61,12 +64,66 @@ function Dalle({ position, args, texture, uvOffset, uvScale, isPlaying }: { posi
   );
 }
 
-function HumanSilhouette({ position, isDarkMode = false }: { position: [number, number, number], isDarkMode?: boolean }) {
+function HumanSilhouette({ 
+  position, 
+  isDarkMode = false,
+  onDragStart,
+  onDrag,
+  onDragEnd
+}: { 
+  position: [number, number, number], 
+  isDarkMode?: boolean,
+  onDragStart?: () => void,
+  onDrag?: (pos: [number, number, number]) => void,
+  onDragEnd?: () => void
+}) {
+  const [dragging, setDragging] = React.useState(false);
+  const planeXZ = React.useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), []);
+  const intersection = React.useMemo(() => new THREE.Vector3(), []);
+
+  const handlePointerDown = (e: any) => {
+    e.stopPropagation();
+    setDragging(true);
+    if (onDragStart) onDragStart();
+    e.target.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: any) => {
+    if (!dragging) return;
+    e.stopPropagation();
+    e.ray.intersectPlane(planeXZ, intersection);
+    if (onDrag) {
+      onDrag([intersection.x, 0, intersection.z]);
+    }
+  };
+
+  const handlePointerUp = (e: any) => {
+    e.stopPropagation();
+    setDragging(false);
+    if (onDragEnd) onDragEnd();
+    e.target.releasePointerCapture(e.pointerId);
+  };
+
+  const [hovered, setHovered] = React.useState(false);
+  React.useEffect(() => {
+    document.body.style.cursor = hovered ? (dragging ? 'grabbing' : 'grab') : 'auto';
+    return () => {
+      document.body.style.cursor = 'auto';
+    };
+  }, [hovered, dragging]);
+
   const bodyColor = isDarkMode ? "#ffffff" : "#020617";
   const secondaryColor = isDarkMode ? "#94a3b8" : "#334155";
   
   return (
-    <group position={position}>
+    <group 
+      position={position}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
+      onPointerOut={(e) => { e.stopPropagation(); setHovered(false); }}
+    >
       <mesh position={[0, 1.74, 0]} castShadow>
         <sphereGeometry args={[0.08, 32, 32]} />
         <meshStandardMaterial 
@@ -145,20 +202,35 @@ function HumanSilhouette({ position, isDarkMode = false }: { position: [number, 
         />
       </mesh>
       
-      <group position={[0.9, 0, 0]}>
+      <group position={[0.3, 0, 0]}>
         <DimensionLine 
           start={new THREE.Vector3(0, 0, 0)} 
           end={new THREE.Vector3(0, 1.83, 0)} 
           label="1.83 M" 
           color="#1e293b"
           isDarkMode={isDarkMode}
+          occlude={true}
         />
       </group>
     </group>
   );
 }
 
-function DimensionLine({ start, end, label, color = "#1e293b", isDarkMode = false }: { start: THREE.Vector3, end: THREE.Vector3, label: string, color?: string, isDarkMode?: boolean }) {
+function DimensionLine({ 
+  start, 
+  end, 
+  label, 
+  color = "#1e293b", 
+  isDarkMode = false,
+  occlude = false
+}: { 
+  start: THREE.Vector3, 
+  end: THREE.Vector3, 
+  label: string, 
+  color?: string, 
+  isDarkMode?: boolean,
+  occlude?: boolean
+}) {
   const lineRef = useRef<THREE.BufferGeometry>(null);
   
   React.useEffect(() => {
@@ -183,14 +255,14 @@ function DimensionLine({ start, end, label, color = "#1e293b", isDarkMode = fals
       </mesh>
       
       <Html 
-        position={[(start.x + end.x) / 2, (start.y + end.y) / 2, (start.z + end.z) / 2]} 
-        center 
-        distanceFactor={10}
+        position={[(start.x + end.x) / 2, ((start.y + end.y) / 2) + 0.05, (start.z + end.z) / 2]} 
+        center
+        occlude={occlude ? 'blending' : undefined}
       >
-        <div className={`px-2 py-1 backdrop-blur-md border rounded text-[8px] font-black whitespace-nowrap shadow-xl italic tracking-tighter uppercase transition-all hover:scale-110 ${
+        <div className={`px-2.5 py-1 backdrop-blur-md border rounded-lg text-[10px] font-black whitespace-nowrap shadow-md italic tracking-wide uppercase transition-all hover:scale-105 ${
           isDarkMode 
-          ? "bg-white border-white text-slate-900 shadow-[0_0_15px_rgba(255,255,255,0.2)]" 
-          : "bg-white/90 border-white text-slate-900 shadow-lg shadow-black/5"
+          ? "bg-slate-950/80 border-white/10 text-white shadow-[0_4px_12px_rgba(0,0,0,0.5)]" 
+          : "bg-white/90 border-slate-200 text-slate-800 shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
         }`}>
           {label}
         </div>
@@ -199,7 +271,23 @@ function DimensionLine({ start, end, label, color = "#1e293b", isDarkMode = fals
   );
 }
 
-function Screen({ width, height, isCurved, curveLeft, curveRight, isDarkMode, videoUrl }: Screen3DProps & { isDarkMode: boolean }) {
+function Screen({ 
+  width, 
+  height, 
+  isCurved, 
+  is360 = false, 
+  diameter = 1.0, 
+  cabinetAngle = 0, 
+  curveLeft, 
+  curveRight, 
+  isDarkMode, 
+  videoUrl,
+  setControlsEnabled
+}: Screen3DProps & { 
+  isDarkMode: boolean; 
+  cabinetAngle?: number; 
+  setControlsEnabled: (val: boolean) => void;
+}) {
   const meshRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = React.useState<THREE.VideoTexture | null>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
@@ -254,6 +342,98 @@ function Screen({ width, height, isCurved, curveLeft, curveRight, isDarkMode, vi
 
   const DALLE_SIZE = 0.5;
 
+  // 360 mode parameters (dynamic or locked standard angles)
+  const { modulesX: modulesX_360, R: R_360, angleStep: angleStep_360 } = React.useMemo(() => {
+    const angle = cabinetAngle || 0;
+    if (angle !== 0) {
+      const absAngle = Math.abs(angle);
+      const modulesX = 360 / absAngle;
+      const theta = (absAngle * Math.PI) / 180;
+      const R = 0.5 / (2 * Math.sin(theta / 2));
+      return { modulesX, R, angleStep: theta * Math.sign(angle) };
+    } else {
+      const modulesX = Math.round((Math.PI * diameter) / 0.5);
+      const angleStep = (2 * Math.PI) / modulesX;
+      const R = 0.5 / (2 * Math.sin(angleStep / 2));
+      return { modulesX, R, angleStep };
+    }
+  }, [cabinetAngle, diameter]);
+
+  const modulesY_360 = Math.ceil(height / 0.5);
+  const actualDalleH_360 = height / modulesY_360;
+  const isConvex_360 = cabinetAngle <= 0; // Auto (0) and negative angles are convex
+
+  // Track dynamic position of the human silhouette for dragging
+  const defaultHumanPos = React.useMemo<[number, number, number]>(() => {
+    return is360 
+      ? (cabinetAngle > 0 ? [0, 0, 0] : [R_360 + 1.2, 0, 0]) 
+      : [width / 2 + 1.2, 0, 0.5];
+  }, [is360, cabinetAngle, width, R_360]);
+
+  const [humanPos, setHumanPos] = React.useState<[number, number, number]>([0, 0, 0]);
+
+  React.useEffect(() => {
+    setHumanPos(defaultHumanPos);
+  }, [defaultHumanPos]);
+
+  // Shared backing cabinet geometry (extruded arc segment)
+  const cabinetGeometry = React.useMemo(() => {
+    if (!is360) return null;
+    const depth = 0.12; // 12cm thickness
+    const hCabinet = actualDalleH_360;
+    const aLen = Math.abs(angleStep_360);
+    
+    const R_front = R_360;
+    const R_back = isConvex_360 ? (R_360 - depth) : (R_360 + depth);
+    
+    const shape = new THREE.Shape();
+    const halfAngle = aLen / 2;
+    const startAngle = -halfAngle;
+    const endAngle = halfAngle;
+    
+    // Front face (LED screen side)
+    shape.absarc(0, 0, R_front, startAngle, endAngle, false);
+    // Side wall 1
+    shape.lineTo(R_back * Math.cos(endAngle), R_back * Math.sin(endAngle));
+    // Back face (Frame side)
+    shape.absarc(0, 0, R_back, endAngle, startAngle, true);
+    // Side wall 2
+    shape.closePath();
+    
+    const extrudeSettings = {
+      depth: hCabinet,
+      bevelEnabled: false,
+      steps: 1
+    };
+    
+    const geom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    // Extrude builds along Z, so rotate to align vertically along Y
+    geom.rotateX(-Math.PI / 2);
+    geom.translate(0, -hCabinet / 2, 0); // Center vertically
+    return geom;
+  }, [is360, R_360, actualDalleH_360, angleStep_360, isConvex_360]);
+
+  const cabinetMaterial = React.useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: isDarkMode ? "#0f172a" : "#334155",
+      roughness: 0.5,
+      metalness: 0.8
+    });
+  }, [isDarkMode]);
+
+  const ledMaterial = React.useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: texture && isPlaying ? "#ffffff" : "#111111",
+      map: texture && isPlaying ? texture : null,
+      emissive: texture && isPlaying ? "#ffffff" : "#000000",
+      emissiveMap: texture && isPlaying ? texture : null,
+      emissiveIntensity: isDarkMode ? 0.8 : 1.2,
+      roughness: 0.25,
+      metalness: 0.1,
+      side: THREE.DoubleSide
+    });
+  }, [texture, isPlaying, isDarkMode]);
+
   const renderCurvedScreen = () => {
     const modulesX = Math.ceil(width / DALLE_SIZE);
     const actualDalleW = width / modulesX;
@@ -264,22 +444,18 @@ function Screen({ width, height, isCurved, curveLeft, curveRight, isDarkMode, vi
     let currentX = 0;
     let currentZ = 0;
     
-    const wingW = width * 0.25;
-    const centerW = width * 0.5;
-    const lCols = Math.ceil(wingW / actualDalleW);
-    const rCols = Math.ceil(wingW / actualDalleW);
+    const wingCols = Math.round(modulesX * 0.25);
 
     let currentAngle = isCurved ? -THREE.MathUtils.degToRad(curveLeft * 2) : 0;
 
     for (let ix = 0; ix < modulesX; ix++) {
-      const xPosTexture = ix * actualDalleW;
       let angleStep = 0;
 
-      if (isCurved) {
-        if (xPosTexture < wingW) {
-          angleStep = THREE.MathUtils.degToRad(curveLeft * 2) / lCols;
-        } else if (xPosTexture >= wingW + centerW) {
-          angleStep = -THREE.MathUtils.degToRad(curveRight * 2) / rCols;
+      if (isCurved && wingCols > 0) {
+        if (ix < wingCols) {
+          angleStep = THREE.MathUtils.degToRad(curveLeft * 2) / wingCols;
+        } else if (ix >= modulesX - wingCols) {
+          angleStep = -THREE.MathUtils.degToRad(curveRight * 2) / wingCols;
         }
       }
 
@@ -324,6 +500,7 @@ function Screen({ width, height, isCurved, curveLeft, curveRight, isDarkMode, vi
           label={`LARGEUR: ${width.toFixed(2)} M`} 
           color="#1e293b"
           isDarkMode={isDarkMode}
+          occlude={true}
         />
         
         <DimensionLine 
@@ -332,6 +509,71 @@ function Screen({ width, height, isCurved, curveLeft, curveRight, isDarkMode, vi
           label={`HAUTEUR: ${height.toFixed(2)} M`} 
           color="#1e293b"
           isDarkMode={isDarkMode}
+          occlude={true}
+        />
+      </group>
+    );
+  };
+
+  const renderCylindricalScreen = () => {
+    // Generate angles for columns
+    const columns = [];
+    for (let ix = 0; ix < modulesX_360; ix++) {
+      columns.push(ix * angleStep_360);
+    }
+
+    // Offset the screen radius slightly to prevent z-fighting with the front faces of backing cabinets
+    const screenRadius = isConvex_360 ? (R_360 + 0.002) : (R_360 - 0.002);
+
+    return (
+      <group position={[0, 0, 0]}>
+        {/* Render backing cabinet frames gapless */}
+        {cabinetGeometry && columns.map((colAngle, ix) => (
+          <group key={`col-${ix}`} rotation={[0, colAngle, 0]}>
+            {Array.from({ length: modulesY_360 }).map((_, iy) => (
+              <mesh
+                key={`cab-${ix}-${iy}`}
+                geometry={cabinetGeometry}
+                material={cabinetMaterial}
+                position={[0, (iy * actualDalleH_360) + (actualDalleH_360 / 2), 0]}
+                castShadow
+                receiveShadow
+              />
+            ))}
+          </group>
+        ))}
+
+        {/* Render a single seamless Cylinder for the LED screens with emissive glowing materials */}
+        <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+          <cylinderGeometry 
+            args={[
+              screenRadius, // radiusTop
+              screenRadius, // radiusBottom
+              height,       // height
+              modulesX_360 * 8, // radialSegments for round smooth geometry
+              1,            // heightSegments
+              true          // openEnded
+            ]} 
+          />
+          <primitive object={ledMaterial} attach="material" />
+        </mesh>
+
+        <DimensionLine 
+          start={new THREE.Vector3(-R_360, height + 0.5, 0)} 
+          end={new THREE.Vector3(R_360, height + 0.5, 0)} 
+          label={`DIAMÈTRE: ${(R_360 * 2).toFixed(2)} M`} 
+          color="#1e293b"
+          isDarkMode={isDarkMode}
+          occlude={false}
+        />
+        
+        <DimensionLine 
+          start={new THREE.Vector3(-R_360 - 0.4, 0, 0)} 
+          end={new THREE.Vector3(-R_360 - 0.4, height, 0)} 
+          label={`HAUTEUR: ${height.toFixed(2)} M`} 
+          color="#1e293b"
+          isDarkMode={isDarkMode}
+          occlude={true}
         />
       </group>
     );
@@ -339,8 +581,14 @@ function Screen({ width, height, isCurved, curveLeft, curveRight, isDarkMode, vi
 
   return (
     <group ref={meshRef}>
-      {renderCurvedScreen()}
-      <HumanSilhouette position={[width / 2 + 1.2, 0, 0.5]} isDarkMode={isDarkMode} />
+      {is360 ? renderCylindricalScreen() : renderCurvedScreen()}
+      <HumanSilhouette 
+        position={humanPos} 
+        isDarkMode={isDarkMode} 
+        onDragStart={() => setControlsEnabled(false)}
+        onDrag={(pos) => setHumanPos(pos)}
+        onDragEnd={() => setControlsEnabled(true)}
+      />
     </group>
   );
 }
@@ -377,29 +625,61 @@ function MouseIcon({ highlight, isDarkMode = false }: { highlight: 'left' | 'rig
   );
 }
 
-export default function ScreenViewer(props: Screen3DProps) {
-  const { envColor, gridColor, isCurved, isDarkMode, setIsDarkMode } = props;
+export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: number }) {
+  const { envColor, gridColor, isCurved, is360 = false, diameter = 1.0, cabinetAngle = 0, isDarkMode, setIsDarkMode } = props;
   const controlsRef = React.useRef<any>(null);
+  const [showHelp, setShowHelp] = React.useState(false);
+  const [controlsEnabled, setControlsEnabled] = React.useState(true);
+
+  const lastModeRef = React.useRef<string>("");
+  const propsRef = React.useRef({ diameter, width: props.width, height: props.height, cabinetAngle });
+  
+  React.useEffect(() => {
+    propsRef.current = { diameter, width: props.width, height: props.height, cabinetAngle };
+  });
 
   React.useEffect(() => {
-    const updateCamera = () => {
-      if (controlsRef.current) {
-        const maxDim = Math.max(props.width, props.height);
-        const zoomBase = maxDim * 1.1;
-        const heightOffset = props.height / 2;
+    const currentMode = `${is360 ? "360" : isCurved ? "curved" : "flat"}`;
+    const modeChanged = lastModeRef.current !== currentMode;
+    
+    if (modeChanged) {
+      lastModeRef.current = currentMode;
+    }
 
-        // Position camera to the left (-x) to make the left edge appear taller
-        controlsRef.current.object.position.set(-zoomBase * 0.5, zoomBase * 0.3, zoomBase * 0.95);
+    const updateCamera = () => {
+      if (controlsRef.current && (modeChanged || lastModeRef.current === currentMode)) {
+        const currentProps = propsRef.current;
+        let actualDiameter = currentProps.diameter;
+        if (is360 && currentProps.cabinetAngle !== 0) {
+          const absAngle = Math.abs(currentProps.cabinetAngle);
+          const theta = (absAngle * Math.PI) / 180;
+          const R = 0.5 / (2 * Math.sin(theta / 2));
+          actualDiameter = R * 2;
+        }
+        
+        const maxDim = is360 
+          ? Math.max(actualDiameter, currentProps.height) 
+          : Math.max(currentProps.width, currentProps.height);
+          
+        const zoomFactor = is360 ? 2.5 : 1.25; // Standard flat zoom is 1.25, 360 cylindrical gets 2.5 for wide view
+        const zoomBase = maxDim * zoomFactor;
+        const heightOffset = currentProps.height / 2;
+
+        // Position camera to view the model from a nice angle
+        controlsRef.current.object.position.set(-zoomBase * 0.6, zoomBase * 0.4, zoomBase * 1.2);
         controlsRef.current.target.set(0, heightOffset, 0);
         
         controlsRef.current.update();
       }
     };
 
-    updateCamera();
-    const timer = setTimeout(updateCamera, 100);
-    return () => clearTimeout(timer);
-  }, []);
+    // Only run if the mode changed or it is the initial mount
+    if (modeChanged) {
+      updateCamera();
+      const timer = setTimeout(updateCamera, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [is360, isCurved]);
   
   const currentEnv = isDarkMode ? "#020617" : envColor;
   const currentGrid = isDarkMode ? "#1e293b" : gridColor;
@@ -410,6 +690,7 @@ export default function ScreenViewer(props: Screen3DProps) {
         <PerspectiveCamera makeDefault position={[22, 12, 32]} fov={35} />
         <OrbitControls 
           ref={controlsRef}
+          enabled={controlsEnabled}
           enablePan={true} 
           enableZoom={true} 
           minDistance={1} 
@@ -422,7 +703,7 @@ export default function ScreenViewer(props: Screen3DProps) {
         <pointLight position={[-15, 10, 15]} intensity={isDarkMode ? 1.5 : 0.8} color="#c6ff00" />
         
         <Suspense fallback={null}>
-          <Screen {...props} isDarkMode={isDarkMode} />
+          <Screen {...props} isDarkMode={isDarkMode} setControlsEnabled={setControlsEnabled} />
         </Suspense>
 
         <group position={[0, -0.01, 0]}>
@@ -445,10 +726,11 @@ export default function ScreenViewer(props: Screen3DProps) {
         <div className={`h-0.5 w-10 sm:w-16 rounded-full transition-colors duration-300 ${isDarkMode ? "bg-[#c6ff00]/40" : "bg-slate-300"}`} />
       </div>
 
-      <div className="absolute top-3 right-3 sm:top-8 sm:right-8">
+      <div className="absolute top-3 right-3 sm:top-8 sm:right-8 flex flex-col gap-2 sm:gap-3 items-end">
+        {/* Theme button */}
         <button 
           onClick={() => setIsDarkMode(!isDarkMode)}
-          className={`w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 ${
+          className={`w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 pointer-events-auto ${
             isDarkMode 
             ? "bg-slate-900/80 backdrop-blur-md border border-white/10 text-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.2)]" 
             : "bg-white/80 backdrop-blur-md border border-white/50 text-orange-400 shadow-xl"
@@ -456,47 +738,84 @@ export default function ScreenViewer(props: Screen3DProps) {
         >
           {isDarkMode ? <Moon className="w-4 h-4 sm:w-6 sm:h-6 fill-blue-400/20" /> : <Sun className="w-4 h-4 sm:w-6 sm:h-6 fill-orange-400/20" />}
         </button>
+
+        {/* Help toggle button */}
+        <button 
+          onClick={() => setShowHelp(!showHelp)}
+          className={`w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 pointer-events-auto ${
+            showHelp
+              ? (isDarkMode ? "bg-[#c6ff00] text-black shadow-lg" : "bg-black text-[#c6ff00] shadow-lg")
+              : (isDarkMode 
+                  ? "bg-slate-900/80 backdrop-blur-md border border-white/10 text-slate-300 hover:text-white" 
+                  : "bg-white/80 backdrop-blur-md border border-slate-200 text-slate-600 hover:text-slate-900 shadow-xl")
+          }`}
+        >
+          <HelpCircle className="w-4 h-4 sm:w-6 sm:h-6" />
+        </button>
       </div>
 
-      <div className={`hidden xl:flex absolute bottom-8 left-1/2 -translate-x-1/2 items-center gap-10 px-12 py-6 backdrop-blur-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-full border transition-all duration-700 pointer-events-none opacity-0 group-hover:opacity-100 translate-y-6 group-hover:translate-y-0 ${
-        isDarkMode 
-        ? "bg-slate-950/95 border-white/10 text-white" 
-        : "bg-white/95 border-slate-200 text-slate-900"
-      }`}>
-        <div className="flex items-center gap-5">
-          <div className="flex-shrink-0 scale-90">
-            <MouseIcon highlight="left" isDarkMode={isDarkMode} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] leading-none mb-1 opacity-40">{props.t('wizard.dimensions.mouseLeft')}</span>
-            <span className="text-xs font-black uppercase tracking-tight">{props.t('wizard.dimensions.move')}</span>
-          </div>
-        </div>
-        
-        <div className={`w-px h-8 ${isDarkMode ? "bg-white/10" : "bg-slate-200"}`} />
-        
-        <div className="flex items-center gap-5">
-          <div className="flex-shrink-0 scale-90">
-            <MouseIcon highlight="right" isDarkMode={isDarkMode} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] leading-none mb-1 opacity-40">{props.t('wizard.dimensions.mouseRight')}</span>
-            <span className="text-xs font-black uppercase tracking-tight">{props.t('wizard.dimensions.rotate')}</span>
-          </div>
-        </div>
-        
-        <div className={`w-px h-8 ${isDarkMode ? "bg-white/10" : "bg-slate-200"}`} />
-        
-        <div className="flex items-center gap-5">
-          <div className="flex-shrink-0 scale-90">
-            <MouseIcon highlight="wheel" isDarkMode={isDarkMode} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[9px] font-black uppercase tracking-[0.3em] leading-none mb-1 opacity-40">{props.t('wizard.dimensions.mouseWheel')}</span>
-            <span className="text-xs font-black uppercase tracking-tight">{props.t('wizard.dimensions.zoom')}</span>
-          </div>
-        </div>
-      </div>
+      <AnimatePresence>
+        {showHelp && (
+          <motion.div
+            initial={{ opacity: 0, y: 15, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 15, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className={`absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center gap-4 sm:gap-6 px-4 py-2 sm:px-6 sm:py-3.5 backdrop-blur-md shadow-xl rounded-2xl sm:rounded-full border z-[90] max-w-[95%] shrink-0 select-none ${
+              isDarkMode 
+              ? "bg-slate-950/90 border-white/10 text-white" 
+              : "bg-white/90 border-slate-200 text-slate-900"
+            }`}
+          >
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex-shrink-0 scale-65 sm:scale-75">
+                <MouseIcon highlight="left" isDarkMode={isDarkMode} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 opacity-40">
+                  {props.t('wizard.dimensions.mouseLeft')}
+                </span>
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-tight">
+                  {props.t('wizard.dimensions.move')}
+                </span>
+              </div>
+            </div>
+            
+            <div className={`w-px h-5 sm:h-6 ${isDarkMode ? "bg-white/10" : "bg-slate-200"}`} />
+            
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex-shrink-0 scale-65 sm:scale-75">
+                <MouseIcon highlight="right" isDarkMode={isDarkMode} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 opacity-40">
+                  {props.t('wizard.dimensions.mouseRight')}
+                </span>
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-tight">
+                  {props.t('wizard.dimensions.rotate')}
+                </span>
+              </div>
+            </div>
+            
+            <div className={`w-px h-5 sm:h-6 ${isDarkMode ? "bg-white/10" : "bg-slate-200"}`} />
+            
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex-shrink-0 scale-65 sm:scale-75">
+                <MouseIcon highlight="wheel" isDarkMode={isDarkMode} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] leading-none mb-0.5 opacity-40">
+                  {props.t('wizard.dimensions.mouseWheel')}
+                </span>
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-tight">
+                  {props.t('wizard.dimensions.zoom')}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
