@@ -686,7 +686,7 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
 
   return (
     <div className="w-full h-full rounded-[2.5rem] overflow-hidden relative shadow-inner group" style={{ background: currentEnv }}>
-      <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ background: currentEnv }}>
+      <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ background: currentEnv, position: 'relative', zIndex: 0 }}>
         <PerspectiveCamera makeDefault position={[22, 12, 32]} fov={35} />
         <OrbitControls 
           ref={controlsRef}
@@ -721,12 +721,12 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
         <ContactShadows resolution={1024} scale={30} blur={2.5} opacity={isDarkMode ? 0.8 : 0.3} far={2.5} color="#000000" />
       </Canvas>
 
-      <div className="absolute top-3 left-3 sm:top-8 sm:left-8 flex flex-col gap-1 pointer-events-none">
+      <div className="absolute top-3 left-3 sm:top-8 sm:left-8 flex flex-col gap-1 pointer-events-none z-20 [transform:translateZ(0)]">
         <span className={`text-[8px] sm:text-[10px] uppercase tracking-[0.4em] font-black transition-colors duration-300 ${isDarkMode ? "text-[#c6ff00]" : "text-slate-500"}`}>{props.t('wizard.dimensions.simulator3D')}</span>
         <div className={`h-0.5 w-10 sm:w-16 rounded-full transition-colors duration-300 ${isDarkMode ? "bg-[#c6ff00]/40" : "bg-slate-300"}`} />
       </div>
 
-      <div className="absolute top-3 right-3 sm:top-8 sm:right-8 flex flex-col gap-2 sm:gap-3 items-end">
+      <div className="absolute top-3 right-3 sm:top-8 sm:right-8 flex flex-col gap-2 sm:gap-3 items-end z-20 [transform:translateZ(0)]">
         {/* Theme button */}
         <button 
           onClick={() => setIsDarkMode(!isDarkMode)}
@@ -761,7 +761,7 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.95 }}
             transition={{ duration: 0.25 }}
-            className={`absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center gap-4 sm:gap-6 px-4 py-2 sm:px-6 sm:py-3.5 backdrop-blur-md shadow-xl rounded-2xl sm:rounded-full border z-[90] max-w-[95%] shrink-0 select-none ${
+            className={`absolute bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 flex items-center justify-center gap-4 sm:gap-6 px-4 py-2 sm:px-6 sm:py-3.5 backdrop-blur-md shadow-xl rounded-2xl sm:rounded-full border z-[90] [transform:translateZ(0)] max-w-[95%] shrink-0 select-none ${
               isDarkMode 
               ? "bg-slate-950/90 border-white/10 text-white" 
               : "bg-white/90 border-slate-200 text-slate-900"
