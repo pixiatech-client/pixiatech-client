@@ -3,23 +3,19 @@ import styles from './style.css?inline';
 
 interface ChatWidgetConfig {
   position?: 'left' | 'right';
-  primaryColor?: string;
   iframeUrl?: string;
   avatarUrl?: string;
   entranceAnimation?: boolean;
   tooltipText?: string;
-  title?: string;
 }
 
-// Configuration par défaut du Widget
+// Configuration par défaut du Widget pointant directement vers votre vrai chatbot Lumi en production
 const DEFAULT_CONFIG: Required<ChatWidgetConfig> = {
   position: 'right',
-  primaryColor: '#0f172a',
-  iframeUrl: 'https://studio-9205859220-a6440.web.app', // URL par défaut de l'app client
-  avatarUrl: '',
+  iframeUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app',
+  avatarUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app/robot-avatar.png',
   entranceAnimation: true,
-  tooltipText: 'Besoin d\'aide ? Discutons !',
-  title: 'Assistant Pixiatech'
+  tooltipText: 'Besoin d\'aide ? Discutons !'
 };
 
 class PixiatechChatWidget {
@@ -31,11 +27,9 @@ class PixiatechChatWidget {
   private hasIframeLoaded = false;
 
   constructor() {
-    // Fusionner la configuration globale window.ChatWidgetConfig avec les valeurs par défaut
     const globalConfig = (window as any).ChatWidgetConfig || {};
     this.config = { ...DEFAULT_CONFIG, ...globalConfig };
 
-    // S'assurer que le DOM est complètement chargé avant d'initialiser
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => this.init());
     } else {
@@ -69,25 +63,25 @@ class PixiatechChatWidget {
     // 5. Mettre en place les écouteurs d'événements
     this.bindEvents();
 
-    // 6. Animation d'entrée du bouton flottant (avec un léger délai pour faire pro)
+    // 6. Animation d'entrée du bouton flottant (Lumi)
     if (this.config.entranceAnimation) {
       setTimeout(() => {
         const button = this.shadow?.querySelector('.chat-widget-button');
         button?.classList.add('visible');
-      }, 800);
+      }, 600);
 
-      // Afficher la bulle d'aide / tooltip après 3 secondes, et la masquer après 8 secondes
+      // Afficher le tooltip après 3 secondes, et le masquer après 10 secondes
       setTimeout(() => {
         if (!this.isOpen) {
           const tooltip = this.shadow?.querySelector('.chat-widget-tooltip');
           tooltip?.classList.add('visible');
         }
-      }, 3500);
+      }, 3000);
 
       setTimeout(() => {
         const tooltip = this.shadow?.querySelector('.chat-widget-tooltip');
         tooltip?.classList.remove('visible');
-      }, 10500);
+      }, 10000);
     } else {
       const button = this.shadow?.querySelector('.chat-widget-button');
       button?.classList.add('visible');
@@ -97,40 +91,27 @@ class PixiatechChatWidget {
   private render() {
     if (!this.shadow) return;
 
-    // Bulle de chat SVG par défaut ou Avatar Image si spécifié
-    const buttonContent = this.config.avatarUrl
-      ? `<img src="${this.config.avatarUrl}" alt="Chat Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
-      : `<svg class="chat-widget-icon" viewBox="0 0 24 24">
-           <path fill="currentColor" d="M12 2C6.477 2 2 6.14 2 11.25c0 2.48 1.077 4.717 2.825 6.363l-.865 2.89a.75.75 0 0 0 1.01.884l3.35-1.674A11.082 11.082 0 0 0 12 20.5c5.523 0 10-4.14 10-9.25S17.523 2 12 2Zm0 13.5a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm0-4.5a1 1 0 0 1-1-1V8a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1Z"/>
-         </svg>`;
-
-    // Rendu de la structure HTML
     this.shadow.innerHTML += `
-      <!-- Bulle d'aide -->
+      <!-- Bulle d'aide / Tooltip -->
       <div class="chat-widget-tooltip">${this.config.tooltipText}</div>
 
-      <!-- Bouton Flottant -->
-      <button class="chat-widget-button" style="--primary-color: ${this.config.primaryColor};" aria-label="Ouvrir le chatbot">
-        ${buttonContent}
+      <!-- Bouton Flottant (Robot Lumi) -->
+      <button class="chat-widget-button" aria-label="Discuter avec Lumi">
+        <img class="chat-widget-avatar" src="${this.config.avatarUrl}" alt="Lumi Avatar" />
       </button>
 
-      <!-- Modal Popup -->
-      <div class="chat-widget-modal" style="--primary-color: ${this.config.primaryColor};">
-        <div class="chat-widget-header">
-          <div class="chat-widget-title-container">
-            <div class="chat-widget-status"></div>
-            <span class="chat-widget-title">${this.config.title}</span>
-          </div>
-          <button class="chat-widget-close" aria-label="Fermer le chatbot">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
+      <!-- Modal Popup (Iframe uniquement) -->
+      <div class="chat-widget-modal">
+        <!-- Bouton fermer discret pour mobile (fallback) -->
+        <button class="chat-widget-close-fallback" aria-label="Fermer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
         <div class="chat-widget-iframe-container">
           <div class="chat-widget-spinner"></div>
-          <!-- L'iframe sera injectée de façon paresseuse (lazy load) ici -->
+          <!-- L'iframe chargeant votre vrai chatbot Next.js -->
         </div>
       </div>
     `;
@@ -140,17 +121,17 @@ class PixiatechChatWidget {
     if (!this.shadow) return;
 
     const button = this.shadow.querySelector('.chat-widget-button');
-    const closeBtn = this.shadow.querySelector('.chat-widget-close');
+    const closeFallback = this.shadow.querySelector('.chat-widget-close-fallback');
     const tooltip = this.shadow.querySelector('.chat-widget-tooltip');
 
-    // Clic sur le bouton flottant
+    // Clic sur le robot flottant : bascule ouvrir/fermer le chatbot
     button?.addEventListener('click', () => {
       tooltip?.classList.remove('visible');
       this.toggleWidget();
     });
 
-    // Clic sur le bouton de fermeture du header
-    closeBtn?.addEventListener('click', () => {
+    // Clic sur le bouton de fermeture de secours (mobile)
+    closeFallback?.addEventListener('click', () => {
       this.closeWidget();
     });
 
@@ -161,12 +142,12 @@ class PixiatechChatWidget {
       }
     });
 
-    // Écouter les messages inter-fenêtres (postMessage) venant de l'iframe du chatbot
+    // Écouter le message 'close-chatbot' venant de votre vrai chatbot (Next.js) dans l'iframe
     window.addEventListener('message', (event) => {
-      // Pour des raisons de sécurité, nous acceptons le message s'il correspond à l'URL configurée
+      // Sécurité : On vérifie l'origine
       if (event.origin !== new URL(this.config.iframeUrl).origin) return;
 
-      // Si l'iframe envoie { type: 'close-chatbot' }, on ferme le widget
+      // Si l'application principale Next.js envoie { type: 'close-chatbot' }
       if (event.data && event.data.type === 'close-chatbot') {
         this.closeWidget();
       }
@@ -191,7 +172,7 @@ class PixiatechChatWidget {
     modal?.classList.add('open');
     button?.classList.add('open');
 
-    // Charger l'iframe uniquement au premier clic (Lazy Loading)
+    // Lazy loading de l'iframe pour économiser de la performance
     if (!this.hasIframeLoaded) {
       this.loadIframe();
     }
@@ -218,10 +199,10 @@ class PixiatechChatWidget {
     const iframe = document.createElement('iframe');
     iframe.className = 'chat-widget-iframe';
     iframe.src = this.config.iframeUrl;
+    // Autoriser les APIs courantes
     iframe.allow = 'camera; microphone; clipboard-read; clipboard-write; geolocation';
-    iframe.title = this.config.title;
+    iframe.title = 'Assistant Bot Lumi';
 
-    // Cacher le spinner dès que l'iframe a fini de charger
     iframe.onload = () => {
       if (spinner) {
         spinner.style.opacity = '0';
