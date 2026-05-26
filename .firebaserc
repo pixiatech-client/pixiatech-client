@@ -7,6 +7,9 @@
       "hosting": {
         "app": [
           "studio-9205859220-a6440"
+        ],
+        "widget": [
+          "studio-9205859220-a6440-widget"
         ]
       }
     }

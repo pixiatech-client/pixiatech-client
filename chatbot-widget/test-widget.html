@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Isolation - Pixiatech Chatbot Widget</title>
+  <style>
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
+      height: 100vh;
+      margin: 0;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #334155;
+    }
+
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      max-width: 600px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #0f172a;
+      margin-top: 0;
+    }
+
+    /* Style global hyper agressif pour tester l'isolation du Shadow DOM */
+    /* Ces styles écraseraient normalement n'importe quel élément standard, */
+    /* mais n'affecteront pas notre Shadow DOM ! */
+    button {
+      background-color: red !important;
+      color: yellow !important;
+      font-size: 30px !important;
+      border: 5px dashed black !important;
+      border-radius: 0px !important;
+      padding: 50px !important;
+      display: none; /* Cache tous les boutons globaux */
+    }
+
+    iframe {
+      border: 10px solid pink !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Test d'intégration du Widget</h1>
+    <p>Cette page simule un site WordPress avec des règles CSS globales agressives (ex: boutons rouges masqués, iframes à bordures roses).</p>
+    <p>Grâce au <strong>Shadow DOM</strong> et à l'encapsulation de style, le widget de chatbot en bas à droite s'affichera parfaitement dans ses styles d'origine, sans subir aucune altération !</p>
+  </div>
+
+  <!-- Configuration du Widget -->
+  <script>
+    window.ChatWidgetConfig = {
+      position: "right",
+      primaryColor: "#4f46e5", // Indigo moderne
+      iframeUrl: "https://studio-9205859220-a6440.web.app", // URL de test
+      title: "PixiaBot Support",
+      tooltipText: "Une question ? Discutez avec PixiaBot !"
+    };
+  </script>
+
+  <!-- Chargement du Widget compilé -->
+  <script src="./dist/widget.js"></script>
+
+</body>
+</html>
