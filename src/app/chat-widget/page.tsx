@@ -4,8 +4,15 @@ import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLoc
 
 export const dynamic = 'force-dynamic';
 
-export default async function ChatWidgetPage() {
+interface PageProps {
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default async function ChatWidgetPage({ searchParams }: PageProps) {
   const settings: Settings = await getSettings();
+  
+  const langQuery = typeof searchParams.lang === 'string' ? searchParams.lang : 'fr';
+  const lang = langQuery === 'en' ? 'en' : 'fr';
   
   const [deliverySettings, laborSettings, productsResult, locations] = await Promise.all([
     getDeliverySettings(),
@@ -24,6 +31,7 @@ export default async function ChatWidgetPage() {
         laborSettings={laborSettings}
         allProducts={allProducts}
         locations={locations}
+        lang={lang}
       />
     </main>
   );

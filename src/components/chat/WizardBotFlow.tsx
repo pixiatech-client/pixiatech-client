@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, ChevronDown, ArrowRight, ArrowLeft, MapPin, Loader2, Grid, Calendar as CalendarIcon, Clock, Bot, Video, Download, Info, Layers } from 'lucide-react';
 import { format, parse } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enUS } from 'date-fns/locale';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DateRange } from "react-day-picker";
@@ -60,6 +60,7 @@ const STEP = {
 
 export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSettings, deliverySettings, locations }: WizardBotFlowProps) {
   const { t, locale } = useI18n();
+  const dateLocale = locale === 'en' ? enUS : fr;
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -1119,7 +1120,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 flex flex-col gap-6 w-full max-w-md mx-auto">
                       <div className="space-y-4">
                         <div className="flex flex-col gap-2">
-                          <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Dates de l'événement</label>
+                          <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{locale === 'en' ? "Event Dates" : "Dates de l'événement"}</label>
                           <button
                             onClick={() => setIsCalendarOpen(true)}
                             className="w-full h-16 rounded-2xl border-2 border-slate-100 bg-slate-50/50 hover:bg-white hover:border-[#B3E140] transition-all flex items-center px-5 gap-4 group"
@@ -1130,17 +1131,17 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             <div className="flex flex-col items-start">
                               <span className="text-sm font-black text-slate-800">
                                 {configState.rentalStartDate && configState.rentalEndDate
-                                  ? `${format(new Date(configState.rentalStartDate), 'dd MMM yyyy', { locale: fr })} - ${format(new Date(configState.rentalEndDate), 'dd MMM yyyy', { locale: fr })}`
-                                  : "Choisir les dates"}
+                                  ? `${format(new Date(configState.rentalStartDate), 'dd MMM yyyy', { locale: dateLocale })} - ${format(new Date(configState.rentalEndDate), 'dd MMM yyyy', { locale: dateLocale })}`
+                                  : (locale === 'en' ? "Choose dates" : "Choisir les dates")}
                               </span>
-                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Cliquer pour ouvrir le calendrier</span>
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{locale === 'en' ? "Click to open calendar" : "Cliquer pour ouvrir le calendrier"}</span>
                             </div>
                           </button>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="flex flex-col gap-2">
-                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Heure Début</label>
+                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{t('bot.startTime')}</label>
                             <button
                               onClick={() => {
                                 setTempTime({
@@ -1156,7 +1157,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             </button>
                           </div>
                           <div className="flex flex-col gap-2">
-                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Heure Fin</label>
+                            <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{t('bot.endTime')}</label>
                             <button
                               onClick={() => {
                                 setTempTime({
@@ -1179,7 +1180,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                         disabled={!configState.rentalStartDate || !configState.rentalEndDate}
                         className="w-full h-16 font-black rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black uppercase tracking-[0.1em] text-xs shadow-xl active:scale-95 transition-all mt-2"
                       >
-                        Confirmer la période <ArrowRight size={18} className="ml-2" />
+                        {locale === 'en' ? "Confirm period" : "Confirmer la période"} <ArrowRight size={18} className="ml-2" />
                       </Button>
                     </motion.div>
                   )}
@@ -1189,7 +1190,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                       <Input
                         type="number"
                         min={1}
-                        placeholder="Quantité..."
+                        placeholder={locale === 'en' ? "Quantity..." : "Quantité..."}
                         value={configState.quantity === undefined ? "" : configState.quantity}
                         onFocus={() => {
                           if (configState.quantity === 1) {
@@ -1212,52 +1213,52 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                   {step === STEP.DELIVERY && !isTyping && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl p-5 shadow-lg border border-slate-100 space-y-4">
                       <div className="flex items-center gap-2 text-slate-700 font-semibold">
-                        <MapPin size={18} className="text-[#0f766e]" /> Ville de livraison
+                        <MapPin size={18} className="text-[#0f766e]" /> {locale === 'en' ? "Delivery city" : "Ville de livraison"}
                       </div>
                       <select
                         className="w-full h-12 rounded-xl border border-slate-200 px-4 focus:outline-none focus:ring-2 focus:ring-[#0f766e] bg-white text-slate-800"
                         value={deliveryCityId}
                         onChange={(e) => setDeliveryCityId(e.target.value)}
                       >
-                        <option value="" disabled>Sélectionnez une ville...</option>
+                        <option value="" disabled>{locale === 'en' ? "Select a city..." : "Sélectionnez une ville..."}</option>
                         {locations?.villes?.map(city => (
                           <option key={city.id} value={city.id}>{city.name} ({city.postalCode})</option>
                         ))}
                       </select>
                       <Button onClick={handleDeliverySubmit} disabled={!deliveryCityId} className="w-full h-14 font-black rounded-xl bg-black hover:bg-[#B3E140] text-white hover:text-black uppercase tracking-wider text-xs shadow-xl active:scale-95 transition-all">
-                        Confirmer la ville <ArrowRight size={16} className="ml-2" />
+                        {locale === 'en' ? "Confirm city" : "Confirmer la ville"} <ArrowRight size={16} className="ml-2" />
                       </Button>
                     </motion.div>
                   )}
 
                   {step === STEP.FORM_COMPANY && !isTyping && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
-                      <Input placeholder="Nom de votre entreprise..." value={formCompany} onChange={e => setFormCompany(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormCompany()} className="h-12 rounded-2xl font-bold" />
+                      <Input placeholder={t('quoteForm.companyPlaceholder')} value={formCompany} onChange={e => setFormCompany(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormCompany()} className="h-12 rounded-2xl font-bold" />
                       <Button onClick={handleFormCompany} disabled={!formCompany.trim()} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"><ArrowRight size={20} /></Button>
                     </motion.div>
                   )}
                   {step === STEP.FORM_EMAIL && !isTyping && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
-                      <Input type="email" placeholder="votre@email.com..." value={formEmail} onChange={e => setFormEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormEmail()} className="h-12 rounded-2xl font-bold" />
+                      <Input type="email" placeholder={t('quoteForm.emailPlaceholder')} value={formEmail} onChange={e => setFormEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormEmail()} className="h-12 rounded-2xl font-bold" />
                       <Button onClick={handleFormEmail} disabled={!formEmail.includes('@')} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"><ArrowRight size={20} /></Button>
                     </motion.div>
                   )}
                   {step === STEP.FORM_PHONE && !isTyping && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
-                      <Input type="tel" placeholder="06 12 34 56 78..." value={formPhone} onChange={e => setFormPhone(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormPhone()} className="h-12 rounded-2xl font-bold" />
+                      <Input type="tel" placeholder={t('quoteForm.phonePlaceholder')} value={formPhone} onChange={e => setFormPhone(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormPhone()} className="h-12 rounded-2xl font-bold" />
                       <Button onClick={handleFormPhone} disabled={!formPhone.trim()} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"><ArrowRight size={20} /></Button>
                     </motion.div>
                   )}
                   {step === STEP.FORM_ADDRESS && !isTyping && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
-                      <Input placeholder="Adresse complète..." value={formAddress} onChange={e => setFormAddress(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormAddress()} className="h-12 rounded-2xl font-bold" />
+                      <Input placeholder={t('quoteForm.addressPlaceholder')} value={formAddress} onChange={e => setFormAddress(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormAddress()} className="h-12 rounded-2xl font-bold" />
                       <Button onClick={handleFormAddress} disabled={!formAddress.trim()} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"><ArrowRight size={20} /></Button>
                     </motion.div>
                   )}
                   {step === STEP.GENERATING && (
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center bg-white p-6 rounded-3xl shadow-lg border border-slate-100 gap-4">
                       <Loader2 size={32} className="animate-spin text-[#0f766e]" />
-                      <p className="font-bold text-slate-800 animate-pulse">Génération de votre devis PDF en cours...</p>
+                      <p className="font-bold text-slate-800 animate-pulse">{locale === 'en' ? "Generating your PDF quote..." : "Génération de votre devis PDF en cours..."}</p>
                     </motion.div>
                   )}
 
@@ -1300,9 +1301,9 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                     <div className="flex flex-col items-center gap-2">
                       <div className="w-12 h-1.5 bg-slate-100 rounded-full mb-2" />
                       <h3 className="text-lg font-black text-slate-800 uppercase tracking-widest text-center">
-                        Calendrier
+                        {locale === 'en' ? "Calendar" : "Calendrier"}
                       </h3>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Sélectionner les dates de l'événement</p>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{locale === 'en' ? "Select event dates" : "Sélectionner les dates de l'événement"}</p>
                     </div>
 
                     <div className="flex justify-center bg-slate-50/50 rounded-3xl p-2">
@@ -1322,7 +1323,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                           }
                         }}
                         numberOfMonths={1}
-                        locale={fr}
+                        locale={dateLocale}
                         className="bg-transparent"
                       />
                     </div>
@@ -1331,7 +1332,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                       onClick={() => setIsCalendarOpen(false)}
                       className="w-full h-14 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider shadow-xl active:scale-95 transition-all"
                     >
-                      Fermer le calendrier
+                      {locale === 'en' ? "Close calendar" : "Fermer le calendrier"}
                     </Button>
                   </motion.div>
                 </motion.div>

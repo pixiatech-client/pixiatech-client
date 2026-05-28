@@ -7,6 +7,7 @@ interface ChatWidgetConfig {
   avatarUrl?: string;
   entranceAnimation?: boolean;
   tooltipText?: string;
+  lang?: string;
 }
 
 // Configuration par défaut du Widget pointant directement vers votre vrai chatbot Lumi en production
@@ -15,7 +16,8 @@ const DEFAULT_CONFIG: Required<ChatWidgetConfig> = {
   iframeUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app/chat-widget',
   avatarUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app/robot-avatar.png',
   entranceAnimation: true,
-  tooltipText: 'Besoin d\'aide ? Discutons !'
+  tooltipText: 'Besoin d\'aide ? Discutons !',
+  lang: ''
 };
 
 class PixiatechChatWidget {
@@ -197,6 +199,17 @@ class PixiatechChatWidget {
     button?.classList.remove('open');
   }
 
+  private getLanguage(): 'en' | 'fr' {
+    if (this.config.lang === 'en' || this.config.lang === 'fr') {
+      return this.config.lang;
+    }
+    const htmlLang = document.documentElement.lang || '';
+    if (htmlLang.toLowerCase().startsWith('en')) {
+      return 'en';
+    }
+    return 'fr';
+  }
+
   private loadIframe() {
     const container = this.shadow?.querySelector('.chat-widget-iframe-container');
     const spinner = this.shadow?.querySelector('.chat-widget-spinner') as HTMLElement;
@@ -204,9 +217,21 @@ class PixiatechChatWidget {
 
     this.hasIframeLoaded = true;
 
+    // Detect language and append as search param
+    const detectedLang = this.getLanguage();
+    let iframeSrc = this.config.iframeUrl;
+    try {
+      const url = new URL(this.config.iframeUrl);
+      url.searchParams.set('lang', detectedLang);
+      iframeSrc = url.toString();
+    } catch (e) {
+      // Fallback in case of invalid URL
+      iframeSrc = this.config.iframeUrl + (this.config.iframeUrl.includes('?') ? '&' : '?') + 'lang=' + detectedLang;
+    }
+
     const iframe = document.createElement('iframe');
     iframe.className = 'chat-widget-iframe';
-    iframe.src = this.config.iframeUrl;
+    iframe.src = iframeSrc;
     // Autoriser les APIs courantes
     iframe.allow = 'camera; microphone; clipboard-read; clipboard-write; geolocation';
     iframe.title = 'Assistant Bot Lumi';
