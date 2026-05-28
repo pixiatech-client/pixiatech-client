@@ -3,7 +3,9 @@
 :host {
   --transition-speed: 0.4s;
   --transition-bezier: cubic-bezier(0.16, 1, 0.3, 1);
-  --button-size: 80px;
+  --button-size-closed: 120px;
+  --button-size-open: 56px;
+  --button-size: var(--button-size-closed);
   
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   box-sizing: border-box;
@@ -24,11 +26,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.3s var(--transition-bezier), opacity 0.3s var(--transition-bezier);
+  border-radius: 50%;
+  color: #ffffff;
+  transition: 
+    transform 0.4s var(--transition-bezier), 
+    opacity 0.4s var(--transition-bezier),
+    width 0.4s var(--transition-bezier),
+    height 0.4s var(--transition-bezier),
+    background-color 0.4s var(--transition-bezier),
+    box-shadow 0.4s var(--transition-bezier);
   transform: scale(0);
   opacity: 0;
   pointer-events: none;
   padding: 0;
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
 }
 
 .chat-widget-button.visible {
@@ -37,12 +48,46 @@
   pointer-events: auto;
 }
 
-.chat-widget-button:hover {
+.chat-widget-button.visible.open {
+  width: var(--button-size-open);
+  height: var(--button-size-open);
+  background-color: #1a1d21;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transform: scale(1) rotate(90deg);
+}
+
+.chat-widget-button:hover:not(.open) {
   transform: scale(1.08);
 }
 
-.chat-widget-button:active {
+.chat-widget-button:active:not(.open) {
   transform: scale(0.95);
+}
+
+.chat-widget-button.open:hover {
+  transform: scale(1.1) rotate(90deg);
+}
+
+.chat-widget-button.open:active {
+  transform: scale(0.9) rotate(90deg);
+}
+
+/* Conteneur d'Avatar */
+.chat-widget-avatar-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.4s var(--transition-bezier), opacity 0.3s var(--transition-bezier);
+  opacity: 1;
+  transform: scale(1);
+}
+
+.chat-widget-button.open .chat-widget-avatar-container {
+  opacity: 0;
+  transform: scale(0);
+  pointer-events: none;
 }
 
 /* Image du Robot Lumi */
@@ -55,8 +100,29 @@
   -webkit-user-drag: none;
 }
 
+/* Icône fermer */
+.chat-widget-close-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.4s var(--transition-bezier), opacity 0.3s var(--transition-bezier);
+  opacity: 0;
+  transform: scale(0) rotate(-90deg);
+  color: #ffffff;
+}
+
+.chat-widget-button.open .chat-widget-close-icon {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
 /* Animation de flottaison douce du Robot */
-.chat-widget-button.visible:not(.open) .chat-widget-avatar {
+.chat-widget-button.visible:not(.open) .chat-widget-avatar-container {
   animation: float-lumi 4s ease-in-out infinite;
 }
 
@@ -111,11 +177,11 @@
 /* Modal Popup contenant l'iframe */
 .chat-widget-modal {
   position: fixed;
-  bottom: calc(var(--button-size) + 36px);
+  bottom: 96px;
   right: 24px;
   width: 420px;
   height: 640px;
-  max-height: calc(100vh - var(--button-size) - 60px);
+  max-height: calc(100vh - 120px);
   background-color: #ffffff;
   border-radius: 24px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
@@ -222,12 +288,17 @@
 /* Responsiveness Mobile */
 @media (max-width: 480px) {
   :host {
-    --button-size: 70px;
+    --button-size-closed: 96px;
+    --button-size: var(--button-size-closed);
   }
 
   .chat-widget-button {
     bottom: 16px;
     right: 16px;
+  }
+
+  .chat-widget-button.open {
+    display: none; /* Cache le bouton flottant sur mobile s'il est ouvert car la popup prend tout l'écran */
   }
   
   .left-positioned .chat-widget-button {
@@ -236,7 +307,7 @@
   }
   
   .chat-widget-tooltip {
-    bottom: calc(var(--button-size) + 28px);
+    bottom: calc(var(--button-size) + 16px);
     right: 16px;
   }
   

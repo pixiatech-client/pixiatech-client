@@ -22,7 +22,7 @@ export function LayoutProvider({
 }>) {
   const pathname = usePathname();
   const isAdminPage = pathname.startsWith('/admin');
-  const isEmbedPage = pathname.startsWith('/embed');
+  const isEmbedPage = pathname.startsWith('/embed') || pathname.startsWith('/chat-widget');
   const isQuotePage = pathname.startsWith('/quote');
 
   return (

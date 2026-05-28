@@ -12,7 +12,7 @@ interface ChatWidgetConfig {
 // Configuration par défaut du Widget pointant directement vers votre vrai chatbot Lumi en production
 const DEFAULT_CONFIG: Required<ChatWidgetConfig> = {
   position: 'right',
-  iframeUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app',
+  iframeUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app/chat-widget',
   avatarUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app/robot-avatar.png',
   entranceAnimation: true,
   tooltipText: 'Besoin d\'aide ? Discutons !'
@@ -97,7 +97,15 @@ class PixiatechChatWidget {
 
       <!-- Bouton Flottant (Robot Lumi) -->
       <button class="chat-widget-button" aria-label="Discuter avec Lumi">
-        <img class="chat-widget-avatar" src="${this.config.avatarUrl}" alt="Lumi Avatar" />
+        <div class="chat-widget-avatar-container">
+          <img class="chat-widget-avatar" src="${this.config.avatarUrl}" alt="Lumi Avatar" />
+        </div>
+        <div class="chat-widget-close-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </div>
       </button>
 
       <!-- Modal Popup (Iframe uniquement) -->
