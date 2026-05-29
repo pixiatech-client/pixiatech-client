@@ -62,7 +62,12 @@ import {
   LayoutGrid,
   Eye,
   Monitor,
-  Cpu
+  Cpu,
+  Settings2,
+  Activity,
+  Layers,
+  Smartphone,
+  Tv
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { jsPDF } from 'jspdf';
@@ -72,7 +77,8 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase/config';
 import { QuotePDF } from '@/app/admin/quote-pdf';
 import { updateQuoteStatus, getPdfSettings, updateQuotePdfUrl } from '@/app/admin/actions';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 import {
   ProfileType,
   Estimation,
@@ -123,6 +129,41 @@ interface DetailsAppProps {
 export default function DetailsApp({ initialEstimation, allProducts = [], allProductSpecs = {}, startOpen = false, onClose, suppliers = [], onStatusChange }: DetailsAppProps) {
   const { userProfile } = useUser();
   const [profile, setProfile] = useState<ProfileType>('client');
+
+  const firestore = useFirestore();
+  const charsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'characteristics'), orderBy('name')) : null, [firestore]);
+  const { data: characteristics } = useCollection<any>(charsQuery, { suppressPermissionError: true });
+
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case 'écran':
+        return Monitor;
+      case 'distance':
+        return Eye;
+      case 'puissance':
+        return Zap;
+      case 'luminosité':
+        return Sun;
+      case 'pixel':
+        return LayoutGrid;
+      case 'résolution':
+        return Maximize2;
+      case 'paramètres':
+        return Settings;
+      case 'activité':
+        return Activity;
+      case 'processeur':
+        return Cpu;
+      case 'couches':
+        return Layers;
+      case 'mobile':
+        return Smartphone;
+      case 'télévision':
+        return Tv;
+      default:
+        return Settings;
+    }
+  };
 
   // Auto-switch to supplier profile if the user is a supplier
   useEffect(() => {
@@ -1397,7 +1438,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 const powerAvg = powerMax * 0.35;
                                 const amps = Math.ceil((powerMax * 1000) / 230 / 3);
 
-                                return [
+                                const baseSpecs = [
                                   { label: "SURFACE TOTALE", value: `${area.toFixed(2)} m²`, icon: <Maximize2 size={16} />, color: "text-blue-400", bgColor: "bg-blue-400/10" },
                                   { label: "RÉSOLUTION", value: `${resX} x ${resY} pixels`, icon: <Monitor size={16} />, color: "text-violet-400", bgColor: "bg-violet-400/10" },
                                   { label: "NOMBRE DE MODULES LED", value: modules.toString(), icon: <Cpu size={16} />, color: "text-fuchsia-400", bgColor: "bg-fuchsia-400/10" },
@@ -1408,7 +1449,28 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   { label: "ENVIRONNEMENT", value: environment, icon: <Sun size={16} />, color: "text-teal-400", bgColor: "bg-teal-400/10" },
                                   { label: "DISTANCE DE VISIONNAGE", value: visionDistance, icon: <Eye size={16} />, color: "text-cyan-400", bgColor: "bg-cyan-400/10" },
                                   { label: "PIXEL PITCH", value: pixelPitchStr, icon: <LayoutGrid size={16} />, color: "text-red-400", bgColor: "bg-red-400/10" },
-                                ].map((spec, idx) => (
+                                ];
+
+                                const globalProduct = allProducts?.find(prod => prod.id === (p.productId || p.id));
+                                const customSpecs: any[] = [];
+                                if (globalProduct && (globalProduct as any).selectedChars && characteristics) {
+                                  const skippedNames = ['pixel pitch', 'distance de visionnage', 'puissance maximale', 'environnement'];
+                                  (globalProduct as any).selectedChars.forEach((sc: any) => {
+                                    const charDef = characteristics.find(c => String(c.id) === String(sc.id));
+                                    if (charDef && !skippedNames.includes(charDef.name?.toLowerCase())) {
+                                      const IconComponent = getIconComponent(charDef.iconName) || Settings;
+                                      customSpecs.push({
+                                        label: charDef.name.toUpperCase(),
+                                        value: sc.value || 'N/A',
+                                        icon: <IconComponent size={16} />,
+                                        color: charDef.color || "text-slate-400",
+                                        bgColor: (charDef.color || "text-slate-400").replace('text-', 'bg-') + "/10"
+                                      });
+                                    }
+                                  });
+                                }
+
+                                return [...baseSpecs, ...customSpecs].map((spec, idx) => (
                                   <TechnicalSpec
                                     key={idx}
                                     icon={spec.icon}

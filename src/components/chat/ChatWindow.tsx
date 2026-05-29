@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, MoreVertical, Ban, Paperclip, Video, Mic, Send, Mail, Image as ImageIcon, Trash2, StopCircle, Play, Pause, Search, Shield, Users, ChevronLeft, Phone, MessageSquare, Settings, UserX, Bell, BellOff, Eye, EyeOff, ShieldOff, ChevronDown } from 'lucide-react';
+import { X, MoreVertical, Ban, Paperclip, Video, Mic, Send, Mail, Image as ImageIcon, Trash2, StopCircle, Play, Pause, Search, Shield, Users, ChevronLeft, Phone, MessageSquare, Settings, UserX, Bell, BellOff, Eye, EyeOff, ShieldOff, ChevronDown, FileText } from 'lucide-react';
 import { doc, updateDoc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp, getDoc, getDocs, deleteDoc, increment, arrayUnion, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore as db, storage } from '@/firebase/config';
@@ -29,6 +29,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [otherUser, setOtherUser] = useState<UserProfile | null>(null);
+  const [chat, setChat] = useState<Chat | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const isMobile = useMediaQuery('(max-width: 1024px)');
   const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: 'image' | 'video' } | null>(null);
@@ -306,6 +307,13 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
     };
     fetchOtherUser();
 
+    // Subscribe to chat document
+    const unsubscribeChat = onSnapshot(doc(db, 'chats', chatId), (snap) => {
+      if (snap.exists()) {
+        setChat({ id: snap.id, ...snap.data() } as Chat);
+      }
+    });
+
     // Subscribe to messages
     const q = query(
       collection(db, 'chats', chatId, 'messages'),
@@ -329,6 +337,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
 
     return () => {
       unsubscribe();
+      unsubscribeChat();
       if (unsubOtherUser) unsubOtherUser();
     };
   }, [chatId, currentUser.uid]);
@@ -854,9 +863,20 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
                 )}
               </div>
             </div>
-            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
-              {otherUser?.isOnline && !isUserBlocked ? 'En ligne maintenant' : 'Hors ligne'}
-            </p>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+                {otherUser?.isOnline && !isUserBlocked ? 'En ligne maintenant' : 'Hors ligne'}
+              </p>
+              {chat?.quoteNumber && (
+                <>
+                  <span className="text-white/20 text-xs hidden md:inline">•</span>
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-[#10b981] uppercase tracking-wider shrink-0">
+                    <FileText size={10} className="text-[#10b981]" />
+                    <span>Estimation #{chat.quoteNumber}</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 

@@ -38,7 +38,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit, where, onSnapshot } from 'firebase/firestore';
 import { Quote, QuoteStatus, Activity, UserRole, User as UserType } from './types';
-import { moveQuotesToTrash, resetPerformancePoints, getSettings } from '@/app/admin/actions';
+import { moveQuotesToTrash, resetPerformancePoints, resetConfiguratorStats, getSettings } from '@/app/admin/actions';
 import { useToast } from '@/hooks/use-toast';
 import { X, Check } from 'lucide-react';
 import { translateStatus } from '../../../../lib/utils';
@@ -106,6 +106,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
     }
   };
 
+  const handleResetConfiguratorStats = async () => {
+    if (!window.confirm('Voulez-vous vraiment réinitialiser les compteurs des méthodes de configuration à zéro ?')) return;
+    
+    const res = await resetConfiguratorStats();
+    if (res.success) {
+      toast({
+        title: "Compteurs réinitialisés",
+        description: "Les compteurs des méthodes de configuration ont été remis à zéro.",
+      });
+      const newSettings = await getSettings();
+      setPerformanceSettings(newSettings);
+    } else {
+      toast({
+        title: "Erreur",
+        description: res.error,
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleDelete = async (quoteId: string) => {
     if (!window.confirm('Voulez-vous vraiment mettre cette estimation à la corbeille ?')) return;
     
@@ -154,6 +174,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
       archive: allQuotesRaw.filter(q => q.status === 'archive').length,
     };
   }, [allQuotesRaw]);
+
+  const configuratorStats = useMemo(() => {
+    if (!allQuotesRaw) return { guided: 0, manual: 0, lumi: 0 };
+    
+    const resetDateStr = performanceSettings?.configuratorStatsResetAt;
+    const resetDate = resetDateStr ? new Date(resetDateStr) : new Date(0);
+
+    const filteredQuotes = allQuotesRaw.filter(q => {
+      const qDate = q.createdAt?.toDate ? q.createdAt.toDate() : new Date(q.createdAt);
+      return qDate >= resetDate;
+    });
+
+    return {
+      guided: filteredQuotes.filter(q => q.configuratorType === 'guided').length,
+      manual: filteredQuotes.filter(q => q.configuratorType === 'manual').length,
+      lumi: filteredQuotes.filter(q => q.configuratorType === 'lumi').length,
+    };
+  }, [allQuotesRaw, performanceSettings]);
 
   const topCommercials = useMemo(() => {
     if (!allUsers || !allQuotesRaw) return [];
@@ -855,47 +893,57 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
         </div>
       </div>
 
-      <div className="w-full lg:w-[320px] space-y-8">
-        <div className={`hidden md:block p-6 rounded-[2rem] border text-center relative transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
-          <div className="absolute top-6 right-6 flex items-center gap-1">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">En ligne</span>
-          </div>
-          <div className="relative inline-block mb-4">
-            {userAvatar ? (
-              <img 
-                src={userAvatar} 
-                alt="Profile" 
-                className="w-20 h-20 rounded-full border-4 border-white dark:border-white/10 shadow-xl mx-auto object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-full border-4 border-white dark:border-white/10 shadow-xl mx-auto bg-blue-600 flex items-center justify-center text-white font-bold text-2xl">
-                {userName?.charAt(0)?.toUpperCase() || '?'}
-              </div>
+      <div className="w-full lg:w-[320px] space-y-8 lg:pt-[88px]">
+        <div className={`hidden md:block p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-blue-500" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold">Méthodes de configuration</h3>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest">Utilisation globale</p>
+            </div>
+            {(rawRole === 'admin' || userRole === 'admin' || userRole === 'Administrateur') && (
+              <button
+                onClick={handleResetConfiguratorStats}
+                className={`p-2 rounded-lg transition-colors ${isDark ? 'text-gray-400 hover:text-red-400 hover:bg-red-500/10' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+                title="Réinitialiser les compteurs à zéro"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
             )}
           </div>
-          <h3 className="text-lg font-bold">{userName || 'Utilisateur'}</h3>
-          <p className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{userRole || 'Administrateur'}</p>
           
-          <div className="flex items-center justify-center gap-4 mt-6">
-            <button 
-              onClick={onOpenChat}
-              className={`p-2.5 rounded-xl transition-all relative ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-50 hover:bg-gray-100'}`}
-            >
-              <MessageSquare className="w-4 h-4 text-gray-400" />
-              {unreadMessagesCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-[#141414]">
-                  {unreadMessagesCount}
-                </span>
-              )}
-            </button>
-            <button className={`p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-50 hover:bg-gray-100'}`}>
-              <Bell className="w-4 h-4 text-gray-400" />
-            </button>
-            <button className={`p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-50 hover:bg-gray-100'}`}>
-              <Share2 className="w-4 h-4 text-gray-400" />
-            </button>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-yellow-500/10 to-transparent border border-yellow-500/20 hover:scale-[1.02] transition-transform">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center">
+                  <span className="text-yellow-500 text-lg">⚡</span>
+                </div>
+                <span className="text-sm font-bold">Guidé</span>
+              </div>
+              <span className="text-lg font-black text-yellow-600 dark:text-yellow-500">{configuratorStats.guided}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-blue-500/10 to-transparent border border-blue-500/20 hover:scale-[1.02] transition-transform">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <span className="text-blue-500 text-lg">⚙️</span>
+                </div>
+                <span className="text-sm font-bold">Manuel</span>
+              </div>
+              <span className="text-lg font-black text-blue-600 dark:text-blue-500">{configuratorStats.manual}</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-purple-500/10 to-transparent border border-purple-500/20 hover:scale-[1.02] transition-transform">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                  <span className="text-purple-500 text-lg">🤖</span>
+                </div>
+                <span className="text-sm font-bold">Lumi</span>
+              </div>
+              <span className="text-lg font-black text-purple-600 dark:text-purple-500">{configuratorStats.lumi}</span>
+            </div>
           </div>
         </div>
 

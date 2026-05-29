@@ -4,8 +4,10 @@ import React from 'react';
 import { Product } from '@/lib/types';
 import { ConfigState } from '@/lib/configurator-wizard-types';
 import { cn } from '@/lib/utils';
-import { Check, X, Maximize, Zap, Shield, Sun, Eye, Ruler } from 'lucide-react';
+import { Check, X, Maximize, Zap, Shield, Sun, Eye, Ruler, Settings2, Activity, Cpu, Layers, Smartphone, Tv } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 interface ProductComparatorProps {
   products: Product[];
@@ -18,6 +20,41 @@ interface ProductComparatorProps {
 
 export function ProductComparator({ products, configState, onSelect, selectedProductId, onClose, locale = 'fr' }: ProductComparatorProps) {
   const area = configState.width * configState.height;
+
+  const firestore = useFirestore();
+  const charsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'characteristics'), orderBy('name')) : null, [firestore]);
+  const { data: characteristics } = useCollection<any>(charsQuery, { suppressPermissionError: true });
+
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case 'écran':
+        return Monitor;
+      case 'distance':
+        return Eye;
+      case 'puissance':
+        return Zap;
+      case 'luminosité':
+        return Sun;
+      case 'pixel':
+        return Grid3X3;
+      case 'résolution':
+        return Maximize;
+      case 'paramètres':
+        return Settings2;
+      case 'activité':
+        return Activity;
+      case 'processeur':
+        return Cpu;
+      case 'couches':
+        return Layers;
+      case 'mobile':
+        return Smartphone;
+      case 'télévision':
+        return Tv;
+      default:
+        return Settings2;
+    }
+  };
 
   const getPitchValue = (pitch: string | undefined) => parseFloat(String(pitch).replace('P', '')) || 0;
 
@@ -122,6 +159,27 @@ export function ProductComparator({ products, configState, onSelect, selectedPro
     }
   ];
 
+  const customFeatures = React.useMemo(() => {
+    if (!characteristics) return [];
+    const skippedNames = ['pixel pitch', 'distance de visionnage', 'puissance maximale', 'environnement'];
+    return characteristics
+      .filter(char => !skippedNames.includes(char.name?.toLowerCase()))
+      .map(char => {
+        const IconComponent = getIconComponent(char.iconName);
+        return {
+          id: char.id,
+          label: char.name.toUpperCase(),
+          icon: <IconComponent className="w-4 h-4 text-slate-500" />,
+          getValue: (p: Product) => {
+            const sc = p.selectedChars?.find((c: any) => String(c.id) === String(char.id));
+            return sc ? sc.value : 'N/A';
+          }
+        };
+      });
+  }, [characteristics]);
+
+  const allFeatures = [...features, ...customFeatures];
+
   return (
     <div className="w-full h-full bg-white flex flex-col">
       {/* Header */}
@@ -183,8 +241,8 @@ export function ProductComparator({ products, configState, onSelect, selectedPro
 
           {/* Features Rows */}
           <div className="bg-white">
-            {features.map((feature, idx) => (
-              <div key={feature.id} className={cn("flex hover:bg-slate-50 transition-colors", idx !== features.length - 1 && "border-b border-slate-100")}>
+            {allFeatures.map((feature, idx) => (
+              <div key={feature.id} className={cn("flex hover:bg-slate-50 transition-colors", idx !== allFeatures.length - 1 && "border-b border-slate-100")}>
                 <div className="w-64 shrink-0 p-4 px-6 flex items-center gap-3 border-r border-slate-100 bg-[#fafafa]">
                   {feature.icon}
                   <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">{feature.label}</span>

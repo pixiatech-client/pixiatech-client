@@ -66,9 +66,13 @@ export default function MessagesPage() {
     });
   }, [user?.uid]);
 
-  const handleStartChat = async (userId: string) => {
+  const handleStartChat = async (userId: string, quoteId?: string, quoteNumber?: string) => {
     if (!user) return;
-    const existing = chats.find(c => c.participants.includes(userId) && c.participants.includes(user.uid));
+    const existing = chats.find(c => 
+      c.participants.includes(userId) && 
+      c.participants.includes(user.uid) && 
+      (quoteId ? c.quoteId === quoteId : !c.quoteId)
+    );
     if (existing) {
       setActiveChatId(existing.id);
       return existing.id;
@@ -78,7 +82,8 @@ export default function MessagesPage() {
       lastMessage: '',
       lastMessageAt: serverTimestamp(),
       unreadCount: { [user.uid]: 0, [userId]: 0 },
-      isGroup: false
+      isGroup: false,
+      ...(quoteId ? { quoteId, quoteNumber } : {})
     });
     setActiveChatId(docRef.id);
     return docRef.id;
@@ -256,8 +261,8 @@ export default function MessagesPage() {
         )} style={{ width: isMobile ? '100%' : contactListWidth }}>
           <ContactList 
             users={allUsers} 
-            onSelectContact={async (uid) => {
-              const chatId = await handleStartChat(uid);
+            onSelectContact={async (uid, quote) => {
+              const chatId = await handleStartChat(uid, quote?.id, quote?.number);
               if (chatId && isMobile) setActiveMobileTab('chat');
             }} 
             currentUser={user}

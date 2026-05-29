@@ -31,11 +31,7 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
   // If on an auth page, render the minimal layout.
   // The middleware will handle redirecting away if the user is already logged in.
   if (isAuthPage) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-        {children}
-      </div>
-    );
+    return <>{children}</>;
   }
 
   // If on a protected admin page and there is a non-anonymous user, show admin content.

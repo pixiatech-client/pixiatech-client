@@ -175,21 +175,23 @@ export function UserManager() {
 
   const handleApproveUser = async (id: string) => {
     try {
-      await updateUser({ uid: id, status: 'approved' });
-      setUsers(prev => prev.map(u => u.uid === id ? { ...u, status: 'approved' as any } : u));
+      const result = await updateUser({ uid: id, status: 'approved' });
+      if (!result.success) throw new Error(result.error);
       toast.success('Utilisateur approuvé avec succès.');
-    } catch (error) {
-      toast.error('Impossible d\'approuver l\'utilisateur.');
+      await fetchUsers();
+    } catch (error: any) {
+      toast.error(error.message || 'Impossible d\'approuver l\'utilisateur.');
     }
   };
 
   const handleSuspendUser = async (id: string) => {
     try {
-      await updateUser({ uid: id, status: 'suspended' });
-      setUsers(prev => prev.map(u => u.uid === id ? { ...u, status: 'suspended' as any } : u));
+      const result = await updateUser({ uid: id, status: 'suspended' });
+      if (!result.success) throw new Error(result.error);
       toast.success('Utilisateur suspendu.');
-    } catch (error) {
-      toast.error('Impossible de suspendre l\'utilisateur.');
+      await fetchUsers();
+    } catch (error: any) {
+      toast.error(error.message || 'Impossible de suspendre l\'utilisateur.');
     }
   };
 
@@ -202,13 +204,36 @@ export function UserManager() {
   const handleSaveUser = async (data: User) => {
     try {
       if (isAddMode) {
+        const tempPassword = Math.random().toString(36).slice(-8) + 'Ab1!';
         const result = await registerUser({
           email: data.email,
-          password: '',
+          password: tempPassword,
           displayName: data.name,
           phone: data.phone,
         });
         if (!result.success) throw new Error(result.error);
+
+        // Immediately update with role and status chosen by the admin
+        const fbRole = data.role; // Now role is the ID directly
+        const fbRoleTemplate = getRoleTemplate(fbRole);
+        const fbStatus = data.status === UserStatus.APPROUVE ? 'approved'
+          : data.status === UserStatus.EN_ATTENTE ? 'pending'
+          : data.status === UserStatus.SUSPENDU ? 'suspended'
+          : 'pending';
+
+        const updateResult = await updateUser({
+          uid: (result as any).uid,
+          displayName: data.name,
+          phone: data.phone,
+          description: data.description,
+          photoURL: data.avatar,
+          backgroundImage: data.backgroundImage,
+          role: fbRole,
+          roleTemplate: fbRoleTemplate,
+          status: fbStatus as any,
+        });
+        if (!updateResult.success) throw new Error(updateResult.error);
+
         toast.success('Utilisateur créé avec succès.');
         await fetchUsers();
       } else {
@@ -219,7 +244,7 @@ export function UserManager() {
           : data.status === UserStatus.SUSPENDU ? 'suspended'
           : 'pending';
 
-        await updateUser({
+        const updateResult = await updateUser({
           uid: data.id,
           displayName: data.name,
           phone: data.phone,
@@ -231,21 +256,11 @@ export function UserManager() {
           status: fbStatus as any,
         });
 
-        setUsers(prev => prev.map(u => u.uid === data.id
-          ? {
-              ...u,
-              displayName: data.name,
-              phone: data.phone,
-              description: data.description,
-              photoURL: data.avatar,
-              backgroundImage: data.backgroundImage,
-              role: fbRole,
-              roleTemplate: fbRoleTemplate,
-              status: fbStatus as any,
-            }
-          : u
-        ));
+        if (!updateResult.success) throw new Error(updateResult.error || 'Erreur lors de la mise à jour.');
+
         toast.success('Profil mis à jour avec succès.');
+        // Re-fetch from Firestore to ensure data is fresh
+        await fetchUsers();
       }
     } catch (error: any) {
       toast.error(error.message || 'Une erreur est survenue.');

@@ -436,6 +436,7 @@ export function QuoteBuilder({
             lang: locale,
             sitePhoto: activeConfiguredProduct?.installationPhoto,
             taxRate: 0,
+            configuratorType: activeMode === 'wizard' ? 'guided' : 'manual',
         };
     }, [
         baseQuote,
@@ -453,6 +454,7 @@ export function QuoteBuilder({
         selectedCityId,
         unconfiguredCityQuery,
         locale,
+        activeMode,
         calculateLineTotal,
     ]);
 
@@ -602,7 +604,7 @@ export function QuoteBuilder({
 
         if (originalStep === 1) {
             if (activeMode === 'selection') {
-                return <ConfiguratorModeSelection onSelectMode={handleModeSelect} />;
+                return <ConfiguratorModeSelection onSelectMode={handleModeSelect} settings={initialSettings} />;
             }
             if (activeMode === 'wizard') {
                 return <ConfiguratorWizard onComplete={handleWizardComplete} onBack={handleGoToModeSelection} allProducts={allProducts} settings={initialSettings} wizardSettings={wizardSettings} initialStep={initialWizardStep} />;

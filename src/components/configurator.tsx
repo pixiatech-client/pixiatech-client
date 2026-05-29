@@ -332,6 +332,7 @@ export function Configurator({
 
   const getFilteredProductsForLine = useCallback((transactionType: 'sale' | 'rental', productType: ('indoor'|'outdoor'|'showcase')) => {
       return allProducts.filter(p => 
+          !p.isHidden &&
           p.availableFor.includes(transactionType) &&
           p.type.includes(productType)
       );

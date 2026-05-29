@@ -199,6 +199,9 @@ export default function ChatList({
               
               await batch.commit();
               console.log("Chat deleted successfully");
+              if (activeChatId === chatToDelete.id) {
+                onChatSelect(null as any);
+              }
             } catch (error) {
               console.error("Error deleting chat:", error);
             } finally {
@@ -355,12 +358,19 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
       
       <div className="flex-1 text-left min-w-0">
         <div className="flex items-center justify-between mb-0.5">
-          <span className={cn(
-            "font-bold truncate text-sm transition-colors",
-            isBlocked ? "text-red-500" : isBlockedByOther ? "text-gray-400" : (isActive ? "text-white" : "text-[#1a1d21]"),
-            "group-hover:text-white"
-          )}>{otherUser.displayName}</span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+            <span className={cn(
+              "font-bold truncate text-sm transition-colors",
+              isBlocked ? "text-red-500" : isBlockedByOther ? "text-gray-400" : (isActive ? "text-white" : "text-[#1a1d21]"),
+              "group-hover:text-white"
+            )}>{otherUser.displayName}</span>
+            {chat.quoteNumber && (
+              <span className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-black text-[#10b981] uppercase tracking-wider">
+                #{chat.quoteNumber}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
             {isBlockedByOther && (
               <span className="text-[8px] font-black uppercase text-gray-400 tracking-wider px-1.5 py-0.5 bg-gray-100 rounded-full border border-gray-200">
                 Bloqué

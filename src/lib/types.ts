@@ -34,6 +34,7 @@ export type Product = {
   availableFor: ('sale' | 'rental')[];
   productUrl?: string;
   videoUrl?: string;
+  oldPrice?: number;
   salePricePerSqM?: number;
   rentalPricePerDay?: number;
   rentalPricePerHour?: number;
@@ -52,6 +53,8 @@ export type Product = {
   specSheetUrl?: string;
   manualUrl?: string;
   specs?: Record<string, string>;
+  selectedChars?: { id: string | number; name?: string; value: string }[];
+  isHidden?: boolean;
 };
 
 export type ProductSpec = {
@@ -120,6 +123,7 @@ export type QuoteDetails = {
   lang: 'fr' | 'en';
   sitePhoto?: string;
   taxRate?: number;
+  configuratorType?: 'guided' | 'manual' | 'lumi';
   // Screen layout propagated from wizard
   screenLayout?: ScreenLayout;
   isCurved?: boolean;
@@ -176,6 +180,8 @@ export type Settings = {
   isEmailVerificationEnabled?: boolean;
   isPriceHidden?: boolean;
   isWizardBotEnabled?: boolean;
+  isGuidedConfigEnabled?: boolean;
+  isManualConfigEnabled?: boolean;
   hintBubble?: HintBubbleSettings;
   lightThemeId?: string;
   darkThemeId?: string;
@@ -188,6 +194,7 @@ export type Settings = {
   };
   messaging?: MessagingSettings;
   performanceResetAt?: string;
+  configuratorStatsResetAt?: string;
 };
 
 export type City = {
@@ -344,6 +351,7 @@ export type QuoteRequest = Omit<QuoteDetails, 'products' | 'rentalPeriod'> & {
   returnReason?: string;
   previousStatus?: string | null;
   isLocked?: boolean;
+  configuratorType?: 'guided' | 'manual' | 'lumi';
 };
 
 export type Theme = {
@@ -456,6 +464,8 @@ export interface Chat {
   unreadCount: Record<string, number>;
   isGroup?: boolean;
   groupName?: string;
+  quoteId?: string;
+  quoteNumber?: string;
 }
 
 export interface AdminSettings {

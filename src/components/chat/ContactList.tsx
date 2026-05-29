@@ -1,18 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, User, Shield, MessageSquare, MoreVertical, Ban, BellOff, Trash2, CheckCircle2, UserX, EyeOff, Link2Off, X, Calendar, Info, Edit3, Eye, MessageCircle, UserMinus, Pin } from 'lucide-react';
-import { UserProfileChat as UserProfile } from '@/lib/types';
+import { Search, User, Shield, MessageSquare, MoreVertical, Ban, BellOff, Trash2, CheckCircle2, UserX, EyeOff, Link2Off, X, Calendar, Info, Edit3, Eye, MessageCircle, UserMinus, Pin, FileText } from 'lucide-react';
+import { UserProfileChat as UserProfile, QuoteRequest } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { firestore as db } from '@/firebase/config';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useRoles } from '@/contexts/RoleContext';
 
 interface ContactListProps {
   users: UserProfile[];
-  onSelectContact: (userId: string) => void;
+  onSelectContact: (userId: string, quote?: QuoteRequest) => void;
   currentUser: UserProfile;
   isMiniChat?: boolean;
   isCollapsed?: boolean;
@@ -41,6 +41,43 @@ export default function ContactList({
   const [selectedExclusionUserId, setSelectedExclusionUserId] = useState<string | null>(null);
   const [editingReasonId, setEditingReasonId] = useState<string | null>(null);
   const [activeSwipeId, setActiveSwipeId] = useState<string | null>(null);
+  const [quoteSelectorConfig, setQuoteSelectorConfig] = useState<{
+    isOpen: boolean;
+    contactUid: string;
+    quotes: QuoteRequest[];
+  }>({
+    isOpen: false,
+    contactUid: '',
+    quotes: []
+  });
+
+  const handleContactClick = async (clickedUser: UserProfile) => {
+    const isProvider = clickedUser.role === 'prestataire' || currentUser.role === 'prestataire';
+    const providerUid = clickedUser.role === 'prestataire' ? clickedUser.uid : currentUser.uid;
+    
+    if (isProvider) {
+      try {
+        const quotesRef = collection(db, 'quotes');
+        const q = query(quotesRef, where('supplierId', '==', providerUid));
+        const snap = await getDocs(q);
+        const fetchedQuotes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as QuoteRequest));
+        
+        if (fetchedQuotes.length > 0) {
+          setQuoteSelectorConfig({
+            isOpen: true,
+            contactUid: clickedUser.uid,
+            quotes: fetchedQuotes
+          });
+          return;
+        }
+      } catch (error) {
+        console.error("Error fetching quotes:", error);
+      }
+    }
+    
+    onSelectContact(clickedUser.uid);
+  };
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const { roles, getRoleName, getRoleColor } = useRoles();
 
@@ -287,7 +324,7 @@ export default function ContactList({
                         user={user} 
                         currentUser={currentUser}
                         isSelected={selectedUsers.includes(user.uid)}
-                        onSelect={() => selectedUsers.length === 0 ? onSelectContact(user.uid) : toggleSelect(user.uid, {} as any)}
+                        onSelect={() => selectedUsers.length === 0 ? handleContactClick(user) : toggleSelect(user.uid, {} as any)}
                         toggleSelect={toggleSelect}
                         onContextMenu={(e: any) => {
                           if (currentUser.role === 'admin') {
@@ -328,6 +365,19 @@ export default function ContactList({
                                 <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-8 cursor-grab active:cursor-grabbing" />
                               )}
                               
+                              <button 
+                                onClick={() => {
+                                  handleContactClick(user);
+                                  setContextMenuUser(null);
+                                }} 
+                                className="w-full flex items-center gap-4 p-4 rounded-2xl text-[#10b981] hover:bg-emerald-500/10 transition-all text-base font-bold"
+                              >
+                                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                                  <MessageSquare size={22} className="text-[#10b981]" />
+                                </div>
+                                <span>Démarres une nouvelle discussion</span>
+                              </button>
+                              
                               <button onClick={() => handleAction('annoying', user.uid)} className="w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-base font-bold text-gray-300 hover:bg-white/5">
                                 <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
                                   <UserMinus size={22} />
@@ -360,6 +410,112 @@ export default function ContactList({
           })}
         </AnimatePresence>
       </div>
+
+      {/* Quote Selector Modal */}
+      <AnimatePresence>
+        {quoteSelectorConfig.isOpen && (
+          <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setQuoteSelectorConfig(prev => ({ ...prev, isOpen: false }))}
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-lg bg-[#0f1113] border border-white/10 rounded-[32px] overflow-hidden shadow-[0_32px_64px_rgba(0,0,0,0.8)] z-10"
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-white/5 bg-emerald-500/5">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
+                    <MessageSquare size={24} className="text-[#10b981]" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-black text-white leading-none mb-1">Sélectionner une estimation</h3>
+                    <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">Lier la discussion à un dossier</p>
+                  </div>
+                  <button
+                    onClick={() => setQuoteSelectorConfig(prev => ({ ...prev, isOpen: false }))}
+                    className="h-10 w-10 rounded-xl bg-white/5 text-white/40 hover:text-white transition-all flex items-center justify-center"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Quote list */}
+              <div className="p-4 max-h-80 overflow-y-auto custom-scrollbar space-y-2">
+                {/* General discussion option */}
+                <button
+                  onClick={() => {
+                    onSelectContact(quoteSelectorConfig.contactUid);
+                    setQuoteSelectorConfig(prev => ({ ...prev, isOpen: false }));
+                  }}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all text-left group"
+                >
+                  <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                    <MessageCircle size={20} className="text-white/60" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-sm">Discussion générale</p>
+                    <p className="text-[11px] text-white/40">Sans lien avec une estimation</p>
+                  </div>
+                </button>
+
+                {quoteSelectorConfig.quotes.map(q => {
+                  const statusColors: Record<string, string> = {
+                    pending: '#f59e0b', in_progress: '#3b82f6', sent: '#10b981',
+                    delivered: '#8b5cf6', processed: '#6b7280', trashed: '#ef4444',
+                    archived: '#6b7280', returned: '#ef4444'
+                  };
+                  const statusLabels: Record<string, string> = {
+                    pending: 'En attente', in_progress: 'En préparation', sent: 'Envoyée',
+                    delivered: 'Livrée', processed: 'Traitée', trashed: 'Supprimée',
+                    archived: 'Archivée', returned: 'Retournée'
+                  };
+                  const color = statusColors[q.status] || '#6b7280';
+                  const label = statusLabels[q.status] || q.status;
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => {
+                        onSelectContact(quoteSelectorConfig.contactUid, q);
+                        setQuoteSelectorConfig(prev => ({ ...prev, isOpen: false }));
+                      }}
+                      className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all text-left group"
+                    >
+                      <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: color + '20' }}>
+                        <FileText size={18} style={{ color }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <p className="font-black text-white text-sm">#{q.number || q.id.slice(0, 8)}</p>
+                          <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full" style={{ backgroundColor: color + '20', color }}>{label}</span>
+                        </div>
+                        <p className="text-xs text-white/50 truncate">{q.client?.companyName || 'Client inconnu'}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-black text-white">{q.totalQuote ? q.totalQuote.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '–'}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="p-4 border-t border-white/5 bg-black/30">
+                <p className="text-[10px] text-white/30 text-center font-medium">
+                  Chaque discussion liée à une estimation est indépendante
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

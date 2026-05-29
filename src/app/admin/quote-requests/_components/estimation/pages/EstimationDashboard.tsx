@@ -307,54 +307,7 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
      return () => unsubscribe();
    }, [currentUser.uid]);
 
-   // Phase 5: Real-time listener for current tab estimations (First page only)
-   useEffect(() => {
-     if (!userId || !activeTab || currentPage !== 1 || !db) return;
-
-     const statusKey = estimationToStatus[activeTab];
-     const quotesRef = collection(db, 'quote_requests');
-     
-     // Base query: only for the first page to keep it performant
-     let q = query(
-       quotesRef,
-       where('status', '==', statusKey),
-       orderBy('createdAt', 'desc'),
-       limit(itemsPerPage)
-     );
-
-     // If supplier, filter by supplierId
-     if (isFournisseur) {
-       q = query(q, where('supplierId', '==', userId));
-     }
-
-     const unsubscribe = onSnapshot(q, (snapshot) => {
-       // Only update if we are indeed on page 1 and not currently loading via Server Action
-       // to avoid flickering or race conditions
-       if (currentPage === 1) {
-         const newEstimations = snapshot.docs.map(doc => quoteToEstimation({ id: doc.id, ...doc.data() } as any));
-         
-         // Simple check to see if content changed
-         const currentIds = estimations.map(e => e.id).join(',');
-         const nextIds = newEstimations.map(e => e.id).join(',');
-         
-         if (currentIds !== nextIds) {
-           setEstimations(newEstimations);
-           // Also update cache for page 1
-           setPageCache(prev => ({
-             ...prev,
-             [activeTab]: {
-               ...(prev[activeTab] || {}),
-               [1]: { estimations: newEstimations, lastId: snapshot.docs[snapshot.docs.length - 1]?.id || null }
-             }
-           }));
-         }
-       }
-     }, (error) => {
-       console.error('Real-time estimations listener error:', error);
-     });
-
-     return () => unsubscribe();
-   }, [activeTab, userId, isFournisseur, currentPage, itemsPerPage]);
+    // Server Action handles paging and tab caching robustly. Real-time updates for quotes are fetched via actions upon transitions.
 
    const filteredEstimations = useMemo(() => {
     let filtered = estimations.filter((est) => {

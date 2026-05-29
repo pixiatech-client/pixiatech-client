@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Trash2, Undo2, Phone, CheckCircle, Clock, Loader2, ChevronLeft, ChevronRight, MailWarning, Trash, Ban, MailCheck, Search, Truck, FilePen, FileText, Users, SendHorizontal } from 'lucide-react';
+import { Trash2, Undo2, Phone, CheckCircle, Clock, Loader2, ChevronLeft, ChevronRight, MailWarning, Trash, Ban, MailCheck, Search, Truck, FilePen, FileText, Users, SendHorizontal, Zap, Settings, Bot } from 'lucide-react';
 import { Pagination } from '@/components/ui/Pagination';
 import {
   AlertDialog,
@@ -430,7 +430,53 @@ export function QuoteRequestsTable() {
                                 aria-label={`Select quote from ${req.client.companyName}`}
                             />
                         </TableCell>
-                         <TableCell className="font-mono text-[10px] font-bold text-slate-400">EST-{req.id.substring(0, 6).toUpperCase()}</TableCell>
+                         <TableCell className="font-mono text-[10px] font-bold text-slate-400">
+                           <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                             {req.configuratorType === 'guided' && (
+                               <TooltipProvider>
+                                 <Tooltip>
+                                   <TooltipTrigger asChild>
+                                     <div className="w-5 h-5 rounded bg-amber-50 flex items-center justify-center border border-amber-100 shadow-sm cursor-help">
+                                       <Zap className="h-3 w-3 text-amber-500 fill-amber-500/20" />
+                                     </div>
+                                   </TooltipTrigger>
+                                   <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
+                                     <p className="font-medium text-xs">Généré via configurateur guidé (Wizard)</p>
+                                   </TooltipContent>
+                                 </Tooltip>
+                               </TooltipProvider>
+                             )}
+                             {req.configuratorType === 'manual' && (
+                               <TooltipProvider>
+                                 <Tooltip>
+                                   <TooltipTrigger asChild>
+                                     <div className="w-5 h-5 rounded bg-slate-100 flex items-center justify-center border border-slate-200 shadow-sm cursor-help">
+                                       <Settings className="h-3 w-3 text-slate-500" />
+                                     </div>
+                                   </TooltipTrigger>
+                                   <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
+                                     <p className="font-medium text-xs">Généré via configuration manuelle</p>
+                                   </TooltipContent>
+                                 </Tooltip>
+                               </TooltipProvider>
+                             )}
+                             {req.configuratorType === 'lumi' && (
+                               <TooltipProvider>
+                                 <Tooltip>
+                                   <TooltipTrigger asChild>
+                                     <div className="w-5 h-5 rounded bg-blue-50 flex items-center justify-center border border-blue-100 shadow-sm cursor-help">
+                                       <Bot className="h-3 w-3 text-blue-500" />
+                                     </div>
+                                   </TooltipTrigger>
+                                   <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
+                                     <p className="font-medium text-xs">Généré par Lumi AI</p>
+                                   </TooltipContent>
+                                 </Tooltip>
+                               </TooltipProvider>
+                             )}
+                             <span>EST-{req.id.substring(0, 6).toUpperCase()}</span>
+                           </div>
+                         </TableCell>
                         <TableCell>
                             <div className="flex items-center gap-3">
                                 <TooltipProvider>

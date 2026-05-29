@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings, TranslatedString, Theme } from '@/lib/types';
 import { updateSettings } from '../actions';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, Truck, Wrench, MailCheck, EyeOff, Sun, Moon, Bot } from 'lucide-react';
+import { AlertCircle, Truck, Wrench, MailCheck, EyeOff, Sun, Moon, Bot, Zap, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -67,6 +67,8 @@ const settingsSchema = z.object({
   isEmailVerificationEnabled: z.boolean().optional(),
   isPriceHidden: z.boolean().optional(),
   isWizardBotEnabled: z.boolean().optional(),
+  isGuidedConfigEnabled: z.boolean().optional(),
+  isManualConfigEnabled: z.boolean().optional(),
   hintBubble: hintBubbleSchema.optional(),
   lightThemeId: z.string().optional(),
   darkThemeId: z.string().optional(),
@@ -98,7 +100,9 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       ...initialSettings, 
       isEmailVerificationEnabled: initialSettings.isEmailVerificationEnabled ?? true, 
       isPriceHidden: initialSettings.isPriceHidden ?? false,
-      isWizardBotEnabled: initialSettings.isWizardBotEnabled ?? true
+      isWizardBotEnabled: initialSettings.isWizardBotEnabled ?? true,
+      isGuidedConfigEnabled: initialSettings.isGuidedConfigEnabled ?? true,
+      isManualConfigEnabled: initialSettings.isManualConfigEnabled ?? true
     },
   });
 
@@ -340,25 +344,130 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                     )}
                 />
               </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className='flex items-center gap-2'>
-                  <Bot className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <Label htmlFor="isWizardBotEnabled" className="font-semibold">Activer le Wizard Bot Flow</Label>
-                    <p className="text-sm text-muted-foreground">Permet d'utiliser le chatbot conversationnel pour guider les clients.</p>
+              {/* Card Groupée avec style orange pour les modes d'estimation */}
+              <div className="rounded-xl border border-amber-200 bg-amber-50/20 p-5 space-y-4 shadow-sm">
+                <div>
+                  <h5 className="font-semibold text-amber-900 text-base">Modes d'Accès au Configurateur</h5>
+                  <p className="text-sm text-amber-700/80">
+                    Déterminez les options d'accès disponibles pour vos clients. Au moins une option doit toujours rester activée.
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  {/* Option 1: Wizard Bot Flow */}
+                  <div className="flex items-center justify-between rounded-lg border border-amber-100 bg-white p-4 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-amber-100/50 rounded-lg">
+                        <Bot className="h-5 w-5 text-amber-700" />
+                      </div>
+                      <div>
+                        <Label htmlFor="isWizardBotEnabled" className="font-semibold text-slate-800">Activer le Wizard Bot Flow</Label>
+                        <p className="text-sm text-slate-500">Permet d'utiliser le chatbot conversationnel pour guider les clients.</p>
+                      </div>
+                    </div>
+                    <Controller
+                      control={form.control}
+                      name="isWizardBotEnabled"
+                      render={({ field }) => (
+                        <Switch
+                          id="isWizardBotEnabled"
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            if (!checked) {
+                              const guided = form.getValues('isGuidedConfigEnabled');
+                              const manual = form.getValues('isManualConfigEnabled');
+                              if (!guided && !manual) {
+                                toast({
+                                  title: "Action impossible",
+                                  description: "Vous devez laisser au moins une option d'accès activée.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                            }
+                            field.onChange(checked);
+                          }}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  {/* Option 2: Configuration Guidée */}
+                  <div className="flex items-center justify-between rounded-lg border border-amber-100 bg-white p-4 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-amber-100/50 rounded-lg">
+                        <Zap className="h-5 w-5 text-amber-700" />
+                      </div>
+                      <div>
+                        <Label htmlFor="isGuidedConfigEnabled" className="font-semibold text-slate-800">Configuration Guidée</Label>
+                        <p className="text-sm text-slate-500">Recommandé — Rapide, simple et sans prise de tête.</p>
+                      </div>
+                    </div>
+                    <Controller
+                      control={form.control}
+                      name="isGuidedConfigEnabled"
+                      render={({ field }) => (
+                        <Switch
+                          id="isGuidedConfigEnabled"
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            if (!checked) {
+                              const bot = form.getValues('isWizardBotEnabled');
+                              const manual = form.getValues('isManualConfigEnabled');
+                              if (!bot && !manual) {
+                                toast({
+                                  title: "Action impossible",
+                                  description: "Vous devez laisser au moins une option d'accès activée.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                            }
+                            field.onChange(checked);
+                          }}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  {/* Option 3: Configuration Manuelle */}
+                  <div className="flex items-center justify-between rounded-lg border border-amber-100 bg-white p-4 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-amber-100/50 rounded-lg">
+                        <SlidersHorizontal className="h-5 w-5 text-amber-700" />
+                      </div>
+                      <div>
+                        <Label htmlFor="isManualConfigEnabled" className="font-semibold text-slate-800">Configuration Manuelle</Label>
+                        <p className="text-sm text-slate-500">Avancé — Pour ceux qui savent déjà ce qu'ils veulent.</p>
+                      </div>
+                    </div>
+                    <Controller
+                      control={form.control}
+                      name="isManualConfigEnabled"
+                      render={({ field }) => (
+                        <Switch
+                          id="isManualConfigEnabled"
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            if (!checked) {
+                              const bot = form.getValues('isWizardBotEnabled');
+                              const guided = form.getValues('isGuidedConfigEnabled');
+                              if (!bot && !guided) {
+                                toast({
+                                  title: "Action impossible",
+                                  description: "Vous devez laisser au moins une option d'accès activée.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                            }
+                            field.onChange(checked);
+                          }}
+                        />
+                      )}
+                    />
                   </div>
                 </div>
-                <Controller
-                    control={form.control}
-                    name="isWizardBotEnabled"
-                    render={({ field }) => (
-                        <Switch
-                            id="isWizardBotEnabled"
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                        />
-                    )}
-                />
               </div>
             </div>
             </div>

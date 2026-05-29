@@ -247,8 +247,15 @@ const MobileProductCard = React.memo(({
           </div>
         </div>
 
-        <div className="text-3xl font-black text-slate-900 tracking-tighter mt-2">
-          {product.salePricePerSqM || product.price || '—'}
+        <div className="flex items-baseline gap-2 mt-2">
+          {product.oldPrice && (
+            <span className="text-sm font-semibold text-orange-500 line-through">
+              {product.oldPrice} €
+            </span>
+          )}
+          <span className="text-3xl font-black text-slate-900 tracking-tighter">
+            {product.salePricePerSqM || product.price || '—'}
+          </span>
         </div>
       </div>
     </div>
@@ -395,7 +402,14 @@ const ProductListItem = ({
 
       <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
         <div className="md:col-span-2">
-          <h3 className="font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-slate-900 transition-colors truncate">{product.name}</h3>
+          <h3 className="font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-slate-900 transition-colors truncate flex items-center gap-1.5">
+            {product.name}
+            {product.isHidden && (
+              <span title="Produit masqué" className="text-orange-500 shrink-0">
+                <EyeOff className="w-3.5 h-3.5 animate-pulse" />
+              </span>
+            )}
+          </h3>
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
             {/* Environment Badges */}
             {Array.from(new Set((Array.isArray(product.type) ? product.type : [product.type]).filter(Boolean))).map((t: any, idx: number) => {
@@ -456,6 +470,9 @@ const ProductListItem = ({
         <div className="hidden md:flex flex-col gap-1 items-center">
           <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">Vente /m²</span>
           <span className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-slate-900 transition-colors duration-300">
+            {product.oldPrice && (
+              <span className="text-xs font-semibold text-orange-500 line-through mr-1.5">{product.oldPrice} €</span>
+            )}
             {product.salePricePerSqM || product.price || '—'}
           </span>
         </div>
@@ -553,7 +570,7 @@ const DEFAULT_AI_SETTINGS: AISettings = {
 
 
 // --- Composant NumberInput Personnalisé ---
-const NumberInput = ({ value, onChange, placeholder, className, isDark, compact }: { value: string, onChange: (val: string) => void, placeholder?: string, className?: string, isDark?: boolean, compact?: boolean }) => {
+const NumberInput = ({ value, onChange, placeholder, className, isDark, compact, colorTheme = 'default' }: { value: string, onChange: (val: string) => void, placeholder?: string, className?: string, isDark?: boolean, compact?: boolean, colorTheme?: 'default' | 'orange' | 'cyan' }) => {
   const handleIncrement = () => {
     const val = parseFloat(value) || 0;
     onChange((val + 1).toString());
@@ -572,7 +589,12 @@ const NumberInput = ({ value, onChange, placeholder, className, isDark, compact 
         className={cn(
           "w-full rounded-xl font-bold focus:outline-none transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
           isDark
-            ? "bg-[#1a1f2e] border border-blue-500/30 text-white focus:border-cyan-400"
+            ? cn(
+                "bg-[#1a1f2e] text-white",
+                colorTheme === 'orange' ? "border border-orange-500/30 focus:border-orange-400 placeholder:text-orange-500/40" :
+                colorTheme === 'cyan' ? "border border-cyan-500/30 focus:border-cyan-400 placeholder:text-cyan-500/40" :
+                "border border-blue-500/30 focus:border-cyan-400"
+              )
             : "bg-slate-50 border border-slate-200 text-slate-900 focus:ring-2 focus:ring-slate-900 focus:bg-white",
           compact ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm",
           className
@@ -580,10 +602,10 @@ const NumberInput = ({ value, onChange, placeholder, className, isDark, compact 
         placeholder={placeholder}
       />
       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
-        <button onClick={handleIncrement} className={cn("transition-colors", isDark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600")}>
+        <button onClick={handleIncrement} className={cn("transition-colors", isDark ? (colorTheme === 'orange' ? "text-orange-500/50 hover:text-orange-400" : colorTheme === 'cyan' ? "text-cyan-500/50 hover:text-cyan-400" : "text-slate-500 hover:text-slate-300") : "text-slate-400 hover:text-slate-600")}>
           <ChevronUp className={cn(compact ? "w-2.5 h-2.5" : "w-3 h-3")} />
         </button>
-        <button onClick={handleDecrement} className={cn("transition-colors", isDark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600")}>
+        <button onClick={handleDecrement} className={cn("transition-colors", isDark ? (colorTheme === 'orange' ? "text-orange-500/50 hover:text-orange-400" : colorTheme === 'cyan' ? "text-cyan-500/50 hover:text-cyan-400" : "text-slate-500 hover:text-slate-300") : "text-slate-400 hover:text-slate-600")}>
           <ChevronDown className={cn(compact ? "w-2.5 h-2.5" : "w-3 h-3")} />
         </button>
       </div>
@@ -1812,21 +1834,36 @@ const ProduitPage = ({
   pdfError,
   setIsAISettingsOpen,
   screenType,
-  setScreenType
+  setScreenType,
+  oldPrice,
+  setOldPrice,
+  isHidden,
+  setIsHidden
 }: any) => {
   const [specPage, setSpecPage] = useState(1);
   const [prevSpecPage, setPrevSpecPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
   const specItemsPerPage = 6;
-  const totalSpecPages = Math.ceil(selectedChars.length / specItemsPerPage);
-  const paginatedSpecs = selectedChars.slice((specPage - 1) * specItemsPerPage, specPage * specItemsPerPage);
+
+  const filteredSpecs = React.useMemo(() => {
+    if (!searchTerm.trim()) return selectedChars;
+    return selectedChars.filter((sc: any) => {
+      const charDef = characteristics.find((c: any) => c.id === sc.id);
+      if (!charDef) return false;
+      return charDef.name.toLowerCase().includes(searchTerm.toLowerCase().trim());
+    });
+  }, [selectedChars, searchTerm, characteristics]);
+
+  const totalSpecPages = Math.ceil(filteredSpecs.length / specItemsPerPage);
+  const paginatedSpecs = filteredSpecs.slice((specPage - 1) * specItemsPerPage, specPage * specItemsPerPage);
   const specDirection = specPage >= prevSpecPage ? 1 : -1;
 
-  // Reset specPage if items are removed
+  // Reset specPage if items are removed or filtered out
   useEffect(() => {
-    if (specPage > 1 && (specPage - 1) * specItemsPerPage >= selectedChars.length) {
+    if (specPage > 1 && (specPage - 1) * specItemsPerPage >= filteredSpecs.length) {
       setSpecPage(prev => Math.max(prev - 1, 1));
     }
-  }, [selectedChars.length, specPage]);
+  }, [filteredSpecs.length, specPage]);
 
   const [isPricingMediaOpen, setIsPricingMediaOpen] = useState(false);
 
@@ -1999,6 +2036,28 @@ const ProduitPage = ({
                 )}
               </div>
 
+              <div className="relative mb-2">
+                <input
+                  type="text"
+                  placeholder="Rechercher une spécification..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setSpecPage(1);
+                  }}
+                  className="w-full pl-9 pr-8 py-2 text-xs font-bold border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white transition-all text-slate-800 placeholder:text-slate-400"
+                />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
               <div className="relative min-h-[200px]">
                 <AnimatePresence mode="popLayout" initial={false} custom={specDirection}>
                   <motion.div
@@ -2016,7 +2075,7 @@ const ProduitPage = ({
                       if (!charDef) return null;
                       const Icon = getIcon(charDef.iconName);
                       return (
-                        <div key={sc.id} className="bg-theme-card text-theme-card-text rounded-2xl p-4 flex flex-col justify-between shadow-xl relative group border border-theme-card-border">
+                        <div key={sc.id} className="bg-[#0f172a] text-white rounded-2xl p-4 flex flex-col justify-between shadow-xl relative group border border-slate-800">
                           <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                             <button onClick={(e) => { e.stopPropagation(); setCharacteristics(characteristics.map((c: any) => c.id === sc.id ? { ...c, isPinned: !c.isPinned } : c)); }} className={cn("p-1.5 rounded-lg transition-colors", charDef.isPinned ? "text-[#a3e635] bg-[#a3e635]/10" : "text-slate-500 hover:text-[#a3e635]")}>
                               <Pin className="w-4 h-4" />
@@ -2093,6 +2152,43 @@ const ProduitPage = ({
                       isDark
                     />
                     <div className="text-[9px] text-cyan-400/40 mt-1 font-medium italic tracking-tight">Prix public conseillé par m².</div>
+                  </div>
+
+                  {/* Ancien Prix de Vente (Optionnel) */}
+                  <div className="bg-orange-500/10 p-4 rounded-2xl border border-orange-500/40 relative group overflow-hidden shadow-[0_0_20px_rgba(249,115,22,0.08)] ring-1 ring-orange-500/20">
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
+                    <label className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_6px_rgba(249,115,22,0.8)]" />
+                      Ancien prix de vente (€) (Optionnel)
+                    </label>
+                    <NumberInput
+                      value={oldPrice}
+                      onChange={setOldPrice}
+                      placeholder="Ex: 1500"
+                      isDark
+                      colorTheme="orange"
+                    />
+                    <div className="text-[9px] text-orange-400 mt-1 font-medium italic tracking-tight">Saisir un ancien prix pour afficher une réduction barré.</div>
+                  </div>
+
+                  {/* Masquer le produit (Visibility Toggle) */}
+                  <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 flex items-center justify-between shadow-[0_0_15px_rgba(0,0,0,0.15)]">
+                    <div className="pr-4">
+                      <div className="text-xs font-black text-white uppercase tracking-tight flex items-center gap-1.5">
+                        <EyeOff className="w-4 h-4 text-orange-400" />
+                        Masquer le produit
+                      </div>
+                      <div className="text-[9px] text-slate-400 mt-1 leading-tight">
+                        Masque ce produit des suggestions du configurateur et du robot.
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsHidden(!isHidden)}
+                      className={cn("w-12 h-6 rounded-full relative transition-all duration-300 shrink-0", isHidden ? "bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]" : "bg-slate-700")}
+                    >
+                      <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-sm", isHidden ? "left-[28px]" : "left-1")} />
+                    </button>
                   </div>
 
                   {/* Surface Minimum */}
@@ -3496,6 +3592,7 @@ export default function ProductManagementClient() {
           return e;
         }),
         price: (prixVente || '0') + ' €',
+        oldPrice: oldPrice ? parseFloat(oldPrice) : null,
         image: finalPhotoUrl || '',
         videoUrl: finalVideoUrl || '',
         pdfUrl: finalPdfUrl || '',
@@ -3522,6 +3619,7 @@ export default function ProductManagementClient() {
         hasDimensions: !!dimensionsEnabled,
         prixLocationHeure: String(prixLocationHeure || '0'),
         prixLocationJour: String(prixLocationJour || '0'),
+        isHidden: !!isHidden,
         date: new Date().toISOString(),
         uid: user?.uid || 'system',
         selectedChars: (selectedChars || []).map(c => ({
@@ -3817,6 +3915,8 @@ export default function ProductManagementClient() {
 
   // Pricing State
   const [prixVente, setPrixVente] = useState<string>('1250');
+  const [oldPrice, setOldPrice] = useState<string>('');
+  const [isHidden, setIsHidden] = useState<boolean>(false);
   const [prixLocationHeure, setPrixLocationHeure] = useState<string>('');
   const [prixLocationJour, setPrixLocationJour] = useState<string>('');
   const [surfaceMaxLocation, setSurfaceMaxLocation] = useState<string>('');
@@ -3861,6 +3961,7 @@ export default function ProductManagementClient() {
       }));
 
       setPrixVente((editingProduct.price || '').toString().replace(/ /g, '').replace('€', ''));
+      setOldPrice(editingProduct.oldPrice ? editingProduct.oldPrice.toString() : '');
 
       // Handle selected characteristics
       if (editingProduct.selectedChars && Array.isArray(editingProduct.selectedChars)) {
@@ -3908,6 +4009,7 @@ export default function ProductManagementClient() {
       setDimensionsEnabled(!!(editingProduct.dimensionsEnabled || editingProduct.hasDimensions));
       setScreenType(editingProduct.screenType || 'flat');
       setSurface(parseFloat(editingProduct.surfaceMinRequise || '0') || 9.00);
+      setIsHidden(!!editingProduct.isHidden);
     } else {
       // Reset form
       setProductName('');
@@ -3915,6 +4017,7 @@ export default function ProductManagementClient() {
       setEnvironment(['exterieur']);
       setScreenType('flat');
       setPrixVente('1250');
+      setOldPrice('');
 
       // Reset technical/pricing specs
       setPrixLocationHeure('');
@@ -3926,6 +4029,7 @@ export default function ProductManagementClient() {
       setPrixDalle('20');
       setDimensionsEnabled(false);
       setSurface(9.00);
+      setIsHidden(false);
 
       // Set pinned characteristics by default for new products
       const pinnedChars = characteristics.filter(c => c.isPinned).map(c => ({ id: c.id, value: c.options[0] }));
@@ -4402,6 +4506,8 @@ export default function ProductManagementClient() {
                   setCharacteristics={setCharacteristics}
                   prixVente={prixVente}
                   setPrixVente={setPrixVente}
+                  oldPrice={oldPrice}
+                  setOldPrice={setOldPrice}
                   prixLocationHeure={prixLocationHeure}
                   setPrixLocationHeure={setPrixLocationHeure}
                   prixLocationJour={prixLocationJour}
@@ -4434,6 +4540,8 @@ export default function ProductManagementClient() {
                   setUploadedPdf={setUploadedPdf}
                   pdfUrl={pdfUrl}
                   setPdfUrl={setPdfUrl}
+                  isHidden={isHidden}
+                  setIsHidden={setIsHidden}
                   handleSaveProduct={handleSaveProduct}
                   setActivePage={handlePageChange}
                   user={user}

@@ -336,7 +336,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#f8f9fa] px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
+    <div className="relative w-full min-h-screen overflow-hidden bg-[#f8f9fa] px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.12),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(37,99,235,0.08),transparent_22%)]" />
       <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
       <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-300/10 blur-3xl" />
@@ -408,7 +408,7 @@ export default function LoginPage() {
               <div className="border-b border-slate-100 bg-slate-50/80 px-6 pb-6 pt-8 sm:px-8">
                 <div className="mb-6 flex justify-center">
                   <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-slate-900 shadow-lg shadow-slate-200">
-                    <KeyRound className="h-9 w-9 text-theme-sidebar-active-bg" />
+                    <KeyRound className="h-9 w-9 text-white" />
                   </div>
                 </div>
 

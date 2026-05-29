@@ -1358,6 +1358,7 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
   const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
 
   const filteredProducts = (products || []).filter(p => {
+    if (p.isHidden) return false;
     if (!p.pitch && !p.distance) return true;
     const productPitch = p.pitch ? parseFloat(String(p.pitch).replace('P', '')) : null;
     if (productPitch !== null) {
@@ -1534,6 +1535,11 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                       </div>
                     ) : (
                       <>
+                        {product.oldPrice && state.projectType === 'vente' && (
+                          <p className="text-sm font-semibold text-orange-500 line-through">
+                            {((product.oldPrice || 0) * area * quantity).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} €
+                          </p>
+                        )}
                         <p className="text-lg font-black text-slate-900">
                           {totalPrice > 0 ? `${totalPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} €` : t('wizard.products.onEstimate') || 'Sur estimation'}
                         </p>

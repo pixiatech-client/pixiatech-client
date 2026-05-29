@@ -33,6 +33,13 @@ const LABOR_DOC_ID = 'labor';
 const PDF_SETTINGS_DOC_ID = 'pdf';
 const WIZARD_SETTINGS_DOC_ID = 'wizard';
 
+// --- In-memory TTL caches (shared across calls within the same server process) ---
+let _settingsCache: { data: Settings; timestamp: number } | null = null;
+const SETTINGS_CACHE_TTL_MS = 30_000; // 30 seconds
+
+let _themesCache: { data: Theme[]; timestamp: number } | null = null;
+const THEMES_CACHE_TTL_MS = 120_000; // 2 minutes
+
 // --- Session Actions ---
 
 export async function createSession(idToken: string) {
@@ -264,7 +271,7 @@ export async function registerUser(data: unknown) {
     await adminDb.collection('users').doc(userRecord.uid).set(userProfile);
     console.log('[Register Action] Firestore profile write SUCCESS.');
 
-    return { success: true };
+    return { success: true, uid: userRecord.uid };
   } catch (error: any) {
     console.error("Error during user registration:", error);
     // Attempt to delete the auth user if the DB write fails
@@ -396,8 +403,8 @@ const updateUserSchema = z.object({
   email: z.string().email().optional(),
   phone: z.string().optional(),
   description: z.string().optional(),
-  photoURL: z.string().url().or(z.literal('')).optional(),
-  backgroundImage: z.string().url().or(z.literal('')).optional(),
+  photoURL: z.string().optional(),
+  backgroundImage: z.string().optional(),
   role: z.string().optional(),
   roleTemplate: z.string().optional(),
   status: z.enum(['pending', 'approved', 'suspended']).optional(),
@@ -422,8 +429,18 @@ export async function updateUser(data: unknown) {
     const authPayload: { [key: string]: any } = {};
     if (updateData.email) authPayload.email = updateData.email;
     if (updateData.displayName) authPayload.displayName = updateData.displayName;
-    if (updateData.photoURL || updateData.photoURL === '') authPayload.photoURL = updateData.photoURL;
     if (updateData.phone) authPayload.phone = updateData.phone;
+    // Only pass photoURL to Firebase Auth if it's a valid URL (Firebase Auth requires this)
+    if (updateData.photoURL) {
+      try {
+        new URL(updateData.photoURL);
+        authPayload.photoURL = updateData.photoURL;
+      } catch {
+        // Not a valid URL — save to Firestore only, skip Firebase Auth
+      }
+    } else if (updateData.photoURL === '') {
+      authPayload.photoURL = null;
+    }
 
     // Update Firebase Auth if there are changes
     if (Object.keys(authPayload).length > 0) {
@@ -787,6 +804,28 @@ export async function resetPerformancePoints() {
     return { success: true };
   } catch (error: any) {
     console.error('Error resetting performance:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function resetConfiguratorStats() {
+  const { adminDb, FieldValue } = getFirebaseAdmin();
+  if (!adminDb) throw new Error("Firestore not initialized");
+
+  const adminUser = await getCurrentAdminUser();
+  if (!adminUser || 'error' in adminUser || adminUser.role !== 'admin') {
+    throw new Error('Unauthorized: Only administrators can reset stats.');
+  }
+
+  try {
+    await adminDb.collection('settings').doc(SETTINGS_DOC_ID).set({
+      configuratorStatsResetAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error resetting configurator stats:', error);
     return { success: false, error: error.message };
   }
 }
@@ -2061,6 +2100,7 @@ const productSchema = z.object({
   maxRentalArea: z.coerce.number().optional().default(0),
   minArea: z.coerce.number().min(0, "La surface minimum doit être positive.").optional(),
   hasDimensions: z.boolean().optional().default(true),
+  isHidden: z.boolean().optional().default(false),
 }).superRefine((data, ctx) => {
   if ((data.tileWidth ?? 0) > 0 || (data.tileHeight ?? 0) > 0 || (data.pricePerTile ?? 0) > 0) {
     if (data.tileWidth === undefined || data.tileWidth <= 0) {
@@ -2143,10 +2183,12 @@ export async function getProducts(options: { page?: number; limit?: number } = {
           pricePerTile: parseFloat(data.prixDalle || data.pricePerTile || 0),
           hasDimensions: data.dimensionsEnabled !== undefined ? data.dimensionsEnabled : data.hasDimensions,
           minArea: parseFloat(data.surfaceMinRequise || data.minArea || 0),
+          oldPrice: data.oldPrice ? parseFloat(data.oldPrice) : undefined,
           salePricePerSqM: parseFloat(typeof data.price === 'string' ? data.price.replace('€', '').replace(/ /g, '').trim() : data.price || data.salePricePerSqM || 0),
           rentalPricePerDay: parseFloat(data.prixLocationJour || data.rentalPricePerDay || 0),
           rentalPricePerHour: parseFloat(data.prixLocationHeure || data.rentalPricePerHour || 0),
           productUrl: data.pdfUrl || data.productUrl || '',
+          isHidden: !!data.isHidden,
         } as Product;
       });
 
@@ -2374,6 +2416,8 @@ const settingsSchema = z.object({
   isEmailVerificationEnabled: z.boolean().optional(),
   isPriceHidden: z.boolean().optional(),
   isWizardBotEnabled: z.boolean().optional(),
+  isGuidedConfigEnabled: z.boolean().optional(),
+  isManualConfigEnabled: z.boolean().optional(),
   hintBubble: hintBubbleSchema.optional(),
   lightThemeId: z.string().optional(),
   darkThemeId: z.string().optional(),
@@ -2424,6 +2468,11 @@ const wizardSettingsSchema = z.object({
 });
 
 export async function getSettings(): Promise<Settings> {
+  // Serve from in-memory cache if still fresh
+  if (_settingsCache && Date.now() - _settingsCache.timestamp < SETTINGS_CACHE_TTL_MS) {
+    return _settingsCache.data;
+  }
+
   const { adminDb } = getFirebaseAdmin();
   const defaultSettings: Settings = {
     defaultWidth: 20,
@@ -2480,9 +2529,12 @@ export async function getSettings(): Promise<Settings> {
         }
         return value;
       }));
-      return { ...defaultSettings, ...serializedData };
+      const merged = { ...defaultSettings, ...serializedData };
+      _settingsCache = { data: merged, timestamp: Date.now() };
+      return merged;
     } else {
       await docRef.set(defaultSettings);
+      _settingsCache = { data: defaultSettings, timestamp: Date.now() };
       return defaultSettings;
     }
   } catch (error) {
@@ -2516,6 +2568,7 @@ export async function updateSettings(data: unknown) {
       });
     }
 
+    _settingsCache = null; // Invalidate cache so next read picks up fresh data
     revalidatePath('/admin/settings', 'layout');
     revalidatePath('/');
     return { success: true };
@@ -2669,9 +2722,15 @@ const defaultThemes: Omit<Theme, 'id' | 'createdAt'>[] = [
 ];
 
 export async function getThemes(): Promise<Theme[]> {
+  // Serve from in-memory cache if still fresh
+  if (_themesCache && Date.now() - _themesCache.timestamp < THEMES_CACHE_TTL_MS) {
+    return _themesCache.data;
+  }
+
   const { adminDb, FieldValue } = getFirebaseAdmin();
   try {
     const snapshot = await adminDb.collection('themes').orderBy('createdAt', 'asc').get();
+    let themes: Theme[];
     if (snapshot.empty) {
       // If no themes exist, create the default ones
       const batch = adminDb.batch();
@@ -2687,17 +2746,19 @@ export async function getThemes(): Promise<Theme[]> {
         createdThemes.push({ ...themeData, id: docRef.id, createdAt: new Date() });
       });
       await batch.commit();
-      return createdThemes;
+      themes = createdThemes;
+    } else {
+      themes = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
+        } as Theme;
+      });
     }
-
-    return snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        ...data,
-        id: doc.id,
-        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
-      } as Theme;
-    });
+    _themesCache = { data: themes, timestamp: Date.now() };
+    return themes;
   } catch (error) {
     console.error("Error fetching themes:", error);
     return []; // Return empty array on error

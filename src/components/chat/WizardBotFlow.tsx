@@ -486,6 +486,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     const pitchValue = parseFloat(configState.pixelPitch.replace('P', '')) || 2.5;
 
     const filteredProducts = (allProducts || []).filter(p => {
+      if (p.isHidden) return false;
       if (!p.pitch && !p.distance) return true;
       const productPitch = p.pitch ? parseFloat(String(p.pitch).replace('P', '')) : null;
       if (productPitch !== null) {
@@ -620,6 +621,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       height: configState.height,
       productName: selectedProduct?.name ?? '',
       lang: locale,
+      configuratorType: 'lumi',
     };
 
     const formData = {
