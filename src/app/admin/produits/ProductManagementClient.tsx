@@ -1843,6 +1843,8 @@ const ProduitPage = ({
   const [specPage, setSpecPage] = useState(1);
   const [prevSpecPage, setPrevSpecPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [rentalStockLocal, setRentalStockLocal] = useState<string>('');
+  const [rentalQuantityLocal, setRentalQuantityLocal] = useState<string>('1');
   const specItemsPerPage = 6;
 
   const filteredSpecs = React.useMemo(() => {
@@ -2170,6 +2172,45 @@ const ProduitPage = ({
                     />
                     <div className="text-[9px] text-orange-400 mt-1 font-medium italic tracking-tight">Saisir un ancien prix pour afficher une réduction barré.</div>
                   </div>
+
+                  {Array.isArray(mode) && mode.includes('location') && (
+                    <div className="bg-violet-500/10 p-4 rounded-2xl border border-violet-500/40 relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] ring-1 ring-violet-500/20">
+                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
+                      <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
+                        Quantité de location
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-[9px] text-violet-300/80 font-medium uppercase tracking-wider block mb-1">Quantité disponible</span>
+                          <NumberInput
+                            value={rentalStockLocal}
+                            onChange={(val) => setRentalStockLocal(String(val ?? ''))}
+                            placeholder="Ex: 10"
+                            isDark
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[9px] text-violet-300/80 font-medium uppercase tracking-wider block mb-1">Quantité à louer</span>
+                          <NumberInput
+                            value={rentalQuantityLocal}
+                            onChange={(val) => {
+                              const parsed = parseInt(String(val ?? '1'), 10);
+                              const safe = Number.isNaN(parsed) ? 1 : Math.max(1, parsed);
+                              const stock = parseInt(String(rentalStockLocal || '0'), 10);
+                              const maxAllowed = Number.isNaN(stock) ? safe : Math.min(safe, stock);
+                              setRentalQuantityLocal(String(maxAllowed));
+                            }}
+                            placeholder="Ex: 3"
+                            isDark
+                          />
+                        </div>
+                      </div>
+                      <div className="text-[9px] text-violet-400 mt-1 font-medium italic tracking-tight">
+                        Quantité louée affichée : {rentalQuantityLocal || '0'} / {rentalStockLocal || '0'} disponibles.
+                      </div>
+                    </div>
+                  )}
 
                   {/* Masquer le produit (Visibility Toggle) */}
                   <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 flex items-center justify-between shadow-[0_0_15px_rgba(0,0,0,0.15)]">
@@ -3541,6 +3582,14 @@ export default function ProductManagementClient() {
 
   const handleSaveProduct = async () => {
     if (!user) return;
+    if (Array.isArray(mode) && mode.includes('location') && (!rentalStock || Number(rentalStock) <= 0)) {
+      toast({
+        title: "Stock requis",
+        description: "Veuillez renseigner une quantité de stock pour la location.",
+        variant: "destructive"
+      });
+      return;
+    }
     setIsSaving(true);
 
     try {
@@ -3619,6 +3668,8 @@ export default function ProductManagementClient() {
         hasDimensions: !!dimensionsEnabled,
         prixLocationHeure: String(prixLocationHeure || '0'),
         prixLocationJour: String(prixLocationJour || '0'),
+        rentalStock: Number(rentalStock || '0'),
+        rentalQuantity: Number(rentalQuantity || '1'),
         isHidden: !!isHidden,
         date: new Date().toISOString(),
         uid: user?.uid || 'system',
@@ -3921,6 +3972,8 @@ export default function ProductManagementClient() {
   const [prixLocationJour, setPrixLocationJour] = useState<string>('');
   const [surfaceMaxLocation, setSurfaceMaxLocation] = useState<string>('');
   const [surfaceMinRequise, setSurfaceMinRequise] = useState<string>('0');
+  const [rentalStock, setRentalStock] = useState<string>('');
+  const [rentalQuantity, setRentalQuantity] = useState<string>('1');
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -4003,6 +4056,8 @@ export default function ProductManagementClient() {
       setPrixLocationJour(editingProduct.prixLocationJour || '');
       setSurfaceMaxLocation(editingProduct.surfaceMaxLocation || '');
       setSurfaceMinRequise(editingProduct.surfaceMinRequise || '0');
+      setRentalStock((editingProduct.rentalStock ?? editingProduct.surfaceMaxLocation ?? '').toString());
+      setRentalQuantity((editingProduct.rentalQuantity ?? '1').toString());
       setLargeurDalle(editingProduct.tileWidth?.toString() || editingProduct.largeurDalle || '50');
       setHauteurDalle(editingProduct.tileHeight?.toString() || editingProduct.hauteurDalle || '50');
       setPrixDalle(editingProduct.pricePerTile?.toString() || editingProduct.prixDalle || '20');
@@ -4023,6 +4078,8 @@ export default function ProductManagementClient() {
       setPrixLocationHeure('');
       setPrixLocationJour('');
       setSurfaceMaxLocation('');
+      setRentalStock('');
+      setRentalQuantity('1');
       setSurfaceMinRequise('0');
       setLargeurDalle('50');
       setHauteurDalle('50');
