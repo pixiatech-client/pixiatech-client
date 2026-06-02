@@ -337,12 +337,12 @@
         "page": "Page {pageNumber} sur {totalPages}"
     },
     "bot": {
-        "title": "Assistant Bot Lumi",
+        "title": "Assistant Bot Pixia",
         "status": "En ligne",
         "welcome": "Bonjour ! 👋 Je suis votre assistant pour votre projet d'écran LED.",
-        "questionType": "Pour bien vous orienter, souhaitez-vous partir sur une solution en location ou sur un achat définitif ?",
+        "questionType": "Pour bien vous orienter, souhaitez-vous partir sur une solution en location ou sur un achat ?",
         "rental": "Location",
-        "sale": "Achat définitif",
+        "sale": "Achat",
         "perfectRental": "Parfait, un projet de location !",
         "perfectSale": "Parfait, un projet de {type} !",
         "promptRentalPeriod": "Pour vous fournir une estimation précise, merci d’indiquer les dates de début et de fin de votre événement, ainsi que les horaires d’utilisation prévus. 🗓️",

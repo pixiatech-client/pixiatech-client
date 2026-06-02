@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronDown, ArrowRight, ArrowLeft, MapPin, Loader2, Grid, Calendar as CalendarIcon, Clock, Bot, Video, Download, Info, Layers } from 'lucide-react';
+import { X, ChevronDown, ArrowRight, ArrowLeft, MapPin, Loader2, Grid, Calendar as CalendarIcon, Clock, Bot, Video, Download, Info, Layers, RotateCcw } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DateRange } from "react-day-picker";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Message, MessageOption, WizardSettings, Product, Settings, LaborSettings, DeliverySettings, Locations } from '@/lib/types';
@@ -59,7 +60,7 @@ const STEP = {
 } as const;
 
 export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSettings, deliverySettings, locations }: WizardBotFlowProps) {
-  const { t, locale } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const dateLocale = locale === 'en' ? enUS : fr;
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -771,85 +772,51 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                 </div>
                 <div className="hidden md:flex flex-col">
                   <span className="font-bold text-white text-lg leading-tight">{t('bot.title')}</span>
-                  <span className="text-[12px] text-[#86efac] font-medium flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-[#86efac] animate-pulse" />
-                    {t('bot.status')}
-                  </span>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => {
+                          if (step <= 1) return;
+                          const prevStep = Math.max(1, step - 1);
+                          updateStep(prevStep);
+                        }}
+                        className={`w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all active:scale-95 border border-white/10 ${
+                          step > 1 ? "opacity-100" : "opacity-0 pointer-events-none"
+                        }`}
+                      >
+                        <ArrowLeft size={18} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-[11px] font-bold uppercase tracking-wider">
+                      {locale === 'en' ? 'Back' : 'Retour'}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => startConversation()}
+                        className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all active:scale-95 border border-white/10"
+                      >
+                        <RotateCcw size={18} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-[11px] font-bold uppercase tracking-wider">
+                      {t('bot.restart')}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <button
-                  onClick={() => {
-                    if (step === STEP.PROJECT_TYPE) return;
-
-                    // Determine previous step
-                    let prevStep: number = STEP.PROJECT_TYPE;
-                    if (step === STEP.RENTAL_PERIOD) prevStep = STEP.PROJECT_TYPE;
-                    else if (step === STEP.ENVIRONMENT) prevStep = configState.projectType === 'location' ? STEP.RENTAL_PERIOD : STEP.PROJECT_TYPE;
-                    else if (step === STEP.DIMENSIONS) prevStep = STEP.ENVIRONMENT;
-                    else if (step === STEP.DISTANCE) prevStep = STEP.DIMENSIONS;
-                    else if (step === STEP.PITCH) prevStep = STEP.DISTANCE;
-                    else if (step === STEP.SUMMARY) prevStep = STEP.PITCH;
-                    else if (step === STEP.PRODUCTS) prevStep = STEP.SUMMARY;
-                    else if (step === STEP.QUANTITY) prevStep = STEP.PRODUCTS;
-                    else if (step === STEP.DELIVERY) prevStep = STEP.QUANTITY;
-                    else if (step === STEP.INSTALLATION) prevStep = STEP.DELIVERY;
-                    else if (step === STEP.SITE_PHOTO) prevStep = STEP.INSTALLATION;
-                    else if (step === STEP.FORM_COMPANY) prevStep = STEP.SITE_PHOTO;
-                    else if (step === STEP.FORM_EMAIL) prevStep = STEP.FORM_COMPANY;
-                    else if (step === STEP.FORM_PHONE) prevStep = STEP.FORM_EMAIL;
-                    else if (step === STEP.FORM_ADDRESS) prevStep = STEP.FORM_PHONE;
-                    else if (step === STEP.FORM_TERMS) prevStep = STEP.FORM_ADDRESS;
-
-                    // Revert messages: remove user's last answer and bot's last prompt
-                    setMessages(prev => {
-                      const lastUserIdx = [...prev].reverse().findIndex(m => m.senderId === 'user');
-                      if (lastUserIdx !== -1) {
-                        return prev.slice(0, prev.length - lastUserIdx - 1);
-                      }
-                      return prev;
-                    });
-
-                    updateStep(prevStep);
-
-                    // Re-trigger prompt for the previous step
-                    setTimeout(() => {
-                      if (prevStep === STEP.PROJECT_TYPE) startConversation();
-                      else if (prevStep === STEP.ENVIRONMENT) promptEnvironment();
-                      else if (prevStep === STEP.DIMENSIONS) pushBotMessage('Quelles dimensions souhaitez-vous pour votre écran ? Utilisez le formulaire ci-dessous.');
-                      else if (prevStep === STEP.DISTANCE) {
-                        const dists: MessageOption[] = (wizardSettings?.viewingDistances ?? []).map(d => ({ label: d.value, value: d.value, imageUrl: d.imageUrl }));
-                        pushBotMessage('À quelle distance votre audience regardera-t-elle principalement l\'écran ?', dists.length ? dists : undefined);
-                      }
-                      else if (prevStep === STEP.PITCH) handleDistanceSelect(configState.viewingDistance, configState.viewingDistance);
-                      else if (prevStep === STEP.SUMMARY) pushBotMessage('Excellent choix ! Voici le résumé de votre configuration :');
-                      else if (prevStep === STEP.PRODUCTS) handleProceedToProducts();
-                      else if (prevStep === STEP.QUANTITY) pushBotMessage(`Combien d'écrans de ce type souhaitez-vous ?`);
-                      else if (prevStep === STEP.DELIVERY) pushBotMessage('Pour la livraison, dans quelle ville souhaitez-vous être livré ?');
-                      else if (prevStep === STEP.INSTALLATION) pushBotMessage('Souhaitez-vous inclure l\'installation professionnelle ?', [
-                        { label: '✅ Oui, inclure l\'installation', value: 'yes' },
-                        { label: '❌ Non merci', value: 'no' },
-                      ]);
-                      else if (prevStep === STEP.SITE_PHOTO) pushBotMessage('Avez-vous une photo de l\'endroit où l\'écran sera installé ?', [
-                        { label: '📸 Prendre une photo', value: 'add_photo_camera' },
-                        { label: '🖼️ Choisir dans la galerie', value: 'add_photo_gallery' },
-                        { label: 'Passer cette étape', value: 'skip_photo' }
-                      ], 1500, '/bot-avatars/reference-site.webp');
-                    }, 100);
-                  }}
-                  className={cn(
-                    "h-11 px-5 rounded-2xl text-[11px] font-black transition-all active:scale-95 uppercase tracking-[0.1em] flex items-center gap-2",
-                    step > 1 ? "bg-white/10 text-white hover:bg-white/20 border border-white/10" : "opacity-0 pointer-events-none"
-                  )}
+                  onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')}
+                  className="h-11 px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-[11px] font-black uppercase tracking-[0.1em] transition-all active:scale-95 border border-white/10"
                 >
-                  <ArrowLeft size={16} /> {t('common.back')}
-                </button>
-                <button
-                  onClick={() => startConversation()}
-                  className="h-11 px-5 rounded-2xl bg-black text-white hover:bg-[#B3E140] hover:text-black text-[11px] font-black uppercase tracking-[0.1em] transition-all active:scale-95 shadow-xl border border-black/10"
-                >
-                  {t('bot.restart')}
+                  {locale === 'fr' ? 'FR' : 'EN'}
                 </button>
                 <button
                   onClick={onClose}
@@ -1317,6 +1284,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                           from: configState.rentalStartDate ? new Date(configState.rentalStartDate) : undefined,
                           to: configState.rentalEndDate ? new Date(configState.rentalEndDate) : undefined,
                         }}
+                        disabled={[{ before: new Date(new Date().setHours(0, 0, 0, 0)) }]}
                         onSelect={(range) => {
                           if (range?.from) setConfigState(prev => ({ ...prev, rentalStartDate: range.from!.toISOString() }));
                           if (range?.to) {

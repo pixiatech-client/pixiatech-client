@@ -14,7 +14,7 @@ const DetailsApp = dynamic(() => import('../details/App'), {
 import { EstimationDrawer } from '../components/EstimationDrawer';
 import { MobileFilterDrawer } from '../components/MobileFilterDrawer';
 
-import { X } from 'lucide-react';
+import { X, ShoppingBag, Calendar } from 'lucide-react';
 import { EstimationStatus, Estimation, TrackingInfo } from '../types';
 import { getQuoteRequests, getPaginatedQuotes, getQuoteCounts, updateQuoteStatus, moveQuotesToTrash, restoreQuotes, permanentDeleteQuotes, permanentDeleteAllTrashedQuotes, getUsers, getQuoteRequest, getProducts, getProductSpecs, calibrateQuoteStats } from '@/app/admin/actions';
 import type { QuoteRequest, UserProfile, Product, ProductSpec } from '@/lib/types';
@@ -50,6 +50,7 @@ const statusToEstimation: Record<string, EstimationStatus> = {
   'archived': 'Archivé',
   'trashed': 'Corbeille',
   'returned': 'Retourné',
+  'rented': 'Loué',
 };
 
 const estimationToStatus: Record<EstimationStatus, string> = {
@@ -60,6 +61,7 @@ const estimationToStatus: Record<EstimationStatus, string> = {
   'Archivé': 'archived',
   'Corbeille': 'trashed',
   'Retourné': 'returned',
+  'Loué': 'rented',
 };
 
 
@@ -145,6 +147,7 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
   // Pour le fournisseur: afficher "Fournisseur" et "Retourné" par défaut
   const defaultTab = isFournisseur ? 'Fournisseur' : 'En attente';
   const [activeTab, setActiveTab] = useState<EstimationStatus>(defaultTab as EstimationStatus);
+  const [estimationMode, setEstimationMode] = useState<'vente' | 'location'>('vente');
 
    // Current user object for chat
    const currentUser = useMemo(() => ({
@@ -1182,6 +1185,32 @@ return filtered;
   return (
     <div className="min-h-screen px-3 py-4 md:p-6 overflow-x-hidden bg-transparent">
       <div className="max-w-7xl mx-auto w-full">
+
+        <div className="flex justify-end mb-6 gap-3">
+          <button
+            onClick={() => setEstimationMode('vente')}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
+              estimationMode === 'vente'
+                ? "bg-orange-500 text-white shadow-lg shadow-orange-200"
+                : "bg-white text-zinc-500 border border-zinc-200 hover:text-zinc-800"
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            Vente
+          </button>
+          <button
+            onClick={() => setEstimationMode('location')}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
+              estimationMode === 'location'
+                ? "bg-emerald-500 text-white shadow-lg shadow-emerald-200"
+                : "bg-white text-zinc-500 border border-zinc-200 hover:text-zinc-800"
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            Location
+          </button>
+        </div>
+
         <TabNavigation
           activeTab={activeTab}
           onTabChange={handleTabChange}

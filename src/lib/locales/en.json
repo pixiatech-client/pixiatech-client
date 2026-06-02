@@ -337,10 +337,10 @@
         "page": "Page {pageNumber} of {totalPages}"
     },
     "bot": {
-        "title": "Assistant Bot Lumi",
+        "title": "Assistant Bot Pixia",
         "status": "Online",
         "welcome": "Hello! 👋 I am your assistant for your LED screen project.",
-        "questionType": "To guide you better, would you like to go for a rental solution or a final purchase?",
+        "questionType": "To guide you better, would you like to go for a rental solution or a purchase?",
         "rental": "Rental",
         "sale": "Final purchase",
         "perfectRental": "Perfect, a rental project!",
