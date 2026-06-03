@@ -9,6 +9,7 @@ export interface QuoteStats {
   sent: { count: number; total: number };
   archived: { count: number; total: number };
   trashed: { count: number; total: number };
+  rented: { count: number; total: number };
   updatedAt: admin.firestore.Timestamp | null;
   resyncVersion: number;
 }
@@ -21,11 +22,12 @@ const DEFAULT_STATS: QuoteStats = {
   sent: { count: 0, total: 0 },
   archived: { count: 0, total: 0 },
   trashed: { count: 0, total: 0 },
+  rented: { count: 0, total: 0 },
   updatedAt: null,
   resyncVersion: 1
 };
 
-export const validStatuses = ['pending', 'processed', 'returned', 'in_progress', 'sent', 'archived', 'trashed'] as const;
+export const validStatuses = ['pending', 'processed', 'returned', 'in_progress', 'sent', 'archived', 'trashed', 'rented'] as const;
 export type ValidStatus = typeof validStatuses[number];
 
 function isValidStatus(status: string): status is ValidStatus {

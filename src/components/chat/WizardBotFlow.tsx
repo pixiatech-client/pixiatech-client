@@ -21,7 +21,7 @@ import { SuccessView } from '@/components/success-view';
 import { ProductComparator } from '@/components/product-comparator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { createQuoteRequest } from '@/app/actions/quote-actions';
+import { createQuoteRequest, getBlockedPeriods } from '@/app/actions/quote-actions';
 import { useUser } from '@/firebase';
 import { useI18n } from '@/lib/i18n';
 
@@ -141,6 +141,30 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   }, [deliveryCityId, deliverySettings, locations]);
 
   const totalQuote = lineTotal + installationCost + deliveryCost;
+
+  const [blockedPeriods, setBlockedPeriods] = useState<{ from: string; to: string }[]>([]);
+
+  useEffect(() => {
+    const loadBlockedPeriods = async () => {
+      try {
+        const periods = await getBlockedPeriods();
+        setBlockedPeriods(periods);
+      } catch (error) {
+        console.error('Failed to load blocked periods:', error);
+      }
+    };
+    loadBlockedPeriods();
+  }, []);
+
+  const isDateBlocked = useCallback((date: Date) => {
+    // Zero out hours to compare strictly YYYY-MM-DD
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0); // avoid timezone shifts
+    const dateStr = d.toISOString().split('T')[0];
+    return blockedPeriods.some(period => {
+      return dateStr >= period.from && dateStr <= period.to;
+    });
+  }, [blockedPeriods]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -1284,7 +1308,10 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                           from: configState.rentalStartDate ? new Date(configState.rentalStartDate) : undefined,
                           to: configState.rentalEndDate ? new Date(configState.rentalEndDate) : undefined,
                         }}
-                        disabled={[{ before: new Date(new Date().setHours(0, 0, 0, 0)) }]}
+                         disabled={[
+                           { before: new Date(new Date().setHours(0, 0, 0, 0)) },
+                           isDateBlocked
+                         ]}
                         onSelect={(range) => {
                           if (range?.from) setConfigState(prev => ({ ...prev, rentalStartDate: range.from!.toISOString() }));
                           if (range?.to) {

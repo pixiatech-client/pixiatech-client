@@ -1838,13 +1838,13 @@ const ProduitPage = ({
   oldPrice,
   setOldPrice,
   isHidden,
-  setIsHidden
+  setIsHidden,
+  rentalStock,
+  setRentalStock
 }: any) => {
   const [specPage, setSpecPage] = useState(1);
   const [prevSpecPage, setPrevSpecPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [rentalStockLocal, setRentalStockLocal] = useState<string>('');
-  const [rentalQuantityLocal, setRentalQuantityLocal] = useState<string>('1');
   const specItemsPerPage = 6;
 
   const filteredSpecs = React.useMemo(() => {
@@ -1917,7 +1917,7 @@ const ProduitPage = ({
             {/* Desktop Only: Mode de commercialisation */}
             <div className="hidden md:block space-y-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Mode de commercialisation</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
                 <button
                   onClick={() => {
                     setMode((prev: string[]) =>
@@ -1927,12 +1927,19 @@ const ProduitPage = ({
                     );
                   }}
                   className={cn(
-                    "h-10 rounded-xl flex items-center justify-center gap-3 font-bold transition-all border",
-                    mode.includes('vente') ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                    "relative flex-1 flex items-center justify-center gap-2 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                    mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
                   )}
                 >
-                  <ShoppingCart className={cn("w-5 h-5", mode.includes('vente') ? "text-[#c6ff00]" : "text-slate-300")} />
-                  <span>Vente</span>
+                  {mode.includes('vente') && (
+                    <motion.span
+                      layoutId="mode-bubble-vente"
+                      className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                    />
+                  )}
+                  <ShoppingCart className={cn("w-4 h-4 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                  <span className="z-20 whitespace-nowrap">Vente</span>
                 </button>
                 <button
                   onClick={() => {
@@ -1943,12 +1950,19 @@ const ProduitPage = ({
                     );
                   }}
                   className={cn(
-                    "h-10 rounded-xl flex items-center justify-center gap-3 font-bold transition-all border",
-                    mode.includes('location') ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                    "relative flex-1 flex items-center justify-center gap-2 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                    mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
                   )}
                 >
-                  <Calendar className={cn("w-5 h-5", mode.includes('location') ? "text-purple-400" : "text-slate-300")} />
-                  <span>Location</span>
+                  {mode.includes('location') && (
+                    <motion.span
+                      layoutId="mode-bubble-location"
+                      className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                    />
+                  )}
+                  <Calendar className={cn("w-4 h-4 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                  <span className="z-20 whitespace-nowrap">Location</span>
                 </button>
               </div>
             </div>
@@ -2178,37 +2192,14 @@ const ProduitPage = ({
                       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
                       <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
-                        Quantité de location
+                        Quantité disponible
                       </label>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <span className="text-[9px] text-violet-300/80 font-medium uppercase tracking-wider block mb-1">Quantité disponible</span>
-                          <NumberInput
-                            value={rentalStockLocal}
-                            onChange={(val) => setRentalStockLocal(String(val ?? ''))}
-                            placeholder="Ex: 10"
-                            isDark
-                          />
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-violet-300/80 font-medium uppercase tracking-wider block mb-1">Quantité à louer</span>
-                          <NumberInput
-                            value={rentalQuantityLocal}
-                            onChange={(val) => {
-                              const parsed = parseInt(String(val ?? '1'), 10);
-                              const safe = Number.isNaN(parsed) ? 1 : Math.max(1, parsed);
-                              const stock = parseInt(String(rentalStockLocal || '0'), 10);
-                              const maxAllowed = Number.isNaN(stock) ? safe : Math.min(safe, stock);
-                              setRentalQuantityLocal(String(maxAllowed));
-                            }}
-                            placeholder="Ex: 3"
-                            isDark
-                          />
-                        </div>
-                      </div>
-                      <div className="text-[9px] text-violet-400 mt-1 font-medium italic tracking-tight">
-                        Quantité louée affichée : {rentalQuantityLocal || '0'} / {rentalStockLocal || '0'} disponibles.
-                      </div>
+                      <NumberInput
+                        value={rentalStock}
+                        onChange={(val) => setRentalStock(String(val ?? ''))}
+                        placeholder="Ex: 10"
+                        isDark
+                      />
                     </div>
                   )}
 
@@ -2510,7 +2501,7 @@ const ProduitPage = ({
                   {/* Mode de commercialisation */}
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Mode de commercialisation</label>
-                    <div className="grid grid-cols-1 gap-2">
+                    <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
                       <button
                         onClick={() => {
                           setMode((prev: string[]) =>
@@ -2520,14 +2511,19 @@ const ProduitPage = ({
                           );
                         }}
                         className={cn(
-                          "w-full h-12 rounded-xl flex items-center px-4 gap-3 transition-all duration-300 relative overflow-hidden group",
-                          mode.includes('vente') ? "bg-black text-white" : "bg-slate-100 text-slate-400"
+                          "relative flex-1 flex items-center justify-center gap-2 px-4 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                          mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
                         )}
                       >
-                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", mode.includes('vente') ? "bg-white/10" : "bg-slate-200")}>
-                          <ShoppingCart className={cn("w-4 h-4", mode.includes('vente') ? "text-[#c6ff00]" : "text-slate-400")} />
-                        </div>
-                        <span className="text-xs font-black uppercase tracking-widest">Vente</span>
+                        {mode.includes('vente') && (
+                          <motion.span
+                            layoutId="mode-bubble-mobile-vente"
+                            className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
+                            transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                          />
+                        )}
+                        <ShoppingCart className={cn("w-4 h-4 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                        <span className="z-20 whitespace-nowrap">Vente</span>
                       </button>
 
                       <button
@@ -2539,14 +2535,19 @@ const ProduitPage = ({
                           );
                         }}
                         className={cn(
-                          "w-full h-12 rounded-xl flex items-center px-4 gap-3 transition-all duration-300 relative overflow-hidden group",
-                          mode.includes('location') ? "bg-black text-white" : "bg-slate-100 text-slate-400"
+                          "relative flex-1 flex items-center justify-center gap-2 px-4 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                          mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
                         )}
                       >
-                        <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", mode.includes('location') ? "bg-white/10" : "bg-slate-200")}>
-                          <Calendar className={cn("w-4 h-4", mode.includes('location') ? "text-purple-400" : "text-slate-400")} />
-                        </div>
-                        <span className="text-xs font-black uppercase tracking-widest">Location</span>
+                        {mode.includes('location') && (
+                          <motion.span
+                            layoutId="mode-bubble-mobile-location"
+                            className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
+                            transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                          />
+                        )}
+                        <Calendar className={cn("w-4 h-4 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                        <span className="z-20 whitespace-nowrap">Location</span>
                       </button>
                     </div>
                   </div>
@@ -4571,6 +4572,8 @@ export default function ProductManagementClient() {
                   setPrixLocationJour={setPrixLocationJour}
                   surfaceMaxLocation={surfaceMaxLocation}
                   setSurfaceMaxLocation={setSurfaceMaxLocation}
+                  rentalStock={rentalStock}
+                  setRentalStock={setRentalStock}
                   surfaceMinRequise={surfaceMinRequise}
                   setSurfaceMinRequise={setSurfaceMinRequise}
                   dimensionsEnabled={dimensionsEnabled}

@@ -397,3 +397,180 @@ export const SimpleMessagePopup: React.FC<SimpleMessagePopupProps> = ({ isOpen, 
   );
 };
 
+interface RentalTreatmentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (startDate: string, endDate: string, startTime: string, endTime: string) => void;
+}
+
+export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({ isOpen, onClose, onConfirm }) => {
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [startTime, setStartTime] = useState('08:00');
+  const [endTime, setEndTime] = useState('18:00');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setStartDate('');
+      setEndDate('');
+      setStartTime('08:00');
+      setEndTime('18:00');
+      setError(null);
+    }
+  }, [isOpen]);
+
+  const handleConfirm = () => {
+    if (!startDate || !endDate) {
+      setError('Veuillez sélectionner les dates de début et de fin.');
+      return;
+    }
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (end < start) {
+      setError('La date de fin doit être postérieure ou égale à la date de début.');
+      return;
+    }
+    setError(null);
+    onConfirm(startDate, endDate, startTime, endTime);
+  };
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-black/90 backdrop-blur-md"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="relative w-full max-w-xl bg-[#09090b] border border-white/10 rounded-3xl md:rounded-[32px] p-5 md:p-8 shadow-2xl overflow-visible max-h-[90vh] custom-scrollbar flex flex-col"
+          >
+            {/* Ambient Glow - Purple for Rental */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-[#a855f7] to-transparent opacity-50" />
+            
+            <div className="flex items-center justify-between mb-6 md:mb-8 shrink-0">
+              <div className="flex items-center gap-3 md:gap-5">
+                <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-[#a855f7]/10 border border-[#a855f7]/20 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.1)] shrink-0">
+                  <CheckCircle2 size={24} className="text-[#a855f7]" />
+                </div>
+                <div>
+                  <h2 className="text-lg md:text-2xl font-['Space_Grotesk'] font-bold text-white uppercase tracking-tight leading-tight">
+                    Traiter la <span className="text-[#a855f7]">Location</span>
+                  </h2>
+                  <p className="text-[9px] md:text-[11px] text-zinc-500 font-['JetBrains_Mono'] uppercase tracking-[0.1em] md:tracking-[0.2em] mt-0.5">
+                    Définir la période de location
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-xl md:rounded-2xl transition-all text-zinc-500 hover:text-white border border-white/5 shrink-0"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar pr-2 flex-1">
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex gap-3 text-red-400 text-xs font-['JetBrains_Mono'] items-center">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {/* Date Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest">
+                    Date de début
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm font-['JetBrains_Mono'] focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest">
+                    Date de fin
+                  </label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm font-['JetBrains_Mono'] focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
+                  />
+                </div>
+              </div>
+
+              {/* Time Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest">
+                    Heure de début
+                  </label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm font-['JetBrains_Mono'] focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest">
+                    Heure de fin
+                  </label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm font-['JetBrains_Mono'] focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-purple-500/5 border border-purple-500/10 rounded-2xl p-4 flex gap-4">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0">
+                  <Info size={20} className="text-purple-400" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-purple-200/90 font-medium">Création de la période bloquante</p>
+                  <p className="text-[10px] text-purple-300/50 leading-relaxed font-['JetBrains_Mono']">
+                    En validant le traitement, ces dates seront bloquées dans le calendrier de réservation du configurateur pour éviter les doubles réservations.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-4 mt-8 shrink-0">
+              <button
+                onClick={onClose}
+                className="flex-1 py-5 rounded-[20px] bg-white/[0.02] border border-white/5 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 hover:bg-white/5 hover:text-white transition-all font-['Space_Grotesk']"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleConfirm}
+                className="flex-[1.5] py-5 rounded-[20px] bg-gradient-to-r from-[#a855f7] to-[#7c3aed] text-white text-xs font-bold uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(168,85,247,0.2)] hover:shadow-[0_0_50px_rgba(168,85,247,0.4)] transition-all flex items-center justify-center gap-3 font-['Space_Grotesk'] relative overflow-hidden group"
+              >
+                <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-[-20deg]" />
+                <CheckCircle2 size={18} className="group-hover:scale-110 transition-transform" /> 
+                Valider le traitement
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+

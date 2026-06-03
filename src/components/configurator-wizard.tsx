@@ -43,6 +43,7 @@ import { cn } from '@/lib/utils';
 import { ConfigState, INITIAL_STATE, ProjectType, Environment, ViewingDistance, PixelPitch } from '@/lib/configurator-wizard-types';
 import { Button } from './ui/button';
 import { ConfiguredProduct, Product, Settings, UserProfile, WizardSettings } from '@/lib/types';
+import { getBlockedPeriods } from '@/app/actions/quote-actions';
 import Preview from './preview';
 import StepDimensionsOriginal from './StepDimensions';
 import { Label } from './ui/label';
@@ -1070,6 +1071,29 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
 }
 
 export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: ConfigState, updateState: any, t: any }) {
+  const [blockedPeriods, setBlockedPeriods] = React.useState<{ from: string; to: string }[]>([]);
+
+  React.useEffect(() => {
+    const loadBlockedPeriods = async () => {
+      try {
+        const periods = await getBlockedPeriods();
+        setBlockedPeriods(periods);
+      } catch (error) {
+        console.error('Failed to load blocked periods:', error);
+      }
+    };
+    loadBlockedPeriods();
+  }, []);
+
+  const isDateBlocked = React.useCallback((date: Date) => {
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0);
+    const dateStr = d.toISOString().split('T')[0];
+    return blockedPeriods.some(period => {
+      return dateStr >= period.from && dateStr <= period.to;
+    });
+  }, [blockedPeriods]);
+
   const handleDateChange = (range: DateRange | undefined) => {
     if (range?.from) {
       updateState({ rentalStartDate: range.from.toISOString() });
@@ -1109,8 +1133,8 @@ export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: Conf
                   <Button
                     variant={"outline"}
                     className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
+                       "w-full justify-start text-left font-normal",
+                       !startDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -1129,6 +1153,10 @@ export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: Conf
                     initialFocus
                     mode="range"
                     selected={{ from: startDate, to: endDate }}
+                    disabled={[
+                      { before: new Date(new Date().setHours(0, 0, 0, 0)) },
+                      isDateBlocked
+                    ]}
                     onSelect={handleDateChange}
                     numberOfMonths={1}
                   />

@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { EstimationStatus } from '../types';
-import { Clock, CheckCircle2, Truck, Archive, Trash2, Calculator, Users, Hourglass, RotateCcw } from 'lucide-react';
+import { Clock, CheckCircle2, Truck, Archive, Trash2, Calculator, Users, Hourglass, RotateCcw, Key } from 'lucide-react';
 
 interface SummaryCardProps {
   total: number;
@@ -50,9 +50,12 @@ interface TabNavigationProps {
   onTabChange: (tab: EstimationStatus) => void;
   userRole?: string;
   tabCounts?: Record<EstimationStatus, number>;
+  estimationMode?: 'vente' | 'location';
 }
 
-const allTabs: { label: EstimationStatus; icon: React.ElementType; color: string; hoverColor: string; hoverBg: string; roles: string[] }[] = [
+type TabDef = { label: EstimationStatus; icon: React.ElementType; color: string; hoverColor: string; hoverBg: string; roles: string[] };
+
+const venteTabs: TabDef[] = [
   { label: 'En attente', icon: Hourglass, color: '#f4af07', hoverColor: '#ffb86a', hoverBg: '#451a03', roles: ['admin', 'commercial'] },
   { label: 'Traité', icon: CheckCircle2, color: '#3b82f6', hoverColor: '#8ec5ff', hoverBg: '#0e1c47', roles: ['admin', 'commercial'] },
   { label: 'Retourné', icon: RotateCcw, color: '#f97316', hoverColor: '#fdba74', hoverBg: '#7c2d12', roles: ['admin', 'fournisseur', 'commercial'] },
@@ -62,7 +65,16 @@ const allTabs: { label: EstimationStatus; icon: React.ElementType; color: string
   { label: 'Corbeille', icon: Trash2, color: '#ef4444', hoverColor: '#fca5a5', hoverBg: '#450a0a', roles: ['admin', 'commercial'] },
 ];
 
-export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange, userRole = 'admin', tabCounts = {} }) => {
+const locationTabs: TabDef[] = [
+  { label: 'En attente', icon: Hourglass, color: '#f4af07', hoverColor: '#ffb86a', hoverBg: '#451a03', roles: ['admin', 'commercial'] },
+  { label: 'Traité', icon: CheckCircle2, color: '#3b82f6', hoverColor: '#8ec5ff', hoverBg: '#0e1c47', roles: ['admin', 'commercial'] },
+  { label: 'Loué', icon: Key, color: '#a855f7', hoverColor: '#d8b4fe', hoverBg: '#2e1065', roles: ['admin', 'commercial'] },
+  { label: 'Archivé', icon: Archive, color: '#9ca3af', hoverColor: '#9ca3af', hoverBg: '#111827', roles: ['admin', 'commercial'] },
+  { label: 'Corbeille', icon: Trash2, color: '#ef4444', hoverColor: '#fca5a5', hoverBg: '#450a0a', roles: ['admin', 'commercial'] },
+];
+
+export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange, userRole = 'admin', tabCounts = {}, estimationMode = 'vente' }) => {
+  const allTabs = estimationMode === 'location' ? locationTabs : venteTabs;
   const tabs = allTabs.filter(t => t.roles.includes(userRole));
   const activeIndex = tabs.findIndex(t => t.label === activeTab);
   const containerRef = React.useRef<HTMLDivElement>(null);

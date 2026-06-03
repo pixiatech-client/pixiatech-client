@@ -40,6 +40,7 @@ import { Input } from './ui/input';
 import Preview from './preview';
 import { cn } from '@/lib/utils';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { getProductBlockedPeriodsAction, getProductRentalAvailabilityAction } from '@/app/actions/quote-actions';
 
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar as CalendarIcon } from 'lucide-react';
@@ -105,6 +106,62 @@ export function Configurator({
   const [isClient, setIsClient] = useState(false);
   const [showCalcCard, setShowCalcCard] = useState(false);
   const { t, locale } = useI18n();
+
+  // Per-product blocked periods: key = configProductId
+  const [productBlockedPeriods, setProductBlockedPeriods] = useState<Record<string, { from: string; to: string }[]>>({});
+  // Per-product availability info: key = configProductId
+  const [productAvailability, setProductAvailability] = useState<Record<string, { available: boolean; total: number; reserved: number; remaining: number } | null>>({});
+
+  // Load blocked periods for a specific configured product
+  const loadProductBlockedPeriods = useCallback(async (configProductId: string, productId: string, quantity: number) => {
+    if (!productId) return;
+    try {
+      const periods = await getProductBlockedPeriodsAction(productId, quantity);
+      setProductBlockedPeriods(prev => ({ ...prev, [configProductId]: periods }));
+    } catch (error) {
+      console.error('Failed to load blocked periods for product:', productId, error);
+    }
+  }, []);
+
+  // Reload blocked periods whenever a rental product's productId or quantity changes
+  useEffect(() => {
+    configuredProducts.forEach(p => {
+      if (p.transactionType === 'rental' && p.productId) {
+        loadProductBlockedPeriods(p.id, p.productId, p.quantity);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configuredProducts.map(p => `${p.id}-${p.productId}-${p.quantity}`).join(',')]);
+
+  // Load availability for a product when a date range is selected
+  const loadProductAvailability = useCallback(async (
+    configProductId: string,
+    productId: string,
+    from: Date,
+    to: Date,
+    quantity: number
+  ) => {
+    if (!productId || !from || !to) return;
+    try {
+      const avail = await getProductRentalAvailabilityAction(
+        productId,
+        from.toISOString(),
+        to.toISOString(),
+        quantity
+      );
+      setProductAvailability(prev => ({ ...prev, [configProductId]: avail }));
+    } catch (error) {
+      console.error('Failed to check product availability:', error);
+    }
+  }, []);
+
+  const isDateBlockedForProduct = useCallback((configProductId: string) => (date: Date) => {
+    const periods = productBlockedPeriods[configProductId] ?? [];
+    const d = new Date(date);
+    d.setHours(12, 0, 0, 0);
+    const dateStr = d.toISOString().split('T')[0];
+    return periods.some(period => dateStr >= period.from && dateStr <= period.to);
+  }, [productBlockedPeriods]);
 
   const dateLocale = locale === 'en' ? enUS : fr;
 
@@ -504,45 +561,72 @@ export function Configurator({
                             </div>
                             
                             {p.rentalUnit === 'day' && (
-                                 <Popover open={openCalendars[p.id]} onOpenChange={(isOpen) => setOpenCalendars(prev => ({ ...prev, [p.id]: isOpen }))}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant={"outline"}
-                                            className={cn(
-                                                "w-full justify-start text-left font-normal h-9",
-                                                !p.rentalPeriod && "text-muted-foreground"
-                                            )}
-                                            >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {p.rentalPeriod?.from ? (
-                                                p.rentalPeriod.to ? (
-                                                <>
-                                                    {format(p.rentalPeriod.from, "dd LLL y", { locale: dateLocale })} -{" "}
-                                                    {format(p.rentalPeriod.to, "dd LLL y", { locale: dateLocale })}
-                                                </>
-                                                ) : (
-                                                format(p.rentalPeriod.from, "dd LLL y", { locale: dateLocale })
-                                                )
-                                            ) : (
-                                                <span>{t('configurator.pickDateRange')}</span>
-                                            )}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                          mode="range"
-                                          selected={p.rentalPeriod}
-                                          onSelect={(range) => {
-                                            handleUpdateProduct(p.id, 'rentalPeriod', range);
-                                            // Close calendar if range is complete
-                                            if(range?.from && range?.to) {
-                                                toggleCalendar(p.id);
-                                            }
-                                          }}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                 <div className="space-y-1.5">
+                   <Popover open={openCalendars[p.id]} onOpenChange={(isOpen) => setOpenCalendars(prev => ({ ...prev, [p.id]: isOpen }))}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant={"outline"}
+                            className={cn(
+                                "w-full justify-start text-left font-normal h-9",
+                                !p.rentalPeriod && "text-muted-foreground"
                             )}
+                            >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {p.rentalPeriod?.from ? (
+                                p.rentalPeriod.to ? (
+                                <>
+                                    {format(p.rentalPeriod.from, "dd LLL y", { locale: dateLocale })} -{" "}
+                                    {format(p.rentalPeriod.to, "dd LLL y", { locale: dateLocale })}
+                                </>
+                                ) : (
+                                format(p.rentalPeriod.from, "dd LLL y", { locale: dateLocale })
+                                )
+                            ) : (
+                                <span>{t('configurator.pickDateRange')}</span>
+                            )}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="range"
+                          selected={p.rentalPeriod}
+                          disabled={[
+                            { before: new Date(new Date().setHours(0, 0, 0, 0)) },
+                            isDateBlockedForProduct(p.id)
+                          ]}
+                          onSelect={(range) => {
+                            handleUpdateProduct(p.id, 'rentalPeriod', range);
+                            if(range?.from && range?.to) {
+                                toggleCalendar(p.id);
+                                const selectedProduct = allProducts.find(ap => ap.id === p.productId);
+                                if (selectedProduct) {
+                                  loadProductAvailability(p.id, p.productId, range.from, range.to, p.quantity);
+                                }
+                            }
+                          }}
+                        />
+                    </PopoverContent>
+                </Popover>
+                {/* Availability badge */}
+                {(() => {
+                  const avail = productAvailability[p.id];
+                  if (!avail) return null;
+                  return (
+                    <div className={cn(
+                      "text-xs font-semibold px-2 py-1 rounded-md text-center",
+                      avail.available
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                        : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                    )}>
+                      {avail.available
+                        ? `✓ ${avail.remaining} / ${avail.total} ${t('configurator.unitsAvailable') ?? 'disponibles'}`
+                        : `✗ Stock insuffisant — ${avail.remaining} / ${avail.total} disponibles`
+                      }
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
                             {p.rentalUnit === 'hour' && (
                                 <div className='flex flex-wrap items-center gap-2'>
                                     <Popover>
@@ -562,6 +646,10 @@ export function Configurator({
                                             <Calendar
                                                 mode="single"
                                                 selected={p.rentalDate}
+                                                disabled={[
+                                                    { before: new Date(new Date().setHours(0, 0, 0, 0)) },
+                                                    isDateBlockedForProduct(p.id)
+                                                ]}
                                                 onSelect={(date) => handleUpdateProduct(p.id, 'rentalDate', date)}
                                             />
                                         </PopoverContent>

@@ -987,6 +987,12 @@ async function processQuoteSnapshot(docSnap: admin.DocumentSnapshot): Promise<Qu
     includeInstallation: data.includeInstallation,
     includeDelivery: data.includeDelivery,
     transactionType: data.transactionType,
+    rentalPeriod: data.rentalPeriod ? {
+      from: data.rentalPeriod.from?.toDate ? data.rentalPeriod.from.toDate() : new Date(data.rentalPeriod.from),
+      to: data.rentalPeriod.to?.toDate ? data.rentalPeriod.to.toDate() : new Date(data.rentalPeriod.to),
+    } : undefined,
+    rentalStartTime: data.rentalStartTime,
+    rentalEndTime: data.rentalEndTime,
     width: data.width,
     height: data.height,
     unconfiguredCityQuery: data.unconfiguredCityQuery,
@@ -1013,7 +1019,7 @@ async function processQuoteSnapshot(docSnap: admin.DocumentSnapshot): Promise<Qu
   return structuredQuote;
 }
 
-export async function getQuoteCounts(clientSupplierId?: string): Promise<{ counts: Record<string, number>, sums: Record<string, number> }> {
+export async function getQuoteCounts(clientSupplierId?: string, transactionType?: 'sale' | 'rental'): Promise<{ counts: Record<string, number>, sums: Record<string, number> }> {
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return { counts: {}, sums: {} };
 
@@ -1021,16 +1027,23 @@ export async function getQuoteCounts(clientSupplierId?: string): Promise<{ count
   if (!user || 'error' in user) return { counts: {}, sums: {} };
 
   const effectiveSupplierId = user.role === 'fournisseur' ? user.uid : clientSupplierId;
-  const statuses = ['pending', 'processed', 'returned', 'in_progress', 'sent', 'archived', 'trashed'];
+  const statuses = ['pending', 'processed', 'returned', 'in_progress', 'sent', 'archived', 'trashed', 'rented'];
   const counts: Record<string, number> = {};
   const sums: Record<string, number> = {};
   
   statuses.forEach(s => { counts[s] = 0; sums[s] = 0; });
 
-  // If filtering by supplier, manual count is required since stats are global
-  if (effectiveSupplierId) {
+  // If filtering by supplier or transactionType, manual count is required since stats are global
+  if (effectiveSupplierId || transactionType) {
     try {
-      const snap = await adminDb.collection('quotes').where('supplierId', '==', effectiveSupplierId).get();
+      let q: admin.Query = adminDb.collection('quotes');
+      if (effectiveSupplierId) {
+        q = q.where('supplierId', '==', effectiveSupplierId);
+      }
+      if (transactionType) {
+        q = q.where('transactionType', '==', transactionType);
+      }
+      const snap = await q.get();
       snap.forEach(doc => {
         const data = doc.data();
         if (statuses.includes(data.status)) {
@@ -1038,6 +1051,27 @@ export async function getQuoteCounts(clientSupplierId?: string): Promise<{ count
           sums[data.status] += (data.totalClient || data.totalQuote || 0);
         }
       });
+
+      // For 'sale' mode: also count legacy quotes that have NO transactionType field set
+      // (documents created before the Sale/Rental separation feature was added)
+      if (transactionType === 'sale') {
+        let legacyQ: admin.Query = adminDb.collection('quotes');
+        if (effectiveSupplierId) {
+          legacyQ = legacyQ.where('supplierId', '==', effectiveSupplierId);
+        }
+        // Firestore: documents where the field doesn't exist satisfy '==' with null
+        // We use a workaround: fetch docs where transactionType is not set by using != 'rental'
+        // and then excluding those that already have 'sale' (already counted above)
+        legacyQ = legacyQ.where('transactionType', 'not-in', ['sale', 'rental']);
+        const legacySnap = await legacyQ.get();
+        legacySnap.forEach(doc => {
+          const data = doc.data();
+          if (statuses.includes(data.status)) {
+            counts[data.status]++;
+            sums[data.status] += (data.totalClient || data.totalQuote || 0);
+          }
+        });
+      }
     } catch (e) {
       console.error(e);
     }
@@ -1088,11 +1122,13 @@ export async function getPaginatedQuotes({
   limit = 6,
   startAfterId,
   supplierId: clientSupplierId,
+  transactionType,
 }: {
   status: string;
   limit?: number;
   startAfterId?: string | null;
   supplierId?: string;
+  transactionType?: 'sale' | 'rental';
 }) {
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) throw new Error("Firestore not initialized");
@@ -1114,26 +1150,84 @@ export async function getPaginatedQuotes({
     'totalPurchase', 'totalClient', 'totalQuote', 'supplierId', 'trackingNumber',
     'isReturned', 'isLocked', 'treatedBy', 'treatedByName', 'treatedByRole',
     'emailVerified', 'products', 'deliveryCost', 'installationCost',
-    'supplierNotes', 'returnReason', 'sitePhoto', 'phone', 'email'
+    'supplierNotes', 'returnReason', 'sitePhoto', 'phone', 'email',
+    'transactionType', 'rentalPeriod', 'rentalStartTime', 'rentalEndTime'
   ];
 
+  const toIso = (val: any): string | null => {
+    if (!val) return null;
+    if (typeof val.toDate === 'function') return val.toDate().toISOString();
+    if (val instanceof Date) return val.toISOString();
+    if (typeof val === 'string') return val;
+    return null;
+  };
+
+  const mapDoc = (doc: admin.DocumentSnapshot) => {
+    const data = doc.data() || {};
+    return {
+      id: doc.id,
+      number: data.number || `EST-${doc.id.substring(0, 6).toUpperCase()}`,
+      client: data.client?.companyName || data.companyName || 'Client Inconnu',
+      email: data.client?.email || data.email || '',
+      phone: data.client?.phone || data.phone || '',
+      status: data.status || 'pending',
+      createdAt: toIso(data.createdAt) || new Date(0).toISOString(),
+      treatedAt: toIso(data.treatedAt),
+      totalPurchase: data.totalPurchase || 0,
+      totalClient: data.totalClient || 0,
+      totalQuote: data.totalQuote || 0,
+      supplierId: typeof data.supplierId === 'string' ? data.supplierId : (data.supplierId?.id || null),
+      trackingNumber: data.trackingNumber || null,
+      isReturned: data.isReturned || false,
+      isLocked: data.isLocked || false,
+      treatedBy: data.treatedBy || null,
+      treatedByName: data.treatedByName || null,
+      treatedByRole: data.treatedByRole || null,
+      emailVerified: data.emailVerified || false,
+      products: (data.products || []).map((p: any) => ({
+        id: p.id || '',
+        name: p.name || '',
+        quantity: p.quantity || 0,
+        purchasePrice: p.purchasePrice || 0,
+        sellingPrice: p.sellingPrice || 0,
+        lineTotal: p.lineTotal || 0,
+      })),
+      deliveryCost: data.deliveryCost || 0,
+      installationCost: data.installationCost || 0,
+      supplierNotes: data.supplierNotes || null,
+      returnReason: data.returnReason || null,
+      sitePhoto: data.client?.sitePhoto || data.sitePhoto || null,
+      transactionType: data.transactionType || null,
+      rentalPeriod: data.rentalPeriod ? {
+        from: toIso(data.rentalPeriod.from),
+        to: toIso(data.rentalPeriod.to)
+      } : null,
+      rentalStartTime: data.rentalStartTime || null,
+      rentalEndTime: data.rentalEndTime || null,
+    };
+  };
+
+  const applyProjection = (q: admin.Query) => {
+    try {
+      return (q as any).select(...LIST_FIELDS);
+    } catch {
+      return q; // Fallback if .select() not available
+    }
+  };
+
   try {
-    // native Firestore query with composite indexes
+    // ── Primary query: strictly-typed sale OR rental documents ──
     let q: admin.Query = adminDb.collection('quotes');
-    
+
     if (effectiveSupplierId) {
       q = q.where('supplierId', '==', effectiveSupplierId);
     }
-    
-    q = q.where('status', '==', status).orderBy('createdAt', 'desc').limit(limit);
 
-    // Apply field projection to reduce document transfer size by ~70%
-    // Excludes: history[], pdfSettings{}, verificationToken, verificationTokenExpires, unconfiguredCityQuery
-    try {
-      q = (q as any).select(...LIST_FIELDS);
-    } catch {
-      // Fallback: .select() not available in this SDK version — full doc is returned
+    if (transactionType) {
+      q = q.where('transactionType', '==', transactionType);
     }
+
+    q = applyProjection(q.where('status', '==', status).orderBy('createdAt', 'desc').limit(limit));
 
     if (startAfterId) {
       const lastDoc = await adminDb.collection('quotes').doc(startAfterId).get();
@@ -1143,54 +1237,46 @@ export async function getPaginatedQuotes({
     }
 
     const snapshot = await q.get();
-    if (snapshot.empty) return { requests: [], lastId: null };
+    let allDocs = snapshot.docs;
 
-    const toIso = (val: any): string | null => {
-      if (!val) return null;
-      if (typeof val.toDate === 'function') return val.toDate().toISOString();
-      if (val instanceof Date) return val.toISOString();
-      if (typeof val === 'string') return val;
-      return null;
-    };
+    // ── For 'sale' mode: also include legacy quotes without the transactionType field ──
+    // These are documents created before the Sale/Rental separation was implemented.
+    // Firestore `not-in` catches docs where the field is absent or has a non-matching value.
+    if (transactionType === 'sale' && !startAfterId) {
+      // Only on first page to keep pagination simple; legacy docs backfill happens over time
+      try {
+        let legacyQ: admin.Query = adminDb.collection('quotes');
+        if (effectiveSupplierId) {
+          legacyQ = legacyQ.where('supplierId', '==', effectiveSupplierId);
+        }
+        legacyQ = applyProjection(
+          legacyQ
+            .where('transactionType', 'not-in', ['sale', 'rental'])
+            .where('status', '==', status)
+            .orderBy('transactionType') // required by Firestore when using not-in
+            .orderBy('createdAt', 'desc')
+            .limit(limit)
+        );
+        const legacySnap = await legacyQ.get();
+        // Merge and de-duplicate by doc id
+        const existingIds = new Set(allDocs.map(d => d.id));
+        legacySnap.docs.forEach(d => { if (!existingIds.has(d.id)) allDocs.push(d); });
+        // Re-sort merged list by createdAt desc and enforce page limit
+        allDocs.sort((a, b) => {
+          const tA = a.data()?.createdAt?.toMillis?.() ?? 0;
+          const tB = b.data()?.createdAt?.toMillis?.() ?? 0;
+          return tB - tA;
+        });
+        allDocs = allDocs.slice(0, limit);
+      } catch (legacyErr) {
+        // Legacy query failed (e.g. index missing) — proceed with primary results only
+        console.warn('[getPaginatedQuotes] Legacy query skipped:', legacyErr);
+      }
+    }
 
-    const requests = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        number: data.number || `EST-${doc.id.substring(0, 6).toUpperCase()}`,
-        client: data.client?.companyName || data.companyName || 'Client Inconnu',
-        email: data.client?.email || data.email || '',
-        phone: data.client?.phone || data.phone || '',
-        status: data.status || 'pending',
-        createdAt: toIso(data.createdAt) || new Date(0).toISOString(),
-        treatedAt: toIso(data.treatedAt),
-        totalPurchase: data.totalPurchase || 0,
-        totalClient: data.totalClient || 0,
-        totalQuote: data.totalQuote || 0,
-        supplierId: typeof data.supplierId === 'string' ? data.supplierId : (data.supplierId?.id || null),
-        trackingNumber: data.trackingNumber || null,
-        isReturned: data.isReturned || false,
-        isLocked: data.isLocked || false,
-        treatedBy: data.treatedBy || null,
-        treatedByName: data.treatedByName || null,
-        treatedByRole: data.treatedByRole || null,
-        emailVerified: data.emailVerified || false,
-        products: (data.products || []).map((p: any) => ({
-          id: p.id || '',
-          name: p.name || '',
-          quantity: p.quantity || 0,
-          purchasePrice: p.purchasePrice || 0,
-          sellingPrice: p.sellingPrice || 0,
-          lineTotal: p.lineTotal || 0,
-        })),
-        deliveryCost: data.deliveryCost || 0,
-        installationCost: data.installationCost || 0,
-        supplierNotes: data.supplierNotes || null,
-        returnReason: data.returnReason || null,
-        sitePhoto: data.client?.sitePhoto || data.sitePhoto || null,
-      };
-    });
+    if (allDocs.length === 0) return { requests: [], lastId: null };
 
+    const requests = allDocs.map(mapDoc);
     const lastId = requests.length > 0 ? requests[requests.length - 1].id : null;
     return { requests, lastId };
   } catch (error) {

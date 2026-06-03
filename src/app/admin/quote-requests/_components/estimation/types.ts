@@ -6,7 +6,8 @@ export type EstimationStatus =
   | 'Livraison'   // 4. Livraison (delivery) - REQUIS: trackingNumber + deliveryDate
   | 'Archivé'     // 5. Archivé (archived)
   | 'Corbeille'   // 6. Corbeille (bin)
-  | 'Retourné';   // 7. Retourné (returned)
+  | 'Retourné'    // 7. Retourné (returned)
+  | 'Loué';       // 8. Loué (rented)
 
 export interface TrackingInfo {
   number: string;
@@ -45,5 +46,12 @@ export interface Estimation {
   emailVerified?: boolean;
   sitePhoto?: string;
   pdfUrl?: string;
+  transactionType?: 'sale' | 'rental';
+  rentalPeriod?: {
+    from: string;
+    to: string;
+  };
+  rentalStartTime?: string;
+  rentalEndTime?: string;
 }
 

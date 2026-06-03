@@ -1120,7 +1120,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               {/* VENTE / LOCATION TOGGLE */}
                               {isEditMode && (
                                 <div className="mt-4 flex items-center gap-2">
-                                  <div className="flex p-1 bg-slate-100 border border-slate-200 rounded-xl">
+                                  <div className="flex p-1 bg-slate-100/80 border border-slate-200/80 rounded-xl backdrop-blur-sm shadow-sm">
                                     <button
                                       onClick={() => {
                                         const newProducts = estimation.products.map(prod => prod.id === p.id ? { 
@@ -1130,7 +1130,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         } : prod);
                                         setEstimation({ ...estimation, products: newProducts as any });
                                       }}
-                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.transactionType !== 'rental' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.transactionType !== 'rental' ? 'bg-black text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
                                       Vente
                                     </button>
@@ -1143,7 +1143,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         } : prod);
                                         setEstimation({ ...estimation, products: newProducts as any });
                                       }}
-                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.transactionType === 'rental' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
+                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.transactionType === 'rental' ? 'bg-black text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
                                       Location
                                     </button>
@@ -1215,26 +1215,26 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 className="mt-6 pt-6 border-t border-white/5 space-y-4 overflow-hidden"
                               >
                                 <div className="flex items-center gap-4">
-                                  <div className="flex p-1 bg-slate-100 border border-slate-200 rounded-xl">
-                                    <button
-                                      onClick={() => {
-                                        const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'day' } : prod);
-                                        setEstimation({ ...estimation, products: newProducts as any });
-                                      }}
-                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.rentalUnit !== 'hour' ? 'bg-aura-accent text-white shadow-lg' : 'text-slate-500 hover:text-slate-900'}`}
-                                    >
-                                      Période (Jours)
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'hour' } : prod);
-                                        setEstimation({ ...estimation, products: newProducts as any });
-                                      }}
-                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${p.rentalUnit === 'hour' ? 'bg-aura-accent text-white shadow-lg' : 'text-slate-500 hover:text-slate-900'}`}
-                                    >
-                                      Jour précis (Heures)
-                                    </button>
-                                  </div>
+                                   <div className="flex p-1 bg-black/5 border border-black/10 rounded-xl">
+                                     <button
+                                       onClick={() => {
+                                         const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'day' } : prod);
+                                         setEstimation({ ...estimation, products: newProducts as any });
+                                       }}
+                                       className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit !== 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
+                                     >
+                                       Période (Jours)
+                                     </button>
+                                     <button
+                                       onClick={() => {
+                                         const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'hour' } : prod);
+                                         setEstimation({ ...estimation, products: newProducts as any });
+                                       }}
+                                       className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit === 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
+                                     >
+                                       Jour précis (Heures)
+                                     </button>
+                                   </div>
                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">

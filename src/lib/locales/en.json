@@ -205,7 +205,8 @@
         "next": "Next",
         "minAreaReached": "Minimum area reached.",
         "minAreaRequired": "Minimum area of {area} m² required.",
-        "quantityInfo": "Number of identical screens for this configuration"
+        "quantityInfo": "Number of identical screens for this configuration",
+        "unitsAvailable": "available"
     },
     "delivery": {
         "title": "Delivery",

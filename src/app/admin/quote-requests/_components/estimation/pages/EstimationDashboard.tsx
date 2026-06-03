@@ -2,11 +2,12 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import { TabNavigation, SummaryCard } from '../components/Layout';
 import dynamic from 'next/dynamic';
 import { SearchHeader, EstimationTable } from '../components/Table';
 import { Pagination } from '@/components/ui/Pagination';
-import { TransmitModal, SimpleMessagePopup, ReturnReasonPopup } from '@/application/admin/estimations/components/TransmitModal';
+import { TransmitModal, SimpleMessagePopup, ReturnReasonPopup, RentalTreatmentModal } from '@/application/admin/estimations/components/TransmitModal';
 
 const DetailsApp = dynamic(() => import('../details/App'), {
   loading: () => <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[110]"><div className="w-10 h-10 border-4 border-[#95d230] border-t-transparent rounded-full animate-spin" /></div>,
@@ -74,6 +75,15 @@ function quoteToEstimation(q: QuoteRequest): Estimation {
   const totalClient = q.totalQuote || (q.products?.reduce((sum, p) => sum + (p.lineTotal || 0), 0) || 0) + (q.deliveryCost || 0) + (q.installationCost || 0);
   const idShort = q.id.slice(0, 8).toUpperCase();
 
+  // Parse rental period from string ISO dates (from getPaginatedQuotes projection)
+  let rentalPeriod: { from: string; to: string } | undefined;
+  const rawRental = (q as any).rentalPeriod;
+  if (rawRental) {
+    const fromVal = rawRental.from instanceof Date ? rawRental.from.toISOString().split('T')[0] : (typeof rawRental.from === 'string' ? rawRental.from.split('T')[0] : null);
+    const toVal = rawRental.to instanceof Date ? rawRental.to.toISOString().split('T')[0] : (typeof rawRental.to === 'string' ? rawRental.to.split('T')[0] : null);
+    if (fromVal && toVal) rentalPeriod = { from: fromVal, to: toVal };
+  }
+
    return {
      id: q.id,
      number: q.number || `DEV-${idShort}`,
@@ -98,6 +108,10 @@ function quoteToEstimation(q: QuoteRequest): Estimation {
      emailVerified: (q as any).emailVerified,
      sitePhoto: q.sitePhoto || (q.client && typeof q.client === 'object' ? (q.client as any).sitePhoto : undefined),
      pdfUrl: q.pdfUrl,
+     transactionType: (q as any).transactionType,
+     rentalPeriod,
+     rentalStartTime: (q as any).rentalStartTime,
+     rentalEndTime: (q as any).rentalEndTime,
    };
 }
 
@@ -130,6 +144,8 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
   const [popupData, setPopupData] = useState({ title: '', message: '', subtitle: '', variant: 'default' as 'default' | 'alert' });
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isEmptyTrashConfirming, setIsEmptyTrashConfirming] = useState(false);
+  const [isRentalModalOpen, setIsRentalModalOpen] = useState(false);
+  const [pendingRentalId, setPendingRentalId] = useState<string | null>(null);
   const [lastDocIds, setLastDocIds] = useState<Record<number, string | null>>({ 1: null });
   const [pageCache, setPageCache] = useState<Record<string, Record<number, { estimations: Estimation[], lastId: string | null }>>>({});
    const [isFetchingFullQuote, setIsFetchingFullQuote] = useState(false);
@@ -193,9 +209,10 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
     }
   }, []);
 
-  const fetchPage = useCallback(async (page: number, currentTab: EstimationStatus, startId: string | null) => {
+  const fetchPage = useCallback(async (page: number, currentTab: EstimationStatus, startId: string | null, mode?: 'vente' | 'location') => {
     // Check cache first
-    const tabCache = pageCache[currentTab] || {};
+    const cacheKey = `${currentTab}_${mode || 'vente'}`;
+    const tabCache = pageCache[cacheKey] || {};
     if (tabCache[page]) {
       setEstimations(tabCache[page].estimations);
       return;
@@ -206,11 +223,13 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
     setEstimations([]);
     try {
       const statusKey = estimationToStatus[currentTab as string];
+      const txType = (mode || estimationMode) === 'location' ? 'rental' : 'sale';
       const { requests, lastId } = await getPaginatedQuotes({
         status: statusKey,
         limit: itemsPerPage,
         startAfterId: startId,
-        supplierId: isFournisseur ? (userId ?? null) : undefined
+        supplierId: isFournisseur ? (userId ?? null) : undefined,
+        transactionType: txType,
       });
       
       const newEstimations = requests.map((q: any) => quoteToEstimation(q));
@@ -218,8 +237,8 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
       // Update cache
       setPageCache(prev => ({
         ...prev,
-        [currentTab]: {
-          ...(prev[currentTab] || {}),
+        [cacheKey]: {
+          ...(prev[cacheKey] || {}),
           [page]: { estimations: newEstimations, lastId }
         }
       }));
@@ -231,7 +250,7 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
     } finally {
       setIsLoading(false);
     }
-  }, [isFournisseur, userId, itemsPerPage]);
+  }, [isFournisseur, userId, itemsPerPage, estimationMode]);
 
   // Load suppliers and counts separately to avoid redundant calls during pagination
   useEffect(() => {
@@ -240,7 +259,8 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
       
       try {
         // Phase 1 perf: only load stats at startup — products/specs load lazily on detail open
-        const statsResult = await getQuoteCounts(isFournisseur ? (userId ?? null) : null);
+        const txType = estimationMode === 'location' ? 'rental' : 'sale';
+        const statsResult = await getQuoteCounts(isFournisseur ? (userId ?? null) : null, txType);
         
         // Store stats using technical keys (pending, processed, etc.) for easier lookup
         setServerTabCounts(statsResult.counts);
@@ -260,18 +280,48 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
     };
     
     loadInitialData();
-  }, [isAdmin, isCommercial, isFournisseur, userId, userName]);
+  }, [isAdmin, isCommercial, isFournisseur, userId, userName, estimationMode]);
 
   useEffect(() => {
     setLastDocIds({ 1: null });
     setCurrentPage(1);
-    fetchPage(1, activeTab, null);
+    // Pass estimationMode explicitly to avoid reading stale closure value
+    fetchPage(1, activeTab, null, estimationMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
+  // When mode changes, reset to first valid tab and immediately fetch with the NEW mode.
+  // We must pass the new mode explicitly to fetchPage — the closure inside fetchPage
+  // still holds the OLD estimationMode value until the next render cycle.
+  useEffect(() => {
+    const validTabs = estimationMode === 'location'
+      ? ['En attente', 'Traité', 'Loué', 'Archivé', 'Corbeille']
+      : ['En attente', 'Traité', 'Retourné', 'Fournisseur', 'Livraison', 'Archivé', 'Corbeille'];
+    
+    const targetTab: EstimationStatus = validTabs.includes(activeTab)
+      ? activeTab
+      : 'En attente' as EstimationStatus;
+    
+    // Reset all pagination/cache state for the new mode
+    setPageCache({});
+    setLastDocIds({ 1: null });
+    setCurrentPage(1);
+    setEstimations([]);
+
+    if (!validTabs.includes(activeTab)) {
+      // setActiveTab will trigger the [activeTab] effect which calls fetchPage,
+      // but we pass the mode explicitly here to be safe
+      setActiveTab(targetTab);
+    }
+    // Always fetch immediately with the new mode, passing it explicitly
+    fetchPage(1, targetTab, null, estimationMode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estimationMode]);
+
   useEffect(() => {
     const startId = lastDocIds[currentPage];
-    fetchPage(currentPage, activeTab, startId);
+    // Pass estimationMode explicitly to avoid reading stale closure value
+    fetchPage(currentPage, activeTab, startId, estimationMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
@@ -433,37 +483,95 @@ return filtered;
       return { valid: true };
     };
 
+    const handleRentalConfirm = useCallback(async (startDate: string, endDate: string, startTime: string, endTime: string) => {
+      if (!pendingRentalId) return;
+      const est = estimations.find(e => e.id === pendingRentalId);
+      if (!est) { setIsRentalModalOpen(false); return; }
+
+      const firestoreStatus = estimationToStatus['Traité'];
+      try {
+        const updateData: any = {
+          status: firestoreStatus,
+          treatedBy: currentUser.uid,
+          treatedByName: currentUser.displayName,
+          treatedByRole: currentUser.role,
+          treatedAt: Date.now(),
+          rentalPeriod: { from: startDate, to: endDate },
+          rentalStartTime: startTime,
+          rentalEndTime: endTime,
+        };
+        await updateQuoteStatus(pendingRentalId, updateData);
+        clearCache(est.status);
+        clearCache('Traité');
+        updateCountsLocally(est.status, 'Traité', 1, est.totalClient || 0);
+        setEstimations(prev => prev.filter(e => e.id !== pendingRentalId));
+        setActiveTab('Traité');
+      } catch (error) {
+        console.error('Failed to process rental treatment:', error);
+      } finally {
+        setIsRentalModalOpen(false);
+        setPendingRentalId(null);
+      }
+    }, [pendingRentalId, estimations, currentUser, clearCache, updateCountsLocally]);
+
     const handleStatusTransition = useCallback(async (id: string) => {
       const est = estimations.find(e => e.id === id);
       if (!est) return;
 
       let nextStatus: EstimationStatus = est.status;
 
-      // 1. EN ATTENTE -> TRAITÉ (Action: Check icon)
-      if (est.status === 'En attente') {
-        nextStatus = 'Traité';
-      } 
-      // 2. TRAITÉ -> FOURNISSEUR (Action: Send icon)
-      else if (est.status === 'Traité' || est.status === 'Retourné') {
-        setActiveEstimationId(id);
-        setIsSupplierPanelOpen(true); // Ouvre la modale de transmission
-        return;
-      } 
-      // 3. FOURNISSEUR -> LIVRAISON (Action: Truck icon)
-      else if (est.status === 'Fournisseur') {
-        nextStatus = 'Livraison';
-      } 
-      // 4. LIVRAISON -> ARCHIVÉ (Action: Archive icon)
-      else if (est.status === 'Livraison') {
-        nextStatus = 'Archivé';
-      } 
-      // 5. ARCHIVÉ -> CORBEILLE
-      else if (est.status === 'Archivé') {
-        nextStatus = 'Corbeille';
-      } 
-      // 6. CORBEILLE -> EN ATTENTE (Restaurer)
-      else if (est.status === 'Corbeille') {
-        nextStatus = 'En attente';
+      // LOCATION MODE specific transitions
+      if (estimationMode === 'location') {
+        // 1. EN ATTENTE -> TRAITÉ: show rental period modal
+        if (est.status === 'En attente') {
+          setPendingRentalId(id);
+          setIsRentalModalOpen(true);
+          return;
+        }
+        // 2. TRAITÉ -> LOUÉ: direct transition
+        else if (est.status === 'Traité') {
+          nextStatus = 'Loué';
+        }
+        // 3. LOUÉ -> ARCHIVÉ
+        else if (est.status === 'Loué') {
+          nextStatus = 'Archivé';
+        }
+        // 4. ARCHIVÉ -> CORBEILLE
+        else if (est.status === 'Archivé') {
+          nextStatus = 'Corbeille';
+        }
+        // 5. CORBEILLE -> EN ATTENTE
+        else if (est.status === 'Corbeille') {
+          nextStatus = 'En attente';
+        }
+      } else {
+        // VENTE MODE (existing logic)
+        // 1. EN ATTENTE -> TRAITÉ (Action: Check icon)
+        if (est.status === 'En attente') {
+          nextStatus = 'Traité';
+        } 
+        // 2. TRAITÉ -> FOURNISSEUR (Action: Send icon)
+        else if (est.status === 'Traité' || est.status === 'Retourné') {
+          setActiveEstimationId(id);
+          setIsSupplierPanelOpen(true); // Ouvre la modale de transmission
+          return;
+        } 
+        // 3. FOURNISSEUR -> LIVRAISON (Action: Truck icon)
+        else if (est.status === 'Fournisseur') {
+          nextStatus = 'Livraison';
+        } 
+        // 4. LIVRAISON -> ARCHIVÉ (Action: Archive icon)
+        else if (est.status === 'Livraison') {
+          nextStatus = 'Archivé';
+        } 
+        // 5. ARCHIVÉ -> CORBEILLE
+        else if (est.status === 'Archivé') {
+          nextStatus = 'Corbeille';
+        } 
+        // 6. CORBEILLE -> EN ATTENTE (Restaurer)
+        else if (est.status === 'Corbeille') {
+          nextStatus = 'En attente';
+        }
       }
 
       // Appliquer les règles métier avant transition
@@ -1186,29 +1294,43 @@ return filtered;
     <div className="min-h-screen px-3 py-4 md:p-6 overflow-x-hidden bg-transparent">
       <div className="max-w-7xl mx-auto w-full">
 
-        <div className="flex justify-end mb-6 gap-3">
-          <button
-            onClick={() => setEstimationMode('vente')}
-            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
-              estimationMode === 'vente'
-                ? "bg-orange-500 text-white shadow-lg shadow-orange-200"
-                : "bg-white text-zinc-500 border border-zinc-200 hover:text-zinc-800"
-            }`}
-          >
-            <ShoppingBag className="w-4 h-4" />
-            Vente
-          </button>
-          <button
-            onClick={() => setEstimationMode('location')}
-            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
-              estimationMode === 'location'
-                ? "bg-emerald-500 text-white shadow-lg shadow-emerald-200"
-                : "bg-white text-zinc-500 border border-zinc-200 hover:text-zinc-800"
-            }`}
-          >
-            <Calendar className="w-4 h-4" />
-            Location
-          </button>
+        <div className="flex justify-end mb-6">
+          <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full md:w-auto overflow-hidden shadow-sm">
+            <button
+              onClick={() => setEstimationMode('vente')}
+              className={cn(
+                "relative flex-1 md:flex-none flex items-center justify-center gap-2 md:gap-3 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                estimationMode === 'vente' ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
+              )}
+            >
+              {estimationMode === 'vente' && (
+                <motion.span
+                  layoutId="estimation-mode-bubble"
+                  className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                />
+              )}
+              <ShoppingBag className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'vente' ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+              <span className="z-20 whitespace-nowrap">Vente</span>
+            </button>
+            <button
+              onClick={() => setEstimationMode('location')}
+              className={cn(
+                "relative flex-1 md:flex-none flex items-center justify-center gap-2 md:gap-3 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                estimationMode === 'location' ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
+              )}
+            >
+              {estimationMode === 'location' && (
+                <motion.span
+                  layoutId="estimation-mode-bubble"
+                  className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
+                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                />
+              )}
+              <Calendar className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'location' ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+              <span className="z-20 whitespace-nowrap">Location</span>
+            </button>
+          </div>
         </div>
 
         <TabNavigation
@@ -1216,6 +1338,7 @@ return filtered;
           onTabChange={handleTabChange}
           userRole={userRole}
           tabCounts={tabCounts}
+          estimationMode={estimationMode}
         />
 
         <SearchHeader
@@ -1262,6 +1385,7 @@ return filtered;
                   loading={isLoading}
                   exitingIds={exitingIds}
                   bulkProgress={bulkProgress}
+                  estimationMode={estimationMode}
                 />
 
           {totalPages > 1 && (
@@ -1280,6 +1404,12 @@ return filtered;
         isOpen={isSupplierPanelOpen}
         onClose={() => setIsSupplierPanelOpen(false)}
         onConfirm={handleSupplierConfirm}
+      />
+
+      <RentalTreatmentModal
+        isOpen={isRentalModalOpen}
+        onClose={() => { setIsRentalModalOpen(false); setPendingRentalId(null); }}
+        onConfirm={handleRentalConfirm}
       />
 
       <SimpleMessagePopup

@@ -336,3 +336,94 @@ export async function createQuoteRequest(userId: string, formData: FormValues, q
     
     return { id: null, success: false, requiresVerification: emailVerificationEnabled, error: "Une erreur est survenue lors de la création de l'estimation." };
 }
+
+export async function getProductBlockedPeriodsAction(
+  productId: string,
+  quantityRequested: number,
+  excludeQuoteId?: string
+): Promise<{ from: string; to: string }[]> {
+  try {
+    const { getProductBlockedPeriods } = await import('@/lib/stockService');
+    return await getProductBlockedPeriods(productId, quantityRequested, excludeQuoteId);
+  } catch (error) {
+    console.error('[quote-actions] getProductBlockedPeriodsAction error:', error);
+    return [];
+  }
+}
+
+export async function getProductRentalAvailabilityAction(
+  productId: string,
+  fromISO: string,
+  toISO: string,
+  quantityRequested: number,
+  excludeQuoteId?: string
+): Promise<{ available: boolean; total: number; reserved: number; remaining: number }> {
+  try {
+    const { getProductRentalAvailability } = await import('@/lib/stockService');
+    return await getProductRentalAvailability(
+      productId,
+      new Date(fromISO),
+      new Date(toISO),
+      quantityRequested,
+      excludeQuoteId
+    );
+  } catch (error) {
+    console.error('[quote-actions] getProductRentalAvailabilityAction error:', error);
+    return { available: false, total: 0, reserved: 0, remaining: 0 };
+  }
+}
+
+export async function getBlockedPeriods(): Promise<{ from: string; to: string }[]> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return [];
+
+  try {
+    const snap = await adminDb.collection('quotes')
+      .where('status', 'in', ['processed', 'rented'])
+      .get();
+      
+    const periods: { from: string; to: string }[] = [];
+    
+    snap.forEach(doc => {
+      const data = doc.data();
+      if (data.rentalPeriod) {
+        let fromStr = '';
+        let toStr = '';
+        if (data.rentalPeriod.from) {
+          const fromDate = data.rentalPeriod.from.toDate ? data.rentalPeriod.from.toDate() : new Date(data.rentalPeriod.from);
+          fromStr = fromDate.toISOString().split('T')[0];
+        }
+        if (data.rentalPeriod.to) {
+          const toDate = data.rentalPeriod.to.toDate ? data.rentalPeriod.to.toDate() : new Date(data.rentalPeriod.to);
+          toStr = toDate.toISOString().split('T')[0];
+        }
+        if (fromStr && toStr) {
+          periods.push({ from: fromStr, to: toStr });
+        }
+      } else if (data.products) {
+        data.products.forEach((p: any) => {
+          if (p.rentalPeriod) {
+            let fromStr = '';
+            let toStr = '';
+            if (p.rentalPeriod.from) {
+              const fromDate = p.rentalPeriod.from.toDate ? p.rentalPeriod.from.toDate() : new Date(p.rentalPeriod.from);
+              fromStr = fromDate.toISOString().split('T')[0];
+            }
+            if (p.rentalPeriod.to) {
+              const toDate = p.rentalPeriod.to.toDate ? p.rentalPeriod.to.toDate() : new Date(p.rentalPeriod.to);
+              toStr = toDate.toISOString().split('T')[0];
+            }
+            if (fromStr && toStr) {
+              periods.push({ from: fromStr, to: toStr });
+            }
+          }
+        });
+      }
+    });
+    
+    return periods;
+  } catch (error) {
+    console.error("Error fetching blocked periods:", error);
+    return [];
+  }
+}

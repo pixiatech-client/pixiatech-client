@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search, Phone, MoreVertical, Trash2, Send, RotateCcw, PlusCircle, Clock, CheckCircle2, Truck, Archive, User, Users, Pencil, AlertTriangle, Filter, Calendar, DollarSign, Check, ChevronDown, X, Package, Mail, Undo2, Lock, Unlock, History, XCircle, ShieldCheck, Link, MessageSquare, ImageIcon, Paperclip } from 'lucide-react';
+import { Search, Phone, MoreVertical, Trash2, Send, RotateCcw, PlusCircle, Clock, CheckCircle2, Truck, Archive, User, Users, Pencil, AlertTriangle, Filter, Calendar, DollarSign, Check, ChevronDown, X, Package, Mail, Undo2, Lock, Unlock, History, XCircle, ShieldCheck, Link, MessageSquare, ImageIcon, Paperclip, Key, Timer } from 'lucide-react';
 import { Estimation, EstimationStatus, TrackingInfo } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/firebase';
@@ -49,7 +49,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
 
       {/* Search + filters row */}
       <div className="flex items-center gap-3 w-full flex-1">
-        <div className="relative flex-1 flex items-stretch h-11 overflow-hidden">
+        <div className="relative flex-1 flex items-stretch h-11">
           {onSelectAll && (
             <div className="md:hidden flex items-center px-3 bg-theme-card border border-theme-card-border rounded-l-lg border-r-0 shadow-sm shrink-0">
               <input
@@ -173,6 +173,7 @@ interface EstimationTableProps {
   loading?: boolean;
   exitingIds?: Set<string>;
   bulkProgress?: { total: number; remaining: number } | null;
+  estimationMode?: 'vente' | 'location';
 }
 
 
@@ -181,6 +182,7 @@ function getStatusConfig(status: EstimationStatus, isReturned?: boolean) {
   if (isReturned || status === 'Retourné') return { bg: '#ffedd5', text: '#ea580c', hoverBg: '#7c2d12', hoverText: '#fdba74', icon: RotateCcw };
   if (status === 'En attente') return { bg: '#fff7ed', text: '#f4af07', hoverBg: '#451a03', hoverText: '#ffb86a', icon: Clock };
   if (status.startsWith('Trait')) return { bg: '#dbeafe', text: '#3b82f6', hoverBg: '#0e1c47', hoverText: '#8ec5ff', icon: CheckCircle2 };
+  if (status === 'Loué') return { bg: '#f3e8ff', text: '#a855f7', hoverBg: '#2e1065', hoverText: '#d8b4fe', icon: Key };
   if (status === 'Fournisseur') return { bg: '#f5f3ff', text: '#a78bfa', hoverBg: '#2e1065', hoverText: '#ddd6fe', icon: Users };
   if (status === 'Livraison') return { bg: '#dcfce7', text: '#22c55e', hoverBg: '#052e16', hoverText: '#86efac', icon: Truck };
   if (status.startsWith('Archiv')) return { bg: '#e5e7eb', text: '#9ca3af', hoverBg: '#111827', hoverText: '#9ca3af', icon: Archive };
@@ -188,6 +190,16 @@ function getStatusConfig(status: EstimationStatus, isReturned?: boolean) {
     return { bg: '#fee2e2', text: '#ef4444', hoverBg: '#450a0a', hoverText: '#fca5a5', icon: Trash2 };
   }
   return { bg: '#f4f4f5', text: '#71717a', hoverBg: '#18181b', hoverText: '#d4d4d8', icon: Clock };
+}
+
+function getRemainingDays(rentalPeriod?: { from: string; to: string }): number | null {
+  if (!rentalPeriod?.to) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const end = new Date(rentalPeriod.to);
+  end.setHours(0, 0, 0, 0);
+  const diff = Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return diff;
 }
 
 interface EstimationRowProps {
@@ -213,6 +225,7 @@ interface EstimationRowProps {
   setSelectedEstimation: (est: Estimation) => void;
   setIsTrackingPanelOpen: (open: boolean) => void;
   setIsRefusalPanelOpen: (open: boolean) => void;
+  estimationMode?: 'vente' | 'location';
 }
 
 const EstimationRow: React.FC<EstimationRowProps> = ({
@@ -238,6 +251,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
   setSelectedEstimation,
   setIsTrackingPanelOpen,
   setIsRefusalPanelOpen,
+  estimationMode = 'vente',
 }) => {
   const config = getStatusConfig(est.status, est.isReturned);
   const StatusIcon = config.icon;
@@ -345,7 +359,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             </div>
 
             {/* Statut */}
-            <div className="w-32 px-2 flex items-center">
+            <div className="w-32 px-2 flex flex-col items-start gap-1">
               <button
                 onClick={(e) => { e.stopPropagation(); onStatusClick(est.id); }}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all shadow-sm"
@@ -358,6 +372,27 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 <StatusIcon className="w-3 h-3" />
                 {est.isReturned ? 'Retourné' : translateStatus(est.status)}
               </button>
+              {/* Rental remaining days indicator */}
+              {estimationMode === 'location' && est.rentalPeriod && (est.status === 'Traité' || est.status === 'Loué') && (() => {
+                const days = getRemainingDays(est.rentalPeriod);
+                if (days === null) return null;
+                const isExpired = days < 0;
+                const isUrgent = days >= 0 && days <= 1;
+                const isWarning = days >= 2 && days <= 3;
+                return (
+                  <span
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
+                      isExpired ? 'bg-red-100 text-red-600' :
+                      isUrgent ? 'bg-orange-100 text-orange-600 animate-pulse' :
+                      isWarning ? 'bg-amber-100 text-amber-600' :
+                      'bg-emerald-100 text-emerald-700'
+                    }`}
+                  >
+                    <Timer className="w-2.5 h-2.5" />
+                    {isExpired ? `Expiré (${Math.abs(days)}j)` : days === 0 ? "Aujourd'hui" : `${days}j restant${days > 1 ? 's' : ''}`}
+                  </span>
+                );
+              })()}
             </div>
 
             {/* Heure / Date */}
@@ -478,9 +513,15 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title="Modifier">
                          <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title="Transférer au fournisseur">
-                         <Send className="w-4 h-4" />
-                      </button>
+                      {estimationMode === 'location' ? (
+                        <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-purple-500'}`} title="Marquer comme Loué">
+                           <Key className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title="Transférer au fournisseur">
+                           <Send className="w-4 h-4" />
+                        </button>
+                      )}
                     </>
                   )}
                   {est.status === 'Fournisseur' && (
@@ -935,6 +976,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
   loading = false,
   exitingIds = new Set(),
   bulkProgress = null,
+  estimationMode = 'vente',
 }) => {
 
   const RowSkeleton = () => (
@@ -1110,8 +1152,17 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                       onClick={onBulkStatusClick}
                       className="flex items-center gap-1.5 px-4 py-2 bg-theme-sidebar-active-bg hover:bg-[#1447e6] text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all group border border-white/10 shrink-0"
                     >
-                      <Send className="w-3.5 h-3.5 text-[#1447e6] group-hover:text-theme-sidebar-active-text transition-colors" />
-                      Transférer
+                      {estimationMode === 'location' ? (
+                        <>
+                          <Key className="w-3.5 h-3.5 text-purple-500 group-hover:text-theme-sidebar-active-text transition-colors" />
+                          Louer
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5 text-[#1447e6] group-hover:text-theme-sidebar-active-text transition-colors" />
+                          Transférer
+                        </>
+                      )}
                     </button>
                   )}
                   {activeTab === 'Fournisseur' && (
@@ -1230,6 +1281,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
                   setSelectedEstimation={setSelectedEstimation}
                   setIsTrackingPanelOpen={setIsTrackingPanelOpen}
                   setIsRefusalPanelOpen={setIsRefusalPanelOpen}
+                  estimationMode={estimationMode}
                 />
               ))}
             </AnimatePresence>

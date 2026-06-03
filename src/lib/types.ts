@@ -38,6 +38,7 @@ export type Product = {
   salePricePerSqM?: number;
   rentalPricePerDay?: number;
   rentalPricePerHour?: number;
+  rentalStock?: number;
   tileWidth?: number; 
   tileHeight?: number; 
   pricePerTile?: number; 
@@ -316,7 +317,13 @@ export type QuoteRequest = Omit<QuoteDetails, 'products' | 'rentalPeriod'> & {
   updatedAt?: Date;
   updatedBy?: string;
   isRead: boolean;
-  status: 'pending' | 'processed' | 'trashed' | 'in_progress' | 'sent' | 'delivered' | 'archived' | 'returned';
+  status: 'pending' | 'processed' | 'trashed' | 'in_progress' | 'sent' | 'delivered' | 'archived' | 'returned' | 'rented';
+  rentalPeriod?: {
+    from: Date;
+    to: Date;
+  };
+  rentalStartTime?: string;
+  rentalEndTime?: string;
   client: {
     companyName: string;
     email: string;

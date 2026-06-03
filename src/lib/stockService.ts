@@ -199,3 +199,206 @@ export async function checkStockAvailability(
     nextAvailableDate,
   };
 }
+
+export interface ProductUsageEvent {
+  quoteId: string;
+  from: Date;
+  to: Date;
+  quantity: number;
+}
+
+/** Fetch all active rental bookings for a product from Firestore. */
+async function fetchProductUsageEvents(productId: string, excludeQuoteId?: string): Promise<ProductUsageEvent[]> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return [];
+
+  try {
+    const productDoc = await adminDb.collection('products').doc(productId).get();
+    if (!productDoc.exists) {
+      console.warn(`[stockService] Product ${productId} not found`);
+      return [];
+    }
+    const productData = productDoc.data() || {};
+    const tileW = (productData.tileWidth || 50) / 100;
+    const tileH = (productData.tileHeight || 50) / 100;
+    const isLed = !!(productData.tileWidth && productData.tileHeight);
+
+    const snap = await adminDb
+      .collection('quotes')
+      .where('status', 'in', ['processed', 'rented'])
+      .get();
+
+    const events: ProductUsageEvent[] = [];
+
+    snap.forEach((doc) => {
+      if (excludeQuoteId && doc.id === excludeQuoteId) return;
+      const data = doc.data();
+      const products: any[] = data.products || [];
+
+      for (const p of products) {
+        if (p.productId === productId && p.transactionType === 'rental') {
+          let qty = 0;
+          if (isLed) {
+            const cabW = Math.ceil((p.width || 1) / tileW);
+            const cabH = Math.ceil((p.height || 1) / tileH);
+            qty = cabW * cabH * (p.quantity || 1);
+          } else {
+            qty = p.quantity || 1;
+          }
+
+          let from: Date | null = null;
+          let to: Date | null = null;
+
+          if (p.rentalPeriod?.from) {
+            from = p.rentalPeriod.from.toDate ? p.rentalPeriod.from.toDate() : new Date(p.rentalPeriod.from);
+            to = p.rentalPeriod.to.toDate ? p.rentalPeriod.to.toDate() : new Date(p.rentalPeriod.to);
+          } else if (p.rentalDate) {
+            from = p.rentalDate.toDate ? p.rentalDate.toDate() : new Date(p.rentalDate);
+            to = from;
+          } else if (data.rentalPeriod?.from) {
+            from = data.rentalPeriod.from.toDate ? data.rentalPeriod.from.toDate() : new Date(data.rentalPeriod.from);
+            to = data.rentalPeriod.to.toDate ? data.rentalPeriod.to.toDate() : new Date(data.rentalPeriod.to);
+          }
+
+          if (from && to) {
+            events.push({
+              quoteId: doc.id,
+              from: toMidnight(from),
+              to: toMidnight(to),
+              quantity: qty
+            });
+          }
+        }
+      }
+    });
+
+    return events;
+  } catch (e) {
+    console.error('[stockService] fetchProductUsageEvents error:', e);
+    return [];
+  }
+}
+
+/** Compute daily quantity usage map for a product in [start, end] range. */
+function computeDailyProductUsage(
+  start: Date,
+  end: Date,
+  events: ProductUsageEvent[]
+): Map<string, number> {
+  const usage = new Map<string, number>();
+  const cur = new Date(toMidnight(start));
+  const endDay = toMidnight(end);
+
+  while (cur <= endDay) {
+    const key = cur.toISOString().slice(0, 10);
+    let daily = 0;
+    for (const event of events) {
+      if (cur >= event.from && cur <= event.to) {
+        daily += event.quantity;
+      }
+    }
+    usage.set(key, daily);
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return usage;
+}
+
+/** Get rental availability metrics of a product over a given period. */
+export async function getProductRentalAvailability(
+  productId: string,
+  from: Date,
+  to: Date,
+  quantityRequested: number,
+  excludeQuoteId?: string
+): Promise<{ available: boolean; total: number; reserved: number; remaining: number }> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) {
+    return { available: false, total: 0, reserved: 0, remaining: 0 };
+  }
+
+  const productDoc = await adminDb.collection('products').doc(productId).get();
+  let totalStock = 0;
+  let isLed = false;
+  if (productDoc.exists) {
+    const data = productDoc.data() || {};
+    isLed = !!(data.tileWidth && data.tileHeight);
+    totalStock = data.rentalStock !== undefined ? Number(data.rentalStock) : (isLed ? 500 : 0);
+  }
+
+  const events = await fetchProductUsageEvents(productId, excludeQuoteId);
+  const usage = computeDailyProductUsage(from, to, events);
+  const peakUsage = Math.max(...Array.from(usage.values()), 0);
+  const remaining = Math.max(0, totalStock - peakUsage);
+  const available = peakUsage + quantityRequested <= totalStock;
+
+  return {
+    available,
+    total: totalStock,
+    reserved: peakUsage,
+    remaining
+  };
+}
+
+/** Get date ranges in the next 365 days when a product has insufficient stock. */
+export async function getProductBlockedPeriods(
+  productId: string,
+  quantityRequested: number,
+  excludeQuoteId?: string
+): Promise<{ from: string; to: string }[]> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return [];
+
+  const productDoc = await adminDb.collection('products').doc(productId).get();
+  let totalStock = 0;
+  let isLed = false;
+  if (productDoc.exists) {
+    const data = productDoc.data() || {};
+    isLed = !!(data.tileWidth && data.tileHeight);
+    totalStock = data.rentalStock !== undefined ? Number(data.rentalStock) : (isLed ? 500 : 0);
+  }
+
+  const events = await fetchProductUsageEvents(productId, excludeQuoteId);
+  const today = new Date();
+  const oneYearLater = new Date();
+  oneYearLater.setDate(today.getDate() + 365);
+
+  const usage = computeDailyProductUsage(today, oneYearLater, events);
+
+  const blockedDates: string[] = [];
+  usage.forEach((dailyUsage, dateStr) => {
+    if (dailyUsage + quantityRequested > totalStock) {
+      blockedDates.push(dateStr);
+    }
+  });
+
+  blockedDates.sort();
+
+  const ranges: { from: string; to: string }[] = [];
+  if (blockedDates.length === 0) return ranges;
+
+  let currentRange: { from: string; to: string } | null = null;
+
+  for (const dateStr of blockedDates) {
+    if (!currentRange) {
+      currentRange = { from: dateStr, to: dateStr };
+    } else {
+      const prevDate = new Date(currentRange.to);
+      const nextDay = new Date(Date.UTC(prevDate.getUTCFullYear(), prevDate.getUTCMonth(), prevDate.getUTCDate() + 1));
+      const nextDayStr = nextDay.toISOString().slice(0, 10);
+
+      if (dateStr === nextDayStr) {
+        currentRange.to = dateStr;
+      } else {
+        ranges.push(currentRange);
+        currentRange = { from: dateStr, to: dateStr };
+      }
+    }
+  }
+
+  if (currentRange) {
+    ranges.push(currentRange);
+  }
+
+  return ranges;
+}
+
