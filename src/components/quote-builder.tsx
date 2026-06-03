@@ -14,6 +14,8 @@ import { InstallationForm } from './installation-form';
 import { DeliveryForm } from './delivery-form';
 import { StepImagePreview } from './step-image-preview';
 import { useAuth, useUser } from '@/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { firestore as db } from '@/firebase/config';
 import { signInAnonymously } from 'firebase/auth';
 import { differenceInDays } from 'date-fns';
 import Image from 'next/image';

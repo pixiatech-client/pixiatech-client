@@ -163,6 +163,23 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
 
   console.log(`[Email] Preparing to send to: ${recipientEmail}`);
   console.log(`[Email] Using baseUrl: ${safeBaseUrl}`);
+  console.log(`[Email] Transport configured:`, { host: smtpHost, port: smtpPort, secure: isSecure, user: smtpUser, hasPassword: !!smtpPass });
+
+  let logoBuffer: Buffer | null = null;
+  let logoContentType = 'image/png';
+
+  try {
+    const logoResponse = await fetch(logoSource, { cache: 'no-store' });
+    if (logoResponse.ok) {
+      const arrayBuffer = await logoResponse.arrayBuffer();
+      logoBuffer = Buffer.from(arrayBuffer);
+      logoContentType = logoResponse.headers.get('content-type') || 'image/png';
+    } else {
+      console.warn(`[Email] Failed to fetch logo (${logoResponse.status}), sending without attachment.`);
+    }
+  } catch (fetchError) {
+    console.warn('[Email] Error fetching logo, sending without attachment:', fetchError);
+  }
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; text-align: center; padding: 40px; background-color: #f4f4f4; border-radius: 20px;">
@@ -190,16 +207,100 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
       to: recipientEmail,
       subject: t.email.subject,
       html: emailHtml,
-      attachments: [{
-        filename: 'logo.png',
-        path: logoSource,
-        cid: 'pixiatech-logo' // Same CID value as in the html img src
-      }]
+      attachments: logoBuffer
+        ? [
+            {
+              filename: 'logo.png',
+              content: logoBuffer,
+              cid: 'pixiatech-logo',
+              contentType: logoContentType,
+            },
+          ]
+        : [],
     });
     console.log(`[Email] Sent successfully! MessageId: ${result.messageId}`);
   } catch (error) {
     console.error(`[Email] Error sending email to ${recipientEmail}:`, error);
     throw error; // Re-throw to be caught by createQuoteRequest
+  }
+}
+
+export async function testSmtpConnection(
+  testEmail?: string
+): Promise<{ success: boolean; message: string; details?: Record<string, any> }> {
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
+  const isSecure = smtpPort === 465;
+
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    return {
+      success: false,
+      message: 'Configuration SMTP manquante (SMTP_HOST, SMTP_USER ou SMTP_PASS absents).',
+      details: {
+        hostPresent: !!smtpHost,
+        userPresent: !!smtpUser,
+        passPresent: !!smtpPass,
+      },
+    };
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: isSecure,
+    auth: { user: smtpUser, pass: smtpPass },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+  });
+
+  try {
+    await transporter.verify();
+
+    if (testEmail) {
+      const info = await transporter.sendMail({
+        from: `"PixiaTech Test" <${smtpUser}>`,
+        to: testEmail,
+        subject: 'Test SMTP PixiaTech - Connexion réussie',
+        text: 'Ce message confirme que la configuration SMTP est opérationnelle.',
+      });
+      return {
+        success: true,
+        message: `Connexion SMTP réussie. Email de test envoyé à ${testEmail}.`,
+        details: { messageId: info.messageId },
+      };
+    }
+
+    return {
+      success: true,
+      message: `Connexion SMTP réussie (${smtpHost}:${smtpPort}).`,
+    };
+  } catch (error: any) {
+    const code = error.code;
+    const errno = error.errno;
+    const responseCode = error.responseCode;
+    let diagnosticMessage = 'Erreur lors de la connexion SMTP.';
+
+    if (code === 'ECONNECTION' || errno === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED')) {
+      diagnosticMessage = 'Port bloqué ou hôte introuvable (connexion refusée).';
+    } else if (responseCode === 535 || error.message?.includes('Invalid login') || error.message?.includes('535')) {
+      diagnosticMessage = 'Authentification refusée : utilisateur ou mot de passe incorrect.';
+    } else if (error.message?.includes('self signed certificate') || error.message?.includes('certificate')) {
+      diagnosticMessage = 'Erreur de certificat SSL/TLS. Essayez le port 587 sans SSL.';
+    } else if (error.message?.includes('ETIMEDOUT') || error.message?.includes('ESOCKETTIMEDOUT')) {
+      diagnosticMessage = 'Délai dépassé : hôte ou port bloqué par le firewall.';
+    } else if (error.message?.includes('ENOTFOUND') || error.message?.includes('getaddrinfo')) {
+      diagnosticMessage = 'Hôte introuvable : vérifiez SMTP_HOST.';
+    }
+
+    return {
+      success: false,
+      message: diagnosticMessage,
+      details: { code, errno, responseCode, rawError: error.message },
+    };
   }
 }
 

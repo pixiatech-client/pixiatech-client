@@ -29,41 +29,34 @@ export function LayoutProvider({
     <FirebaseClientProvider>
       <RoleProvider>
         <I18nProvider>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <DynamicThemeProvider>
-            <div className="flex flex-col bg-background min-h-dvh">
-              {!isAdminPage && !isEmbedPage && <Header />}
-              <main
-                className={cn(
-                  'flex-1 flex items-start justify-center w-full',
-                  !isAdminPage && !isQuotePage && !isEmbedPage && 'px-4 pb-4 pt-1 md:px-6 md:pb-6 md:pt-2'
-                )}
-              >
-                {children}
-              </main>
-              {/* FloatingChatButton removed from here to be moved to the landing page specifically */}
-            </div>
-          </DynamicThemeProvider>
-          <ShadcnToaster />
-          <SonnerToaster 
-            position="bottom-right" 
-            expand={true} 
-            richColors 
-            toastOptions={{
-              style: {
-                background: 'rgba(255, 255, 255, 0.6)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: '#1f2937'
-              }
-            }}
-          />
-        </ThemeProvider>
+        <DynamicThemeProvider>
+          <div className="flex flex-col bg-background min-h-dvh">
+            {!isAdminPage && !isEmbedPage && <Header />}
+            <main
+              className={cn(
+                'flex-1 flex items-start justify-center w-full',
+                !isAdminPage && !isQuotePage && !isEmbedPage && 'px-4 pb-4 pt-1 md:px-6 md:pb-6 md:pt-2'
+              )}
+            >
+              {children}
+            </main>
+            {/* FloatingChatButton removed from here to be moved to the landing page specifically */}
+          </div>
+        </DynamicThemeProvider>
+        <ShadcnToaster />
+        <SonnerToaster 
+          position="bottom-right" 
+          expand={true} 
+          richColors 
+          toastOptions={{
+            style: {
+              background: 'rgba(255, 255, 255, 0.6)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: '#1f2937'
+            }
+          }}
+        />
       </I18nProvider>
       </RoleProvider>
     </FirebaseClientProvider>

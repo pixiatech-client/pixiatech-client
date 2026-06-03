@@ -9,15 +9,16 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings, TranslatedString, Theme } from '@/lib/types';
 import { updateSettings } from '../actions';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, Truck, Wrench, MailCheck, EyeOff, Sun, Moon, Bot, Zap, SlidersHorizontal } from 'lucide-react';
+import { AlertCircle, Truck, Wrench, MailCheck, EyeOff, Sun, Moon, Bot, Zap, SlidersHorizontal, Eye, Server, Play, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { InputWithUpload } from './_components/input-with-upload';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { testSmtpConnection } from '@/app/actions/quote-actions';
 
 
 const translatedStringSchema = z.object({
@@ -80,7 +81,7 @@ const settingsSchema = z.object({
 });
 
 
-type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'hint-bubble' | 'messaging';
+type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'hint-bubble' | 'messaging' | 'software';
 type Language = 'fr' | 'en';
 type FormValues = z.infer<typeof settingsSchema>;
 
@@ -142,6 +143,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       content: 'Contenu',
       'hint-bubble': 'Bulle d\'Aide',
       messaging: 'Messagerie',
+      software: 'Logiciel',
   }
 
   return (

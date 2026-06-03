@@ -162,7 +162,7 @@ export function ProductComparator({ products, configState, onSelect, selectedPro
   const customFeatures = React.useMemo(() => {
     if (!characteristics) return [];
     const skippedNames = ['pixel pitch', 'distance de visionnage', 'puissance maximale', 'environnement'];
-    return characteristics
+    const base = characteristics
       .filter(char => !skippedNames.includes(char.name?.toLowerCase()))
       .map(char => {
         const IconComponent = getIconComponent(char.iconName);
@@ -172,11 +172,13 @@ export function ProductComparator({ products, configState, onSelect, selectedPro
           icon: <IconComponent className="w-4 h-4 text-slate-500" />,
           getValue: (p: Product) => {
             const sc = p.selectedChars?.find((c: any) => String(c.id) === String(char.id));
-            return sc ? sc.value : 'N/A';
+            return sc ? sc.value : null;
           }
         };
       });
-  }, [characteristics]);
+
+    return base.filter(char => products.some(p => char.getValue(p) !== null));
+  }, [characteristics, products]);
 
   const allFeatures = [...features, ...customFeatures];
 

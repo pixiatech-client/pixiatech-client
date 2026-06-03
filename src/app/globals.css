@@ -76,44 +76,17 @@
     --theme-btn-secondary-hover: #e2e8f0;
   }
 
-     /* Admin specific overrides to respect dynamic theme */
-     #admin-root .bg-white:not(.static-white) {
-       background-color: var(--theme-card-bg) !important;
-     }
-     #admin-root .border-gray-100,
-     #admin-root .border-gray-200,
-     #admin-root .border-slate-200,
-     #admin-root .border-zinc-200 {
-       border-color: var(--theme-card-border) !important;
-     }
+   /* Admin specific overrides to respect dynamic theme */
+   #admin-root .bg-white:not(.static-white) {
+     background-color: var(--theme-card-bg) !important;
+   }
+   #admin-root .border-gray-100,
+   #admin-root .border-gray-200,
+   #admin-root .border-slate-200,
+   #admin-root .border-zinc-200 {
+     border-color: var(--theme-card-border) !important;
+   }
   }
-
-  .dark {
-    --background: 0 0% 5%;
-    --foreground: 210 40% 98%;
-    --card: 0 0% 8%;
-    --card-foreground: 210 40% 98%;
-    --popover: 0 0% 5%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 15.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 217.2 91.2% 59.8%;
-
-     /* Admin specific */
-    --admin-background: 0 0% 5%;
-  }
-
-@layer base {
   * {
     @apply border-border;
   }
@@ -255,12 +228,11 @@
     @apply bg-white text-black;
   }
   
-  .bg-admin-background {
-      background-color: var(--admin-background);
-  }
-}
-
-@layer components {
+   .bg-admin-background {
+       background-color: var(--admin-background);
+   }
+   
+   @layer components {
     .btn-sidebar {
         @apply h-10 px-4 py-2 w-full justify-start rounded-lg text-sm font-medium transition-colors;
         @apply text-muted-foreground hover:text-primary hover:bg-primary/5;

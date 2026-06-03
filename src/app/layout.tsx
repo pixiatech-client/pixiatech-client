@@ -23,28 +23,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className="scroll-smooth" suppressHydrationWarning>
-      <body className="font-body antialiased min-h-[100dvh]">
+      <body className="font-body antialiased min-h-[100dvh] bg-white">
         <div className="flare cyan" aria-hidden="true" />
         <div className="flare magenta" aria-hidden="true" />
         <div className="directional-flare" aria-hidden="true" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // No Flashbang
-              (function() {
-                if (
-                  localStorage.getItem("theme") === "dark" ||
-                  (!("theme" in localStorage) &&
-                    window.matchMedia("(prefers-color-scheme: dark)").matches)
-                ) {
-                  document.documentElement.classList.add("dark");
-                } else {
-                  document.documentElement.classList.remove("dark");
-                }
-              })();
-            `,
-          }}
-        />
         <LayoutProvider>{children}</LayoutProvider>
         <script
           dangerouslySetInnerHTML={{
