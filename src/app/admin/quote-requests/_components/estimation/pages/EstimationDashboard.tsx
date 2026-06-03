@@ -1410,6 +1410,10 @@ return filtered;
         isOpen={isRentalModalOpen}
         onClose={() => { setIsRentalModalOpen(false); setPendingRentalId(null); }}
         onConfirm={handleRentalConfirm}
+        defaultStartDate={estimations.find(e => e.id === pendingRentalId)?.rentalPeriod?.from || ''}
+        defaultEndDate={estimations.find(e => e.id === pendingRentalId)?.rentalPeriod?.to || ''}
+        defaultStartTime={estimations.find(e => e.id === pendingRentalId)?.rentalStartTime || '08:00'}
+        defaultEndTime={estimations.find(e => e.id === pendingRentalId)?.rentalEndTime || '18:00'}
       />
 
       <SimpleMessagePopup

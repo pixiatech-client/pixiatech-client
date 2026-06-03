@@ -401,24 +401,36 @@ interface RentalTreatmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (startDate: string, endDate: string, startTime: string, endTime: string) => void;
+  defaultStartDate?: string;
+  defaultEndDate?: string;
+  defaultStartTime?: string;
+  defaultEndTime?: string;
 }
 
-export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({ isOpen, onClose, onConfirm }) => {
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [startTime, setStartTime] = useState('08:00');
-  const [endTime, setEndTime] = useState('18:00');
+export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm,
+  defaultStartDate = '',
+  defaultEndDate = '',
+  defaultStartTime = '08:00',
+  defaultEndTime = '18:00'
+}) => {
+  const [startDate, setStartDate] = useState(defaultStartDate);
+  const [endDate, setEndDate] = useState(defaultEndDate);
+  const [startTime, setStartTime] = useState(defaultStartTime);
+  const [endTime, setEndTime] = useState(defaultEndTime);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setStartDate('');
-      setEndDate('');
-      setStartTime('08:00');
-      setEndTime('18:00');
+      setStartDate(defaultStartDate);
+      setEndDate(defaultEndDate);
+      setStartTime(defaultStartTime);
+      setEndTime(defaultEndTime);
       setError(null);
     }
-  }, [isOpen]);
+  }, [isOpen, defaultStartDate, defaultEndDate, defaultStartTime, defaultEndTime]);
 
   const handleConfirm = () => {
     if (!startDate || !endDate) {
