@@ -76,10 +76,12 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const initialized = useRef(false);
   const [step, setStep] = useState<number>(STEP.PROJECT_TYPE);
   const stepRef = useRef<number>(STEP.PROJECT_TYPE);
-  const updateStep = (newStep: number) => {
+  const [stepHistory, setStepHistory] = useState<any[]>([]);
+
+  const updateStep = useCallback((newStep: number) => {
     stepRef.current = newStep;
     setStep(newStep);
-  };
+  }, []);
   const [configState, setConfigState] = useState<ConfigState>(INITIAL_STATE);
   const { user } = useUser();
 
@@ -99,6 +101,40 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const [formEmail, setFormEmail] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formAddress, setFormAddress] = useState('');
+
+  const takeSnapshot = useCallback(() => {
+    setStepHistory(prev => [
+      ...prev,
+      {
+        step: stepRef.current,
+        messages: [...messages],
+        configState: { ...configState },
+        deliveryCityId,
+        includeInstallation,
+        formCompany,
+        formEmail,
+        formPhone,
+        formAddress
+      }
+    ]);
+  }, [messages, configState, deliveryCityId, includeInstallation, formCompany, formEmail, formPhone, formAddress]);
+
+  const handleBack = useCallback(() => {
+    if (stepHistory.length === 0) return;
+    const prev = stepHistory[stepHistory.length - 1];
+    setStepHistory(prevHistory => prevHistory.slice(0, -1));
+
+    stepRef.current = prev.step;
+    setStep(prev.step);
+    setMessages(prev.messages);
+    setConfigState(prev.configState);
+    setDeliveryCityId(prev.deliveryCityId);
+    setIncludeInstallation(prev.includeInstallation);
+    setFormCompany(prev.formCompany);
+    setFormEmail(prev.formEmail);
+    setFormPhone(prev.formPhone);
+    setFormAddress(prev.formAddress);
+  }, [stepHistory]);
 
   // Cost calculation
   const selectedProduct = allProducts.find(p => String(p.id) === String(configState.selectedProduct));
@@ -217,7 +253,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
   const getAngryImage = () => '/bot-avatars/005.webp';
 
-  const pushBotMessage = useCallback((content: string, options?: MessageOption[], delay = 600, customImage?: string, onComplete?: () => void) => {
+  const pushBotMessage = useCallback((content: string, options?: MessageOption[], delay = 600, customImage?: string, onComplete?: () => void, translationKey?: string, translationParams?: Record<string, string | number>) => {
     setIsTyping(true);
     setBotStatus('thinking');
     setTimeout(() => {
@@ -235,12 +271,14 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         createdAt: new Date(),
         options,
         botImage: customImage || getBotImageForStep(stepRef.current),
+        translationKey,
+        translationParams,
       }]);
       if (onComplete) onComplete();
     }, delay);
   }, []);
 
-  const pushUserMessage = (content: string, imageUrl?: string) => {
+  const pushUserMessage = (content: string, imageUrl?: string, translationKey?: string, translationParams?: Record<string, string | number>) => {
     setMessages(prev => {
       const updated = [...prev];
       for (let i = updated.length - 1; i >= 0; i--) {
@@ -258,6 +296,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         fileUrl: imageUrl,
         status: 'seen',
         createdAt: new Date(),
+        translationKey,
+        translationParams,
       }];
     });
   };
@@ -265,19 +305,20 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const startConversation = useCallback((settingsObj: WizardSettings | null = wizardSettings) => {
     if (!settingsObj) return;
     setMessages([]);
+    setStepHistory([]);
     updateStep(STEP.PROJECT_TYPE);
     setConfigState(INITIAL_STATE);
 
     setBotStatus('smiling');
-    pushBotMessage(t('bot.welcome'), undefined, 400);
+    pushBotMessage(t('bot.welcome'), undefined, 400, undefined, undefined, 'bot.welcome');
 
     setTimeout(() => {
       const types: MessageOption[] = [];
       if (settingsObj.projectTypes?.location?.enabled !== false)
-        types.push({ label: t('bot.rental'), value: 'location', imageUrl: settingsObj.projectTypes?.location?.imageUrl });
+        types.push({ label: t('bot.rental'), value: 'location', imageUrl: settingsObj.projectTypes?.location?.imageUrl, translationKey: 'bot.rental' });
       if (settingsObj.projectTypes?.vente?.enabled !== false)
-        types.push({ label: t('bot.sale'), value: 'vente', imageUrl: settingsObj.projectTypes?.vente?.imageUrl });
-      pushBotMessage(t('bot.questionType'), types, 600);
+        types.push({ label: t('bot.sale'), value: 'vente', imageUrl: settingsObj.projectTypes?.vente?.imageUrl, translationKey: 'bot.sale' });
+      pushBotMessage(t('bot.questionType'), types, 600, undefined, undefined, 'bot.questionType');
     }, 800);
   }, [wizardSettings, pushBotMessage]);
 
@@ -287,33 +328,34 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     startConversation(wizardSettings);
   }, [wizardSettings, startConversation]);
 
-  const handleOptionSelect = (value: string, label: string, imageUrl?: string) => {
-    pushUserMessage(label, imageUrl);
+  const handleOptionSelect = (value: string, label: string, imageUrl?: string, translationKey?: string, translationParams?: Record<string, string | number>) => {
+    takeSnapshot();
+    pushUserMessage(label, imageUrl, translationKey, translationParams);
 
     if (step === STEP.PROJECT_TYPE) {
       setConfigState(prev => ({ ...prev, projectType: value as any }));
       if (value === 'location') {
         setBotStatus('smiling');
-        pushBotMessage(t('bot.perfectRental'), undefined, 800, '/bot-avatars/005.webp');
+        pushBotMessage(t('bot.perfectRental'), undefined, 800, '/bot-avatars/005.webp', undefined, 'bot.perfectRental');
         setTimeout(() => pushBotMessage(t('bot.promptRentalPeriod'), undefined, 1200, '/bot-avatars/005.webp', () => {
           updateStep(STEP.RENTAL_PERIOD);
-        }), 1000);
+        }, 'bot.promptRentalPeriod'), 1000);
       } else {
         setBotStatus('smiling');
-        pushBotMessage(t('bot.perfectSale', { type: label.toLowerCase() }), undefined, 800, undefined, () => {
+        pushBotMessage(t('bot.perfectSale', { type: value.toLowerCase() }), undefined, 800, undefined, () => {
           updateStep(STEP.ENVIRONMENT);
           promptEnvironment();
-        });
+        }, 'bot.perfectSale', { type: value.toLowerCase() });
       }
     }
     else if (step === STEP.ENVIRONMENT) {
       setConfigState(prev => ({ ...prev, environment: value as any }));
       setBotStatus('smiling');
-      pushBotMessage(t('bot.perfectSale', { type: label.toLowerCase() }), undefined, 800, undefined, () => {
+      pushBotMessage(t('bot.perfectSale', { type: configState.projectType === 'location' ? 'location' : 'vente' }), undefined, 800, undefined, () => {
         pushBotMessage(t('bot.dimensions'), undefined, 1200, undefined, () => {
           updateStep(STEP.DIMENSIONS);
-        });
-      });
+        }, 'bot.dimensions');
+      }, 'bot.perfectSale', { type: configState.projectType === 'location' ? 'location' : 'vente' });
     }
     else if (step === STEP.DISTANCE) {
       handleDistanceSelect(value, label);
@@ -322,23 +364,23 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       setConfigState(prev => ({ ...prev, pixelPitch: value }));
       updateStep(STEP.SUMMARY);
       setBotStatus('solution');
-      pushBotMessage('Excellent choix ! Voici le résumé de votre configuration :');
+      pushBotMessage(t('bot.excellentChoice'), undefined, 0, undefined, undefined, 'bot.excellentChoice');
     }
     else if (step === STEP.FORM_EMAIL && value === 'back_phone') {
       updateStep(STEP.FORM_PHONE);
-      pushBotMessage('Pas de souci, quel est votre numéro de téléphone ?');
+      pushBotMessage(t('bot.askPhone'), undefined, 0, undefined, undefined, 'bot.askPhone');
     }
     else if (step === STEP.FORM_PHONE && value === 'back_email') {
       updateStep(STEP.FORM_EMAIL);
-      pushBotMessage('Pas de souci, quelle est votre adresse email ?');
+      pushBotMessage(t('bot.askEmail'), undefined, 0, undefined, undefined, 'bot.askEmail');
     }
     else if (step === STEP.SITE_PHOTO) {
       if (value === 'skip_photo') {
-        pushBotMessage('Pas de problème. Dernière ligne droite pour votre devis !', undefined, 800, '/bot-avatars/009.webp', () => {
-          pushBotMessage('Quel est le nom de votre entreprise ?', undefined, 1200, '/bot-avatars/009.webp', () => {
+        pushBotMessage(t('bot.lastStretch'), undefined, 800, '/bot-avatars/009.webp', () => {
+          pushBotMessage(t('bot.company'), undefined, 1200, '/bot-avatars/009.webp', () => {
             updateStep(STEP.FORM_COMPANY);
-          });
-        });
+          }, 'bot.company');
+        }, 'bot.lastStretch');
       } else if (value === 'add_photo_camera') {
         document.getElementById('site-photo-upload-camera')?.click();
       } else if (value === 'add_photo_gallery') {
@@ -348,9 +390,9 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     else if (step === STEP.FORM_TERMS) {
       if (value === 'read_terms') {
         window.open('https://pixiatech.com/conditions-generales', '_blank');
-        setTimeout(() => pushBotMessage('Avez-vous pris connaissance de nos conditions ?', [
-          { label: "J'accepte les conditions", value: 'accept_terms' }
-        ], 800, '/bot-avatars/009.webp'), 800);
+        setTimeout(() => pushBotMessage(t('bot.askTerms'), [
+          { label: t('bot.acceptTerms'), value: 'accept_terms', translationKey: 'bot.acceptTerms' }
+        ], 800, '/bot-avatars/009.webp', undefined, 'bot.askTerms'), 800);
       } else if (value === 'accept_terms') {
         submitFinalQuote();
       }
@@ -359,17 +401,18 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
   const promptEnvironment = () => {
     const envs: MessageOption[] = [];
-    if (wizardSettings?.environments?.interieur) envs.push({ label: t('bot.indoor'), value: 'interieur', imageUrl: wizardSettings.environments.interieur.imageUrl });
-    if (wizardSettings?.environments?.['semi-exterieur']) envs.push({ label: t('bot.semiOutdoor'), value: 'semi-exterieur', imageUrl: wizardSettings.environments['semi-exterieur'].imageUrl });
-    if (wizardSettings?.environments?.exterieur) envs.push({ label: t('bot.outdoor'), value: 'exterieur', imageUrl: wizardSettings.environments.exterieur.imageUrl });
+    if (wizardSettings?.environments?.interieur) envs.push({ label: t('bot.indoor'), value: 'interieur', imageUrl: wizardSettings.environments.interieur.imageUrl, translationKey: 'bot.indoor' });
+    if (wizardSettings?.environments?.['semi-exterieur']) envs.push({ label: t('bot.semiOutdoor'), value: 'semi-exterieur', imageUrl: wizardSettings.environments['semi-exterieur'].imageUrl, translationKey: 'bot.semiOutdoor' });
+    if (wizardSettings?.environments?.exterieur) envs.push({ label: t('bot.outdoor'), value: 'exterieur', imageUrl: wizardSettings.environments.exterieur.imageUrl, translationKey: 'bot.outdoor' });
     pushBotMessage(t('bot.promptEnvironment'), envs.length ? envs : [
-      { label: t('bot.indoor'), value: 'interieur' },
-      { label: t('bot.semiOutdoor'), value: 'semi-exterieur' },
-      { label: t('bot.outdoor'), value: 'exterieur' },
-    ], 1500, '/bot-avatars/003.webp');
+      { label: t('bot.indoor'), value: 'interieur', translationKey: 'bot.indoor' },
+      { label: t('bot.semiOutdoor'), value: 'semi-exterieur', translationKey: 'bot.semiOutdoor' },
+      { label: t('bot.outdoor'), value: 'exterieur', translationKey: 'bot.outdoor' },
+    ], 1500, '/bot-avatars/003.webp', undefined, 'bot.promptEnvironment');
   };
 
   const handleRentalPeriodSubmit = () => {
+    takeSnapshot();
     const formatDate = (dateStr: string) => {
       if (!dateStr) return '';
       const date = new Date(dateStr);
@@ -379,42 +422,27 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     const formattedStart = formatDate(configState.rentalStartDate || '');
     const formattedEnd = formatDate(configState.rentalEndDate || '');
 
-    const message = `
-      <div class="space-y-2">
-        <div class="flex items-center gap-2">
-          <span class="opacity-70">Période de location:</span>
-          <span class="font-bold">Du ${formattedStart} au ${formattedEnd}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="opacity-70">${t('bot.startTime')}:</span>
-          <span class="font-bold">${configState.rentalStartTime || '08:00'}</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <span class="opacity-70">${t('bot.endTime')}:</span>
-          <span class="font-bold">${configState.rentalEndTime || '18:00'}</span>
-        </div>
-      </div>
-    `;
-
-    pushUserMessage(message);
+    const rentalPeriodContent = t('bot.userRentalPeriod', { start: formattedStart, end: formattedEnd, startTime: configState.rentalStartTime || '08:00', endTime: configState.rentalEndTime || '18:00' });
+    pushUserMessage(rentalPeriodContent);
     setBotStatus('smiling');
-    pushBotMessage('C\'est noté pour cette période !', undefined, 800, undefined, () => {
+    pushBotMessage(t('bot.periodNoted'), undefined, 800, undefined, () => {
       updateStep(STEP.ENVIRONMENT);
       promptEnvironment();
-    });
+    }, 'bot.periodNoted');
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      takeSnapshot();
       const reader = new FileReader();
       reader.onload = (ev) => {
         const dataUrl = ev.target?.result as string;
         setConfigState(prev => ({ ...prev, installationPhoto: dataUrl }));
         pushUserMessage(t('bot.photoPreview'), dataUrl);
         updateStep(STEP.FORM_COMPANY);
-        pushBotMessage(t('bot.photoSuccess'));
-        setTimeout(() => pushBotMessage(t('bot.company'), undefined, 1500, '/bot-avatars/009.webp'), 1500);
+        pushBotMessage(t('bot.photoSuccess'), undefined, 0, undefined, undefined, 'bot.photoSuccess');
+        setTimeout(() => pushBotMessage(t('bot.company'), undefined, 1500, '/bot-avatars/009.webp', undefined, 'bot.company'), 1500);
       };
       reader.readAsDataURL(file);
     }
@@ -422,9 +450,10 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
   const handleDimensionsSubmit = () => {
     if (!configState.width || !configState.height) return;
+    takeSnapshot();
     pushUserMessage(`${configState.width}m&nbsp;×&nbsp;${configState.height}m`);
     updateStep(STEP.DISTANCE);
-    pushBotMessage('Super dimensions&nbsp;!');
+    pushBotMessage(t('bot.dimensionsNoted'), undefined, 0, undefined, undefined, 'bot.dimensionsNoted');
     setTimeout(() => {
       const pType = configState.projectType === 'location' ? 'rental' : 'sale';
       const availableDistances = Array.from(new Set(
@@ -451,7 +480,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           );
         }
       }
-      pushBotMessage(t('bot.distance'), dists);
+      pushBotMessage(t('bot.distance'), dists, 0, undefined, undefined, 'bot.distance');
     }, 1500);
   };
 
@@ -500,13 +529,14 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       pitches.push(...(wizardSettings?.pixelPitches ?? []).map(p => ({ label: formatPitchLabel(p.value), value: p.value, imageUrl: p.imageUrl })));
     }
 
-    if (!pitches.find(p => p.value === 'Je ne sais pas')) pitches.push({ label: 'Je ne sais pas', value: 'Je ne sais pas' });
+    if (!pitches.find(p => p.value === 'Je ne sais pas')) pitches.push({ label: t('bot.dontKnow'), value: 'Je ne sais pas', translationKey: 'bot.dontKnow' });
 
     updateStep(STEP.PITCH);
-    pushBotMessage(t('bot.pitches'), pitches);
+    pushBotMessage(t('bot.pitches'), pitches, 0, undefined, undefined, 'bot.pitches');
   };
 
   const handleProceedToProducts = () => {
+    takeSnapshot();
     const area = configState.width * configState.height;
     const pitchValue = parseFloat(configState.pixelPitch.replace('P', '')) || 2.5;
 
@@ -535,18 +565,18 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     setBotStatus('thinking');
 
     pushBotMessage(t('bot.searching'), undefined, 800, '/bot-avatars/006.webp', () => {
-      // Show product card once initial search message is done
       updateStep(STEP.PRODUCTS);
       setBotStatus('solution');
-      pushBotMessage(sortedProducts.length > 0 ? t('bot.recommendation') : t('bot.noMatch'), undefined, 1000, '/bot-avatars/006.webp');
-    });
+      pushBotMessage(sortedProducts.length > 0 ? t('bot.recommendation') : t('bot.noMatch'), undefined, 1000, '/bot-avatars/006.webp', undefined, sortedProducts.length > 0 ? 'bot.recommendation' : 'bot.noMatch');
+    }, 'bot.searching');
   };
 
   const handleProductSelected = (productId: string) => {
+    takeSnapshot();
     setConfigState(prev => ({ ...prev, selectedProduct: productId }));
     updateStep(STEP.QUANTITY);
     setBotStatus('smiling');
-    pushBotMessage(t('bot.quantity', { width: configState.width, height: configState.height }));
+    pushBotMessage(t('bot.quantity', { width: configState.width, height: configState.height }), undefined, 0, undefined, undefined, 'bot.quantity', { width: configState.width, height: configState.height });
   };
 
   const handleQuantitySubmit = () => {
@@ -558,35 +588,38 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       if (newCount >= 6) {
         pushBotMessage(t('bot.errorValidation'), undefined, 800, '/bot-avatars/007.webp', () => {
           setTimeout(() => onClose(), 2000);
-        });
+        }, 'bot.errorValidation');
       } else if (newCount >= 3) {
-        pushBotMessage(t('bot.errorHelp'), undefined, 800, '/bot-avatars/007.webp');
+        pushBotMessage(t('bot.errorHelp'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorHelp');
       } else {
-        pushBotMessage(t('bot.errorQuantityZero'), undefined, 800, '/bot-avatars/007.webp');
+        pushBotMessage(t('bot.errorQuantityZero'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorQuantityZero');
       }
       return;
     }
     setErrorCount(0);
+    takeSnapshot();
     const finalQty = qty || 1;
-    pushUserMessage(`${finalQty} écran(s)`);
+    pushUserMessage(t('bot.userQuantity', { count: finalQty }), undefined, 'bot.userQuantity', { count: finalQty });
     pushBotMessage(t('bot.delivery'), undefined, 800, '/bot-avatars/013.webp', () => {
       updateStep(STEP.DELIVERY);
-    });
+    }, 'bot.delivery');
   };
 
   const handleDeliverySubmit = () => {
     if (!deliveryCityId) return;
+    takeSnapshot();
     const city = locations?.villes?.find(c => c.id === deliveryCityId);
-    pushUserMessage(`Livraison à : ${city?.name || 'Ville'}`);
+    pushUserMessage(t('bot.userDelivery', { city: city?.name || 'Ville' }));
     updateStep(STEP.INSTALLATION);
-    pushBotMessage(t('bot.installation', { city: city?.name || 'Ville' }), undefined, 600, '/bot-avatars/013.webp');
+    pushBotMessage(t('bot.installation', { city: city?.name || 'Ville' }), undefined, 600, '/bot-avatars/013.webp', undefined, 'bot.installation', { city: city?.name || 'Ville' });
     setTimeout(() => pushBotMessage(t('bot.promptInstallation'), [
-      { label: t('bot.yesInstallation'), value: 'yes' },
-      { label: t('bot.noInstallation'), value: 'no' },
-    ], 1500, '/bot-avatars/005.webp'), 1500);
+      { label: t('bot.yesInstallation'), value: 'yes', translationKey: 'bot.yesInstallation' },
+      { label: t('bot.noInstallation'), value: 'no', translationKey: 'bot.noInstallation' },
+    ], 1500, '/bot-avatars/005.webp', undefined, 'bot.promptInstallation'), 1500);
   };
 
   const handleInstallationChoice = (value: string, label: string) => {
+    takeSnapshot();
     pushUserMessage(label);
     const include = value === 'yes';
     setIncludeInstallation(include);
@@ -605,13 +638,14 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
     updateStep(STEP.SITE_PHOTO);
     setBotStatus('smiling');
-    pushBotMessage(include ? t('bot.installationIncluded') : t('bot.noProblem'));
+    pushBotMessage(include ? t('bot.installationIncluded') : t('bot.noProblem'), undefined, 0, undefined, undefined, include ? 'bot.installationIncluded' : 'bot.noProblem');
     setTimeout(() => pushBotMessage(t('bot.photo'), [
-      { label: t('bot.takePhoto'), value: 'add_photo_camera' },
-      { label: t('bot.chooseGallery'), value: 'add_photo_gallery' },
-      { label: t('bot.skip'), value: 'skip_photo' }
-    ], 1500, '/bot-avatars/012.webp'), 1500);
+      { label: t('bot.takePhoto'), value: 'add_photo_camera', translationKey: 'bot.takePhoto' },
+      { label: t('bot.chooseGallery'), value: 'add_photo_gallery', translationKey: 'bot.chooseGallery' },
+      { label: t('bot.skip'), value: 'skip_photo', translationKey: 'bot.skip' }
+    ], 1500, '/bot-avatars/012.webp', undefined, 'bot.photo'), 1500);
   };
+
   const submitFinalQuote = async () => {
     const uid = user?.uid || 'anonymous';
     // Switch to SUCCESS immediately to avoid waiting screen
@@ -667,21 +701,22 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           updateStep(STEP.SUCCESS);
         }, 1500);
       } else {
-        pushBotMessage(t('bot.errorQuote'), undefined, 800, '/bot-avatars/007.webp');
-        updateStep(STEP.FORM_TERMS); // Go back to let them try again
+        pushBotMessage(t('bot.errorQuote'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorQuote');
+        updateStep(STEP.FORM_TERMS);
       }
     } catch (e) {
       console.error("Background quote creation failed:", e);
-      pushBotMessage(t('bot.errorGeneric'), undefined, 800, '/bot-avatars/007.webp');
+      pushBotMessage(t('bot.errorGeneric'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorGeneric');
     }
   };
 
   const handleFormCompany = () => {
     if (!formCompany.trim()) return;
+    takeSnapshot();
     pushUserMessage(formCompany);
     pushBotMessage(t('bot.email'), undefined, 800, undefined, () => {
       updateStep(STEP.FORM_EMAIL);
-    });
+    }, 'bot.email');
   };
   const handleFormEmail = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -692,19 +727,20 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       if (newCount >= 6) {
         pushBotMessage(t('bot.errorValidation'), undefined, 800, '/bot-avatars/007.webp', () => {
           setTimeout(() => onClose(), 2000);
-        });
+        }, 'bot.errorValidation');
       } else if (newCount >= 3) {
-        pushBotMessage(t('bot.errorHelp'), undefined, 800, '/bot-avatars/007.webp');
+        pushBotMessage(t('bot.errorHelp'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorHelp');
       } else {
-        pushBotMessage(t('bot.errorEmailInvalid'), undefined, 800, '/bot-avatars/007.webp');
+        pushBotMessage(t('bot.errorEmailInvalid'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorEmailInvalid');
       }
       return;
     }
     setErrorCount(0);
+    takeSnapshot();
     pushUserMessage(formEmail);
     pushBotMessage(t('bot.phone'), undefined, 800, undefined, () => {
       updateStep(STEP.FORM_PHONE);
-    });
+    }, 'bot.phone');
   };
   const handleFormPhone = () => {
     const digitsOnly = formPhone.replace(/\D/g, '');
@@ -715,37 +751,38 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       setErrorCount(newCount);
 
       if (newCount >= 6) {
-        pushBotMessage("Nous n'arrivons pas à valider votre numéro. La session va se fermer.", undefined, 800, '/bot-avatars/008.webp', () => {
+        pushBotMessage(t('bot.errorPhoneValidation'), undefined, 800, '/bot-avatars/008.webp', () => {
           setTimeout(() => onClose(), 2000);
-        });
+        }, 'bot.errorPhoneValidation');
       } else if (newCount >= 3) {
-        pushBotMessage(t('bot.errorPhoneInvalid'), undefined, 800, '/bot-avatars/008.webp');
+        pushBotMessage(t('bot.errorPhoneInvalid'), undefined, 800, '/bot-avatars/008.webp', undefined, 'bot.errorPhoneInvalid');
       } else {
-        pushBotMessage(t('bot.errorPhoneInvalid'), undefined, 800, '/bot-avatars/008.webp');
+        pushBotMessage(t('bot.errorPhoneInvalid'), undefined, 800, '/bot-avatars/008.webp', undefined, 'bot.errorPhoneInvalid');
       }
       return;
     }
     setErrorCount(0);
+    takeSnapshot();
     pushUserMessage(formPhone);
     pushBotMessage(t('bot.address'), undefined, 800, '/bot-avatars/013.webp', () => {
       updateStep(STEP.FORM_ADDRESS);
-    });
+    }, 'bot.address');
   };
   const handleFormAddress = () => {
     if (formAddress.trim().length < 6) {
-      pushBotMessage(t('bot.errorAddressShort'), undefined, 800, getAngryImage());
+      pushBotMessage(t('bot.errorAddressShort'), undefined, 800, getAngryImage(), undefined, 'bot.errorAddressShort');
       return;
     }
+    takeSnapshot();
     pushUserMessage(formAddress);
     updateStep(STEP.FORM_TERMS);
     const isEmailVerificationEnabled = settings.isEmailVerificationEnabled ?? false;
 
     if (isEmailVerificationEnabled) {
       pushBotMessage(t('bot.terms'), [
-        { label: t('bot.acceptTerms'), value: 'accept_terms' }
-      ], 800, '/bot-avatars/009.webp');
+        { label: t('bot.acceptTerms'), value: 'accept_terms', translationKey: 'bot.acceptTerms' }
+      ], 800, '/bot-avatars/009.webp', undefined, 'bot.terms');
     } else {
-      // Skip verification logic
       submitFinalQuote();
     }
   };
@@ -804,13 +841,9 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => {
-                          if (step <= 1) return;
-                          const prevStep = Math.max(1, step - 1);
-                          updateStep(prevStep);
-                        }}
+                        onClick={handleBack}
                         className={`w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all active:scale-95 border border-white/10 ${
-                          step > 1 ? "opacity-100" : "opacity-0 pointer-events-none"
+                          stepHistory.length > 0 ? "opacity-100" : "opacity-0 pointer-events-none"
                         }`}
                       >
                         <ArrowLeft size={18} />

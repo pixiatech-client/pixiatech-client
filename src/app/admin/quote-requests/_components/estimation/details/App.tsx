@@ -689,6 +689,21 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   </div>
                 </div>
 
+                {/* Middle Indicator */}
+                <div className="hidden md:flex items-center justify-center">
+                  {initialEstimation?.transactionType === 'sale' ? (
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 shadow-sm">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em]">Mode Vente</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-50 border border-violet-100 text-violet-700 shadow-sm">
+                      <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em]">Mode Location</span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2 md:gap-4 shrink-0">
                   <div className="flex items-center gap-1 md:gap-2">
                     {profile === 'supplier' && userProfile?.role !== 'supplier' && (
@@ -1606,7 +1621,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     key="aura-footer"
                     initial={{ y: 80, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="aura-footer-fixed hidden md:block relative shrink-0 border-t border-slate-200"
+                    className="aura-footer-fixed hidden md:block relative shrink-0"
                   >
                     {/* Toggle Pill — floating on the border-top divider line, always visible */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
@@ -1641,7 +1656,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           transition={{ duration: 0.4, ease: 'easeInOut' }}
                           style={{ overflow: 'hidden' }}
                         >
-                          <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10 mb-8 emerald-neon-halo">
+                          <div className="flex flex-col md:flex-row md:items-end gap-6 md:gap-10 mb-8">
                             <div className="flex-1 bg-slate-100 p-5 md:p-6 rounded-2xl border border-slate-200 shadow-sm w-full">
                               <div className="space-y-4">
                                 <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b border-slate-200 pb-4 gap-4 sm:gap-0">
@@ -1661,7 +1676,6 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </div>
                             </div>
                             <div className="text-left md:text-right flex flex-col justify-end min-w-0 md:min-w-[220px] flex-shrink-0 relative">
-                              <div className="absolute -inset-4 bg-emerald-500/10 blur-[40px] rounded-full pointer-events-none hidden md:block" />
                               <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">À Payer (TTC)</div>
                               <div className="text-4xl sm:text-5xl md:text-6xl font-display font-black tracking-tighter neon-text-emerald relative z-10 truncate">
                                 {formatCurrency(calculations.finalTotal)}
@@ -2030,30 +2044,33 @@ function CustomSelect({
 }
 
 function NumericControl({ value, onChange, label, unit = "" }: { value: number, onChange: (val: number) => void, label: string, unit?: string }) {
+  const len = (value || 0).toString().length;
+  const fontSizeClass = len > 7 ? 'text-xs' : len > 4 ? 'text-sm' : 'text-base';
+  
   return (
     <div className="space-y-1 flex-1 min-w-0">
       <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">{label}</span>
       <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-1 group focus-within:border-aura-accent shadow-sm transition-all">
         <button
           onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-10 h-10 rounded-lg bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200"
+          className="w-8 h-8 rounded-lg bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200 shrink-0"
         >
-          <Minus size={14} />
+          <Minus size={12} />
         </button>
-        <div className="flex-1 flex items-center justify-center gap-1.5 px-3">
+        <div className="flex-1 flex items-center justify-center gap-1 px-2 min-w-0">
           <input
             type="number"
             value={isNaN(value) ? 0 : value}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="bg-transparent border-none p-0 focus:ring-0 text-center font-display font-black text-2xl w-full text-slate-900 appearance-none no-arrows"
+            className={`bg-transparent border-none p-0 focus:ring-0 text-center font-display font-black w-full min-w-0 flex-1 text-slate-900 appearance-none no-arrows ${fontSizeClass}`}
           />
-          {unit && <span className="text-base font-display font-black text-aura-accent min-w-[1ch]">{unit}</span>}
+          {unit && <span className="text-sm font-display font-black text-aura-accent shrink-0">{unit}</span>}
         </div>
         <button
           onClick={() => onChange(value + 1)}
-          className="w-10 h-10 rounded-lg bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200"
+          className="w-8 h-8 rounded-lg bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200 shrink-0"
         >
-          <Plus size={14} />
+          <Plus size={12} />
         </button>
       </div>
     </div>

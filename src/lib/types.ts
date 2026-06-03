@@ -444,6 +444,8 @@ export interface MessageOption {
   value: string;
   imageUrl?: string;
   description?: string;
+  translationKey?: string;
+  translationParams?: Record<string, string | number>;
 }
 
 export interface Message {
@@ -461,6 +463,8 @@ export interface Message {
   options?: MessageOption[]; // Interactive rich buttons for the wizard bot
   summaryData?: Record<string, string>; // Data for the wizard bot summary card
   botImage?: string; // Specific avatar image for this bot message
+  translationKey?: string;
+  translationParams?: Record<string, string | number>;
 }
 
 export interface Chat {

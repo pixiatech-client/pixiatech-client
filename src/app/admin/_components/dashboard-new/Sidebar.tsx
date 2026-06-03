@@ -39,6 +39,7 @@ import { UserRole } from './dashboard-new-types';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
+import { useI18n } from '@/lib/i18n';
 
 export type SidebarState = 'expanded' | 'compact' | 'hidden';
 export type SidebarTheme = 'light' | 'dark';
@@ -139,6 +140,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSaveLogo,
   initialOrder
 }) => {
+  const { t } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -216,15 +218,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const initialItems = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'users', label: 'Utilisateurs', icon: Users, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
-    { id: 'estimations', label: 'Estimations', icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'history', label: 'Historique', icon: Clock, color: 'text-cyan-400', roles: [UserRole.ADMINISTRATEUR] },
-    { id: 'produit', label: 'Produits', icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
-    { id: 'messages', label: 'Messages', icon: MessageSquare, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'notifications', label: 'Notifications', icon: Bell, color: 'text-amber-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'profile', label: 'Mon Profil', icon: UserIcon, color: 'text-purple-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'settings', label: 'Paramètres', icon: Settings, color: 'text-fuchsia-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'dashboard', label: t('admin.dashboard'), icon: LayoutDashboard, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'users', label: t('admin.users'), icon: Users, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'estimations', label: t('admin.estimations'), icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'history', label: t('admin.history'), icon: Clock, color: 'text-cyan-400', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'produit', label: t('admin.products'), icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'messages', label: t('admin.messages'), icon: MessageSquare, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'notifications', label: t('admin.notifications'), icon: Bell, color: 'text-amber-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'profile', label: t('admin.myProfile'), icon: UserIcon, color: 'text-purple-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'settings', label: t('admin.settings'), icon: Settings, color: 'text-fuchsia-500', roles: [UserRole.ADMINISTRATEUR] },
   ];
 
   const [items, setItems] = useState(() => {
@@ -473,8 +475,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="w-full max-w-md bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh] pointer-events-auto mx-4">
                   <div className="flex items-center justify-between mb-8">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">Configuration du Logo</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Personnalisez l'identité visuelle</p>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('admin.logoConfigTitle')}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('admin.logoConfigDesc')}</p>
                     </div>
                     <button
                       onClick={() => setIsEditingLogo(false)}
@@ -487,7 +489,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div className="space-y-6">
                     {/* Preview Section */}
                     <div className="p-6 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-4 min-h-[120px]">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Aperçu en direct</span>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('admin.livePreview')}</span>
                       <div className="flex items-center justify-center gap-3 scale-110 origin-center w-full overflow-hidden px-4">
                         {tempLogoConfig.image ? (
                           <img src={tempLogoConfig.image} alt="Preview" className="w-10 h-10 rounded-lg object-cover shadow-lg shrink-0" />
@@ -502,7 +504,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     {/* Text Input */}
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Nom de l'application</label>
+                      <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t('admin.appName')}</label>
                       <input
                         type="text"
                         placeholder="Ex: Mon App"
@@ -516,7 +518,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {/* Letter Input */}
                       {!tempLogoConfig.image && (
                         <div>
-                          <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Initiale</label>
+                          <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t('admin.initial')}</label>
                           <input
                             type="text"
                             maxLength={1}
@@ -531,7 +533,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {/* Color Picker */}
                       {!tempLogoConfig.image && (
                         <div className="col-span-2">
-                          <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Couleur de marque</label>
+                          <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t('admin.brandColor')}</label>
                           <div className="flex flex-wrap gap-2.5">
                             {logoColors.map((color) => (
                               <button
@@ -553,7 +555,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <div className="flex items-center gap-3">
                         <label className="flex-1 flex items-center justify-center gap-3 px-4 py-3 bg-gray-50 dark:bg-white/5 border border-dashed border-gray-300 dark:border-white/20 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-all group/upload">
                           <Upload className="w-4 h-4 text-gray-400 group-hover/upload:text-blue-500" />
-                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Charger une image</span>
+                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t('admin.uploadImage')}</span>
                           <input type="file" accept="image/*" className="hidden" onChange={handleLogoImageUpload} />
                         </label>
                         {tempLogoConfig.image && (
@@ -575,7 +577,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-base shadow-xl shadow-blue-600/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                       >
                         <Check className="w-5 h-5" />
-                        Enregistrer les modifications
+                        {t('admin.saveChanges')}
                       </button>
                     </div>
                   </div>
@@ -591,7 +593,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center justify-between mb-4 px-2">
             {!isCompact && (
               <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                Menu Principal
+                {t('admin.mainMenu')}
               </span>
             )}
             {role === UserRole.ADMINISTRATEUR && (
@@ -732,7 +734,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-semibold group hover:bg-red-50 hover:text-red-600 text-red-500`}
             >
               <LogOut className={`${isCompact ? 'w-4 h-4 mx-auto' : 'w-4 h-4'} transition-colors duration-200 group-hover:text-red-500`} />
-              {!isCompact && <span>Se déconnecter</span>}
+              {!isCompact && <span>{t('admin.logout')}</span>}
 
               {isCompact && hoveredItem === 'logout' && (
                 <motion.div
@@ -740,7 +742,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   animate={{ opacity: 1, x: 20 }}
                   className={`absolute left-full ml-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap z-[100] shadow-xl bg-red-500 text-white`}
                 >
-                  Se déconnecter
+                  {t('admin.logout')}
                   <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 border-y-[6px] border-y-transparent border-r-[6px] border-r-red-500" />
                 </motion.div>
               )}

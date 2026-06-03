@@ -134,16 +134,27 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
   const logoSource = pdfSettings.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Flogo.png?alt=media&token=8544c77c-6554-46c5-ac33-0c464c8d50d0';
   const t = translations[lang] || translations.fr;
 
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
   const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
   const isSecure = smtpPort === 465;
 
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    console.error(`[Email] WARNING: Missing SMTP configuration in environment!`, {
+      SMTP_HOST: smtpHost ? 'Present' : 'MISSING',
+      SMTP_USER: smtpUser ? 'Present' : 'MISSING',
+      SMTP_PASS: smtpPass ? 'Present' : 'MISSING',
+    });
+  }
+
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
+    host: smtpHost,
     port: smtpPort,
     secure: isSecure,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: smtpUser,
+      pass: smtpPass,
     },
     tls: {
       rejectUnauthorized: false

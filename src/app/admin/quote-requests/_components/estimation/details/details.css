@@ -89,8 +89,8 @@
 .aura-footer-fixed {
   padding: 2rem;
   padding-top: 2.5rem;
-  border-top: 1px solid #e2e8f0;
-  background-color: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid #e2eec0;
+  background-color: rgba(248, 250, 240, 0.95);
   backdrop-filter: blur(24px);
   position: relative;
   z-index: 50;
@@ -102,20 +102,11 @@
 }
 
 .emerald-neon-halo::after {
-  content: '';
-  position: absolute;
-  bottom: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  height: 40px;
-  background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: -1;
+  content: none !important;
 }
 
 .neon-text-emerald {
-  color: #059669;
+  color: #9AAE00 !important;
   text-shadow: none;
 }
 

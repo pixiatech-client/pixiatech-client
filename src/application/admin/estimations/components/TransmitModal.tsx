@@ -422,6 +422,9 @@ export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({
   const [endTime, setEndTime] = useState(defaultEndTime);
   const [error, setError] = useState<string | null>(null);
 
+  // Today's date in YYYY-MM-DD — used as `min` to block past dates
+  const today = new Date().toISOString().split('T')[0];
+
   useEffect(() => {
     if (isOpen) {
       setStartDate(defaultStartDate);
@@ -507,6 +510,7 @@ export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({
                   <input
                     type="date"
                     value={startDate}
+                    min={today}
                     onChange={(e) => setStartDate(e.target.value)}
                     className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm font-['JetBrains_Mono'] focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
                   />
@@ -518,6 +522,7 @@ export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({
                   <input
                     type="date"
                     value={endDate}
+                    min={startDate || today}
                     onChange={(e) => setEndDate(e.target.value)}
                     className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm font-['JetBrains_Mono'] focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
                   />

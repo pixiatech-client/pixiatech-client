@@ -43,6 +43,7 @@ import type { Theme, Settings as AppSettings, UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
 import { collection, orderBy, query, doc, onSnapshot } from 'firebase/firestore';
+import { useI18n } from '@/lib/i18n';
 import { Sidebar, type SidebarState, type SidebarTheme, type SettingsSection } from './dashboard-new/Sidebar';
 import { UserRole as UserRoleEnum } from './dashboard-new/dashboard-new-types';
 import { NotificationBell } from './NotificationBell';
@@ -72,6 +73,7 @@ const DEFAULT_LOGO_CONFIG = {
 };
 
 const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor, userProfile, roles, logout, toggleTheme, mainNavItems, secondaryNavItems, mode, setMode, activeSettingsSection, onSettingsSectionChange, isSettingsPage, role, onOpenAccountDrawer, initialSettings }: { children: React.ReactNode, pageTitle: string, pageSubtitle: string, headerColor: string, userProfile: any, roles: any[], logout: any, toggleTheme: any, mainNavItems: any[], secondaryNavItems: any[], mode: string, setMode: (theme: string) => void, activeSettingsSection?: SettingsSection, onSettingsSectionChange?: (section: SettingsSection) => void, isSettingsPage?: boolean, role?: UserRoleEnum, onOpenAccountDrawer?: () => void, initialSettings?: AppSettings | null }) => {
+  const { t, locale, setLocale } = useI18n();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [settings, setSettings] = useState<any>(initialSettings);
   const firestore = useFirestore();
@@ -397,7 +399,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 variant="ghost"
                 size="icon"
                 onClick={() => router.push('/')}
-                title="Accéder au site"
+                title={t('admin.siteAccess')}
                 className={cn(
                   "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
                   isDark ? "bg-white/5 hover:bg-theme-sidebar-active-bg" : "bg-white hover:bg-theme-sidebar-active-bg"
@@ -407,7 +409,20 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   "h-5 w-5 transition-colors",
                   isDark ? "text-gray-400 group-hover:text-emerald-400" : "text-gray-400 group-hover:text-emerald-500"
                 )} />
-                <span className="sr-only">Accéder au site</span>
+                <span className="sr-only">{t('admin.siteAccess')}</span>
+              </Button>
+
+              {/* ── 5. Language Switcher (FR / EN) ── */}
+              <Button
+                variant="ghost"
+                onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')}
+                title={locale === 'fr' ? "Switch to English" : "Passer en Français"}
+                className={cn(
+                  "group h-11 px-3 rounded-xl shadow-sm transition-all duration-200 hidden md:flex items-center gap-1 font-black uppercase text-xs tracking-wider",
+                  isDark ? "bg-white/5 hover:bg-theme-sidebar-active-bg" : "bg-white hover:bg-theme-sidebar-active-bg"
+                )}
+              >
+                <span>{locale === 'fr' ? 'FR' : 'EN'}</span>
               </Button>
 
               <div className={cn("h-9 w-px mx-1 hidden sm:block", isDark ? "bg-white/10" : "bg-gray-200")} />
@@ -519,7 +534,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover/item:scale-110 transition-transform shadow-sm">
                       <User size={20} strokeWidth={2.5} />
                     </div>
-                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Profil</span>
+                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">{t('admin.profile')}</span>
                   </div>
                   <ChevronDown className="w-4 h-4 text-gray-300 -rotate-90" />
                 </Link>
@@ -533,7 +548,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center text-zinc-500 group-hover/item:scale-110 transition-transform shadow-sm">
                       <Settings size={20} strokeWidth={2.5} />
                     </div>
-                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Paramètres</span>
+                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">{t('admin.settings')}</span>
                   </div>
                   <ChevronDown className="w-4 h-4 text-gray-300 -rotate-90" />
                 </Link>
@@ -547,7 +562,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover/item:scale-110 transition-transform shadow-sm">
                       <Globe size={20} strokeWidth={2.5} />
                     </div>
-                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Accéder au Site</span>
+                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">{t('admin.siteAccess')}</span>
                   </div>
                   <ChevronDown className="w-4 h-4 text-gray-300 -rotate-90" />
                 </Link>
@@ -560,7 +575,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     <div className="w-12 h-12 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center text-red-500 group-hover/logout:scale-110 transition-transform shadow-sm">
                       <LogOut size={20} strokeWidth={2.5} />
                     </div>
-                    <span className="text-sm font-bold text-red-600 uppercase tracking-wide">Déconnexion</span>
+                    <span className="text-sm font-bold text-red-600 uppercase tracking-wide">{t('admin.logout')}</span>
                   </div>
                   <ChevronDown className="w-4 h-4 text-red-200 -rotate-90" />
                 </button>

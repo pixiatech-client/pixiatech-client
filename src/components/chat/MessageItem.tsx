@@ -4,10 +4,18 @@ import React, { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { Check, CheckCheck, Video, Paperclip, Mic, Play, Pause, Share2, Trash2 } from 'lucide-react';
 import { cn, formatTimestamp } from '@/lib/utils';
-import { Message } from '@/lib/types';
+import { Message, MessageOption } from '@/lib/types';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useRoles } from '@/contexts/RoleContext';
 import { useI18n } from '@/lib/i18n';
+
+const translateOption = (option: MessageOption | string, translateFn: (key: string, params?: Record<string, string | number>) => string): string => {
+  if (typeof option === 'string') return option;
+  if (option.translationKey) {
+    return translateFn(option.translationKey, option.translationParams);
+  }
+  return option.label;
+};
 
 const TypewriterText = ({ content, isMine }: { content: string; isMine: boolean }) => {
   // Split by HTML tags, entities, or spaces, keeping the separators
@@ -62,6 +70,13 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
   const controls = useAnimation();
   const { getRoleColor, getRoleName } = useRoles();
   const { t } = useI18n();
+
+  const getTranslatedContent = () => {
+    if (msg.translationKey) {
+      return t(msg.translationKey, msg.translationParams);
+    }
+    return msg.content;
+  };
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -234,9 +249,9 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
             {msg.type === 'text' && (
               <div className="leading-relaxed font-medium text-[15px]">
                 {!isMine && !msg.fileUrl ? (
-                  <TypewriterText content={msg.content} isMine={isMine} />
+                  <TypewriterText content={getTranslatedContent()} isMine={isMine} />
                 ) : (
-                  <p dangerouslySetInnerHTML={{ __html: msg.content }} />
+                  <p dangerouslySetInnerHTML={{ __html: getTranslatedContent() }} />
                 )}
               </div>
             )}

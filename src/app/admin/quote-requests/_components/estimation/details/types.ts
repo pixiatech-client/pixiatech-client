@@ -8,6 +8,7 @@ export interface ClientInfo {
   address?: string;
   notes?: string;
   sitePhoto?: string;
+  commercialNotes?: string;
 }
 
 export interface Product {
@@ -73,6 +74,7 @@ export interface Estimation {
   hideCommentsFromSupplier?: boolean;
   hidePhotoFromSupplier?: boolean;
   supplierNotes?: string;
+  commercialNotes?: string;
   status?: string;
   pdfUrl?: string;
 }

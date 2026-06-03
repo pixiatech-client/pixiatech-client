@@ -91,7 +91,7 @@ export default function LoginPage() {
       try {
         // Add a timeout to prevent hanging if Firebase is blocked by an AdBlocker
         const signOutPromise = signOut(auth);
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Timeout during sign-out')), 2000)
         );
 
@@ -147,12 +147,12 @@ export default function LoginPage() {
       console.log('[Login] Starting signInWithEmailAndPassword for:', loginEmail);
       const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
       console.log('[Login] Auth success, UID:', userCredential.user.uid);
-      
+
       const { checkUserStatus } = await import('@/app/admin/actions');
       console.log('[Login] Calling checkUserStatus server action...');
       const statusResult = await checkUserStatus(userCredential.user.uid);
       console.log('[Login] statusResult:', statusResult);
-      
+
       if (!statusResult.success) {
         console.warn('[Login] checkUserStatus returned failure:', statusResult.error);
         await signOut(auth);
@@ -189,7 +189,8 @@ export default function LoginPage() {
         localStorage.removeItem('remember-password');
       }
 
-      window.location.href = '/admin';
+      router.push('/admin');
+      router.refresh();
     } catch (error: any) {
       console.error('[Login] handleLogin Error:', error);
       setLoginError(getFirebaseErrorMessage(error, error.message || 'Une erreur est survenue. Veuillez réessayer.'));
@@ -266,7 +267,7 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
       const idToken = await userCredential.user.getIdToken();
-      
+
       const result = await googleSignInAction({
         uid: userCredential.user.uid,
         email: userCredential.user.email || '',
@@ -289,13 +290,13 @@ export default function LoginPage() {
         setGoogleUser(result.userData);
         setGoogleDisplayName(result.userData?.displayName || userCredential.user.displayName || '');
         setGooglePhone(result.userData?.phone || '');
-        
+
         if (result.isNew || !result.userData?.displayName) {
           setShowGoogleProfileForm(true);
         } else {
           setShowPendingMessage(true);
         }
-        
+
         await signOut(auth);
       }
     } catch (error: any) {
@@ -313,7 +314,7 @@ export default function LoginPage() {
   const handleSaveGoogleProfile = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!googleUser?.uid) return;
-    
+
     setIsSavingGoogleProfile(true);
     try {
       const result = await updateGoogleUserProfile({
@@ -361,8 +362,8 @@ export default function LoginPage() {
                   <span className="block text-blue-600">PixiaTech</span>
                 </h1>
                 <p className="max-w-lg text-base leading-7 text-slate-500">
-                  Connectez-vous pour gérer vos produits, vos fiches techniques et les éléments
-                  essentiels de votre catalogue depuis une interface moderne et centralisée.
+                  Cet espace est réservé exclusivement aux fournisseurs, aux commerciaux et aux administrateurs,
+                  afin de gérer le catalogue professionnel dans un environnement sécurisé.
                 </p>
               </div>
 
@@ -751,41 +752,41 @@ export default function LoginPage() {
 
                 {!showGoogleProfileForm && !showPendingMessage && (
                   <>
-                  <div className="relative mt-6 flex items-center">
-                  <div className="flex-1 border-t border-slate-200" />
-                  <span className="px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">ou</span>
-                  <div className="flex-1 border-t border-slate-200" />
-                </div>
+                    <div className="relative mt-6 flex items-center">
+                      <div className="flex-1 border-t border-slate-200" />
+                      <span className="px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">ou</span>
+                      <div className="flex-1 border-t border-slate-200" />
+                    </div>
 
-                <button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  disabled={isSigningInWithGoogle || isLoggingIn || isSigningUp || isSigningOut}
-                  className="mt-4 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white text-sm font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isSigningInWithGoogle ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <svg className="h-5 w-5" viewBox="0 0 24 24">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                    </svg>
-                  )}
-                  Continuer avec Google
-                </button>
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignIn}
+                      disabled={isSigningInWithGoogle || isLoggingIn || isSigningUp || isSigningOut}
+                      className="mt-4 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white text-sm font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isSigningInWithGoogle ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <svg className="h-5 w-5" viewBox="0 0 24 24">
+                          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+                          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                        </svg>
+                      )}
+                      Continuer avec Google
+                    </button>
 
-                <div className="mt-6 border-t border-slate-100 pt-5 text-center">
-                  <Link
-                    href="/"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-900 lg:hidden"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Retour au site
-                  </Link>
-                </div>
-                </>
+                    <div className="mt-6 border-t border-slate-100 pt-5 text-center">
+                      <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-900 lg:hidden"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        Retour au site
+                      </Link>
+                    </div>
+                  </>
                 )}
               </div>
 
