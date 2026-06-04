@@ -20,6 +20,7 @@ import { EstimationStatus, Estimation, TrackingInfo } from '../types';
 import { getQuoteRequests, getPaginatedQuotes, getQuoteCounts, updateQuoteStatus, moveQuotesToTrash, restoreQuotes, permanentDeleteQuotes, permanentDeleteAllTrashedQuotes, getUsers, getQuoteRequest, getProducts, getProductSpecs, calibrateQuoteStats } from '@/app/admin/actions';
 import type { QuoteRequest, UserProfile, Product, ProductSpec } from '@/lib/types';
 import { hasPermission, canPermanentlyDelete } from '@/lib/permissions';
+import { useI18n } from '@/lib/i18n';
 import { 
   collection, 
   query, 
@@ -156,14 +157,26 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
    const [exitingIds, setExitingIds] = useState<Set<string>>(new Set());
    const [bulkProgress, setBulkProgress] = useState<{ total: number; remaining: number } | null>(null);
 
-   const isFournisseur = userRole === 'fournisseur';
-  const isCommercial = userRole === 'commercial';
-  const isAdmin = userRole === 'admin';
+const isFournisseur = userRole === 'fournisseur';
+   const isCommercial = userRole === 'commercial';
+   const isAdmin = userRole === 'admin';
+   const { t } = useI18n();
 
-  // Pour le fournisseur: afficher "Fournisseur" et "Retourné" par défaut
-  const defaultTab = isFournisseur ? 'Fournisseur' : 'En attente';
-  const [activeTab, setActiveTab] = useState<EstimationStatus>(defaultTab as EstimationStatus);
-  const [estimationMode, setEstimationMode] = useState<'vente' | 'location'>('vente');
+   // Pour le fournisseur: afficher "Fournisseur" et "Retourné" par défaut
+   const defaultTab = isFournisseur ? 'Fournisseur' : 'En attente';
+   const [activeTab, setActiveTab] = useState<EstimationStatus>(defaultTab as EstimationStatus);
+   const [estimationMode, setEstimationMode] = useState<'vente' | 'location'>('vente');
+   const [sortField, setSortField] = useState<'price' | 'date' | 'time'>('price');
+   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+   const handleSortChange = useCallback((field: 'price' | 'date' | 'time') => {
+     setSortField(prevField => {
+       if (prevField === field) {
+         setSortDirection(prevDir => prevDir === 'asc' ? 'desc' : 'asc');
+       }
+       return field;
+     });
+   }, []);
 
    // Current user object for chat
    const currentUser = useMemo(() => ({
@@ -362,30 +375,30 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
 
     // Server Action handles paging and tab caching robustly. Real-time updates for quotes are fetched via actions upon transitions.
 
-   const filteredEstimations = useMemo(() => {
-    let filtered = estimations.filter((est) => {
-      const matchesTab = est.status === activeTab;
-      const matchesSearch =
-        est.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        est.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        est.date.includes(searchTerm);
+const filteredEstimations = useMemo(() => {
+     let filtered = estimations.filter((est) => {
+       const matchesTab = est.status === activeTab;
+       const matchesSearch =
+         est.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         est.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         est.date.includes(searchTerm);
 
-        if (isFournisseur) {
-          return matchesTab && matchesSearch;
-        }
+         if (isFournisseur) {
+           return matchesTab && matchesSearch;
+         }
 
-      return matchesTab && matchesSearch;
-    });
-return filtered;
-   }, [estimations, activeTab, searchTerm, isFournisseur, userId]);
+       return matchesTab && matchesSearch;
+     });
+ return filtered;
+     }, [estimations, activeTab, searchTerm, isFournisseur, userId]);
 
-   const tabCounts = useMemo(() => {
-      const counts: any = {};
-      Object.entries(estimationToStatus).forEach(([label, techKey]) => {
-        counts[label] = serverTabCounts[techKey] || 0;
-      });
-      return counts;
-    }, [serverTabCounts]);
+     const tabCounts = useMemo(() => {
+       const counts: any = {};
+       Object.entries(estimationToStatus).forEach(([label, techKey]) => {
+         counts[label] = serverTabCounts[techKey] || 0;
+       });
+       return counts;
+     }, [serverTabCounts]);
 
    const totalPages = Math.max(1, Math.ceil((tabCounts[activeTab] || 0) / itemsPerPage));
   const paginatedEstimations = filteredEstimations;
@@ -1310,8 +1323,8 @@ return filtered;
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
-              <ShoppingBag className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'vente' ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-              <span className="z-20 whitespace-nowrap">Vente</span>
+<ShoppingBag className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'vente' ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+               <span className="z-20 whitespace-nowrap">{t('admin.saleMode')}</span>
             </button>
             <button
               onClick={() => setEstimationMode('location')}
@@ -1327,8 +1340,8 @@ return filtered;
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
               )}
-              <Calendar className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'location' ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-              <span className="z-20 whitespace-nowrap">Location</span>
+<Calendar className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'location' ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+               <span className="z-20 whitespace-nowrap">{t('admin.rentalMode')}</span>
             </button>
           </div>
         </div>
@@ -1341,52 +1354,58 @@ return filtered;
           estimationMode={estimationMode}
         />
 
-        <SearchHeader
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          total={totalValue}
-          selectedCount={selectedItems.size}
-          activeTab={activeTab}
-          onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)}
-          isFournisseur={isFournisseur}
-          isAdmin={isAdmin}
-          onEmptyTrash={handleEmptyTrash}
-          onResync={isAdmin ? handleResync : undefined}
-          onSelectAll={handleSelectAll}
-          isAllSelected={paginatedEstimations.length > 0 && selectedItems.size === paginatedEstimations.length}
-        />
+<SearchHeader
+           searchTerm={searchTerm}
+           onSearchChange={setSearchTerm}
+           total={totalValue}
+           selectedCount={selectedItems.size}
+           activeTab={activeTab}
+           onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)}
+           isFournisseur={isFournisseur}
+           isAdmin={isAdmin}
+           onEmptyTrash={handleEmptyTrash}
+           onResync={isAdmin ? handleResync : undefined}
+           onSelectAll={handleSelectAll}
+           isAllSelected={paginatedEstimations.length > 0 && selectedItems.size === paginatedEstimations.length}
+           sortField={sortField}
+           sortDirection={sortDirection}
+           onSortChange={handleSortChange}
+         />
 
         <div className="flex flex-col gap-4 pb-28 md:pb-0">
-          <EstimationTable
-                  estimations={paginatedEstimations}
-                  selectedIds={selectedIds}
-                  onSelect={handleSelect}
-                  onSelectAll={handleSelectAll}
-                  activeTab={activeTab}
-                  onStatusClick={handleStatusTransition}
-                  onBulkStatusClick={handleBulkStatusTransition}
-                  onSupplierClick={handleSupplierClick}
-                  onSupplierAction={handleSupplierAction}
-                  onMarkAsDelivered={handleMarkAsDelivered}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onBulkDelete={handleBulkDelete}
-                  onRestore={handleRestore}
-                  onBulkRestore={handleBulkRestore}
-                  onArchive={handleArchive}
-                  onToggleLock={handleToggleLock}
-                  onUpdateTracking={handleUpdateTracking}
-                  onViewMessage={handleViewMessage}
-                  isFournisseur={isFournisseur}
-                  userRole={userRole}
-                  currentUser={currentUser}
-                  suppliers={suppliers}
-                  unreadCounts={unreadCounts}
-                  loading={isLoading}
-                  exitingIds={exitingIds}
-                  bulkProgress={bulkProgress}
-                  estimationMode={estimationMode}
-                />
+<EstimationTable
+                   estimations={paginatedEstimations}
+                   selectedIds={selectedIds}
+                   onSelect={handleSelect}
+                   onSelectAll={handleSelectAll}
+                   activeTab={activeTab}
+                   onStatusClick={handleStatusTransition}
+                   onBulkStatusClick={handleBulkStatusTransition}
+                   onSupplierClick={handleSupplierClick}
+                   onSupplierAction={handleSupplierAction}
+                   onMarkAsDelivered={handleMarkAsDelivered}
+                   onEdit={handleEdit}
+                   onDelete={handleDelete}
+                   onBulkDelete={handleBulkDelete}
+                   onRestore={handleRestore}
+                   onBulkRestore={handleBulkRestore}
+                   onArchive={handleArchive}
+                   onToggleLock={handleToggleLock}
+                   onUpdateTracking={handleUpdateTracking}
+                   onViewMessage={handleViewMessage}
+                   isFournisseur={isFournisseur}
+                   userRole={userRole}
+                   currentUser={currentUser}
+                   suppliers={suppliers}
+                   unreadCounts={unreadCounts}
+                   loading={isLoading}
+                   exitingIds={exitingIds}
+                   bulkProgress={bulkProgress}
+                   estimationMode={estimationMode}
+                   sortField={sortField}
+                   sortDirection={sortDirection}
+                   onSortChange={handleSortChange}
+                 />
 
           {totalPages > 1 && (
             <Pagination

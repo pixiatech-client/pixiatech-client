@@ -6,7 +6,6 @@ import { EstimationStatus } from '../types';
 import { Clock, CheckCircle2, Truck, Archive, Trash2, Calculator, Users, Hourglass, RotateCcw, Key } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
-// Hook to get translated status label
 const useStatusLabel = () => {
   const { t } = useI18n();
   
@@ -96,6 +95,7 @@ const locationTabs: TabDef[] = [
 ];
 
 export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange, userRole = 'admin', tabCounts = {}, estimationMode = 'vente' }) => {
+  const getStatusLabel = useStatusLabel();
   const allTabs = estimationMode === 'location' ? locationTabs : venteTabs;
   const tabs = allTabs.filter(t => t.roles.includes(userRole));
   const activeIndex = tabs.findIndex(t => t.label === activeTab);
@@ -120,7 +120,6 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
     updateIndicator();
     window.addEventListener('resize', updateIndicator);
     
-    // Also update when the content might have changed (like tab counts loading)
     const timeoutId = setTimeout(updateIndicator, 100);
     
     return () => {
@@ -135,7 +134,6 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
         ref={containerRef}
         className="relative flex items-center gap-3 bg-theme-card p-2 rounded-2xl border border-theme-card-border shadow-sm w-fit"
       >
-        {/* Animated sliding background */}
         <motion.div
           className="absolute top-2 bottom-2 rounded-xl bg-theme-sidebar-active-bg shadow-lg z-0"
           animate={{
@@ -148,7 +146,6 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
             stiffness: 300,
           }}
           style={{
-            // Calculate the correct position accounting for padding
             left: indicatorStyle.left,
             width: indicatorStyle.width,
           }}
@@ -176,7 +173,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
                 className="w-5 h-5 transition-colors"
                 style={{ color: isActive ? color : color }}
               />
-              <span className="relative">{label}</span>
+              <span className="relative">{getStatusLabel(label)}</span>
               {count > 0 && (
                 <span className={`
                   px-2 py-0.5 rounded-lg text-[10px] font-black transition-all duration-300
