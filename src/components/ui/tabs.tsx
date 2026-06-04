@@ -58,10 +58,7 @@ const TabsList = React.forwardRef<
             {isChildActive && !hideBubble && (
               <motion.div
                 layoutId="tabs-bubble"
-                className={cn(
-                  "absolute inset-0 z-10 rounded-md",
-                  "dark:bg-primary bg-black"
-                )}
+                className="absolute inset-0 z-10 rounded-md bg-primary"
                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
               />
             )}

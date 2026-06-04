@@ -43,7 +43,7 @@ import { cn } from '@/lib/utils';
 import { ConfigState, INITIAL_STATE, ProjectType, Environment, ViewingDistance, PixelPitch } from '@/lib/configurator-wizard-types';
 import { Button } from './ui/button';
 import { ConfiguredProduct, Product, Settings, UserProfile, WizardSettings } from '@/lib/types';
-import { getBlockedPeriods } from '@/app/actions/quote-actions';
+import { getBlockedPeriods, getProductRentalAvailabilityAction } from '@/app/actions/quote-actions';
 import Preview from './preview';
 import StepDimensionsOriginal from './StepDimensions';
 import { Label } from './ui/label';
@@ -378,7 +378,7 @@ function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigSta
     case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} />;
     case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} locale={locale} />;
     case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} t={t} />;
-    case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} t={t} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
+    case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} t={t} locale={locale} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
     case 7: return <StepSummary state={state} t={t} locale={locale} />;
     case 8: return <StepFinal state={state} updateState={updateState} products={products} settings={settings} t={t} locale={locale!} hideBackButton={true} />;
     default: return null;
@@ -1070,8 +1070,9 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
   );
 }
 
-export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: ConfigState, updateState: any, t: any }) {
-  const [blockedPeriods, setBlockedPeriods] = React.useState<{ from: string; to: string }[]>([]);
+export function StepRentalDatesAndPhoto({ state, updateState, t, locale }: { state: ConfigState, updateState: any, t: any, locale: string }) {
+   const [blockedPeriods, setBlockedPeriods] = React.useState<{ from: string; to: string }[]>([]);
+   const [productAvailability, setProductAvailability] = React.useState<Record<string, { total: number, reserved: number, remaining: number }>>({});
 
   React.useEffect(() => {
     const loadBlockedPeriods = async () => {
@@ -1085,13 +1086,33 @@ export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: Conf
     loadBlockedPeriods();
   }, []);
 
+  React.useEffect(() => {
+    const loadProductAvailability = async () => {
+      if (!state.selectedProduct || !state.rentalStartDate || !state.rentalEndDate) return;
+      try {
+        const from = new Date(state.rentalStartDate);
+        const to = new Date(state.rentalEndDate);
+        const result = await getProductRentalAvailabilityAction(
+          state.selectedProduct,
+          state.rentalStartDate,
+          state.rentalEndDate,
+          state.quantity || 1
+        );
+        setProductAvailability(prev => ({ ...prev, [state.selectedProduct!]: result }));
+      } catch (error) {
+        console.error('Failed to load product availability:', error);
+      }
+    };
+    loadProductAvailability();
+  }, [state.selectedProduct, state.rentalStartDate, state.rentalEndDate, state.quantity]);
+
+  const dateLocale = locale === 'en' ? enUS : fr;
+
   const isDateBlocked = React.useCallback((date: Date) => {
     const d = new Date(date);
     d.setHours(12, 0, 0, 0);
     const dateStr = d.toISOString().split('T')[0];
-    return blockedPeriods.some(period => {
-      return dateStr >= period.from && dateStr <= period.to;
-    });
+    return blockedPeriods.some(period => dateStr >= period.from && dateStr <= period.to);
   }, [blockedPeriods]);
 
   const handleDateChange = (range: DateRange | undefined) => {
@@ -1149,17 +1170,18 @@ export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: Conf
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    initialFocus
-                    mode="range"
-                    selected={{ from: startDate, to: endDate }}
-                    disabled={[
-                      { before: new Date(new Date().setHours(0, 0, 0, 0)) },
-                      isDateBlocked
-                    ]}
-                    onSelect={handleDateChange}
-                    numberOfMonths={1}
-                  />
+<Calendar
+                     initialFocus
+                     mode="range"
+                     selected={{ from: startDate, to: endDate }}
+                     disabled={[
+                       { before: new Date(new Date().setHours(0, 0, 0, 0)) },
+                       isDateBlocked
+                     ]}
+                     onSelect={handleDateChange}
+                     numberOfMonths={1}
+                     locale={dateLocale}
+                   />
                 </PopoverContent>
               </Popover>
             </div>
@@ -1259,7 +1281,7 @@ export function StepRentalDatesAndPhoto({ state, updateState, t }: { state: Conf
   );
 }
 
-export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, locale?: string }) {
+export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, locale: string }) {
   const [showMoreDetails, setShowMoreDetails] = React.useState(false);
   const dateLocale = locale === 'en' ? enUS : fr;
   const area = state.width * state.height;
@@ -1407,38 +1429,13 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
   const [showComparator, setShowComparator] = useState(false);
   const [compareProductIds, setCompareProductIds] = useState<string[]>([]);
 
-  return (
+return (
     <div className="bg-transparent font-sans flex flex-col">
       <div className="w-full p-6 text-center">
         <h2 className="text-[24px] md:text-[28px] font-black text-[#0f172a] uppercase tracking-[0.2em]">{t('wizard.products.title')}</h2>
         <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mt-2">
           {t('wizard.products.config')} {state.pixelPitch} • {area.toFixed(2)}m²
         </p>
-        
-        {sortedProducts.length > 1 && (
-          <div className="relative group/tooltip inline-block mt-4">
-            <button
-              disabled={compareProductIds.length < 2}
-              onClick={() => setShowComparator(true)}
-              className={cn(
-                "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 mx-auto border",
-                compareProductIds.length < 2
-                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
-                  : "bg-black text-white hover:bg-[#c6ff00] hover:text-black border-black hover:border-[#c6ff00] active:scale-95 cursor-pointer"
-              )}
-            >
-              <Layers className="w-4 h-4" /> 
-              <span>{locale === 'fr' ? 'Comparer les produits' : 'Compare products'} ({compareProductIds.length})</span>
-            </button>
-
-            {compareProductIds.length < 2 && (
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest py-2 px-3 rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-all duration-300 text-center z-50">
-                {locale === 'fr' ? 'Veuillez sélectionner au moins 2 produits pour pouvoir les comparer' : 'Please select at least 2 products to compare them'}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 pointer-events-none" />
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       <div className="flex-1 p-0 scrollbar-hide px-6">
@@ -1491,61 +1488,34 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                       });
                     }}
                     className={cn(
-                      "absolute top-4 left-4 z-20 px-3 py-1.5 rounded-xl backdrop-blur-md flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider transition-all duration-300 border shadow-md",
+                      "absolute top-3 right-3 z-30 w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center",
                       compareProductIds.includes(product.id)
-                        ? "bg-[#c6ff00] text-black border-[#c6ff00] scale-105"
-                        : "bg-white/80 hover:bg-white text-slate-700 border-slate-200"
+                        ? "bg-[#c6ff00] border-[#c6ff00]"
+                        : "border-gray-300 bg-white/50 hover:border-gray-400"
                     )}
+                    aria-label="Sélectionner pour comparer"
                   >
-                    <div className={cn(
-                      "w-3.5 h-3.5 rounded flex items-center justify-center border transition-all",
-                      compareProductIds.includes(product.id)
-                        ? "border-black bg-black text-[#c6ff00]"
-                        : "border-slate-300 bg-white text-transparent"
-                    )}>
-                      <Check size={10} strokeWidth={4} />
-                    </div>
-                    <span>
-                      {compareProductIds.includes(product.id)
-                        ? (locale === 'fr' ? 'Sélectionné' : 'Selected')
-                        : (locale === 'fr' ? 'Comparer' : 'Compare')}
-                    </span>
+                    {compareProductIds.includes(product.id) && (
+                      <Check size={14} className="text-black" strokeWidth={3} />
+                    )}
                   </button>
-
-                  <img
-                    src={product.imageUrl || product.image || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=90&w=1200"}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-
-                  <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                    {product.videoUrl && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); window.open(product.videoUrl, '_blank'); }}
-                        className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-black hover:text-white transition-all"
-                      >
-                        <Play size={16} />
-                      </button>
-                    )}
-                    {product.productUrl && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); window.open(product.productUrl, '_blank'); }}
-                        className="w-10 h-10 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg hover:bg-black hover:text-white transition-all"
-                      >
-                        <Info size={16} />
-                      </button>
-                    )}
-                  </div>
-
-                  {isSelected && (
-                    <div className="absolute inset-0 bg-black/5 flex items-center justify-center">
-                      <div className="w-12 h-12 bg-[#c6ff00] text-black rounded-full flex items-center justify-center shadow-2xl">
-                        <Check size={28} strokeWidth={4} />
-                      </div>
+                  
+                  {/* Bouton promotion si applicable */}
+                  {product.oldPrice && product.salePricePerSqM && product.oldPrice > product.salePricePerSqM && (
+                    <div className="absolute top-3 left-3 z-30">
+                      <span className="px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-red-500 text-white rounded-full">
+                        -{Math.round(((product.oldPrice - product.salePricePerSqM) / product.oldPrice) * 100)}%
+                      </span>
                     </div>
                   )}
-                </div>
 
+                  <img
+                    src={product.imageUrl || product.image || '/no-product.png'}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                
                 <div className="space-y-1">
                   <div className="flex justify-between items-start">
                     <h3 className="font-black uppercase tracking-[0.1em] text-sm text-gray-900 line-clamp-1">{product.name}</h3>
@@ -1620,7 +1590,35 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
         </div>
       </div>
 
-      <AnimatePresence>
+      {/* Bouton Comparer - Déplacé sous la liste des produits */}
+      {sortedProducts.length > 1 && (
+        <div className="p-6 pt-0">
+          <div className="relative group/tooltip">
+            <button
+              disabled={compareProductIds.length < 2}
+              onClick={() => setShowComparator(true)}
+              className={cn(
+                "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 mx-auto border",
+                compareProductIds.length < 2
+                  ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                  : "bg-black text-white hover:bg-[#c6ff00] hover:text-black border-black hover:border-[#c6ff00] active:scale-95 cursor-pointer"
+              )}
+            >
+              <Layers className="w-4 h-4" /> 
+              <span>{locale === 'fr' ? 'Comparer les produits' : 'Compare products'} ({compareProductIds.length})</span>
+            </button>
+
+            {compareProductIds.length < 2 && (
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest py-2 px-3 rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-all duration-300 text-center z-50">
+                {locale === 'fr' ? 'Veuillez sélectionner au moins 2 produits pour pouvoir les comparer' : 'Please select at least 2 products to compare them'}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 pointer-events-none" />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+<AnimatePresence>
         {showComparator && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -1641,7 +1639,7 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
             />
           </motion.div>
         )}
-      </AnimatePresence>
+</AnimatePresence>
     </div>
   );
 }

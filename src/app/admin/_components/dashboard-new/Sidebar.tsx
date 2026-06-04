@@ -83,11 +83,12 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/settings/pdf': 'pdfSub',
   '/admin/settings/emergency': 'emergencySub',
   '/admin/settings/personalization': 'personalizationSub',
+  '/admin/settings/software': 'software',
   '/admin/messages': 'messages',
   '/admin/notification': 'notifications',
 };
 
-export type SettingsSection = 'general' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'hint-bubble' | 'messaging';
+export type SettingsSection = 'general' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'hint-bubble' | 'messaging' | 'software';
 
 interface SidebarProps {
   state: SidebarState;
@@ -357,7 +358,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                 isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-white hover:bg-gray-50'
               } active:scale-95 group relative`}
-              title="Masquer le menu"
+              title={t('admin.hideMenu')}
             >
               <EyeOff className={`w-3.5 h-3.5 transition-all duration-300 text-amber-500/80 ${
                 hoveredItem === 'control-hide' ? 'text-amber-500' : ''
@@ -374,7 +375,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                 isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-white hover:bg-gray-50'
               } active:scale-95 group relative`}
-              title={isCompact ? "Agrandir le menu" : "Réduire le menu"}
+              title={isCompact ? t('admin.expandMenu') : t('admin.reduceMenu')}
             >
               {isCompact ? (
                 <ChevronRight className={`w-3.5 h-3.5 transition-all duration-300 text-blue-500/80 ${

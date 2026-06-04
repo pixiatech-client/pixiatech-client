@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 interface FloatingCalculatorProps {
   isOpen: boolean;
   onClose: () => void;
-  isDark: boolean;
 }
 
 type CalcButton = {
@@ -50,7 +49,7 @@ const BUTTONS: CalcButton[][] = [
   ],
 ];
 
-export function FloatingCalculator({ isOpen, onClose, isDark }: FloatingCalculatorProps) {
+export function FloatingCalculator({ isOpen, onClose }: FloatingCalculatorProps) {
   const [display, setDisplay]       = useState('0');
   const [expression, setExpression] = useState('');
   const [waitingForOperand, setWaitingForOperand] = useState(false);
@@ -153,30 +152,27 @@ export function FloatingCalculator({ isOpen, onClose, isDark }: FloatingCalculat
           transition={{ type: 'spring', damping: 22, stiffness: 260 }}
           style={{ position: 'fixed', bottom: 100, right: 28, zIndex: 9999, touchAction: 'none' }}
           className={cn(
-            'w-[280px] rounded-2xl shadow-2xl overflow-hidden select-none',
-            isDark
-              ? 'bg-zinc-900 border border-white/10'
-              : 'bg-white border border-gray-200'
+            'w-[280px] rounded-2xl shadow-2xl overflow-hidden select-none bg-white border border-gray-200'
           )}
         >
           {/* ── Header / drag handle ── */}
           <div className={cn(
             'flex items-center justify-between px-4 py-2.5 cursor-grab active:cursor-grabbing',
-            isDark ? 'bg-zinc-800/80' : 'bg-gray-50'
+            'bg-gray-50'
           )}>
             <div className="flex items-center gap-2">
-              <Calculator className={cn('w-4 h-4', isDark ? 'text-indigo-400' : 'text-indigo-600')} />
-              <span className={cn('text-xs font-black uppercase tracking-widest', isDark ? 'text-gray-300' : 'text-gray-600')}>
+              <Calculator className={cn('w-4 h-4', 'text-indigo-600')} />
+              <span className={cn('text-xs font-black uppercase tracking-widest', 'text-gray-600')}>
                 Calculatrice
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <GripHorizontal className={cn('w-4 h-4', isDark ? 'text-white/30' : 'text-gray-300')} />
+              <GripHorizontal className={cn('w-4 h-4', 'text-gray-300')} />
               <button
                 onClick={onClose}
                 className={cn(
                   'w-6 h-6 rounded-full flex items-center justify-center transition-colors',
-                  isDark ? 'text-gray-400 hover:bg-white/10 hover:text-white' : 'text-gray-400 hover:bg-gray-200 hover:text-gray-700'
+                  'text-gray-400 hover:bg-gray-200 hover:text-gray-700'
                 )}
               >
                 <X className="w-3.5 h-3.5" />
@@ -187,7 +183,7 @@ export function FloatingCalculator({ isOpen, onClose, isDark }: FloatingCalculat
           {/* ── Display ── */}
           <div className={cn(
             'px-5 pt-4 pb-3 text-right',
-            isDark ? 'bg-gradient-to-b from-zinc-800 to-zinc-900' : 'bg-gradient-to-b from-gray-800 to-gray-700'
+            'bg-gradient-to-b from-gray-800 to-gray-700'
           )}>
             <p className="text-[10px] text-gray-400 h-4 mb-1 truncate">{expression}&nbsp;</p>
             <p className={cn(

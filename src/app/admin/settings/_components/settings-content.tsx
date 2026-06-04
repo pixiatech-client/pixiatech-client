@@ -6,8 +6,9 @@ import type { Settings as AppSettings } from '@/lib/types';
 import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging' | 'software';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -25,6 +26,7 @@ const EmergencyContent = lazy(() => import('../emergency/page'));
 const MessagingContent = lazy(() => import('../messaging/page'));
 const PersonalizationContent = lazy(() => import('../personalization/page'));
 const ThemesContent = lazy(() => import('../themes/page'));
+const SoftwareContent = lazy(() => import('../software/page'));
 
 function LoadingFallback() {
     return (
@@ -53,6 +55,7 @@ const tabsConfig: TabItem[] = [
     { id: 'messaging', label: 'Messagerie', icon: MessageSquare },
     { id: 'emergency', label: 'Urgence', icon: AlertTriangle },
     { id: 'hint-bubble', label: 'Bulles d\'aide', icon: MessageSquare },
+    { id: 'software', label: 'Logiciel', icon: Settings },
 ];
 
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
@@ -125,6 +128,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <PersonalizationContent />;
             case 'appearance':
                 return <ThemesContent />;
+            case 'software':
+                return <SoftwareContent />;
             default:
                 return <GeneralContent />;
         }

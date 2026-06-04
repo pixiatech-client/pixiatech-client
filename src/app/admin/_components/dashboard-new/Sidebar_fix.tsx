@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
@@ -33,6 +34,8 @@ import {
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
 import { usePathname, useRouter } from 'next/navigation';
+import { useI18n } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 export type SidebarState = 'expanded' | 'compact' | 'hidden';
 export type SidebarTheme = 'light' | 'dark';
@@ -117,6 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   userAvatar,
   userId
 }) => {
+  const { t } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -161,23 +165,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const initialItems = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'users', label: 'Utilisateurs', icon: Users, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
-    { id: 'estimations', label: 'Estimations', icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'history', label: 'Historique', icon: Clock, color: 'text-cyan-400', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'produit', label: 'Produits', icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'messages', label: 'Messages', icon: MessageSquare, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'profile', label: 'Mon Profil', icon: UserIcon, color: 'text-purple-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'settings', label: 'Paramètres', icon: Settings, color: 'text-fuchsia-500', roles: [UserRole.ADMINISTRATEUR], subItems: [
-      { id: 'settings-main', label: 'Général', icon: Settings, color: 'text-blue-500' },
-      { id: 'images-sub', label: 'Images', icon: Upload, color: 'text-green-500' },
-      { id: 'content-sub', label: 'Contenu', icon: MessageSquareText, color: 'text-purple-500' },
-      { id: 'appearance-sub', label: 'Apparence', icon: Palette, color: 'text-pink-500' },
-      { id: 'wizard-sub', label: 'Wizard', icon: Wand2, color: 'text-orange-500' },
-      { id: 'delivery-sub', label: 'Livraison', icon: Truck, color: 'text-cyan-500' },
-      { id: 'labor-sub', label: 'Main d\'œuvre', icon: HardHat, color: 'text-yellow-500' },
-      { id: 'pdf-sub', label: 'PDF', icon: FileText, color: 'text-red-500' },
-      { id: 'emergency-sub', label: 'Urgence', icon: AlertTriangle, color: 'text-rose-500' },
+    { id: 'dashboard', label: t('admin.dashboard'), icon: LayoutDashboard, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'users', label: t('admin.users'), icon: Users, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'estimations', label: t('admin.estimations'), icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'history', label: t('admin.history'), icon: Clock, color: 'text-cyan-400', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'produit', label: t('admin.products'), icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'messages', label: t('admin.messages'), icon: MessageSquare, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'profile', label: t('admin.myProfile'), icon: UserIcon, color: 'text-purple-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'settings', label: t('admin.settings'), icon: Settings, color: 'text-fuchsia-500', roles: [UserRole.ADMINISTRATEUR], subItems: [
+      { id: 'settings-main', label: t('admin.general'), icon: Settings, color: 'text-blue-500' },
+      { id: 'images-sub', label: t('admin.images'), icon: Upload, color: 'text-green-500' },
+      { id: 'content-sub', label: t('admin.content'), icon: MessageSquareText, color: 'text-purple-500' },
+      { id: 'appearance-sub', label: t('admin.appearance'), icon: Palette, color: 'text-pink-500' },
+      { id: 'wizard-sub', label: t('admin.wizard'), icon: Wand2, color: 'text-orange-500' },
+      { id: 'delivery-sub', label: t('admin.delivery'), icon: Truck, color: 'text-cyan-500' },
+      { id: 'labor-sub', label: t('admin.labor'), icon: HardHat, color: 'text-yellow-500' },
+      { id: 'pdf-sub', label: t('admin.pdf'), icon: FileText, color: 'text-red-500' },
+      { id: 'emergency-sub', label: t('admin.emergency'), icon: AlertTriangle, color: 'text-rose-500' },
     ] },
   ];
 
@@ -561,6 +565,3 @@ export const Sidebar: React.FC<SidebarProps> = ({
   );
 }
 
-function cn(...classes: (string | boolean | undefined | null)[]): string {
-  return classes.filter(Boolean).join(' ');
-}

@@ -52,20 +52,20 @@ export default function HintBubble({ visible, onHide }: HintBubbleProps) {
           className="absolute z-50 flex flex-col items-center pointer-events-none w-max"
           style={typeof window !== 'undefined' && window.innerWidth >= 1024 ? desktopStyle : mobileStyle}
         >
-          <div className="rounded-lg bg-gray-100 border px-3 py-2 text-sm shadow-xl text-center dark:bg-black dark:text-white dark:border-gray-700"
-               dangerouslySetInnerHTML={{ __html: text }}
-          />
-          <motion.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{
-              duration: 1.2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-            className="flex justify-center mt-1"
-          >
-            <ArrowDown className="text-red-500 dark:text-white" size={24} />
-          </motion.div>
+<div className="rounded-lg bg-gray-100 border px-3 py-2 text-sm shadow-xl text-center"
+                 dangerouslySetInnerHTML={{ __html: text }}
+           />
+           <motion.div
+             animate={{ y: [0, 6, 0] }}
+             transition={{
+               duration: 1.2,
+               repeat: Infinity,
+               ease: "easeInOut",
+             }}
+             className="flex justify-center mt-1"
+           >
+             <ArrowDown className="text-red-500" size={24} />
+           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>

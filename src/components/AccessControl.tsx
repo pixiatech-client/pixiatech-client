@@ -55,25 +55,25 @@ function AccessDenied({ role, currentPath }: AccessDeniedProps) {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center p-8">
       <div className="w-full max-w-md text-center space-y-6">
-        <div className="w-20 h-20 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+        <div className="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center">
           <Shield className="w-10 h-10 text-red-500" />
         </div>
         
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900">
             Accès refusé
           </h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-gray-500">
             Vous n'avez pas la permission d'accéder à cette page.
           </p>
         </div>
 
-        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-2">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div className="p-4 bg-gray-50 rounded-xl space-y-2">
+          <p className="text-sm font-medium text-gray-700">
             Votre rôle: <span className="font-bold">{ROLE_LABELS[role]}</span>
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Page: <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">{currentPath}</code>
+          <p className="text-xs text-gray-500">
+            Page: <code className="bg-gray-200 px-1 rounded">{currentPath}</code>
           </p>
         </div>
 

@@ -128,7 +128,7 @@ export function QuoteForm({ quoteDetails, onBack, onSubmitted, settings, allProd
         <CardContent className="flex-grow">
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 h-full flex flex-col">
-                <div className="border rounded-lg p-4 bg-muted/20 dark:bg-slate-800/60 text-sm">
+                <div className="border rounded-lg p-4 bg-muted/20 text-sm">
                     <h4 className="font-semibold mb-2">{t('quoteForm.summaryTitle')}</h4>
                     <div className="space-y-2">
                     {quoteDetails.products.map(p => {
@@ -169,7 +169,7 @@ export function QuoteForm({ quoteDetails, onBack, onSubmitted, settings, allProd
                             {!settings.isDeliveryStepEnabled ? (
                                 <>
                                     <div>{t('quoteForm.delivery')}</div>
-                                    <div className="font-medium text-right text-blue-600 dark:text-blue-400">{t('quoteForm.tobeconfirmed')}</div>
+                                    <div className="font-medium text-right text-blue-600">{t('quoteForm.tobeconfirmed')}</div>
                                 </>
                             ) : quoteDetails.includeDelivery ? (
                                 <>
@@ -177,7 +177,7 @@ export function QuoteForm({ quoteDetails, onBack, onSubmitted, settings, allProd
                                     {isDeliveryFinal ? (
                                         <div className={cn("font-medium text-right", shouldAnimatePrice && "blur-sm")}>{deliveryCost > 0 ? formatCurrency(deliveryCost) : t('quoteForm.free')}</div>
                                     ) : (
-                                        <div className="font-medium text-right text-blue-600 dark:text-blue-400">{t('quoteForm.tobeconfirmed')}</div>
+                                        <div className="font-medium text-right text-blue-600">{t('quoteForm.tobeconfirmed')}</div>
                                     )}
                                 </>
                             ) : null}
@@ -185,7 +185,7 @@ export function QuoteForm({ quoteDetails, onBack, onSubmitted, settings, allProd
                             {!settings.isInstallationStepEnabled ? (
                             <>
                                 <div>{t('quoteForm.installation')}</div>
-                                <div className="font-medium text-right text-blue-600 dark:text-blue-400">{t('quoteForm.tobeconfirmed')}</div>
+                                <div className="font-medium text-right text-blue-600">{t('quoteForm.tobeconfirmed')}</div>
                             </>
                             ) : quoteDetails.includeInstallation ? (
                             <>

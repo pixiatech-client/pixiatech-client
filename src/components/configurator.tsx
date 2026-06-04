@@ -450,7 +450,7 @@ export function Configurator({
                     }}
                     className={cn(
                       "p-3 border rounded-lg cursor-pointer transition-all space-y-3",
-                      activeConfigProductId === p.id ? 'border-primary bg-primary/5 shadow-md' : 'bg-slate-50/80 hover:bg-slate-100 dark:bg-slate-800/30 dark:hover:bg-slate-800/60'
+                      activeConfigProductId === p.id ? 'border-primary bg-primary/5 shadow-md' : 'bg-slate-50/80 hover:bg-slate-100'
                     )}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -615,8 +615,8 @@ export function Configurator({
                     <div className={cn(
                       "text-xs font-semibold px-2 py-1 rounded-md text-center",
                       avail.available
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                        : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
                     )}>
                       {avail.available
                         ? `✓ ${avail.remaining} / ${avail.total} ${t('configurator.unitsAvailable') ?? 'disponibles'}`

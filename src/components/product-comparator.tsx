@@ -172,12 +172,16 @@ export function ProductComparator({ products, configState, onSelect, selectedPro
           icon: <IconComponent className="w-4 h-4 text-slate-500" />,
           getValue: (p: Product) => {
             const sc = p.selectedChars?.find((c: any) => String(c.id) === String(char.id));
-            return sc ? sc.value : null;
+            return sc && sc.value ? sc.value : null;
           }
         };
       });
 
-    return base.filter(char => products.some(p => char.getValue(p) !== null));
+    return base.filter(char => {
+      const values = products.map(p => char.getValue(p));
+      const allNull = values.every(v => !v);
+      return !allNull;
+    });
   }, [characteristics, products]);
 
   const allFeatures = [...features, ...customFeatures];
@@ -214,7 +218,7 @@ export function ProductComparator({ products, configState, onSelect, selectedPro
             {products.map((product) => (
               <div key={product.id} className="flex-1 min-w-[220px] p-6 flex flex-col items-center text-center border-r border-slate-100 relative group">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden bg-slate-100 mb-4 shadow-sm relative mx-auto">
-                  <img src={product.imageUrl || product.image || '/placeholder.png'} alt={product.name} className="w-full h-full object-cover" />
+                  <img src={product.imageUrl || product.image || '/no-product.png'} alt={product.name} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-blue-500/10 mix-blend-overlay"></div>
                 </div>
                 <h3 className="font-black text-xs md:text-sm text-slate-900 uppercase tracking-tight mb-1 min-h-[48px] flex items-center justify-center px-2 leading-tight">

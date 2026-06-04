@@ -190,7 +190,7 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
         <CardContent className="flex-grow">
             <Form {...form}>
             <form id="quote-form-main" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 h-full flex flex-col">
-                <div className="border rounded-lg p-4 bg-muted/20 dark:bg-slate-800/60 text-sm">
+                <div className="border rounded-lg p-4 bg-slate-50/50 text-sm">
                     <h4 className="font-semibold mb-2">{t('quoteForm.summaryTitle')}</h4>
                     <div className="space-y-2">
                     {quoteDetails.products.map(p => {
@@ -250,7 +250,7 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
                             {!settings.isDeliveryStepEnabled ? (
                                 <>
                                     <div>{t('quoteForm.delivery')}</div>
-                                    <div className="font-medium text-right text-blue-600 dark:text-blue-400">{t('quoteForm.tobeconfirmed')}</div>
+                                    <div className="font-medium text-right text-blue-600">{t('quoteForm.tobeconfirmed')}</div>
                                 </>
                             ) : quoteDetails.includeDelivery ? (
                                 <>
@@ -258,7 +258,7 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
                                     {isDeliveryFinal ? (
                                         <div className={cn("font-medium text-right", shouldAnimatePrice && "blur-sm")}>{deliveryCost > 0 ? formatCurrency(deliveryCost) : t('quoteForm.free')}</div>
                                     ) : (
-                                        <div className="font-medium text-right text-blue-600 dark:text-blue-400">{t('quoteForm.tobeconfirmed')}</div>
+                                        <div className="font-medium text-right text-blue-600">{t('quoteForm.tobeconfirmed')}</div>
                                     )}
                                 </>
                             ) : null}
@@ -266,7 +266,7 @@ export const QuoteForm = forwardRef<QuoteFormHandle, QuoteFormProps>(({
                             {!settings.isInstallationStepEnabled ? (
                             <>
                                 <div>{t('quoteForm.installation')}</div>
-                                <div className="font-medium text-right text-blue-600 dark:text-blue-400">{t('quoteForm.tobeconfirmed')}</div>
+                                <div className="font-medium text-right text-blue-600">{t('quoteForm.tobeconfirmed')}</div>
                             </>
                             ) : quoteDetails.includeInstallation ? (
                             <>

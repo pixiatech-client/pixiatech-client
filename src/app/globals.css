@@ -514,36 +514,26 @@
   display: none;
 }
 
-.dark .flare {
-  display: block;
-}
-
 .flare.cyan {
-  width: 500px;
-  height: 500px;
-  background: #00ffff;
-  top: 10%;
-  left: 20%;
-  opacity: 0.15;
+   width: 500px;
+   height: 500px;
+   background: #00ffff;
+   top: 10%;
+   left: 20%;
+   opacity: 0.15;
 }
 
 .flare.magenta {
-  width: 400px;
-  height: 400px;
-  background: #ff00ff;
-  bottom: 10%;
-  right: 15%;
-  animation-delay: 3s;
-  opacity: 0.2;
+   width: 400px;
+   height: 400px;
+   background: #ff00ff;
+   bottom: 10%;
+   right: 15%;
+   animation-delay: 3s;
+   opacity: 0.2;
 }
 
-.light .flare.cyan {
-  opacity: 0.2;
-}
-.light .flare.magenta {
-  opacity: 0.25;
-  background: #a855f7;
-}
+/* .light .flare is not needed - flares are disabled in light theme */
 
 @keyframes float {
   0% {
@@ -648,72 +638,26 @@ body.light-theme {
 }
 
 body {
-  font-family: "Inter", sans-serif;
-  overflow-x: hidden;
-  transition: background-color 0.5s ease;
+   font-family: "Inter", sans-serif;
+   overflow-x: hidden;
+   background-color: #ffffff;
+   color: #1e293b;
 }
 
 p,
 .text-slate-500,
 .text-slate-600,
 .text-sm {
-  font-family: "Manrope", sans-serif;
+   font-family: "Manrope", sans-serif;
 }
 
-/* Dark theme glass styles */
-body.dark-theme .glass-ui {
-  background-color: rgba(29, 39, 58, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-body.dark-theme {
-  color: #f8fafc;
-}
-
-/* Light theme glass styles */
+/* Remove all dark theme styles - light theme only */
 body.light-theme .glass-ui {
-  background-color: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+   background-color: rgba(255, 255, 255, 0.5);
+   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-body.light-theme {
-  color: #1e293b;
-}
-
-body.dark-theme header.glass-ui,
-body.light-theme header.glass-ui {
-  border-left: none;
-  border-right: none;
-}
-
-body.light-theme #quick-look-modal.glass-ui,
-body.light-theme #contact-modal.glass-ui {
-  -webkit-backdrop-filter: blur(5px);
-  backdrop-filter: blur(5px);
-  background-image: linear-gradient(
-    135deg,
-    rgba(222, 253, 253, 0.85),
-    rgba(255, 222, 255, 0.6)
-  ) !important;
-}
-
-/* Glass card styling */
-.glass-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  transition: background 0.3s ease, border 0.3s ease;
-}
-
-body.dark-theme .glass-card {
-  background: rgba(15, 23, 42, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
-}
-
+/* Glass card styling - light theme only */
 body.light-theme .glass-card {
   background: rgba(255, 255, 255, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -721,11 +665,6 @@ body.light-theme .glass-card {
 
 .glass-card:hover {
   background: rgba(255, 255, 255, 0.55);
-}
-
-body.dark-theme .glass-card:hover {
-  background: rgba(15, 23, 42, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* Light theme scrollbar */
@@ -772,26 +711,19 @@ body.light-theme .login-button:hover {
   border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* Sidebar glass effect */
-body.dark-theme aside.glass-ui {
-  background-color: rgba(29, 39, 58, 0.4);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-}
-
+/* Sidebar glass effect - light theme only */
 body.light-theme aside.glass-ui {
-  background-color: rgba(255, 255, 255, 0.6);
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
+   background-color: rgba(255, 255, 255, 0.6);
+   border-right: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* Nav link hover states */
-body.dark-theme .nav-link:hover,
-body.light-theme .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+/* Nav link hover states - light theme only */
+.nav-link:hover {
+   background-color: rgba(255, 255, 255, 0.05);
 }
 
-body.dark-theme .nav-link.active,
-body.light-theme .nav-link.active {
-  background-color: rgba(255, 255, 255, 0.1);
+.nav-link.active {
+   background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Keep these additions last so they are easy to locate for future edits */

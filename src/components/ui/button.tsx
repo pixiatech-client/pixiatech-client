@@ -23,7 +23,7 @@ const buttonVariants = cva(
         "destructive-ghost":
           "hover:bg-destructive/10 text-muted-foreground hover:text-destructive",
         link: "text-primary underline-offset-4 hover:underline",
-        sidebar: "h-10 px-4 py-2 w-full justify-start rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:text-primary hover:bg-black/5 dark:hover:bg-white/5",
+        sidebar: "h-10 px-4 py-2 w-full justify-start rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:text-primary hover:bg-black/5",
         "sidebar-active": "h-10 px-4 py-2 w-full justify-start rounded-lg text-sm font-medium transition-colors bg-black text-white hover:bg-black hover:text-white",
         
         glow: "bg-transparent text-foreground border-none hover:bg-black hover:text-white transition-all duration-300 ease-in-out group",

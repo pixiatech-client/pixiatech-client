@@ -10,19 +10,20 @@ export function formatTimestamp(timestamp: any): string {
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
   return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
-export function translateStatus(status: string): string {
-  if (!status) return '';
-  const s = status.toLowerCase();
-  const translations: Record<string, string> = {
-    'pending': 'En attente',
-    'processed': 'Traité',
-    'trashed': 'Corbeille',
-    'archive': 'Archivé',
-    'archived': 'Archivé',
-    'in_progress': 'En cours',
-    'sent': 'Envoyé',
-    'delivered': 'Livré',
-    'returned': 'Retourné',
-  };
-  return translations[s] || status;
-}
+type QuoteStatus = 'pending' | 'processed' | 'delivered' | 'trashed' | 'archive';
+
+const STATUS_TRANSLATIONS: Record<string, { fr: string; en: string }> = {
+  pending: { fr: 'En attente', en: 'Pending' },
+  processed: { fr: 'Traité', en: 'Processed' },
+  delivered: { fr: 'Livré', en: 'Delivered' },
+  trashed: { fr: 'Corbeille', en: 'Trashed' },
+  archive: { fr: 'Archivé', en: 'Archived' },
+  archived: { fr: 'Archivé', en: 'Archived' },
+};
+
+export const translateStatus = (status: string, locale: string = 'fr'): string => {
+  const normalized = STATUS_TRANSLATIONS[status];
+  if (!normalized) return status;
+  const lang = locale === 'en' ? 'en' : 'fr';
+  return normalized[lang];
+};

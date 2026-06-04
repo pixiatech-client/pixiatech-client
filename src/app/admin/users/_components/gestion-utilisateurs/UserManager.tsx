@@ -10,6 +10,7 @@ import { useUser, useFirestore, useAuth, useCollection, useMemoFirebase } from '
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { useI18n } from '@/lib/i18n';
 
 import { FiltersBar } from './FiltersBar';
 import { UserCard } from './UserCard';
@@ -23,6 +24,7 @@ import { useRoles } from '@/contexts/RoleContext';
 const ITEMS_PER_PAGE = 8;
 
 export function UserManager() {
+  const { t } = useI18n();
   const { userProfile, isUserLoading } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
@@ -286,9 +288,9 @@ export function UserManager() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900 hidden md:block">Gestion des Utilisateurs</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-slate-900 hidden md:block">{t('admin.manageUsers')}</h1>
       <p className="mt-1 mb-6 text-sm text-slate-500 hidden md:block">
-        Gérez les utilisateurs, les rôles et les permissions de votre plateforme.
+        {t('admin.manageUsersDesc')}
       </p>
       <FiltersBar
         searchQuery={searchQuery}
@@ -312,9 +314,9 @@ export function UserManager() {
               <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           </div>
-          <p className="text-xl font-bold text-gray-900 mb-2">Aucun utilisateur trouvé</p>
+          <p className="text-xl font-bold text-gray-900 mb-2">{t('admin.noUsersFound')}</p>
           <p className="text-sm font-medium text-gray-400 max-w-xs">
-            {searchQuery ? 'Aucun résultat pour votre recherche.' : 'Aucun utilisateur enregistré pour le moment.'}
+            {searchQuery ? t('admin.noUsersMatch') : t('admin.noUsersYet')}
           </p>
         </div>
       ) : viewMode === 'grid' ? (

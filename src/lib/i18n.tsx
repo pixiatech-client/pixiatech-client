@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import fr from './locales/fr.json';
 import en from './locales/en.json';
 
@@ -18,8 +18,53 @@ interface I18nContextType {
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
+// Intl helpers for locale-aware formatting
+export const IntlHelpers = {
+  formatGreeting: (userName: string, locale: Locale) => {
+    const hour = new Date().getHours();
+    const greeting = locale === 'en' ? 'Good' : 'Bonjour';
+    return `${greeting}, ${userName}`;
+  },
+  formatDate: (date: Date, locale: Locale, options?: Intl.DateTimeFormatOptions) => {
+    try {
+      return date.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', options || { day: 'numeric', month: 'short' });
+    } catch {
+      return '';
+    }
+  },
+  formatDateTime: (date: Date, locale: Locale) => {
+    try {
+      return date.toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }
+};
+
+// Helper to get stored locale from localStorage
+const getStoredLocale = (): Locale => {
+  if (typeof window === 'undefined') return 'fr';
+  const stored = localStorage.getItem('admin-locale');
+  if (stored === 'en' || stored === 'fr') return stored;
+  return 'fr';
+};
+
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
-  const [locale, setLocale] = useState<Locale>('fr');
+  const [locale, setLocaleState] = useState<Locale>('fr');
+
+  // Initialize from localStorage on mount
+  useEffect(() => {
+    const stored = getStoredLocale();
+    setLocaleState(stored);
+  }, []);
+
+  const setLocale = useCallback((newLocale: Locale) => {
+    setLocaleState(newLocale);
+    // Persist to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('admin-locale', newLocale);
+    }
+  }, []);
 
   const t = useCallback((key: string, options?: Record<string, string | number>): string => {
     const keys = key.split('.');

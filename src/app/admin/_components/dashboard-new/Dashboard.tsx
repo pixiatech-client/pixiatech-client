@@ -42,9 +42,28 @@ import { moveQuotesToTrash, resetPerformancePoints, resetConfiguratorStats, getS
 import { useToast } from '@/hooks/use-toast';
 import { X, Check } from 'lucide-react';
 import { translateStatus } from '../../../../lib/utils';
+import { useI18n, IntlHelpers } from '@/lib/i18n';
 
-const DAYS = ['Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa', 'Di'];
-const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+const DAYS_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+const MONTH_KEYS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'] as const;
+
+const formatDate = (date: Date | null | undefined, locale: string) => {
+  if (!date) return '';
+  try {
+    return date.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'short' });
+  } catch {
+    return '';
+  }
+};
+
+const formatDateLong = (date: Date | null | undefined, locale: string) => {
+  if (!date) return '';
+  try {
+    return date.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch {
+    return '';
+  }
+};
 
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
@@ -65,6 +84,8 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userName, userAvatar, userRole, rawRole }) => {
+  const { t, locale } = useI18n();
+  const { user, userProfile } = useUser();
   const router = useRouter();
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -86,62 +107,59 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   }, []);
 
   const handleResetPerformance = async () => {
-    if (!window.confirm('Voulez-vous vraiment réinitialiser les scores de performance ? Cette action est irréversible.')) return;
-    
+    if (!window.confirm(t('admin.resetPerformanceConfirm'))) return;
     const res = await resetPerformancePoints();
     if (res.success) {
       toast({
-        title: "Scores réinitialisés",
-        description: "Les performances des commerciaux repartent de zéro.",
+        title: t('admin.resetPerformanceSuccess', { defaultValue: 'Scores réinitialisés' }),
+        description: t('admin.resetPerformanceDesc'),
       });
       const newSettings = await getSettings();
       setPerformanceSettings(newSettings);
       setIsPerformanceMenuOpen(false);
     } else {
       toast({
-        title: "Erreur",
+        title: t('common.error'),
         description: res.error,
-        variant: "destructive"
+        variant: 'destructive'
       });
     }
   };
 
   const handleResetConfiguratorStats = async () => {
-    if (!window.confirm('Voulez-vous vraiment réinitialiser les compteurs des méthodes de configuration à zéro ?')) return;
-    
+    if (!window.confirm(t('admin.resetConfiguratorConfirm'))) return;
     const res = await resetConfiguratorStats();
     if (res.success) {
       toast({
-        title: "Compteurs réinitialisés",
-        description: "Les compteurs des méthodes de configuration ont été remis à zéro.",
+        title: t('admin.resetConfiguratorSuccess', { defaultValue: 'Compteurs réinitialisés' }),
+        description: t('admin.resetConfiguratorDesc'),
       });
       const newSettings = await getSettings();
       setPerformanceSettings(newSettings);
     } else {
       toast({
-        title: "Erreur",
+        title: t('common.error'),
         description: res.error,
-        variant: "destructive"
+        variant: 'destructive'
       });
     }
   };
 
   const handleDelete = async (quoteId: string) => {
-    if (!window.confirm('Voulez-vous vraiment mettre cette estimation à la corbeille ?')) return;
-    
+    if (!window.confirm(t('admin.deleteQuoteConfirm'))) return;
     setIsDeleting(quoteId);
     try {
       await moveQuotesToTrash([quoteId]);
       toast({
-        title: "Estimation supprimée",
-        description: "L'estimation a été déplacée vers la corbeille.",
+        title: t('admin.deleteQuoteSuccess'),
+        description: t('admin.deleteQuoteDesc'),
       });
       router.refresh();
     } catch (error) {
       toast({
-        title: "Erreur",
-        description: "Impossible de supprimer l'estimation.",
-        variant: "destructive",
+        title: t('common.error'),
+        description: t('admin.deleteQuoteError'),
+        variant: 'destructive',
       });
     } finally {
       setIsDeleting(null);
@@ -261,11 +279,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
     });
     
     if (statusFilter !== 'ALL') {
-      const targetStatus = statusFilter === 'En attente' ? 'pending' 
-                        : statusFilter === 'Traité' ? 'processed' 
-                        : statusFilter === 'Corbeille' ? 'trashed' 
-                        : statusFilter === 'Archive' ? 'archive' : statusFilter;
-      quotes = quotes.filter(q => q.status === targetStatus);
+      quotes = quotes.filter(q => q.status === statusFilter);
     }
 
     if (dateRange.start) {
@@ -294,17 +308,58 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   }, [allQuotesRaw, statusFilter, selectedDate, dateRange]);
 
   const performanceStats = useMemo(() => {
-    if (!allQuotesRaw) return { percentage: 0, message: 'Chargement...', treated: 0, total: 0 };
+    if (!allQuotesRaw) return { percentage: 0, message: t('common.loading'), treated: 0, total: 0 };
     const totalQuotes = allQuotesRaw.length;
     const treatedQuotes = allQuotesRaw.filter(q => q.status === 'processed' || q.status === 'delivered').length;
     const percentage = totalQuotes > 0 ? Math.round((treatedQuotes / totalQuotes) * 100) : 0;
-    const message = percentage >= 60 
-      ? 'Continuez comme ça !' 
-      : percentage >= 30 
-        ? 'Vous êtes en bonne voie !' 
-        : 'Continuez vos efforts !';
+    const message = percentage >= 60
+      ? t('admin.encouragementExcellent')
+      : percentage >= 30
+        ? t('admin.encouragementGood')
+        : t('admin.encouragementLow');
     return { percentage, message, treated: treatedQuotes, total: totalQuotes };
   }, [allQuotesRaw]);
+
+  const ACTIVITY_TRANSLATIONS: Record<string, { fr: string; en: string }> = {
+    'Mise à jour du statut': { fr: 'Mise à jour du statut', en: 'Status update' },
+    'Statut changé vers': { fr: 'Statut changé vers', en: 'Status changed to' },
+    'Statut changé pour': { fr: 'Statut changé pour', en: 'Status changed for' },
+    'traité': { fr: 'traité', en: 'processed' },
+    'traitée': { fr: 'traitée', en: 'processed' },
+    'en attente': { fr: 'en attente', en: 'pending' },
+    'corbeille': { fr: 'corbeille', en: 'trashed' },
+    'archivé': { fr: 'archivé', en: 'archived' },
+    'livré': { fr: 'livré', en: 'delivered' },
+    'envoyé': { fr: 'envoyé', en: 'sent' },
+    'retourné': { fr: 'retourné', en: 'returned' },
+    'loué': { fr: 'loué', en: 'rented' },
+    'payé': { fr: 'payé', en: 'paid' },
+    'annulé': { fr: 'annulé', en: 'cancelled' },
+    'confirmé': { fr: 'confirmé', en: 'confirmed' },
+    'expiré': { fr: 'expiré', en: 'expired' },
+    'révisé': { fr: 'révisé', en: 'revised' },
+    'accepté': { fr: 'accepté', en: 'accepted' },
+  };
+
+  function translateActivityText(text: string, targetLocale: string): string {
+    if (targetLocale !== 'en') return text;
+    let translated = text;
+    const phrases = Object.entries(ACTIVITY_TRANSLATIONS)
+      .filter(([key]) => key.length > 3)
+      .sort((a, b) => b[0].length - a[0].length);
+    for (const [phrase, translations] of phrases) {
+      if (translated.includes(phrase)) {
+        translated = translated.replace(phrase, translations[targetLocale as 'fr' | 'en'] || phrase);
+      }
+    }
+    const words = text.split(' ').filter(w => w.length > 3);
+    for (const word of words) {
+      if (ACTIVITY_TRANSLATIONS[word]) {
+        translated = translated.replace(word, ACTIVITY_TRANSLATIONS[word][targetLocale as 'fr' | 'en'] || word);
+      }
+    }
+    return translated;
+  }
 
   const activityHistory = useMemo(() => {
     if (!allQuotesRaw) return [];
@@ -320,10 +375,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
         });
       }
     });
-    return history.sort((a, b) => b.timestamp - a.timestamp).slice(0, 5);
-  }, [allQuotesRaw]);
-
-  const { user } = useUser();
+    return history
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5)
+      .map((activity) => ({
+        ...activity,
+        action: translateActivityText(activity.action || '', locale),
+        details: translateActivityText(activity.details || '', locale),
+      }));
+  }, [allQuotesRaw, locale]);
 
   // Fetch unread messages
   React.useEffect(() => {
@@ -421,7 +481,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const renderCalendar = () => (
     <div className="bg-black rounded-3xl border border-white/10 p-4 shadow-2xl">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-white">{MONTHS[currentMonth]} {currentYear}</h3>
+        <h3 className="text-sm font-bold text-white">{IntlHelpers.formatDate(new Date(currentYear, currentMonth, 1), locale, { month: 'long' })} {currentYear}</h3>
         <div className="flex items-center gap-1">
           <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
             <ChevronLeft className="w-4 h-4 text-white" />
@@ -432,8 +492,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
         </div>
       </div>
       <div className="grid grid-cols-7 gap-y-2 text-center mb-2">
-        {DAYS.map(day => (
-          <span key={day} className="text-[10px] font-bold uppercase text-gray-500">{day}</span>
+        {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(day => (
+          <span key={day} className="text-[10px] font-bold uppercase text-gray-500">{t(`admin.days.${day}`)}</span>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-y-1">
@@ -461,9 +521,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
             <div className="text-[10px] text-gray-400">
                 <span className="text-white">
                   {dateRange.start && dateRange.end ? (
-                    `Du ${dateRange.start.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} au ${dateRange.end.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`
+                    `${t('admin.dateRangeFromTo', { start: IntlHelpers.formatDate(dateRange.start, locale, { day: 'numeric', month: 'short' }), end: IntlHelpers.formatDate(dateRange.end, locale, { day: 'numeric', month: 'short' }) })}`
                   ) : (
-                    (selectedDate || dateRange.start)?.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                    IntlHelpers.formatDate(selectedDate || dateRange.start, locale, { day: 'numeric', month: 'long', year: 'numeric' })
                   )}
                 </span>
             </div>
@@ -471,7 +531,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
               onClick={clearDateFilter}
               className="text-[10px] text-red-400 hover:text-red-300 transition-colors font-bold uppercase tracking-widest"
             >
-              Réinitialiser
+              {t('admin.dateFilterReset')}
             </button>
           </div>
         </div>
@@ -484,9 +544,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
       <div className="flex-1 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Bonjour, {userName || 'Utilisateur'} 👋</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('admin.greetingAdmin', { userName: userName || 'Utilisateur' })}</h1>
             <p className="text-sm mt-1 text-gray-500">
-              Voici ce qui se passe aujourd'hui.
+              {t('admin.subtitleToday')}
             </p>
           </div>
         </div>
@@ -524,35 +584,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
         <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold">Estimations récentes</h3>
+              <h3 className="text-lg font-bold">{t('admin.recentEstimations')}</h3>
               <button 
                 onClick={() => router.push('/admin/quote-requests')}
                 className="sm:hidden text-[10px] font-black uppercase tracking-widest text-blue-500"
               >
-                Voir tout
+                {t('admin.viewAll')}
               </button>
             </div>
             <div className="flex items-center gap-3">
               <CustomSelect
                 options={[
-                  { value: 'ALL', label: 'Tous les statuts' },
-                  { value: 'Traité', label: 'Traité', color: 'text-emerald-500' },
-                  { value: 'En attente', label: 'En attente', color: 'text-yellow-500' },
-                  { value: 'Corbeille', label: 'Corbeille', color: 'text-rose-500' },
-                  { value: 'Archive', label: 'Archive', color: 'text-gray-500' },
+                  { value: 'ALL', label: t('admin.allStatuses') },
+                  { value: 'Traité', label: t('admin.processed'), color: 'text-emerald-500' },
+                  { value: 'En attente', label: t('admin.pending'), color: 'text-yellow-500' },
+                  { value: 'Corbeille', label: t('admin.trashed'), color: 'text-rose-500' },
+                  { value: 'Archive', label: t('admin.archived'), color: 'text-gray-500' },
                 ]}
                 value={statusFilter}
                 onChange={(val) => setStatusFilter(val as QuoteStatus | 'ALL')}
                 isDark={isDark}
-                placeholder="Statut"
+                placeholder={t('admin.status')}
                 className="w-full sm:min-w-[160px]"
               />
               <button 
                 onClick={() => router.push('/admin/quote-requests')}
                 className="hidden sm:flex items-center gap-2 text-xs font-medium text-blue-500 cursor-pointer hover:underline"
-              >
-                Voir tout <ChevronRight className="w-3 h-3" />
-              </button>
+                >
+                  {t('admin.viewAll')} <ChevronRight className="w-3 h-3" />
+                </button>
             </div>
           </div>
           {/* Desktop View */}
@@ -560,10 +620,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
             <table className="w-full">
               <thead>
                 <tr className={`text-left text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                  <th className="pb-4 font-semibold">Client / ID</th>
-                  <th className="pb-4 font-semibold">Date de soumission</th>
-                  <th className="pb-4 font-semibold">Statut</th>
-                  <th className="pb-4 font-semibold text-right">Actions</th>
+                  <th className="pb-4 font-semibold">{t('admin.clientIdHeader')}</th>
+                  <th className="pb-4 font-semibold">{t('admin.submissionDateHeader')}</th>
+                  <th className="pb-4 font-semibold">{t('admin.status')}</th>
+                  <th className="pb-4 font-semibold text-right">{t('admin.status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -575,14 +635,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                           {quote.id.substring(0,3).toUpperCase()}
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold group-hover:text-blue-500 transition-colors">{quote.client?.companyName || 'Sans nom'}</span>
+                          <span className="text-sm font-bold group-hover:text-blue-500 transition-colors">{quote.client?.companyName || t('admin.noNameClient')}</span>
                           <span className="text-[10px] text-gray-400 uppercase tracking-tighter">ID: {quote.id.substring(0, 8)}</span>
                         </div>
                       </div>
                     </td>
                     <td className="py-4">
                       <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500 group-hover:text-zinc-600'} transition-colors`}>
-                        {quote.createdAt?.toDate ? quote.createdAt.toDate().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Date inconnue'}
+                        {quote.createdAt?.toDate ? IntlHelpers.formatDate(quote.createdAt.toDate(), locale, { day: 'numeric', month: 'long', year: 'numeric' }) : t('admin.unknownDate')}
                       </span>
                     </td>
                     <td className="py-4">
@@ -592,7 +652,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                         quote.status === 'trashed' ? 'bg-red-500/10 text-red-500' :
                         'bg-gray-500/10 text-gray-500 group-hover:bg-zinc-800'
                       } transition-colors`}>
-                        {translateStatus(quote.status)}
+                        {translateStatus(quote.status, locale)}
                       </span>
                     </td>
                     <td className="py-4 text-right">
@@ -622,7 +682,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 )) : (
                   <tr>
                     <td colSpan={4} className={`py-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                      Aucune estimation trouvée
+                      {t('admin.noEstimationFound')}
                     </td>
                   </tr>
                 )}
@@ -634,7 +694,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
           <div className="md:hidden space-y-3">
             {filteredQuotes.length > 0 ? filteredQuotes.slice(0, 4).map((quote) => {
               const isExpanded = expandedId === quote.id;
-              const dateStr = quote.createdAt?.toDate ? quote.createdAt.toDate().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : 'Date inconnue';
+               const dateStr = quote.createdAt?.toDate ? IntlHelpers.formatDate(quote.createdAt.toDate(), locale, { day: 'numeric', month: 'long' }) : t('admin.unknownDate');
               
               return (
                 <div 
@@ -654,7 +714,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                         {quote.id.substring(0,3).toUpperCase()}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold truncate max-w-[150px]">{quote.client?.companyName || 'Sans nom'}</span>
+                        <span className="text-sm font-bold truncate max-w-[150px]">{quote.client?.companyName || t('admin.noNameClient')}</span>
                         <span className="text-[10px] text-gray-400 uppercase font-medium">{dateStr}</span>
                       </div>
                     </div>
@@ -666,7 +726,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                         quote.status === 'trashed' ? 'bg-red-500/20 text-red-500' :
                         'bg-gray-500/20 text-gray-500'
                       }`}>
-                        {translateStatus(quote.status)}
+                        {translateStatus(quote.status, locale)}
                       </span>
                       <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                     </div>
@@ -684,11 +744,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                           <div className="flex flex-col gap-4">
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex-1 min-w-0">
-                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Identifiant</p>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">{t('admin.identifier')}</p>
                                 <p className="text-[11px] font-medium text-gray-500 truncate" title={quote.id}>{quote.id}</p>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Montant Estimé</p>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">{t('admin.estimatedAmount')}</p>
                                 <p className="text-xs font-black text-gray-900">
                                   {quote.totalQuote ? quote.totalQuote.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '—'}
                                 </p>
@@ -702,7 +762,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                               className="flex-1 py-3 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
                             >
                               <Eye className="w-4 h-4" />
-                              <span>Détails</span>
+                               <span>{t('admin.detailsButton')}</span>
                             </Link>
                             {(rawRole === 'admin' || userRole === 'Administrateur') ? (
                               <button 
@@ -725,9 +785,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 </div>
               )
             }) : (
-              <div className={`py-12 text-center rounded-2xl border border-dashed ${isDark ? 'border-white/10 text-gray-500' : 'border-gray-200 text-gray-400'}`}>
-                Aucune estimation récente
-              </div>
+                <div className={`py-12 text-center rounded-2xl border border-dashed ${isDark ? 'border-white/10 text-gray-500' : 'border-gray-200 text-gray-400'}`}>
+                  {t('admin.noRecentEstimation')}
+                </div>
             )}
           </div>
 
@@ -736,7 +796,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
             <div className="flex flex-col gap-4 mb-6">
-              <h3 className="text-lg font-bold">Meilleurs Commerciaux</h3>
+              <h3 className="text-lg font-bold">{t('admin.topCommercialsTitle')}</h3>
               <div className="w-full">
                 <div className="relative w-full">
                   <button 
@@ -746,9 +806,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                     }`}
                   >
                     <span className="text-sm font-medium">
-                      {performancePeriod === '1-month' ? '1 mois' : 
-                       performancePeriod === '2-months' ? '2 mois' : 
-                       performancePeriod === '3-months' ? '3 mois' : 'Une année'}
+                      {performancePeriod === '1-month' ? t('admin.1month') : 
+                       performancePeriod === '2-months' ? t('admin.2months') : 
+                       performancePeriod === '3-months' ? t('admin.3months') : t('admin.1year')}
                     </span>
                     <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isPerformanceMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -765,41 +825,41 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                           isDark ? 'bg-[#1a1a1a] border-white/10' : 'bg-white border-gray-100'
                         }`}
                       >
-                        {[
-                          { id: '1-month', label: '1 mois' },
-                          { id: '2-months', label: '2 mois' },
-                          { id: '3-months', label: '3 mois' },
-                          { id: 'year', label: 'Une année' },
-                        ].map((item) => (
-                          <button
-                            key={item.id}
-                            onClick={() => {
-                              setPerformancePeriod(item.id as any);
-                              setIsPerformanceMenuOpen(false);
-                            }}
-                            className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-all ${
-                              performancePeriod === item.id
-                                ? isDark ? 'bg-white/10 text-white' : 'bg-blue-50 text-blue-600'
-                                : isDark ? 'text-gray-300 hover:bg-white/5' : 'text-gray-700 hover:bg-gray-50'
-                            }`}
-                          >
-                            <span>{item.label}</span>
-                            {performancePeriod === item.id && (
-                              <Check className="w-4 h-4 text-blue-500" />
-                            )}
-                          </button>
-                        ))}
-                        {(rawRole === 'admin' || userRole === 'admin' || userRole === 'Administrateur') && (
-                          <div className="border-t border-gray-100">
-                            <button
-                              onClick={() => { handleResetPerformance(); setIsPerformanceMenuOpen(false); }}
-                              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-all"
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                              Réinitialiser
-                            </button>
-                          </div>
-                        )}
+                         {[
+                           { id: '1-month', label: t('admin.1month') },
+                           { id: '2-months', label: t('admin.2months') },
+                           { id: '3-months', label: t('admin.3months') },
+                           { id: 'year', label: t('admin.1year') },
+                         ].map((item) => (
+                           <button
+                             key={item.id}
+                             onClick={() => {
+                               setPerformancePeriod(item.id as any);
+                               setIsPerformanceMenuOpen(false);
+                             }}
+                             className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-all ${
+                               performancePeriod === item.id
+                                 ? isDark ? 'bg-white/10 text-white' : 'bg-blue-50 text-blue-600'
+                                 : isDark ? 'text-gray-300 hover:bg-white/5' : 'text-gray-700 hover:bg-gray-50'
+                             }`}
+                           >
+                             <span>{item.label}</span>
+                             {performancePeriod === item.id && (
+                               <Check className="w-4 h-4 text-blue-500" />
+                             )}
+                           </button>
+                         ))}
+                         {(rawRole === 'admin' || userRole === 'admin' || userRole === 'Administrateur') && (
+                           <div className="border-t border-gray-100">
+                             <button
+                               onClick={() => { handleResetPerformance(); setIsPerformanceMenuOpen(false); }}
+                               className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-all"
+                             >
+                               <RefreshCw className="w-4 h-4" />
+                               {t('admin.resetPerformanceButton')}
+                             </button>
+                           </div>
+                         )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -828,11 +888,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h4 className="text-xs font-bold truncate">{user.name}</h4>
-                        <span className={`text-[10px] font-black shrink-0 ml-2 ${
-                          user.count === 0 ? (isDark ? 'text-gray-600' : 'text-gray-300') : 'text-rose-500'
-                        }`}>
-                          {user.count} devis
-                        </span>
+                    <span className={`text-[10px] font-black shrink-0 ml-2 ${
+                      user.count === 0 ? (isDark ? 'text-gray-600' : 'text-gray-300') : 'text-rose-500'
+                    }`}>
+                          {user.count} {t('admin.estimates')}
+                    </span>
                       </div>
                       <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-gray-100'}`}>
                         <div
@@ -849,7 +909,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 ))
               ) : (
                 <div className="text-center py-8 text-gray-400 text-xs italic">
-                  Aucun commercial enregistré
+                  {t('admin.noCommercialRegistered')}
                 </div>
               )}
             </div>
@@ -857,12 +917,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
 
           <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold">Historique des actions</h3>
+              <h3 className="text-lg font-bold">{t('admin.recentActivities')}</h3>
               <button 
                 onClick={() => router.push('/admin/history')}
                 className="text-xs font-medium text-blue-500 cursor-pointer hover:underline"
               >
-                Voir tout
+                {t('admin.viewAll')}
               </button>
             </div>
             <div className="relative space-y-6 pl-6">
@@ -877,7 +937,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">{activity.userName}</span>
                     <span className={`text-[10px] font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {new Date(activity.timestamp).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(activity.timestamp).toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <h4 className="text-xs font-bold mb-1">{activity.action}</h4>
@@ -885,7 +945,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 </div>
               )) : (
                 <div className="py-4 text-center text-xs text-gray-400 italic">
-                  Aucune activité récente
+                  {t('admin.noRecentActivity')}
                 </div>
               )}
             </div>
@@ -900,14 +960,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
               <TrendingUp className="w-5 h-5 text-blue-500" />
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-bold">Méthodes de configuration</h3>
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest">Utilisation globale</p>
+              <h3 className="text-sm font-bold">{t('admin.configuratorMethodsTitle')}</h3>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest">{t('admin.globalUsage')}</p>
             </div>
             {(rawRole === 'admin' || userRole === 'admin' || userRole === 'Administrateur') && (
               <button
                 onClick={handleResetConfiguratorStats}
                 className={`p-2 rounded-lg transition-colors ${isDark ? 'text-gray-400 hover:text-red-400 hover:bg-red-500/10' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
-                title="Réinitialiser les compteurs à zéro"
+                title={t('admin.resetCounters')}
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -920,7 +980,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center">
                   <span className="text-yellow-500 text-lg">⚡</span>
                 </div>
-                <span className="text-sm font-bold">Guidé</span>
+                <span className="text-sm font-bold">{t('admin.configuratorGuided')}</span>
               </div>
               <span className="text-lg font-black text-yellow-600 dark:text-yellow-500">{configuratorStats.guided}</span>
             </div>
@@ -930,7 +990,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
                   <span className="text-blue-500 text-lg">⚙️</span>
                 </div>
-                <span className="text-sm font-bold">Manuel</span>
+                <span className="text-sm font-bold">{t('admin.configuratorManual')}</span>
               </div>
               <span className="text-lg font-black text-blue-600 dark:text-blue-500">{configuratorStats.manual}</span>
             </div>
@@ -1014,10 +1074,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
               <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-8" />
               
               <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-2xl font-black text-gray-900 leading-tight">Période</h2>
-                  <p className="text-sm text-gray-500 font-medium">Faites votre choix</p>
-                </div>
+                 <div>
+                   <h2 className="text-2xl font-black text-gray-900 leading-tight">{t('admin.periodTitle')}</h2>
+                   <p className="text-sm text-gray-500 font-medium">{t('admin.periodChoose')}</p>
+                 </div>
                 <button 
                   onClick={() => setIsPerformanceMenuOpen(false)}
                   className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500"
@@ -1027,11 +1087,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
               </div>
 
               <div className="space-y-3">
-                {[
-                  { id: '1-month', label: '1 mois' },
-                  { id: '2-months', label: '2 mois' },
-                  { id: '3-months', label: '3 mois' },
-                  { id: 'year', label: 'Une année' },
+                 {[
+                  { id: '1-month', label: t('admin.1month') },
+                  { id: '2-months', label: t('admin.2months') },
+                  { id: '3-months', label: t('admin.3months') },
+                  { id: 'year', label: t('admin.1year') },
                 ].map((item) => (
                   <button
                     key={item.id}

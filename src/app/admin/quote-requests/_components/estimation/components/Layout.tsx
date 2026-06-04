@@ -4,6 +4,28 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { EstimationStatus } from '../types';
 import { Clock, CheckCircle2, Truck, Archive, Trash2, Calculator, Users, Hourglass, RotateCcw, Key } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
+
+// Hook to get translated status label
+const useStatusLabel = () => {
+  const { t } = useI18n();
+  
+  const getStatusLabel = (status: EstimationStatus): string => {
+    const statusMap: Record<EstimationStatus, string> = {
+      'En attente': t('estimationStatus.pending'),
+      'Traité': t('estimationStatus.processed'),
+      'Retourné': t('estimationStatus.returned'),
+      'Fournisseur': t('estimationStatus.supplier'),
+      'Livraison': t('estimationStatus.delivery'),
+      'Archivé': t('estimationStatus.archived'),
+      'Corbeille': t('estimationStatus.trash'),
+      'Loué': t('estimationStatus.rented'),
+    };
+    return statusMap[status] || status;
+  };
+  
+  return getStatusLabel;
+};
 
 interface SummaryCardProps {
   total: number;
