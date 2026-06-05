@@ -402,3 +402,111 @@ export async function getProductBlockedPeriods(
   return ranges;
 }
 
+export async function getProductsRentalAvailability(
+  productIds: string[],
+  from: Date,
+  to: Date,
+  neededTilesMap: Record<string, number>,
+  excludeQuoteId?: string
+): Promise<Record<string, { available: boolean; total: number; reserved: number; remaining: number }>> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) {
+    const fallback: Record<string, any> = {};
+    for (const id of productIds) {
+      fallback[id] = { available: false, total: 0, reserved: 0, remaining: 0 };
+    }
+    return fallback;
+  }
+
+  // 1. Fetch all products at once
+  const productDocs = await Promise.all(
+    productIds.map(id => adminDb.collection('products').doc(id).get())
+  );
+  
+  const productsData: Record<string, any> = {};
+  for (const doc of productDocs) {
+    if (doc.exists) {
+      productsData[doc.id] = doc.data() || {};
+    }
+  }
+
+  // 2. Fetch all quotes once
+  const snap = await adminDb
+    .collection('quotes')
+    .where('status', 'in', ['processed', 'rented'])
+    .get();
+
+  const allQuotes: any[] = [];
+  snap.forEach(doc => {
+    if (excludeQuoteId && doc.id === excludeQuoteId) return;
+    allQuotes.push({ id: doc.id, ...doc.data() });
+  });
+
+  const results: Record<string, { available: boolean; total: number; reserved: number; remaining: number }> = {};
+
+  for (const productId of productIds) {
+    const productData = productsData[productId] || {};
+    const tileW = (productData.tileWidth || 50) / 100;
+    const tileH = (productData.tileHeight || 50) / 100;
+    const isLed = !!(productData.tileWidth && productData.tileHeight);
+    const totalStock = productData.rentalStock !== undefined ? Number(productData.rentalStock) : (isLed ? 500 : 0);
+
+    // Filter events for this specific product from the already fetched quotes
+    const events: ProductUsageEvent[] = [];
+    for (const data of allQuotes) {
+      const products: any[] = data.products || [];
+      for (const p of products) {
+        if (p.productId === productId && p.transactionType === 'rental') {
+          let qty = 0;
+          if (isLed) {
+            const cabW = Math.ceil((p.width || 1) / tileW);
+            const cabH = Math.ceil((p.height || 1) / tileH);
+            qty = cabW * cabH * (p.quantity || 1);
+          } else {
+            qty = p.quantity || 1;
+          }
+
+          let fromDate: Date | null = null;
+          let toDate: Date | null = null;
+
+          if (p.rentalPeriod?.from) {
+            fromDate = p.rentalPeriod.from.toDate ? p.rentalPeriod.from.toDate() : new Date(p.rentalPeriod.from);
+            toDate = p.rentalPeriod.to.toDate ? p.rentalPeriod.to.toDate() : new Date(p.rentalPeriod.to);
+          } else if (p.rentalDate) {
+            fromDate = p.rentalDate.toDate ? p.rentalDate.toDate() : new Date(p.rentalDate);
+            toDate = fromDate;
+          } else if (data.rentalPeriod?.from) {
+            fromDate = data.rentalPeriod.from.toDate ? data.rentalPeriod.from.toDate() : new Date(data.rentalPeriod.from);
+            toDate = data.rentalPeriod.to.toDate ? data.rentalPeriod.to.toDate() : new Date(data.rentalPeriod.to);
+          }
+
+          if (fromDate && toDate) {
+            events.push({
+              quoteId: data.id,
+              from: toMidnight(fromDate),
+              to: toMidnight(toDate),
+              quantity: qty
+            });
+          }
+        }
+      }
+    }
+
+    const usage = computeDailyProductUsage(from, to, events);
+    const peakUsage = Math.max(...Array.from(usage.values()), 0);
+    const remaining = Math.max(0, totalStock - peakUsage);
+    
+    const quantityRequested = neededTilesMap[productId] || 1;
+    const available = peakUsage + quantityRequested <= totalStock;
+
+    results[productId] = {
+      available,
+      total: totalStock,
+      reserved: peakUsage,
+      remaining
+    };
+  }
+
+  return results;
+}
+

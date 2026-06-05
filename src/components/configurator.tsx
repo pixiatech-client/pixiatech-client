@@ -123,15 +123,19 @@ export function Configurator({
     }
   }, []);
 
-  // Reload blocked periods whenever a rental product's productId or quantity changes
+  // Reload blocked periods whenever a rental product's productId, quantity, width, or height changes
   useEffect(() => {
     configuredProducts.forEach(p => {
       if (p.transactionType === 'rental' && p.productId) {
-        loadProductBlockedPeriods(p.id, p.productId, p.quantity);
+        const prod = allProducts.find(ap => ap.id === p.productId);
+        const tileW = (prod?.tileWidth || 50) / 100;
+        const tileH = (prod?.tileHeight || 50) / 100;
+        const neededTiles = Math.ceil(p.width / tileW) * Math.ceil(p.height / tileH) * p.quantity;
+        loadProductBlockedPeriods(p.id, p.productId, neededTiles);
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [configuredProducts.map(p => `${p.id}-${p.productId}-${p.quantity}`).join(',')]);
+  }, [configuredProducts.map(p => `${p.id}-${p.productId}-${p.quantity}-${p.width}-${p.height}`).join(','), allProducts]);
 
   // Load availability for a product when a date range is selected
   const loadProductAvailability = useCallback(async (
@@ -600,7 +604,10 @@ export function Configurator({
                                 toggleCalendar(p.id);
                                 const selectedProduct = allProducts.find(ap => ap.id === p.productId);
                                 if (selectedProduct) {
-                                  loadProductAvailability(p.id, p.productId, range.from, range.to, p.quantity);
+                                  const tileW = (selectedProduct.tileWidth || 50) / 100;
+                                  const tileH = (selectedProduct.tileHeight || 50) / 100;
+                                  const neededTiles = Math.ceil(p.width / tileW) * Math.ceil(p.height / tileH) * p.quantity;
+                                  loadProductAvailability(p.id, p.productId, range.from, range.to, neededTiles);
                                 }
                             }
                           }}

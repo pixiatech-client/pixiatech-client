@@ -38,12 +38,16 @@ import {
   Upload,
   Settings2,
   ChevronDown,
+  Ban,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConfigState, INITIAL_STATE, ProjectType, Environment, ViewingDistance, PixelPitch } from '@/lib/configurator-wizard-types';
 import { Button } from './ui/button';
 import { ConfiguredProduct, Product, Settings, UserProfile, WizardSettings } from '@/lib/types';
-import { getBlockedPeriods, getProductRentalAvailabilityAction } from '@/app/actions/quote-actions';
+import { getBlockedPeriods, getProductRentalAvailabilityAction, getProductBlockedPeriodsAction } from '@/app/actions/quote-actions';
 import Preview from './preview';
 import StepDimensionsOriginal from './StepDimensions';
 import { Label } from './ui/label';
@@ -378,7 +382,7 @@ function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigSta
     case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} />;
     case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} locale={locale} />;
     case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} t={t} />;
-    case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} t={t} locale={locale} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
+    case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} products={products} t={t} locale={locale} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
     case 7: return <StepSummary state={state} t={t} locale={locale} />;
     case 8: return <StepFinal state={state} updateState={updateState} products={products} settings={settings} t={t} locale={locale!} hideBackButton={true} />;
     default: return null;
@@ -1070,41 +1074,79 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
   );
 }
 
-export function StepRentalDatesAndPhoto({ state, updateState, t, locale }: { state: ConfigState, updateState: any, t: any, locale: string }) {
+export function StepRentalDatesAndPhoto({ state, updateState, products = [], t, locale }: { state: ConfigState, updateState: any, products?: Product[], t: any, locale: string }) {
    const [blockedPeriods, setBlockedPeriods] = React.useState<{ from: string; to: string }[]>([]);
-   const [productAvailability, setProductAvailability] = React.useState<Record<string, { total: number, reserved: number, remaining: number }>>({});
+   const [productAvailability, setProductAvailability] = React.useState<Record<string, { total: number, reserved: number, remaining: number, available: boolean }>>({});
+
+  const activeProduct = React.useMemo(() => {
+    if (state.selectedProduct) {
+      const p = products.find(prod => prod.id === state.selectedProduct);
+      if (p) return p;
+    }
+    const envMap: Record<string, 'indoor' | 'outdoor' | 'showcase'> = {
+      'interieur': 'indoor',
+      'semi-exterieur': 'showcase',
+      'exterieur': 'outdoor'
+    };
+    const targetEnv = envMap[state.environment] || 'indoor';
+    const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
+
+    // Filter products
+    const filtered = products.filter(p => 
+      !p.isHidden &&
+      p.availableFor.includes('rental') &&
+      p.type.includes(targetEnv)
+    );
+
+    if (filtered.length === 0) return null;
+
+    const sorted = [...filtered].sort((a, b) => {
+      const aPitch = a.pitch ? parseFloat(String(a.pitch).replace('P', '')) || 999 : 999;
+      const bPitch = b.pitch ? parseFloat(String(b.pitch).replace('P', '')) || 999 : 999;
+      return Math.abs(aPitch - pitchValue) - Math.abs(bPitch - pitchValue);
+    });
+
+    return sorted[0];
+  }, [products, state.selectedProduct, state.environment, state.pixelPitch]);
+
+  const neededTiles = React.useMemo(() => {
+    if (!activeProduct) return 1;
+    const tileW = (activeProduct.tileWidth || 50) / 100;
+    const tileH = (activeProduct.tileHeight || 50) / 100;
+    return Math.ceil(state.width / tileW) * Math.ceil(state.height / tileH) * (state.quantity || 1);
+  }, [activeProduct, state.width, state.height, state.quantity]);
 
   React.useEffect(() => {
     const loadBlockedPeriods = async () => {
+      if (!activeProduct) return;
       try {
-        const periods = await getBlockedPeriods();
+        const periods = await getProductBlockedPeriodsAction(activeProduct.id, neededTiles);
         setBlockedPeriods(periods);
       } catch (error) {
         console.error('Failed to load blocked periods:', error);
       }
     };
     loadBlockedPeriods();
-  }, []);
+  }, [activeProduct, neededTiles]);
 
   React.useEffect(() => {
     const loadProductAvailability = async () => {
-      if (!state.selectedProduct || !state.rentalStartDate || !state.rentalEndDate) return;
+      const prodId = state.selectedProduct || activeProduct?.id;
+      if (!prodId || !state.rentalStartDate || !state.rentalEndDate) return;
       try {
-        const from = new Date(state.rentalStartDate);
-        const to = new Date(state.rentalEndDate);
         const result = await getProductRentalAvailabilityAction(
-          state.selectedProduct,
+          prodId,
           state.rentalStartDate,
           state.rentalEndDate,
-          state.quantity || 1
+          neededTiles
         );
-        setProductAvailability(prev => ({ ...prev, [state.selectedProduct!]: result }));
+        setProductAvailability(prev => ({ ...prev, [prodId]: result }));
       } catch (error) {
         console.error('Failed to load product availability:', error);
       }
     };
     loadProductAvailability();
-  }, [state.selectedProduct, state.rentalStartDate, state.rentalEndDate, state.quantity]);
+  }, [state.selectedProduct, activeProduct, state.rentalStartDate, state.rentalEndDate, neededTiles]);
 
   const dateLocale = locale === 'en' ? enUS : fr;
 
@@ -1184,6 +1226,26 @@ export function StepRentalDatesAndPhoto({ state, updateState, t, locale }: { sta
                    />
                 </PopoverContent>
               </Popover>
+              {/* Availability badge */}
+              {(() => {
+                const prodId = state.selectedProduct || activeProduct?.id;
+                if (!prodId) return null;
+                const avail = productAvailability[prodId];
+                if (!avail) return null;
+                return (
+                  <div className={cn(
+                    "flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-md mt-2 border",
+                    avail.available
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-red-50 text-red-700 border-red-200"
+                  )}>
+                    {avail.available
+                      ? <><CheckCircle2 size={13} className="shrink-0" />{`${avail.remaining} / ${avail.total} dalles disponibles`}</>
+                      : <><Ban size={13} className="shrink-0" />{`Stock insuffisant — ${avail.remaining} / ${avail.total} disponibles`}</>
+                    }
+                  </div>
+                );
+              })()}
             </div>
             <div className="flex items-end gap-2">
               <div className="flex-1 space-y-1.5">
@@ -1428,6 +1490,61 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
 
   const [showComparator, setShowComparator] = useState(false);
   const [compareProductIds, setCompareProductIds] = useState<string[]>([]);
+  const [availabilities, setAvailabilities] = useState<Record<string, { total: number, reserved: number, remaining: number, available: boolean }>>({});
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+
+  const isRental = state.projectType === 'location';
+
+  useEffect(() => {
+    if (!isRental || !state.rentalStartDate || !state.rentalEndDate) return;
+    
+    let active = true;
+    setIsLoadingAvailability(true);
+    setAvailabilities({});
+
+    const checkAllAvailabilities = async () => {
+      const results: Record<string, { total: number, reserved: number, remaining: number, available: boolean }> = {};
+      await Promise.all(
+        sortedProducts.map(async (product) => {
+          const tileW = (product.tileWidth || 50) / 100;
+          const tileH = (product.tileHeight || 50) / 100;
+          const needed = Math.ceil(state.width / tileW) * Math.ceil(state.height / tileH) * (state.quantity || 1);
+          try {
+            const avail = await getProductRentalAvailabilityAction(
+              product.id,
+              state.rentalStartDate!,
+              state.rentalEndDate!,
+              needed
+            );
+            results[product.id] = avail;
+          } catch (error) {
+            console.error('Failed to check product availability in StepFinal:', product.id, error);
+          }
+        })
+      );
+      if (active) {
+        setAvailabilities(results);
+        setIsLoadingAvailability(false);
+        if (state.selectedProduct && results[state.selectedProduct] && !results[state.selectedProduct].available) {
+          updateState({ selectedProduct: null });
+        }
+      }
+    };
+
+    checkAllAvailabilities();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    state.rentalStartDate,
+    state.rentalEndDate,
+    state.width,
+    state.height,
+    state.quantity,
+    isRental,
+    products
+  ]);
 
 return (
     <div className="bg-transparent font-sans flex flex-col">
@@ -1454,6 +1571,28 @@ return (
             const isSelected = state.selectedProduct === product.id;
             const area = state.width * state.height;
             const quantity = state.quantity || 1;
+
+            // Availability state
+            const avail = availabilities[product.id];
+            const isUnavailable = isRental && state.rentalStartDate && state.rentalEndDate && avail !== undefined && !avail.available;
+            const isAvailabilityKnown = avail !== undefined;
+
+            // i18n product type labels
+            const typeLabel = product.type.map((t: string) => {
+              const tl = t.toLowerCase();
+              if (locale === 'fr') {
+                if (tl.includes('indoor') || tl.includes('interieur') || tl.includes('intérieur')) return 'Intérieur';
+                if (tl.includes('outdoor') || tl.includes('exterieur') || tl.includes('extérieur')) return 'Extérieur';
+                if (tl.includes('semi')) return 'Semi-extérieur';
+              } else {
+                if (tl.includes('indoor') || tl.includes('interieur') || tl.includes('intérieur')) return 'Indoor';
+                if (tl.includes('outdoor') || tl.includes('exterieur') || tl.includes('extérieur')) return 'Outdoor';
+                if (tl.includes('semi')) return 'Semi-outdoor';
+              }
+              return t;
+            }).join(' • ');
+
+            // Price calculation
             let unitPrice = 0;
             if (state.projectType === 'vente') {
               unitPrice = (product.salePricePerSqM || 0) * area;
@@ -1462,29 +1601,66 @@ return (
             }
             const totalPrice = unitPrice * quantity;
 
+            // P4: prix toujours selon isPriceHidden, totalPrice === 0 also shows "Sur estimation"
+            const showPrice = !settings.isPriceHidden && totalPrice > 0;
+            const showOnEstimate = settings.isPriceHidden || totalPrice === 0;
+
             return (
               <div
                 key={product.id}
                 className={cn(
-                  "group cursor-pointer transition-all duration-500",
-                  isSelected ? "opacity-100" : "opacity-90 hover:opacity-100"
+                  "group transition-all duration-500",
+                  isUnavailable ? "cursor-not-allowed" : "cursor-pointer",
+                  isUnavailable ? "opacity-60" : isSelected ? "opacity-100" : "opacity-90 hover:opacity-100"
                 )}
-                onClick={() => updateState({ selectedProduct: product.id })}
+                onClick={() => {
+                  if (isUnavailable) return; // P5: block click on unavailable
+                  updateState({ selectedProduct: product.id });
+                }}
               >
                 <div className={cn(
                   "relative aspect-square bg-gray-50 rounded-2xl border transition-all duration-500 overflow-hidden mb-4",
-                  isSelected ? "border-[#c6ff00] border-4 shadow-2xl shadow-black/10 scale-[1.02]" : "border-gray-100 group-hover:border-gray-300"
+                  isSelected ? "border-[#c6ff00] border-4 shadow-2xl shadow-black/10 scale-[1.02]" : "border-gray-100 group-hover:border-gray-300",
+                  isUnavailable && "grayscale"
                 )}>
-                  {/* Comparer Checkbox */}
+                  {/* P6: Unavailable overlay */}
+                  {isUnavailable && (
+                    <div className="absolute inset-0 z-20 bg-red-900/20 flex items-center justify-center">
+                      <div className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                        <Ban size={11} />{locale === 'fr' ? 'Indisponible' : 'Unavailable'}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* P7: Strong selected indicator */}
+                  {isSelected && !isUnavailable && (
+                    <div className="absolute inset-0 z-20 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-full bg-[#c6ff00] flex items-center justify-center shadow-2xl shadow-black/30">
+                        <Check size={32} className="text-black" strokeWidth={3} />
+                      </div>
+                    </div>
+                  )}
+                  {/* Loading skeleton for availability check - P1 */}
+                  {isRental && state.rentalStartDate && state.rentalEndDate && isLoadingAvailability && !isAvailabilityKnown && (
+                    <div className="absolute bottom-2 left-2 right-2 z-10 h-6 rounded-lg bg-slate-200 animate-pulse" />
+                  )}
+                  
+                  {/* Promotion badge */}
+                  {product.oldPrice && product.salePricePerSqM && product.oldPrice > product.salePricePerSqM && (
+                    <div className="absolute top-3 left-3 z-30">
+                      <span className="px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-red-500 text-white rounded-full">
+                        -{Math.round(((product.oldPrice - product.salePricePerSqM) / product.oldPrice) * 100)}%
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Compare checkbox */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setCompareProductIds(prev => {
-                        if (prev.includes(product.id)) {
-                          return prev.filter(id => id !== product.id);
-                        } else {
-                          return [...prev, product.id];
-                        }
+                        if (prev.includes(product.id)) return prev.filter(id => id !== product.id);
+                        return [...prev, product.id];
                       });
                     }}
                     className={cn(
@@ -1499,15 +1675,6 @@ return (
                       <Check size={14} className="text-black" strokeWidth={3} />
                     )}
                   </button>
-                  
-                  {/* Bouton promotion si applicable */}
-                  {product.oldPrice && product.salePricePerSqM && product.oldPrice > product.salePricePerSqM && (
-                    <div className="absolute top-3 left-3 z-30">
-                      <span className="px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-red-500 text-white rounded-full">
-                        -{Math.round(((product.oldPrice - product.salePricePerSqM) / product.oldPrice) * 100)}%
-                      </span>
-                    </div>
-                  )}
 
                   <img
                     src={product.imageUrl || product.image || '/no-product.png'}
@@ -1516,18 +1683,18 @@ return (
                   />
                 </div>
                 
-                <div className="space-y-1">
+                <div className={cn("space-y-1", isUnavailable && "opacity-60")}>
                   <div className="flex justify-between items-start">
                     <h3 className="font-black uppercase tracking-[0.1em] text-sm text-gray-900 line-clamp-1">{product.name}</h3>
                     {product.pitch && <span className="font-black text-[10px] bg-gray-100 px-2 py-0.5 rounded uppercase tracking-tighter">{product.pitch}</span>}
                   </div>
-                  <p className="font-bold text-gray-400 text-[10px] uppercase tracking-widest">
-                    {product.type.join(' • ')}
-                  </p>
+                  {/* P3: i18n type labels */}
+                  <p className="font-bold text-gray-400 text-[10px] uppercase tracking-widest">{typeLabel}</p>
 
                   <div className="pt-2">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('wizard.products.priceLabel')}</p>
-                    {settings.isPriceHidden && totalPrice > 0 ? (
+                    {/* P4: Consistent price display */}
+                    {showOnEstimate ? (
                       <div className="flex flex-col">
                         <span className="text-lg font-black text-black/30 animate-pulse blur-[2px] select-none">{t('configurator.estimating')}</span>
                       </div>
@@ -1570,19 +1737,41 @@ return (
                       </div>
                     </div>
                   )}
+
+                  {isRental && state.rentalStartDate && state.rentalEndDate && availabilities[product.id] && (
+                    <div className={cn(
+                      "flex items-center gap-2 text-[11px] font-bold px-3 py-2.5 rounded-xl mt-3 border transition-all duration-300",
+                      availabilities[product.id].available
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : "bg-red-50 text-red-700 border-red-200"
+                    )}>
+                      {availabilities[product.id].available
+                        ? <><CheckCircle2 size={13} className="shrink-0" />{locale === 'fr' ? `${availabilities[product.id].remaining} / ${availabilities[product.id].total} dalles dispo.` : `${availabilities[product.id].remaining} / ${availabilities[product.id].total} tiles avail.`}</>
+                        : <><Ban size={13} className="shrink-0" />{locale === 'fr' ? `Stock insuffisant — ${availabilities[product.id].remaining} / ${availabilities[product.id].total}` : `Insufficient stock — ${availabilities[product.id].remaining} / ${availabilities[product.id].total}`}</>
+                      }
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Button */}
                 <button
+                  disabled={isRental && state.rentalStartDate && state.rentalEndDate && availabilities[product.id] && !availabilities[product.id].available}
                   onClick={(e) => { e.stopPropagation(); updateState({ selectedProduct: product.id }) }}
                   className={cn(
-                    "w-full mt-6 h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center transition-all active:scale-95 shadow-sm",
+                    "w-full mt-6 h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm",
                     isSelected
                       ? "bg-black text-[#c6ff00] shadow-2xl shadow-black/20"
-                      : "bg-white/40 backdrop-blur-md text-black border border-gray-100 hover:bg-black hover:text-[#c6ff00] hover:shadow-2xl hover:shadow-black/10"
+                      : (isRental && state.rentalStartDate && state.rentalEndDate && availabilities[product.id] && !availabilities[product.id].available)
+                        ? "bg-red-50 text-red-400 border border-red-200 cursor-not-allowed"
+                        : "bg-white/40 backdrop-blur-md text-black border border-gray-100 hover:bg-black hover:text-[#c6ff00] hover:shadow-2xl hover:shadow-black/10"
                   )}
                 >
-                  {isSelected ? t('common.selected') || "Sélectionné" : t('common.select') || "Sélectionner"}
+                  {(isRental && state.rentalStartDate && state.rentalEndDate && availabilities[product.id] && !availabilities[product.id].available)
+                    ? <><Ban size={13} />{locale === 'fr' ? "Indisponible" : "Unavailable"}</>
+                    : isSelected 
+                      ? t('common.selected') || "Sélectionné" 
+                      : t('common.select') || "Sélectionner"
+                  }
                 </button>
               </div>
             );

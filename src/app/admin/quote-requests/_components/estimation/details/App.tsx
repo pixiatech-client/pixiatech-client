@@ -122,13 +122,14 @@ interface DetailsAppProps {
   allProducts?: GlobalProduct[];
   allProductSpecs?: Record<string, ProductSpec[]>;
   startOpen?: boolean;
+  autoEditMode?: boolean;
   onClose?: () => void;
   suppliers?: any[];
   onStatusChange?: (newStatus: string) => void;
   onSave?: (updatedQuote: any) => void;
 }
 
-export default function DetailsApp({ initialEstimation, allProducts = [], allProductSpecs = {}, startOpen = false, onClose, suppliers = [], onStatusChange, onSave }: DetailsAppProps) {
+export default function DetailsApp({ initialEstimation, allProducts = [], allProductSpecs = {}, startOpen = false, autoEditMode = false, onClose, suppliers = [], onStatusChange, onSave }: DetailsAppProps) {
   const { userProfile } = useUser();
   const [profile, setProfile] = useState<ProfileType>('client');
 
@@ -372,6 +373,13 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       setIsDrawerOpen(true);
     }
   }, [startOpen]);
+
+  // Auto-activer le mode édition si lancé depuis le bouton "Traiter"
+  useEffect(() => {
+    if (autoEditMode) {
+      setIsEditMode(true);
+    }
+  }, [autoEditMode]);
 
   const handleClose = () => {
     setIsDrawerOpen(false);
@@ -1275,6 +1283,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         <input 
                                           type="date"
                                           className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
+                                          min={new Date().toISOString().split('T')[0]}
                                           value={p.rentalPeriod?.from ? new Date(p.rentalPeriod.from).toISOString().split('T')[0] : ''}
                                           onChange={(e) => {
                                             const from = new Date(e.target.value);
@@ -1294,6 +1303,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         <input 
                                           type="date"
                                           className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
+                                          min={new Date().toISOString().split('T')[0]}
                                           value={p.rentalPeriod?.to ? new Date(p.rentalPeriod.to).toISOString().split('T')[0] : ''}
                                           onChange={(e) => {
                                             const to = new Date(e.target.value);
@@ -1324,6 +1334,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         <input 
                                           type="date"
                                           className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
+                                          min={new Date().toISOString().split('T')[0]}
                                           value={p.rentalDate ? new Date(p.rentalDate).toISOString().split('T')[0] : ''}
                                           onChange={(e) => {
                                             const date = new Date(e.target.value);
@@ -1665,6 +1676,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de début</label>
                                   <input
                                     type="date"
+                                    min={new Date().toISOString().split('T')[0]}
                                     value={estimation.rentalPeriod?.from ? new Date(estimation.rentalPeriod.from).toISOString().split('T')[0] : ''}
                                     onChange={(e) => {
                                       const from = new Date(e.target.value);
@@ -1678,6 +1690,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de fin</label>
                                   <input
                                     type="date"
+                                    min={new Date().toISOString().split('T')[0]}
                                     value={estimation.rentalPeriod?.to ? new Date(estimation.rentalPeriod.to).toISOString().split('T')[0] : ''}
                                     onChange={(e) => {
                                       const to = new Date(e.target.value);

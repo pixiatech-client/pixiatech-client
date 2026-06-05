@@ -138,6 +138,7 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
   const [activeEstimationId, setActiveEstimationId] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedEstimation, setSelectedEstimation] = useState<any>(null);
+  const [autoEditMode, setAutoEditMode] = useState(false);
   const [suppliers, setSuppliers] = useState<UserProfile[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [fullQuotes, setFullQuotes] = useState<Record<string, QuoteRequest>>({});
@@ -535,9 +536,26 @@ const filteredEstimations = useMemo(() => {
 
       // LOCATION MODE specific transitions
       if (estimationMode === 'location') {
-        // 1. EN ATTENTE -> TRAITÉ: ouvrir la fenêtre Modifier pour saisir les dates
+        // 1. EN ATTENTE -> TRAITÉ: transition directe sans popup ni fenêtre Modifier
         if (est.status === 'En attente') {
-          handleEdit(id);
+          const firestoreStatus = estimationToStatus['Traité'];
+          try {
+            const updateData: any = {
+              status: firestoreStatus,
+              treatedBy: currentUser.uid,
+              treatedByName: currentUser.displayName,
+              treatedByRole: currentUser.role,
+              treatedAt: Date.now(),
+            };
+            await updateQuoteStatus(id, updateData);
+            clearCache(est.status);
+            clearCache('Traité');
+            updateCountsLocally(est.status, 'Traité', 1, est.totalClient || 0);
+            setEstimations(prev => prev.filter(e => e.id !== id));
+            setActiveTab('Traité' as EstimationStatus);
+          } catch (error) {
+            console.error('Failed to process rental treatment:', error);
+          }
           return;
         }
         // 2. TRAITÉ -> LOUÉ: direct transition
@@ -1444,8 +1462,9 @@ const filteredEstimations = useMemo(() => {
             allProducts={allProducts}
             allProductSpecs={allProductSpecs}
             startOpen={true}
+            autoEditMode={autoEditMode}
             suppliers={suppliers}
-            onClose={() => setIsDetailsOpen(false)}
+            onClose={() => { setIsDetailsOpen(false); setAutoEditMode(false); }}
             onSave={async (updatedQuote) => {
               setFullQuotes(prev => ({ ...prev, [updatedQuote.id]: updatedQuote }));
               setSelectedEstimation(updatedQuote);
@@ -1454,10 +1473,16 @@ const filteredEstimations = useMemo(() => {
               await fetchPage(currentPage, activeTab, startId, estimationMode);
             }}
             onStatusChange={async (newStatus) => {
-              setSelectedEstimation(prev => prev ? { ...prev, status: newStatus } : null);
+              setAutoEditMode(false);
+              setIsDetailsOpen(false);
+              setSelectedEstimation(null);
               setPageCache({});
               const startId = lastDocIds[currentPage];
               await fetchPage(currentPage, activeTab, startId, estimationMode);
+              // Si on était sur "En attente" et qu'on passe en "Traité", switcher l'onglet
+              if (activeTab === 'En attente' && newStatus === 'processed') {
+                setActiveTab('Traité' as EstimationStatus);
+              }
             }}
           />
         </div>

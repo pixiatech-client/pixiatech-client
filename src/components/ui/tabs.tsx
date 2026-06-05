@@ -25,8 +25,8 @@ TabsContent.displayName = TabsPrimitive.Content.displayName
 
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { activeTab?: string; hideBubble?: boolean }
->(({ className, children, activeTab: activeTabProp, hideBubble = false, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { activeTab?: string; hideBubble?: boolean; bubbleClassName?: string }
+>(({ className, children, activeTab: activeTabProp, hideBubble = false, bubbleClassName, ...props }, ref) => {
   const [internalActiveTab, setInternalActiveTab] = React.useState(
     (React.Children.toArray(children)[0] as React.ReactElement).props.value
   );
@@ -55,13 +55,13 @@ const TabsList = React.forwardRef<
         
         return (
           <div className="relative w-full">
-            {isChildActive && !hideBubble && (
-              <motion.div
-                layoutId="tabs-bubble"
-                className="absolute inset-0 z-10 rounded-md bg-primary"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
+              {isChildActive && !hideBubble && (
+                <motion.div
+                  layoutId="tabs-bubble"
+                  className={cn("absolute inset-0 z-10 rounded-md bg-black", bubbleClassName)}
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
             {React.cloneElement(child, {
               ...child.props,
               onClick: (e: any) => {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronDown, ArrowRight, ArrowLeft, MapPin, Loader2, Grid, Calendar as CalendarIcon, Clock, Bot, Video, Download, Info, Layers, RotateCcw } from 'lucide-react';
+import { X, ChevronDown, ArrowRight, ArrowLeft, MapPin, Loader2, Grid, Calendar as CalendarIcon, Clock, Bot, Video, Download, Info, Layers, RotateCcw, Ban, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { Calendar } from "@/components/ui/calendar";
@@ -21,7 +21,7 @@ import { SuccessView } from '@/components/success-view';
 import { ProductComparator } from '@/components/product-comparator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { createQuoteRequest, getBlockedPeriods } from '@/app/actions/quote-actions';
+import { createQuoteRequest, getBlockedPeriods, getProductRentalAvailabilityAction } from '@/app/actions/quote-actions';
 import { useUser } from '@/firebase';
 import { useI18n } from '@/lib/i18n';
 
@@ -179,6 +179,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const totalQuote = lineTotal + installationCost + deliveryCost;
 
   const [blockedPeriods, setBlockedPeriods] = useState<{ from: string; to: string }[]>([]);
+  const [productAvailability, setProductAvailability] = useState<{ available: boolean; total: number; reserved: number; remaining: number } | null>(null);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
   useEffect(() => {
     const loadBlockedPeriods = async () => {
@@ -191,6 +193,40 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     };
     loadBlockedPeriods();
   }, []);
+
+  // Load availability for the recommended product
+  useEffect(() => {
+    if (step !== STEP.PRODUCTS || !configState.rentalStartDate || !configState.rentalEndDate) {
+      setProductAvailability(null);
+      setIsCheckingAvailability(false);
+      return;
+    }
+    const currentProduct = matchingProducts[currentProductIndex];
+    if (!currentProduct) return;
+
+    const tileW = (currentProduct.tileWidth || 50) / 100;
+    const tileH = (currentProduct.tileHeight || 50) / 100;
+    const needed = Math.ceil(configState.width / tileW) * Math.ceil(configState.height / tileH) * 1; // quantity = 1
+
+    const checkProductAvailability = async () => {
+      setProductAvailability(null);
+      setIsCheckingAvailability(true);
+      try {
+        const avail = await getProductRentalAvailabilityAction(
+          currentProduct.id,
+          configState.rentalStartDate!,
+          configState.rentalEndDate!,
+          needed
+        );
+        setProductAvailability(avail);
+      } catch (error) {
+        console.error('Failed to check recommended product availability:', error);
+      } finally {
+        setIsCheckingAvailability(false);
+      }
+    };
+    checkProductAvailability();
+  }, [step, currentProductIndex, matchingProducts, configState.rentalStartDate, configState.rentalEndDate, configState.width, configState.height]);
 
   const isDateBlocked = useCallback((date: Date) => {
     // Zero out hours to compare strictly YYYY-MM-DD
@@ -579,9 +615,9 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     pushBotMessage(t('bot.quantity', { width: configState.width, height: configState.height }), undefined, 0, undefined, undefined, 'bot.quantity', { width: configState.width, height: configState.height });
   };
 
-  const handleQuantitySubmit = () => {
-    const qty = configState.quantity;
-    if (qty === 0) {
+  const handleQuantitySubmit = async () => {
+    const qty = configState.quantity === undefined ? 1 : configState.quantity;
+    if (qty <= 0) {
       const newCount = errorCount + 1;
       setErrorCount(newCount);
 
@@ -596,6 +632,41 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       }
       return;
     }
+
+    if (configState.projectType === 'location' && selectedProduct) {
+      const tileW = (selectedProduct.tileWidth || 50) / 100;
+      const tileH = (selectedProduct.tileHeight || 50) / 100;
+      const neededTiles = Math.ceil(configState.width / tileW) * Math.ceil(configState.height / tileH) * qty;
+
+      setIsTyping(true);
+      try {
+        const avail = await getProductRentalAvailabilityAction(
+          selectedProduct.id,
+          configState.rentalStartDate!,
+          configState.rentalEndDate!,
+          neededTiles
+        );
+
+        if (!avail.available) {
+          setIsTyping(false);
+          setBotStatus('angry');
+          pushBotMessage(
+            locale === 'fr' 
+              ? `Stock insuffisant pour ${qty} écran(s) (${neededTiles} dalles requises). Il ne reste que ${avail.remaining} dalles disponibles sur cette période. Veuillez réduire la quantité ou changer vos dates.`
+              : `Insufficient stock for ${qty} screen(s) (${neededTiles} tiles required). Only ${avail.remaining} tiles are available during this period. Please reduce the quantity or change dates.`,
+            undefined,
+            400,
+            '/bot-avatars/005.webp'
+          );
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to validate stock in handleQuantitySubmit:', error);
+      } finally {
+        setIsTyping(false);
+      }
+    }
+
     setErrorCount(0);
     takeSnapshot();
     const finalQty = qty || 1;
@@ -1002,6 +1073,31 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                               }
                             }
 
+                            // Environment i18n label
+                            const envLabel = (() => {
+                              const env = (currentProduct.environment || '').toLowerCase();
+                              if (locale === 'fr') {
+                                if (env.includes('indoor') || env.includes('interieur') || env.includes('intérieur')) return 'Intérieur';
+                                if (env.includes('outdoor') || env.includes('exterieur') || env.includes('extérieur')) return 'Extérieur';
+                                if (env.includes('semi')) return 'Semi-extérieur';
+                              } else {
+                                if (env.includes('indoor') || env.includes('interieur') || env.includes('intérieur')) return 'Indoor';
+                                if (env.includes('outdoor') || env.includes('exterieur') || env.includes('extérieur')) return 'Outdoor';
+                                if (env.includes('semi')) return 'Semi-outdoor';
+                              }
+                              return currentProduct.environment || '';
+                            })();
+
+                            // Price display
+                            const priceLabel = locale === 'fr' ? 'Prix sur estimation' : 'Price on quote';
+                            const priceBlurLabel = locale === 'fr' ? 'Sur estimation' : 'On quote';
+
+                            // Availability states
+                            const isRental = configState.projectType === 'location';
+                            const hasDates = !!(configState.rentalStartDate && configState.rentalEndDate);
+                            const isUnavailable = isRental && hasDates && productAvailability !== null && !productAvailability?.available;
+                            const isAvailable = isRental && hasDates && productAvailability !== null && !!productAvailability?.available;
+
                             return (
                               <>
                                 <motion.div
@@ -1010,12 +1106,28 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                 animate={{ x: 0, opacity: 1 }}
                                 exit={{ x: -40, opacity: 0 }}
                                 transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-                                className="bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden flex flex-col"
+                                className={cn(
+                                  "rounded-[40px] shadow-2xl border overflow-hidden flex flex-col relative transition-all duration-500",
+                                  isUnavailable
+                                    ? "bg-slate-100 border-red-200 opacity-60 grayscale-[0.5]"
+                                    : "bg-white border-slate-100"
+                                )}
                               >
+                                {/* Unavailable overlay banner */}
+                                {isUnavailable && (
+                                  <div className="absolute top-0 left-0 right-0 z-20 bg-red-600 text-white text-[12px] font-black uppercase tracking-widest text-center py-3 flex items-center justify-center gap-2 shadow-sm">
+                                    <Ban size={14} />
+                                    {locale === 'fr' ? 'Rupture de stock' : 'Out of stock'}
+                                  </div>
+                                )}
+
                                 {/* New Premium Header Style */}
-                                <div className="p-6 text-center border-b border-slate-50">
+                                <div className={cn("p-6 text-center border-b border-slate-50", isUnavailable && "pt-12")}>
                                   <h2 className="font-black text-[#0f172a] tracking-tight text-[13px] leading-relaxed uppercase mb-2 px-4">
-                                    Au vu de la configuration que vous avez choisie, ce produit représente la solution la plus adaptée à vos besoins.
+                                    {locale === 'fr'
+                                      ? "Au vu de la configuration que vous avez choisie, ce produit représente la solution la plus adaptée à vos besoins."
+                                      : "Based on your configuration, this product is the most suitable solution for your needs."
+                                    }
                                   </h2>
                                   <div className="flex items-center justify-center gap-3">
                                     <div className="h-[2px] bg-slate-100 w-8" />
@@ -1026,14 +1138,14 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                   </div>
                                 </div>
 
-                                <div className="relative aspect-square md:aspect-video bg-[#f8fafc] overflow-hidden flex items-center justify-center group">
+                                <div className={cn("relative aspect-square md:aspect-video bg-[#f8fafc] overflow-hidden flex items-center justify-center group", isUnavailable && "grayscale")}>
                                   {/* Media Actions Overlay */}
                                   <div className="absolute top-8 right-8 flex flex-col gap-3 z-30">
                                     {currentProduct.videoUrl && (
                                       <button
                                         onClick={(e) => { e.stopPropagation(); setLightboxUrl(currentProduct.videoUrl!); }}
                                         className="h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm shadow-xl flex items-center justify-center text-slate-900 transition-all hover:bg-white active:scale-90 border border-slate-100"
-                                        title="Voir la vidéo"
+                                        title={locale === 'fr' ? 'Voir la vidéo' : 'Watch video'}
                                       >
                                         <Video size={18} />
                                       </button>
@@ -1046,7 +1158,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                         rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
                                         className="h-10 w-10 rounded-full bg-white/90 backdrop-blur-sm shadow-xl flex items-center justify-center text-[#2563eb] transition-all hover:bg-white active:scale-90 border border-slate-100"
-                                        title="Consulter la Fiche Technique"
+                                        title={locale === 'fr' ? 'Consulter la Fiche Technique' : 'View Spec Sheet'}
                                       >
                                         <Info size={18} />
                                       </a>
@@ -1066,17 +1178,17 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                           className="w-full h-full object-cover"
                                         />
                                       ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">Média non disponible</div>
+                                        <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">{locale === 'fr' ? 'Média non disponible' : 'No media available'}</div>
                                       )}
                                     </div>
                                   </div>
                                 </div>
 
-                                <div className="p-8 space-y-8">
+                                <div className="p-8 space-y-5">
                                   <div className="flex justify-between items-start gap-4">
                                     <div className="flex flex-col gap-1 flex-1">
                                       <h3 className="font-black text-2xl text-[#0f172a] leading-tight uppercase tracking-tight">{currentProduct.name}</h3>
-                                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{currentProduct.environment}</p>
+                                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{envLabel}</p>
                                     </div>
                                     <div className="bg-[#f1f5f9] px-5 py-3 rounded-2xl">
                                       <span className="font-black text-slate-800 text-base tracking-tighter">{currentProduct.pitch || configState.pixelPitch}</span>
@@ -1084,13 +1196,37 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                   </div>
 
                                   <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Prix Estimation</span>
-                                    <span className="font-black text-2xl text-slate-300 filter blur-[3px] select-none pointer-events-none transition-all duration-700 hover:blur-none hover:text-[#0f766e]">Estimation en cours...</span>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{priceLabel}</span>
+                                    <span className="font-black text-2xl text-slate-300 filter blur-[3px] select-none pointer-events-none transition-all duration-700 hover:blur-none hover:text-[#0f766e]">{priceBlurLabel}</span>
                                   </div>
+
+                                  {/* Availability badge for rental */}
+                                  {isRental && hasDates && (
+                                    <div className={cn(
+                                      "flex items-center gap-2 text-[11px] font-bold px-4 py-3 rounded-xl border transition-all duration-300",
+                                      isCheckingAvailability
+                                        ? "bg-slate-50 text-slate-400 border-slate-100"
+                                        : isAvailable
+                                          ? "bg-green-50 text-green-700 border-green-200"
+                                          : isUnavailable
+                                            ? "bg-red-50 text-red-700 border-red-200"
+                                            : "bg-slate-50 text-slate-400 border-slate-100"
+                                    )}>
+                                      {isCheckingAvailability ? (
+                                        <><Loader2 size={14} className="animate-spin shrink-0" />{locale === 'fr' ? 'Vérification du stock...' : 'Checking stock...'}</>
+                                      ) : isAvailable ? (
+                                        <><CheckCircle2 size={14} className="shrink-0" />{locale === 'fr' ? `${productAvailability!.remaining} / ${productAvailability!.total} dalles disponibles` : `${productAvailability!.remaining} / ${productAvailability!.total} tiles available`}</>
+                                      ) : isUnavailable ? (
+                                        <><Ban size={14} className="shrink-0" />{locale === 'fr' ? `Rupture de stock — ${productAvailability!.remaining} / ${productAvailability!.total} dalles restantes` : `Out of stock — ${productAvailability!.remaining} / ${productAvailability!.total} tiles remaining`}</>
+                                      ) : (
+                                        <><AlertTriangle size={14} className="shrink-0" />{locale === 'fr' ? 'Disponibilité inconnue' : 'Availability unknown'}</>
+                                      )}
+                                    </div>
+                                  )}
 
                                   <div className="p-4 bg-[#0f766e]/5 border border-[#0f766e]/10 rounded-xl">
                                     <h3 className="font-bold text-[#0f766e] text-[13px] flex items-center gap-2 mb-1">
-                                      💡 L'astuce de l'assistant
+                                      💡 {locale === 'fr' ? "L'astuce de l'assistant" : "Assistant tip"}
                                     </h3>
                                     <p className="text-[12px] text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: quantityExplanation }} />
                                   </div>
@@ -1099,21 +1235,32 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                     <Button
                                       variant="outline"
                                       onClick={() => {
-                                        // Direct switch to next product or "not found" if exhausted
                                         setCurrentProductIndex(prev => prev + 1);
                                       }}
                                       className="h-14 rounded-xl font-bold border-slate-200 text-slate-600 bg-white hover:bg-slate-100 hover:text-black uppercase tracking-wider text-[11px] transition-all"
                                     >
-                                      Produit suivant
+                                      {locale === 'fr' ? 'Produit suivant' : 'Next product'}
                                     </Button>
                                     <Button
+                                      disabled={isCheckingAvailability || isUnavailable}
                                       onClick={() => {
-                                        pushUserMessage("Ce produit me convient");
+                                        pushUserMessage(locale === 'fr' ? "Ce produit me convient" : "This product suits me");
                                         handleProductSelected(currentProduct.id);
                                       }}
-                                      className="h-14 rounded-xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-[11px] shadow-xl active:scale-95 transition-all"
+                                      className={cn(
+                                        "h-14 rounded-xl font-black uppercase tracking-wider text-[11px] shadow-xl active:scale-95 transition-all",
+                                        isUnavailable
+                                          ? "bg-red-100 text-red-400 cursor-not-allowed border border-red-200"
+                                          : "bg-black hover:bg-[#B3E140] text-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
+                                      )}
                                     >
-                                      Confirmer <ArrowRight size={16} className="ml-2" />
+                                      {isCheckingAvailability ? (
+                                        <Loader2 size={16} className="animate-spin" />
+                                      ) : isUnavailable ? (
+                                        <><Ban size={14} className="mr-1.5" />{locale === 'fr' ? 'Indisponible' : 'Unavailable'}</>
+                                      ) : (
+                                        <>{locale === 'fr' ? 'Confirmer' : 'Confirm'}<ArrowRight size={16} className="ml-2" /></>
+                                      )}
                                     </Button>
                                   </div>
                                 </div>
@@ -1341,10 +1488,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                           from: configState.rentalStartDate ? new Date(configState.rentalStartDate) : undefined,
                           to: configState.rentalEndDate ? new Date(configState.rentalEndDate) : undefined,
                         }}
-                         disabled={[
-                           { before: new Date(new Date().setHours(0, 0, 0, 0)) },
-                           isDateBlocked
-                         ]}
+                         disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
                         onSelect={(range) => {
                           if (range?.from) setConfigState(prev => ({ ...prev, rentalStartDate: range.from!.toISOString() }));
                           if (range?.to) {

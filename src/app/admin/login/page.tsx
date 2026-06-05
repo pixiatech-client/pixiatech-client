@@ -383,7 +383,7 @@ export default function LoginPage() {
                     <KeyRound className="h-9 w-9" />
                   </div>
                   <h2 className="text-sm font-bold text-slate-900">Inscription intégrée</h2>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm text">
                     Création de compte via le backend existant avec provisioning du profil et du rôle.
                   </p>
                 </div>
@@ -426,11 +426,11 @@ export default function LoginPage() {
                     setSignupSuccess(null);
                   }}>
                     <TabsList activeTab={authMode} className="rounded-2xl border border-slate-200 bg-slate-100 p-1.5">
-                      <TabsTrigger value="login" className="rounded-xl py-2.5 text-sm font-bold">
-                        <LogIn className={`mr-2 h-4 w-4 transition-colors ${authMode === 'login' ? 'text-blue-800' : 'text-slate-400'}`} />
+                      <TabsTrigger value="login" className="rounded-xl py-2.5 text-sm font-bold data-[state=active]:bg-black data-[state=active]:text-white">
+                        <LogIn className={`mr-2 h-4 w-4 transition-colors ${authMode === 'login' ? 'text-blue-500' : 'text-slate-400'}`} />
                         Connexion
                       </TabsTrigger>
-                      <TabsTrigger value="signup" className="rounded-xl py-2.5 text-sm font-bold">
+                      <TabsTrigger value="signup" className="rounded-xl py-2.5 text-sm font-bold data-[state=active]:bg-black data-[state=active]:text-white">
                         <UserPlus className={`mr-2 h-4 w-4 transition-colors ${authMode === 'signup' ? 'text-emerald-600' : 'text-slate-400'}`} />
                         Inscription
                       </TabsTrigger>
@@ -524,16 +524,16 @@ export default function LoginPage() {
                       <button
                         type="submit"
                         disabled={isLoggingIn || isSigningOut}
-                        className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-theme-sidebar-active-bg text-sm font-bold text-theme-sidebar-active-text shadow-lg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 transition-all"
+                        className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-black text-sm font-bold text-white shadow-lg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 transition-all"
                       >
                         {isLoggingIn || isSigningOut ? (
                           <>
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
                             Connexion...
                           </>
                         ) : (
                           <>
-                            <LogIn className="h-5 w-5" />
+                            <LogIn className="h-5 w-5 text-blue-500" />
                             Se connecter
                           </>
                         )}

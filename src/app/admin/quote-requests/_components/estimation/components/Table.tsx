@@ -1425,6 +1425,7 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                       <input
                         type="date"
+                        min={new Date().toISOString().split('T')[0]}
                         value={trackingForm.deliveryDate}
                         onChange={(e) => setTrackingForm({ ...trackingForm, deliveryDate: e.target.value })}
                         className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-theme-sidebar-active-text"
@@ -1437,6 +1438,7 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                       <History className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                       <input
                         type="date"
+                        min={new Date().toISOString().split('T')[0]}
                         value={trackingForm.receiptDate}
                         onChange={(e) => setTrackingForm({ ...trackingForm, receiptDate: e.target.value })}
                         className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-theme-sidebar-active-text"
