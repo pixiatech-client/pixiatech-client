@@ -1000,7 +1000,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
                   <span className="text-purple-500 text-lg">🤖</span>
                 </div>
-                <span className="text-sm font-bold">Lumi</span>
+                <span className="text-sm font-bold">{t('bot.title')}</span>
               </div>
               <span className="text-lg font-black text-purple-600 dark:text-purple-500">{configuratorStats.lumi}</span>
             </div>

@@ -303,6 +303,30 @@ function computeDailyProductUsage(
   return usage;
 }
 
+function findNextAvailableDateForProduct(
+  targetStart: Date,
+  targetEnd: Date,
+  neededTiles: number,
+  totalStock: number,
+  events: ProductUsageEvent[]
+): Date | null {
+  const durationMs = toMidnight(targetEnd).getTime() - toMidnight(targetStart).getTime();
+  const today = toMidnight(new Date());
+  let candidate = new Date(Math.max(toMidnight(targetStart).getTime(), today.getTime()));
+  candidate.setUTCDate(candidate.getUTCDate() + 1);
+
+  for (let i = 0; i < 365; i++) {
+    const candidateEnd = new Date(candidate.getTime() + durationMs);
+    const usage = computeDailyProductUsage(candidate, candidateEnd, events);
+    const peak = Math.max(...Array.from(usage.values()), 0);
+    if (peak + neededTiles <= totalStock) {
+      return candidate;
+    }
+    candidate = new Date(candidate.getTime() + 86_400_000); // +1 day
+  }
+  return null;
+}
+
 /** Get rental availability metrics of a product over a given period. */
 export async function getProductRentalAvailability(
   productId: string,
@@ -310,10 +334,10 @@ export async function getProductRentalAvailability(
   to: Date,
   quantityRequested: number,
   excludeQuoteId?: string
-): Promise<{ available: boolean; total: number; reserved: number; remaining: number }> {
+): Promise<{ available: boolean; total: number; reserved: number; remaining: number; nextAvailableDate: Date | null }> {
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
-    return { available: false, total: 0, reserved: 0, remaining: 0 };
+    return { available: false, total: 0, reserved: 0, remaining: 0, nextAvailableDate: null };
   }
 
   const productDoc = await adminDb.collection('products').doc(productId).get();
@@ -331,11 +355,17 @@ export async function getProductRentalAvailability(
   const remaining = Math.max(0, totalStock - peakUsage);
   const available = peakUsage + quantityRequested <= totalStock;
 
+  let nextAvailableDate: Date | null = null;
+  if (!available) {
+    nextAvailableDate = findNextAvailableDateForProduct(from, to, quantityRequested, totalStock, events);
+  }
+
   return {
     available,
     total: totalStock,
     reserved: peakUsage,
-    remaining
+    remaining,
+    nextAvailableDate
   };
 }
 
@@ -408,12 +438,12 @@ export async function getProductsRentalAvailability(
   to: Date,
   neededTilesMap: Record<string, number>,
   excludeQuoteId?: string
-): Promise<Record<string, { available: boolean; total: number; reserved: number; remaining: number }>> {
+): Promise<Record<string, { available: boolean; total: number; reserved: number; remaining: number; nextAvailableDate: Date | null }>> {
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
     const fallback: Record<string, any> = {};
     for (const id of productIds) {
-      fallback[id] = { available: false, total: 0, reserved: 0, remaining: 0 };
+      fallback[id] = { available: false, total: 0, reserved: 0, remaining: 0, nextAvailableDate: null };
     }
     return fallback;
   }
@@ -442,7 +472,7 @@ export async function getProductsRentalAvailability(
     allQuotes.push({ id: doc.id, ...doc.data() });
   });
 
-  const results: Record<string, { available: boolean; total: number; reserved: number; remaining: number }> = {};
+  const results: Record<string, { available: boolean; total: number; reserved: number; remaining: number; nextAvailableDate: Date | null }> = {};
 
   for (const productId of productIds) {
     const productData = productsData[productId] || {};
@@ -499,11 +529,17 @@ export async function getProductsRentalAvailability(
     const quantityRequested = neededTilesMap[productId] || 1;
     const available = peakUsage + quantityRequested <= totalStock;
 
+    let nextAvailableDate: Date | null = null;
+    if (!available) {
+      nextAvailableDate = findNextAvailableDateForProduct(from, to, quantityRequested, totalStock, events);
+    }
+
     results[productId] = {
       available,
       total: totalStock,
       reserved: peakUsage,
-      remaining
+      remaining,
+      nextAvailableDate
     };
   }
 

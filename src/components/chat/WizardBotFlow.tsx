@@ -179,7 +179,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const totalQuote = lineTotal + installationCost + deliveryCost;
 
   const [blockedPeriods, setBlockedPeriods] = useState<{ from: string; to: string }[]>([]);
-  const [productAvailability, setProductAvailability] = useState<{ available: boolean; total: number; reserved: number; remaining: number } | null>(null);
+  const [productAvailability, setProductAvailability] = useState<{ available: boolean; total: number; reserved: number; remaining: number; nextAvailableDate?: string | null } | null>(null);
+  const [bulkAvailability, setBulkAvailability] = useState<Record<string, { available: boolean; total: number; reserved: number; remaining: number; nextAvailableDate?: string | null }> | null>(null);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
   useEffect(() => {
@@ -571,7 +572,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     pushBotMessage(t('bot.pitches'), pitches, 0, undefined, undefined, 'bot.pitches');
   };
 
-  const handleProceedToProducts = () => {
+  const handleProceedToProducts = async () => {
     takeSnapshot();
     const area = configState.width * configState.height;
     const pitchValue = parseFloat(configState.pixelPitch.replace('P', '')) || 2.5;
@@ -587,18 +588,59 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       return true;
     });
 
-    const sortedProducts = [...filteredProducts].sort((a, b) => {
+    let sortedProducts = [...filteredProducts].sort((a, b) => {
       const aPitch = a.pitch ? parseFloat(String(a.pitch).replace('P', '')) || 999 : 999;
       const bPitch = b.pitch ? parseFloat(String(b.pitch).replace('P', '')) || 999 : 999;
       return Math.abs(aPitch - pitchValue) - Math.abs(bPitch - pitchValue);
     });
 
-    setMatchingProducts(sortedProducts);
-    setCurrentProductIndex(0);
-
     // Clear summary immediately and start bot search animation
     updateStep(STEP.GENERATING);
     setBotStatus('thinking');
+
+    if (configState.projectType === 'location' && configState.rentalStartDate && configState.rentalEndDate) {
+      try {
+        const productIds = sortedProducts.map(p => p.id);
+        const neededMap: Record<string, number> = {};
+        for (const p of sortedProducts) {
+          const tileW = (p.tileWidth || 50) / 100;
+          const tileH = (p.tileHeight || 50) / 100;
+          neededMap[p.id] = Math.ceil(configState.width / tileW) * Math.ceil(configState.height / tileH) * 1;
+        }
+
+        const { getProductsRentalAvailabilityAction } = await import('@/app/actions/quote-actions');
+        const bulkAvail = await getProductsRentalAvailabilityAction(
+          productIds,
+          configState.rentalStartDate,
+          configState.rentalEndDate,
+          neededMap
+        );
+
+        setBulkAvailability(bulkAvail);
+
+        // Sort by availability and remaining stock
+        sortedProducts = sortedProducts.sort((a, b) => {
+          const aAvail = bulkAvail[a.id];
+          const bAvail = bulkAvail[b.id];
+          // If a is available and b is not, a comes first
+          if (aAvail?.available && !bAvail?.available) return -1;
+          if (!aAvail?.available && bAvail?.available) return 1;
+          // If both available (or both not), sort by remaining stock descending
+          const aRem = aAvail?.remaining || 0;
+          const bRem = bAvail?.remaining || 0;
+          if (aRem !== bRem) return bRem - aRem;
+          // Fallback to pitch sorting
+          const aPitch = a.pitch ? parseFloat(String(a.pitch).replace('P', '')) || 999 : 999;
+          const bPitch = b.pitch ? parseFloat(String(b.pitch).replace('P', '')) || 999 : 999;
+          return Math.abs(aPitch - pitchValue) - Math.abs(bPitch - pitchValue);
+        });
+      } catch (error) {
+        console.error('Failed to fetch bulk availability:', error);
+      }
+    }
+
+    setMatchingProducts(sortedProducts);
+    setCurrentProductIndex(0);
 
     pushBotMessage(t('bot.searching'), undefined, 800, '/bot-avatars/006.webp', () => {
       updateStep(STEP.PRODUCTS);
@@ -1073,6 +1115,45 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                               }
                             }
 
+                            const isRental = configState.projectType === 'location';
+                            const hasDates = !!(configState.rentalStartDate && configState.rentalEndDate);
+                            // Merge bulk info to avoid flashes if productAvailability isn't loaded yet
+                            const currentBulkAvail = bulkAvailability?.[currentProduct.id];
+                            const effectiveAvail = productAvailability || currentBulkAvail;
+
+                            const isUnavailable = isRental && hasDates && effectiveAvail !== null && !effectiveAvail?.available;
+                            const isAvailable = isRental && hasDates && effectiveAvail !== null && !!effectiveAvail?.available;
+
+                            // Alternative size calculation
+                            let altWidth: number | null = null;
+                            let altHeight: number | null = null;
+                            if (isUnavailable && effectiveAvail?.remaining !== undefined && effectiveAvail.remaining > 0 && currentProduct.tileWidth && currentProduct.tileHeight) {
+                              const tileW = currentProduct.tileWidth / 100;
+                              const tileH = currentProduct.tileHeight / 100;
+                              let w = configState.width;
+                              let h = configState.height;
+                              while (w >= 0.5 && h >= 0.5) {
+                                if (w >= h) w -= 0.5;
+                                else h -= 0.5;
+                                if (w > 0 && h > 0 && Math.ceil(w / tileW) * Math.ceil(h / tileH) <= effectiveAvail.remaining) {
+                                  altWidth = w;
+                                  altHeight = h;
+                                  break;
+                                }
+                              }
+                            }
+
+                            // Best choice badge check
+                            const isBestChoice = currentProductIndex === 0 && matchingProducts.length > 1 && (!isRental || isAvailable);
+
+                            // Promotion check
+                            const activePrice = isRental ? currentProduct.rentalPricePerDay : currentProduct.salePricePerSqM;
+                            const oldPrice = currentProduct.oldPrice;
+                            let promoPercent = null;
+                            if (oldPrice && activePrice && oldPrice > activePrice) {
+                              promoPercent = Math.round((1 - activePrice / oldPrice) * 100);
+                            }
+
                             // Environment i18n label
                             const envLabel = (() => {
                               const env = (currentProduct.environment || '').toLowerCase();
@@ -1092,12 +1173,6 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             const priceLabel = locale === 'fr' ? 'Prix sur estimation' : 'Price on quote';
                             const priceBlurLabel = locale === 'fr' ? 'Sur estimation' : 'On quote';
 
-                            // Availability states
-                            const isRental = configState.projectType === 'location';
-                            const hasDates = !!(configState.rentalStartDate && configState.rentalEndDate);
-                            const isUnavailable = isRental && hasDates && productAvailability !== null && !productAvailability?.available;
-                            const isAvailable = isRental && hasDates && productAvailability !== null && !!productAvailability?.available;
-
                             return (
                               <>
                                 <motion.div
@@ -1113,6 +1188,20 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                     : "bg-white border-slate-100"
                                 )}
                               >
+                                {/* Badges layer */}
+                                <div className="absolute top-4 left-4 z-40 flex flex-col gap-2">
+                                  {isBestChoice && (
+                                    <div className="bg-[#B3E140] text-black font-black uppercase text-[10px] tracking-widest py-1.5 px-3 rounded-full shadow-md flex items-center gap-1.5">
+                                      ⭐ {locale === 'fr' ? 'Meilleur choix' : 'Best choice'}
+                                    </div>
+                                  )}
+                                  {promoPercent && (
+                                    <div className="bg-red-500 text-white font-black uppercase text-[10px] tracking-widest py-1.5 px-3 rounded-full shadow-md flex items-center gap-1">
+                                      Promotion -{promoPercent}%
+                                    </div>
+                                  )}
+                                </div>
+
                                 {/* Unavailable overlay banner */}
                                 {isUnavailable && (
                                   <div className="absolute top-0 left-0 right-0 z-20 bg-red-600 text-white text-[12px] font-black uppercase tracking-widest text-center py-3 flex items-center justify-center gap-2 shadow-sm">
@@ -1220,6 +1309,54 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                         <><Ban size={14} className="shrink-0" />{locale === 'fr' ? `Rupture de stock — ${productAvailability!.remaining} / ${productAvailability!.total} dalles restantes` : `Out of stock — ${productAvailability!.remaining} / ${productAvailability!.total} tiles remaining`}</>
                                       ) : (
                                         <><AlertTriangle size={14} className="shrink-0" />{locale === 'fr' ? 'Disponibilité inconnue' : 'Availability unknown'}</>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Availability Date and Alternative */}
+                                  {isUnavailable && (
+                                    <div className="space-y-3">
+                                      {effectiveAvail?.nextAvailableDate && (
+                                        <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-800 text-[12px] font-bold flex items-center gap-2">
+                                          <CalendarIcon size={14} />
+                                          {locale === 'fr' ? `Disponible à partir du ${new Date(effectiveAvail.nextAvailableDate).toLocaleDateString('fr-FR')}` : `Available from ${new Date(effectiveAvail.nextAvailableDate).toLocaleDateString('en-US')}`}
+                                        </div>
+                                      )}
+                                      
+                                      {altWidth && altHeight && (
+                                        <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
+                                          <h4 className="text-orange-800 text-[12px] font-bold mb-2 flex items-center gap-1">
+                                            ✨ {locale === 'fr' ? 'Alternative possible' : 'Possible alternative'}
+                                          </h4>
+                                          <p className="text-orange-700 text-[11px] mb-3 leading-relaxed">
+                                            {locale === 'fr' 
+                                              ? `Pour cette période, une configuration ${altWidth}m × ${altHeight}m est disponible.`
+                                              : `For this period, a ${altWidth}m × ${altHeight}m configuration is available.`}
+                                          </p>
+                                          <Button
+                                            onClick={() => {
+                                              setConfigState(prev => ({ ...prev, width: altWidth!, height: altHeight! }));
+                                              setProductAvailability(null);
+                                              setIsCheckingAvailability(true);
+                                              // Check availability for the new config
+                                              setTimeout(() => {
+                                                const tileW = (currentProduct.tileWidth || 50) / 100;
+                                                const tileH = (currentProduct.tileHeight || 50) / 100;
+                                                const newNeeded = Math.ceil(altWidth! / tileW) * Math.ceil(altHeight! / tileH);
+                                                import('@/app/actions/quote-actions').then(m => {
+                                                  m.getProductRentalAvailabilityAction(currentProduct.id, configState.rentalStartDate!, configState.rentalEndDate!, newNeeded)
+                                                  .then(res => {
+                                                    setProductAvailability(res as any);
+                                                    setIsCheckingAvailability(false);
+                                                  });
+                                                });
+                                              }, 100);
+                                            }}
+                                            className="w-full h-8 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider"
+                                          >
+                                            {locale === 'fr' ? 'Utiliser cette configuration' : 'Use this configuration'}
+                                          </Button>
+                                        </div>
                                       )}
                                     </div>
                                   )}

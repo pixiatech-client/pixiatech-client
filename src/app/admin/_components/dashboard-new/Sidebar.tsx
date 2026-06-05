@@ -218,7 +218,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const initialItems = [
+  const initialItems = useMemo(() => [
     { id: 'dashboard', label: t('admin.dashboard'), icon: LayoutDashboard, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'users', label: t('admin.users'), icon: Users, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'estimations', label: t('admin.estimations'), icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
@@ -228,7 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'notifications', label: t('admin.notifications'), icon: Bell, color: 'text-amber-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'profile', label: t('admin.myProfile'), icon: UserIcon, color: 'text-purple-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'settings', label: t('admin.settings'), icon: Settings, color: 'text-fuchsia-500', roles: [UserRole.ADMINISTRATEUR] },
-  ];
+  ], [t]);
 
   const [items, setItems] = useState(() => {
     if (initialOrder && initialOrder.length > 0) {
@@ -239,14 +239,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return initialItems;
   });
 
-  // Sync items when initialOrder changes (loaded from Firestore)
   useEffect(() => {
     if (initialOrder && initialOrder.length > 0) {
         const orderedItems = initialOrder.map((id: string) => initialItems.find(item => item.id === id)).filter(Boolean);
         const newItems = initialItems.filter(item => !initialOrder.includes(item.id));
         setItems([...orderedItems, ...newItems]);
+    } else {
+      setItems(initialItems);
     }
-  }, [initialOrder]);
+  }, [initialItems, initialOrder]);
 
   // We no longer save to localStorage for everyone.
   // We'll save to Firestore when the user finishes editing.
@@ -449,7 +450,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 setIsEditingLogo(true);
               }}
               className="p-1.5 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg opacity-20 group-hover/logo:opacity-100 transition-all hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-200 dark:hover:border-blue-500/30 group/editbtn"
-              title="Modifier le logo"
+               title={t('admin.editLogo')}
             >
               <Edit2 className="w-3.5 h-3.5 text-gray-400 group-hover/editbtn:text-blue-600 transition-colors" />
             </button>
@@ -552,7 +553,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     {/* Image Upload */}
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Image personnalisée</label>
+                      <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t('admin.customImage')}</label>
                       <div className="flex items-center gap-3">
                         <label className="flex-1 flex items-center justify-center gap-3 px-4 py-3 bg-gray-50 dark:bg-white/5 border border-dashed border-gray-300 dark:border-white/20 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-all group/upload">
                           <Upload className="w-4 h-4 text-gray-400 group-hover/upload:text-blue-500" />
@@ -563,7 +564,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           <button
                             onClick={() => setTempLogoConfig(prev => ({ ...prev, image: null }))}
                             className="p-3 bg-rose-50 dark:bg-rose-500/10 text-rose-500 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors"
-                            title="Supprimer l'image"
+                             title={t('admin.removeImage')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -604,7 +605,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   ? 'bg-blue-600 text-white'
                   : `${isDark ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`
                   }`}
-                title={isEditingOrder ? "Terminer et sauvegarder la réorganisation" : "Réorganiser le menu"}
+                 title={isEditingOrder ? t('admin.finishReorganize') : t('admin.reorganizeMenu')}
               >
                 <GripVertical className="w-3.5 h-3.5" />
               </button>

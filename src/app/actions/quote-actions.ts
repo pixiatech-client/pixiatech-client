@@ -469,22 +469,57 @@ export async function getProductRentalAvailabilityAction(
   toISO: string,
   quantityRequested: number,
   excludeQuoteId?: string
-): Promise<{ available: boolean; total: number; reserved: number; remaining: number }> {
+): Promise<{ available: boolean; total: number; reserved: number; remaining: number; nextAvailableDate: string | null }> {
   try {
     const { getProductRentalAvailability } = await import('@/lib/stockService');
-    return await getProductRentalAvailability(
+    const result = await getProductRentalAvailability(
       productId,
       new Date(fromISO),
       new Date(toISO),
       quantityRequested,
       excludeQuoteId
     );
+    return {
+      ...result,
+      nextAvailableDate: result.nextAvailableDate ? result.nextAvailableDate.toISOString() : null
+    };
   } catch (error) {
     console.error('[quote-actions] getProductRentalAvailabilityAction error:', error);
-    return { available: false, total: 0, reserved: 0, remaining: 0 };
+    return { available: false, total: 0, reserved: 0, remaining: 0, nextAvailableDate: null };
   }
 }
 
+export async function getProductsRentalAvailabilityAction(
+  productIds: string[],
+  fromISO: string,
+  toISO: string,
+  neededTilesMap: Record<string, number>,
+  excludeQuoteId?: string
+): Promise<Record<string, { available: boolean; total: number; reserved: number; remaining: number; nextAvailableDate: string | null }>> {
+  try {
+    const { getProductsRentalAvailability } = await import('@/lib/stockService');
+    const results = await getProductsRentalAvailability(
+      productIds,
+      new Date(fromISO),
+      new Date(toISO),
+      neededTilesMap,
+      excludeQuoteId
+    );
+    
+    // Convert Dates to ISO strings
+    const serializedResults: Record<string, any> = {};
+    for (const [key, val] of Object.entries(results)) {
+      serializedResults[key] = {
+        ...val,
+        nextAvailableDate: val.nextAvailableDate ? val.nextAvailableDate.toISOString() : null
+      };
+    }
+    return serializedResults;
+  } catch (error) {
+    console.error('[quote-actions] getProductsRentalAvailabilityAction error:', error);
+    return {};
+  }
+}
 export async function getBlockedPeriods(): Promise<{ from: string; to: string }[]> {
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return [];
