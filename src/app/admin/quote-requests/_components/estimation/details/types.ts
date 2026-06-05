@@ -77,4 +77,7 @@ export interface Estimation {
   commercialNotes?: string;
   status?: string;
   pdfUrl?: string;
+  rentalPeriod?: { from: Date | string; to: Date | string };
+  rentalStartTime?: string;
+  rentalEndTime?: string;
 }

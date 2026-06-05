@@ -67,7 +67,8 @@ import {
   Activity,
   Layers,
   Smartphone,
-  Tv
+  Tv,
+  Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { jsPDF } from 'jspdf';
@@ -124,9 +125,10 @@ interface DetailsAppProps {
   onClose?: () => void;
   suppliers?: any[];
   onStatusChange?: (newStatus: string) => void;
+  onSave?: (updatedQuote: any) => void;
 }
 
-export default function DetailsApp({ initialEstimation, allProducts = [], allProductSpecs = {}, startOpen = false, onClose, suppliers = [], onStatusChange }: DetailsAppProps) {
+export default function DetailsApp({ initialEstimation, allProducts = [], allProductSpecs = {}, startOpen = false, onClose, suppliers = [], onStatusChange, onSave }: DetailsAppProps) {
   const { userProfile } = useUser();
   const [profile, setProfile] = useState<ProfileType>('client');
 
@@ -356,7 +358,10 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
           ]
         },
         status: initialEstimation.status,
-        pdfUrl: initialEstimation.pdfUrl
+        pdfUrl: initialEstimation.pdfUrl,
+        rentalPeriod: (initialEstimation as any).rentalPeriod || undefined,
+        rentalStartTime: (initialEstimation as any).rentalStartTime || undefined,
+        rentalEndTime: (initialEstimation as any).rentalEndTime || undefined,
       };
       setEstimation(mapped);
     }
@@ -1057,11 +1062,21 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 <CustomSelect
                                   value={p.productId || ''}
                                   placeholder="Sélectionner un produit..."
-                                  options={allProducts.map(prod => ({
-                                    id: prod.id,
-                                    label: prod.name,
-                                    image: prod.image || (prod as any).mainImage
-                                  }))}
+                                  options={allProducts
+                                    .filter(prod => {
+                                      if (prod.id === p.productId) return true;
+                                      const isRentalMode = initialEstimation?.transactionType === 'rental';
+                                      if (isRentalMode) {
+                                        return prod.availableFor?.includes('rental');
+                                      } else {
+                                        return prod.availableFor?.includes('sale') || !prod.availableFor || prod.availableFor.length === 0;
+                                      }
+                                    })
+                                    .map(prod => ({
+                                      id: prod.id,
+                                      label: prod.name,
+                                      image: prod.image || (prod as any).mainImage
+                                    }))}
                                   onChange={(val) => {
                                     const selectedProd = allProducts.find(prod => prod.id === val);
                                     if (selectedProd) {
@@ -1132,8 +1147,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 </div>
                               )}
                               
-                              {/* VENTE / LOCATION TOGGLE */}
-                              {isEditMode && (
+                              {/* VENTE / LOCATION TOGGLE — masqué en mode Vente, affiché uniquement en mode Location */}
+                              {isEditMode && initialEstimation?.transactionType === 'rental' && (
                                 <div className="mt-4 flex items-center gap-2">
                                   <div className="flex p-1 bg-slate-100/80 border border-slate-200/80 rounded-xl backdrop-blur-sm shadow-sm">
                                     <button
@@ -1220,9 +1235,9 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             )}
                           </div>
 
-                          {/* RENTAL OPTIONS */}
+                          {/* RENTAL OPTIONS — affiché uniquement en mode Location */}
                           <AnimatePresence>
-                            {isEditMode && p.transactionType === 'rental' && (
+                            {isEditMode && initialEstimation?.transactionType === 'rental' && p.transactionType === 'rental' && (
                               <motion.div 
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
@@ -1609,8 +1624,98 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         </div>
                       </div>
 
+                      {/* CARTE PÉRIODE DE LOCATION - visible uniquement en mode Location */}
+                      {initialEstimation?.transactionType === 'rental' && (
+                        <div className="bg-violet-50 border border-violet-200 p-6 rounded-[2rem] space-y-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                              <Calendar size={20} className="text-violet-600" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold uppercase text-slate-900">Période de Location</div>
+                              <div className="text-[10px] text-slate-400 uppercase">Dates &amp; Horaires</div>
+                            </div>
+                          </div>
+
+                          {!isEditMode ? (
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="bg-white border border-violet-100 rounded-2xl p-3 space-y-0.5">
+                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Début</div>
+                                <div className="text-sm font-bold text-slate-900">
+                                  {estimation.rentalPeriod?.from
+                                    ? new Date(estimation.rentalPeriod.from).toLocaleDateString('fr-FR')
+                                    : '—'}
+                                </div>
+                                <div className="text-[10px] text-slate-500">{estimation.rentalStartTime || '—'}</div>
+                              </div>
+                              <div className="bg-white border border-violet-100 rounded-2xl p-3 space-y-0.5">
+                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Fin</div>
+                                <div className="text-sm font-bold text-slate-900">
+                                  {estimation.rentalPeriod?.to
+                                    ? new Date(estimation.rentalPeriod.to).toLocaleDateString('fr-FR')
+                                    : '—'}
+                                </div>
+                                <div className="text-[10px] text-slate-500">{estimation.rentalEndTime || '—'}</div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-4 pt-2 border-t border-violet-200">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de début</label>
+                                  <input
+                                    type="date"
+                                    value={estimation.rentalPeriod?.from ? new Date(estimation.rentalPeriod.from).toISOString().split('T')[0] : ''}
+                                    onChange={(e) => {
+                                      const from = new Date(e.target.value);
+                                      const to = estimation.rentalPeriod?.to ? new Date(estimation.rentalPeriod.to) : from;
+                                      setEstimation({ ...estimation, rentalPeriod: { from, to } });
+                                    }}
+                                    className="w-full px-4 py-3 bg-white border border-violet-200 rounded-2xl text-slate-900 text-sm focus:border-violet-400 focus:outline-none transition-all [color-scheme:light]"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de fin</label>
+                                  <input
+                                    type="date"
+                                    value={estimation.rentalPeriod?.to ? new Date(estimation.rentalPeriod.to).toISOString().split('T')[0] : ''}
+                                    onChange={(e) => {
+                                      const to = new Date(e.target.value);
+                                      const from = estimation.rentalPeriod?.from ? new Date(estimation.rentalPeriod.from) : to;
+                                      setEstimation({ ...estimation, rentalPeriod: { from, to } });
+                                    }}
+                                    className="w-full px-4 py-3 bg-white border border-violet-200 rounded-2xl text-slate-900 text-sm focus:border-violet-400 focus:outline-none transition-all [color-scheme:light]"
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Heure de début</label>
+                                  <input
+                                    type="time"
+                                    value={estimation.rentalStartTime || '08:00'}
+                                    onChange={(e) => setEstimation({ ...estimation, rentalStartTime: e.target.value })}
+                                    className="w-full px-4 py-3 bg-white border border-violet-200 rounded-2xl text-slate-900 text-sm focus:border-violet-400 focus:outline-none transition-all [color-scheme:light]"
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Heure de fin</label>
+                                  <input
+                                    type="time"
+                                    value={estimation.rentalEndTime || '18:00'}
+                                    onChange={(e) => setEstimation({ ...estimation, rentalEndTime: e.target.value })}
+                                    className="w-full px-4 py-3 bg-white border border-violet-200 rounded-2xl text-slate-900 text-sm focus:border-violet-400 focus:outline-none transition-all [color-scheme:light]"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                     </motion.section>
                   )}
+
                 </AnimatePresence>
               </div>
 
@@ -1693,8 +1798,10 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 setIsAiLoading(true);
                                 try {
                                   addHistory('Validation Modifications et Sauvegarde');
-                                  // Actual DB Save
-                                  await updateQuoteStatus(initialEstimation.id, {
+                                  const isRentalPending =
+                                    initialEstimation?.transactionType === 'rental' &&
+                                    (initialEstimation?.status === 'pending' || initialEstimation?.status === 'En attente');
+                                  const updatedFields: any = {
                                     products: estimation.products.map(p => ({
                                       ...p,
                                       productName: p.name,
@@ -1702,9 +1809,23 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                     })),
                                     taxRate: estimation.taxRate,
                                     globalDiscount: estimation.globalDiscount,
-                                    client: estimation.client
-                                  } as any);
+                                    client: estimation.client,
+                                    rentalPeriod: (estimation as any).rentalPeriod || null,
+                                    rentalStartTime: (estimation as any).rentalStartTime || null,
+                                    rentalEndTime: (estimation as any).rentalEndTime || null,
+                                    // Transition automatique En attente -> Traité pour les locations
+                                    ...(isRentalPending ? { status: 'processed' } : {}),
+                                  };
+                                  // Actual DB Save
+                                  await updateQuoteStatus(initialEstimation.id, updatedFields as any);
                                   setIsEditMode(false);
+                                  onSave?.({
+                                    ...initialEstimation,
+                                    ...updatedFields
+                                  });
+                                  if (isRentalPending && onStatusChange) {
+                                    onStatusChange('processed');
+                                  }
                                 } catch (err) {
                                   console.error("Erreur sauvegarde:", err);
                                 } finally {

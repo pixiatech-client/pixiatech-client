@@ -427,7 +427,7 @@ export default function LoginPage() {
                   }}>
                     <TabsList activeTab={authMode} className="rounded-2xl border border-slate-200 bg-slate-100 p-1.5">
                       <TabsTrigger value="login" className="rounded-xl py-2.5 text-sm font-bold">
-                        <LogIn className={`mr-2 h-4 w-4 transition-colors ${authMode === 'login' ? 'text-blue-600' : 'text-slate-400'}`} />
+                        <LogIn className={`mr-2 h-4 w-4 transition-colors ${authMode === 'login' ? 'text-blue-800' : 'text-slate-400'}`} />
                         Connexion
                       </TabsTrigger>
                       <TabsTrigger value="signup" className="rounded-xl py-2.5 text-sm font-bold">
@@ -666,7 +666,7 @@ export default function LoginPage() {
                   >
                     <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
                       <p className="font-bold">Complétez votre profil</p>
-                      <p className="mt-1 text-xs">Votre compte sera soumis à l'approbation d'un administrateur.</p>
+                      <p className="mt-1 text-xs">Votre compte sera soumis à l&apos;approbation d&apos;un administrateur.</p>
                     </div>
 
                     <form onSubmit={handleSaveGoogleProfile} className="space-y-4">
@@ -792,7 +792,7 @@ export default function LoginPage() {
 
               <div className="border-t border-slate-100 bg-slate-50 px-6 py-4 text-center sm:px-8">
                 <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">
-                  Accès réservé à l’administration PixiaTech
+                  Accès réservé à l&apos;administration PixiaTech
                 </p>
               </div>
             </div>

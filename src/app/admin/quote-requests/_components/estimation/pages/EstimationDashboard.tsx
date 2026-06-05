@@ -535,10 +535,9 @@ const filteredEstimations = useMemo(() => {
 
       // LOCATION MODE specific transitions
       if (estimationMode === 'location') {
-        // 1. EN ATTENTE -> TRAITÉ: show rental period modal
+        // 1. EN ATTENTE -> TRAITÉ: ouvrir la fenêtre Modifier pour saisir les dates
         if (est.status === 'En attente') {
-          setPendingRentalId(id);
-          setIsRentalModalOpen(true);
+          handleEdit(id);
           return;
         }
         // 2. TRAITÉ -> LOUÉ: direct transition
@@ -1425,15 +1424,7 @@ const filteredEstimations = useMemo(() => {
         onConfirm={handleSupplierConfirm}
       />
 
-      <RentalTreatmentModal
-        isOpen={isRentalModalOpen}
-        onClose={() => { setIsRentalModalOpen(false); setPendingRentalId(null); }}
-        onConfirm={handleRentalConfirm}
-        defaultStartDate={estimations.find(e => e.id === pendingRentalId)?.rentalPeriod?.from || ''}
-        defaultEndDate={estimations.find(e => e.id === pendingRentalId)?.rentalPeriod?.to || ''}
-        defaultStartTime={estimations.find(e => e.id === pendingRentalId)?.rentalStartTime || '08:00'}
-        defaultEndTime={estimations.find(e => e.id === pendingRentalId)?.rentalEndTime || '18:00'}
-      />
+      {/* RentalTreatmentModal supprimé — le flux Traiter passe désormais par la fenêtre Modifier (DetailsApp) */}
 
       <SimpleMessagePopup
         isOpen={isMessagePopupOpen}
@@ -1455,6 +1446,19 @@ const filteredEstimations = useMemo(() => {
             startOpen={true}
             suppliers={suppliers}
             onClose={() => setIsDetailsOpen(false)}
+            onSave={async (updatedQuote) => {
+              setFullQuotes(prev => ({ ...prev, [updatedQuote.id]: updatedQuote }));
+              setSelectedEstimation(updatedQuote);
+              setPageCache({});
+              const startId = lastDocIds[currentPage];
+              await fetchPage(currentPage, activeTab, startId, estimationMode);
+            }}
+            onStatusChange={async (newStatus) => {
+              setSelectedEstimation(prev => prev ? { ...prev, status: newStatus } : null);
+              setPageCache({});
+              const startId = lastDocIds[currentPage];
+              await fetchPage(currentPage, activeTab, startId, estimationMode);
+            }}
           />
         </div>
       )}
