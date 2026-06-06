@@ -973,13 +973,16 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
         </div>
       </div>
 
-      <div className="p-5 bg-white/10 backdrop-blur-md rounded-xl flex gap-3.5 items-start border border-white/20">
-        <Info className="w-5 h-5 text-[#2b4c7e] shrink-0 mt-0.5" />
-        <div>
-          <h4 className="text-[13px] font-bold text-[#2b4c7e] uppercase tracking-wider mb-1.5">{t('wizard.photo.expertAdviceTitle')}</h4>
-          <p className="text-[14px] text-[#2b4c7e] leading-relaxed">
-            {t('wizard.photo.expertAdviceDesc')}
-          </p>
+      {/* Expert Advice */}
+      <div className="max-w-2xl mx-auto">
+        <div className="p-4 rounded-2xl flex gap-3 items-start border" style={{ backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }}>
+          <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: '#2563EB' }} />
+          <div>
+            <h4 className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: '#1D4ED8' }}>{t('wizard.photo.expertAdviceTitle')}</h4>
+            <p className="text-[13px] leading-relaxed" style={{ color: '#1E3A5F' }}>
+              {t('wizard.photo.expertAdviceDesc')}
+            </p>
+          </div>
         </div>
       </div>
     </div>
