@@ -74,6 +74,7 @@ interface ConfiguratorWizardProps {
   settings: Settings;
   wizardSettings: WizardSettings;
   initialStep?: number;
+  initialConfiguredProduct?: ConfiguredProduct;
 }
 
 function HorizontalStepper({ currentStep, onStepClick, isMobile, t }: { currentStep: number, onStepClick: (step: number) => void, isMobile: boolean, t: any }) {
@@ -124,12 +125,52 @@ function HorizontalStepper({ currentStep, onStepClick, isMobile, t }: { currentS
   );
 }
 
-export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, wizardSettings, initialStep = 1 }: ConfiguratorWizardProps) {
+export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, wizardSettings, initialStep = 1, initialConfiguredProduct }: ConfiguratorWizardProps) {
   const { t, locale } = useI18n();
-  const [state, setState] = useState<ConfigState>(() => ({
-    ...INITIAL_STATE,
-    step: initialStep
-  }));
+  const [state, setState] = useState<ConfigState>(() => {
+    if (initialConfiguredProduct) {
+      const projectType = initialConfiguredProduct.transactionType === 'rental' ? 'location' : 'vente';
+      const envRevMap: Record<'indoor' | 'outdoor' | 'showcase', 'interieur' | 'semi-exterieur' | 'exterieur'> = {
+        'indoor': 'interieur',
+        'showcase': 'semi-exterieur',
+        'outdoor': 'exterieur'
+      };
+      const environment = envRevMap[initialConfiguredProduct.productType] || 'interieur';
+      
+      const prod = allProducts.find(p => p.id === initialConfiguredProduct.productId);
+      const pixelPitch = prod?.pitch || 'P2.5';
+      const viewingDistance = prod?.distance || '2-5m';
+
+      return {
+        ...INITIAL_STATE,
+        step: initialStep,
+        projectType,
+        width: initialConfiguredProduct.width,
+        height: initialConfiguredProduct.height,
+        quantity: initialConfiguredProduct.quantity || 1,
+        selectedProduct: initialConfiguredProduct.productId,
+        selectedProducts: [initialConfiguredProduct.productId],
+        environment,
+        pixelPitch,
+        viewingDistance,
+        rentalStartDate: initialConfiguredProduct.rentalPeriod?.from ? new Date(initialConfiguredProduct.rentalPeriod.from).toISOString() : null,
+        rentalEndDate: initialConfiguredProduct.rentalPeriod?.to ? new Date(initialConfiguredProduct.rentalPeriod.to).toISOString() : null,
+        rentalStartTime: initialConfiguredProduct.rentalStartTime || '08:00',
+        rentalEndTime: initialConfiguredProduct.rentalEndTime || '18:00',
+        installationPhoto: initialConfiguredProduct.installationPhoto || null,
+        isCurved: initialConfiguredProduct.isCurved || false,
+        is360: initialConfiguredProduct.is360 || false,
+        diameter: initialConfiguredProduct.diameter || 2,
+        cabinetAngle: initialConfiguredProduct.cabinetAngle || 5.625,
+        curveLeft: initialConfiguredProduct.curveLeft || 0,
+        curveRight: initialConfiguredProduct.curveRight || 0,
+      };
+    }
+    return {
+      ...INITIAL_STATE,
+      step: initialStep
+    };
+  });
   const { userProfile } = useUser();
   const isMobile = useIsMobile();
   const [isInteracting, setIsInteracting] = useState(false);
@@ -1467,18 +1508,7 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                         <Info size={16} className="text-black" />
                       </a>
                     )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleSelect(); }}
-                      className={cn(
-                        "px-4 h-10 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center gap-1.5 shadow-lg hover:scale-105 active:scale-95 transition-all",
-                        isSelected ? "bg-[#c6ff00] text-black" : "bg-white/90 backdrop-blur-sm text-black hover:bg-[#c6ff00]"
-                      )}
-                    >
-                      {isSelected
-                        ? <><Check size={13} strokeWidth={3} />{locale === 'fr' ? 'S\u00e9lectionn\u00e9' : 'Selected'}</>
-                        : <><ArrowRight size={13} strokeWidth={2.5} />{locale === 'fr' ? 'Choisir' : 'Select'}</>
-                      }
-                    </button>
+
                   </div>
                 </div>
 

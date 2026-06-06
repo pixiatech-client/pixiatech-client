@@ -27,7 +27,8 @@ export function StepImagePreview({ imageUrl, title }: StepImagePreviewProps) {
 
     return (
         <div 
-            className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden"
+            className="relative w-full h-full flex items-center justify-center overflow-hidden"
+            style={{ backgroundColor: '#F9F8F4' }}
         >
             {imageUrl ? (
                 <>
