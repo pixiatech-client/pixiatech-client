@@ -25,7 +25,6 @@ const PdfContent = lazy(() => import('../../pdf-settings/page'));
 const EmergencyContent = lazy(() => import('../emergency/page'));
 const MessagingContent = lazy(() => import('../messaging/page'));
 const PersonalizationContent = lazy(() => import('../personalization/page'));
-const ThemesContent = lazy(() => import('../themes/page'));
 const SoftwareContent = lazy(() => import('../software/page'));
 
 function LoadingFallback() {
@@ -47,7 +46,6 @@ const tabsConfig: TabItem[] = [
     { id: 'images', label: 'Images', icon: ImageIcon },
     { id: 'content', label: 'Contenu', icon: FileText },
     { id: 'personalization', label: 'Personnalisation', icon: Palette },
-    { id: 'appearance', label: 'Apparence', icon: Palette },
     { id: 'wizard', label: 'Wizard', icon: Wand2 },
     { id: 'livraison', label: 'Livraison', icon: Truck },
     { id: 'main-doeuvre', label: 'Main d\'œuvre', icon: HardHat },
@@ -126,8 +124,6 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <EmergencyContent />;
             case 'personalization':
                 return <PersonalizationContent />;
-            case 'appearance':
-                return <ThemesContent />;
             case 'software':
                 return <SoftwareContent />;
             default:

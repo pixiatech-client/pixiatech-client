@@ -2702,13 +2702,6 @@ export async function saveSidebarConfig(data: unknown) {
 export async function getWizardSettings(): Promise<WizardSettings> {
   const { adminDb } = getFirebaseAdmin();
 
-  function mergeArrayWithDefaults<T extends { id: string; value: string }>(dbArray: T[] | undefined, defaultArray: T[]): T[] {
-    if (!dbArray || dbArray.length === 0) return defaultArray;
-    const dbValues = new Set(dbArray.map(item => item.value));
-    const newItems = defaultArray.filter(item => !dbValues.has(item.value));
-    return [...dbArray, ...newItems];
-  }
-
   const defaultSettings: WizardSettings = {
     projectTypes: {
       location: { enabled: true, imageUrl: 'https://picsum.photos/seed/led-location/800/600' },
@@ -2752,7 +2745,8 @@ export async function getWizardSettings(): Promise<WizardSettings> {
     const docSnap = await docRef.get();
     if (docSnap.exists) {
       const dbData = docSnap.data() as Partial<WizardSettings> | undefined;
-      // Deep merge to ensure all keys from default are present
+      // Deep merge structure-level keys but use Firestore arrays AS-IS (no default injection)
+      // so that deletions made by the user are respected after page refresh.
       const mergedData: WizardSettings = {
         projectTypes: {
           location: { ...defaultSettings.projectTypes.location, ...dbData?.projectTypes?.location },
@@ -2764,9 +2758,11 @@ export async function getWizardSettings(): Promise<WizardSettings> {
           exterieur: { ...defaultSettings.environments.exterieur, ...dbData?.environments?.exterieur },
         },
         viewingDistanceImageUrl: dbData?.viewingDistanceImageUrl ?? defaultSettings.viewingDistanceImageUrl,
-        viewingDistances: mergeArrayWithDefaults(dbData?.viewingDistances, defaultSettings.viewingDistances),
+        // Use Firestore array directly — do NOT merge with defaults to preserve user deletions
+        viewingDistances: dbData?.viewingDistances ?? defaultSettings.viewingDistances,
         pixelPitchImageUrl: dbData?.pixelPitchImageUrl ?? defaultSettings.pixelPitchImageUrl,
-        pixelPitches: mergeArrayWithDefaults(dbData?.pixelPitches, defaultSettings.pixelPitches),
+        // Use Firestore array directly — do NOT merge with defaults to preserve user deletions
+        pixelPitches: dbData?.pixelPitches ?? defaultSettings.pixelPitches,
       };
       return mergedData;
     } else {

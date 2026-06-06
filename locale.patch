@@ -1,0 +1,14 @@
+*** Begin Patch
+*** Update File: src/lib/locales/en.json
+@@
+     "admin": {
+         "dashboard": "Dashboard",
+         "users": "Users",
+         "estimations": "Estimates",
+         "history": "History",
+         "products": "Products",
++        "managementTitle": "Product Management",
++        "productFormTitle": "Product Sheet",
++        "characteristicsTitle": "Characteristics",
+         "messages": "Messages",
+*** End Patch
