@@ -14,8 +14,8 @@ export function StepProjectType({ state, updateState, wizardSettings, t }: { sta
   };
 
   return (
-    <div className="flex flex-col space-y-6 bg-transparent">
-      <div className="w-full">
+    <div className="flex flex-col space-y-6 bg-transparent max-w-3xl mx-auto w-full">
+      <div className="w-full bg-transparent">
         <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 leading-tight mb-2 text-center">{t('wizard.projectType.title')}</h2>
         <p className="text-center text-[12px] font-medium text-slate-500 italic">
           {t('wizard.projectType.description')}

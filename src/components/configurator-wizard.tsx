@@ -1004,16 +1004,19 @@ export function StepRentalDatesAndPhoto({ state, updateState, products = [], t, 
         <div className="space-y-4 max-w-3xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             {/* Left: Dates */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('wizard.rental.datesLabel')}</Label>
+            <div className="space-y-1.5 flex flex-col">
+              <div className="h-5 flex items-center">
+                <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('wizard.rental.datesLabel')}</Label>
+              </div>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
                     className={cn(
-                      "w-full h-10 justify-start text-left font-normal border-slate-200 rounded-xl",
+                      "w-full justify-start text-left font-normal border-slate-200 rounded-xl",
                       !startDate && "text-muted-foreground"
                     )}
+                    style={{ height: '40px' }}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
                     {startDate && endDate ? (
@@ -1042,8 +1045,8 @@ export function StepRentalDatesAndPhoto({ state, updateState, products = [], t, 
             </div>
 
             {/* Right: Times */}
-            <div className="space-y-1.5">
-              <div className="flex items-center">
+            <div className="space-y-1.5 flex flex-col">
+              <div className="h-5 flex items-center">
                 <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex-1">{t('wizard.rental.startTime')}</Label>
                 <div className="w-8 shrink-0" />
                 <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex-1">{t('wizard.rental.endTime')}</Label>
@@ -1051,7 +1054,7 @@ export function StepRentalDatesAndPhoto({ state, updateState, products = [], t, 
               <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <Select value={state.rentalStartTime || '08:00'} onValueChange={(value) => updateState({ rentalStartTime: value })}>
-                    <SelectTrigger className="h-10 border-slate-200 rounded-xl font-bold text-slate-800 text-sm">
+                    <SelectTrigger className="border-slate-200 rounded-xl font-bold text-slate-800 text-sm w-full" style={{ height: '40px' }}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1068,7 +1071,7 @@ export function StepRentalDatesAndPhoto({ state, updateState, products = [], t, 
 
                 <div className="flex-1">
                   <Select value={state.rentalEndTime || '18:00'} onValueChange={(value) => updateState({ rentalEndTime: value })}>
-                    <SelectTrigger className="h-10 border-slate-200 rounded-xl font-bold text-slate-800 text-sm">
+                    <SelectTrigger className="border-slate-200 rounded-xl font-bold text-slate-800 text-sm w-full" style={{ height: '40px' }}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
