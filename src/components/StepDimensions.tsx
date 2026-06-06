@@ -86,20 +86,17 @@ export default function StepDimensions({
     const nextState = { ...state, ...updates };
     
     if (nextState.is360) {
-      const angle = nextState.cabinetAngle !== undefined ? nextState.cabinetAngle : (state.cabinetAngle || 0);
-      if (angle !== 0) {
-        const absAngle = Math.abs(angle);
-        const theta = (absAngle * Math.PI) / 180;
-        const computedD = 0.5 / Math.sin(theta / 2);
-        const modulesX = 360 / absAngle;
-        updates.diameter = Number(computedD.toFixed(2));
-        updates.width = modulesX * 0.5;
-      } else {
-        // Auto: Calculate modulesX and sync width
-        const d = nextState.diameter !== undefined ? nextState.diameter : (state.diameter || 1.0);
-        const modulesX = Math.round((Math.PI * d) / 0.5);
-        updates.width = modulesX * 0.5;
-      }
+      const d = nextState.diameter !== undefined ? nextState.diameter : (state.diameter || 1.0);
+      const isInterior = nextState.cabinetAngle !== undefined 
+        ? nextState.cabinetAngle > 0 
+        : (state.cabinetAngle ? state.cabinetAngle > 0 : false);
+      
+      const modulesX = Math.round((Math.PI * d) / 0.5);
+      updates.width = modulesX * 0.5;
+      
+      const angleStepDeg = 360 / modulesX;
+      updates.cabinetAngle = isInterior ? angleStepDeg : -angleStepDeg;
+      updates.diameter = d;
     }
     
     updateState(updates);
@@ -166,7 +163,20 @@ export default function StepDimensions({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleUpdateState({ isCurved: false, is360: true, height: 2.5, diameter: 1.0, curveLeft: 0, curveRight: 0 })}
+                  onClick={() => {
+                    const defaultD = 1.0;
+                    const modulesX = Math.round((Math.PI * defaultD) / 0.5);
+                    const angleStepDeg = 360 / modulesX;
+                    handleUpdateState({
+                      isCurved: false,
+                      is360: true,
+                      height: 2.5,
+                      diameter: defaultD,
+                      cabinetAngle: -angleStepDeg,
+                      curveLeft: 0,
+                      curveRight: 0
+                    });
+                  }}
                   className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all duration-300 font-bold text-[10px] sm:text-xs ${state.is360
                       ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
                       : 'text-slate-400 hover:bg-white/50'
@@ -210,58 +220,46 @@ export default function StepDimensions({
                 <div className="space-y-5 pb-1">
                   {state.is360 ? (
                     <>
-                      {/* Cabinet Angle Selector */}
+                      {/* Cabinet Orientation Selector */}
                       <div className="space-y-2">
                         <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">
                           Angle du Cabinet
                         </label>
-                        <div className="grid grid-cols-5 gap-1 bg-slate-900/5 p-1 rounded-lg border border-slate-900/10">
-                          {[
-                            { value: -30, label: "-30°" },
-                            { value: -15, label: "-15°" },
-                            { value: 0, label: "Auto" },
-                            { value: 15, label: "+15°" },
-                            { value: 30, label: "+30°" }
-                          ].map((opt) => (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              onClick={() => handleUpdateState({ cabinetAngle: opt.value })}
-                              className={`py-1 rounded-md text-[9px] sm:text-[10px] font-bold transition-all ${
-                                state.cabinetAngle === opt.value
-                                  ? "bg-white text-slate-900 shadow-sm border border-slate-200"
-                                  : "text-slate-400 hover:bg-white/50"
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
+                        <div className="grid grid-cols-2 gap-1 bg-slate-900/5 p-1 rounded-lg border border-slate-900/10">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const d = state.diameter || 1.0;
+                              const modulesX = Math.round((Math.PI * d) / 0.5);
+                              const angleStepDeg = 360 / modulesX;
+                              handleUpdateState({ cabinetAngle: angleStepDeg });
+                            }}
+                            className={`py-1.5 rounded-md text-xs font-bold transition-all ${
+                              state.cabinetAngle > 0
+                                ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                                : "text-slate-400 hover:bg-white/50"
+                            }`}
+                          >
+                            Intérieur
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const d = state.diameter || 1.0;
+                              const modulesX = Math.round((Math.PI * d) / 0.5);
+                              const angleStepDeg = 360 / modulesX;
+                              handleUpdateState({ cabinetAngle: -angleStepDeg });
+                            }}
+                            className={`py-1.5 rounded-md text-xs font-bold transition-all ${
+                              state.cabinetAngle <= 0
+                                ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                                : "text-slate-400 hover:bg-white/50"
+                            }`}
+                          >
+                            Extérieur
+                          </button>
                         </div>
                       </div>
-
-                       {/* Standard Diameter Buttons */}
-                       <div className={`space-y-2 transition-all duration-300 ${state.cabinetAngle !== 0 ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
-                         <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">
-                           Diamètres Standards
-                         </label>
-                         <div className="flex flex-wrap gap-2">
-                           {[1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 8.0, 10, 15, 20, 30].map((d) => (
-                             <button
-                               key={d}
-                               type="button"
-                               disabled={state.cabinetAngle !== 0}
-                               onClick={() => handleUpdateState({ diameter: d })}
-                               className={`flex-1 min-w-[4.5rem] py-1 rounded-lg border text-[10px] sm:text-xs font-bold transition-all ${
-                                 Math.abs((state.diameter || 1.0) - d) < 0.05
-                                   ? "bg-black text-[#c6ff00] border-black shadow-md"
-                                   : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
-                               }`}
-                             >
-                                {d.toFixed(1)} M
-                             </button>
-                           ))}
-                         </div>
-                       </div>
 
                       {/* Diameter Slider */}
                       <div className="space-y-3 relative">
@@ -269,52 +267,43 @@ export default function StepDimensions({
                           <span className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-500 ml-2">
                             {t('wizard.dimensions.diameterTotal') || 'Diamètre Total (m)'}
                           </span>
-                          <div className={`flex items-center bg-white rounded-full border border-slate-200 px-2 py-0.5 shadow-sm transition-all duration-300 ${state.cabinetAngle !== 0 ? "opacity-50 pointer-events-none" : ""}`}>
+                          <div className="flex items-center bg-white rounded-full border border-slate-200 px-2 py-0.5 shadow-sm transition-all duration-300">
                             <button
                               type="button"
-                              disabled={state.cabinetAngle !== 0}
                               onClick={() => handleUpdateState({ diameter: Math.max(1.0, (state.diameter || 1.0) - 0.5) })}
                               className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
                             >
                               <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
-                          <input
-                            type="number"
-                            step="0.5"
-                            min="1.0"
-                            max="30"
-                            disabled={state.cabinetAngle !== 0}
-                            value={state.diameter || 1.0}
-                            onChange={(e) => {
-                              const val = parseFloat(e.target.value);
-                              if (!isNaN(val)) handleUpdateState({ diameter: Math.min(30, Math.max(1.0, val)) });
-                            }}
-                            className="w-10 sm:w-16 text-center text-sm sm:text-base font-black text-slate-800 bg-transparent border-none appearance-none focus:outline-none focus:ring-0"
-                          />
-                          <button
-                            type="button"
-                            disabled={state.cabinetAngle !== 0}
-                            onClick={() => handleUpdateState({ diameter: Math.min(30, (state.diameter || 1.0) + 0.5) })}
-                            className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
-                          >
+                            <input
+                              type="number"
+                              step="0.5"
+                              min="1.0"
+                              max="30"
+                              value={state.diameter || 1.0}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value);
+                                if (!isNaN(val)) handleUpdateState({ diameter: Math.min(30, Math.max(1.0, val)) });
+                              }}
+                              className="w-10 sm:w-16 text-center text-sm sm:text-base font-black text-slate-800 bg-transparent border-none appearance-none focus:outline-none focus:ring-0"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateState({ diameter: Math.min(30, (state.diameter || 1.0) + 0.5) })}
+                              className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
+                            >
                               <ChevronRight className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
-                        <div className={`relative group px-2 transition-all duration-300 ${state.cabinetAngle !== 0 ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+                        <div className="relative group px-2 transition-all duration-300 opacity-100">
                           <input
                             type="range" min="1.0" max="30" step="0.5"
-                            disabled={state.cabinetAngle !== 0}
                             value={state.diameter || 1.0}
                             onChange={(e) => handleUpdateState({ diameter: parseFloat(e.target.value) })}
                             className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-[#c6ff00]"
                           />
                         </div>
-                        {state.cabinetAngle !== 0 && (
-                          <div className="text-[10px] text-teal-600 font-bold ml-2">
-                            Verrouillé par l'angle du cabinet ({state.cabinetAngle > 0 ? "+" : ""}{state.cabinetAngle}°)
-                          </div>
-                        )}
                       </div>
 
                       {/* Standard Height Buttons */}
@@ -430,35 +419,7 @@ export default function StepDimensions({
                     </div>
                   </div>
 
-                  {/* Color Controls (Enabled in light mode, disabled in dark mode) */}
-                  <div className={`grid grid-cols-2 gap-4 pt-2 transition-all duration-500 ${isDarkMode ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">{t('wizard.dimensions.bgDecor')}</label>
-                      <div className="flex items-center gap-3 p-2 bg-white/50 rounded-2xl border border-slate-200">
-                        <input
-                          type="color"
-                          value={state.envColor}
-                          onChange={(e) => handleUpdateState({ envColor: e.target.value })}
-                          disabled={isDarkMode}
-                          className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 bg-transparent overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-lg"
-                        />
-                        <span className="text-[10px] font-mono text-slate-400 uppercase">{state.envColor}</span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">{t('wizard.dimensions.groundLines')}</label>
-                      <div className="flex items-center gap-3 p-2 bg-white/50 rounded-2xl border border-slate-200">
-                        <input
-                          type="color"
-                          value={state.gridColor}
-                          onChange={(e) => handleUpdateState({ gridColor: e.target.value })}
-                          disabled={isDarkMode}
-                          className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 bg-transparent overflow-hidden [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-lg [&::-moz-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-lg"
-                        />
-                        <span className="text-[10px] font-mono text-slate-400 uppercase">{state.gridColor}</span>
-                      </div>
-                    </div>
-                  </div>
+
                 </div>
               </div>
             </div>

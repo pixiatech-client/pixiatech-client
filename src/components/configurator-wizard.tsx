@@ -977,87 +977,7 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
 }
 
 export function StepRentalDatesAndPhoto({ state, updateState, products = [], t, locale }: { state: ConfigState, updateState: any, products?: Product[], t: any, locale: string }) {
-   const [blockedPeriods, setBlockedPeriods] = React.useState<{ from: string; to: string }[]>([]);
-   const [productAvailability, setProductAvailability] = React.useState<Record<string, { total: number, reserved: number, remaining: number, available: boolean }>>({});
-
-  const activeProduct = React.useMemo(() => {
-    if (state.selectedProduct) {
-      const p = products.find(prod => prod.id === state.selectedProduct);
-      if (p) return p;
-    }
-    const envMap: Record<string, 'indoor' | 'outdoor' | 'showcase'> = {
-      'interieur': 'indoor',
-      'semi-exterieur': 'showcase',
-      'exterieur': 'outdoor'
-    };
-    const targetEnv = envMap[state.environment] || 'indoor';
-    const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
-
-    // Filter products
-    const filtered = products.filter(p => 
-      !p.isHidden &&
-      p.availableFor.includes('rental') &&
-      p.type.includes(targetEnv)
-    );
-
-    if (filtered.length === 0) return null;
-
-    const sorted = [...filtered].sort((a, b) => {
-      const aPitch = a.pitch ? parseFloat(String(a.pitch).replace('P', '')) || 999 : 999;
-      const bPitch = b.pitch ? parseFloat(String(b.pitch).replace('P', '')) || 999 : 999;
-      return Math.abs(aPitch - pitchValue) - Math.abs(bPitch - pitchValue);
-    });
-
-    return sorted[0];
-  }, [products, state.selectedProduct, state.environment, state.pixelPitch]);
-
-  const neededTiles = React.useMemo(() => {
-    if (!activeProduct) return 1;
-    const tileW = (activeProduct.tileWidth || 50) / 100;
-    const tileH = (activeProduct.tileHeight || 50) / 100;
-    return Math.ceil(state.width / tileW) * Math.ceil(state.height / tileH) * (state.quantity || 1);
-  }, [activeProduct, state.width, state.height, state.quantity]);
-
-  React.useEffect(() => {
-    const loadBlockedPeriods = async () => {
-      if (!activeProduct) return;
-      try {
-        const periods = await getProductBlockedPeriodsAction(activeProduct.id, neededTiles);
-        setBlockedPeriods(periods);
-      } catch (error) {
-        console.error('Failed to load blocked periods:', error);
-      }
-    };
-    loadBlockedPeriods();
-  }, [activeProduct, neededTiles]);
-
-  React.useEffect(() => {
-    const loadProductAvailability = async () => {
-      const prodId = state.selectedProduct || activeProduct?.id;
-      if (!prodId || !state.rentalStartDate || !state.rentalEndDate) return;
-      try {
-        const result = await getProductRentalAvailabilityAction(
-          prodId,
-          state.rentalStartDate,
-          state.rentalEndDate,
-          neededTiles
-        );
-        setProductAvailability(prev => ({ ...prev, [prodId]: result }));
-      } catch (error) {
-        console.error('Failed to load product availability:', error);
-      }
-    };
-    loadProductAvailability();
-  }, [state.selectedProduct, activeProduct, state.rentalStartDate, state.rentalEndDate, neededTiles]);
-
   const dateLocale = locale === 'en' ? enUS : fr;
-
-  const isDateBlocked = React.useCallback((date: Date) => {
-    const d = new Date(date);
-    d.setHours(12, 0, 0, 0);
-    const dateStr = d.toISOString().split('T')[0];
-    return blockedPeriods.some(period => dateStr >= period.from && dateStr <= period.to);
-  }, [blockedPeriods]);
 
   const handleDateChange = (range: DateRange | undefined) => {
     if (range?.from) {
@@ -1081,97 +1001,83 @@ export function StepRentalDatesAndPhoto({ state, updateState, products = [], t, 
       </div>
 
       <div className="px-6">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>{t('wizard.rental.datesLabel')}</Label>
+        <div className="space-y-4 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+            {/* Left: Dates */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('wizard.rental.datesLabel')}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
                     className={cn(
-                       "w-full justify-start text-left font-normal",
-                       !startDate && "text-muted-foreground"
+                      "w-full h-10 justify-start text-left font-normal border-slate-200 rounded-xl",
+                      !startDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
                     {startDate && endDate ? (
-                      <>
-                        {format(startDate, "dd LLL, y")} -{" "}
-                        {format(endDate, "dd LLL, y")}
-                      </>
+                      <span className="text-slate-800 font-bold text-sm">
+                        {format(startDate, "dd LLL, y")} - {format(endDate, "dd LLL, y")}
+                      </span>
                     ) : (
                       <span>{t('wizard.rental.pickRange')}</span>
                     )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-<Calendar
-                     initialFocus
-                     mode="range"
-                     selected={{ from: startDate, to: endDate }}
-                     disabled={[
-                       { before: new Date(new Date().setHours(0, 0, 0, 0)) },
-                       isDateBlocked
-                     ]}
-                     onSelect={handleDateChange}
-                     numberOfMonths={1}
-                     locale={dateLocale}
-                   />
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    selected={{ from: startDate, to: endDate }}
+                    disabled={[
+                      { before: new Date(new Date().setHours(0, 0, 0, 0)) }
+                    ]}
+                    onSelect={handleDateChange}
+                    numberOfMonths={1}
+                    locale={dateLocale}
+                  />
                 </PopoverContent>
               </Popover>
-              {/* Availability badge */}
-              {(() => {
-                const prodId = state.selectedProduct || activeProduct?.id;
-                if (!prodId) return null;
-                const avail = productAvailability[prodId];
-                if (!avail) return null;
-                return (
-                  <div className={cn(
-                    "flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-md mt-2 border",
-                    avail.available
-                      ? "bg-green-50 text-green-700 border-green-200"
-                      : "bg-red-50 text-red-700 border-red-200"
-                  )}>
-                    {avail.available
-                      ? <><CheckCircle2 size={13} className="shrink-0" />{`${avail.remaining} / ${avail.total} dalles disponibles`}</>
-                      : <><Ban size={13} className="shrink-0" />{`Stock insuffisant — ${avail.remaining} / ${avail.total} disponibles`}</>
-                    }
-                  </div>
-                );
-              })()}
             </div>
-            <div className="flex items-end gap-2">
-              <div className="flex-1 space-y-1.5">
-                <Label>{t('wizard.rental.startTime')}</Label>
-                <Select value={state.rentalStartTime || '08:00'} onValueChange={(value) => updateState({ rentalStartTime: value })}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(hour => (
-                      <SelectItem key={hour} value={hour}>{hour}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="pb-2.5 font-medium text-slate-400">
-                {t('wizard.rental.to')}
-              </div>
 
-              <div className="flex-1 space-y-1.5">
-                <Label>{t('wizard.rental.endTime')}</Label>
-                <Select value={state.rentalEndTime || '18:00'} onValueChange={(value) => updateState({ rentalEndTime: value })}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(hour => (
-                      <SelectItem key={hour} value={hour}>{hour}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Right: Times */}
+            <div className="space-y-1.5">
+              <div className="flex items-center">
+                <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex-1">{t('wizard.rental.startTime')}</Label>
+                <div className="w-8 shrink-0" />
+                <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex-1">{t('wizard.rental.endTime')}</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <Select value={state.rentalStartTime || '08:00'} onValueChange={(value) => updateState({ rentalStartTime: value })}>
+                    <SelectTrigger className="h-10 border-slate-200 rounded-xl font-bold text-slate-800 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(hour => (
+                        <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="font-semibold text-slate-400 text-sm px-1 text-center w-8 shrink-0">
+                  {t('wizard.rental.to')}
+                </div>
+
+                <div className="flex-1">
+                  <Select value={state.rentalEndTime || '18:00'} onValueChange={(value) => updateState({ rentalEndTime: value })}>
+                    <SelectTrigger className="h-10 border-slate-200 rounded-xl font-bold text-slate-800 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`).map(hour => (
+                        <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>

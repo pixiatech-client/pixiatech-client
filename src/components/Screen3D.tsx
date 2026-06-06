@@ -455,7 +455,7 @@ function Screen({
         if (ix < wingCols) {
           angleStep = THREE.MathUtils.degToRad(curveLeft * 2) / wingCols;
         } else if (ix >= modulesX - wingCols) {
-          angleStep = -THREE.MathUtils.degToRad(curveRight * 2) / wingCols;
+          angleStep = THREE.MathUtils.degToRad(curveRight * 2) / wingCols;
         }
       }
 
