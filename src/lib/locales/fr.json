@@ -123,8 +123,10 @@
             "add": "Ajouter une photo de l'emplacement",
             "expertAdviceTitle": "Conseil d'expert",
             "expertAdviceDesc": "Prenez la photo avec un recul suffisant pour que nous puissions voir les prises électriques et les obstacles potentiels aux alentours du mur.",
-            "dropzoneTitle": "Glissez-déposez votre photo ici ou cliquez pour téléverser",
-            "dropzoneSubtitle": "Formats acceptés : JPG, PNG, WEBP"
+            "optional": "optionnelle",
+            "dropzoneTitle": "Glissez-déposez votre photo ici ou cliquez n'importe où dans cette zone",
+            "dropzoneSubtitle": "Formats acceptés : JPG, PNG, WEBP",
+            "replacePhoto": "Remplacer la photo"
         },
         "rental": {
             "title": "Période de location",

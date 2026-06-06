@@ -123,8 +123,10 @@
             "add": "Add a photo of the location",
             "expertAdviceTitle": "Expert advice",
             "expertAdviceDesc": "Take the photo with sufficient distance so that we can see the electrical outlets and potential obstacles around the wall.",
-            "dropzoneTitle": "Drag and drop your photo here or click to upload",
-            "dropzoneSubtitle": "Accepted formats: JPG, PNG, WEBP"
+            "optional": "optional",
+            "dropzoneTitle": "Drag and drop your photo here or click anywhere in this area",
+            "dropzoneSubtitle": "Accepted formats: JPG, PNG, WEBP",
+            "replacePhoto": "Replace photo"
         },
         "rental": {
             "title": "Rental period",
