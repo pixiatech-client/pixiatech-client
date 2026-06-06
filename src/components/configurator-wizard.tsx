@@ -191,6 +191,9 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
 
   const nextStep = useCallback(() => {
     setState(prev => {
+      if (prev.step === 6 && prev.projectType === 'location' && (!prev.rentalStartDate || !prev.rentalEndDate)) {
+        return prev;
+      }
       if (prev.step === 8) {
         if (!prev.selectedProduct) return prev; // Prevent completion without selection
 
@@ -207,6 +210,13 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
           ? { from: new Date(prev.rentalStartDate), to: new Date(prev.rentalEndDate) }
           : isRental ? { from: new Date(), to: new Date() } : undefined;
 
+        let calculatedDuration = 1;
+        if (isRental && prev.rentalStartDate && prev.rentalEndDate) {
+          const fromDate = new Date(prev.rentalStartDate);
+          const toDate = new Date(prev.rentalEndDate);
+          calculatedDuration = Math.max(1, Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+        }
+
         const envMap: Record<string, 'indoor' | 'outdoor' | 'showcase'> = {
           'interieur': 'indoor',
           'semi-exterieur': 'showcase',
@@ -221,7 +231,7 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
           height: prev.height,
           quantity: prev.quantity || 1,
           transactionType: prev.projectType === 'vente' ? 'sale' : 'rental',
-          rentalDuration: 1,
+          rentalDuration: calculatedDuration,
           rentalUnit: 'day',
           rentalPeriod: rentalPeriod,
           rentalDate: isRental && prev.rentalStartDate ? new Date(prev.rentalStartDate) : undefined,
@@ -333,10 +343,15 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
                       {/* Bouton Suivant (Capsule Noire) */}
                       <button
                         onClick={nextStep}
-                        disabled={state.step === 8 && !state.selectedProduct}
+                        disabled={
+                          (state.step === 8 && !state.selectedProduct) ||
+                          (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate))
+                        }
                         className={cn(
                           "flex-1 h-12 bg-black rounded-[18px] flex items-center px-6 transition-all duration-300 group active:scale-[0.98] overflow-hidden relative",
-                          state.step === 8 && !state.selectedProduct && "opacity-50 cursor-not-allowed grayscale"
+                          ((state.step === 8 && !state.selectedProduct) ||
+                           (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate))) &&
+                          "opacity-50 cursor-not-allowed grayscale"
                         )}
                       >
                         <div className="absolute inset-0 bg-black group-hover:bg-gray-900 transition-colors duration-300"></div>
@@ -1046,7 +1061,7 @@ export function StepRentalDatesAndPhoto({ state, updateState, products = [], t, 
 
             {/* Right: Times */}
             <div className="space-y-1.5 flex flex-col">
-              <div className="h-5 flex items-center">
+              <div className="h-5 flex items-center gap-2">
                 <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex-1">{t('wizard.rental.startTime')}</Label>
                 <div className="w-8 shrink-0" />
                 <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex-1">{t('wizard.rental.endTime')}</Label>
@@ -1216,6 +1231,7 @@ function DetailItem({ icon, iconBg = "bg-slate-100", label, value }: { icon: Rea
   );
 }
 
+
 export function StepFinal({ state, updateState, products, settings, t, locale, hideBackButton }: { state: ConfigState, updateState: any, products?: Product[], settings: Settings, t: any, locale: string, hideBackButton?: boolean }) {
   const area = state.width * state.height;
   const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
@@ -1241,69 +1257,54 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
 
   const [showComparator, setShowComparator] = useState(false);
   const [compareProductIds, setCompareProductIds] = useState<string[]>([]);
-  const [availabilities, setAvailabilities] = useState<Record<string, { total: number, reserved: number, remaining: number, available: boolean }>>({});
-  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+  const [videoProduct, setVideoProduct] = useState<Product | null>(null);
 
-  const isRental = state.projectType === 'location';
+  const isMulti = state.selectionMode === 'multi';
+  const selectedProducts = state.selectedProducts || [];
 
-  useEffect(() => {
-    if (!isRental || !state.rentalStartDate || !state.rentalEndDate) return;
-    
-    let active = true;
-    setIsLoadingAvailability(true);
-    setAvailabilities({});
-
-    const checkAllAvailabilities = async () => {
-      const results: Record<string, { total: number, reserved: number, remaining: number, available: boolean }> = {};
-      await Promise.all(
-        sortedProducts.map(async (product) => {
-          const tileW = (product.tileWidth || 50) / 100;
-          const tileH = (product.tileHeight || 50) / 100;
-          const needed = Math.ceil(state.width / tileW) * Math.ceil(state.height / tileH) * (state.quantity || 1);
-          try {
-            const avail = await getProductRentalAvailabilityAction(
-              product.id,
-              state.rentalStartDate!,
-              state.rentalEndDate!,
-              needed
-            );
-            results[product.id] = avail;
-          } catch (error) {
-            console.error('Failed to check product availability in StepFinal:', product.id, error);
-          }
-        })
-      );
-      if (active) {
-        setAvailabilities(results);
-        setIsLoadingAvailability(false);
-        if (state.selectedProduct && results[state.selectedProduct] && !results[state.selectedProduct].available) {
-          updateState({ selectedProduct: null });
-        }
-      }
-    };
-
-    checkAllAvailabilities();
-
-    return () => {
-      active = false;
-    };
-  }, [
-    state.rentalStartDate,
-    state.rentalEndDate,
-    state.width,
-    state.height,
-    state.quantity,
-    isRental,
-    products
-  ]);
-
-return (
+  return (
     <div className="bg-transparent font-sans flex flex-col">
       <div className="w-full p-6 text-center">
         <h2 className="text-[24px] md:text-[28px] font-black text-[#0f172a] uppercase tracking-[0.2em]">{t('wizard.products.title')}</h2>
         <p className="text-[10px] font-bold text-gray-400 tracking-widest uppercase mt-2">
-          {t('wizard.products.config')} {state.pixelPitch} • {area.toFixed(2)}m²
+          {t('wizard.products.config')} {state.pixelPitch} &bull; {area.toFixed(2)}m&sup2;
         </p>
+
+        {/* Selection mode toggle */}
+        <div className="flex items-center justify-center gap-2 mt-4">
+          <button
+            onClick={() => updateState({ selectionMode: 'single', selectedProducts: state.selectedProduct ? [state.selectedProduct] : [] })}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+              !isMulti
+                ? "bg-black text-[#c6ff00] border-black"
+                : "bg-white text-slate-400 border-slate-200 hover:border-slate-400"
+            )}
+          >
+            <Check size={12} strokeWidth={3} />
+            {locale === 'fr' ? 'S\u00e9lection' : 'Single'}
+          </button>
+          <button
+            onClick={() => updateState({ selectionMode: 'multi', selectedProducts: state.selectedProduct ? [state.selectedProduct] : [] })}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+              isMulti
+                ? "bg-black text-[#c6ff00] border-black"
+                : "bg-white text-slate-400 border-slate-200 hover:border-slate-400"
+            )}
+          >
+            <Layers size={12} />
+            {locale === 'fr' ? 'Multi-s\u00e9lection' : 'Multi-select'}
+          </button>
+        </div>
+        {isMulti && (
+          <p className="text-[9px] font-bold text-slate-400 tracking-widest uppercase mt-2">
+            {locale === 'fr'
+              ? `${selectedProducts.length} / 3 produits s\u00e9lectionn\u00e9s`
+              : `${selectedProducts.length} / 3 products selected`
+            }
+          </p>
+        )}
       </div>
 
       <div className="flex-1 p-0 scrollbar-hide px-6">
@@ -1319,83 +1320,94 @@ return (
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 pb-2">
           {sortedProducts.map((product) => {
-            const isSelected = state.selectedProduct === product.id;
-            const area = state.width * state.height;
+            const isSelected = isMulti
+              ? selectedProducts.includes(product.id)
+              : state.selectedProduct === product.id;
+            const atMaxMulti = isMulti && selectedProducts.length >= 3 && !isSelected;
             const quantity = state.quantity || 1;
 
-            // Availability state
-            const avail = availabilities[product.id];
-            const isUnavailable = isRental && state.rentalStartDate && state.rentalEndDate && avail !== undefined && !avail.available;
-            const isAvailabilityKnown = avail !== undefined;
-
-            // i18n product type labels
-            const typeLabel = product.type.map((t: string) => {
-              const tl = t.toLowerCase();
-              if (locale === 'fr') {
-                if (tl.includes('indoor') || tl.includes('interieur') || tl.includes('intérieur')) return 'Intérieur';
-                if (tl.includes('outdoor') || tl.includes('exterieur') || tl.includes('extérieur')) return 'Extérieur';
-                if (tl.includes('semi')) return 'Semi-extérieur';
+            const handleSelect = () => {
+              if (isMulti) {
+                if (isSelected) {
+                  updateState({ selectedProducts: selectedProducts.filter(id => id !== product.id) });
+                } else if (!atMaxMulti) {
+                  updateState({ selectedProducts: [...selectedProducts, product.id] });
+                }
               } else {
-                if (tl.includes('indoor') || tl.includes('interieur') || tl.includes('intérieur')) return 'Indoor';
-                if (tl.includes('outdoor') || tl.includes('exterieur') || tl.includes('extérieur')) return 'Outdoor';
+                updateState({ selectedProduct: product.id });
+              }
+            };
+
+            const typeLabel = product.type.map((tType: string) => {
+              const tl = tType.toLowerCase();
+              if (locale === 'fr') {
+                if (tl.includes('indoor') || tl.includes('interieur') || tl.includes('int\u00e9rieur')) return 'Int\u00e9rieur';
+                if (tl.includes('outdoor') || tl.includes('exterieur') || tl.includes('ext\u00e9rieur')) return 'Ext\u00e9rieur';
+                if (tl.includes('semi')) return 'Semi-ext\u00e9rieur';
+              } else {
+                if (tl.includes('indoor') || tl.includes('interieur') || tl.includes('int\u00e9rieur')) return 'Indoor';
+                if (tl.includes('outdoor') || tl.includes('exterieur') || tl.includes('ext\u00e9rieur')) return 'Outdoor';
                 if (tl.includes('semi')) return 'Semi-outdoor';
               }
-              return t;
-            }).join(' • ');
+              return tType;
+            }).join(' \u2022 ');
 
-            // Price calculation
             let unitPrice = 0;
-            if (state.projectType === 'vente') {
-              unitPrice = (product.salePricePerSqM || 0) * area;
+            if (product.hasDimensions && product.tileWidth && product.tileHeight && product.pricePerTile && product.pricePerTile > 0) {
+              const tilesPerWidth = Math.ceil((state.width * 100) / product.tileWidth);
+              const tilesPerHeight = Math.ceil((state.height * 100) / product.tileHeight);
+              const totalTiles = tilesPerWidth * tilesPerHeight;
+              unitPrice = totalTiles * product.pricePerTile;
             } else {
-              unitPrice = (product.rentalPricePerDay || 0) * area;
+              if (state.projectType === 'vente') {
+                unitPrice = (product.salePricePerSqM || 0) * area;
+              } else {
+                unitPrice = (product.rentalPricePerDay || 0) * area;
+              }
             }
-            const totalPrice = unitPrice * quantity;
 
-            // P4: prix toujours selon isPriceHidden, totalPrice === 0 also shows "Sur estimation"
-            const showPrice = !settings.isPriceHidden && totalPrice > 0;
+            const isRental = state.projectType === 'location';
+            let duration = 1;
+            if (isRental && state.rentalStartDate && state.rentalEndDate) {
+              const startD = new Date(state.rentalStartDate);
+              const endD = new Date(state.rentalEndDate);
+              duration = Math.max(1, Math.ceil((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+            }
+
+            const totalPrice = unitPrice * quantity * duration;
             const showOnEstimate = settings.isPriceHidden || totalPrice === 0;
+            const displayedUnitPrice = isRental ? unitPrice * duration : unitPrice;
+
+            const shortDesc = product.selectedChars && product.selectedChars.length > 0
+              ? product.selectedChars.slice(0, 2).map(c => c.value).join(' \u2022 ')
+              : product.pitch && product.distance
+                ? `${product.pitch} \u2022 ${product.distance}`
+                : product.pitch || product.distance || '';
 
             return (
               <div
                 key={product.id}
                 className={cn(
                   "group transition-all duration-500",
-                  isUnavailable ? "cursor-not-allowed" : "cursor-pointer",
-                  isUnavailable ? "opacity-60" : isSelected ? "opacity-100" : "opacity-90 hover:opacity-100"
+                  atMaxMulti ? "cursor-not-allowed opacity-40" : "cursor-pointer",
+                  isSelected ? "opacity-100" : atMaxMulti ? "" : "opacity-90 hover:opacity-100"
                 )}
-                onClick={() => {
-                  if (isUnavailable) return; // P5: block click on unavailable
-                  updateState({ selectedProduct: product.id });
-                }}
+                onClick={atMaxMulti ? undefined : handleSelect}
               >
+                {/* Image container with hover actions */}
                 <div className={cn(
                   "relative aspect-square bg-gray-50 rounded-2xl border transition-all duration-500 overflow-hidden mb-4",
-                  isSelected ? "border-[#c6ff00] border-4 shadow-2xl shadow-black/10 scale-[1.02]" : "border-gray-100 group-hover:border-gray-300",
-                  isUnavailable && "grayscale"
+                  isSelected ? "border-[#c6ff00] border-4 shadow-2xl shadow-black/10 scale-[1.02]" : "border-gray-100 group-hover:border-gray-300"
                 )}>
-                  {/* P6: Unavailable overlay */}
-                  {isUnavailable && (
-                    <div className="absolute inset-0 z-20 bg-red-900/20 flex items-center justify-center">
-                      <div className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                        <Ban size={11} />{locale === 'fr' ? 'Indisponible' : 'Unavailable'}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* P7: Strong selected indicator */}
-                  {isSelected && !isUnavailable && (
+                  {/* Selected check overlay */}
+                  {isSelected && (
                     <div className="absolute inset-0 z-20 flex items-center justify-center">
                       <div className="w-16 h-16 rounded-full bg-[#c6ff00] flex items-center justify-center shadow-2xl shadow-black/30">
                         <Check size={32} className="text-black" strokeWidth={3} />
                       </div>
                     </div>
                   )}
-                  {/* Loading skeleton for availability check - P1 */}
-                  {isRental && state.rentalStartDate && state.rentalEndDate && isLoadingAvailability && !isAvailabilityKnown && (
-                    <div className="absolute bottom-2 left-2 right-2 z-10 h-6 rounded-lg bg-slate-200 animate-pulse" />
-                  )}
-                  
+
                   {/* Promotion badge */}
                   {product.oldPrice && product.salePricePerSqM && product.oldPrice > product.salePricePerSqM && (
                     <div className="absolute top-3 left-3 z-30">
@@ -1409,10 +1421,9 @@ return (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setCompareProductIds(prev => {
-                        if (prev.includes(product.id)) return prev.filter(id => id !== product.id);
-                        return [...prev, product.id];
-                      });
+                      setCompareProductIds(prev =>
+                        prev.includes(product.id) ? prev.filter(id => id !== product.id) : [...prev, product.id]
+                      );
                     }}
                     className={cn(
                       "absolute top-3 right-3 z-30 w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center",
@@ -1420,7 +1431,7 @@ return (
                         ? "bg-[#c6ff00] border-[#c6ff00]"
                         : "border-gray-300 bg-white/50 hover:border-gray-400"
                     )}
-                    aria-label="Sélectionner pour comparer"
+                    aria-label="S\u00e9lectionner pour comparer"
                   >
                     {compareProductIds.includes(product.id) && (
                       <Check size={14} className="text-black" strokeWidth={3} />
@@ -1432,19 +1443,60 @@ return (
                     alt={product.name}
                     className="w-full h-full object-cover"
                   />
+
+                  {/* Hover action overlay */}
+                  <div className="absolute inset-0 z-10 flex items-end justify-center pb-4 gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none group-hover:pointer-events-auto">
+                    {product.videoUrl && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setVideoProduct(product); }}
+                        className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"
+                        title={locale === 'fr' ? 'Voir la vid\u00e9o' : 'Watch video'}
+                      >
+                        <Play size={16} className="text-black fill-black ml-0.5" />
+                      </button>
+                    )}
+                    {product.productUrl && (
+                      <a
+                        href={product.productUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"
+                        title={locale === 'fr' ? "Plus d'informations" : 'More information'}
+                      >
+                        <Info size={16} className="text-black" />
+                      </a>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleSelect(); }}
+                      className={cn(
+                        "px-4 h-10 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center gap-1.5 shadow-lg hover:scale-105 active:scale-95 transition-all",
+                        isSelected ? "bg-[#c6ff00] text-black" : "bg-white/90 backdrop-blur-sm text-black hover:bg-[#c6ff00]"
+                      )}
+                    >
+                      {isSelected
+                        ? <><Check size={13} strokeWidth={3} />{locale === 'fr' ? 'S\u00e9lectionn\u00e9' : 'Selected'}</>
+                        : <><ArrowRight size={13} strokeWidth={2.5} />{locale === 'fr' ? 'Choisir' : 'Select'}</>
+                      }
+                    </button>
+                  </div>
                 </div>
-                
-                <div className={cn("space-y-1", isUnavailable && "opacity-60")}>
+
+                {/* Product info */}
+                <div className="space-y-1">
                   <div className="flex justify-between items-start">
                     <h3 className="font-black uppercase tracking-[0.1em] text-sm text-gray-900 line-clamp-1">{product.name}</h3>
-                    {product.pitch && <span className="font-black text-[10px] bg-gray-100 px-2 py-0.5 rounded uppercase tracking-tighter">{product.pitch}</span>}
+                    {product.pitch && <span className="font-black text-[10px] bg-gray-100 px-2 py-0.5 rounded uppercase tracking-tighter shrink-0 ml-2">{product.pitch}</span>}
                   </div>
-                  {/* P3: i18n type labels */}
+
                   <p className="font-bold text-gray-400 text-[10px] uppercase tracking-widest">{typeLabel}</p>
+
+                  {shortDesc && (
+                    <p className="text-[10px] text-gray-500 font-medium leading-snug line-clamp-1">{shortDesc}</p>
+                  )}
 
                   <div className="pt-2">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('wizard.products.priceLabel')}</p>
-                    {/* P4: Consistent price display */}
                     {showOnEstimate ? (
                       <div className="flex flex-col">
                         <span className="text-lg font-black text-black/30 animate-pulse blur-[2px] select-none">{t('configurator.estimating')}</span>
@@ -1453,34 +1505,34 @@ return (
                       <>
                         {product.oldPrice && state.projectType === 'vente' && (
                           <p className="text-sm font-semibold text-orange-500 line-through">
-                            {((product.oldPrice || 0) * area * quantity).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} €
+                            {(product.oldPrice * area * quantity).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} &#8364;
                           </p>
                         )}
                         <p className="text-lg font-black text-slate-900">
-                          {totalPrice > 0 ? `${totalPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} €` : t('wizard.products.onEstimate') || 'Sur estimation'}
+                          {totalPrice > 0 ? `${totalPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} \u20ac` : t('wizard.products.onEstimate') || 'Sur estimation'}
                         </p>
                         {quantity > 1 && (
                           <p className="text-[10px] font-bold text-slate-400 italic">
-                            {t('wizard.products.perUnit', { price: unitPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US') })}
+                            {t('wizard.products.perUnit', { price: displayedUnitPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US') })}
                           </p>
                         )}
                       </>
                     )}
                   </div>
 
-                  {isSelected && (
+                  {isSelected && !isMulti && (
                     <div className="mt-4 flex items-center justify-between bg-gray-50 p-2 rounded-xl border border-gray-100">
                       <span className="font-black uppercase tracking-[0.1em] text-[9px] ml-2 text-gray-400">{t('wizard.products.quantity')}</span>
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={(e) => { e.stopPropagation(); updateState({ quantity: Math.max(1, (state.quantity || 1) - 1) }) }}
+                          onClick={(e) => { e.stopPropagation(); updateState({ quantity: Math.max(1, (state.quantity || 1) - 1) }); }}
                           className="w-8 h-8 rounded-full bg-[#c6ff00] text-black flex items-center justify-center transition-all active:scale-90"
                         >
                           <ChevronLeft size={14} strokeWidth={3} />
                         </button>
                         <span className="font-black text-xs w-4 text-center">{state.quantity || 1}</span>
                         <button
-                          onClick={(e) => { e.stopPropagation(); updateState({ quantity: (state.quantity || 1) + 1 }) }}
+                          onClick={(e) => { e.stopPropagation(); updateState({ quantity: (state.quantity || 1) + 1 }); }}
                           className="w-8 h-8 rounded-full bg-[#c6ff00] text-black flex items-center justify-center transition-all active:scale-90"
                         >
                           <ChevronRight size={14} strokeWidth={3} />
@@ -1489,48 +1541,36 @@ return (
                     </div>
                   )}
 
-                  {isRental && state.rentalStartDate && state.rentalEndDate && availabilities[product.id] && (
-                    <div className={cn(
-                      "flex items-center gap-2 text-[11px] font-bold px-3 py-2.5 rounded-xl mt-3 border transition-all duration-300",
-                      availabilities[product.id].available
-                        ? "bg-green-50 text-green-700 border-green-200"
-                        : "bg-red-50 text-red-700 border-red-200"
-                    )}>
-                      {availabilities[product.id].available
-                        ? <><CheckCircle2 size={13} className="shrink-0" />{locale === 'fr' ? `${availabilities[product.id].remaining} / ${availabilities[product.id].total} dalles dispo.` : `${availabilities[product.id].remaining} / ${availabilities[product.id].total} tiles avail.`}</>
-                        : <><Ban size={13} className="shrink-0" />{locale === 'fr' ? `Stock insuffisant — ${availabilities[product.id].remaining} / ${availabilities[product.id].total}` : `Insufficient stock — ${availabilities[product.id].remaining} / ${availabilities[product.id].total}`}</>
-                      }
-                    </div>
-                  )}
+                  {/* Action Button */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleSelect(); }}
+                    disabled={atMaxMulti}
+                    className={cn(
+                      "w-full mt-6 h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm",
+                      atMaxMulti
+                        ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                        : isSelected
+                          ? "bg-black text-[#c6ff00] shadow-2xl shadow-black/20"
+                          : "bg-white/40 backdrop-blur-md text-black border border-gray-100 hover:bg-black hover:text-[#c6ff00] hover:shadow-2xl hover:shadow-black/10"
+                    )}
+                  >
+                    {atMaxMulti
+                      ? (locale === 'fr' ? 'Maximum atteint' : 'Max reached')
+                      : isSelected && isMulti
+                        ? (locale === 'fr' ? 'S\u00e9lectionn\u00e9 \u2022 Retirer' : 'Selected \u2022 Remove')
+                        : isSelected
+                          ? t('common.selected') || 'S\u00e9lectionn\u00e9'
+                          : t('common.select') || 'S\u00e9lectionner'
+                    }
+                  </button>
                 </div>
-
-                {/* Action Button */}
-                <button
-                  disabled={isRental && state.rentalStartDate && state.rentalEndDate && availabilities[product.id] && !availabilities[product.id].available}
-                  onClick={(e) => { e.stopPropagation(); updateState({ selectedProduct: product.id }) }}
-                  className={cn(
-                    "w-full mt-6 h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm",
-                    isSelected
-                      ? "bg-black text-[#c6ff00] shadow-2xl shadow-black/20"
-                      : (isRental && state.rentalStartDate && state.rentalEndDate && availabilities[product.id] && !availabilities[product.id].available)
-                        ? "bg-red-50 text-red-400 border border-red-200 cursor-not-allowed"
-                        : "bg-white/40 backdrop-blur-md text-black border border-gray-100 hover:bg-black hover:text-[#c6ff00] hover:shadow-2xl hover:shadow-black/10"
-                  )}
-                >
-                  {(isRental && state.rentalStartDate && state.rentalEndDate && availabilities[product.id] && !availabilities[product.id].available)
-                    ? <><Ban size={13} />{locale === 'fr' ? "Indisponible" : "Unavailable"}</>
-                    : isSelected 
-                      ? t('common.selected') || "Sélectionné" 
-                      : t('common.select') || "Sélectionner"
-                  }
-                </button>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Bouton Comparer - Déplacé sous la liste des produits */}
+      {/* Compare button */}
       {sortedProducts.length > 1 && (
         <div className="p-6 pt-0">
           <div className="relative group/tooltip">
@@ -1544,13 +1584,12 @@ return (
                   : "bg-black text-white hover:bg-[#c6ff00] hover:text-black border-black hover:border-[#c6ff00] active:scale-95 cursor-pointer"
               )}
             >
-              <Layers className="w-4 h-4" /> 
+              <Layers className="w-4 h-4" />
               <span>{locale === 'fr' ? 'Comparer les produits' : 'Compare products'} ({compareProductIds.length})</span>
             </button>
-
             {compareProductIds.length < 2 && (
               <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest py-2 px-3 rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-all duration-300 text-center z-50">
-                {locale === 'fr' ? 'Veuillez sélectionner au moins 2 produits pour pouvoir les comparer' : 'Please select at least 2 products to compare them'}
+                {locale === 'fr' ? 'Veuillez s\u00e9lectionner au moins 2 produits pour pouvoir les comparer' : 'Please select at least 2 products to compare them'}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 pointer-events-none" />
               </div>
             )}
@@ -1558,7 +1597,47 @@ return (
         </div>
       )}
 
-<AnimatePresence>
+      {/* Video modal */}
+      <AnimatePresence>
+        {videoProduct && videoProduct.videoUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[400] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setVideoProduct(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-3xl rounded-2xl overflow-hidden bg-black shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setVideoProduct(null)}
+                className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black transition-all"
+              >
+                <X size={18} />
+              </button>
+              <div className="aspect-video w-full">
+                <iframe
+                  src={videoProduct.videoUrl.replace('watch?v=', 'embed/')}
+                  className="w-full h-full"
+                  allowFullScreen
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                />
+              </div>
+              <div className="p-4 bg-black text-white">
+                <h3 className="font-black uppercase tracking-widest text-sm">{videoProduct.name}</h3>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Comparator modal */}
+      <AnimatePresence>
         {showComparator && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -1579,10 +1658,11 @@ return (
             />
           </motion.div>
         )}
-</AnimatePresence>
+      </AnimatePresence>
     </div>
   );
 }
+
 // --- Helpers ---
 function calculateRatio(w: number, h: number): string {
   const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);

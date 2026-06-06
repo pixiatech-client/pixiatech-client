@@ -14,6 +14,8 @@ export interface ConfigState {
   height: number;
   installationPhoto: string | null;
   selectedProduct: string | null;
+  selectedProducts: string[];
+  selectionMode: 'single' | 'multi';
   delivery: string | null;
   installation: string | null;
   rentalStartDate: string | null;
@@ -42,6 +44,8 @@ export const INITIAL_STATE: ConfigState = {
   height: 6.5,
   installationPhoto: null,
   selectedProduct: null,
+  selectedProducts: [],
+  selectionMode: 'single',
   delivery: null,
   installation: null,
   rentalStartDate: null,

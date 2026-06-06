@@ -195,39 +195,11 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     loadBlockedPeriods();
   }, []);
 
-  // Load availability for the recommended product
+  // Load availability check removed to speed up the application
   useEffect(() => {
-    if (step !== STEP.PRODUCTS || !configState.rentalStartDate || !configState.rentalEndDate) {
-      setProductAvailability(null);
-      setIsCheckingAvailability(false);
-      return;
-    }
-    const currentProduct = matchingProducts[currentProductIndex];
-    if (!currentProduct) return;
-
-    const tileW = (currentProduct.tileWidth || 50) / 100;
-    const tileH = (currentProduct.tileHeight || 50) / 100;
-    const needed = Math.ceil(configState.width / tileW) * Math.ceil(configState.height / tileH) * 1; // quantity = 1
-
-    const checkProductAvailability = async () => {
-      setProductAvailability(null);
-      setIsCheckingAvailability(true);
-      try {
-        const avail = await getProductRentalAvailabilityAction(
-          currentProduct.id,
-          configState.rentalStartDate!,
-          configState.rentalEndDate!,
-          needed
-        );
-        setProductAvailability(avail);
-      } catch (error) {
-        console.error('Failed to check recommended product availability:', error);
-      } finally {
-        setIsCheckingAvailability(false);
-      }
-    };
-    checkProductAvailability();
-  }, [step, currentProductIndex, matchingProducts, configState.rentalStartDate, configState.rentalEndDate, configState.width, configState.height]);
+    setProductAvailability({ available: true, total: 999, reserved: 0, remaining: 999 });
+    setIsCheckingAvailability(false);
+  }, [step, currentProductIndex, matchingProducts]);
 
   const isDateBlocked = useCallback((date: Date) => {
     // Zero out hours to compare strictly YYYY-MM-DD
@@ -598,46 +570,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     updateStep(STEP.GENERATING);
     setBotStatus('thinking');
 
-    if (configState.projectType === 'location' && configState.rentalStartDate && configState.rentalEndDate) {
-      try {
-        const productIds = sortedProducts.map(p => p.id);
-        const neededMap: Record<string, number> = {};
-        for (const p of sortedProducts) {
-          const tileW = (p.tileWidth || 50) / 100;
-          const tileH = (p.tileHeight || 50) / 100;
-          neededMap[p.id] = Math.ceil(configState.width / tileW) * Math.ceil(configState.height / tileH) * 1;
-        }
-
-        const { getProductsRentalAvailabilityAction } = await import('@/app/actions/quote-actions');
-        const bulkAvail = await getProductsRentalAvailabilityAction(
-          productIds,
-          configState.rentalStartDate,
-          configState.rentalEndDate,
-          neededMap
-        );
-
-        setBulkAvailability(bulkAvail);
-
-        // Sort by availability and remaining stock
-        sortedProducts = sortedProducts.sort((a, b) => {
-          const aAvail = bulkAvail[a.id];
-          const bAvail = bulkAvail[b.id];
-          // If a is available and b is not, a comes first
-          if (aAvail?.available && !bAvail?.available) return -1;
-          if (!aAvail?.available && bAvail?.available) return 1;
-          // If both available (or both not), sort by remaining stock descending
-          const aRem = aAvail?.remaining || 0;
-          const bRem = bAvail?.remaining || 0;
-          if (aRem !== bRem) return bRem - aRem;
-          // Fallback to pitch sorting
-          const aPitch = a.pitch ? parseFloat(String(a.pitch).replace('P', '')) || 999 : 999;
-          const bPitch = b.pitch ? parseFloat(String(b.pitch).replace('P', '')) || 999 : 999;
-          return Math.abs(aPitch - pitchValue) - Math.abs(bPitch - pitchValue);
-        });
-      } catch (error) {
-        console.error('Failed to fetch bulk availability:', error);
-      }
-    }
+    // Availability search and sorting removed to speed up the app
 
     setMatchingProducts(sortedProducts);
     setCurrentProductIndex(0);

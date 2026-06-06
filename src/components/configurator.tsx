@@ -112,60 +112,22 @@ export function Configurator({
   // Per-product availability info: key = configProductId
   const [productAvailability, setProductAvailability] = useState<Record<string, { available: boolean; total: number; reserved: number; remaining: number } | null>>({});
 
-  // Load blocked periods for a specific configured product
-  const loadProductBlockedPeriods = useCallback(async (configProductId: string, productId: string, quantity: number) => {
-    if (!productId) return;
-    try {
-      const periods = await getProductBlockedPeriodsAction(productId, quantity);
-      setProductBlockedPeriods(prev => ({ ...prev, [configProductId]: periods }));
-    } catch (error) {
-      console.error('Failed to load blocked periods for product:', productId, error);
-    }
-  }, []);
+  // Blocked periods loading removed to speed up application
+  const loadProductBlockedPeriods = useCallback(async (configProductId: string, productId: string, quantity: number) => {}, []);
 
-  // Reload blocked periods whenever a rental product's productId, quantity, width, or height changes
-  useEffect(() => {
-    configuredProducts.forEach(p => {
-      if (p.transactionType === 'rental' && p.productId) {
-        const prod = allProducts.find(ap => ap.id === p.productId);
-        const tileW = (prod?.tileWidth || 50) / 100;
-        const tileH = (prod?.tileHeight || 50) / 100;
-        const neededTiles = Math.ceil(p.width / tileW) * Math.ceil(p.height / tileH) * p.quantity;
-        loadProductBlockedPeriods(p.id, p.productId, neededTiles);
-      }
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [configuredProducts.map(p => `${p.id}-${p.productId}-${p.quantity}-${p.width}-${p.height}`).join(','), allProducts]);
-
-  // Load availability for a product when a date range is selected
+  // Availability check removed to speed up application
   const loadProductAvailability = useCallback(async (
     configProductId: string,
     productId: string,
     from: Date,
     to: Date,
     quantity: number
-  ) => {
-    if (!productId || !from || !to) return;
-    try {
-      const avail = await getProductRentalAvailabilityAction(
-        productId,
-        from.toISOString(),
-        to.toISOString(),
-        quantity
-      );
-      setProductAvailability(prev => ({ ...prev, [configProductId]: avail }));
-    } catch (error) {
-      console.error('Failed to check product availability:', error);
-    }
-  }, []);
+  ) => {}, []);
 
+  // Date blocking disabled
   const isDateBlockedForProduct = useCallback((configProductId: string) => (date: Date) => {
-    const periods = productBlockedPeriods[configProductId] ?? [];
-    const d = new Date(date);
-    d.setHours(12, 0, 0, 0);
-    const dateStr = d.toISOString().split('T')[0];
-    return periods.some(period => dateStr >= period.from && dateStr <= period.to);
-  }, [productBlockedPeriods]);
+    return false;
+  }, []);
 
   const dateLocale = locale === 'en' ? enUS : fr;
 
