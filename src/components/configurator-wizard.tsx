@@ -914,12 +914,39 @@ export function StepDimensions(props: any) {
 }
 
 export function StepInstallationPhoto({ state, updateState, t }: { state: ConfigState, updateState: any, t: any }) {
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const [isDragging, setIsDragging] = React.useState(false);
+
+  const handleFile = (file: File | null) => {
+    if (file && file.type.startsWith('image/')) {
       const url = URL.createObjectURL(file);
       updateState({ installationPhoto: url });
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    handleFile(file);
+    e.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0] || null;
+    handleFile(file);
   };
 
   return (
@@ -962,7 +989,8 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
         </div>
       </div>
 
-      <div>
+      {/* Mobile Upload Controls */}
+      <div className="md:hidden">
         <div className="p-4 md:p-6 border-2 border-dashed border-white/50 rounded-3xl bg-white/20 backdrop-blur-md flex flex-col items-center mb-4">
           <div className="flex items-center gap-6 md:gap-8 mb-4">
             <label className="flex flex-col items-center gap-2 cursor-pointer group">
@@ -970,7 +998,7 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
                 <Camera size={28} />
               </div>
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">{t('wizard.photo.camera')}</span>
-              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageUpload} />
+              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleInputChange} />
             </label>
 
             <div className="w-px h-12 bg-slate-200" />
@@ -980,22 +1008,60 @@ export function StepInstallationPhoto({ state, updateState, t }: { state: Config
                 <Upload size={28} />
               </div>
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-black">{t('wizard.photo.gallery')}</span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              <input type="file" accept="image/*" className="hidden" onChange={handleInputChange} />
             </label>
           </div>
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 text-center">
             {state.installationPhoto ? t('wizard.photo.change') : t('wizard.photo.add')}
           </p>
         </div>
+      </div>
 
-        <div className="p-5 bg-white/10 backdrop-blur-md rounded-xl flex gap-3.5 items-start border border-white/20">
-          <Info className="w-5 h-5 text-[#2b4c7e] shrink-0 mt-0.5" />
-          <div>
-            <h4 className="text-[13px] font-bold text-[#2b4c7e] uppercase tracking-wider mb-1.5">{t('wizard.photo.expertAdviceTitle')}</h4>
-            <p className="text-[14px] text-[#2b4c7e] leading-relaxed">
-              {t('wizard.photo.expertAdviceDesc')}
+      {/* Desktop/Tablet Drag & Drop Zone */}
+      <div className="hidden md:block">
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={cn(
+            "relative w-full max-w-2xl mx-auto rounded-[2.5rem] border-2 border-dashed transition-all duration-300 cursor-pointer group",
+            isDragging
+              ? "border-black bg-black/5 scale-[1.01]"
+              : "border-slate-300 bg-white/40 hover:border-black hover:bg-white/60"
+          )}
+          onClick={() => document.getElementById('installation-photo-dropzone-input')?.click()}
+        >
+          <input
+            id="installation-photo-dropzone-input"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleInputChange}
+          />
+          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <div className={cn(
+              "w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-300",
+              isDragging ? "bg-black text-[#c6ff00] scale-110" : "bg-slate-900 text-white group-hover:bg-black group-hover:scale-110"
+            )}>
+              <Upload size={32} className="transition-transform duration-300" />
+            </div>
+            <h3 className="text-base md:text-lg font-black text-slate-900 mb-2 tracking-tight">
+              {t('wizard.photo.dropzoneTitle')}
+            </h3>
+            <p className="text-xs md:text-sm font-medium text-slate-500">
+              {t('wizard.photo.dropzoneSubtitle')}
             </p>
           </div>
+        </div>
+      </div>
+
+      <div className="p-5 bg-white/10 backdrop-blur-md rounded-xl flex gap-3.5 items-start border border-white/20">
+        <Info className="w-5 h-5 text-[#2b4c7e] shrink-0 mt-0.5" />
+        <div>
+          <h4 className="text-[13px] font-bold text-[#2b4c7e] uppercase tracking-wider mb-1.5">{t('wizard.photo.expertAdviceTitle')}</h4>
+          <p className="text-[14px] text-[#2b4c7e] leading-relaxed">
+            {t('wizard.photo.expertAdviceDesc')}
+          </p>
         </div>
       </div>
     </div>

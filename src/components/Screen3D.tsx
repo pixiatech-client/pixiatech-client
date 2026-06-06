@@ -354,7 +354,7 @@ function Screen({
     } else {
       const modulesX = Math.round((Math.PI * diameter) / 0.5);
       const angleStep = (2 * Math.PI) / modulesX;
-      const R = 0.5 / (2 * Math.sin(angleStep / 2));
+      const R = diameter / 2;
       return { modulesX, R, angleStep };
     }
   }, [cabinetAngle, diameter]);

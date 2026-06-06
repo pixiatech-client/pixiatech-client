@@ -239,29 +239,29 @@ export default function StepDimensions({
                         </div>
                       </div>
 
-                      {/* Standard Diameter Buttons */}
-                      <div className={`space-y-2 transition-all duration-300 ${state.cabinetAngle !== 0 ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
-                        <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">
-                          Diamètres Standards
-                        </label>
-                        <div className="flex gap-2">
-                          {[1.0, 1.2, 1.5].map((d) => (
-                            <button
-                              key={d}
-                              type="button"
-                              disabled={state.cabinetAngle !== 0}
-                              onClick={() => handleUpdateState({ diameter: d })}
-                              className={`flex-1 py-1 rounded-lg border text-[10px] sm:text-xs font-bold transition-all ${
-                                Math.abs((state.diameter || 1.0) - d) < 0.05
-                                  ? "bg-black text-[#c6ff00] border-black shadow-md"
-                                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
-                              }`}
-                            >
-                               {d.toFixed(1)} M
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                       {/* Standard Diameter Buttons */}
+                       <div className={`space-y-2 transition-all duration-300 ${state.cabinetAngle !== 0 ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
+                         <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">
+                           Diamètres Standards
+                         </label>
+                         <div className="flex flex-wrap gap-2">
+                           {[1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 8.0, 10, 15, 20, 30].map((d) => (
+                             <button
+                               key={d}
+                               type="button"
+                               disabled={state.cabinetAngle !== 0}
+                               onClick={() => handleUpdateState({ diameter: d })}
+                               className={`flex-1 min-w-[4.5rem] py-1 rounded-lg border text-[10px] sm:text-xs font-bold transition-all ${
+                                 Math.abs((state.diameter || 1.0) - d) < 0.05
+                                   ? "bg-black text-[#c6ff00] border-black shadow-md"
+                                   : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                               }`}
+                             >
+                                {d.toFixed(1)} M
+                             </button>
+                           ))}
+                         </div>
+                       </div>
 
                       {/* Diameter Slider */}
                       <div className="space-y-3 relative">
@@ -273,37 +273,37 @@ export default function StepDimensions({
                             <button
                               type="button"
                               disabled={state.cabinetAngle !== 0}
-                              onClick={() => handleUpdateState({ diameter: Math.max(1.0, (state.diameter || 1.0) - 0.1) })}
+                              onClick={() => handleUpdateState({ diameter: Math.max(1.0, (state.diameter || 1.0) - 0.5) })}
                               className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
                             >
                               <ChevronLeft className="w-3.5 h-3.5" />
                             </button>
-                            <input
-                              type="number"
-                              step="0.1"
-                              min="1.0"
-                              max="3.0"
-                              disabled={state.cabinetAngle !== 0}
-                              value={state.diameter || 1.0}
-                              onChange={(e) => {
-                                const val = parseFloat(e.target.value);
-                                if (!isNaN(val)) handleUpdateState({ diameter: Math.min(3.0, Math.max(1.0, val)) });
-                              }}
-                              className="w-10 sm:w-16 text-center text-sm sm:text-base font-black text-slate-800 bg-transparent border-none appearance-none focus:outline-none focus:ring-0"
-                            />
-                            <button
-                              type="button"
-                              disabled={state.cabinetAngle !== 0}
-                              onClick={() => handleUpdateState({ diameter: Math.min(3.0, (state.diameter || 1.0) + 0.1) })}
-                              className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
-                            >
+                          <input
+                            type="number"
+                            step="0.5"
+                            min="1.0"
+                            max="30"
+                            disabled={state.cabinetAngle !== 0}
+                            value={state.diameter || 1.0}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value);
+                              if (!isNaN(val)) handleUpdateState({ diameter: Math.min(30, Math.max(1.0, val)) });
+                            }}
+                            className="w-10 sm:w-16 text-center text-sm sm:text-base font-black text-slate-800 bg-transparent border-none appearance-none focus:outline-none focus:ring-0"
+                          />
+                          <button
+                            type="button"
+                            disabled={state.cabinetAngle !== 0}
+                            onClick={() => handleUpdateState({ diameter: Math.min(30, (state.diameter || 1.0) + 0.5) })}
+                            className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
+                          >
                               <ChevronRight className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
                         <div className={`relative group px-2 transition-all duration-300 ${state.cabinetAngle !== 0 ? "opacity-40 pointer-events-none" : "opacity-100"}`}>
                           <input
-                            type="range" min="1.0" max="3.0" step="0.1"
+                            type="range" min="1.0" max="30" step="0.5"
                             disabled={state.cabinetAngle !== 0}
                             value={state.diameter || 1.0}
                             onChange={(e) => handleUpdateState({ diameter: parseFloat(e.target.value) })}

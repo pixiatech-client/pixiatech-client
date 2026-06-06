@@ -167,6 +167,32 @@ export default function WizardPage() {
         </CardContent>
       </Card>
 
+      {/* Step Images */}
+      <Card className="rounded-xl border border-slate-200/60">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-bold">Images des étapes</CardTitle>
+          <CardDescription>Configurez les images affichées dans les étapes Distance de visionnage et Pixel Pitch.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase text-slate-400">Distance de visionnage</Label>
+            <InputWithUpload
+              placeholder="URL de l'image"
+              value={settings.viewingDistanceImageUrl || ''}
+              onChange={(newUrl) => setSettings({ ...settings, viewingDistanceImageUrl: newUrl })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase text-slate-400">Pixel Pitch recommandé</Label>
+            <InputWithUpload
+              placeholder="URL de l'image"
+              value={settings.pixelPitchImageUrl || ''}
+              onChange={(newUrl) => setSettings({ ...settings, pixelPitchImageUrl: newUrl })}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Pixel Pitches */}
       <Card className="rounded-xl border border-slate-200/60">
         <CardHeader className="pb-4 flex flex-row items-center justify-between">
