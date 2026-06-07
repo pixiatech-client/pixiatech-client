@@ -236,15 +236,15 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
         return prev;
       }
       if (prev.step === 8) {
-        if (!prev.selectedProduct) return prev; // Prevent completion without selection
+        const isMulti = prev.selectionMode === 'multi';
+        if (!isMulti && !prev.selectedProduct) return prev; // Prevent completion without selection
+        if (isMulti && (!prev.selectedProducts || prev.selectedProducts.length === 0)) return prev;
 
         const matchingProduct = allProducts.find(p =>
           p.availableFor.includes((prev.projectType === 'vente' ? 'sale' : 'rental') as 'sale' | 'rental') &&
           p.type.includes(prev.environment as any)
         );
 
-        // Use the explicitly selected product from Step 8, fallback to matching product
-        const productId = prev.selectedProduct !== null ? String(prev.selectedProduct) : (matchingProduct?.id ?? allProducts[0]?.id ?? 'fallback-product-id');
         const isRental = prev.projectType === 'location';
 
         const rentalPeriod = isRental && prev.rentalStartDate && prev.rentalEndDate
@@ -264,31 +264,61 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
           'exterieur': 'outdoor'
         };
 
-        const configuredProduct: ConfiguredProduct = {
-          id: `config_${Date.now()}`,
-          productId: productId,
-          productType: envMap[prev.environment] || 'indoor',
-          width: prev.width,
-          height: prev.height,
-          quantity: prev.quantity || 1,
-          transactionType: prev.projectType === 'vente' ? 'sale' : 'rental',
-          rentalDuration: calculatedDuration,
-          rentalUnit: 'day',
-          rentalPeriod: rentalPeriod,
-          rentalDate: isRental && prev.rentalStartDate ? new Date(prev.rentalStartDate) : undefined,
-          rentalStartTime: isRental ? prev.rentalStartTime || '08:00' : undefined,
-          rentalEndTime: isRental ? prev.rentalEndTime || '18:00' : undefined,
-          installationPhoto: prev.installationPhoto || undefined,
-          // Screen layout data from StepDimensions
-          screenLayout: prev.is360 ? 'cylindrical' : prev.isCurved ? 'curved' : 'flat',
-          isCurved: prev.isCurved,
-          is360: prev.is360,
-          diameter: prev.is360 ? prev.diameter : undefined,
-          cabinetAngle: prev.cabinetAngle,
-          curveLeft: prev.isCurved ? prev.curveLeft : undefined,
-          curveRight: prev.isCurved ? prev.curveRight : undefined,
-        };
-        onComplete(configuredProduct);
+        if (isMulti) {
+          const configuredProductsList: ConfiguredProduct[] = prev.selectedProducts.map((productId, idx) => {
+            const productQty = prev.quantities?.[productId] || 1;
+            return {
+              id: `config_${Date.now()}_${idx}`,
+              productId: productId,
+              productType: envMap[prev.environment] || 'indoor',
+              width: prev.width,
+              height: prev.height,
+              quantity: productQty,
+              transactionType: prev.projectType === 'vente' ? 'sale' : 'rental',
+              rentalDuration: calculatedDuration,
+              rentalUnit: 'day',
+              rentalPeriod: rentalPeriod,
+              rentalDate: isRental && prev.rentalStartDate ? new Date(prev.rentalStartDate) : undefined,
+              rentalStartTime: isRental ? prev.rentalStartTime || '08:00' : undefined,
+              rentalEndTime: isRental ? prev.rentalEndTime || '18:00' : undefined,
+              installationPhoto: prev.installationPhoto || undefined,
+              screenLayout: prev.is360 ? 'cylindrical' : prev.isCurved ? 'curved' : 'flat',
+              isCurved: prev.isCurved,
+              is360: prev.is360,
+              diameter: prev.is360 ? prev.diameter : undefined,
+              cabinetAngle: prev.cabinetAngle,
+              curveLeft: prev.isCurved ? prev.curveLeft : undefined,
+              curveRight: prev.isCurved ? prev.curveRight : undefined,
+            };
+          });
+          onComplete(configuredProductsList as any);
+        } else {
+          const productId = prev.selectedProduct !== null ? String(prev.selectedProduct) : (matchingProduct?.id ?? allProducts[0]?.id ?? 'fallback-product-id');
+          const configuredProduct: ConfiguredProduct = {
+            id: `config_${Date.now()}`,
+            productId: productId,
+            productType: envMap[prev.environment] || 'indoor',
+            width: prev.width,
+            height: prev.height,
+            quantity: prev.quantity || 1,
+            transactionType: prev.projectType === 'vente' ? 'sale' : 'rental',
+            rentalDuration: calculatedDuration,
+            rentalUnit: 'day',
+            rentalPeriod: rentalPeriod,
+            rentalDate: isRental && prev.rentalStartDate ? new Date(prev.rentalStartDate) : undefined,
+            rentalStartTime: isRental ? prev.rentalStartTime || '08:00' : undefined,
+            rentalEndTime: isRental ? prev.rentalEndTime || '18:00' : undefined,
+            installationPhoto: prev.installationPhoto || undefined,
+            screenLayout: prev.is360 ? 'cylindrical' : prev.isCurved ? 'curved' : 'flat',
+            isCurved: prev.isCurved,
+            is360: prev.is360,
+            diameter: prev.is360 ? prev.diameter : undefined,
+            cabinetAngle: prev.cabinetAngle,
+            curveLeft: prev.isCurved ? prev.curveLeft : undefined,
+            curveRight: prev.isCurved ? prev.curveRight : undefined,
+          };
+          onComplete(configuredProduct);
+        }
         return prev;
       }
       setDirection(1);
@@ -385,12 +415,12 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
                       <button
                         onClick={nextStep}
                         disabled={
-                          (state.step === 8 && !state.selectedProduct) ||
+                          (state.step === 8 && (state.selectionMode === 'multi' ? (!state.selectedProducts || state.selectedProducts.length === 0) : !state.selectedProduct)) ||
                           (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate))
                         }
                         className={cn(
                           "flex-1 h-12 bg-black rounded-[18px] flex items-center px-6 transition-all duration-300 group active:scale-[0.98] overflow-hidden relative",
-                          ((state.step === 8 && !state.selectedProduct) ||
+                          ((state.step === 8 && (state.selectionMode === 'multi' ? (!state.selectedProducts || state.selectedProducts.length === 0) : !state.selectedProduct)) ||
                            (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate))) &&
                           "opacity-50 cursor-not-allowed grayscale"
                         )}
@@ -1365,7 +1395,9 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
               ? selectedProducts.includes(product.id)
               : state.selectedProduct === product.id;
             const atMaxMulti = isMulti && selectedProducts.length >= 3 && !isSelected;
-            const quantity = state.quantity || 1;
+            const quantity = isMulti
+              ? (state.quantities?.[product.id] || 1)
+              : (state.quantity || 1);
 
             const handleSelect = () => {
               if (isMulti) {
@@ -1394,16 +1426,23 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
             }).join(' \u2022 ');
 
             let unitPrice = 0;
+            const isRentalMode = state.projectType === 'location';
             if (product.hasDimensions && product.tileWidth && product.tileHeight && product.pricePerTile && product.pricePerTile > 0) {
               const tilesPerWidth = Math.ceil((state.width * 100) / product.tileWidth);
               const tilesPerHeight = Math.ceil((state.height * 100) / product.tileHeight);
               const totalTiles = tilesPerWidth * tilesPerHeight;
               unitPrice = totalTiles * product.pricePerTile;
+              if (isRentalMode && product.rentalPricePerDay && product.rentalPricePerDay > 0) {
+                unitPrice = product.rentalPricePerDay * area;
+              }
             } else {
               if (state.projectType === 'vente') {
-                unitPrice = (product.salePricePerSqM || 0) * area;
+                unitPrice = (product.salePricePerSqM || 2000) * area;
               } else {
-                unitPrice = (product.rentalPricePerDay || 0) * area;
+                const rentalRate = (typeof product.rentalPricePerDay === 'number' && product.rentalPricePerDay > 0)
+                  ? product.rentalPricePerDay
+                  : 12;
+                unitPrice = rentalRate * area;
               }
             }
 
@@ -1416,7 +1455,9 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
             }
 
             const totalPrice = unitPrice * quantity * duration;
-            const showOnEstimate = settings.isPriceHidden || totalPrice === 0;
+            
+            const hasNoPricingData = !product.pricePerTile && !product.salePricePerSqM && !product.rentalPricePerDay;
+            const showOnEstimate = settings.isPriceHidden || hasNoPricingData;
             const displayedUnitPrice = isRental ? unitPrice * duration : unitPrice;
 
             const shortDesc = product.selectedChars && product.selectedChars.length > 0
@@ -1550,19 +1591,47 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                     )}
                   </div>
 
-                  {isSelected && !isMulti && (
-                    <div className="mt-4 flex items-center justify-between bg-gray-50 p-2 rounded-xl border border-gray-100">
+                  {isSelected && (
+                    <div className="mt-4 flex items-center justify-between bg-gray-50 p-2 rounded-xl border border-gray-100 font-sans">
                       <span className="font-black uppercase tracking-[0.1em] text-[9px] ml-2 text-gray-400">{t('wizard.products.quantity')}</span>
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={(e) => { e.stopPropagation(); updateState({ quantity: Math.max(1, (state.quantity || 1) - 1) }); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isMulti) {
+                              const currentQty = state.quantities?.[product.id] || 1;
+                              const newQty = Math.max(1, currentQty - 1);
+                              updateState({
+                                quantities: {
+                                  ...(state.quantities || {}),
+                                  [product.id]: newQty
+                                }
+                              });
+                            } else {
+                              updateState({ quantity: Math.max(1, (state.quantity || 1) - 1) });
+                            }
+                          }}
                           className="w-8 h-8 rounded-full bg-[#c6ff00] text-black flex items-center justify-center transition-all active:scale-90"
                         >
                           <ChevronLeft size={14} strokeWidth={3} />
                         </button>
-                        <span className="font-black text-xs w-4 text-center">{state.quantity || 1}</span>
+                        <span className="font-black text-xs w-4 text-center">{quantity}</span>
                         <button
-                          onClick={(e) => { e.stopPropagation(); updateState({ quantity: (state.quantity || 1) + 1 }); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isMulti) {
+                              const currentQty = state.quantities?.[product.id] || 1;
+                              const newQty = currentQty + 1;
+                              updateState({
+                                quantities: {
+                                  ...(state.quantities || {}),
+                                  [product.id]: newQty
+                                }
+                              });
+                            } else {
+                              updateState({ quantity: (state.quantity || 1) + 1 });
+                            }
+                          }}
                           className="w-8 h-8 rounded-full bg-[#c6ff00] text-black flex items-center justify-center transition-all active:scale-90"
                         >
                           <ChevronRight size={14} strokeWidth={3} />

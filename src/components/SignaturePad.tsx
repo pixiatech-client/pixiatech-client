@@ -10,17 +10,24 @@ interface SignaturePadProps {
   onSave: (dataUrl: string) => void;
   onClear: () => void;
   isValidated: boolean;
+  onStrokeComplete?: (dataUrl: string) => void;
 }
 
-export default function SignaturePad({ onSave, onClear, isValidated }: SignaturePadProps) {
+export default function SignaturePad({ onSave, onClear, isValidated, onStrokeComplete }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
 
-  // Initialize canvas with smooth rendering
+  // Initialize canvas with smooth rendering and correct scaling
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Adjust physical drawing dimensions to match visual layout dimensions (fixes offset)
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width || canvas.offsetWidth || 600;
+    canvas.height = rect.height || canvas.offsetHeight || 176;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -42,6 +49,14 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
       return {
         x: e.touches[0].clientX - rect.left,
         y: e.touches[0].clientY - rect.top
+      };
+    }
+
+    // Default to mouse event: use offsetX/offsetY if available (resilient to CSS zoom)
+    if (e.nativeEvent && typeof e.nativeEvent.offsetX === 'number') {
+      return {
+        x: e.nativeEvent.offsetX,
+        y: e.nativeEvent.offsetY
       };
     }
 
@@ -78,11 +93,22 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
     ctx.lineTo(x, y);
     ctx.stroke();
     setHasDrawn(true);
+
+    // Live update preview on stroke move
+    if (onStrokeComplete) {
+      const dataUrl = canvas.toDataURL('image/png');
+      onStrokeComplete(dataUrl);
+    }
   };
 
   const stopDrawing = () => {
     if (isDrawing) {
       setIsDrawing(false);
+      const canvas = canvasRef.current;
+      if (canvas && hasDrawn && onStrokeComplete) {
+        const dataUrl = canvas.toDataURL('image/png');
+        onStrokeComplete(dataUrl);
+      }
     }
   };
 
@@ -95,6 +121,9 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasDrawn(false);
     onClear();
+    if (onStrokeComplete) {
+      onStrokeComplete('');
+    }
   };
 
   const validateSignature = () => {

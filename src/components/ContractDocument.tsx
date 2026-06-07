@@ -273,11 +273,11 @@ export default function ContractDocument({
                 
                 {/* Preneur signature spot */}
                 <div className="relative w-32 h-24 my-2 flex items-center justify-center bg-zinc-50 border border-zinc-200 rounded-lg overflow-hidden">
-                  {isValidated && signatureDataUrl ? (
+                  {signatureDataUrl ? (
                     <img 
                       src={signatureDataUrl} 
                       alt="Signature Preneur" 
-                      className="max-w-full max-h-full object-contain mix-blend-multiply transition-all duration-300"
+                      className="max-w-full max-h-full object-contain mix-blend-multiply transition-all duration-300 animate-fade-in"
                       referrerPolicy="no-referrer"
                     />
                   ) : (
@@ -294,6 +294,8 @@ export default function ContractDocument({
                   <span className="underline text-zinc-400">{renter.email || 'ayanhil103@gmail.com'}</span> <br />
                   {isValidated ? (
                     <span className="text-blue-600 font-semibold">Signé électroniquement</span>
+                  ) : signatureDataUrl ? (
+                    <span className="text-blue-550 font-medium italic">Signature en cours...</span>
                   ) : (
                     <span className="text-amber-600 font-medium italic">Signature requise</span>
                   )}

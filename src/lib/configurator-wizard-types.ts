@@ -24,6 +24,7 @@ export interface ConfigState {
   rentalStartTime: string | null;
   rentalEndTime: string | null;
   quantity: number;
+  quantities: Record<string, number>;
   isCurved: boolean;
   curveLeft: number;
   curveRight: number;
@@ -54,6 +55,7 @@ export const INITIAL_STATE: ConfigState = {
   rentalStartTime: '08:00',
   rentalEndTime: '18:00',
   quantity: 1,
+  quantities: {},
   isCurved: false,
   curveLeft: 0,
   curveRight: 0,

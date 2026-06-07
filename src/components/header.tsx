@@ -25,7 +25,7 @@ export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; 
 
   const LoginButton = () => {
     if (!isClient || isUserLoading) {
-      return <Skeleton className="h-10 w-12 rounded-lg" />;
+      return <Skeleton className="h-10 w-12 rounded-lg shrink-0" />;
     }
 
     const isLoggedIn = user && !user.isAnonymous;
@@ -35,10 +35,10 @@ export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; 
         asChild
         variant="outline"
         size="icon"
-        className="group w-12 border-zinc-200 hover:border-zinc-350"
+        className="group w-12 border-zinc-200 hover:border-zinc-900 bg-white hover:bg-zinc-900 transition-all shrink-0"
       >
         <Link href={isLoggedIn ? "/admin" : "/admin/login"} title="Administration">
-          <LogIn className="h-[18px] w-[18px] text-zinc-700 group-hover:text-zinc-900" />
+          <LogIn className="h-[18px] w-[18px] text-zinc-700 group-hover:text-white transition-colors" />
         </Link>
       </Button>
     );

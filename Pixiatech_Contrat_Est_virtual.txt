@@ -1,0 +1,31 @@
+=======================================================================
+ESTIMATION TECHNIQUE & CONTRAT NUMERIQUE VALIDE - PIXIATECH PRO
+=======================================================================
+Reference Dossier     : PIXIA-EST-NaN-2026
+Date d'Homologation   : 29 mai 2026
+Statut de Signature   : CERTIFIE ET SIGNE ELECTRONIQUEMENT
+-----------------------------------------------------------------------
+
+SOCIETE CONTRACTANTE (PRENEUR) :
+- Raison Sociale : virtual
+- Representant : realitymakers
+- Adresse de livraison : 46 cite 68 logts ENRIO,  
+- Coordonnees : ayanhil@gmail.com | +213777657080
+
+SPECIFICATIONS TECHNIQUES DU BIEN :
+- Modele d'Affichage : Location Écran LED Sur-Mesure
+- Dimensions d'ecran : undefinedm x undefinedm
+- Surface totale d'affichage : NaN m2
+- Nombre de modules LED : NaN dalles de dimensions 50cm x 50cm
+- Type de commande : LOCATION
+
+DECOMPTE FINANCIER :
+- Sous-total materiel : 0 EUR TTC
+- Frais logistique de livraison : 250 EUR TTC
+- Prestation d'Installation : Incluse par nos techniciens (NaN EUR TTC)
+- MONTANT TOTAL ESTIME (TTC) : NaN EUR TTC
+
+-----------------------------------------------------------------------
+Certifie par PandaDoc e-Sign. Authentifie par OTP Mail Code #854394
+PIXIATECH - Saint-Ouen-sur-Seine et France Entiere.
+=======================================================================

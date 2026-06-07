@@ -115,6 +115,7 @@ export default function SignatureFlow({
   const [acceptedCgl, setAcceptedCgl] = useState<boolean>(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [isSignatureValidated, setIsSignatureValidated] = useState<boolean>(false);
+  const [tempSignatureUrl, setTempSignatureUrl] = useState<string | null>(null);
 
   // OTP Verification
   const [sentOtpCode, setSentOtpCode] = useState<string>('');
@@ -125,8 +126,6 @@ export default function SignatureFlow({
   const [showErrorTips, setShowErrorTips] = useState<boolean>(false);
   const [otpResent, setOtpResent] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [showEmailPulse, setShowEmailPulse] = useState<boolean>(false);
-  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
@@ -189,22 +188,6 @@ export default function SignatureFlow({
     ]
   };
 
-  const handleCopyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(sentOtpCode);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      // Fallback
-      const textArea = document.createElement("textarea");
-      textArea.value = sentOtpCode;
-      document.body.appendChild(textArea);
-      textArea.select();
-      try { document.execCommand('copy'); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); } catch (e) {}
-      document.body.removeChild(textArea);
-    }
-  };
-
   // OTP Countdown timer
   useEffect(() => {
     let timer: any;
@@ -217,15 +200,6 @@ export default function SignatureFlow({
       if (timer) clearInterval(timer);
     };
   }, [currentStep, otpTimeLeft, isOtpCompleted]);
-
-  // Flash email pulse on securite mount
-  useEffect(() => {
-    if (currentStep === 'securite') {
-      setShowEmailPulse(true);
-      const timer = setTimeout(() => setShowEmailPulse(false), 3500);
-      return () => clearTimeout(timer);
-    }
-  }, [currentStep]);
 
   // Handle auto code completion on typing/paste
   useEffect(() => {
@@ -915,31 +889,36 @@ export default function SignatureFlow({
                 <ContractDocument
                   pack={activePack}
                   renter={renterDetails}
-                  signatureDataUrl={signatureDataUrl}
+                  signatureDataUrl={signatureDataUrl || tempSignatureUrl}
                   isValidated={isSignatureValidated}
                 />
 
                 <div 
                   id="sig-checkbox-box" 
-                  className={`p-4 rounded-xl border transition-all duration-200 ${
+                  onClick={() => {
+                    if (!isSignatureValidated) {
+                      setAcceptedCgl(prev => {
+                        const newVal = !prev;
+                        if (newVal) setShowErrorTips(false);
+                        return newVal;
+                      });
+                    }
+                  }}
+                  className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer select-none ${
                     showErrorTips && !acceptedCgl
-                      ? 'border-red-200 bg-red-50/40 text-red-950'
+                      ? 'border-red-200 bg-red-50/40 text-red-950 hover:bg-red-50/65'
                       : acceptedCgl
                       ? 'border-blue-200 bg-blue-50/20 text-zinc-800'
-                      : 'border-zinc-200 bg-zinc-50/40 text-zinc-600'
+                      : 'border-zinc-200 bg-zinc-50/40 text-zinc-600 hover:bg-zinc-55/50'
                   }`}
                 >
-                  <label className="flex items-start gap-3 cursor-pointer select-none">
-                    <div className="relative mt-0.5">
+                  <div className="flex items-start gap-3">
+                    <div className="relative mt-0.5 shrink-0">
                       <input
                         id="cgl-chk"
                         type="checkbox"
                         checked={acceptedCgl}
-                        onChange={(e) => {
-                          setAcceptedCgl(e.target.checked);
-                          if (e.target.checked) setShowErrorTips(false);
-                        }}
-                        disabled={isSignatureValidated}
+                        readOnly
                         className={`w-5 h-5 rounded-lg border appearance-none checked:bg-blue-650 checked:border-blue-600 hover:border-blue-500 transition-all flex items-center justify-center cursor-pointer ${
                           showErrorTips && !acceptedCgl ? 'border-red-500 bg-white ring-2 ring-red-500/15' : 'border-zinc-300 bg-white'
                         }`}
@@ -951,7 +930,7 @@ export default function SignatureFlow({
                     <span className="text-xs leading-relaxed">
                       Je reconnais avoir lu et accepté les <strong className="text-zinc-900 font-semibold">Conditions Générales de Location</strong>. Je certifie que les informations fournies sont exactes et je m'engage à respecter les termes du contrat.
                     </span>
-                  </label>
+                  </div>
                 </div>
 
                 <div 
@@ -974,8 +953,10 @@ export default function SignatureFlow({
                     <SignaturePad
                       isValidated={isSignatureValidated}
                       onSave={handleSignatureSave}
+                      onStrokeComplete={(url) => setTempSignatureUrl(url || null)}
                       onClear={() => {
                         setSignatureDataUrl(null);
+                        setTempSignatureUrl(null);
                         setIsSignatureValidated(false);
                       }}
                     />
@@ -1240,101 +1221,6 @@ export default function SignatureFlow({
                   ACCÈS RÉSERVÉ À L'ADMINISTRATION PIXIATECH
                 </div>
 
-              </div>
-
-              {/* SIMULATEUR DE MESSAGERIE */}
-              <div className="space-y-3.5">
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-[10px] font-bold text-zinc-600 tracking-wider block uppercase font-heading flex items-center gap-1">
-                    <MailOpen size={12} />
-                    Simulateur de Messagerie
-                  </span>
-                  <span className="text-[8px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full uppercase animate-pulse">
-                    Reçu à l'instant
-                  </span>
-                </div>
-
-                {/* Apple styled email sandbox */}
-                <div 
-                  className={`border rounded-[24px] bg-white overflow-hidden shadow-lg transition-all duration-300 ${
-                    showEmailPulse ? 'ring-4 ring-blue-500/25 border-blue-400 scale-[1.01]' : 'border-zinc-200'
-                  }`}
-                  id="sandbox-email-panel"
-                >
-                  {/* Title mock bar */}
-                  <div className="bg-zinc-50 border-b border-zinc-150 px-4 py-2.5 flex justify-between items-center text-zinc-400 text-xs">
-                    <div className="flex gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-red-400/80"></span>
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80"></span>
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80"></span>
-                    </div>
-                    <span className="text-[9px] font-mono select-none">Client Webmail Sécurisé</span>
-                  </div>
-
-                  {/* Email header */}
-                  <div className="p-5 border-b border-zinc-100 text-center space-y-4">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center mx-auto">
-                      <MailOpen size={18} />
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <h4 className="text-xs font-black font-heading tracking-wide text-zinc-900 uppercase">
-                        Authentification
-                      </h4>
-                      <p className="text-[11px] text-zinc-500 max-w-sm mx-auto">
-                        Un code de sécurité est requis pour accéder à votre estimation Pixatech.
-                      </p>
-                    </div>
-
-                    <div className="inline-flex items-center gap-1 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 text-[10px] text-blue-600 font-bold">
-                      <Clock size={11} />
-                      <span>{formatTime(otpTimeLeft)}</span>
-                    </div>
-                  </div>
-
-                  {/* Mail Body */}
-                  <div className="p-5 space-y-5 text-xs text-zinc-600">
-                    
-                    {/* Code digits display */}
-                    <div className="space-y-3">
-                      <span className="text-[9px] text-zinc-400 uppercase tracking-widest text-center block font-medium">Votre code temporaire d'authentification</span>
-                      
-                      <div className="flex justify-center gap-2">
-                        {sentOtpCode.split('').map((char, index) => (
-                          <div 
-                            key={index}
-                            className="w-10 h-12 bg-blue-50/40 border-2 border-blue-100 text-blue-600 font-extrabold font-mono text-xl rounded-xl flex items-center justify-center shadow-sm"
-                          >
-                            {char}
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="flex justify-center pt-0.5">
-                        <button
-                          onClick={handleCopyCode}
-                          type="button"
-                          className="px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1.5 border border-blue-200 shadow-sm"
-                        >
-                          <Copy size={11} />
-                          <span>{isCopied ? "Code copié !" : "Copier le code dans le presse-papier"}</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Security notice */}
-                    <div className="p-3.5 bg-blue-50 rounded-xl border border-blue-100 text-[10px] text-blue-900 leading-relaxed font-sans">
-                      <strong>🚨 Information de sécurité :</strong> <br />
-                      "Ce code est strictement personnel. Ne le partagez jamais avec un tiers, y compris un collaborateur Pixatec."
-                    </div>
-
-                    <div className="border-t border-zinc-100 pt-3 flex flex-col gap-1 items-center justify-center text-[9px] text-zinc-400 text-center font-sans uppercase">
-                      <span>Ce message automatique est crypté. PandaDoc Secure Shield.</span>
-                      <a href="mailto:contact@pixiatech.com" className="text-blue-500 font-bold hover:underline">Contacter le support</a>
-                    </div>
-
-                  </div>
-                </div>
               </div>
 
             </div>
