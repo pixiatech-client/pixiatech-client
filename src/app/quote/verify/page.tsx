@@ -33,6 +33,32 @@ function VerifyContent() {
 
                 if (result && result.success) {
                     setStatus('success');
+
+                    // Notify opener/parent window if possible
+                    if (window.opener) {
+                        try {
+                            window.opener.postMessage({ type: 'OTP_VERIFIED', quoteId: id || token, otp: otp }, '*');
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+
+                    // Notify BroadcastChannel
+                    try {
+                        const bc = new BroadcastChannel('otp_verification');
+                        bc.postMessage({ type: 'OTP_VERIFIED', quoteId: id || token, otp: otp });
+                        bc.close();
+                    } catch (e) {
+                        console.error(e);
+                    }
+
+                    // Set localStorage key
+                    try {
+                        localStorage.setItem(`otp_verified_${id || token}`, Date.now().toString());
+                    } catch (e) {
+                        console.error(e);
+                    }
+
                     // Attempt to close this tab after a brief delay so the user sees the success message
                     setTimeout(() => {
                         try {

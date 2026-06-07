@@ -126,6 +126,9 @@ export default function SignatureFlow({
   const [showErrorTips, setShowErrorTips] = useState<boolean>(false);
   const [otpResent, setOtpResent] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isSimulatingLinkClick, setIsSimulatingLinkClick] = useState<boolean>(false);
+  const [showEmailPulse, setShowEmailPulse] = useState<boolean>(false);
+  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   // Form validation errors
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -207,21 +210,40 @@ export default function SignatureFlow({
     };
   }, [currentStep, otpTimeLeft, isOtpCompleted]);
 
+  // Flash email panel pulse notification when security validation page mounts
+  useEffect(() => {
+    if (currentStep === 'securite') {
+      setShowEmailPulse(true);
+      const timer = setTimeout(() => {
+        setShowEmailPulse(false);
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
   // Handle auto code completion on typing/paste
   useEffect(() => {
-    if (inputOtpCode.length === 6 && !isOtpCompleted) {
+    if (inputOtpCode.length === 6 && !isOtpCompleted && !isSimulatingLinkClick) {
       handleManualCodeVerify(inputOtpCode);
     }
-  }, [inputOtpCode]);
+  }, [inputOtpCode, isOtpCompleted, isSimulatingLinkClick]);
 
-  // Real-time listener for email link click validation
+  // Auto-download PDF when currentStep changes to 'confirmation'
+  useEffect(() => {
+    if (currentStep === 'confirmation') {
+      handleContractDownload();
+    }
+  }, [currentStep]);
+
+  // Real-time listener for email link click validation (Firestore, Broadcast, LocalStorage, window.opener postMessage)
   useEffect(() => {
     if (!quoteId || currentStep !== 'securite') return;
     
+    // 1. Firestore snapshot listener
     const unsubscribe = onSnapshot(doc(db, 'quotes', quoteId), (docSnap) => {
       if (docSnap.exists()) {
         const quoteData = docSnap.data();
-        if (quoteData?.emailVerified) {
+        if (quoteData?.emailVerified && !isOtpCompleted && !isSimulatingLinkClick) {
           setIsOtpCompleted(true);
           setOtpError(null);
           setTimeout(() => {
@@ -231,8 +253,134 @@ export default function SignatureFlow({
       }
     });
 
-    return () => unsubscribe();
-  }, [quoteId, currentStep]);
+    // Helper to animate digit injection
+    const animateOtpDigits = (otpCodeVal: string) => {
+      if (isSimulatingLinkClick || isOtpCompleted) return;
+      setIsSimulatingLinkClick(true);
+      setOtpError(null);
+      setInputOtpCode('');
+
+      let currentInput = '';
+      let index = 0;
+
+      const interval = setInterval(() => {
+        if (index < otpCodeVal.length) {
+          currentInput += otpCodeVal[index];
+          setInputOtpCode(currentInput);
+          index++;
+        } else {
+          clearInterval(interval);
+          setTimeout(() => {
+            setIsOtpCompleted(true);
+            setIsSimulatingLinkClick(false);
+            setCurrentStep('confirmation');
+          }, 800);
+        }
+      }, 150);
+    };
+
+    // 2. BroadcastChannel listener
+    const bc = new BroadcastChannel('otp_verification');
+    bc.onmessage = (e) => {
+      if (e.data?.type === 'OTP_VERIFIED' && e.data?.quoteId === quoteId) {
+        const otpCodeVal = e.data?.otp;
+        if (otpCodeVal && otpCodeVal.length === 6) {
+          animateOtpDigits(otpCodeVal);
+        } else {
+          setIsOtpCompleted(true);
+          setOtpError(null);
+          setTimeout(() => {
+            setCurrentStep('confirmation');
+          }, 800);
+        }
+      }
+    };
+
+    // 3. LocalStorage storage listener
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `otp_verified_${quoteId}` && e.newValue) {
+        try {
+          localStorage.removeItem(`otp_verified_${quoteId}`);
+        } catch (_) {}
+        setIsOtpCompleted(true);
+        setOtpError(null);
+        setTimeout(() => {
+          setCurrentStep('confirmation');
+        }, 800);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    // 4. Window message listener (for window.opener postMessage)
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'OTP_VERIFIED' && e.data?.quoteId === quoteId) {
+        const otpCodeVal = e.data?.otp;
+        if (otpCodeVal && otpCodeVal.length === 6) {
+          animateOtpDigits(otpCodeVal);
+        } else {
+          setIsOtpCompleted(true);
+          setOtpError(null);
+          setTimeout(() => {
+            setCurrentStep('confirmation');
+          }, 800);
+        }
+      }
+    };
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      unsubscribe();
+      bc.close();
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [quoteId, currentStep, isOtpCompleted, isSimulatingLinkClick]);
+
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(sentOtpCode);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      const textArea = document.createElement("textarea");
+      textArea.value = sentOtpCode;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      } catch (e) {
+        console.error("Fallback copy failed:", e);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const handleSimulateEmailConnect = () => {
+    if (isSimulatingLinkClick || isOtpCompleted || !sentOtpCode) return;
+    setIsSimulatingLinkClick(true);
+    setOtpError(null);
+    setInputOtpCode('');
+
+    let currentInput = '';
+    let index = 0;
+
+    const interval = setInterval(() => {
+      if (index < sentOtpCode.length) {
+        currentInput += sentOtpCode[index];
+        setInputOtpCode(currentInput);
+        index++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsOtpCompleted(true);
+          setIsSimulatingLinkClick(false);
+          setCurrentStep('confirmation');
+        }, 800);
+      }
+    }, 150);
+  };
 
   // Cohesive stages in the upper header
   const steps: Step[] = [
@@ -1196,10 +1344,10 @@ export default function SignatureFlow({
 
           </div>
         )}
-        {/* STEP 3: VÉRIFICATION DE SÉCURITÉ */}
         {currentStep === 'securite' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in">
             
+            {/* Left Hand: High security validation page (Écran 4) */}
             <div className="lg:col-span-7 space-y-6">
               
               <div className="flex flex-col gap-2">
@@ -1218,6 +1366,7 @@ export default function SignatureFlow({
                 </p>
               </div>
 
+              {/* Discreet notice info cards on the left */}
               <div className="space-y-3.5 pt-1">
                 <div className="bg-white border border-[#e2e8f0] p-4 rounded-2xl shadow-sm flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
@@ -1241,7 +1390,7 @@ export default function SignatureFlow({
 
                 <button
                   onClick={handlePrevStep}
-                  className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200/80 text-zinc-700 font-bold rounded-full text-xs transition-all cursor-pointer flex items-center gap-1.5 self-start"
+                  className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200/80 text-zinc-650 font-bold rounded-full text-xs transition-all cursor-pointer flex items-center gap-1.5 self-start"
                 >
                   <ArrowLeft size={13} />
                   <span>Retour au contrat</span>
@@ -1250,30 +1399,34 @@ export default function SignatureFlow({
 
             </div>
 
+            {/* Right Hand: Interactive PIN input card & Simulated Inbox side-by-side! */}
             <div className="lg:col-span-5 space-y-6">
               
-              {/* Authenticator Box */}
+              {/* Authenticator Box (Image 4 right layout card) with prominent blue contour and shadows */}
               <div className="bg-blue-50/30 border-2 border-blue-600 rounded-[24px] p-6 sm:p-8 shadow-lg text-center space-y-6 relative overflow-hidden" id="blue-contour-securite-card">
                 
+                {/* Black lock logo visual */}
                 <div className="w-12 h-12 bg-zinc-950 text-white rounded-[16px] flex items-center justify-center mx-auto shadow-md">
                   <Lock size={20} className="stroke-[2.5]" />
                 </div>
 
                 <div className="space-y-1">
-                  <h3 className="text-base font-bold text-zinc-900 font-heading">Authentification par code</h3>
+                  <h3 className="text-base font-bold text-zinc-900 font-heading">Vérification</h3>
                   <p className="text-xs text-zinc-500 max-w-xs mx-auto">
-                    Entrez le code à 6 chiffres envoyé sur votre boîte e-mail.
+                    Entrez le code à 6 chiffres envoyé sur votre appareil de confiance.
                   </p>
                 </div>
 
-                {/* 6 digits PIN inputs */}
+                {/* Simulated 6 digits code inputs using our single-hidden input trick! */}
                 <div className="relative py-2 max-w-xs mx-auto">
+                  
+                  {/* Hidden underlying element */}
                   <input
                     ref={hiddenInputRef}
                     id="otp-code-hidden-ctrl"
                     type="text"
                     maxLength={6}
-                    disabled={isOtpCompleted}
+                    disabled={isSimulatingLinkClick || isOtpCompleted}
                     value={inputOtpCode}
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, '').slice(0, 6);
@@ -1284,6 +1437,7 @@ export default function SignatureFlow({
                     autoFocus
                   />
                   
+                  {/* Styled visual panels for grid alignment */}
                   <div 
                     onClick={() => hiddenInputRef.current?.focus()}
                     className="flex justify-between gap-1.5 sm:gap-2.5"
@@ -1298,7 +1452,7 @@ export default function SignatureFlow({
                             isOtpCompleted
                               ? 'bg-emerald-50 border-emerald-500 text-emerald-600 scale-95 shadow-inner'
                               : isFocused
-                              ? 'bg-white border-blue-500 ring-4 ring-blue-500/10 text-zinc-900 font-extrabold'
+                              ? 'bg-white border-blue-500 ring-4 ring-blue-500/10 text-zinc-900 scale-102 font-extrabold'
                               : 'bg-zinc-50 border-zinc-200 text-zinc-800'
                           }`}
                         >
@@ -1307,9 +1461,10 @@ export default function SignatureFlow({
                       );
                     })}
                   </div>
+
                 </div>
 
-                {/* Session countdown */}
+                {/* Countdown display */}
                 <div className="flex items-center justify-center gap-1 text-[11px] text-zinc-400 font-medium">
                   <Clock size={12} />
                   <span>Le code de validation expirera dans </span>
@@ -1318,13 +1473,15 @@ export default function SignatureFlow({
                   </span>
                 </div>
 
+                {/* Error messages reporting fail states */}
                 {otpError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-left text-[11px] text-red-900">
-                    <AlertTriangle size={14} className="text-red-600 shrink-0 mt-0.5" />
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2 text-left text-[11px] text-red-900 animate-shake">
+                    <AlertTriangle size={14} className="text-red-650 shrink-0 mt-0.5" />
                     <span>{otpError}</span>
                   </div>
                 )}
 
+                {/* Checked completed notice */}
                 {isOtpCompleted && (
                   <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-semibold flex items-center justify-center gap-1.5 animate-bounce">
                     <CheckCircle size={15} className="text-emerald-600" />
@@ -1332,14 +1489,15 @@ export default function SignatureFlow({
                   </div>
                 )}
 
+                {/* Confirm big black validation button modeled exactly */}
                 <div className="pt-2">
                   <button
-                    disabled={inputOtpCode.length < 6 || isOtpCompleted}
+                    disabled={inputOtpCode.length < 6 || isSimulatingLinkClick || isOtpCompleted}
                     onClick={() => handleManualCodeVerify(inputOtpCode)}
                     className={`w-full py-3 rounded-xl font-heading font-extrabold text-xs uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                      inputOtpCode.length === 6 && !isOtpCompleted
-                        ? 'bg-zinc-950 hover:bg-zinc-800 text-white shadow-md'
-                        : 'bg-zinc-100 border border-zinc-200 text-zinc-400 cursor-not-allowed'
+                      inputOtpCode.length === 6 && !isSimulatingLinkClick && !isOtpCompleted
+                        ? 'bg-zinc-950 hover:bg-zinc-850 text-white shadow-md shadow-zinc-955/20'
+                        : 'bg-zinc-100 border border-zinc-150 text-zinc-400 cursor-not-allowed'
                     }`}
                   >
                     <Lock size={12} />
@@ -1359,7 +1517,7 @@ export default function SignatureFlow({
                   <div className="flex justify-center items-center gap-4 text-[10px]">
                     <button 
                       onClick={handleResendCode}
-                      disabled={isOtpCompleted || isSubmitting}
+                      disabled={isSimulatingLinkClick || isOtpCompleted || isSubmitting}
                       className="text-blue-600 font-semibold hover:underline bg-transparent border-none cursor-pointer disabled:opacity-40"
                     >
                       Code non reçu ? Renvoyer le code
@@ -1371,6 +1529,152 @@ export default function SignatureFlow({
                   ACCÈS RÉSERVÉ À L'ADMINISTRATION PIXIATECH
                 </div>
 
+              </div>
+
+              {/* SIMULATED EMAIL INBOX COMPONENT (Image 3 - Outstanding simulator) */}
+              <div className="space-y-3.5">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-[10px] font-bold text-zinc-650 tracking-wider block uppercase font-heading flex items-center gap-1">
+                    <MailOpen size={12} />
+                    Simulateur de Messagerie
+                  </span>
+                  <span className="text-[8px] bg-emerald-100 text-emerald-850 font-bold px-2 py-0.5 rounded-full uppercase self-end animate-pulse">
+                    Reçu à l'instant
+                  </span>
+                </div>
+
+                {/* Apple styled beautiful sandbox box */}
+                <div 
+                  className={`border rounded-[24px] bg-white overflow-hidden shadow-lg transition-all duration-300 ${
+                    showEmailPulse ? 'ring-4 ring-blue-500/25 border-blue-400 scale-[1.01]' : 'border-zinc-200'
+                  }`}
+                  id="sandbox-email-panel"
+                >
+                  {/* Title mock bar */}
+                  <div className="bg-zinc-50 border-b border-zinc-150 px-4 py-2.5 flex justify-between items-center text-zinc-400 text-xs">
+                    <div className="flex gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-400/80"></span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80"></span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80"></span>
+                    </div>
+                    <span className="text-[9px] font-mono select-none">Client Webmail Sécurisé</span>
+                  </div>
+
+                  {/* Envelope and warning title */}
+                  <div className="p-5 border-b border-zinc-100 text-center space-y-4">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-105 flex items-center justify-center mx-auto">
+                      <MailOpen size={18} />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-black font-heading tracking-wide text-zinc-900 uppercase">
+                        AUTHENTIFICATION
+                      </h4>
+                      <p className="text-[11px] text-zinc-500 max-w-sm mx-auto">
+                        Un code de sécurité est requis pour accéder à votre estimation Pixatech.
+                      </p>
+                    </div>
+
+                    {/* Clock countdown badge in Email */}
+                    <div className="inline-flex items-center gap-1 bg-blue-50 border border-blue-105 rounded-full px-3 py-1 text-[10px] text-blue-600 font-bold">
+                      <Clock size={11} className="animate-spin-slow" />
+                      <span>{formatTime(otpTimeLeft)}</span>
+                    </div>
+                  </div>
+
+                  {/* Mail Body */}
+                  <div className="p-5 space-y-5 text-xs text-zinc-600">
+                    
+                    {/* Separate Premium Characters digits display (Image 3 centerpiece) */}
+                    <div className="space-y-3">
+                      <span className="text-[9px] text-zinc-400 uppercase tracking-widest text-center block font-medium">Votre code temporaire d'authentification</span>
+                      
+                      <div className="flex justify-center gap-2">
+                        {sentOtpCode.split('').map((char, index) => (
+                          <div 
+                            key={index}
+                            className="w-10 h-12 bg-blue-50/40 border-2 border-blue-100 text-blue-600 font-extrabold font-mono text-xl rounded-xl flex items-center justify-center shadow-sm"
+                          >
+                            {char}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex justify-center pt-0.5">
+                        <button
+                          onClick={handleCopyCode}
+                          type="button"
+                          className="px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1.5 border border-blue-200 shadow-sm"
+                        >
+                          <Copy size={11} />
+                          <span>{isCopied ? "Code copié !" : "Copier le code dans le presse-papier"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Discreet blue warning/info box (Image 3 security update) */}
+                    <div className="p-3.5 bg-blue-50 rounded-xl border border-blue-100 text-[10px] text-blue-900 leading-relaxed font-sans text-left">
+                      <strong>🚨 Information de sécurité :</strong> <br />
+                      "Ce code est strictement personnel. Ne le partagez jamais avec un tiers, y compris un collaborateur Pixatec."
+                    </div>
+
+                    {/* Auto Connection Action CTA button inside the simulated email body */}
+                    <div className="pt-1 text-center space-y-3">
+                      
+                      <button
+                        onClick={handleSimulateEmailConnect}
+                        disabled={isOtpCompleted || isSimulatingLinkClick}
+                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-xs shadow-md transition-all cursor-pointer ${
+                          isOtpCompleted
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-250 cursor-not-allowed'
+                            : isSimulatingLinkClick
+                            ? 'bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white hover:scale-[1.01]'
+                        }`}
+                      >
+                        {isOtpCompleted ? (
+                          <>
+                            <Check size={14} className="stroke-[3]" />
+                            <span>Contrat activé automatiquement !</span>
+                          </>
+                        ) : isSimulatingLinkClick ? (
+                          <>
+                            <div className="w-3 h-3 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Récupération automatique...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle size={14} />
+                            <span>Valider et continuer (Lien direct)</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (window.confirm("Réinitialiser l'estimatif ? Les étapes actuelles seront effacées.")) {
+                            setCurrentStep('informations');
+                            setIsSignatureValidated(false);
+                            setSignatureDataUrl(null);
+                            setAcceptedCgl(false);
+                            setInputOtpCode('');
+                            setIsOtpCompleted(false);
+                          }
+                        }}
+                        className="block text-[10px] text-zinc-450 hover:underline hover:text-zinc-650 font-medium mx-auto bg-transparent border-0 cursor-pointer"
+                      >
+                        Créer un nouveau devis
+                      </button>
+
+                    </div>
+
+                    <div className="border-t border-zinc-100 pt-3 flex flex-col gap-1 items-center justify-center text-[9px] text-zinc-400 text-center font-sans uppercase">
+                      <span>Ce message automatique est crypté. PandaDoc Secure Shield.</span>
+                      <a href="mailto:contact@pixiatech.com" className="text-blue-500 font-bold hover:underline">Contacter le support</a>
+                    </div>
+
+                  </div>
+                </div>
               </div>
 
             </div>

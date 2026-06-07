@@ -721,46 +721,88 @@ async function sendSignatureOtpEmail(
   }
 
   const digitsHtml = otpCode.split('').map(digit => `
-    <div style="width: 40px; height: 50px; background-color: #eff6ff; border: 2px solid #dbeafe; color: #2563eb; font-weight: 900; font-family: monospace; font-size: 24px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; line-height: 50px; text-align: center;">
+    <div style="width: 42px; height: 50px; background-color: #eff6ff; border: 2px solid #dbeafe; color: #2563eb; font-weight: 900; font-family: monospace; font-size: 24px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; line-height: 50px; text-align: center;">
       ${digit}
     </div>
   `).join('');
 
   const emailHtml = `
-    <div style="font-family: Arial, sans-serif; text-align: center; padding: 40px; background-color: #f4f4f4; border-radius: 20px;">
-      <div style="background-color: white; padding: 40px; border-radius: 30px; max-width: 500px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center;">
-        <img src="cid:pixiatech-logo" alt="PixiaTech Logo" style="max-width: 150px; margin: 0 auto 30px auto; display: block;">
-        <h1 style="color: #1a1a1a; font-size: 22px; font-weight: 900; margin-bottom: 20px; text-transform: uppercase; letter-spacing: -0.5px; text-align: center;">
-          🔑 ${lang === 'fr' ? 'Votre code de vérification PixiaTech Pro' : 'Your PixiaTech Pro Verification Code'}
-        </h1>
-        <p style="color: #666; font-size: 15px; line-height: 1.6; margin-bottom: 25px; text-align: left;">
-          ${lang === 'fr' 
-            ? `Bonjour ${representative},<br/><br/>Merci pour votre demande d'estimation. Voici votre code temporaire de validation pour signer électroniquement votre contrat PixiaTech :` 
-            : `Hello ${representative},<br/><br/>Thank you for your estimation request. Here is your temporary validation code to sign your PixiaTech contract electronically:`}
-        </p>
-        <div style="margin: 30px 0; text-align: center; display: block;">
-          ${digitsHtml}
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px 20px; background-color: #FAF8F5; min-height: 100%;">
+      <div style="background-color: white; border: 1px solid #e2e8f0; border-radius: 24px; max-width: 500px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden;">
+        
+        <!-- Apple style header -->
+        <table cellpadding="0" cellspacing="0" width="100%" style="background-color: #f4f4f5; border-bottom: 1px solid #e4e4e7; padding: 10px 16px;">
+          <tr>
+            <td align="left" style="line-height: 0;">
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #ef4444; margin-right: 4px;"></span>
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #f59e0b; margin-right: 4px;"></span>
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #10b981;"></span>
+            </td>
+            <td align="right" style="color: #a1a1aa; font-size: 9px; font-family: monospace;">
+              Client Webmail Sécurisé
+            </td>
+          </tr>
+        </table>
+
+        <!-- Header -->
+        <div style="padding: 30px; text-align: center; border-bottom: 1px solid #f4f4f5;">
+          <div style="margin-bottom: 15px; text-align: center;">
+            <span style="background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: 9px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">
+              Reçu à l'instant
+            </span>
+          </div>
+          <h1 style="color: #18181b; font-size: 22px; font-weight: 800; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px;">
+            AUTHENTIFICATION
+          </h1>
+          <div style="display: inline-flex; align-items: center; background-color: #eff6ff; border: 1px solid #dbeafe; border-radius: 9999px; padding: 4px 12px; font-size: 11px; font-weight: bold; color: #2563eb; margin: 5px 0;">
+            ⏳ 10:00
+          </div>
         </div>
-        <p style="color: #666; font-size: 14px; margin-bottom: 25px; text-align: left;">
-          ${lang === 'fr'
-            ? "Vous pouvez également valider automatiquement en cliquant sur le bouton ci-dessous :"
-            : "You can also validate automatically by clicking the button below:"}
-        </p>
-        <div style="text-align: center; margin-bottom: 30px;">
-          <a href="${verificationUrl}" style="background-color: #2563eb; color: white; padding: 18px 32px; text-decoration: none; border-radius: 14px; display: inline-block; font-size: 16px; font-weight: bold; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);">
-            ${lang === 'fr' ? 'Valider et continuer (Lien direct)' : 'Validate and continue (Direct Link)'}
-          </a>
+
+        <!-- Body -->
+        <div style="padding: 30px; text-align: center;">
+          <p style="color: #71717a; font-size: 13px; line-height: 1.5; margin-bottom: 25px; text-align: left;">
+            ${lang === 'fr' 
+              ? `Bonjour ${representative},<br/><br/>Un code d'authentification temporaire a été généré pour finaliser la signature électronique de votre estimation PixiaTech.` 
+              : `Hello ${representative},<br/><br/>A temporary authentication code was generated to finalize the electronic signature of your PixiaTech estimation.`}
+          </p>
+
+          <div style="margin: 25px 0;">
+            <span style="display: block; font-size: 9px; text-transform: uppercase; color: #a1a1aa; letter-spacing: 1px; margin-bottom: 10px; font-weight: bold;">
+              ${lang === 'fr' ? "Votre code d'authentification" : "Your authentication code"}
+            </span>
+            <div style="text-align: center; display: block; margin: 15px 0;">
+              ${digitsHtml}
+            </div>
+          </div>
+
+          <!-- Direct Link -->
+          <div style="margin: 30px 0;">
+            <a href="${verificationUrl}" style="background-color: #10b981; color: white; padding: 16px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 13px; font-weight: bold; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); text-transform: uppercase; letter-spacing: 0.5px;">
+              ${lang === 'fr' ? 'Valider et continuer (Lien direct)' : 'Validate and continue (Direct Link)'}
+            </a>
+          </div>
+
+          <!-- Information de sécurité -->
+          <div style="background-color: #eff6ff; border: 1px solid #dbeafe; border-radius: 16px; padding: 16px; text-align: left; margin-bottom: 25px;">
+            <p style="margin: 0; font-size: 11px; color: #1e3a8a; line-height: 1.5; font-weight: bold;">
+              🚨 ${lang === 'fr' ? "Information de sécurité :" : "Security Information:"}
+            </p>
+            <p style="margin: 4px 0 0 0; font-size: 11px; color: #1e40af; line-height: 1.5;">
+              ${lang === 'fr'
+                ? '"Ce code est strictement personnel. Ne le partagez jamais avec un tiers, y compris un collaborateur Pixatech."'
+                : '"This code is strictly personal. Do not share it with a third party, including a Pixatech representative."'}
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="border-top: 1px solid #f4f4f5; padding-top: 20px; color: #a1a1aa; font-size: 10px; line-height: 1.4;">
+            ${lang === 'fr'
+              ? "Ce message automatique est crypté. PandaDoc Secure Shield."
+              : "This automatic message is encrypted. PandaDoc Secure Shield."}
+          </div>
+
         </div>
-        <p style="color: #ef4444; font-size: 11px; font-weight: bold; margin-bottom: 25px; text-align: center;">
-          ${lang === 'fr'
-            ? "⚠️ Ce code est strictement personnel. Ne le partagez jamais."
-            : "⚠️ This code is strictly personal. Do not share it."}
-        </p>
-        <p style="color: #999; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; text-align: center;">
-          ${lang === 'fr'
-            ? "Ce message automatique est sécurisé par PandaDoc Secure Shield."
-            : "This automatic message is secured by PandaDoc Secure Shield."}
-        </p>
       </div>
     </div>
   `;
@@ -769,7 +811,7 @@ async function sendSignatureOtpEmail(
     await transporter.sendMail({
       from: `"PixiaTech" <${process.env.SMTP_USER}>`,
       to: recipientEmail,
-      subject: lang === 'fr' ? "🔑 Votre code de vérification PixiaTech Pro" : "🔑 Your PixiaTech Pro verification code",
+      subject: lang === 'fr' ? "🔑 Authentification PixiaTech" : "🔑 PixiaTech Authentication",
       html: emailHtml,
       attachments: logoBuffer
         ? [
