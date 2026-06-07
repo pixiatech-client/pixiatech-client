@@ -127,6 +127,12 @@ export default function SignatureFlow({
   const [otpResent, setOtpResent] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+  // Form validation errors
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // Accordion state for multi-product display
+  const [openProductAccordion, setOpenProductAccordion] = useState<string | null>(null);
+
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
   // Resolve current product
@@ -253,10 +259,18 @@ export default function SignatureFlow({
 
   const handleNextStep = () => {
     if (currentStep === 'informations') {
-      if (!renterDetails.company || !renterDetails.representative || !renterDetails.email || !renterDetails.phone || !renterDetails.address) {
-        alert("Veuillez remplir toutes les informations requises.");
+      const errors: Record<string, string> = {};
+      if (!renterDetails.company.trim()) errors.company = 'Ce champ est obligatoire';
+      if (!renterDetails.representative.trim()) errors.representative = 'Ce champ est obligatoire';
+      if (!renterDetails.email.trim()) errors.email = 'Ce champ est obligatoire';
+      if (!renterDetails.phone.trim()) errors.phone = 'Ce champ est obligatoire';
+      if (!renterDetails.address.trim()) errors.address = 'Ce champ est obligatoire';
+      if (!renterDetails.city.trim()) errors.city = 'Ce champ est obligatoire';
+      if (Object.keys(errors).length > 0) {
+        setFormErrors(errors);
         return;
       }
+      setFormErrors({});
       setCurrentStep('contrat');
     }
   };
@@ -516,66 +530,107 @@ export default function SignatureFlow({
               
               {/* Form client details */}
               <div className="lg:col-span-7 bg-white border border-[#e2e8f0] rounded-[24px] p-6 sm:p-10 shadow-sm space-y-6">
+
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
+                  <div>
+                    <h2 className="text-sm font-black font-heading text-zinc-900 uppercase tracking-wide">Informations client</h2>
+                    <p className="text-[10px] text-zinc-400 font-medium mt-0.5">Tous les champs sont obligatoires sauf la note pour le vendeur</p>
+                  </div>
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   
-                  {/* Nom entreprise en pleine largeur */}
+                  {/* Nom entreprise */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-name" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Nom de l'entreprise</label>
+                    <label htmlFor="comp-name" className={`font-extrabold uppercase tracking-wide text-[10px] ${formErrors.company ? 'text-red-600' : 'text-zinc-650'}`}>
+                      Nom de l'entreprise <span className="text-red-500">*</span>
+                    </label>
                     <input
                       id="comp-name"
                       type="text"
-                      placeholder="Pixia Tech Europe"
+                      placeholder="Veuillez saisir le nom de l'entreprise"
                       value={renterDetails.company}
-                      onChange={(e) => setRenterDetails({ ...renterDetails, company: e.target.value })}
-                      className="w-full bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 rounded-xl px-4 py-3 font-semibold focus:bg-white focus:border-blue-500 focus:outline-none transition-all text-zinc-900 shadow-sm"
+                      onChange={(e) => { setRenterDetails({ ...renterDetails, company: e.target.value }); if (formErrors.company) setFormErrors(p => ({...p, company: ''})); }}
+                      className={`w-full rounded-xl px-4 py-3 font-semibold focus:outline-none transition-all text-zinc-900 shadow-sm ${
+                        formErrors.company
+                          ? 'bg-red-50 border-2 border-red-400 focus:border-red-500'
+                          : 'bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
+                    {formErrors.company && <p className="text-[10px] text-red-600 font-semibold flex items-center gap-1"><AlertTriangle size={10} /> {formErrors.company}</p>}
                   </div>
 
-                  {/* Nom du représentant en pleine largeur */}
+                  {/* Nom du contact */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="rep-name" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Nom du représentant</label>
+                    <label htmlFor="rep-name" className={`font-extrabold uppercase tracking-wide text-[10px] ${formErrors.representative ? 'text-red-600' : 'text-zinc-650'}`}>
+                      Nom du contact <span className="text-red-500">*</span>
+                    </label>
                     <input
                       id="rep-name"
                       type="text"
-                      placeholder="Jean Dupont"
+                      placeholder="Nom de la personne à contacter"
                       value={renterDetails.representative}
-                      onChange={(e) => setRenterDetails({ ...renterDetails, representative: e.target.value })}
-                      className="w-full bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 rounded-xl px-4 py-3 font-semibold focus:bg-white focus:border-blue-500 focus:outline-none transition-all text-zinc-900 shadow-sm"
+                      onChange={(e) => { setRenterDetails({ ...renterDetails, representative: e.target.value }); if (formErrors.representative) setFormErrors(p => ({...p, representative: ''})); }}
+                      className={`w-full rounded-xl px-4 py-3 font-semibold focus:outline-none transition-all text-zinc-900 shadow-sm ${
+                        formErrors.representative
+                          ? 'bg-red-50 border-2 border-red-400 focus:border-red-500'
+                          : 'bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
+                    {formErrors.representative && <p className="text-[10px] text-red-600 font-semibold flex items-center gap-1"><AlertTriangle size={10} /> {formErrors.representative}</p>}
                   </div>
 
-                  {/* Email professionnel en pleine largeur */}
+                  {/* Email professionnel */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-email" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Email professionnel</label>
+                    <label htmlFor="comp-email" className={`font-extrabold uppercase tracking-wide text-[10px] ${formErrors.email ? 'text-red-600' : 'text-zinc-650'}`}>
+                      Email professionnel <span className="text-red-500">*</span>
+                    </label>
                     <input
                       id="comp-email"
                       type="email"
-                      placeholder="contact@pixiatech.com"
+                      placeholder="adresse@email.com"
                       value={renterDetails.email}
-                      onChange={(e) => setRenterDetails({ ...renterDetails, email: e.target.value })}
-                      className="w-full bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 rounded-xl px-4 py-3 font-semibold focus:bg-white focus:border-blue-500 focus:outline-none transition-all text-zinc-900 shadow-sm"
+                      onChange={(e) => { setRenterDetails({ ...renterDetails, email: e.target.value }); if (formErrors.email) setFormErrors(p => ({...p, email: ''})); }}
+                      className={`w-full rounded-xl px-4 py-3 font-semibold focus:outline-none transition-all text-zinc-900 shadow-sm ${
+                        formErrors.email
+                          ? 'bg-red-50 border-2 border-red-400 focus:border-red-500'
+                          : 'bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
+                    {formErrors.email && <p className="text-[10px] text-red-600 font-semibold flex items-center gap-1"><AlertTriangle size={10} /> {formErrors.email}</p>}
                   </div>
 
+                  {/* Téléphone */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-phone" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Téléphone</label>
+                    <label htmlFor="comp-phone" className={`font-extrabold uppercase tracking-wide text-[10px] ${formErrors.phone ? 'text-red-600' : 'text-zinc-650'}`}>
+                      Téléphone <span className="text-red-500">*</span>
+                    </label>
                     <input
                       id="comp-phone"
                       type="text"
-                      placeholder="+33 1 23 45 67 89"
+                      placeholder="Numéro de téléphone"
                       value={renterDetails.phone}
-                      onChange={(e) => setRenterDetails({ ...renterDetails, phone: e.target.value })}
-                      className="w-full bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 rounded-xl px-4 py-3 font-semibold focus:bg-white focus:border-blue-500 focus:outline-none transition-all text-zinc-900 shadow-sm"
+                      onChange={(e) => { setRenterDetails({ ...renterDetails, phone: e.target.value }); if (formErrors.phone) setFormErrors(p => ({...p, phone: ''})); }}
+                      className={`w-full rounded-xl px-4 py-3 font-semibold focus:outline-none transition-all text-zinc-900 shadow-sm ${
+                        formErrors.phone
+                          ? 'bg-red-50 border-2 border-red-400 focus:border-red-500'
+                          : 'bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
+                    {formErrors.phone && <p className="text-[10px] text-red-600 font-semibold flex items-center gap-1"><AlertTriangle size={10} /> {formErrors.phone}</p>}
                   </div>
 
-                  {/* Ville de livraison (Combobox custom) */}
+                  {/* Ville de livraison — icône Truck + badge orange */}
                   <div className="space-y-1.5 md:col-span-2 relative">
-                    <label className="font-extrabold text-[#2563eb] uppercase tracking-wide text-[10px] flex items-center gap-1">
-                      <span>Ville de livraison</span>
-                      <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded font-mono font-bold uppercase">combobox</span>
-                    </label>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-7 h-7 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-500 shrink-0">
+                        <Truck size={13} />
+                      </div>
+                      <label className={`font-extrabold uppercase tracking-wide text-[10px] ${formErrors.city ? 'text-red-600' : 'text-zinc-800'}`}>
+                        Ville de livraison <span className="text-red-500">*</span>
+                      </label>
+                      <span className="text-[9px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-orange-200">Important</span>
+                    </div>
                     
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
@@ -583,14 +638,19 @@ export default function SignatureFlow({
                       </div>
                       <input
                         type="text"
-                        placeholder="Rechercher une ville ou un code postal (ex: Lyon, 75000)..."
+                        placeholder="Ville de livraison"
                         value={citySearchQuery}
                         onChange={(e) => {
                           setCitySearchQuery(e.target.value);
                           setIsCityDropdownOpen(true);
+                          if (formErrors.city) setFormErrors(p => ({...p, city: ''}));
                         }}
                         onFocus={() => setIsCityDropdownOpen(true)}
-                        className="w-full bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 rounded-xl pl-9 pr-10 py-3 font-semibold focus:bg-white focus:border-blue-500 focus:outline-none transition-all text-zinc-900 shadow-sm text-xs"
+                        className={`w-full rounded-xl pl-9 pr-10 py-3 font-semibold focus:outline-none transition-all text-zinc-900 shadow-sm text-xs ${
+                          formErrors.city
+                            ? 'bg-red-50 border-2 border-red-400 focus:border-red-500'
+                            : 'bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 focus:bg-white focus:border-blue-500'
+                        }`}
                       />
                       <button
                         type="button"
@@ -600,6 +660,7 @@ export default function SignatureFlow({
                         <ChevronDown size={16} className={`transition-transform duration-200 ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
                       </button>
                     </div>
+                    {formErrors.city && <p className="text-[10px] text-red-600 font-semibold flex items-center gap-1"><AlertTriangle size={10} /> {formErrors.city}</p>}
 
                     {isCityDropdownOpen && (
                       <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-zinc-200 rounded-2xl shadow-xl max-h-56 overflow-y-auto divide-y divide-zinc-50 text-xs font-semibold">
@@ -624,11 +685,12 @@ export default function SignatureFlow({
                                 }));
                                 setIsCityDropdownOpen(false);
                                 setIsInstallationAccordionOpen(true);
+                                if (formErrors.city) setFormErrors(p => ({...p, city: ''}));
                               }}
-                              className="w-full text-left px-4 py-3 hover:bg-blue-50/50 flex items-center justify-between text-zinc-800 transition-colors"
+                              className="w-full text-left px-4 py-3 hover:bg-orange-50/50 flex items-center justify-between text-zinc-800 transition-colors"
                             >
                               <span>{c.name} ({c.postalCode})</span>
-                              {selectedCityId === c.id && <Check size={14} className="text-blue-600 font-bold" />}
+                              {selectedCityId === c.id && <Check size={14} className="text-orange-600 font-bold" />}
                             </button>
                           ))
                         ) : (
@@ -646,7 +708,7 @@ export default function SignatureFlow({
                                 }));
                                 setIsCityDropdownOpen(false);
                               }}
-                              className="mt-3 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-[10px] font-bold transition-all"
+                              className="mt-3 px-3 py-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-600 text-[10px] font-bold transition-all"
                             >
                               Réinitialiser à Paris
                             </button>
@@ -656,28 +718,42 @@ export default function SignatureFlow({
                     )}
                   </div>
 
+                  {/* Adresse */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-address" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Adresse de l'événement</label>
+                    <label htmlFor="comp-address" className={`font-extrabold uppercase tracking-wide text-[10px] ${formErrors.address ? 'text-red-600' : 'text-zinc-650'}`}>
+                      Adresse de l'événement <span className="text-red-500">*</span>
+                    </label>
                     <input
                       id="comp-address"
                       type="text"
                       placeholder="Palais des Congrès, Paris"
                       value={renterDetails.address}
-                      onChange={(e) => setRenterDetails({ ...renterDetails, address: e.target.value })}
-                      className="w-full bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 rounded-xl px-4 py-3 font-semibold focus:bg-white focus:border-blue-500 focus:outline-none transition-all text-zinc-900 shadow-sm"
+                      onChange={(e) => { setRenterDetails({ ...renterDetails, address: e.target.value }); if (formErrors.address) setFormErrors(p => ({...p, address: ''})); }}
+                      className={`w-full rounded-xl px-4 py-3 font-semibold focus:outline-none transition-all text-zinc-900 shadow-sm ${
+                        formErrors.address
+                          ? 'bg-red-50 border-2 border-red-400 focus:border-red-500'
+                          : 'bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 focus:bg-white focus:border-blue-500'
+                      }`}
                     />
+                    {formErrors.address && <p className="text-[10px] text-red-600 font-semibold flex items-center gap-1"><AlertTriangle size={10} /> {formErrors.address}</p>}
                   </div>
 
+                  {/* Note pour le vendeur — OPTIONNEL */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-notes" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Notes additionnelles</label>
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="comp-notes" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Note pour le vendeur</label>
+                      <span className="text-[9px] bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-zinc-200">Facultatif</span>
+                    </div>
                     <textarea
                       id="comp-notes"
                       rows={3}
+                      placeholder="Ajoutez toute information utile pour le vendeur (contraintes, disponibilités, accès au site, remarques particulières, etc.)"
                       value={additionalNotes}
                       onChange={(e) => setAdditionalNotes(e.target.value)}
-                      className="w-full bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 rounded-xl px-4 py-3 font-semibold focus:bg-white focus:border-blue-500 focus:outline-none transition-all text-zinc-900 shadow-sm resize-none"
+                      className="w-full bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 rounded-xl px-4 py-3 font-semibold focus:bg-white focus:border-blue-500 focus:outline-none transition-all text-zinc-900 shadow-sm resize-none text-xs placeholder:text-zinc-400 placeholder:font-normal"
                       style={{ height: '7.5rem' }}
                     />
+                    <p className="text-[10px] text-zinc-400 italic">Ex : "Disponible après 16h30" — "Accès uniquement le matin" — "Je serai absent le vendredi"</p>
                   </div>
 
                 </div>
@@ -694,7 +770,8 @@ export default function SignatureFlow({
                     onClick={onBackToConfigurator}
                     className="w-full sm:w-auto px-6 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 border border-transparent transition-all cursor-pointer active:scale-98"
                   >
-                    Retour à l'estimatif
+                    <ArrowLeft size={13} />
+                    Retour aux produits recommandés
                   </button>
                 </div>
 
@@ -703,8 +780,8 @@ export default function SignatureFlow({
               {/* Right Hand panel */}
               <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-6">
 
-                {/* Details list - FIRST */}
-                <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-9 shadow-sm space-y-5">
+                {/* Details list — single or multi-product accordion */}
+                <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-6 shadow-sm space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
                     <h3 className="text-sm font-heading font-bold text-zinc-900 uppercase tracking-wide">
                       Détails Techniques
@@ -714,28 +791,101 @@ export default function SignatureFlow({
                     </span>
                   </div>
 
-                  <div className="space-y-2.5 text-xs">
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500 font-semibold">Produit</span>
-                      <span className="text-zinc-900 font-bold text-right max-w-[60%]">{product?.name || activePack.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500 font-semibold">Quantité</span>
-                      <span className="text-zinc-900 font-bold font-mono">x{quantity}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500 font-semibold">Dimensions</span>
-                      <span className="text-zinc-900 font-bold font-mono">{width}m x {height}m</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500 font-semibold">Surface Totale</span>
-                      <span className="text-zinc-900 font-bold font-mono">{surface.toFixed(2)} m²</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500 font-semibold">Détails dalles</span>
-                      <span className="text-zinc-900 font-bold font-mono text-right">{dalles} Dalles <span className="text-zinc-400 font-normal text-[10px]">({product?.tileWidth || 50}cm x {product?.tileHeight || 50}cm)</span></span>
-                    </div>
-                  </div>
+                  {(() => {
+                    const multiProducts = Array.isArray((configuredProduct as any))
+                      ? (configuredProduct as any as ConfiguredProduct[])
+                      : null;
+
+                    if (multiProducts && multiProducts.length > 1) {
+                      // MULTI-PRODUCT ACCORDION
+                      return (
+                        <div className="space-y-2">
+                          {multiProducts.map((cp, idx) => {
+                            const cpProduct = allProducts.find(p => p.id === cp.productId);
+                            const cpSurface = cp.width * cp.height;
+                            const cpDalles = cpProduct?.tileWidth && cpProduct?.tileHeight
+                              ? Math.ceil((cp.width * 100) / cpProduct.tileWidth) * Math.ceil((cp.height * 100) / cpProduct.tileHeight)
+                              : Math.round(cpSurface * 4);
+                            const accordionKey = `product-${idx}`;
+                            const isOpen = openProductAccordion === accordionKey;
+                            return (
+                              <div key={idx} className="border border-zinc-100 rounded-2xl overflow-hidden">
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenProductAccordion(isOpen ? null : accordionKey)}
+                                  className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50 hover:bg-zinc-100 transition-colors cursor-pointer text-left"
+                                >
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black text-[10px] shrink-0">{idx + 1}</div>
+                                    <span className="text-xs font-bold text-zinc-900 line-clamp-1">{cpProduct?.name || `Produit ${idx + 1}`}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <span className="text-[10px] font-mono font-black text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">x{cp.quantity || 1}</span>
+                                    <ChevronDown size={14} className={`text-zinc-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                                  </div>
+                                </button>
+                                {isOpen && (
+                                  <div className="px-4 py-3 space-y-2 text-xs border-t border-zinc-100">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-zinc-500 font-semibold">Quantité</span>
+                                      <span className="text-zinc-900 font-bold font-mono">x{cp.quantity || 1}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-zinc-500 font-semibold">Dimensions</span>
+                                      <span className="text-zinc-900 font-bold font-mono">{cp.width}m x {cp.height}m</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-zinc-500 font-semibold">Surface unitaire</span>
+                                      <span className="text-zinc-900 font-bold font-mono">{cpSurface.toFixed(2)} m²</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-zinc-500 font-semibold">Surface totale</span>
+                                      <span className="text-zinc-900 font-bold font-mono">{(cpSurface * (cp.quantity || 1)).toFixed(2)} m²</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-zinc-500 font-semibold">Dalles unitaire</span>
+                                      <span className="text-zinc-900 font-bold font-mono">{cpDalles}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-zinc-500 font-semibold">Dalles totales</span>
+                                      <span className="text-zinc-900 font-bold font-mono">{cpDalles * (cp.quantity || 1)}</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                          <div className="pt-1 text-[10px] text-zinc-400 font-medium text-center">{multiProducts.length} produits sélectionnés</div>
+                        </div>
+                      );
+                    }
+
+                    // SINGLE PRODUCT
+                    return (
+                      <div className="space-y-2.5 text-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="text-zinc-500 font-semibold">Produit</span>
+                          <span className="text-zinc-900 font-bold text-right max-w-[60%]">{product?.name || activePack.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-zinc-500 font-semibold">Quantité</span>
+                          <span className="text-zinc-900 font-bold font-mono">x{quantity}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-zinc-500 font-semibold">Dimensions</span>
+                          <span className="text-zinc-900 font-bold font-mono">{width}m x {height}m</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-zinc-500 font-semibold">Surface Totale</span>
+                          <span className="text-zinc-900 font-bold font-mono">{surface.toFixed(2)} m²</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-zinc-500 font-semibold">Détails dalles</span>
+                          <span className="text-zinc-900 font-bold font-mono text-right">{dalles} Dalles <span className="text-zinc-400 font-normal text-[10px]">({product?.tileWidth || 50}cm x {product?.tileHeight || 50}cm)</span></span>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="border-t border-zinc-100 pt-3 space-y-2 text-xs font-semibold">
                     <div className="flex justify-between items-center">
