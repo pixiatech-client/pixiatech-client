@@ -337,11 +337,11 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
   };
 
   return (
-    <div className="flex flex-col md:flex-row flex-1 bg-white md:h-full md:overflow-hidden">
+    <div className="flex flex-col md:flex-row flex-1 bg-[#FAF8F5] md:h-full md:overflow-hidden">
       <div className="flex-1 flex flex-col min-w-0 h-full relative">
         <main
           ref={mainRef}
-          className="flex-1 md:overflow-y-auto flex flex-col bg-white relative scrollbar-hide overflow-x-hidden"
+          className="flex-1 md:overflow-y-auto flex flex-col bg-[#FAF8F5] relative scrollbar-hide overflow-x-hidden"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -607,7 +607,7 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
                   "p-4 rounded-2xl border-2 transition-all duration-300 cursor-pointer flex flex-col relative group",
                   isSelected
                     ? `${colors.border} ${colors.bg} shadow-sm`
-                    : `border-slate-200 bg-white/40 backdrop-blur-md hover:shadow-lg hover:-translate-y-1 ${colors.hoverBorder}`
+                    : `border-slate-200 bg-[#FAF8F5] hover:shadow-lg hover:-translate-y-1 ${colors.hoverBorder}`
                 )}
               >
                 {isSelected && (

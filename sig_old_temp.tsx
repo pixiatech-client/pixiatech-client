@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,12 +56,12 @@ const CITIES = [
   { id: '11', name: 'Rennes', postalCode: '35000' },
   { id: '12', name: 'Reims', postalCode: '51100' },
   { id: '13', name: 'Toulon', postalCode: '83000' },
-  { id: '14', name: 'Saint-Étienne', postalCode: '42000' },
+  { id: '14', name: 'Saint-├ëtienne', postalCode: '42000' },
   { id: '15', name: 'Le Havre', postalCode: '76600' },
   { id: '16', name: 'Grenoble', postalCode: '38000' },
   { id: '17', name: 'Dijon', postalCode: '21000' },
   { id: '18', name: 'Angers', postalCode: '49000' },
-  { id: '19', name: 'Nîmes', postalCode: '30000' },
+  { id: '19', name: 'N├«mes', postalCode: '30000' },
   { id: '20', name: 'Aix-en-Provence', postalCode: '13100' }
 ];
 
@@ -174,18 +174,18 @@ export default function SignatureFlow({
   const activePack: Pack = {
     id: product?.id || 'custom-led-78',
     name: projectMode === 'vente' 
-      ? (product?.name || 'Caissons LED Série Extra Plat')
-      : (product?.name || 'Location Écran LED Sur-Mesure'),
-    surface: `${(surface * quantity).toFixed(2)} m²`,
+      ? (product?.name || 'Caissons LED S├®rie Extra Plat')
+      : (product?.name || 'Location ├ëcran LED Sur-Mesure'),
+    surface: `${(surface * quantity).toFixed(2)} m┬▓`,
     price: Math.round(subtotalProducts * quantity),
     deposit: Math.round(subtotalProducts * quantity * 0.5),
-    description: `Configuration de ${quantity} écran(s) LED de ${width}m x ${height}m (Total ${dalles * quantity} dalles)`,
+    description: `Configuration de ${quantity} ├®cran(s) LED de ${width}m x ${height}m (Total ${dalles * quantity} dalles)`,
     specs: [
       `Dimensions unitaire : ${width}m x ${height}m`,
-      `Surface unitaire : ${surface.toFixed(2)} m²`,
-      `Quantité d'écrans : ${quantity}`,
-      `Surface totale d'affichage : ${(surface * quantity).toFixed(2)} m²`,
-      `Quantité de matériel : ${dalles * quantity} dalles`
+      `Surface unitaire : ${surface.toFixed(2)} m┬▓`,
+      `Quantit├® d'├®crans : ${quantity}`,
+      `Surface totale d'affichage : ${(surface * quantity).toFixed(2)} m┬▓`,
+      `Quantit├® de mat├®riel : ${dalles * quantity} dalles`
     ]
   };
 
@@ -256,10 +256,10 @@ export default function SignatureFlow({
 
   // Cohesive stages in the upper header
   const steps: Step[] = [
-    { id: 'informations', label: 'Résumé de l’estimation', isCompleted: currentStep !== 'informations', isActive: currentStep === 'informations' },
+    { id: 'informations', label: 'R├®sum├® de lÔÇÖestimation', isCompleted: currentStep !== 'informations', isActive: currentStep === 'informations' },
     { id: 'contrat', label: 'Contrat & Signature', isCompleted: currentStep === 'securite' || currentStep === 'confirmation', isActive: currentStep === 'contrat' },
-    { id: 'securite', label: 'Vérification de sécurité', isCompleted: currentStep === 'confirmation', isActive: currentStep === 'securite' },
-    { id: 'confirmation', label: 'Félicitations', isCompleted: false, isActive: currentStep === 'confirmation' }
+    { id: 'securite', label: 'V├®rification de s├®curit├®', isCompleted: currentStep === 'confirmation', isActive: currentStep === 'securite' },
+    { id: 'confirmation', label: 'F├®licitations', isCompleted: false, isActive: currentStep === 'confirmation' }
   ];
 
   // Time format (MM:SS)
@@ -289,7 +289,7 @@ export default function SignatureFlow({
 
   const handleSignatureSave = async (dataUrl: string) => {
     if (!acceptedCgl) {
-      alert("Veuillez d'abord déclarer accepter les conditions générales.");
+      alert("Veuillez d'abord d├®clarer accepter les conditions g├®n├®rales.");
       setShowErrorTips(true);
       return;
     }
@@ -363,7 +363,7 @@ export default function SignatureFlow({
         setIsSignatureValidated(true);
         setCurrentStep('securite');
       } else {
-        alert("Erreur lors de la création du contrat : " + (res.error || "Inconnu"));
+        alert("Erreur lors de la cr├®ation du contrat : " + (res.error || "Inconnu"));
       }
     } catch (e: any) {
       console.error(e);
@@ -385,10 +385,10 @@ export default function SignatureFlow({
           setCurrentStep('confirmation');
         }, 800);
       } else {
-        setOtpError(res.error || "Validation automatique impossible. Entrez le code reçu par e-mail.");
+        setOtpError(res.error || "Validation automatique impossible. Entrez le code re├ºu par e-mail.");
       }
     } catch (e) {
-      setOtpError("Erreur lors de la vérification du code.");
+      setOtpError("Erreur lors de la v├®rification du code.");
     }
   };
 
@@ -417,45 +417,45 @@ export default function SignatureFlow({
 
 
   const handleContractDownload = () => {
-    const lines = [
-      '=======================================================================',
-      'ESTIMATION TECHNIQUE & CONTRAT NUMERIQUE VALIDE - PIXIATECH PRO',
-      '=======================================================================',
-      'Reference Dossier     : PIXIA-EST-' + Math.round(surface) + '-2026',
-      "Date d'Homologation   : 29 mai 2026",
-      'Statut de Signature   : CERTIFIE ET SIGNE ELECTRONIQUEMENT',
-      '-----------------------------------------------------------------------',
-      '',
-      'SOCIETE CONTRACTANTE (PRENEUR) :',
-      '- Raison Sociale : ' + renterDetails.company,
-      '- Representant : ' + renterDetails.representative,
-      '- Adresse de livraison : ' + renterDetails.address + ', ' + renterDetails.postcode + ' ' + renterDetails.city,
-      '- Coordonnees : ' + renterDetails.email + ' | ' + renterDetails.phone,
-      '',
-      'SPECIFICATIONS TECHNIQUES DU BIEN :',
-      '- Modele d\'Affichage : ' + activePack.name,
-      '- Dimensions d\'ecran : ' + width + 'm x ' + height + 'm',
-      '- Surface totale d\'affichage : ' + surface.toFixed(2) + ' m2',
-      '- Nombre de modules LED : ' + dalles + ' dalles de dimensions 50cm x 50cm',
-      '- Type de commande : ' + projectMode.toUpperCase(),
-      '',
-      'DECOMPTE FINANCIER :',
-      '- Sous-total materiel : ' + subtotalProducts.toLocaleString('fr-FR') + ' EUR TTC',
-      '- Frais logistique de livraison : ' + (250 * quantity).toLocaleString('fr-FR') + ' EUR TTC',
-      '- Prestation d\'Installation : ' + (isInstallationIncluded ? 'Incluse par nos techniciens (' + (installationFee * quantity).toLocaleString('fr-FR') + ' EUR TTC)' : 'Non incluse - par vos soins (Pixiatech decline toute responsabilite)'),
-      '- MONTANT TOTAL ESTIME (TTC) : ' + totalAmount.toLocaleString('fr-FR') + ' EUR TTC',
-      '',
-      '-----------------------------------------------------------------------',
-      'Certifie par PandaDoc e-Sign. Authentifie par OTP Mail Code #' + sentOtpCode,
-      'PIXIATECH - Saint-Ouen-sur-Seine et France Entiere.',
-      '=======================================================================',
-    ];
-    const textData = lines.join('\n');
+    const textData = `
+========================================================================
+ESTIMATION TECHNIQUE & CONTRAT NUM├ëRIQUE VALIDE - PIXIATECH PRO
+========================================================================
+R├®f├®rence Dossier     : PIXIA-EST-${Math.round(surface)}-2026
+Date d'Homologation   : 29 mai 2026
+Statut de Signature   : CERTIFI├ë ET SIGN├ë ├ëLECTRONIQUEMENT
+------------------------------------------------------------------------
+
+SOCI├ëT├ë CONTRACTANTE (PRENEUR) :
+- Raison Sociale : ${renterDetails.company}
+- Repr├®sentant : ${renterDetails.representative}
+- Adresse de livraison : ${renterDetails.address}, ${renterDetails.postcode} ${renterDetails.city}
+- Coordonn├®es : ${renterDetails.email} | ${renterDetails.phone}
+
+SP├ëCIFICATIONS TECHNIQUES DU BIEN :
+- Mod├¿le d'Affichage : ${activePack.name}
+- Dimensions d'├®cran : ${width}m x ${height}m
+- Surface totale d'affichage : ${surface.toFixed(2)} m┬▓
+- Nombre de modules LED : ${dalles} dalles de dimensions 50cm x 50cm
+- Type de commande : ${projectMode.toUpperCase()}
+
+D├ëCOMPTE FINANCIER :
+- Sous-total mat├®riel : ${subtotalProducts.toLocaleString('fr-FR')} Ôé¼ TTC
+- Frais logistique de livraison : ${(250 * quantity).toLocaleString('fr-FR')} Ôé¼ TTC
+- Prestation d'Installation : ${isInstallationIncluded ? `Incluse par nos techniciens (${(installationFee * quantity).toLocaleString('fr-FR')} Ôé¼ TTC)` : 'Non incluse - par vos soins (Pixiatech d├®cline toute responsabilit├®)'}
+- MONTANT TOTAL ESTIM├ë (TTC) : ${totalAmount.toLocaleString('fr-FR')} Ôé¼ TTC
+
+------------------------------------------------------------------------
+Certifi├® par PandaDoc e-Sign. Authentifi├® par OTP Mail Code #${sentOtpCode}
+PIXIATECH - Saint-Ouen-sur-Seine et France Enti├¿re.
+========================================================================
+`;
+
     const blob = new Blob([textData], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'Pixiatech_Contrat_Est_' + renterDetails.company.replace(/\s+/g, '_') + '.txt';
+    link.download = `Pixiatech_Contrat_Est_${renterDetails.company.replace(/\s+/g, '_')}.txt`;
     link.click();
   };
 
@@ -464,16 +464,21 @@ export default function SignatureFlow({
       
       {/* Header progress bar */}
       {currentStep !== 'confirmation' && (
-        <div className="w-full bg-[#FAF8F5] border-b border-zinc-200/80 py-5 px-4 overflow-x-auto select-none">
-          <div className="max-w-3xl mx-auto flex flex-col items-center justify-center min-w-[700px] px-2">
-            
-            {/* Row 1: Circles (Icons) */}
-            <div className="flex items-center justify-between w-full">
-              {steps.map((st) => {
-                const active = st.isActive;
-                const completed = st.isCompleted;
-                return (
-                  <div key={`circle-${st.id}`} className="w-[140px] flex justify-center">
+        <div className="w-full bg-[#FAF8F5] border-b border-zinc-200 py-6 px-4 overflow-x-auto select-none">
+          <div className="max-w-3xl mx-auto flex items-center justify-center gap-1.5 sm:gap-4 md:gap-6 min-w-[620px] px-2">
+            {steps.map((st, index) => {
+              const active = st.isActive;
+              const completed = st.isCompleted;
+              return (
+                <React.Fragment key={st.id}>
+                  {index > 0 && (
+                    <div 
+                      className={`h-[2px] w-8 sm:w-16 md:w-24 transition-all duration-300 ${
+                        completed || active ? 'bg-zinc-900' : 'bg-zinc-200'
+                      }`}
+                    />
+                  )}
+                  <div className="flex flex-col items-center">
                     <button
                       id={`stepper-btn-${st.id}`}
                       disabled={!completed && st.id !== currentStep}
@@ -482,12 +487,12 @@ export default function SignatureFlow({
                           setCurrentStep(st.id);
                         }
                       }}
-                      className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
+                      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                         active 
-                          ? 'bg-zinc-950 text-white shadow-md ring-[5px] ring-blue-100 border border-zinc-950 scale-105' 
+                          ? 'bg-zinc-950 text-white shadow-lg ring-4 ring-blue-100 scale-105' 
                           : completed
                           ? 'bg-zinc-900 border border-zinc-900 text-white shadow-sm cursor-pointer hover:bg-zinc-800'
-                          : 'bg-[#EAEFF4] text-[#8A99A8] border border-transparent'
+                          : 'bg-zinc-200 text-zinc-400 cursor-not-allowed border border-transparent'
                       }`}
                     >
                       {st.id === 'informations' && <LayoutGrid size={18} className="stroke-[2.5]" />}
@@ -495,38 +500,16 @@ export default function SignatureFlow({
                       {st.id === 'securite' && <Wrench size={18} className="stroke-[2.5]" />}
                       {st.id === 'confirmation' && <Calculator size={18} className="stroke-[2.5]" />}
                     </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Row 2: Labels and horizontal lines between them */}
-            <div className="flex items-center justify-between w-full mt-2.5">
-              {steps.map((st, index) => {
-                const active = st.isActive;
-                const completed = st.isCompleted;
-                const isLineCompleted = completed || active;
-                return (
-                  <React.Fragment key={`label-${st.id}`}>
-                    {index > 0 && (
-                      <div className="flex-1 flex items-center px-1">
-                        <div 
-                          className={`h-[1px] w-full transition-all duration-300 ${
-                            isLineCompleted ? 'bg-zinc-350' : 'bg-zinc-200'
-                          }`}
-                        />
-                      </div>
-                    )}
-                    <div className="w-[140px] text-center flex justify-center shrink-0">
-                      <span className={`text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all duration-300 ${active ? 'text-zinc-900 font-bold' : 'text-zinc-400'}`}>
-                        {st.label}
-                      </span>
+                    <span className={`text-[10px] sm:text-xs font-semibold mt-1.5 transition-all text-center max-w-[125px] ${active ? 'text-zinc-900 font-bold' : 'text-zinc-400'}`}>
+                      {st.label}
+                    </span>
+                    <div className="h-1 w-8 rounded-full mt-2 transition-all duration-300">
+                      {active && <div className="h-full w-full bg-blue-650 rounded-full"></div>}
                     </div>
-                  </React.Fragment>
-                );
-              })}
-            </div>
-            
+                  </div>
+                </React.Fragment>
+              );
+            })}
           </div>
         </div>
       )}
@@ -534,10 +517,22 @@ export default function SignatureFlow({
       {/* Main Container */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 md:py-8 flex flex-col gap-6">
 
-        {/* STEP 1: RÉSUMÉ DE L'ESTIMATION */}
+        {/* STEP 1: R├ëSUM├ë DE L'ESTIMATION */}
         {currentStep === 'informations' && (
           <div className="space-y-8 animate-fade-in" id="estimation-recap-main-card">
             
+            <div className="flex flex-col items-center text-center pb-4 select-none">
+              <div className="w-14 h-14 rounded-2xl bg-white border border-[#e2e8f0] flex items-center justify-center text-blue-600 mb-2.5 shadow-sm">
+                <Shield size={28} className="stroke-[2.5]" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black font-heading tracking-tight text-zinc-900">
+                R├®capitulatif d'Estimation
+              </h1>
+              <p className="text-xs sm:text-sm text-zinc-500 font-medium mt-1">
+                V├®rifiez les d├®tails avant l'envoi
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               
               {/* Form client details */}
@@ -558,9 +553,9 @@ export default function SignatureFlow({
                     />
                   </div>
 
-                  {/* Nom du représentant en pleine largeur */}
+                  {/* Nom du repr├®sentant en pleine largeur */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="rep-name" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Nom du représentant</label>
+                    <label htmlFor="rep-name" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Nom du repr├®sentant</label>
                     <input
                       id="rep-name"
                       type="text"
@@ -585,7 +580,7 @@ export default function SignatureFlow({
                   </div>
 
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-phone" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Téléphone</label>
+                    <label htmlFor="comp-phone" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">T├®l├®phone</label>
                     <input
                       id="comp-phone"
                       type="text"
@@ -659,7 +654,7 @@ export default function SignatureFlow({
                           ))
                         ) : (
                           <div className="text-center p-4 text-zinc-500">
-                            <p className="font-bold text-zinc-700">Zone non configurée</p>
+                            <p className="font-bold text-zinc-700">Zone non configur├®e</p>
                             <button
                               type="button"
                               onClick={() => {
@@ -674,7 +669,7 @@ export default function SignatureFlow({
                               }}
                               className="mt-3 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-[10px] font-bold transition-all"
                             >
-                              Réinitialiser à Paris
+                              R├®initialiser ├á Paris
                             </button>
                           </div>
                         )}
@@ -683,11 +678,11 @@ export default function SignatureFlow({
                   </div>
 
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-address" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Adresse de l'événement</label>
+                    <label htmlFor="comp-address" className="font-extrabold text-zinc-650 uppercase tracking-wide text-[10px]">Adresse de l'├®v├®nement</label>
                     <input
                       id="comp-address"
                       type="text"
-                      placeholder="Palais des Congrès, Paris"
+                      placeholder="Palais des Congr├¿s, Paris"
                       value={renterDetails.address}
                       onChange={(e) => setRenterDetails({ ...renterDetails, address: e.target.value })}
                       className="w-full bg-[#FAF8F5] border border-zinc-200 hover:border-zinc-300 rounded-xl px-4 py-3 font-semibold focus:bg-white focus:border-blue-500 focus:outline-none transition-all text-zinc-900 shadow-sm"
@@ -720,7 +715,7 @@ export default function SignatureFlow({
                     onClick={onBackToConfigurator}
                     className="w-full sm:w-auto px-6 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-semibold rounded-xl text-xs flex items-center justify-center gap-2 border border-transparent transition-all cursor-pointer active:scale-98"
                   >
-                    Retour à l'estimatif
+                    Retour ├á l'estimatif
                   </button>
                 </div>
 
@@ -729,71 +724,7 @@ export default function SignatureFlow({
               {/* Right Hand panel */}
               <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-6">
 
-                {/* Details list - FIRST */}
-                <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-9 shadow-sm space-y-5">
-                  <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-                    <h3 className="text-sm font-heading font-bold text-zinc-900 uppercase tracking-wide">
-                      Détails Techniques
-                    </h3>
-                    <span className="bg-blue-50 text-blue-600 border border-blue-100 rounded-full px-2.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
-                      {projectMode === 'vente' ? 'Vente' : 'Leasing'}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2.5 text-xs">
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500 font-semibold">Produit</span>
-                      <span className="text-zinc-900 font-bold text-right max-w-[60%]">{product?.name || activePack.name}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500 font-semibold">Quantité</span>
-                      <span className="text-zinc-900 font-bold font-mono">x{quantity}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500 font-semibold">Dimensions</span>
-                      <span className="text-zinc-900 font-bold font-mono">{width}m x {height}m</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500 font-semibold">Surface Totale</span>
-                      <span className="text-zinc-900 font-bold font-mono">{surface.toFixed(2)} m²</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500 font-semibold">Détails dalles</span>
-                      <span className="text-zinc-900 font-bold font-mono text-right">{dalles} Dalles <span className="text-zinc-400 font-normal text-[10px]">({product?.tileWidth || 50}cm x {product?.tileHeight || 50}cm)</span></span>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-zinc-100 pt-3 space-y-2 text-xs font-semibold">
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-400">Total Ligne</span>
-                      <span className="text-zinc-800 font-mono">{(subtotalProducts).toLocaleString('fr-FR')} €</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-400">Sous-total produits</span>
-                      <span className="text-zinc-800 font-mono">{(subtotalProducts * quantity).toLocaleString('fr-FR')} €</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-400">Livraison</span>
-                      <span className="text-zinc-800 font-mono">{(250 * quantity).toLocaleString('fr-FR')} €</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-400">Installation</span>
-                      <span className="text-zinc-800 font-mono">{(installationFee * quantity).toLocaleString('fr-FR')} €</span>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 shadow-sm space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold text-zinc-900 font-heading uppercase tracking-wide">Total estimé (TTC)</span>
-                    </div>
-                    <div className="text-right text-2xl font-mono font-black text-blue-600">
-                      {totalAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Installation - SECOND */}
+                {/* Installation - toujours visible, sans accord├®on */}
                 <div className="border border-zinc-200 rounded-[24px] bg-white overflow-hidden shadow-sm">
                   <div className="px-5 sm:px-6 py-4 flex items-center gap-3 border-b border-zinc-100">
                     <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
@@ -802,7 +733,7 @@ export default function SignatureFlow({
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-extrabold text-zinc-900 text-sm">Installation</h3>
-                        <span className="text-[9px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">Recommandé</span>
+                        <span className="text-[9px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">Recommand├®</span>
                       </div>
                       <p className="text-[10px] text-zinc-500 font-medium">Souhaitez-vous inclure l'installation par nos techniciens ?</p>
                     </div>
@@ -834,8 +765,8 @@ export default function SignatureFlow({
                       </div>
                       {isInstallationIncluded && (
                         <div className="mt-4 pt-4 border-t border-zinc-100 space-y-1 text-zinc-800 font-semibold text-xs">
-                          <p>Pour une surface totale de <strong className="text-zinc-900 font-black">{surface.toFixed(2)} m²</strong>, votre projet nécessite <strong className="text-zinc-900 font-black">{techniciansCount} technicien(s)</strong>.</p>
-                          <p className="text-sm font-extrabold text-zinc-900 mt-2">Coût : {(installationFee * quantity).toLocaleString('fr-FR')} €</p>
+                          <p>Pour une surface totale de <strong className="text-zinc-900 font-black">{surface.toFixed(2)} m┬▓</strong>, votre projet n├®cessite <strong className="text-zinc-900 font-black">{techniciansCount} technicien(s)</strong>.</p>
+                          <p className="text-sm font-extrabold text-zinc-900 mt-2">Co├╗t : {(installationFee * quantity).toLocaleString('fr-FR')} Ôé¼</p>
                         </div>
                       )}
                     </button>
@@ -852,7 +783,7 @@ export default function SignatureFlow({
                       <div className="flex items-start justify-between">
                         <div className="space-y-0.5">
                           <span className="font-extrabold text-zinc-900 text-sm block">Non, je m'en occupe</span>
-                          <span className="text-zinc-500 font-medium text-xs block">Vous gérez l'installation vous-même.</span>
+                          <span className="text-zinc-500 font-medium text-xs block">Vous g├®rez l'installation vous-m├¬me.</span>
                         </div>
                         <div className="pt-1.5">
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
@@ -870,28 +801,81 @@ export default function SignatureFlow({
                         <div className="space-y-1">
                           <span className="text-red-700 font-extrabold text-xs uppercase tracking-wider block">Attention</span>
                           <p className="text-red-600 font-semibold leading-relaxed text-[11px]">
-                            L'entreprise <strong className="font-extrabold">PIXIATECH</strong> décline toute responsabilité en cas de problème lié à une installation non effectuée par ses techniciens.
+                            L'entreprise <strong className="font-extrabold">PIXIATECH</strong> d├®cline toute responsabilit├® en cas de probl├¿me li├® ├á une installation non effectu├®e par ses techniciens.
                           </p>
                         </div>
                       </div>
                     )}
+
+                  </div>
+                </div>
+
+                {/* Details list */}
+                <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-9 shadow-sm space-y-5">
+                  <div className="flex items-center justify-between pb-2">
+                    <h3 className="text-sm font-heading font-bold text-zinc-900 uppercase tracking-wide">
+                      D├®tails Techniques
+                    </h3>
+                    <span className="bg-blue-50 text-blue-600 border border-blue-100 rounded-full px-2.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                      {product?.name || 'S├®rie Extra Plat'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-y-2.5 text-xs text-zinc-650 leading-normal font-medium py-1">
+                    <div className="text-zinc-400">Dimensions</div>
+                    <div className="text-right text-zinc-900 font-bold font-mono">{width}m x {height}m</div>
+
+                    <div className="text-zinc-400">Surface Totale</div>
+                    <div className="text-right text-zinc-900 font-bold font-mono">{surface.toFixed(2)} m┬▓</div>
+
+                    <div className="text-zinc-400">Mat├®riel</div>
+                    <div className="text-right text-zinc-900 font-bold font-mono">{dalles} Dalles <span className="text-zinc-400 font-normal">(50cm x 50cm)</span></div>
+
+                    <div className="text-zinc-400">Mode</div>
+                    <div className="text-right font-mono font-black text-blue-600 uppercase tracking-wider">{projectMode === 'vente' ? 'Vente' : 'Leasing'}</div>
+                  </div>
+
+                  <div className="border-t border-zinc-100 pt-3 space-y-2 text-xs font-semibold">
+                    <div className="flex justify-between items-center">
+                      <span className="text-zinc-400">Mat├®riel LED</span>
+                      <span className="text-zinc-800 font-mono">{(subtotalProducts * quantity).toLocaleString('fr-FR')} Ôé¼</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-zinc-400">Livraison</span>
+                      <span className="text-zinc-800 font-mono">{(250 * quantity).toLocaleString('fr-FR')} Ôé¼</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-zinc-400">Prestation d'Installation</span>
+                      <span className="text-zinc-800 font-mono">{(installationFee * quantity).toLocaleString('fr-FR')} Ôé¼</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 shadow-sm flex items-center justify-between">
+                    <span className="text-sm font-bold text-zinc-900 font-heading uppercase tracking-wide">Total (TTC)</span>
+                    <span className="text-2xl font-mono font-black text-blue-600">
+                      {totalAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Ôé¼
+                    </span>
                   </div>
 
                 </div>
 
               </div>
 
-           </div>
+            </div>
+
           </div>
         )}
+
         {/* STEP 2: CONTRAT ET SIGNATURE */}
         {currentStep === 'contrat' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in">
+            
             <div className="lg:col-span-8 space-y-6">
+              
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex flex-col gap-1">
                   <span className="text-xs font-bold text-blue-600 uppercase tracking-widest font-mono">
-                    Étape 2 sur 4 • Validation
+                    ├ëtape 2 sur 4 ÔÇó Validation
                   </span>
                   <h2 className="text-xl sm:text-2xl font-black font-heading tracking-tight text-zinc-900">
                     Contrat de location d'affichage
@@ -903,7 +887,7 @@ export default function SignatureFlow({
                   className="px-4 py-2 text-xs font-semibold bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-full flex items-center gap-1.5 transition-all self-start cursor-pointer"
                 >
                   <ArrowLeft size={13} />
-                  <span>Corriger les données d'estimation</span>
+                  <span>Corriger les donn├®es d'estimation</span>
                 </button>
               </div>
 
@@ -949,7 +933,7 @@ export default function SignatureFlow({
                       )}
                     </div>
                     <span className="text-xs leading-relaxed">
-                      Je reconnais avoir lu et accepté les <strong className="text-zinc-900 font-semibold">Conditions Générales de Location</strong>. Je certifie que les informations fournies sont exactes et je m'engage à respecter les termes du contrat.
+                      Je reconnais avoir lu et accept├® les <strong className="text-zinc-900 font-semibold">Conditions G├®n├®rales de Location</strong>. Je certifie que les informations fournies sont exactes et je m'engage ├á respecter les termes du contrat.
                     </span>
                   </label>
                 </div>
@@ -961,14 +945,14 @@ export default function SignatureFlow({
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-1.5 h-4 bg-blue-600 rounded-full"></div>
                     <h4 className="text-xs sm:text-sm font-heading font-extrabold uppercase tracking-widest text-zinc-900">
-                      Signature du contrat numérique
+                      Signature du contrat num├®rique
                     </h4>
                   </div>
 
                   {isSubmitting ? (
                     <div className="h-44 bg-zinc-50 border border-zinc-200 rounded-xl flex flex-col items-center justify-center gap-2">
                       <RefreshCw size={24} className="animate-spin text-blue-600" />
-                      <span className="text-xs text-zinc-500 font-semibold">Génération sécurisée du contrat et envoi de l'OTP...</span>
+                      <span className="text-xs text-zinc-500 font-semibold">G├®n├®ration s├®curis├®e du contrat et envoi de l'OTP...</span>
                     </div>
                   ) : (
                     <SignaturePad
@@ -982,7 +966,7 @@ export default function SignatureFlow({
                   )}
 
                   <div className="text-center mt-3 text-[10px] text-zinc-400 font-mono">
-                    Votre signature sera certifiée numériquement par PandaDoc — valeur juridique contractuelle
+                    Votre signature sera certifi├®e num├®riquement par PandaDoc ÔÇö valeur juridique contractuelle
                   </div>
 
                 </div>
@@ -996,7 +980,7 @@ export default function SignatureFlow({
               <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-5 shadow-sm space-y-4">
                 <div className="flex justify-between items-center border-b border-zinc-100 pb-2">
                   <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider font-heading">
-                    Pack Sélectionné
+                    Pack S├®lectionn├®
                   </span>
                   <span className="bg-blue-50 text-blue-650 border border-blue-200 font-bold px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wide">
                     Sans Engagement
@@ -1005,7 +989,7 @@ export default function SignatureFlow({
 
                 <div className="flex gap-3">
                   <div className="w-12 h-12 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-center font-heading font-black text-xs text-blue-650 shrink-0">
-                    {surface < 10 ? `${Math.round(surface)}m²` : 'LED'}
+                    {surface < 10 ? `${Math.round(surface)}m┬▓` : 'LED'}
                   </div>
                   <div>
                     <h4 className="text-xs sm:text-sm font-bold text-zinc-900">{activePack.name}</h4>
@@ -1025,7 +1009,7 @@ export default function SignatureFlow({
               <div className="bg-[#0e1115] border border-zinc-800 rounded-[24px] p-6 shadow-xl space-y-5 text-white">
                 <div className="border-b border-zinc-800 pb-3">
                   <h3 className="text-sm font-heading font-bold text-white uppercase tracking-wider">
-                    Récapitulatif financier
+                    R├®capitulatif financier
                   </h3>
                 </div>
 
@@ -1036,28 +1020,28 @@ export default function SignatureFlow({
                   </div>
                   <div className="text-xs font-sans">
                     <strong className="text-white block">{activePack.name}</strong>
-                    <span className="text-blue-400 font-semibold">{width}m x {height}m ({surface.toFixed(2)}m²)</span>
+                    <span className="text-blue-400 font-semibold">{width}m x {height}m ({surface.toFixed(2)}m┬▓)</span>
                   </div>
                 </div>
 
                 <div className="space-y-3.5 text-xs font-sans pt-1">
                   <div className="flex justify-between items-center leading-normal">
-                    <span className="text-zinc-400">{projectMode === 'vente' ? 'Règlement total :' : 'Premier règlement (Loyer + Caution) :'}</span>
+                    <span className="text-zinc-400">{projectMode === 'vente' ? 'R├¿glement total :' : 'Premier r├¿glement (Loyer + Caution) :'}</span>
                     <strong className="text-blue-400 font-mono text-[13px] sm:text-sm font-extrabold whitespace-nowrap">
-                      {(projectMode === 'vente' ? totalAmount : activePack.price + activePack.deposit).toLocaleString('fr-FR')}€ TTC
+                      {(projectMode === 'vente' ? totalAmount : activePack.price + activePack.deposit).toLocaleString('fr-FR')}Ôé¼ TTC
                     </strong>
                   </div>
 
                   <div className="flex justify-between items-center leading-normal">
-                    <span className="text-zinc-400">Puis prélèvements mensuels :</span>
+                    <span className="text-zinc-400">Puis pr├®l├¿vements mensuels :</span>
                     <strong className="text-white font-mono text-[13px] sm:text-sm font-bold whitespace-nowrap">
-                      {(projectMode === 'vente' ? 0 : activePack.price).toLocaleString('fr-FR')}€ TTC
+                      {(projectMode === 'vente' ? 0 : activePack.price).toLocaleString('fr-FR')}Ôé¼ TTC
                     </strong>
                   </div>
                 </div>
 
                 <div className="text-[9px] text-zinc-500 font-sans tracking-wide leading-normal text-center pt-2 border-t border-zinc-850">
-                  Taxe sur la valeur ajoutée (TVA) 20% légale incluse dans les tarifs TTC affichés.
+                  Taxe sur la valeur ajout├®e (TVA) 20% l├®gale incluse dans les tarifs TTC affich├®s.
                 </div>
               </div>
 
@@ -1065,7 +1049,8 @@ export default function SignatureFlow({
 
           </div>
         )}
-        {/* STEP 3: VÉRIFICATION DE SÉCURITÉ */}
+
+        {/* STEP 3: V├ëRIFICATION DE S├ëCURIT├ë */}
         {currentStep === 'securite' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in">
             
@@ -1074,16 +1059,16 @@ export default function SignatureFlow({
               <div className="flex flex-col gap-2">
                 <span className="text-xs font-mono font-bold text-amber-600 uppercase tracking-widest block flex items-center gap-1.5">
                   <ShieldAlert size={13} className="text-amber-550" />
-                  Espace hautement sécurisé • Étape 3 sur 4
+                  Espace hautement s├®curis├® ÔÇó ├ëtape 3 sur 4
                 </span>
                 
                 <h1 className="text-3xl sm:text-4xl font-black font-heading tracking-tight text-zinc-900 leading-[1.15]">
-                  Vérification de <br />
-                  <span className="text-blue-650">sécurité PixiaTech</span>
+                  V├®rification de <br />
+                  <span className="text-blue-650">s├®curit├® PixiaTech</span>
                 </h1>
                 
                 <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed font-sans mt-1">
-                  Nous avons envoyé un code de sécurité à votre adresse e-mail. Consultez votre boîte de réception puis cliquez sur le lien reçu. Pensez également à vérifier vos courriers indésirables.
+                  Nous avons envoy├® un code de s├®curit├® ├á votre adresse e-mail. Consultez votre bo├«te de r├®ception puis cliquez sur le lien re├ºu. Pensez ├®galement ├á v├®rifier vos courriers ind├®sirables.
                 </p>
               </div>
 
@@ -1093,8 +1078,8 @@ export default function SignatureFlow({
                     <KeyRound size={18} />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-900 font-heading">La validation automatique n'a pas fonctionné ?</h4>
-                    <span className="text-[11px] text-zinc-500 font-medium block mt-0.5">Saisissez le code reçu par e-mail dans les slots de vérification.</span>
+                    <h4 className="text-xs font-bold text-zinc-900 font-heading">La validation automatique n'a pas fonctionn├® ?</h4>
+                    <span className="text-[11px] text-zinc-500 font-medium block mt-0.5">Saisissez le code re├ºu par e-mail dans les slots de v├®rification.</span>
                   </div>
                 </div>
 
@@ -1103,8 +1088,8 @@ export default function SignatureFlow({
                     <Clock size={18} />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-900 font-heading">Délai de session</h4>
-                    <span className="text-[11px] text-zinc-500 font-medium block mt-0.5">Le code envoyé est valide pour les 10 prochaines minutes.</span>
+                    <h4 className="text-xs font-bold text-zinc-900 font-heading">D├®lai de session</h4>
+                    <span className="text-[11px] text-zinc-500 font-medium block mt-0.5">Le code envoy├® est valide pour les 10 prochaines minutes.</span>
                   </div>
                 </div>
 
@@ -1131,7 +1116,7 @@ export default function SignatureFlow({
                 <div className="space-y-1">
                   <h3 className="text-base font-bold text-zinc-900 font-heading">Authentification par code</h3>
                   <p className="text-xs text-zinc-500 max-w-xs mx-auto">
-                    Entrez le code à 6 chiffres envoyé sur votre boîte e-mail.
+                    Entrez le code ├á 6 chiffres envoy├® sur votre bo├«te e-mail.
                   </p>
                 </div>
 
@@ -1197,7 +1182,7 @@ export default function SignatureFlow({
                 {isOtpCompleted && (
                   <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-semibold flex items-center justify-center gap-1.5 animate-bounce">
                     <CheckCircle size={15} className="text-emerald-600" />
-                    <span>L'identité a été validée avec succès !</span>
+                    <span>L'identit├® a ├®t├® valid├®e avec succ├¿s !</span>
                   </div>
                 )}
 
@@ -1221,7 +1206,7 @@ export default function SignatureFlow({
                   {otpResent && (
                     <div className="text-[10px] text-emerald-700 font-extrabold bg-emerald-50 border border-emerald-150 px-3 py-1.5 rounded-xl animate-bounce flex items-center gap-1">
                       <CheckCircle size={10} className="text-emerald-600" />
-                      <span>Nouveau code expédié sur votre email !</span>
+                      <span>Nouveau code exp├®di├® sur votre email !</span>
                     </div>
                   )}
 
@@ -1231,13 +1216,13 @@ export default function SignatureFlow({
                       disabled={isOtpCompleted || isSubmitting}
                       className="text-blue-600 font-semibold hover:underline bg-transparent border-none cursor-pointer disabled:opacity-40"
                     >
-                      Code non reçu ? Renvoyer le code
+                      Code non re├ºu ? Renvoyer le code
                     </button>
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-zinc-100 text-[8px] tracking-widest text-zinc-400 font-mono">
-                  ACCÈS RÉSERVÉ À L'ADMINISTRATION PIXIATECH
+                  ACC├êS R├ëSERV├ë ├Ç L'ADMINISTRATION PIXIATECH
                 </div>
 
               </div>
@@ -1250,7 +1235,7 @@ export default function SignatureFlow({
                     Simulateur de Messagerie
                   </span>
                   <span className="text-[8px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full uppercase animate-pulse">
-                    Reçu à l'instant
+                    Re├ºu ├á l'instant
                   </span>
                 </div>
 
@@ -1268,7 +1253,7 @@ export default function SignatureFlow({
                       <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80"></span>
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80"></span>
                     </div>
-                    <span className="text-[9px] font-mono select-none">Client Webmail Sécurisé</span>
+                    <span className="text-[9px] font-mono select-none">Client Webmail S├®curis├®</span>
                   </div>
 
                   {/* Email header */}
@@ -1282,7 +1267,7 @@ export default function SignatureFlow({
                         Authentification
                       </h4>
                       <p className="text-[11px] text-zinc-500 max-w-sm mx-auto">
-                        Un code de sécurité est requis pour accéder à votre estimation Pixatech.
+                        Un code de s├®curit├® est requis pour acc├®der ├á votre estimation Pixatech.
                       </p>
                     </div>
 
@@ -1317,19 +1302,19 @@ export default function SignatureFlow({
                           className="px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 hover:text-blue-700 text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1.5 border border-blue-200 shadow-sm"
                         >
                           <Copy size={11} />
-                          <span>{isCopied ? "Code copié !" : "Copier le code dans le presse-papier"}</span>
+                          <span>{isCopied ? "Code copi├® !" : "Copier le code dans le presse-papier"}</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Security notice */}
                     <div className="p-3.5 bg-blue-50 rounded-xl border border-blue-100 text-[10px] text-blue-900 leading-relaxed font-sans">
-                      <strong>🚨 Information de sécurité :</strong> <br />
+                      <strong>­ƒÜ¿ Information de s├®curit├® :</strong> <br />
                       "Ce code est strictement personnel. Ne le partagez jamais avec un tiers, y compris un collaborateur Pixatec."
                     </div>
 
                     <div className="border-t border-zinc-100 pt-3 flex flex-col gap-1 items-center justify-center text-[9px] text-zinc-400 text-center font-sans uppercase">
-                      <span>Ce message automatique est crypté. PandaDoc Secure Shield.</span>
+                      <span>Ce message automatique est crypt├®. PandaDoc Secure Shield.</span>
                       <a href="mailto:contact@pixiatech.com" className="text-blue-500 font-bold hover:underline">Contacter le support</a>
                     </div>
 
@@ -1342,7 +1327,7 @@ export default function SignatureFlow({
           </div>
         )}
 
-        {/* STEP 4: CONFIRMATION & FÉLICITATIONS */}
+        {/* STEP 4: CONFIRMATION & F├ëLICITATIONS */}
         {currentStep === 'confirmation' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch animate-fade-in py-2">
             
@@ -1360,14 +1345,14 @@ export default function SignatureFlow({
 
                 <div className="space-y-1">
                   <h1 className="text-4xl sm:text-5xl font-black font-heading tracking-tight text-zinc-900 leading-[1.08] uppercase">
-                    Félicitations <br />
-                    <span className="text-blue-600 block lowercase normal-case">votre projet est prêt.</span>
+                    F├®licitations <br />
+                    <span className="text-blue-600 block lowercase normal-case">votre projet est pr├¬t.</span>
                   </h1>
                   
                   <div className="text-xs sm:text-sm text-zinc-500 leading-relaxed font-sans max-w-lg mt-3 space-y-3">
-                    <p>Votre estimation a été générée avec succès.</p>
-                    <p>Vous pouvez dès maintenant consulter ou télécharger votre estimation au format PDF.</p>
-                    <p>Merci de votre confiance et d’avoir choisi Pixiatech. Nous sommes ravis de vous accompagner dans la réalisation de votre projet.</p>
+                    <p>Votre estimation a ├®t├® g├®n├®r├®e avec succ├¿s.</p>
+                    <p>Vous pouvez d├¿s maintenant consulter ou t├®l├®charger votre estimation au format PDF.</p>
+                    <p>Merci de votre confiance et dÔÇÖavoir choisi Pixiatech. Nous sommes ravis de vous accompagner dans la r├®alisation de votre projet.</p>
                   </div>
                 </div>
 
@@ -1380,7 +1365,7 @@ export default function SignatureFlow({
                   className="w-full sm:w-auto px-6 py-3 bg-zinc-950 hover:bg-zinc-800 text-white font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <RefreshCw size={14} />
-                  <span>Créer un nouveau devis</span>
+                  <span>Cr├®er un nouveau devis</span>
                 </button>
 
                 <button
@@ -1389,7 +1374,7 @@ export default function SignatureFlow({
                   className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-zinc-50 text-zinc-700 font-bold border border-zinc-200 text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Download size={14} className="text-blue-600" />
-                  <span>Télécharger PDF</span>
+                  <span>T├®l├®charger PDF</span>
                 </button>
               </div>
 
@@ -1402,22 +1387,22 @@ export default function SignatureFlow({
                 <div className="space-y-4">
                   <div className="flex justify-between items-center border-b border-zinc-100 pb-2">
                     <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest font-heading">
-                      Détails Techniques
+                      D├®tails Techniques
                     </span>
                     <span className="bg-blue-50 text-blue-650 border border-blue-200 text-[8px] font-bold px-2 py-0.5 rounded uppercase">
-                      Série Extra Plat
+                      S├®rie Extra Plat
                     </span>
                   </div>
 
                   <div className="space-y-2 text-xs font-bold font-mono">
                     <div className="flex justify-between text-zinc-500 py-0.5 font-sans">
-                      <span>Dimensions d'écran :</span>
+                      <span>Dimensions d'├®cran :</span>
                       <span className="text-zinc-900 font-mono">{width}m x {height}m</span>
                     </div>
 
                     <div className="flex justify-between text-zinc-500 py-0.5 font-sans">
                       <span>Surface totale d'affichage :</span>
-                      <span className="text-zinc-900 font-mono">{surface.toFixed(2)} m²</span>
+                      <span className="text-zinc-900 font-mono">{surface.toFixed(2)} m┬▓</span>
                     </div>
 
                     <div className="flex justify-between text-zinc-500 py-0.5 font-sans">
@@ -1427,19 +1412,19 @@ export default function SignatureFlow({
 
                     <div className="flex justify-between text-zinc-500 py-0.5 font-sans border-t border-zinc-100 pt-2 font-semibold">
                       <span>Loyer mensuel :</span>
-                      <span className="text-zinc-950 font-mono">{(projectMode === 'vente' ? 0 : activePack.price).toLocaleString('fr-FR')} € TTC</span>
+                      <span className="text-zinc-950 font-mono">{(projectMode === 'vente' ? 0 : activePack.price).toLocaleString('fr-FR')} Ôé¼ TTC</span>
                     </div>
 
                     <div className="flex justify-between text-zinc-500 py-0.5 font-sans pb-1 font-semibold">
-                      <span>Dépôt de garantie :</span>
-                      <span className="text-zinc-950 font-mono">{(projectMode === 'vente' ? totalAmount : activePack.deposit).toLocaleString('fr-FR')} € TTC</span>
+                      <span>D├®p├┤t de garantie :</span>
+                      <span className="text-zinc-950 font-mono">{(projectMode === 'vente' ? totalAmount : activePack.deposit).toLocaleString('fr-FR')} Ôé¼ TTC</span>
                     </div>
                   </div>
 
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex justify-between items-center shadow-inner">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase font-sans">Total Estimé :</span>
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase font-sans">Total Estim├® :</span>
                     <span className="text-lg font-mono font-black text-blue-600">
-                      {totalAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                      {totalAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Ôé¼
                     </span>
                   </div>
                 </div>
@@ -1456,7 +1441,7 @@ export default function SignatureFlow({
                       <div className="relative z-10 p-1.5 flex flex-col justify-between h-full">
                         <span className="text-[6px] font-bold text-white font-mono leading-none tracking-widest uppercase">PIXIA SCREEN</span>
                         <div className="w-full flex justify-between text-[5px] text-white/50">
-                          <span>{surface.toFixed(1)}m²</span>
+                          <span>{surface.toFixed(1)}m┬▓</span>
                           <span>ACTIVE</span>
                         </div>
                       </div>

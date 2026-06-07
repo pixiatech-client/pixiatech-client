@@ -6,12 +6,9 @@ import { useState, useMemo, useEffect, useCallback, useTransition, useRef } from
 import type { Product, Settings, DeliverySettings, LaborSettings, ConfiguredProduct, QuoteDetails, Locations, WizardSettings } from '@/lib/types';
 import { Configurator } from './configurator';
 import Preview from './preview';
-import { QuoteForm, type QuoteFormHandle } from '@/components/quote-form';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Card, CardContent } from './ui/card';
 import { Stepper } from './stepper';
-import { InstallationForm } from './installation-form';
-import { DeliveryForm } from './delivery-form';
 import { StepImagePreview } from './step-image-preview';
 import { useAuth, useUser } from '@/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -25,12 +22,14 @@ import { FloatingFooterNav } from './ui/floating-footer-nav';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { SuccessView } from './success-view';
 import HintBubble from './ui/hint-bubble';
+
 import { ConfiguratorWizard } from './configurator-wizard';
 import { ConfiguratorModeSelection } from './configurator-mode-selection';
 import { preloadImages } from '@/lib/image-preload';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import SignatureFlow from './SignatureFlow';
+
 
 
 type PreviewMode = 'dimension' | 'video' | 'image';
@@ -135,9 +134,9 @@ export function QuoteBuilder({
     const [wizardSettings, setWizardSettings] = useState<WizardSettings>(initialWizardSettings);
     const [configuredProducts, setConfiguredProducts] = useState<ConfiguredProduct[]>([]);
     const [activeConfigProductId, setActiveConfigProductId] = useState<string | null>(null);
-    const quoteFormRef = useRef<QuoteFormHandle>(null);
 
     const [baseQuote, setBaseQuote] = useState(0);
+
     const [includeInstallation, setIncludeInstallation] = useState(true);
     const [deliveryCost, setDeliveryCost] = useState(0);
     const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
@@ -152,14 +151,16 @@ export function QuoteBuilder({
     const [mediaUrl, setMediaUrl] = useState<string | null>(null);
     const [mediaType, setMediaType] = useState<'video' | 'image' | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [isSignatureFlowActive, setIsSignatureFlowActive] = useState(false);
 
     console.log("DEBUG: QuoteBuilder Rendered", { isSuccess, currentStep });
+
     const [successQuoteId, setSuccessQuoteId] = useState<string | null>(null);
     const [submittedEmail, setSubmittedEmail] = useState<string | undefined>(undefined);
     const [isHintBubbleVisible, setIsHintBubbleVisible] = useState(false);
     const [direction, setDirection] = useState(0);
-    const [isQuoteFormValid, setIsQuoteFormValid] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
 
     const isMobile = useIsMobile();
     const [activeMode, setActiveMode] = useState<'selection' | 'wizard' | 'manual'>('selection');
@@ -467,7 +468,9 @@ export function QuoteBuilder({
         setActiveMode('selection');
         setCurrentStep(1); // Crucial: Reset to step 1
         setIsSubmitting(false);
+        setIsSignatureFlowActive(false);
     }, []);
+
 
 
     const handleBack = () => {
@@ -488,28 +491,16 @@ export function QuoteBuilder({
         }
     };
     const handleNext = () => {
-        if (getOriginalStep(currentStep) === 4) {
-            setIsSubmitting(true);
-            try {
-                quoteFormRef.current?.submit();
-            } catch (error) {
-                console.error("Submission failed:", error);
-                setIsSubmitting(false);
+        const originalStep = getOriginalStep(currentStep);
+        if (originalStep === 1) {
+            if (configuredProducts.length === 0) {
+                alert("Veuillez configurer au moins un produit.");
+                return;
             }
-            return;
+            setIsSignatureFlowActive(true);
         }
-        setDirection(1);
-        setCurrentStep(prev => {
-            let nextVisibleStep = prev + 1;
-            if (nextVisibleStep > visibleSteps.length) return visibleSteps.length;
-
-            const originalNextStep = getOriginalStep(nextVisibleStep);
-            if (originalNextStep === 2 && !isDeliveryStepEnabled) nextVisibleStep++;
-            if (originalNextStep === 3 && !isInstallationStepEnabled) nextVisibleStep++;
-
-            return Math.min(nextVisibleStep, visibleSteps.length);
-        });
     };
+
 
     const handleStepClick = (step: number) => {
         const originalStep = getOriginalStep(step);
@@ -582,7 +573,9 @@ export function QuoteBuilder({
         setSuccessQuoteId(null);
         setActiveMode('selection');
         setIsSubmitting(false);
+        setIsSignatureFlowActive(false);
     };
+
 
     const handleModeSelect = (mode: 'wizard' | 'manual') => {
         handleGoToModeSelection(); // Reset state
@@ -592,14 +585,9 @@ export function QuoteBuilder({
     const handleWizardComplete = (product: ConfiguredProduct) => {
         setConfiguredProducts([product]);
         setActiveConfigProductId(product.id);
-        // After guided wizard completion, navigate to the Delivery visible step if present
-        const deliveryIndex = visibleSteps.findIndex(s => s.label === 'stepper.step2');
-        if (deliveryIndex !== -1) {
-            setCurrentStep(deliveryIndex + 1);
-        } else {
-            handleNext();
-        }
+        setIsSignatureFlowActive(true);
     };
+
 
     const renderStepContent = () => {
         const originalStep = getOriginalStep(currentStep);
@@ -627,61 +615,11 @@ export function QuoteBuilder({
             }
         }
 
-        switch (originalStep) {
-            case 2:
-                if (!locations) {
-                    return (
-                        <div className="w-full h-full flex items-center justify-center p-8">
-                            <Loader2 className="animate-spin mr-2" /> {t('common.loading')}
-                        </div>
-                    )
-                }
-                return (
-                    <DeliveryForm
-                        onBack={handleBack}
-                        onNext={handleNext}
-                        deliverySettings={deliverySettings}
-                        onLocationChange={handleLocationChange}
-                        totalQuote={totalQuoteForStep}
-                        settings={initialSettings}
-                        locations={locations}
-                        hideFooter={true}
-                    />
-                );
-            case 3:
-                return (
-                    <InstallationForm
-                        onBack={handleBack}
-                        onNext={handleNext}
-                        setIncludeInstallation={setIncludeInstallation}
-                        includeInstallation={includeInstallation}
-                        installationCost={installationCost}
-                        totalQuote={totalQuoteForStep}
-                        techniciansRequired={techniciansRequired}
-                        totalArea={totalArea}
-                        settings={initialSettings}
-                        hideFooter={true}
-                    />
-                );
-            case 4:
-                return <QuoteForm
-                    ref={quoteFormRef}
-                    quoteDetails={finalQuoteDetails}
-                    onBack={handleBack}
-                    onSubmitted={handleSubmitted}
-                    onError={() => setIsSubmitting(false)}
-                    settings={initialSettings}
-                    allProducts={allProducts}
-                    hideFooter={true}
-                    onValidationChange={setIsQuoteFormValid}
-                />;
-            default:
-                return (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <p>{t('common.invalidStep')}</p>
-                    </div>
-                );
-        }
+        return (
+            <div className="w-full h-full flex items-center justify-center">
+                <p>{t('common.invalidStep')}</p>
+            </div>
+        );
     }
 
     const renderPreviewContent = () => {
@@ -712,19 +650,9 @@ export function QuoteBuilder({
             );
         }
 
-        switch (originalStep) {
-            case 1:
-                return previewComponent;
-            case 2:
-                return <StepImagePreview imageUrl={initialSettings.deliveryImageUrl} title={initialSettings.deliveryTitle ?? "delivery.title"} />;
-            case 3:
-                return <StepImagePreview imageUrl={initialSettings.technicianImageUrl} title={initialSettings.installationTitle ?? "installation.title"} />;
-            case 4:
-                return <StepImagePreview imageUrl={initialSettings.congratulationsImageUrl} title={initialSettings.congratulationsTitle ?? "successPage.title"} />;
-            default:
-                return null;
-        }
+        return previewComponent;
     };
+
 
     const showMediaPreviewMobile = isMobile && previewMode !== 'dimension' && mediaUrl && mediaType;
 
@@ -760,11 +688,27 @@ export function QuoteBuilder({
         </motion.div>
     );
 
-    if (isSuccess) {
-        return <SuccessView quoteId={successQuoteId} onNewQuote={handleNewQuote} initialEmail={submittedEmail} />;
+
+
+    if (isSignatureFlowActive && activeConfiguredProduct) {
+        return (
+            <SignatureFlow
+                configuredProduct={activeConfiguredProduct}
+                allProducts={allProducts}
+                settings={initialSettings}
+                userId={user?.uid || 'anonymous'}
+                onNewQuote={handleNewQuote}
+                onBackToConfigurator={() => {
+                    setIsSignatureFlowActive(false);
+                    setActiveMode('manual');
+                    setCurrentStep(1);
+                }}
+            />
+        );
     }
 
     if (isMobile === undefined) {
+
         return null;
     }
 
@@ -858,21 +802,7 @@ export function QuoteBuilder({
                     </AnimatePresence>
                 </div>
             </div>
-            {getOriginalStep(currentStep) > 1 && !isSuccess && (
-                <div className="w-full flex justify-center mt-8">
-                    <FloatingFooterNav
-                        onBack={handleBack}
-                        onNext={handleNext}
-                        nextLabel={getOriginalStep(currentStep) === 4 ? t('quoteForm.submit') : t('common.next')}
-                        nextDisabled={
-                            (getOriginalStep(currentStep) === 2 && !selectedCityId) ||
-                            (getOriginalStep(currentStep) === 4 && (!isQuoteFormValid || isSubmitting))
-                        }
-                        isLoading={isSubmitting}
-                        className="mt-0"
-                    />
-                </div>
-            )}
+
             <AnimatePresence>
                 {showMediaPreviewMobile && <MobileImageModal />}
             </AnimatePresence>

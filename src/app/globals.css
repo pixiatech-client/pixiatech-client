@@ -8,7 +8,7 @@
   :root {
     --background: 42 33% 97%;
     --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
+    --card: 42 33% 97%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
@@ -54,9 +54,9 @@
     --aura-accent: #3b82f6;
     --aura-success: #10b981;
     --aura-text-dim: #a1a1aa;
-    
+
     /* Theme Customization System */
-    --theme-card-bg: #ffffff;
+    --theme-card-bg: #FAF8F5;
     --theme-hover-bg: #f3f4f6;
     --theme-active-bg: #e5e7eb;
     --theme-text-primary: #111827;
@@ -87,9 +87,11 @@
      border-color: var(--theme-card-border) !important;
    }
   }
+
   * {
     @apply border-border;
   }
+
   /* ===== RESET GLOBAL ===== */
   html,
   body,
@@ -198,7 +200,7 @@
   }
 
   .card {
-    @apply rounded-[2rem] bg-white text-card-foreground border border-gray-200 shadow-sm p-6 transition-all duration-300;
+    @apply rounded-[2rem] bg-card text-card-foreground border border-gray-200 shadow-sm p-6 transition-all duration-300;
   }
   .icon-glow-active {
     color: #3b82f6;
@@ -227,11 +229,11 @@
     --ring: hsl(var(--ring));
     @apply bg-white text-black;
   }
-  
+
    .bg-admin-background {
        background-color: var(--admin-background);
    }
-   
+
    @layer components {
     .btn-sidebar {
         @apply h-10 px-4 py-2 w-full justify-start rounded-lg text-sm font-medium transition-colors;
@@ -305,7 +307,7 @@
       color: #4ade80; /* green-400 */
       filter: drop-shadow(0 0 5px #4ade80);
   }
-  
+
   /* Animated Gradient Background */
   @keyframes moveInCircle {
     0% { transform: rotate(0deg); }
@@ -414,7 +416,7 @@
   .text-balance {
     text-wrap: balance;
   }
-  
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -617,12 +619,12 @@
 body {
    font-family: "Inter", sans-serif;
    overflow-x: hidden;
-   background-color: #F9F8F4;
+   background-color: #FAF8F5;
    color: #1e293b;
 }
 
 body.light-theme {
-  background: #F9F8F4;
+  background: #FAF8F5;
 }
 
 body.dark-theme {
@@ -819,7 +821,7 @@ body.light-theme aside.glass-ui {
 
 /* Cyberpunk Grid Background */
 .cyber-grid {
-  background-image: 
+  background-image:
     linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
     linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
   background-size: 40px 40px;

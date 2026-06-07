@@ -574,3 +574,319 @@ export async function getBlockedPeriods(): Promise<{ from: string; to: string }[
     return [];
   }
 }
+
+export async function createQuoteWithContract(
+  userId: string,
+  clientDetails: {
+    company: string;
+    representative: string;
+    address: string;
+    postcode: string;
+    city: string;
+    email: string;
+    phone: string;
+    notes?: string;
+  },
+  quoteDetails: {
+    products: any[];
+    transactionType: 'sale' | 'rental';
+    includeInstallation: boolean;
+    installationCost: number;
+    techniciansRequired: number;
+    includeDelivery: boolean;
+    deliveryCost: number;
+    totalQuote: number;
+    width: number;
+    height: number;
+    productName: string;
+    lang: 'fr' | 'en';
+  },
+  signatureDataUrl: string
+): Promise<{ success: boolean; id?: string; otpCode?: string; error?: string }> {
+  const { adminDb, FieldValue, Timestamp } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Database service unavailable' };
+
+  try {
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expirationDate = new Date();
+    expirationDate.setMinutes(expirationDate.getMinutes() + 10); // 10 minutes expiration
+
+    const pdfSettings = await getPdfSettings(true);
+
+    const docData: any = {
+      ...quoteDetails,
+      client: {
+        companyName: clientDetails.company,
+        representative: clientDetails.representative,
+        address: `${clientDetails.address}, ${clientDetails.postcode} ${clientDetails.city}`,
+        email: clientDetails.email,
+        phone: clientDetails.phone,
+        notes: clientDetails.notes || '',
+      },
+      userId,
+      createdAt: FieldValue.serverTimestamp(),
+      isRead: false,
+      status: 'pending',
+      emailVerified: false,
+      signatureDataUrl,
+      signedAt: FieldValue.serverTimestamp(),
+      otpCode,
+      otpExpires: Timestamp.fromDate(expirationDate),
+      pdfSettings,
+    };
+
+    const docRef = await adminDb.collection('quotes').add(docData);
+    
+    // Increment stats on create
+    try {
+      await updateStatsOnCreate('pending', quoteDetails.totalQuote);
+    } catch (statsError) {
+      console.error("Error updating stats on create:", statsError);
+    }
+
+    // Prepare SMTP and send OTP email
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') 
+      || (process.env.NODE_ENV === 'production' 
+          ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app' 
+          : 'http://localhost:3000');
+
+    const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
+      ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
+      : baseUrl;
+
+    const verificationUrl = `${safeBaseUrl}/quote/verify?otp=${otpCode}&id=${docRef.id}`;
+    
+    await sendSignatureOtpEmail(
+      clientDetails.email,
+      otpCode,
+      quoteDetails.lang || 'fr',
+      clientDetails.company,
+      clientDetails.representative,
+      quoteDetails.totalQuote,
+      `${quoteDetails.width}m x ${quoteDetails.height}m - ${quoteDetails.productName}`,
+      verificationUrl
+    );
+
+    return { success: true, id: docRef.id, otpCode };
+  } catch (error: any) {
+    console.error("Error in createQuoteWithContract:", error);
+    return { success: false, error: error.message || 'Failed to create contract quote' };
+  }
+}
+
+async function sendSignatureOtpEmail(
+  recipientEmail: string,
+  otpCode: string,
+  lang: 'fr' | 'en',
+  companyName: string,
+  representative: string,
+  totalAmount: number,
+  details: string,
+  verificationUrl: string
+) {
+  const pdfSettings = await getPdfSettings(true);
+  const logoSource = pdfSettings.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Flogo.png?alt=media&token=8544c77c-6554-46c5-ac33-0c464c8d50d0';
+
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
+  const isSecure = smtpPort === 465;
+
+  const transporter = nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: isSecure,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+    tls: {
+      rejectUnauthorized: false
+    }
+  });
+
+  let logoBuffer: Buffer | null = null;
+  let logoContentType = 'image/png';
+
+  try {
+    const logoResponse = await fetch(logoSource, { cache: 'no-store' });
+    if (logoResponse.ok) {
+      const arrayBuffer = await logoResponse.arrayBuffer();
+      logoBuffer = Buffer.from(arrayBuffer);
+      logoContentType = logoResponse.headers.get('content-type') || 'image/png';
+    }
+  } catch (fetchError) {
+    console.warn('[Email] Error fetching logo:', fetchError);
+  }
+
+  const digitsHtml = otpCode.split('').map(digit => `
+    <div style="width: 40px; height: 50px; background-color: #eff6ff; border: 2px solid #dbeafe; color: #2563eb; font-weight: 900; font-family: monospace; font-size: 24px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; line-height: 50px; text-align: center;">
+      ${digit}
+    </div>
+  `).join('');
+
+  const emailHtml = `
+    <div style="font-family: Arial, sans-serif; text-align: center; padding: 40px; background-color: #f4f4f4; border-radius: 20px;">
+      <div style="background-color: white; padding: 40px; border-radius: 30px; max-width: 500px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center;">
+        <img src="cid:pixiatech-logo" alt="PixiaTech Logo" style="max-width: 150px; margin: 0 auto 30px auto; display: block;">
+        <h1 style="color: #1a1a1a; font-size: 22px; font-weight: 900; margin-bottom: 20px; text-transform: uppercase; letter-spacing: -0.5px; text-align: center;">
+          🔑 ${lang === 'fr' ? 'Votre code de vérification PixiaTech Pro' : 'Your PixiaTech Pro Verification Code'}
+        </h1>
+        <p style="color: #666; font-size: 15px; line-height: 1.6; margin-bottom: 25px; text-align: left;">
+          ${lang === 'fr' 
+            ? `Bonjour ${representative},<br/><br/>Merci pour votre demande d'estimation. Voici votre code temporaire de validation pour signer électroniquement votre contrat PixiaTech :` 
+            : `Hello ${representative},<br/><br/>Thank you for your estimation request. Here is your temporary validation code to sign your PixiaTech contract electronically:`}
+        </p>
+        <div style="margin: 30px 0; text-align: center; display: block;">
+          ${digitsHtml}
+        </div>
+        <p style="color: #666; font-size: 14px; margin-bottom: 25px; text-align: left;">
+          ${lang === 'fr'
+            ? "Vous pouvez également valider automatiquement en cliquant sur le bouton ci-dessous :"
+            : "You can also validate automatically by clicking the button below:"}
+        </p>
+        <div style="text-align: center; margin-bottom: 30px;">
+          <a href="${verificationUrl}" style="background-color: #2563eb; color: white; padding: 18px 32px; text-decoration: none; border-radius: 14px; display: inline-block; font-size: 16px; font-weight: bold; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);">
+            ${lang === 'fr' ? 'Valider et continuer (Lien direct)' : 'Validate and continue (Direct Link)'}
+          </a>
+        </div>
+        <p style="color: #ef4444; font-size: 11px; font-weight: bold; margin-bottom: 25px; text-align: center;">
+          ${lang === 'fr'
+            ? "⚠️ Ce code est strictement personnel. Ne le partagez jamais."
+            : "⚠️ This code is strictly personal. Do not share it."}
+        </p>
+        <p style="color: #999; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; text-align: center;">
+          ${lang === 'fr'
+            ? "Ce message automatique est sécurisé par PandaDoc Secure Shield."
+            : "This automatic message is secured by PandaDoc Secure Shield."}
+        </p>
+      </div>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"PixiaTech" <${process.env.SMTP_USER}>`,
+      to: recipientEmail,
+      subject: lang === 'fr' ? "🔑 Votre code de vérification PixiaTech Pro" : "🔑 Your PixiaTech Pro verification code",
+      html: emailHtml,
+      attachments: logoBuffer
+        ? [
+            {
+              filename: 'logo.png',
+              content: logoBuffer,
+              cid: 'pixiatech-logo',
+              contentType: logoContentType,
+            },
+          ]
+        : [],
+    });
+  } catch (error) {
+    console.error(`[Email] Error sending OTP email to ${recipientEmail}:`, error);
+  }
+}
+
+export async function verifyQuoteOtp(quoteId: string, otpCode: string): Promise<{ success: boolean; error?: string }> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Database service unavailable' };
+
+  try {
+    const docRef = adminDb.collection('quotes').doc(quoteId);
+    const docSnap = await docRef.get();
+    
+    if (!docSnap.exists) {
+      return { success: false, error: 'Estimation introuvable.' };
+    }
+
+    const quoteData = docSnap.data();
+    if (!quoteData) {
+      return { success: false, error: 'Estimation invalide.' };
+    }
+
+    if (quoteData.otpCode !== otpCode) {
+      return { success: false, error: 'Validation automatique impossible. Entrez le code reçu par e-mail.' };
+    }
+
+    const expiresTimestamp = quoteData.otpExpires;
+    if (expiresTimestamp && new Date() > expiresTimestamp.toDate()) {
+      return { success: false, error: 'Le code de vérification a expiré.' };
+    }
+
+    if (!quoteData.emailVerified) {
+      await docRef.update({ emailVerified: true });
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in verifyQuoteOtp:", error);
+    return { success: false, error: 'Erreur lors de la vérification.' };
+  }
+}
+
+export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolean; error?: string }> {
+  const { adminDb, Timestamp } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Database service unavailable' };
+
+  try {
+    const docRef = adminDb.collection('quotes').doc(quoteId);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return { success: false, error: 'Estimation introuvable.' };
+    }
+
+    const quoteData = docSnap.data();
+    if (!quoteData) {
+      return { success: false, error: 'Estimation invalide.' };
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expirationDate = new Date();
+    expirationDate.setMinutes(expirationDate.getMinutes() + 10); // 10 minutes expiration
+
+    await docRef.update({
+      otpCode,
+      otpExpires: Timestamp.fromDate(expirationDate),
+      emailVerified: false
+    });
+
+    const clientEmail = quoteData.client?.email || quoteData.email;
+    const clientCompany = quoteData.client?.companyName || quoteData.company || '';
+    const clientRepresentative = quoteData.client?.representative || quoteData.representative || '';
+    const totalAmount = quoteData.totalQuote || 0;
+    const lang = quoteData.lang || 'fr';
+    const width = quoteData.width || 0;
+    const height = quoteData.height || 0;
+    const productName = quoteData.productName || '';
+
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') 
+      || (process.env.NODE_ENV === 'production' 
+          ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app' 
+          : 'http://localhost:3000');
+
+    const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
+      ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
+      : baseUrl;
+
+    const verificationUrl = `${safeBaseUrl}/quote/verify?otp=${otpCode}&id=${quoteId}`;
+
+    await sendSignatureOtpEmail(
+      clientEmail,
+      otpCode,
+      lang,
+      clientCompany,
+      clientRepresentative,
+      totalAmount,
+      `${width}m x ${height}m - ${productName}`,
+      verificationUrl
+    );
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in resendQuoteOtp:", error);
+    return { success: false, error: error.message || 'Failed to resend OTP' };
+  }
+}
+
+

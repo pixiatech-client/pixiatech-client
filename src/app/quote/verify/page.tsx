@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { verifyQuoteToken } from '@/app/admin/actions';
+import { verifyQuoteOtp } from '@/app/actions/quote-actions';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -10,28 +11,32 @@ function VerifyContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const token = searchParams.get('token');
+    const otp = searchParams.get('otp');
+    const id = searchParams.get('id');
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [error, setError] = useState<string>('');
 
     useEffect(() => {
         async function verify() {
-            if (!token) {
+            if (!token && (!otp || !id)) {
                 setStatus('error');
-                setError('Jeton de vérification manquant.');
+                setError('Paramètres de vérification manquants.');
                 return;
             }
 
             try {
-                const result = await verifyQuoteToken(token);
-                if (result.success) {
+                let result;
+                if (otp && id) {
+                    result = await verifyQuoteOtp(id, otp);
+                } else if (token) {
+                    result = await verifyQuoteToken(token);
+                }
+
+                if (result && result.success) {
                     setStatus('success');
-                    // Short delay to show the success message before redirecting
-                    setTimeout(() => {
-                        router.push(`/quote/success?id=${result.quoteId}`);
-                    }, 2000);
                 } else {
                     setStatus('error');
-                    setError(result.error || 'Erreur lors de la vérification.');
+                    setError(result?.error || 'Erreur lors de la vérification.');
                 }
             } catch (err) {
                 setStatus('error');
@@ -40,7 +45,8 @@ function VerifyContent() {
         }
 
         verify();
-    }, [token, router]);
+    }, [token, otp, id, router]);
+
 
     return (
         <Card className="w-full max-w-md border-none shadow-2xl rounded-[32px] overflow-hidden bg-white">
