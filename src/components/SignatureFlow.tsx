@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   Check, 
   ArrowLeft, 
@@ -150,6 +151,8 @@ export default function SignatureFlow({
   onBackToConfigurator,
   onStepChange
 }: SignatureFlowProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [currentStep, setCurrentStep] = useState<StepId>('informations');
   const [quoteId, setQuoteId] = useState<string | null>(null);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
@@ -251,11 +254,30 @@ export default function SignatureFlow({
 
   const prevStepRef = useRef<StepId>(currentStep);
   useEffect(() => {
-    if (prevStepRef.current !== currentStep && onStepChange) {
-      onStepChange(currentStep);
+    if (prevStepRef.current !== currentStep) {
+      const routeMap: Record<StepId, string | null> = {
+        'informations': null,
+        'contrat': null,
+        'securite': '/verification-securite',
+        'confirmation': '/projet-termine',
+      };
+      const route = routeMap[currentStep];
+      if (route) {
+        router.replace(route);
+      }
+      if (onStepChange) onStepChange(currentStep);
     }
     prevStepRef.current = currentStep;
-  }, [currentStep, onStepChange]);
+  }, [currentStep, router, onStepChange]);
+
+  // Sync step from URL on mount
+  useEffect(() => {
+    if (pathname === '/verification-securite') {
+      setCurrentStep('securite');
+    } else if (pathname === '/projet-termine') {
+      setCurrentStep('confirmation');
+    }
+  }, [pathname]);
 
   // Sync draft state to localStorage
   useEffect(() => {
@@ -1574,10 +1596,16 @@ export default function SignatureFlow({
 
                 {/* Pack Selection Detail Row */}
                 <div className="flex gap-4.5 bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/60 select-none">
-                  <div className="w-12 h-12 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col items-center justify-center font-heading font-black text-xs text-blue-400 shrink-0">
-                    <span className="text-[9px] leading-tight text-zinc-500 font-mono font-normal">Taille</span>
-                    <span className="text-[11px] leading-tight mt-0.5">{totalSurface.toFixed(1)}m²</span>
-                  </div>
+                  {productPhoto ? (
+                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-zinc-700">
+                      <img src={productPhoto} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col items-center justify-center font-heading font-black text-xs text-blue-400 shrink-0">
+                      <span className="text-[9px] leading-tight text-zinc-500 font-mono font-normal">Taille</span>
+                      <span className="text-[11px] leading-tight mt-0.5">{totalSurface.toFixed(1)}m²</span>
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs sm:text-sm font-bold text-white truncate">{activePack.name}</h4>
                     <p className="text-[11px] text-zinc-400 mt-1 select-none leading-relaxed line-clamp-2">

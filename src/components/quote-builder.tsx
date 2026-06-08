@@ -277,17 +277,8 @@ export function QuoteBuilder({
     }, []);
 
     const handleSignatureStepChange = useCallback((signatureStep: string) => {
-        const stepRoutes: Record<string, string | null> = {
-            'informations': null,
-            'contrat': '/contrat-signature',
-            'securite': '/verification-securite',
-            'confirmation': '/projet-termine',
-        };
-        const route = stepRoutes[signatureStep];
-        if (route) {
-            router.push(route);
-        }
-    }, [router]);
+        // SignatureFlow handles its own route pushes directly
+    }, []);
 
     const refreshWizardSettings = useCallback(async () => {
         try {
