@@ -1,4 +1,3 @@
-
 'use server';
 
 import type { QuoteDetails } from '@/lib/types';
@@ -41,86 +40,86 @@ type FormValues = z.infer<typeof formSchema>;
 
 
 async function urlToDataUri(url: string | undefined): Promise<string> {
-    if (!url) return '';
-    try {
-        const response = await fetch(url, { cache: 'no-store' });
-        if (!response.ok) {
-            console.error(`Failed to fetch image: ${response.statusText} for URL: ${url}`);
-            return '';
-        }
-        const arrayBuffer = await response.arrayBuffer();
-        let contentType = response.headers.get('content-type') || 'image/png';
-        if (url.endsWith('.svg') || contentType === 'image/svg+xml') {
-            contentType = 'image/svg+xml';
-        }
-        const buffer = Buffer.from(arrayBuffer);
-        return `data:${contentType};base64,${buffer.toString('base64')}`;
-    } catch (error) {
-        console.error(`Error converting URL to data URI for ${url}:`, error);
-        return '';
+  if (!url) return '';
+  try {
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) {
+      console.error(`Failed to fetch image: ${response.statusText} for URL: ${url}`);
+      return '';
     }
+    const arrayBuffer = await response.arrayBuffer();
+    let contentType = response.headers.get('content-type') || 'image/png';
+    if (url.endsWith('.svg') || contentType === 'image/svg+xml') {
+      contentType = 'image/svg+xml';
+    }
+    const buffer = Buffer.from(arrayBuffer);
+    return `data:${contentType};base64,${buffer.toString('base64')}`;
+  } catch (error) {
+    console.error(`Error converting URL to data URI for ${url}:`, error);
+    return '';
+  }
 }
 
 
 export async function getPdfSettings(rawUrls = false): Promise<PdfSettings> {
-    const { adminDb } = getFirebaseAdmin();
-    const defaultSettings: PdfSettings = {
-        logoUrl: "https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Flogo.png?alt=media&token=8544c77c-6554-46c5-ac33-0c464c8d50d0",
-        logoWidth: 190,
-        backgroundUrl: "https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Fbackground.jpg?alt=media&token=0a32d431-1554-4648-9b88-be9c73eac09f",
-        companyName: "PIXIATECH",
-        siret: "123 456 789 00010 100",
-        capital: "100000€",
-        address: "123 Rue de l'Exemple, 75001 Paris, France",
-        phone: "+33 1 23 45 67 89",
-        email: "contact@pixiatech.com",
-        textColor: "#000000",
-        titleColor: "#000000",
-        headerColor: "#0a5499",
-        quoteTitle: "Estimation",
-        quoteNumberPrefix: "EST-",
-        termsAndConditions: "Merci de votre confiance. Cette estimation est valable 30 jours.",
-    };
+  const { adminDb } = getFirebaseAdmin();
+  const defaultSettings: PdfSettings = {
+    logoUrl: "https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Flogo.png?alt=media&token=8544c77c-6554-46c5-ac33-0c464c8d50d0",
+    logoWidth: 190,
+    backgroundUrl: "https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Fbackground.jpg?alt=media&token=0a32d431-1554-4648-9b88-be9c73eac09f",
+    companyName: "PIXIATECH",
+    siret: "123 456 789 00010 100",
+    capital: "100000€",
+    address: "123 Rue de l'Exemple, 75001 Paris, France",
+    phone: "+33 1 23 45 67 89",
+    email: "contact@pixiatech.com",
+    textColor: "#000000",
+    titleColor: "#000000",
+    headerColor: "#0a5499",
+    quoteTitle: "Estimation",
+    quoteNumberPrefix: "EST-",
+    termsAndConditions: "Merci de votre confiance. Cette estimation est valable 30 jours.",
+  };
 
-    try {
-        const docRef = adminDb.collection('settings').doc('pdf');
-        const docSnap = await docRef.get();
-        const settings = docSnap.exists ? { ...defaultSettings, ...docSnap.data() } : defaultSettings;
-        
-        if (rawUrls) {
-            return settings;
-        }
+  try {
+    const docRef = adminDb.collection('settings').doc('pdf');
+    const docSnap = await docRef.get();
+    const settings = docSnap.exists ? { ...defaultSettings, ...docSnap.data() } : defaultSettings;
 
-        const [logoDataUri, backgroundDataUri] = await Promise.all([
-            urlToDataUri(settings.logoUrl),
-            urlToDataUri(settings.backgroundUrl)
-        ]);
-
-        return { ...settings, logoUrl: logoDataUri, backgroundUrl: backgroundDataUri };
-    } catch (error) {
-        console.error("Error fetching PDF settings from Firestore:", error);
-        return defaultSettings;
+    if (rawUrls) {
+      return settings;
     }
+
+    const [logoDataUri, backgroundDataUri] = await Promise.all([
+      urlToDataUri(settings.logoUrl),
+      urlToDataUri(settings.backgroundUrl)
+    ]);
+
+    return { ...settings, logoUrl: logoDataUri, backgroundUrl: backgroundDataUri };
+  } catch (error) {
+    console.error("Error fetching PDF settings from Firestore:", error);
+    return defaultSettings;
+  }
 }
 
 export async function updatePdfSettings(data: Partial<PdfSettings>) {
-    const { adminDb } = getFirebaseAdmin();
-    try {
-        await adminDb.collection('settings').doc('pdf').set(data, { merge: true });
-        return { success: true };
-    } catch (error: any) {
-        console.error("Error updating PDF settings:", error);
-        return { success: false, error: error.message };
-    }
+  const { adminDb } = getFirebaseAdmin();
+  try {
+    await adminDb.collection('settings').doc('pdf').set(data, { merge: true });
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating PDF settings:", error);
+    return { success: false, error: error.message };
+  }
 }
 
 
 async function sendQuoteEmail(recipientEmail: string, verificationToken: string, lang: Locale) {
   // ✅ Priorité : variable d'env → sinon URL de production App Hosting → sinon localhost
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') 
-    || (process.env.NODE_ENV === 'production' 
-        ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app' 
-        : 'http://localhost:3000');
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+    || (process.env.NODE_ENV === 'production'
+      ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
+      : 'http://localhost:3000');
 
   // ✅ Nettoyer l'URL : s'assurer qu'on n'utilise pas localhost en production si le lien vient d'une workstation
   const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
@@ -129,7 +128,7 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
 
   const verificationUrl = `${safeBaseUrl}/quote/verify?token=${verificationToken}`;
   const pdfSettings = await getPdfSettings(true);
-  
+
   // Use the logo from settings, or a reliable fallback
   const logoSource = pdfSettings.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Flogo.png?alt=media&token=8544c77c-6554-46c5-ac33-0c464c8d50d0';
   const t = translations[lang] || translations.fr;
@@ -209,13 +208,13 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
       html: emailHtml,
       attachments: logoBuffer
         ? [
-            {
-              filename: 'logo.png',
-              content: logoBuffer,
-              cid: 'pixiatech-logo',
-              contentType: logoContentType,
-            },
-          ]
+          {
+            filename: 'logo.png',
+            content: logoBuffer,
+            cid: 'pixiatech-logo',
+            contentType: logoContentType,
+          },
+        ]
         : [],
     });
     console.log(`[Email] Sent successfully! MessageId: ${result.messageId}`);
@@ -305,148 +304,148 @@ export async function testSmtpConnection(
 }
 
 async function createQuoteDocument(
-    userId: string, 
-    formData: FormValues, 
-    quoteDetails: QuoteDetails, 
-    emailVerification: boolean
+  userId: string,
+  formData: FormValues,
+  quoteDetails: QuoteDetails,
+  emailVerification: boolean
 ): Promise<{ id: string; token: string; error?: string }> {
-    const { adminDb, FieldValue } = getFirebaseAdmin();
+  const { adminDb, FieldValue } = getFirebaseAdmin();
 
-    if (!userId) {
-        throw new Error("User ID is required to create a quote request.");
-    }
-    
-    const pdfSettings = await getPdfSettings(true); // Get raw URLs for DB
-    const cleanedQuoteDetails = JSON.parse(JSON.stringify(quoteDetails));
-    
-    const documentData: any = {
-      ...cleanedQuoteDetails,
-      client: {
-        companyName: formData.companyName,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        notes: formData.notes || '',
-        sitePhoto: cleanedQuoteDetails.sitePhoto || ''
-      },
-      userId: userId,
-      createdAt: FieldValue.serverTimestamp(),
-      isRead: false,
-      status: 'pending',
-      emailVerified: !emailVerification,
-      pdfSettings: pdfSettings,
-    };
+  if (!userId) {
+    throw new Error("User ID is required to create a quote request.");
+  }
 
-    // Remove sitePhoto from root after placing it in client
-    delete documentData.sitePhoto;
-    
-    let token = '';
-    if (emailVerification) {
-        token = require('crypto').randomBytes(32).toString('hex');
-        const verificationToken = createHash('sha256').update(token).digest('hex');
-        const expirationDate = new Date();
-        expirationDate.setHours(expirationDate.getHours() + 24);
-        documentData.verificationToken = verificationToken;
-        documentData.verificationTokenExpires = Timestamp.fromDate(expirationDate);
-    }
-    
-    if (quoteDetails.unconfiguredCityQuery) {
-        documentData.unconfiguredCityQuery = quoteDetails.unconfiguredCityQuery;
-    } else {
-       delete documentData.unconfiguredCityQuery;
-    }
-    
-    if (quoteDetails.selectedCityId) {
-        documentData.selectedCityId = quoteDetails.selectedCityId;
-    } else {
-        delete documentData.selectedCityId;
-    }
-    
+  const pdfSettings = await getPdfSettings(true); // Get raw URLs for DB
+  const cleanedQuoteDetails = JSON.parse(JSON.stringify(quoteDetails));
+
+  const documentData: any = {
+    ...cleanedQuoteDetails,
+    client: {
+      companyName: formData.companyName,
+      email: formData.email,
+      phone: formData.phone,
+      address: formData.address,
+      notes: formData.notes || '',
+      sitePhoto: cleanedQuoteDetails.sitePhoto || ''
+    },
+    userId: userId,
+    createdAt: FieldValue.serverTimestamp(),
+    isRead: false,
+    status: 'pending',
+    emailVerified: !emailVerification,
+    pdfSettings: pdfSettings,
+  };
+
+  // Remove sitePhoto from root after placing it in client
+  delete documentData.sitePhoto;
+
+  let token = '';
+  if (emailVerification) {
+    token = require('crypto').randomBytes(32).toString('hex');
+    const verificationToken = createHash('sha256').update(token).digest('hex');
+    const expirationDate = new Date();
+    expirationDate.setHours(expirationDate.getHours() + 24);
+    documentData.verificationToken = verificationToken;
+    documentData.verificationTokenExpires = Timestamp.fromDate(expirationDate);
+  }
+
+  if (quoteDetails.unconfiguredCityQuery) {
+    documentData.unconfiguredCityQuery = quoteDetails.unconfiguredCityQuery;
+  } else {
+    delete documentData.unconfiguredCityQuery;
+  }
+
+  if (quoteDetails.selectedCityId) {
+    documentData.selectedCityId = quoteDetails.selectedCityId;
+  } else {
+    delete documentData.selectedCityId;
+  }
+
+  try {
+    const docRef = await adminDb.collection('quotes').add(documentData);
+
+    // Phase 3: Increment stats on create
+    const amount = documentData.totalClient || documentData.totalQuote || 0;
     try {
-        const docRef = await adminDb.collection('quotes').add(documentData);
-        
-        // Phase 3: Increment stats on create
-        const amount = documentData.totalClient || documentData.totalQuote || 0;
-        try {
-            await updateStatsOnCreate('pending', amount);
-        } catch (statsError) {
-            console.error("Error updating stats on create:", statsError);
-        }
-        
-        // Create notifications for admins, commerciaux, and fournisseurs
-        try {
-            const usersSnapshot = await adminDb.collection('users')
-                .where('role', 'in', ['admin', 'commercial', 'fournisseur'])
-                .where('status', '==', 'approved')
-                .get();
-            
-            const notificationsBatch: any[] = [];
-            usersSnapshot.forEach((userDoc: any) => {
-                const userData = userDoc.data();
-                if (userData.uid !== userId) { // Don't notify the user who created the quote
-                    notificationsBatch.push({
-                        userId: userData.uid,
-                        type: 'estimation',
-                        title: 'Nouvelle demande client',
-                        description: `Nouveau devis de ${formData.companyName || 'Client'}`,
-                        href: `/admin/quotes/${docRef.id}`,
-                        read: false,
-                        createdAt: FieldValue.serverTimestamp()
-                    });
-                }
-            });
-            
-            // Batch create notifications
-            if (notificationsBatch.length > 0) {
-                const batch = adminDb.batch();
-                notificationsBatch.forEach(notifData => {
-                    const notifRef = adminDb.collection('notifications').doc();
-                    batch.set(notifRef, notifData);
-                });
-                await batch.commit();
-            }
-        } catch (notifError) {
-            console.error("Error creating notifications:", notifError);
-            // Don't fail the quote creation if notifications fail
-        }
-        
-
-        return { id: docRef.id, token };
-    } catch (error: any) {
-        console.error("Error creating quote document:", error);
-        return { id: '', token: '', error: error.message };
+      await updateStatsOnCreate('pending', amount);
+    } catch (statsError) {
+      console.error("Error updating stats on create:", statsError);
     }
+
+    // Create notifications for admins, commerciaux, and fournisseurs
+    try {
+      const usersSnapshot = await adminDb.collection('users')
+        .where('role', 'in', ['admin', 'commercial', 'fournisseur'])
+        .where('status', '==', 'approved')
+        .get();
+
+      const notificationsBatch: any[] = [];
+      usersSnapshot.forEach((userDoc: any) => {
+        const userData = userDoc.data();
+        if (userData.uid !== userId) { // Don't notify the user who created the quote
+          notificationsBatch.push({
+            userId: userData.uid,
+            type: 'estimation',
+            title: 'Nouvelle demande client',
+            description: `Nouveau devis de ${formData.companyName || 'Client'}`,
+            href: `/admin/quotes/${docRef.id}`,
+            read: false,
+            createdAt: FieldValue.serverTimestamp()
+          });
+        }
+      });
+
+      // Batch create notifications
+      if (notificationsBatch.length > 0) {
+        const batch = adminDb.batch();
+        notificationsBatch.forEach(notifData => {
+          const notifRef = adminDb.collection('notifications').doc();
+          batch.set(notifRef, notifData);
+        });
+        await batch.commit();
+      }
+    } catch (notifError) {
+      console.error("Error creating notifications:", notifError);
+      // Don't fail the quote creation if notifications fail
+    }
+
+
+    return { id: docRef.id, token };
+  } catch (error: any) {
+    console.error("Error creating quote document:", error);
+    return { id: '', token: '', error: error.message };
+  }
 }
 
 export async function createQuoteRequest(userId: string, formData: FormValues, quoteDetails: QuoteDetails, skipVerification: boolean = false): Promise<{ id: string | null; success: boolean, requiresVerification: boolean, error?: string }> {
-    if (!userId) {
-        return { id: null, success: false, requiresVerification: true, error: 'Session utilisateur invalide. Veuillez rafraîchir la page.' };
-    }
+  if (!userId) {
+    return { id: null, success: false, requiresVerification: true, error: 'Session utilisateur invalide. Veuillez rafraîchir la page.' };
+  }
 
-    const generalSettings = await getSettings();
-    const emailVerificationEnabled = skipVerification ? false : (generalSettings.isEmailVerificationEnabled ?? true);
+  const generalSettings = await getSettings();
+  const emailVerificationEnabled = skipVerification ? false : (generalSettings.isEmailVerificationEnabled ?? true);
 
-    const { id, token, error: createError } = await createQuoteDocument(userId, formData, quoteDetails, emailVerificationEnabled);
-    
-    if (createError) {
-        return { id: null, success: false, requiresVerification: emailVerificationEnabled, error: createError };
-    }
+  const { id, token, error: createError } = await createQuoteDocument(userId, formData, quoteDetails, emailVerificationEnabled);
 
-    if (id) {
-        if (emailVerificationEnabled) {
-            try {
-                await sendQuoteEmail(formData.email, token, quoteDetails.lang || 'fr');
-            } catch (e) {
-                console.error("Critical email error:", e);
-                // On peut décider de retourner une erreur ici ou de laisser l'utilisateur voir le message de succès
-                // Pour le débug, on va retourner l'erreur
-                return { id, success: false, requiresVerification: true, error: "Erreur lors de l'envoi de l'email de confirmation. Veuillez vérifier la configuration SMTP." };
-            }
-        }
-        return { id, success: true, requiresVerification: emailVerificationEnabled };
+  if (createError) {
+    return { id: null, success: false, requiresVerification: emailVerificationEnabled, error: createError };
+  }
+
+  if (id) {
+    if (emailVerificationEnabled) {
+      try {
+        await sendQuoteEmail(formData.email, token, quoteDetails.lang || 'fr');
+      } catch (e) {
+        console.error("Critical email error:", e);
+        // On peut décider de retourner une erreur ici ou de laisser l'utilisateur voir le message de succès
+        // Pour le débug, on va retourner l'erreur
+        return { id, success: false, requiresVerification: true, error: "Erreur lors de l'envoi de l'email de confirmation. Veuillez vérifier la configuration SMTP." };
+      }
     }
-    
-    return { id: null, success: false, requiresVerification: emailVerificationEnabled, error: "Une erreur est survenue lors de la création de l'estimation." };
+    return { id, success: true, requiresVerification: emailVerificationEnabled };
+  }
+
+  return { id: null, success: false, requiresVerification: emailVerificationEnabled, error: "Une erreur est survenue lors de la création de l'estimation." };
 }
 
 export async function getProductBlockedPeriodsAction(
@@ -505,7 +504,7 @@ export async function getProductsRentalAvailabilityAction(
       neededTilesMap,
       excludeQuoteId
     );
-    
+
     // Convert Dates to ISO strings
     const serializedResults: Record<string, any> = {};
     for (const [key, val] of Object.entries(results)) {
@@ -528,9 +527,9 @@ export async function getBlockedPeriods(): Promise<{ from: string; to: string }[
     const snap = await adminDb.collection('quotes')
       .where('status', 'in', ['processed', 'rented'])
       .get();
-      
+
     const periods: { from: string; to: string }[] = [];
-    
+
     snap.forEach(doc => {
       const data = doc.data();
       if (data.rentalPeriod) {
@@ -567,7 +566,7 @@ export async function getBlockedPeriods(): Promise<{ from: string; to: string }[
         });
       }
     });
-    
+
     return periods;
   } catch (error) {
     console.error("Error fetching blocked periods:", error);
@@ -636,7 +635,7 @@ export async function createQuoteWithContract(
     };
 
     const docRef = await adminDb.collection('quotes').add(docData);
-    
+
     // Increment stats on create
     try {
       await updateStatsOnCreate('pending', quoteDetails.totalQuote);
@@ -645,17 +644,17 @@ export async function createQuoteWithContract(
     }
 
     // Prepare SMTP and send OTP email
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') 
-      || (process.env.NODE_ENV === 'production' 
-          ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app' 
-          : 'http://localhost:3000');
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+      || (process.env.NODE_ENV === 'production'
+        ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
+        : 'http://localhost:3000');
 
     const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
       ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
       : baseUrl;
 
     const verificationUrl = `${safeBaseUrl}/quote/verify?otp=${otpCode}&id=${docRef.id}`;
-    
+
     await sendSignatureOtpEmail(
       clientDetails.email,
       otpCode,
@@ -762,9 +761,9 @@ async function sendSignatureOtpEmail(
         <!-- Body -->
         <div style="padding: 30px; text-align: center;">
           <p style="color: #71717a; font-size: 13px; line-height: 1.5; margin-bottom: 25px; text-align: left;">
-            ${lang === 'fr' 
-              ? `Bonjour ${representative},<br/><br/>Un code d'authentification temporaire a été généré pour finaliser la signature électronique de votre estimation PixiaTech.` 
-              : `Hello ${representative},<br/><br/>A temporary authentication code was generated to finalize the electronic signature of your PixiaTech estimation.`}
+            ${lang === 'fr'
+      ? `Bonjour ${representative},<br/><br/>Un code d'authentification temporaire a été généré pour finaliser la signature électronique de votre estimation PixiaTech.`
+      : `Hello ${representative},<br/><br/>A temporary authentication code was generated to finalize the electronic signature of your PixiaTech estimation.`}
           </p>
 
           <div style="margin: 25px 0;">
@@ -790,16 +789,16 @@ async function sendSignatureOtpEmail(
             </p>
             <p style="margin: 4px 0 0 0; font-size: 11px; color: #1e40af; line-height: 1.5;">
               ${lang === 'fr'
-                ? '"Ce code est strictement personnel. Ne le partagez jamais avec un tiers, y compris un collaborateur Pixatech."'
-                : '"This code is strictly personal. Do not share it with a third party, including a Pixatech representative."'}
+      ? '"Ce code est strictement personnel. Ne le partagez jamais avec un tiers, y compris un collaborateur Pixatech."'
+      : '"This code is strictly personal. Do not share it with a third party, including a Pixatech representative."'}
             </p>
           </div>
 
           <!-- Footer -->
           <div style="border-top: 1px solid #f4f4f5; padding-top: 20px; color: #a1a1aa; font-size: 10px; line-height: 1.4;">
             ${lang === 'fr'
-              ? "Ce message automatique est crypté. PandaDoc Secure Shield."
-              : "This automatic message is encrypted. PandaDoc Secure Shield."}
+      ? "Ce message automatique est crypté. PandaDoc Secure Shield."
+      : "This automatic message is encrypted. PandaDoc Secure Shield."}
           </div>
 
         </div>
@@ -815,13 +814,13 @@ async function sendSignatureOtpEmail(
       html: emailHtml,
       attachments: logoBuffer
         ? [
-            {
-              filename: 'logo.png',
-              content: logoBuffer,
-              cid: 'pixiatech-logo',
-              contentType: logoContentType,
-            },
-          ]
+          {
+            filename: 'logo.png',
+            content: logoBuffer,
+            cid: 'pixiatech-logo',
+            contentType: logoContentType,
+          },
+        ]
         : [],
     });
   } catch (error) {
@@ -836,7 +835,7 @@ export async function verifyQuoteOtp(quoteId: string, otpCode: string): Promise<
   try {
     const docRef = adminDb.collection('quotes').doc(quoteId);
     const docSnap = await docRef.get();
-    
+
     if (!docSnap.exists) {
       return { success: false, error: 'Estimation introuvable.' };
     }
@@ -902,10 +901,10 @@ export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolea
     const height = quoteData.height || 0;
     const productName = quoteData.productName || '';
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') 
-      || (process.env.NODE_ENV === 'production' 
-          ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app' 
-          : 'http://localhost:3000');
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+      || (process.env.NODE_ENV === 'production'
+        ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
+        : 'http://localhost:3000');
 
     const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
       ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
