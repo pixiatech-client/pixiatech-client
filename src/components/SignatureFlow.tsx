@@ -176,6 +176,13 @@ export default function SignatureFlow({
   const [isInstallationIncluded, setIsInstallationIncluded] = useState<boolean>(true);
   const [isInstallationAccordionOpen, setIsInstallationAccordionOpen] = useState<boolean>(true);
   const [showRentalPeriodSection, setShowRentalPeriodSection] = useState<boolean>(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  const validateEmail = (email: string) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
 
   const [acceptedCgl, setAcceptedCgl] = useState<boolean>(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
@@ -564,18 +571,22 @@ export default function SignatureFlow({
   };
 
   const handleNextStep = () => {
+    setEmailError(null);
+    setPhoneError(null);
+    
     let hasError = false;
 
     if (!renterDetails.company.trim()) hasError = true;
     if (!renterDetails.representative.trim()) hasError = true;
     
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(renterDetails.email)) {
+    if (!validateEmail(renterDetails.email)) {
+      setEmailError('Veuillez saisir une adresse email valide.');
       hasError = true;
     }
     
     const phoneResult = validatePhone(renterDetails.phone);
     if (!phoneResult.isValid) {
+      setPhoneError(phoneResult.error || 'Numéro de téléphone invalide.');
       hasError = true;
     }
     
@@ -819,7 +830,7 @@ export default function SignatureFlow({
 
                   {/* Corporate professional email */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-email" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${!renterDetails.email ? 'text-red-500' : 'text-zinc-700'}`}>
+                    <label htmlFor="comp-email" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${emailError ? 'text-red-500' : 'text-zinc-700'}`}>
                       Email professionnel *
                     </label>
                     <input
@@ -829,21 +840,23 @@ export default function SignatureFlow({
                       value={renterDetails.email}
                       onChange={(e) => setRenterDetails({ ...renterDetails, email: e.target.value })}
                       className={`w-full rounded-[14px] px-4 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
-                        !renterDetails.email 
+                        emailError 
+                          ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
+                          : !renterDetails.email 
                           ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
                           : 'bg-[#edf2f7]/40 border-2 border-transparent focus:bg-white focus:border-blue-500'
                       }`}
                     />
-                    {!renterDetails.email && (
+                    {(emailError || !renterDetails.email) && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
-                        <span>▲ Ce champ est obligatoire</span>
+                        <span>▲ {emailError || 'Ce champ est obligatoire'}</span>
                       </p>
                     )}
                   </div>
 
                   {/* Phone number */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-phone" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${!renterDetails.phone ? 'text-red-500' : 'text-zinc-700'}`}>
+                    <label htmlFor="comp-phone" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${phoneError ? 'text-red-500' : 'text-zinc-700'}`}>
                       Téléphone *
                     </label>
                     <input
@@ -856,14 +869,16 @@ export default function SignatureFlow({
                         setRenterDetails({ ...renterDetails, phone: val });
                       }}
                       className={`w-full rounded-[14px] px-4 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
-                        !renterDetails.phone 
+                        phoneError 
+                          ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
+                          : !renterDetails.phone 
                           ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
                           : 'bg-[#edf2f7]/40 border-2 border-transparent focus:bg-white focus:border-blue-500'
                       }`}
                     />
-                    {!renterDetails.phone && (
+                    {(phoneError || !renterDetails.phone) && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
-                        <span>▲ Ce champ est obligatoire</span>
+                        <span>▲ {phoneError || 'Ce champ est obligatoire'}</span>
                       </p>
                     )}
                   </div>
