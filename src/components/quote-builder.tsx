@@ -4,9 +4,8 @@
 
 import { useState, useMemo, useEffect, useCallback, useTransition, useRef } from 'react';
 import type { Product, Settings, DeliverySettings, LaborSettings, ConfiguredProduct, QuoteDetails, Locations, WizardSettings } from '@/lib/types';
-import { useRouter, usePathname } from 'next/navigation';
 import { saveQuoteState, loadQuoteState, clearQuoteState } from '@/lib/quote-persistence';
-import { STEP_ROUTES, ROUTE_STEP_MAP } from '@/lib/quote-routes';
+import { ROUTE_STEP_MAP } from '@/lib/quote-routes';
 import { Configurator } from './configurator';
 import Preview from './preview';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -136,8 +135,6 @@ export function QuoteBuilder({
     workflowStep: initialWorkflowStep,
 }: QuoteBuilderProps) {
     const { t, locale, setLocale } = useI18n();
-    const router = useRouter();
-    const pathname = usePathname();
     
     const [wizardSettings, setWizardSettings] = useState<WizardSettings>(initialWizardSettings);
     const [configuredProducts, setConfiguredProducts] = useState<ConfiguredProduct[]>([]);
@@ -271,23 +268,14 @@ export function QuoteBuilder({
             if (hasProducts) {
                 setIsSignatureFlowActive(true);
             } else {
-                router.replace('/produits-recommandes');
+                setCurrentStep(1);
             }
         }
     }, []);
 
-    const handleSignatureStepChange = useCallback((signatureStep: string) => {
-        const stepRoutes: Record<string, string | null> = {
-            'informations': null,
-            'contrat': '/contrat-signature',
-            'securite': '/verification-securite',
-            'confirmation': '/projet-termine',
-        };
-        const route = stepRoutes[signatureStep];
-        if (route) {
-            router.push(route);
-        }
-    }, [router]);
+    const handleSignatureStepChange = useCallback((_signatureStep: string) => {
+        // SignatureFlow gère ses propres transitions internes
+    }, []);
 
     const refreshWizardSettings = useCallback(async () => {
         try {
@@ -536,8 +524,7 @@ export function QuoteBuilder({
         setCurrentStep(1);
         setIsSubmitting(false);
         setIsSignatureFlowActive(false);
-        router.push('/produits-recommandes');
-    }, [router]);
+    }, []);
 
 
 
@@ -548,7 +535,6 @@ export function QuoteBuilder({
             setIsSubmitting(false);
         }
         const prevStep = Math.max(1, currentStep - 1);
-        const prevRoute = STEP_ROUTES[prevStep];
         saveQuoteState({
             configuredProducts,
             activeConfigProductId,
@@ -567,7 +553,7 @@ export function QuoteBuilder({
             isSignatureFlowActive,
             currentStep: prevStep,
         });
-        router.push(prevRoute);
+        setCurrentStep(prevStep);
     };
     const handleNext = () => {
         const originalStep = getOriginalStep(currentStep);
@@ -594,10 +580,11 @@ export function QuoteBuilder({
                 isSignatureFlowActive: true,
                 currentStep: 5,
             });
-            router.push('/contrat-signature');
+            setIsSignatureFlowActive(true);
+            setCurrentStep(5);
         } else if (currentStep < 4) {
             const nextStep = currentStep + 1;
-            const nextRoute = STEP_ROUTES[nextStep];
+            setCurrentStep(nextStep);
             saveQuoteState({
                 configuredProducts,
                 activeConfigProductId,
@@ -616,7 +603,6 @@ export function QuoteBuilder({
                 isSignatureFlowActive,
                 currentStep: nextStep,
             });
-            router.push(nextRoute);
         }
     };
 
@@ -626,7 +612,9 @@ export function QuoteBuilder({
 
         if (originalStep === 1) {
             clearQuoteState();
-            router.push('/produits-recommandes');
+            setCurrentStep(1);
+            setActiveMode('selection');
+            setIsSignatureFlowActive(false);
             return;
         }
 
@@ -637,7 +625,6 @@ export function QuoteBuilder({
                 setSelectedCityId(null);
                 setUnconfiguredCityQuery(undefined);
             }
-            const route = STEP_ROUTES[step];
             saveQuoteState({
                 configuredProducts,
                 activeConfigProductId,
@@ -656,7 +643,7 @@ export function QuoteBuilder({
                 isSignatureFlowActive: false,
                 currentStep: step,
             });
-            router.push(route);
+            setCurrentStep(step);
         }
     };
 
@@ -713,7 +700,6 @@ export function QuoteBuilder({
         setActiveMode('selection');
         setIsSubmitting(false);
         setIsSignatureFlowActive(false);
-        router.push('/produits-recommandes');
     };
 
 
@@ -726,12 +712,13 @@ export function QuoteBuilder({
         setCurrentStep(1);
         setIsSubmitting(false);
         setIsSignatureFlowActive(false);
-        router.push('/produits-recommandes');
     };
 
     const handleWizardComplete = (product: ConfiguredProduct) => {
         setConfiguredProducts([product]);
         setActiveConfigProductId(product.id);
+        setIsSignatureFlowActive(true);
+        setCurrentStep(5);
         saveQuoteState({
             configuredProducts: [product],
             activeConfigProductId: product.id,
@@ -750,7 +737,6 @@ export function QuoteBuilder({
             isSignatureFlowActive: true,
             currentStep: 5,
         });
-        router.push('/contrat-signature');
     };
 
 

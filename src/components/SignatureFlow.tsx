@@ -48,6 +48,7 @@ import ContractDocument from './ContractDocument';
 import { ConfiguredProduct, Product, Settings } from '@/lib/types';
 import { createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp } from '@/app/actions/quote-actions';
 import { jsPDF } from 'jspdf';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import html2canvas from 'html2canvas';
 import confetti from 'canvas-confetti';
 
@@ -1219,32 +1220,44 @@ export default function SignatureFlow({
                     </span>
                   </div>
 
-                  {/* Product list */}
-                  <div className="space-y-3">
+                  {/* Product list as accordion */}
+                  <Accordion type="multiple" className="space-y-2">
                     {productCalculations.map((pc, idx) => {
                       const prod = pc.product;
+                      const totalProductPrice = pc.subtotal * pc.quantity;
                       return (
-                        <div key={idx} className="p-3 bg-zinc-50/50 border border-zinc-100 rounded-xl space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            {pc.photo && (
-                              <img src={pc.photo} alt="" className="w-8 h-8 rounded-lg object-cover border border-zinc-200" />
-                            )}
-                            <span className="text-[11px] font-black text-zinc-800 uppercase truncate">{prod?.name || `Produit ${idx + 1}`}</span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] font-semibold text-zinc-500">
-                            <span>Dimensions</span>
-                            <span className="text-zinc-905 font-black font-mono text-right">{pc.width}m x {pc.height}m</span>
-                            <span>Surface</span>
-                            <span className="text-zinc-905 font-black font-mono text-right">{(pc.surface * pc.quantity).toFixed(2)} m²</span>
-                            <span>Quantité</span>
-                            <span className="text-zinc-905 font-black font-mono text-right">x{pc.quantity}</span>
-                            <span>Sous-total</span>
-                            <span className="text-zinc-905 font-black font-mono text-right">{(pc.subtotal * pc.quantity).toLocaleString('fr-FR')} €</span>
-                          </div>
-                        </div>
+                        <AccordionItem
+                          key={idx}
+                          value={`product-${idx}`}
+                          className="border border-zinc-100 rounded-xl overflow-hidden data-[state=open]:border-zinc-200"
+                        >
+                          <AccordionTrigger className="px-3 py-2.5 hover:no-underline hover:bg-zinc-50/50 data-[state=open]:bg-zinc-50/50">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {pc.photo && (
+                                <img src={pc.photo} alt="" className="w-8 h-8 rounded-lg object-cover border border-zinc-200 shrink-0" />
+                              )}
+                              <span className="text-[11px] font-black text-zinc-800 uppercase truncate">{prod?.name || `Produit ${idx + 1}`}</span>
+                              <span className="ml-auto text-[11px] font-black font-mono text-zinc-600 shrink-0">
+                                {totalProductPrice.toLocaleString('fr-FR')} €
+                              </span>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-3 pb-3">
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] font-semibold text-zinc-500 pt-1 border-t border-zinc-100">
+                              <span>Dimensions</span>
+                              <span className="text-zinc-800 font-black font-mono text-right">{pc.width}m x {pc.height}m</span>
+                              <span>Surface</span>
+                              <span className="text-zinc-800 font-black font-mono text-right">{(pc.surface * pc.quantity).toFixed(2)} m²</span>
+                              <span>Quantité</span>
+                              <span className="text-zinc-800 font-black font-mono text-right">x{pc.quantity}</span>
+                              <span>Sous-total</span>
+                              <span className="text-zinc-800 font-black font-mono text-right">{totalProductPrice.toLocaleString('fr-FR')} €</span>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
                       );
                     })}
-                  </div>
+                  </Accordion>
 
                   {/* separator divider */}
                   <div className="border-t border-zinc-100 my-4" />

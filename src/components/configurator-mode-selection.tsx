@@ -18,17 +18,6 @@ export function ConfiguratorModeSelection({ onSelectMode, settings }: Configurat
   const [exiting, setExiting] = useState<'wizard' | 'manual' | null>(null);
   const { t } = useI18n();
 
-  // If one of the modes is disabled, and we are not exiting, we can auto-redirect
-  React.useEffect(() => {
-    if (settings) {
-      if (settings.isGuidedConfigEnabled === false && settings.isManualConfigEnabled !== false) {
-        onSelectMode('manual');
-      } else if (settings.isManualConfigEnabled === false && settings.isGuidedConfigEnabled !== false) {
-        onSelectMode('wizard');
-      }
-    }
-  }, [settings, onSelectMode]);
-
   const handleSelect = (mode: 'wizard' | 'manual') => {
     setExiting(mode);
     // Small delay so the exit animation is visible before switching view
