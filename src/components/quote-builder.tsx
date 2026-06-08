@@ -30,7 +30,6 @@ import { ConfiguratorModeSelection } from './configurator-mode-selection';
 import { preloadImages } from '@/lib/image-preload';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import SignatureFlow from './SignatureFlow';
-import { useRouter, usePathname } from 'next/navigation';
 
 
 
