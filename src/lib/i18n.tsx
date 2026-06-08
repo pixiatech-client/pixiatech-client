@@ -43,14 +43,14 @@ export const IntlHelpers = {
 
 // Helper to get stored locale from localStorage
 const getStoredLocale = (): Locale => {
-  if (typeof window === 'undefined') return 'fr';
+  if (typeof window === 'undefined') return 'en';
   const stored = localStorage.getItem('admin-locale');
   if (stored === 'en' || stored === 'fr') return stored;
-  return 'fr';
+  return 'en';
 };
 
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
-  const [locale, setLocaleState] = useState<Locale>('fr');
+  const [locale, setLocaleState] = useState<Locale>('en');
 
   // Initialize from localStorage on mount
   useEffect(() => {

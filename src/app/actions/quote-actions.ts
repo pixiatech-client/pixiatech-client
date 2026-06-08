@@ -16,6 +16,7 @@ type Locale = 'fr' | 'en';
 const translations = { fr, en };
 
 import { validatePhone } from '@/lib/phone-validation';
+import { buildOtpEmailHtml, buildVerificationEmailHtml } from '@/lib/email-templates';
 
 const formSchema = z.object({
   companyName: z.string().min(1, "Le nom de l'entreprise est requis"),
@@ -115,22 +116,16 @@ export async function updatePdfSettings(data: Partial<PdfSettings>) {
 
 
 async function sendQuoteEmail(recipientEmail: string, verificationToken: string, lang: Locale) {
-  // ✅ Priorité : variable d'env → sinon URL de production App Hosting → sinon localhost
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
     || (process.env.NODE_ENV === 'production'
       ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
       : 'http://localhost:3000');
 
-  // ✅ Nettoyer l'URL : s'assurer qu'on n'utilise pas localhost en production si le lien vient d'une workstation
   const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
     ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
     : baseUrl;
 
   const verificationUrl = `${safeBaseUrl}/quote/verify?token=${verificationToken}`;
-  const pdfSettings = await getPdfSettings(true);
-
-  // Use the logo from settings, or a reliable fallback
-  const logoSource = pdfSettings.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Flogo.png?alt=media&token=8544c77c-6554-46c5-ac33-0c464c8d50d0';
   const t = translations[lang] || translations.fr;
 
   const smtpHost = process.env.SMTP_HOST;
@@ -139,66 +134,15 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
   const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
   const isSecure = smtpPort === 465;
 
-  if (!smtpHost || !smtpUser || !smtpPass) {
-    console.error(`[Email] WARNING: Missing SMTP configuration in environment!`, {
-      SMTP_HOST: smtpHost ? 'Present' : 'MISSING',
-      SMTP_USER: smtpUser ? 'Present' : 'MISSING',
-      SMTP_PASS: smtpPass ? 'Present' : 'MISSING',
-    });
-  }
-
   const transporter = nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
     secure: isSecure,
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
+    auth: { user: smtpUser, pass: smtpPass },
+    tls: { rejectUnauthorized: false }
   });
 
-  console.log(`[Email] Preparing to send to: ${recipientEmail}`);
-  console.log(`[Email] Using baseUrl: ${safeBaseUrl}`);
-  console.log(`[Email] Transport configured:`, { host: smtpHost, port: smtpPort, secure: isSecure, user: smtpUser, hasPassword: !!smtpPass });
-
-  let logoBuffer: Buffer | null = null;
-  let logoContentType = 'image/png';
-
-  try {
-    const logoResponse = await fetch(logoSource, { cache: 'no-store' });
-    if (logoResponse.ok) {
-      const arrayBuffer = await logoResponse.arrayBuffer();
-      logoBuffer = Buffer.from(arrayBuffer);
-      logoContentType = logoResponse.headers.get('content-type') || 'image/png';
-    } else {
-      console.warn(`[Email] Failed to fetch logo (${logoResponse.status}), sending without attachment.`);
-    }
-  } catch (fetchError) {
-    console.warn('[Email] Error fetching logo, sending without attachment:', fetchError);
-  }
-
-  const emailHtml = `
-    <div style="font-family: Arial, sans-serif; text-align: center; padding: 40px; background-color: #f4f4f4; border-radius: 20px;">
-      <div style="background-color: white; padding: 40px; border-radius: 30px; max-width: 500px; margin: 0 auto; shadow: 0 10px 25px rgba(0,0,0,0.05);">
-        <img src="cid:pixiatech-logo" alt="PixiaTech Logo" style="max-width: 150px; margin-bottom: 30px;">
-        <h1 style="color: #1a1a1a; font-size: 24px; font-weight: 900; margin-bottom: 20px; text-transform: uppercase; letter-spacing: -0.5px;">
-          ${t.email.title}
-        </h1>
-        <p style="color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
-          ${t.email.body}
-        </p>
-        <a href="${verificationUrl}" style="background-color: #007bff; color: white; padding: 18px 32px; text-decoration: none; border-radius: 14px; display: inline-block; font-size: 16px; font-weight: bold; box-shadow: 0 8px 20px rgba(0, 123, 255, 0.3);">
-          ${t.email.button}
-        </a>
-        <p style="color: #999; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; pt: 20px;">
-          ${t.email.footer}
-        </p>
-      </div>
-    </div>
-  `;
+  const emailHtml = buildVerificationEmailHtml(verificationUrl, lang);
 
   try {
     const result = await transporter.sendMail({
@@ -206,21 +150,11 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
       to: recipientEmail,
       subject: t.email.subject,
       html: emailHtml,
-      attachments: logoBuffer
-        ? [
-          {
-            filename: 'logo.png',
-            content: logoBuffer,
-            cid: 'pixiatech-logo',
-            contentType: logoContentType,
-          },
-        ]
-        : [],
     });
     console.log(`[Email] Sent successfully! MessageId: ${result.messageId}`);
   } catch (error) {
     console.error(`[Email] Error sending email to ${recipientEmail}:`, error);
-    throw error; // Re-throw to be caught by createQuoteRequest
+    throw error;
   }
 }
 
@@ -434,7 +368,7 @@ export async function createQuoteRequest(userId: string, formData: FormValues, q
   if (id) {
     if (emailVerificationEnabled) {
       try {
-        await sendQuoteEmail(formData.email, token, quoteDetails.lang || 'fr');
+        await sendQuoteEmail(formData.email, token, quoteDetails.lang || 'en');
       } catch (e) {
         console.error("Critical email error:", e);
         // On peut décider de retourner une erreur ici ou de laisser l'utilisateur voir le message de succès
@@ -658,7 +592,7 @@ export async function createQuoteWithContract(
     await sendSignatureOtpEmail(
       clientDetails.email,
       otpCode,
-      quoteDetails.lang || 'fr',
+      quoteDetails.lang || 'en',
       clientDetails.company,
       clientDetails.representative,
       quoteDetails.totalQuote,
@@ -683,9 +617,6 @@ async function sendSignatureOtpEmail(
   details: string,
   verificationUrl: string
 ) {
-  const pdfSettings = await getPdfSettings(true);
-  const logoSource = pdfSettings.logoUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Flogo.png?alt=media&token=8544c77c-6554-46c5-ac33-0c464c8d50d0';
-
   const smtpHost = process.env.SMTP_HOST;
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
@@ -696,115 +627,11 @@ async function sendSignatureOtpEmail(
     host: smtpHost,
     port: smtpPort,
     secure: isSecure,
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
+    auth: { user: smtpUser, pass: smtpPass },
+    tls: { rejectUnauthorized: false }
   });
 
-  let logoBuffer: Buffer | null = null;
-  let logoContentType = 'image/png';
-
-  try {
-    const logoResponse = await fetch(logoSource, { cache: 'no-store' });
-    if (logoResponse.ok) {
-      const arrayBuffer = await logoResponse.arrayBuffer();
-      logoBuffer = Buffer.from(arrayBuffer);
-      logoContentType = logoResponse.headers.get('content-type') || 'image/png';
-    }
-  } catch (fetchError) {
-    console.warn('[Email] Error fetching logo:', fetchError);
-  }
-
-  const digitsHtml = otpCode.split('').map(digit => `
-    <div style="width: 42px; height: 50px; background-color: #eff6ff; border: 2px solid #dbeafe; color: #2563eb; font-weight: 900; font-family: monospace; font-size: 24px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; margin: 0 4px; line-height: 50px; text-align: center;">
-      ${digit}
-    </div>
-  `).join('');
-
-  const emailHtml = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 40px 20px; background-color: #FAF8F5; min-height: 100%;">
-      <div style="background-color: white; border: 1px solid #e2e8f0; border-radius: 24px; max-width: 500px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden;">
-        
-        <!-- Apple style header -->
-        <table cellpadding="0" cellspacing="0" width="100%" style="background-color: #f4f4f5; border-bottom: 1px solid #e4e4e7; padding: 10px 16px;">
-          <tr>
-            <td align="left" style="line-height: 0;">
-              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #ef4444; margin-right: 4px;"></span>
-              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #f59e0b; margin-right: 4px;"></span>
-              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #10b981;"></span>
-            </td>
-            <td align="right" style="color: #a1a1aa; font-size: 9px; font-family: monospace;">
-              Client Webmail Sécurisé
-            </td>
-          </tr>
-        </table>
-
-        <!-- Header -->
-        <div style="padding: 30px; text-align: center; border-bottom: 1px solid #f4f4f5;">
-          <div style="margin-bottom: 15px; text-align: center;">
-            <span style="background-color: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: 9px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">
-              Reçu à l'instant
-            </span>
-          </div>
-          <h1 style="color: #18181b; font-size: 22px; font-weight: 800; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px;">
-            AUTHENTIFICATION
-          </h1>
-          <div style="display: inline-flex; align-items: center; background-color: #eff6ff; border: 1px solid #dbeafe; border-radius: 9999px; padding: 4px 12px; font-size: 11px; font-weight: bold; color: #2563eb; margin: 5px 0;">
-            ⏳ 10:00
-          </div>
-        </div>
-
-        <!-- Body -->
-        <div style="padding: 30px; text-align: center;">
-          <p style="color: #71717a; font-size: 13px; line-height: 1.5; margin-bottom: 25px; text-align: left;">
-            ${lang === 'fr'
-      ? `Bonjour ${representative},<br/><br/>Un code d'authentification temporaire a été généré pour finaliser la signature électronique de votre estimation PixiaTech.`
-      : `Hello ${representative},<br/><br/>A temporary authentication code was generated to finalize the electronic signature of your PixiaTech estimation.`}
-          </p>
-
-          <div style="margin: 25px 0;">
-            <span style="display: block; font-size: 9px; text-transform: uppercase; color: #a1a1aa; letter-spacing: 1px; margin-bottom: 10px; font-weight: bold;">
-              ${lang === 'fr' ? "Votre code d'authentification" : "Your authentication code"}
-            </span>
-            <div style="text-align: center; display: block; margin: 15px 0;">
-              ${digitsHtml}
-            </div>
-          </div>
-
-          <!-- Direct Link -->
-          <div style="margin: 30px 0;">
-            <a href="${verificationUrl}" style="background-color: #10b981; color: white; padding: 16px 32px; text-decoration: none; border-radius: 9999px; display: inline-block; font-size: 13px; font-weight: bold; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); text-transform: uppercase; letter-spacing: 0.5px;">
-              ${lang === 'fr' ? 'Valider et continuer (Lien direct)' : 'Validate and continue (Direct Link)'}
-            </a>
-          </div>
-
-          <!-- Information de sécurité -->
-          <div style="background-color: #eff6ff; border: 1px solid #dbeafe; border-radius: 16px; padding: 16px; text-align: left; margin-bottom: 25px;">
-            <p style="margin: 0; font-size: 11px; color: #1e3a8a; line-height: 1.5; font-weight: bold;">
-              🚨 ${lang === 'fr' ? "Information de sécurité :" : "Security Information:"}
-            </p>
-            <p style="margin: 4px 0 0 0; font-size: 11px; color: #1e40af; line-height: 1.5;">
-              ${lang === 'fr'
-      ? '"Ce code est strictement personnel. Ne le partagez jamais avec un tiers, y compris un collaborateur Pixatech."'
-      : '"This code is strictly personal. Do not share it with a third party, including a Pixatech representative."'}
-            </p>
-          </div>
-
-          <!-- Footer -->
-          <div style="border-top: 1px solid #f4f4f5; padding-top: 20px; color: #a1a1aa; font-size: 10px; line-height: 1.4;">
-            ${lang === 'fr'
-      ? "Ce message automatique est crypté. PandaDoc Secure Shield."
-      : "This automatic message is encrypted. PandaDoc Secure Shield."}
-          </div>
-
-        </div>
-      </div>
-    </div>
-  `;
+  const emailHtml = buildOtpEmailHtml(otpCode, verificationUrl, lang);
 
   try {
     await transporter.sendMail({
@@ -812,16 +639,6 @@ async function sendSignatureOtpEmail(
       to: recipientEmail,
       subject: lang === 'fr' ? "🔑 Authentification PixiaTech" : "🔑 PixiaTech Authentication",
       html: emailHtml,
-      attachments: logoBuffer
-        ? [
-          {
-            filename: 'logo.png',
-            content: logoBuffer,
-            cid: 'pixiatech-logo',
-            contentType: logoContentType,
-          },
-        ]
-        : [],
     });
   } catch (error) {
     console.error(`[Email] Error sending OTP email to ${recipientEmail}:`, error);
@@ -896,7 +713,7 @@ export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolea
     const clientCompany = quoteData.client?.companyName || quoteData.company || '';
     const clientRepresentative = quoteData.client?.representative || quoteData.representative || '';
     const totalAmount = quoteData.totalQuote || 0;
-    const lang = quoteData.lang || 'fr';
+    const lang = quoteData.lang || 'en';
     const width = quoteData.width || 0;
     const height = quoteData.height || 0;
     const productName = quoteData.productName || '';

@@ -43,7 +43,7 @@ const flatEn = flattenObject(en);
  * Get the translation for a key in the specified locale
  * Falls back to French if key not found
  */
-export function getTranslation(key: string, locale: Locale = 'fr'): string {
+export function getTranslation(key: string, locale: Locale = 'en'): string {
   const translations = locale === 'en' ? flatEn : flatFr;
   return translations[key] || flatFr[key] || key;
 }
@@ -70,10 +70,10 @@ export function createTranslator(locale: Locale) {
  * This is a placeholder - actual implementation should read from cookies
  */
 export function getLocaleFromCookie(cookieHeader?: string): Locale {
-  if (!cookieHeader) return 'fr';
+  if (!cookieHeader) return 'en';
   
   const match = cookieHeader.match(/admin-locale=(fr|en)/);
-  return (match?.[1] as Locale) || 'fr';
+  return (match?.[1] as Locale) || 'en';
 }
 
 // Pre-defined translation keys for backend (Server Actions)
@@ -173,5 +173,5 @@ export function t(key: keyof typeof backendTranslations, locale: Locale): string
     console.warn(`Translation key not found: ${key}`);
     return key;
   }
-  return translations[locale] || translations.fr;
+  return translations[locale] || translations.en;
 }

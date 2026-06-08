@@ -1,6 +1,0 @@
-{
-  "name": "PIXIATECH - Signature de Contrat",
-  "description": "Module interactif de signature de contrat de vente et location d'écrans LED professionnels en ligne pour PIXIATECH.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

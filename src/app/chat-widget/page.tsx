@@ -11,8 +11,8 @@ interface PageProps {
 export default async function ChatWidgetPage({ searchParams }: PageProps) {
   const settings: Settings = await getSettings();
   
-  const langQuery = typeof searchParams.lang === 'string' ? searchParams.lang : 'fr';
-  const lang = langQuery === 'en' ? 'en' : 'fr';
+  const langQuery = typeof searchParams.lang === 'string' ? searchParams.lang : 'en';
+  const lang = langQuery === 'fr' ? 'fr' : 'en';
   
   const [deliverySettings, laborSettings, productsResult, locations] = await Promise.all([
     getDeliverySettings(),

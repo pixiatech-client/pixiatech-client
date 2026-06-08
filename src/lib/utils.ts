@@ -31,7 +31,7 @@ for (const [key, value] of Object.entries(STATUS_TRANSLATIONS)) {
   STATUS_REVERSE_MAP[value.fr] = key;
 }
 
-export const translateStatus = (status: string, locale: string = 'fr'): string => {
+export const translateStatus = (status: string, locale: string = 'en'): string => {
   const translationKey = STATUS_REVERSE_MAP[status] || status;
   const normalized = STATUS_TRANSLATIONS[translationKey];
   if (!normalized) return status;

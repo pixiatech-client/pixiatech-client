@@ -14,6 +14,7 @@ import type { firestore as admin } from 'firebase-admin';
 import { getStorage } from 'firebase-admin/storage';
 import { createHash } from 'crypto';
 import nodemailer from 'nodemailer';
+import { buildSupplierEmailHtml } from '@/lib/email-templates';
 
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings } from '@/lib/types';
 import { DocumentData, Timestamp } from 'firebase-admin/firestore';
@@ -1467,24 +1468,7 @@ async function sendSupplierEmail(supplierEmail: string, quoteNumber: string, cli
     }
   });
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.pixiatech.com';
-  
-  const emailHtml = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
-      <div style="background: #000; color: #fff; padding: 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 20px;">Nouvelle Estimation Transmise</h1>
-      </div>
-      <div style="padding: 30px; line-height: 1.6; color: #333;">
-        <p>Bonjour,</p>
-        <p>Une nouvelle demande d'estimation (<b>N°${quoteNumber}</b>) pour le client <b>${clientName}</b> vous a été transmise.</p>
-        ${message ? `<div style="background: #f9f9f9; padding: 15px; border-left: 4px solid #000; margin: 20px 0;">${message}</div>` : ''}
-        <p>Veuillez vous connecter à votre tableau de bord pour traiter cette demande.</p>
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="${baseUrl}/admin/quote-requests?tab=Fournisseur" style="background: #95d230; color: #000; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Accéder au tableau de bord</a>
-        </div>
-      </div>
-    </div>
-  `;
+  const emailHtml = buildSupplierEmailHtml(supplierEmail, quoteNumber, clientName, message);
 
   try {
     await transporter.sendMail({

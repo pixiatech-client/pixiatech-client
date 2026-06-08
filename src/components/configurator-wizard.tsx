@@ -744,7 +744,7 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
   );
 }
 
-export function StepPixelPitch({ state, updateState, userProfile, wizardSettings, t, locale = 'fr' }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, t: any, locale?: string }) {
+export function StepPixelPitch({ state, updateState, userProfile, wizardSettings, t, locale = 'en' }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, t: any, locale?: string }) {
   const allPitches = wizardSettings?.pixelPitches || [];
   const uniquePitches = Array.from(new Map(allPitches.map(p => [p.value, p])).values());
   const pixelPitches = uniquePitches;
