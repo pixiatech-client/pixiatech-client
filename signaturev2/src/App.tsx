@@ -631,39 +631,57 @@ export default function App() {
 
   // Download contract text
   const handleContractDownload = () => {
-    const textData = `
-========================================================================
-ESTIMATION TECHNIQUE & CONTRAT NUMÉRIQUE VALIDE - PIXIATECH PRO
-========================================================================
-Référence Dossier     : PIXIA-EST-${Math.round(surface)}-2026
-Date d'Homologation   : 29 mai 2026
-Statut de Signature   : CERTIFIÉ ET SIGNÉ ÉLECTRONIQUEMENT
-------------------------------------------------------------------------
+    // Format rental period for PDF
+    const formatD = (d: Date | string | undefined) => {
+      if (!d) return '';
+      const date = d instanceof Date ? d : new Date(d);
+      return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+    const rFrom = rentalStartDate ? formatD(rentalStartDate) : '';
+    const rTo = rentalEndDate ? formatD(rentalEndDate) : '';
+    const rPeriodLine = (projectMode === 'location' && rFrom && rTo)
+      ? [`- Période de location : ${rFrom} au ${rTo}`]
+      : [];
+    const rHoursLine = (projectMode === 'location' && (rentalStartTime || rentalEndTime))
+      ? [`- Horaires : ${rentalStartTime || '08:00'} à ${rentalEndTime || '18:00'}`]
+      : [];
 
-SOCIÉTÉ CONTRACTANTE (PRENEUR) :
-- Raison Sociale : ${renterDetails.company}
-- Représentant : ${renterDetails.representative}
-- Adresse de livraison : ${renterDetails.address}, ${renterDetails.postcode} ${renterDetails.city}
-- Coordonnées : ${renterDetails.email} | ${renterDetails.phone}
-
-SPÉCIFICATIONS TECHNIQUES DU BIEN :
-- Modèle d'Affichage : ${activePack.name}
-- Dimensions d'écran : ${width}m x ${height}m
-- Surface totale d'affichage : ${surface.toFixed(2)} m²
-- Nombre de modules LED : ${dalles} dalles de dimensions 50cm x 50cm
-- Type de commande : ${projectMode.toUpperCase()}
-
-DÉCOMPTE FINANCIER :
-- Sous-total matériel : ${subtotalProducts.toLocaleString('fr-FR')} € TTC
-- Frais logistique de livraison : ${deliveryFee.toLocaleString('fr-FR')} € TTC
-- Prestation d'Installation : ${isInstallationIncluded ? `Incluse par nos techniciens (${installationFee.toLocaleString('fr-FR')} € TTC)` : 'Non incluse - par vos soins (Pixiatech décline toute responsabilité)'}
-- MONTANT TOTAL ESTIMÉ (TTC) : ${totalAmount.toLocaleString('fr-FR')} € TTC
-
-------------------------------------------------------------------------
-Certifié par PandaDoc e-Sign. Authentifié par OTP Mail Code #${sentOtpCode}
-PIXIATECH - Saint-Ouen-sur-Seine et France Entière.
-========================================================================
-`;
+    const lines = [
+      '========================================================================',
+      'ESTIMATION TECHNIQUE & CONTRAT NUMÉRIQUE VALIDE - PIXIATECH PRO',
+      '========================================================================',
+      `Référence Dossier     : PIXIA-EST-${Math.round(surface)}-2026`,
+      "Date d'Homologation   : 29 mai 2026",
+      'Statut de Signature   : CERTIFIÉ ET SIGNÉ ÉLECTRONIQUEMENT',
+      '------------------------------------------------------------------------',
+      '',
+      'SOCIÉTÉ CONTRACTANTE (PRENEUR) :',
+      `- Raison Sociale : ${renterDetails.company}`,
+      `- Représentant : ${renterDetails.representative}`,
+      `- Adresse de livraison : ${renterDetails.address}, ${renterDetails.postcode} ${renterDetails.city}`,
+      `- Coordonnées : ${renterDetails.email} | ${renterDetails.phone}`,
+      '',
+      'SPÉCIFICATIONS TECHNIQUES DU BIEN :',
+      `- Modèle d'Affichage : ${activePack.name}`,
+      `- Dimensions d'écran : ${width}m x ${height}m`,
+      `- Surface totale d'affichage : ${surface.toFixed(2)} m²`,
+      `- Nombre de modules LED : ${dalles} dalles de dimensions 50cm x 50cm`,
+      `- Type de commande : ${projectMode.toUpperCase()}`,
+      ...rPeriodLine,
+      ...rHoursLine,
+      '',
+      'DÉCOMPTE FINANCIER :',
+      `- Sous-total matériel : ${subtotalProducts.toLocaleString('fr-FR')} € TTC`,
+      `- Frais logistique de livraison : ${deliveryFee.toLocaleString('fr-FR')} € TTC`,
+      `- Prestation d'Installation : ${isInstallationIncluded ? `Incluse par nos techniciens (${installationFee.toLocaleString('fr-FR')} € TTC)` : 'Non incluse - par vos soins (Pixiatech décline toute responsabilité)'}`,
+      `- MONTANT TOTAL ESTIMÉ (TTC) : ${totalAmount.toLocaleString('fr-FR')} € TTC`,
+      '',
+      '------------------------------------------------------------------------',
+      `Certifié par PandaDoc e-Sign. Authentifié par OTP Mail Code #${sentOtpCode}`,
+      'PIXIATECH - Saint-Ouen-sur-Seine et France Entière.',
+      '========================================================================',
+    ];
+    const textData = lines.join('\n');
 
     const blob = new Blob([textData], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -1433,6 +1451,9 @@ PIXIATECH - Saint-Ouen-sur-Seine et France Entière.
                   signatureDataUrl={signatureDataUrl}
                   isValidated={isSignatureValidated}
                   projectMode={projectMode}
+                  rentalPeriod={{ from: rentalStartDate, to: rentalEndDate }}
+                  rentalStartTime={rentalStartTime}
+                  rentalEndTime={rentalEndTime}
                 />
 
                 {/* Scroll checkbox verification with custom error styling */}
