@@ -5,6 +5,8 @@
 import { useState, useMemo, useEffect, useCallback, useTransition, useRef } from 'react';
 import type { Product, Settings, DeliverySettings, LaborSettings, ConfiguredProduct, QuoteDetails, Locations, WizardSettings } from '@/lib/types';
 import { useRouter, usePathname } from 'next/navigation';
+import { saveQuoteState, loadQuoteState, clearQuoteState } from '@/lib/quote-persistence';
+import { STEP_ROUTES, ROUTE_STEP_MAP } from '@/lib/quote-routes';
 import { Configurator } from './configurator';
 import Preview from './preview';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -151,15 +153,12 @@ export function QuoteBuilder({
     const [installationCost, setInstallationCost] = useState(0);
     const [techniciansRequired, setTechniciansRequired] = useState(0);
     const [currentStep, setCurrentStep] = useState<number>(() => {
+      const saved = loadQuoteState();
+      if (saved && saved.currentStep > 0) {
+        return saved.currentStep;
+      }
       if (initialWorkflowStep) {
-        const stepMap: Record<string, number> = {
-          'produits-recommandes': 1,
-          'resume-estimation': 2,
-          'contrat-signature': 5,
-          'verification-securite': 6,
-          'projet-termine': 7,
-        };
-        return stepMap[initialWorkflowStep] || 1;
+        return ROUTE_STEP_MAP[initialWorkflowStep] || 1;
       }
       return 1;
     });
@@ -246,6 +245,39 @@ export function QuoteBuilder({
             signInAnonymously(auth);
         }
     }, [isUserLoading, user, auth]);
+
+    useEffect(() => {
+        const saved = loadQuoteState();
+        if (saved) {
+            setConfiguredProducts(saved.configuredProducts ?? []);
+            setActiveConfigProductId(saved.activeConfigProductId);
+            setBaseQuote(saved.baseQuote);
+            setIncludeInstallation(saved.includeInstallation);
+            setDeliveryCost(saved.deliveryCost);
+            setSelectedCityId(saved.selectedCityId);
+            setUnconfiguredCityQuery(saved.unconfiguredCityQuery);
+            setIsDeliveryCostFinal(saved.isDeliveryCostFinal);
+            setInstallationCost(saved.installationCost);
+            setTechniciansRequired(saved.techniciansRequired);
+            setIncludeDelivery(saved.includeDelivery);
+            setActiveMode(saved.activeMode);
+            setIsSubmitting(saved.isSubmitting);
+        }
+        if (initialWorkflowStep && ROUTE_STEP_MAP[initialWorkflowStep] >= 5) {
+            setIsSignatureFlowActive(true);
+        }
+    }, []);
+
+    useEffect(() => {
+        const step = ROUTE_STEP_MAP[initialWorkflowStep ?? ''];
+        if (step && step >= 5) {
+            if (configuredProducts.length > 0) {
+                setIsSignatureFlowActive(true);
+            } else {
+                router.replace('/produits-recommandes');
+            }
+        }
+    }, [initialWorkflowStep, configuredProducts.length, router]);
 
     const refreshWizardSettings = useCallback(async () => {
         try {
@@ -486,14 +518,16 @@ export function QuoteBuilder({
     ]);
 
     const handleGoToModeSelection = useCallback(() => {
+        clearQuoteState();
         setConfiguredProducts([]);
         setActiveConfigProductId(null);
         setBaseQuote(0);
         setActiveMode('selection');
-        setCurrentStep(1); // Crucial: Reset to step 1
+        setCurrentStep(1);
         setIsSubmitting(false);
         setIsSignatureFlowActive(false);
-    }, []);
+        router.push('/produits-recommandes');
+    }, [router]);
 
 
 
@@ -503,16 +537,27 @@ export function QuoteBuilder({
         if (fromStep === 4) {
             setIsSubmitting(false);
         }
-        if (fromStep === 2) { // Coming from Delivery to Step 1
-            if (activeMode === 'wizard') {
-                setInitialWizardStep(8); // Resume at the end of wizard
-                setCurrentStep(1);
-            } else {
-                handleGoToModeSelection();
-            }
-        } else {
-            setCurrentStep(prev => Math.max(1, prev - 1));
-        }
+        const prevStep = Math.max(1, currentStep - 1);
+        const prevRoute = STEP_ROUTES[prevStep];
+        saveQuoteState({
+            configuredProducts,
+            activeConfigProductId,
+            baseQuote,
+            includeInstallation,
+            deliveryCost,
+            selectedCityId,
+            unconfiguredCityQuery,
+            isDeliveryCostFinal,
+            installationCost,
+            techniciansRequired,
+            includeDelivery,
+            activeMode,
+            initialWizardStep: activeMode === 'wizard' ? 8 : 1,
+            isSubmitting,
+            isSignatureFlowActive,
+            currentStep: prevStep,
+        });
+        router.push(prevRoute);
     };
     const handleNext = () => {
         const originalStep = getOriginalStep(currentStep);
@@ -521,7 +566,47 @@ export function QuoteBuilder({
                 alert("Veuillez configurer au moins un produit.");
                 return;
             }
-            setIsSignatureFlowActive(true);
+            saveQuoteState({
+                configuredProducts,
+                activeConfigProductId,
+                baseQuote,
+                includeInstallation,
+                deliveryCost,
+                selectedCityId,
+                unconfiguredCityQuery,
+                isDeliveryCostFinal,
+                installationCost,
+                techniciansRequired,
+                includeDelivery,
+                activeMode,
+                initialWizardStep: 1,
+                isSubmitting,
+                isSignatureFlowActive: true,
+                currentStep: 5,
+            });
+            router.push('/contrat-signature');
+        } else if (currentStep < 4) {
+            const nextStep = currentStep + 1;
+            const nextRoute = STEP_ROUTES[nextStep];
+            saveQuoteState({
+                configuredProducts,
+                activeConfigProductId,
+                baseQuote,
+                includeInstallation,
+                deliveryCost,
+                selectedCityId,
+                unconfiguredCityQuery,
+                isDeliveryCostFinal,
+                installationCost,
+                techniciansRequired,
+                includeDelivery,
+                activeMode,
+                initialWizardStep: 1,
+                isSubmitting,
+                isSignatureFlowActive,
+                currentStep: nextStep,
+            });
+            router.push(nextRoute);
         }
     };
 
@@ -529,9 +614,9 @@ export function QuoteBuilder({
     const handleStepClick = (step: number) => {
         const originalStep = getOriginalStep(step);
 
-        // If clicking "Configuration" (original step 1) from ANY current step, always return to mode selection
         if (originalStep === 1) {
-            handleGoToModeSelection();
+            clearQuoteState();
+            router.push('/produits-recommandes');
             return;
         }
 
@@ -542,7 +627,26 @@ export function QuoteBuilder({
                 setSelectedCityId(null);
                 setUnconfiguredCityQuery(undefined);
             }
-            setCurrentStep(step);
+            const route = STEP_ROUTES[step];
+            saveQuoteState({
+                configuredProducts,
+                activeConfigProductId,
+                baseQuote,
+                includeInstallation,
+                deliveryCost,
+                selectedCityId,
+                unconfiguredCityQuery,
+                isDeliveryCostFinal,
+                installationCost,
+                techniciansRequired,
+                includeDelivery,
+                activeMode,
+                initialWizardStep: 1,
+                isSubmitting,
+                isSignatureFlowActive: false,
+                currentStep: step,
+            });
+            router.push(route);
         }
     };
 
@@ -578,6 +682,7 @@ export function QuoteBuilder({
     };
 
     const handleNewQuote = () => {
+        clearQuoteState();
         setConfiguredProducts([]);
         setActiveConfigProductId(null);
         setBaseQuote(0);
@@ -598,18 +703,44 @@ export function QuoteBuilder({
         setActiveMode('selection');
         setIsSubmitting(false);
         setIsSignatureFlowActive(false);
+        router.push('/produits-recommandes');
     };
 
 
     const handleModeSelect = (mode: 'wizard' | 'manual') => {
-        handleGoToModeSelection(); // Reset state
+        clearQuoteState();
+        setConfiguredProducts([]);
+        setActiveConfigProductId(null);
+        setBaseQuote(0);
         setActiveMode(mode);
+        setCurrentStep(1);
+        setIsSubmitting(false);
+        setIsSignatureFlowActive(false);
+        router.push('/produits-recommandes');
     };
 
     const handleWizardComplete = (product: ConfiguredProduct) => {
         setConfiguredProducts([product]);
         setActiveConfigProductId(product.id);
-        setIsSignatureFlowActive(true);
+        saveQuoteState({
+            configuredProducts: [product],
+            activeConfigProductId: product.id,
+            baseQuote: 0,
+            includeInstallation: true,
+            deliveryCost: 0,
+            selectedCityId: null,
+            unconfiguredCityQuery: undefined,
+            isDeliveryCostFinal: false,
+            installationCost: 0,
+            techniciansRequired: 0,
+            includeDelivery: true,
+            activeMode: 'wizard',
+            initialWizardStep: 1,
+            isSubmitting: false,
+            isSignatureFlowActive: true,
+            currentStep: 5,
+        });
+        router.push('/contrat-signature');
     };
 
 

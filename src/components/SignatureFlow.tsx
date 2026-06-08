@@ -413,7 +413,7 @@ export default function SignatureFlow({
         clientName: renterDetails.representative,
         totalAmount: (projectMode === 'vente' ? totalAmount : activePack.price + activePack.deposit).toLocaleString('fr-FR'),
         details: `${width}m x ${height}m (${surface.toFixed(2)}m²) - ${activePack.name}`,
-        appUrl: `${window.location.origin}${window.location.pathname}`
+        appUrl: `${window.location.origin}/verification-securite`
       };
 
       // If user provided a client-side config, we pass it along

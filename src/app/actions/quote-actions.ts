@@ -653,7 +653,7 @@ export async function createQuoteWithContract(
       ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
       : baseUrl;
 
-    const verificationUrl = `${safeBaseUrl}/quote/verify?otp=${otpCode}&id=${docRef.id}`;
+    const verificationUrl = `${safeBaseUrl}/verification-securite?otp=${otpCode}&id=${docRef.id}`;
 
     await sendSignatureOtpEmail(
       clientDetails.email,
@@ -910,7 +910,7 @@ export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolea
       ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
       : baseUrl;
 
-    const verificationUrl = `${safeBaseUrl}/quote/verify?otp=${otpCode}&id=${quoteId}`;
+    const verificationUrl = `${safeBaseUrl}/verification-securite?otp=${otpCode}&id=${quoteId}`;
 
     await sendSignatureOtpEmail(
       clientEmail,
