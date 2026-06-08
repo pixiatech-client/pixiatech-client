@@ -248,6 +248,8 @@ export function QuoteBuilder({
 
     useEffect(() => {
         const saved = loadQuoteState();
+        const step = ROUTE_STEP_MAP[initialWorkflowStep ?? ''];
+
         if (saved) {
             setConfiguredProducts(saved.configuredProducts ?? []);
             setActiveConfigProductId(saved.activeConfigProductId);
@@ -263,21 +265,29 @@ export function QuoteBuilder({
             setActiveMode(saved.activeMode);
             setIsSubmitting(saved.isSubmitting);
         }
-        if (initialWorkflowStep && ROUTE_STEP_MAP[initialWorkflowStep] >= 5) {
-            setIsSignatureFlowActive(true);
-        }
-    }, []);
 
-    useEffect(() => {
-        const step = ROUTE_STEP_MAP[initialWorkflowStep ?? ''];
         if (step && step >= 5) {
-            if (configuredProducts.length > 0) {
+            const hasProducts = saved?.configuredProducts?.length > 0;
+            if (hasProducts) {
                 setIsSignatureFlowActive(true);
             } else {
                 router.replace('/produits-recommandes');
             }
         }
-    }, [initialWorkflowStep, configuredProducts.length, router]);
+    }, []);
+
+    const handleSignatureStepChange = useCallback((signatureStep: string) => {
+        const stepRoutes: Record<string, string | null> = {
+            'informations': null,
+            'contrat': '/contrat-signature',
+            'securite': '/verification-securite',
+            'confirmation': '/projet-termine',
+        };
+        const route = stepRoutes[signatureStep];
+        if (route) {
+            router.push(route);
+        }
+    }, [router]);
 
     const refreshWizardSettings = useCallback(async () => {
         try {
@@ -858,6 +868,7 @@ export function QuoteBuilder({
                     setActiveMode('manual');
                     setCurrentStep(1);
                 }}
+                onStepChange={handleSignatureStepChange}
             />
         );
     }

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Check, 
   ArrowLeft, 
@@ -142,15 +142,18 @@ interface SignatureFlowProps {
   userId: string;
   onNewQuote: () => void;
   onBackToConfigurator: () => void;
+  onStepChange?: (step: StepId) => void;
 }
 
 export default function SignatureFlow({
   configuredProduct,
   allProducts,
-  onBackToConfigurator
+  onBackToConfigurator,
+  onStepChange
 }: SignatureFlowProps) {
   const [currentStep, setCurrentStep] = useState<StepId>('informations');
   const [quoteId, setQuoteId] = useState<string | null>(null);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
   const [width, setWidth] = useState<number>(configuredProduct.width);
   const [height, setHeight] = useState<number>(configuredProduct.height);
@@ -245,6 +248,14 @@ export default function SignatureFlow({
       console.error("Failed to save SMTP settings:", error);
     }
   }, [smtpConfig]);
+
+  const prevStepRef = useRef<StepId>(currentStep);
+  useEffect(() => {
+    if (prevStepRef.current !== currentStep && onStepChange) {
+      onStepChange(currentStep);
+    }
+    prevStepRef.current = currentStep;
+  }, [currentStep, onStepChange]);
 
   // Sync draft state to localStorage
   useEffect(() => {
@@ -595,6 +606,7 @@ export default function SignatureFlow({
   };
 
   const handleNextStep = () => {
+    setAttemptedSubmit(true);
     setEmailError(null);
     setPhoneError(null);
     
@@ -806,7 +818,7 @@ export default function SignatureFlow({
                   
                   {/* Entity Company name */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-name" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${!renterDetails.company ? 'text-red-500' : 'text-zinc-700'}`}>
+                    <label htmlFor="comp-name" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${attemptedSubmit && !renterDetails.company ? 'text-red-500' : 'text-zinc-700'}`}>
                       Nom de l'entreprise *
                     </label>
                     <input
@@ -816,12 +828,12 @@ export default function SignatureFlow({
                       value={renterDetails.company}
                       onChange={(e) => setRenterDetails({ ...renterDetails, company: e.target.value })}
                       className={`w-full rounded-[14px] px-4 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
-                        !renterDetails.company 
+                        attemptedSubmit && !renterDetails.company 
                           ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
                           : 'bg-[#edf2f7]/40 border-2 border-transparent focus:bg-white focus:border-blue-500'
                       }`}
                     />
-                    {!renterDetails.company && (
+                    {attemptedSubmit && !renterDetails.company && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
                         <span>▲ Ce champ est obligatoire</span>
                       </p>
@@ -830,7 +842,7 @@ export default function SignatureFlow({
 
                   {/* Nom du contact */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-representative" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${!renterDetails.representative ? 'text-red-500' : 'text-zinc-700'}`}>
+                    <label htmlFor="comp-representative" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${attemptedSubmit && !renterDetails.representative ? 'text-red-500' : 'text-zinc-700'}`}>
                       Nom du contact *
                     </label>
                     <input
@@ -840,12 +852,12 @@ export default function SignatureFlow({
                       value={renterDetails.representative}
                       onChange={(e) => setRenterDetails({ ...renterDetails, representative: e.target.value })}
                       className={`w-full rounded-[14px] px-4 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
-                        !renterDetails.representative 
+                        attemptedSubmit && !renterDetails.representative 
                           ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
                           : 'bg-[#edf2f7]/40 border-2 border-transparent focus:bg-white focus:border-blue-500'
                       }`}
                     />
-                    {!renterDetails.representative && (
+                    {attemptedSubmit && !renterDetails.representative && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
                         <span>▲ Ce champ est obligatoire</span>
                       </p>
@@ -854,7 +866,7 @@ export default function SignatureFlow({
 
                   {/* Corporate professional email */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-email" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${emailError ? 'text-red-500' : 'text-zinc-700'}`}>
+                    <label htmlFor="comp-email" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${emailError || (attemptedSubmit && !renterDetails.email) ? 'text-red-500' : 'text-zinc-700'}`}>
                       Email professionnel *
                     </label>
                     <input
@@ -864,14 +876,12 @@ export default function SignatureFlow({
                       value={renterDetails.email}
                       onChange={(e) => setRenterDetails({ ...renterDetails, email: e.target.value })}
                       className={`w-full rounded-[14px] px-4 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
-                        emailError 
-                          ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
-                          : !renterDetails.email 
+                        emailError || (attemptedSubmit && !renterDetails.email)
                           ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
                           : 'bg-[#edf2f7]/40 border-2 border-transparent focus:bg-white focus:border-blue-500'
                       }`}
                     />
-                    {(emailError || !renterDetails.email) && (
+                    {(emailError || (attemptedSubmit && !renterDetails.email)) && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
                         <span>▲ {emailError || 'Ce champ est obligatoire'}</span>
                       </p>
@@ -880,7 +890,7 @@ export default function SignatureFlow({
 
                   {/* Phone number */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-phone" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${phoneError ? 'text-red-500' : 'text-zinc-700'}`}>
+                    <label htmlFor="comp-phone" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${phoneError || (attemptedSubmit && !renterDetails.phone) ? 'text-red-500' : 'text-zinc-700'}`}>
                       Téléphone *
                     </label>
                     <input
@@ -893,14 +903,12 @@ export default function SignatureFlow({
                         setRenterDetails({ ...renterDetails, phone: val });
                       }}
                       className={`w-full rounded-[14px] px-4 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
-                        phoneError 
-                          ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
-                          : !renterDetails.phone 
+                        phoneError || (attemptedSubmit && !renterDetails.phone)
                           ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
                           : 'bg-[#edf2f7]/40 border-2 border-transparent focus:bg-white focus:border-blue-500'
                       }`}
                     />
-                    {(phoneError || !renterDetails.phone) && (
+                    {(phoneError || (attemptedSubmit && !renterDetails.phone)) && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
                         <span>▲ {phoneError || 'Ce champ est obligatoire'}</span>
                       </p>
@@ -910,7 +918,7 @@ export default function SignatureFlow({
                   {/* Ville de livraison (Combobox custom premium with Orange IMPORTANT tag) */}
                   <div className="space-y-1.5 md:col-span-2 relative">
                     <div className="flex items-center gap-2">
-                      <label className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${!citySearchQuery ? 'text-red-500' : 'text-zinc-700'}`}>
+                      <label className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${attemptedSubmit && !citySearchQuery ? 'text-red-500' : 'text-zinc-700'}`}>
                         Ville de livraison *
                       </label>
                       <span className="text-[9px] bg-orange-100 text-orange-700 border border-orange-200/60 px-2 py-0.5 rounded-md font-extrabold uppercase tracking-wider">
@@ -932,7 +940,7 @@ export default function SignatureFlow({
                         }}
                         onFocus={() => setIsCityDropdownOpen(true)}
                         className={`w-full rounded-[14px] pl-10 pr-10 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
-                          !citySearchQuery 
+                          attemptedSubmit && !citySearchQuery 
                             ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
                             : 'bg-[#edf2f7]/40 border-2 border-transparent focus:bg-white focus:border-blue-500'
                         }`}
@@ -946,7 +954,7 @@ export default function SignatureFlow({
                       </button>
                     </div>
 
-                    {!citySearchQuery && (
+                    {attemptedSubmit && !citySearchQuery && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
                         <span>▲ Ce champ est obligatoire</span>
                       </p>
@@ -1010,7 +1018,7 @@ export default function SignatureFlow({
 
                   {/* Address */}
                   <div className="space-y-1.5 md:col-span-2">
-                    <label htmlFor="comp-address" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${!renterDetails.address ? 'text-red-500' : 'text-zinc-700'}`}>
+                    <label htmlFor="comp-address" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${attemptedSubmit && !renterDetails.address ? 'text-red-500' : 'text-zinc-700'}`}>
                       Adresse de l'événement *
                     </label>
                     <input
@@ -1020,12 +1028,12 @@ export default function SignatureFlow({
                       value={renterDetails.address}
                       onChange={(e) => setRenterDetails({ ...renterDetails, address: e.target.value })}
                       className={`w-full rounded-[14px] px-4 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
-                        !renterDetails.address 
+                        attemptedSubmit && !renterDetails.address 
                           ? 'bg-red-50/30 border-2 border-red-300 focus:bg-white focus:border-red-500' 
                           : 'bg-[#edf2f7]/40 border-2 border-transparent focus:bg-white focus:border-blue-500'
                       }`}
                     />
-                    {!renterDetails.address && (
+                    {attemptedSubmit && !renterDetails.address && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
                         <span>▲ Ce champ est obligatoire</span>
                       </p>
