@@ -11,16 +11,35 @@ interface ContractDocumentProps {
   renter: RenterDetails;
   signatureDataUrl: string | null;
   isValidated: boolean;
+  projectMode?: 'vente' | 'location';
+  rentalPeriod?: { from: Date | string; to: Date | string };
+  rentalStartTime?: string | null;
+  rentalEndTime?: string | null;
 }
 
 export default function ContractDocument({
   pack,
   renter,
   signatureDataUrl,
-  isValidated
+  isValidated,
+  projectMode = 'location',
+  rentalPeriod,
+  rentalStartTime,
+  rentalEndTime
 }: ContractDocumentProps) {
   // Use current date
   const contractDate = "29 mai 2026";
+
+  // Format rental period dates
+  const formatRentalDate = (d: Date | string | undefined) => {
+    if (!d) return '';
+    const date = d instanceof Date ? d : new Date(d);
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+  const rentalFrom = rentalPeriod?.from ? formatRentalDate(rentalPeriod.from) : '';
+  const rentalTo = rentalPeriod?.to ? formatRentalDate(rentalPeriod.to) : '';
+  const rentalPeriodStr = rentalFrom && rentalTo ? `${rentalFrom} – ${rentalTo}` : '';
+  const rentalHours = (rentalStartTime || rentalEndTime) ? `${rentalStartTime || '08:00'} à ${rentalEndTime || '18:00'}` : '';
 
   return (
     <div className="w-full flex flex-col">
@@ -88,6 +107,22 @@ export default function ContractDocument({
                   Matériel loué : <strong className="text-zinc-900">{pack.name}</strong> • Surface d'affichage : <strong className="text-zinc-900">{pack.surface}</strong>
                 </span>
               </li>
+              {projectMode === 'location' && rentalPeriodStr && (
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 mt-1">•</span>
+                  <span>
+                    Période de location : <strong className="text-zinc-900">{rentalPeriodStr}</strong>
+                  </span>
+                </li>
+              )}
+              {projectMode === 'location' && rentalHours && (
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 mt-1">•</span>
+                  <span>
+                    Horaires : <strong className="text-zinc-900">{rentalHours}</strong>
+                  </span>
+                </li>
+              )}
               <li className="flex items-start gap-2">
                 <span className="text-blue-600 mt-1">•</span>
                 <span>

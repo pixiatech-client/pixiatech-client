@@ -553,6 +553,21 @@ export default function SignatureFlow({
 
 
   const handleContractDownload = () => {
+    // Format rental period for PDF
+    const formatD = (d: Date | string | undefined) => {
+      if (!d) return '';
+      const date = d instanceof Date ? d : new Date(d);
+      return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+    const rFrom = configuredProduct.rentalPeriod?.from ? formatD(configuredProduct.rentalPeriod.from as any) : '';
+    const rTo = configuredProduct.rentalPeriod?.to ? formatD(configuredProduct.rentalPeriod.to as any) : '';
+    const rPeriodLine = (projectMode === 'location' && rFrom && rTo)
+      ? ['- Periode de location : ' + rFrom + ' au ' + rTo]
+      : [];
+    const rHoursLine = (projectMode === 'location' && (configuredProduct.rentalStartTime || configuredProduct.rentalEndTime))
+      ? ['- Horaires : ' + (configuredProduct.rentalStartTime || '08:00') + ' a ' + (configuredProduct.rentalEndTime || '18:00')]
+      : [];
+
     const lines = [
       '=======================================================================',
       'ESTIMATION TECHNIQUE & CONTRAT NUMERIQUE VALIDE - PIXIATECH PRO',
@@ -571,9 +586,12 @@ export default function SignatureFlow({
       'SPECIFICATIONS TECHNIQUES DU BIEN :',
       '- Modele d\'Affichage : ' + activePack.name,
       '- Dimensions d\'ecran : ' + width + 'm x ' + height + 'm',
+      '- Quantite : x' + quantity,
       '- Surface totale d\'affichage : ' + surface.toFixed(2) + ' m2',
       '- Nombre de modules LED : ' + dalles + ' dalles de dimensions 50cm x 50cm',
       '- Type de commande : ' + projectMode.toUpperCase(),
+      ...rPeriodLine,
+      ...rHoursLine,
       '',
       'DECOMPTE FINANCIER :',
       '- Sous-total materiel : ' + subtotalProducts.toLocaleString('fr-FR') + ' EUR TTC',
@@ -1009,6 +1027,11 @@ export default function SignatureFlow({
                     }
 
                     // SINGLE PRODUCT
+                    const rpFrom = configuredProduct.rentalPeriod?.from;
+                    const rpTo = configuredProduct.rentalPeriod?.to;
+                    const fmtD = (d: any) => { if (!d) return ''; const dt = d instanceof Date ? d : new Date(d); return dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); };
+                    const rentalPeriodLabel = projectMode === 'location' && rpFrom && rpTo ? `${fmtD(rpFrom)} - ${fmtD(rpTo)}` : '';
+                    const rentalHoursLabel = projectMode === 'location' ? `${configuredProduct.rentalStartTime || '08:00'} à ${configuredProduct.rentalEndTime || '18:00'}` : '';
                     return (
                       <div className="space-y-2.5 text-xs">
                         <div className="flex justify-between items-center">
@@ -1031,6 +1054,19 @@ export default function SignatureFlow({
                           <span className="text-zinc-500 font-semibold">Détails dalles</span>
                           <span className="text-zinc-900 font-bold font-mono text-right">{dalles} Dalles <span className="text-zinc-400 font-normal text-[10px]">({product?.tileWidth || 50}cm x {product?.tileHeight || 50}cm)</span></span>
                         </div>
+                        {projectMode === 'location' && rentalPeriodLabel && (
+                          <>
+                            <div className="border-t border-zinc-100 pt-2 mt-1" />
+                            <div className="flex justify-between items-center">
+                              <span className="text-indigo-600 font-semibold">Période de location</span>
+                              <span className="text-zinc-900 font-bold font-mono text-right">{rentalPeriodLabel}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-indigo-600 font-semibold">Horaires</span>
+                              <span className="text-zinc-900 font-bold font-mono">{rentalHoursLabel}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     );
                   })()}
@@ -1189,6 +1225,10 @@ export default function SignatureFlow({
                   renter={renterDetails}
                   signatureDataUrl={signatureDataUrl || tempSignatureUrl}
                   isValidated={isSignatureValidated}
+                  projectMode={projectMode}
+                  rentalPeriod={projectMode === 'location' ? configuredProduct.rentalPeriod as any : undefined}
+                  rentalStartTime={projectMode === 'location' ? configuredProduct.rentalStartTime : undefined}
+                  rentalEndTime={projectMode === 'location' ? configuredProduct.rentalEndTime : undefined}
                 />
 
                 <div 
@@ -1751,6 +1791,11 @@ export default function SignatureFlow({
 
                   <div className="space-y-2 text-xs font-bold font-mono">
                     <div className="flex justify-between text-zinc-500 py-0.5 font-sans">
+                      <span>Type :</span>
+                      <span className="text-zinc-900 font-mono">{projectMode === 'vente' ? 'Vente' : 'Location'}</span>
+                    </div>
+
+                    <div className="flex justify-between text-zinc-500 py-0.5 font-sans">
                       <span>Dimensions d'écran :</span>
                       <span className="text-zinc-900 font-mono">{width}m x {height}m</span>
                     </div>
@@ -1764,6 +1809,26 @@ export default function SignatureFlow({
                       <span>Composants dalles LED :</span>
                       <span className="text-zinc-900 font-mono">{dalles} modules</span>
                     </div>
+
+                    {projectMode === 'location' && (() => {
+                      const cFrom = configuredProduct.rentalPeriod?.from;
+                      const cTo = configuredProduct.rentalPeriod?.to;
+                      const fD = (d: any) => { if (!d) return ''; const dt = d instanceof Date ? d : new Date(d); return dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); };
+                      const pLabel = cFrom && cTo ? `${fD(cFrom)} - ${fD(cTo)}` : '';
+                      const hLabel = `${configuredProduct.rentalStartTime || '08:00'} à ${configuredProduct.rentalEndTime || '18:00'}`;
+                      return pLabel ? (
+                        <>
+                          <div className="flex justify-between text-indigo-600 py-0.5 font-sans">
+                            <span>Période de location :</span>
+                            <span className="text-zinc-900 font-mono text-right">{pLabel}</span>
+                          </div>
+                          <div className="flex justify-between text-indigo-600 py-0.5 font-sans">
+                            <span>Horaires :</span>
+                            <span className="text-zinc-900 font-mono">{hLabel}</span>
+                          </div>
+                        </>
+                      ) : null;
+                    })()}
 
                     <div className="flex justify-between text-zinc-500 py-0.5 font-sans border-t border-zinc-100 pt-2 font-semibold">
                       <span>Loyer mensuel :</span>
