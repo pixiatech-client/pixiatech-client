@@ -45,7 +45,6 @@ import { validatePhone } from '@/lib/phone-validation';
 import { Pack, RenterDetails, Step, StepId } from '@/lib/signature-types';
 import SignaturePad from './SignaturePad';
 import ContractDocument from './ContractDocument';
-import PixiatechLogo from './PixiatechLogo';
 import { ConfiguredProduct, Product, Settings } from '@/lib/types';
 import { createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp } from '@/app/actions/quote-actions';
 import { jsPDF } from 'jspdf';
@@ -136,7 +135,7 @@ const CITIES = [
 ];
 
 interface SignatureFlowProps {
-  configuredProduct: ConfiguredProduct;
+  configuredProducts: ConfiguredProduct[];
   allProducts: Product[];
   settings?: Settings;
   userId: string;
@@ -146,7 +145,7 @@ interface SignatureFlowProps {
 }
 
 export default function SignatureFlow({
-  configuredProduct,
+  configuredProducts,
   allProducts,
   onBackToConfigurator,
   onStepChange
@@ -155,11 +154,12 @@ export default function SignatureFlow({
   const [quoteId, setQuoteId] = useState<string | null>(null);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
-  const [width, setWidth] = useState<number>(configuredProduct.width);
-  const [height, setHeight] = useState<number>(configuredProduct.height);
-  const [quantity, setQuantity] = useState<number>(configuredProduct.quantity || 1);
+  const mainConfig = configuredProducts[0] || {} as ConfiguredProduct;
+  const [width, setWidth] = useState<number>(mainConfig.width || 0);
+  const [height, setHeight] = useState<number>(mainConfig.height || 0);
+  const [quantity, setQuantity] = useState<number>(mainConfig.quantity || 1);
   const [projectMode, setProjectMode] = useState<'vente' | 'location'>(
-    configuredProduct.transactionType === 'sale' ? 'vente' : 'location'
+    mainConfig.transactionType === 'sale' ? 'vente' : 'location'
   );
 
   const [renterDetails, setRenterDetails] = useState<RenterDetails>({
@@ -204,15 +204,15 @@ export default function SignatureFlow({
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const [rentalStartDate, setRentalStartDate] = useState<string>(() => {
-    const rp = (configuredProduct as any).rentalPeriod as any;
+    const rp = (mainConfig as any).rentalPeriod as any;
     return rp?.from ? new Date(rp.from).toISOString().split('T')[0] : '';
   });
   const [rentalEndDate, setRentalEndDate] = useState<string>(() => {
-    const rp = (configuredProduct as any).rentalPeriod as any;
+    const rp = (mainConfig as any).rentalPeriod as any;
     return rp?.to ? new Date(rp.to).toISOString().split('T')[0] : '';
   });
-  const [rentalStartTime, setRentalStartTime] = useState<string>(() => (configuredProduct as any).rentalStartTime || '08:00');
-  const [rentalEndTime, setRentalEndTime] = useState<string>(() => (configuredProduct as any).rentalEndTime || '18:00');
+  const [rentalStartTime, setRentalStartTime] = useState<string>(() => (mainConfig as any).rentalStartTime || '08:00');
+  const [rentalEndTime, setRentalEndTime] = useState<string>(() => (mainConfig as any).rentalEndTime || '18:00');
 
   const [smtpConfig, setSmtpConfig] = useState<{
     host: string;
@@ -423,7 +423,9 @@ export default function SignatureFlow({
         companyName: renterDetails.company,
         clientName: renterDetails.representative,
         totalAmount: (projectMode === 'vente' ? totalAmount : activePack.price + activePack.deposit).toLocaleString('fr-FR'),
-        details: `${width}m x ${height}m (${surface.toFixed(2)}m²) - ${activePack.name}`,
+        details: productCalculations.length > 0 
+          ? `${productCalculations[0].width}m x ${productCalculations[0].height}m (${(productCalculations[0].surface * productCalculations[0].quantity).toFixed(2)}m²) - ${activePack.name}`
+          : `${activePack.name}`,
         appUrl: `${window.location.origin}/verification-securite`
       };
 
@@ -499,39 +501,56 @@ export default function SignatureFlow({
   // Caution/Dépôt location = 50% du sous-total matériel
   // ============================================
 
-  // Live Calculations based on width & height
-  const surface = width * height;
-  const dalles = Math.round(surface * 4); // 4 dalles of 50x50cm per m²
+  // Live Calculations based on all configured products
+  const pricePerSqm = projectMode === 'vente' ? 2000 : 12;
+  const productCalculations = configuredProducts.map(p => {
+    const w = p.width || 0;
+    const h = p.height || 0;
+    const q = p.quantity || 1;
+    const s = w * h;
+    const d = Math.round(s * 4);
+    const sp = s * pricePerSqm;
+    const prod = allProducts.find(ap => ap.id === p.productId);
+    return {
+      width: w,
+      height: h,
+      quantity: q,
+      surface: s,
+      dalles: d,
+      subtotal: sp,
+      productId: p.productId,
+      product: prod,
+      photo: prod?.imageUrl || prod?.image || null
+    };
+  });
 
-  // Price calculation model
-  const pricePerSqm = projectMode === 'vente' ? 2000 : 12; // 2000€ purchase or 12€ lease per sqm
-  const subtotalProducts = surface * pricePerSqm;
-  const deliveryFee = 250;
+  const totalSurface = productCalculations.reduce((sum, pc) => sum + pc.surface * pc.quantity, 0);
+  const totalDalles = productCalculations.reduce((sum, pc) => sum + pc.dalles * pc.quantity, 0);
+  const totalSubtotalProducts = productCalculations.reduce((sum, pc) => sum + pc.subtotal * pc.quantity, 0);
+  const totalDeliveryFee = configuredProducts.reduce((sum, p) => sum + 250 * (p.quantity || 1), 0);
   
-  // Dynamic installation fee calculation
-  // 1 technicien par 40m², 50€ par technicien
-  const techniciansCount = Math.max(1, Math.ceil(surface / 40));
+  const techniciansCount = Math.max(1, Math.ceil(totalSurface / 40));
   const installationFee = isInstallationIncluded ? (techniciansCount * 50) : 0;
-  
-  // Total price calculations including shipment and installation for N screens
-  const totalAmount = (subtotalProducts * quantity) + (250 * quantity) + (installationFee * quantity);
+  const totalAmount = totalSubtotalProducts + totalDeliveryFee + installationFee;
 
-  // Get product info for images and specs
-  const mainProduct = allProducts.find(p => p.id === configuredProduct.productId);
+  const mainProduct = allProducts.find(p => p.id === productCalculations[0]?.productId);
   const productPhoto = mainProduct?.imageUrl || mainProduct?.image || null;
+
+  const productCount = configuredProducts.length;
+  const totalQuantity = configuredProducts.reduce((sum, p) => sum + (p.quantity || 1), 0);
+
   const activePack: Pack = {
     id: 'custom-led-78',
     name: projectMode === 'vente' ? 'Caissons LED Série Extra Plat' : 'Location Écran LED Sur-Mesure',
-    surface: `${(surface * quantity).toFixed(2)} m²`,
-    price: Math.round(subtotalProducts * quantity),
-    deposit: Math.round(subtotalProducts * quantity * 0.5), // Caution
-    description: `Configuration de ${quantity} écran(s) LED de ${width}m x ${height}m (Total ${dalles * quantity} dalles)`,
+    surface: `${totalSurface.toFixed(2)} m²`,
+    price: Math.round(totalSubtotalProducts),
+    deposit: Math.round(totalSubtotalProducts * 0.5),
+    description: `Configuration de ${productCount} produit(s) LED (${totalQuantity} écran(s) au total)`,
     specs: [
-      `Dimensions unitaire : ${width}m x ${height}m`,
-      `Surface unitaire : ${surface.toFixed(2)} m²`,
-      `Quantité d'écrans : ${quantity}`,
-      `Surface totale d'affichage : ${(surface * quantity).toFixed(2)} m²`,
-      `Quantité de matériel : ${dalles * quantity} dalles de 50x50cm (dont dalles de réserve)`
+      `Nombre de produits configurés : ${productCount}`,
+      `Quantité totale d'écrans : ${totalQuantity}`,
+      `Surface totale d'affichage : ${totalSurface.toFixed(2)} m²`,
+      `Quantité de matériel : ${totalDalles} dalles de 50x50cm`
     ]
   };
 
@@ -721,17 +740,7 @@ export default function SignatureFlow({
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc] text-zinc-800 font-sans antialiased">
       
-      {/* Dynamic kinetic glass header bar */}
-      <header className="bg-white border-b border-[#e2e8f0] py-4 px-4 sm:px-8 shadow-sm">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
-            <PixiatechLogo className="w-9 h-9" />
-            <div>
-              <span className="font-heading font-black tracking-tight text-zinc-900 text-sm sm:text-base">PIXIATECH</span>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Header removed - workflow has its own step system */}
 
       {/* Stepper Progress Indicator */}
       {currentStep !== 'confirmation' && (
@@ -1210,55 +1219,31 @@ export default function SignatureFlow({
                     </span>
                   </div>
 
-                  {/* Table specs description */}
-                  <div className="space-y-3.5 text-xs font-semibold">
-                    <div className="flex justify-between items-center text-zinc-400">
-                      <span>Produit</span>
-                      <span className="text-zinc-905 font-black uppercase font-heading text-right">
-                        CAISSONS LED EXTRA PLAT SÉRIE
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-zinc-400">
-                      <span>Quantité</span>
-                      <span className="text-zinc-905 font-black font-mono text-right">
-                        x{quantity}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-zinc-400">
-                      <span>Dimensions</span>
-                      <span className="text-zinc-905 font-black font-mono text-right">
-                        {width}m x {height}m
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-zinc-400">
-                      <span>Surface Totale</span>
-                      <span className="text-zinc-905 font-black font-mono text-right">
-                        {surface.toFixed(2)} m²
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-zinc-400">
-                      <span>Détails dalles</span>
-                      <span className="text-zinc-905 font-bold font-mono text-right flex items-center gap-1">
-                        <span>{dalles} Dalles</span>
-                        <span className="text-zinc-400 font-semibold normal-case">(50cm x 50cm)</span>
-                      </span>
-                    </div>
-                    {projectMode === 'location' && (
-                      <>
-                        <div className="flex border-t border-zinc-100/80 pt-2.5 justify-between items-center text-zinc-400">
-                          <span className="font-semibold text-zinc-400">Période de location :</span>
-                          <span className="text-zinc-905 font-bold font-mono text-right">
-                            {formatFrenchDate(rentalStartDate)} - {formatFrenchDate(rentalEndDate)}
-                          </span>
+                  {/* Product list */}
+                  <div className="space-y-3">
+                    {productCalculations.map((pc, idx) => {
+                      const prod = pc.product;
+                      return (
+                        <div key={idx} className="p-3 bg-zinc-50/50 border border-zinc-100 rounded-xl space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            {pc.photo && (
+                              <img src={pc.photo} alt="" className="w-8 h-8 rounded-lg object-cover border border-zinc-200" />
+                            )}
+                            <span className="text-[11px] font-black text-zinc-800 uppercase truncate">{prod?.name || `Produit ${idx + 1}`}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] font-semibold text-zinc-500">
+                            <span>Dimensions</span>
+                            <span className="text-zinc-905 font-black font-mono text-right">{pc.width}m x {pc.height}m</span>
+                            <span>Surface</span>
+                            <span className="text-zinc-905 font-black font-mono text-right">{(pc.surface * pc.quantity).toFixed(2)} m²</span>
+                            <span>Quantité</span>
+                            <span className="text-zinc-905 font-black font-mono text-right">x{pc.quantity}</span>
+                            <span>Sous-total</span>
+                            <span className="text-zinc-905 font-black font-mono text-right">{(pc.subtotal * pc.quantity).toLocaleString('fr-FR')} €</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center text-zinc-400">
-                          <span className="font-semibold text-zinc-400">Horaires :</span>
-                          <span className="text-zinc-905 font-bold font-mono text-right">
-                            {rentalStartTime} à {rentalEndTime}
-                          </span>
-                        </div>
-                      </>
-                    )}
+                      );
+                    })}
                   </div>
 
                   {/* separator divider */}
@@ -1267,21 +1252,15 @@ export default function SignatureFlow({
                   {/* Subtotals breakdowns */}
                   <div className="space-y-3 text-xs font-semibold">
                     <div className="flex justify-between items-center text-zinc-400">
-                      <span>Total Ligne</span>
-                      <span className="text-zinc-800 font-bold font-mono">
-                        {subtotalProducts.toLocaleString('fr-FR')} €
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-zinc-400">
                       <span>Sous-total produits</span>
                       <span className="text-zinc-800 font-bold font-mono">
-                        {subtotalProducts.toLocaleString('fr-FR')} €
+                        {totalSubtotalProducts.toLocaleString('fr-FR')} €
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-zinc-400">
                       <span>Livraison</span>
                       <span className="text-zinc-800 font-bold font-mono">
-                        {deliveryFee.toLocaleString('fr-FR')} €
+                        {totalDeliveryFee.toLocaleString('fr-FR')} €
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-zinc-400">
@@ -1347,7 +1326,7 @@ export default function SignatureFlow({
 
                       {isInstallationIncluded && (
                         <div className="mt-4 pt-4 border-t border-zinc-100 space-y-1 text-zinc-800 font-medium animate-fade-in text-xs leading-relaxed">
-                          <p>Pour une surface totale de <strong className="text-zinc-955 font-black">{surface.toFixed(2)} m²</strong>, votre projet nécessite <strong className="text-zinc-955 font-black">{techniciansCount} technicien(s)</strong>.</p>
+                          <p>Pour une surface totale de <strong className="text-zinc-955 font-black">{totalSurface.toFixed(2)} m²</strong>, votre projet nécessite <strong className="text-zinc-955 font-black">{techniciansCount} technicien(s)</strong>.</p>
                           <p className="text-sm font-black text-zinc-955 mt-2">Coût : {installationFee.toLocaleString('fr-FR')} €</p>
                         </div>
                       )}
@@ -1597,7 +1576,7 @@ export default function SignatureFlow({
                 <div className="flex gap-4.5 bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/60 select-none">
                   <div className="w-12 h-12 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col items-center justify-center font-heading font-black text-xs text-blue-400 shrink-0">
                     <span className="text-[9px] leading-tight text-zinc-500 font-mono font-normal">Taille</span>
-                    <span className="text-[11px] leading-tight mt-0.5">{surface.toFixed(1)}m²</span>
+                    <span className="text-[11px] leading-tight mt-0.5">{totalSurface.toFixed(1)}m²</span>
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-xs sm:text-sm font-bold text-white truncate">{activePack.name}</h4>
@@ -1690,46 +1669,45 @@ export default function SignatureFlow({
                 </button>
               </div>
 
-              {/* Dynamic Product Mockup Gallery ("Caissons LED Série Extra Plat") */}
+              {/* Product Gallery - one card per product */}
               <div className="space-y-3 px-1">
                 <div className="flex items-center gap-2 select-none">
                   <div className="w-1 h-3.5 bg-blue-600 rounded-full"></div>
                   <h4 className="text-[10px] font-heading font-black tracking-wider uppercase text-zinc-500">
-                    Série Extra Plat • Matériel ({quantity} produit{quantity > 1 ? 's' : ''})
+                    Produits sélectionnés ({productCount} produit{productCount > 1 ? 's' : ''})
                   </h4>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3.5">
-                  <div 
-                    className="bg-white border border-[#e2e8f0] hover:border-zinc-300 rounded-[20px] p-3 shadow-sm space-y-2.5 transition-all relative overflow-hidden group select-none"
-                  >
-                    {/* Visual screen rendering */}
-                    <div 
-                      className="relative aspect-video rounded-xl overflow-hidden bg-zinc-950 border border-zinc-200/80 shadow-inner flex items-center justify-center"
-                      style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }}
-                    >
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-                          LED Screen
-                        </span>
+                  {productCalculations.map((pc, idx) => {
+                    const prod = pc.product;
+                    return (
+                      <div key={idx} className="bg-white border border-[#e2e8f0] hover:border-zinc-300 rounded-[20px] p-3 shadow-sm space-y-2.5 transition-all relative overflow-hidden group select-none">
+                        {/* Product photo */}
+                        <div className="relative aspect-video rounded-xl overflow-hidden bg-zinc-950 border border-zinc-200/80 shadow-inner flex items-center justify-center">
+                          {pc.photo ? (
+                            <img src={pc.photo} alt={prod?.name || ''} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">LED Screen</span>
+                          )}
+                        </div>
+                        {/* Description Metadata specs */}
+                        <div className="flex justify-between items-center text-[11px] pt-0.5">
+                          <div className="min-w-0">
+                            <strong className="text-zinc-900 block font-black text-[11px] uppercase leading-none truncate">
+                              {prod?.name || activePack.name}
+                            </strong>
+                            <span className="text-zinc-500 font-bold font-mono text-[10px] block mt-1.5 leading-none">
+                              {pc.width}m x {pc.height}m ({(pc.surface * pc.quantity).toFixed(2)} m²) x{pc.quantity}
+                            </span>
+                          </div>
+                          <span className="text-[8px] bg-blue-50/80 text-blue-600 border border-blue-100 font-extrabold uppercase rounded-md px-2 py-0.5 tracking-wider font-mono shrink-0 ml-2">
+                            {projectMode === 'vente' ? 'Vente' : 'Location'}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    
-                    {/* Description Metadata specs */}
-                    <div className="flex justify-between items-center text-[11px] pt-0.5">
-                      <div>
-                        <strong className="text-zinc-900 block font-black text-[11px] uppercase leading-none">
-                          {activePack.name}
-                        </strong>
-                        <span className="text-zinc-500 font-bold font-mono text-[10px] block mt-1.5 leading-none">
-                          {width}m x {height}m ({surface.toFixed(2)} m²)
-                        </span>
-                      </div>
-                      <span className="text-[8px] bg-blue-50/80 text-blue-600 border border-blue-100 font-extrabold uppercase rounded-md px-2 py-0.5 tracking-wider font-mono">
-                        {projectMode === 'vente' ? 'Vente' : 'Location'}
-                      </span>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -2104,18 +2082,18 @@ export default function SignatureFlow({
                   <div className="space-y-2 text-xs font-bold font-mono">
                     
                     <div className="flex justify-between text-zinc-500 py-0.5 font-sans">
-                      <span>Dimensions d'écran :</span>
-                      <span className="text-zinc-900 font-mono">{width}m x {height}m</span>
+                      <span>Nombre de produits :</span>
+                      <span className="text-zinc-900 font-mono">{productCount}</span>
                     </div>
 
                     <div className="flex justify-between text-zinc-500 py-0.5 font-sans">
                       <span>Surface totale d'affichage :</span>
-                      <span className="text-zinc-900 font-mono">{surface.toFixed(2)} m²</span>
+                      <span className="text-zinc-900 font-mono">{totalSurface.toFixed(2)} m²</span>
                     </div>
 
                     <div className="flex justify-between text-zinc-500 py-0.5 font-sans">
                       <span>Composants dalles LED :</span>
-                      <span className="text-zinc-900 font-mono">{dalles} modules</span>
+                      <span className="text-zinc-900 font-mono">{totalDalles} modules</span>
                     </div>
 
                     <div className="flex justify-between text-zinc-500 py-0.5 font-sans border-t border-zinc-100 pt-2 font-semibold">

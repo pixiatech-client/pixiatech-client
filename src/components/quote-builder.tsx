@@ -858,7 +858,7 @@ export function QuoteBuilder({
     if (isSignatureFlowActive && activeConfiguredProduct) {
         return (
             <SignatureFlow
-                configuredProduct={activeConfiguredProduct}
+                configuredProducts={configuredProducts}
                 allProducts={allProducts}
                 settings={initialSettings}
                 userId={user?.uid || 'anonymous'}
