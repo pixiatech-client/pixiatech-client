@@ -1348,33 +1348,35 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
         </p>
 
         {/* Selection mode toggle */}
-        <div className="flex items-center justify-center gap-2 mt-4">
-          <button
-            onClick={() => updateState({ selectionMode: 'single', selectedProducts: state.selectedProduct ? [state.selectedProduct] : [] })}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
-              !isMulti
-                ? "bg-black text-[#c6ff00] border-black"
-                : "bg-white text-slate-400 border-slate-200 hover:border-slate-400"
-            )}
-          >
-            <Check size={12} strokeWidth={3} />
-            {locale === 'fr' ? 'S\u00e9lection' : 'Single'}
-          </button>
-          <button
-            onClick={() => updateState({ selectionMode: 'multi', selectedProducts: state.selectedProduct ? [state.selectedProduct] : [] })}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
-              isMulti
-                ? "bg-black text-[#c6ff00] border-black"
-                : "bg-white text-slate-400 border-slate-200 hover:border-slate-400"
-            )}
-          >
-            <Layers size={12} />
-            {locale === 'fr' ? 'Multi-s\u00e9lection' : 'Multi-select'}
-          </button>
-        </div>
-        {isMulti && (
+        {state.projectType !== 'location' && (
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <button
+              onClick={() => updateState({ selectionMode: 'single', selectedProducts: state.selectedProduct ? [state.selectedProduct] : [] })}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+                !isMulti
+                  ? "bg-black text-[#c6ff00] border-black"
+                  : "bg-white text-slate-400 border-slate-200 hover:border-slate-400"
+              )}
+            >
+              <Check size={12} strokeWidth={3} />
+              {locale === 'fr' ? 'S\u00e9lection' : 'Single'}
+            </button>
+            <button
+              onClick={() => updateState({ selectionMode: 'multi', selectedProducts: state.selectedProduct ? [state.selectedProduct] : [] })}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+                isMulti
+                  ? "bg-black text-[#c6ff00] border-black"
+                  : "bg-white text-slate-400 border-slate-200 hover:border-slate-400"
+              )}
+            >
+              <Layers size={12} />
+              {locale === 'fr' ? 'Multi-s\u00e9lection' : 'Multi-select'}
+            </button>
+          </div>
+        )}
+        {state.projectType !== 'location' && isMulti && (
           <p className="text-[9px] font-bold text-slate-400 tracking-widest uppercase mt-2">
             {locale === 'fr'
               ? `${selectedProducts.length} / 3 produits s\u00e9lectionn\u00e9s`
