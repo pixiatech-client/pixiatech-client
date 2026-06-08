@@ -4,6 +4,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useTransition, useRef } from 'react';
 import type { Product, Settings, DeliverySettings, LaborSettings, ConfiguredProduct, QuoteDetails, Locations, WizardSettings } from '@/lib/types';
+import { useRouter, usePathname } from 'next/navigation';
 import { Configurator } from './configurator';
 import Preview from './preview';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -29,6 +30,7 @@ import { ConfiguratorModeSelection } from './configurator-mode-selection';
 import { preloadImages } from '@/lib/image-preload';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import SignatureFlow from './SignatureFlow';
+import { useRouter, usePathname } from 'next/navigation';
 
 
 
@@ -114,12 +116,13 @@ const MediaPreview = ({ url, type }: { url: string, type: 'video' | 'image' }) =
 };
 
 interface QuoteBuilderProps {
-    initialSettings: Settings;
-    deliverySettings: DeliverySettings;
-    laborSettings: LaborSettings;
-    allProducts: Product[];
-    locations: Locations | null;
-    wizardSettings: WizardSettings;
+  initialSettings: Settings;
+  deliverySettings: DeliverySettings;
+  laborSettings: LaborSettings;
+  allProducts: Product[];
+  locations: Locations;
+  wizardSettings: WizardSettings;
+  workflowStep?: string;
 }
 
 export function QuoteBuilder({
@@ -129,8 +132,12 @@ export function QuoteBuilder({
     allProducts,
     locations,
     wizardSettings: initialWizardSettings,
+    workflowStep: initialWorkflowStep,
 }: QuoteBuilderProps) {
     const { t, locale, setLocale } = useI18n();
+    const router = useRouter();
+    const pathname = usePathname();
+    
     const [wizardSettings, setWizardSettings] = useState<WizardSettings>(initialWizardSettings);
     const [configuredProducts, setConfiguredProducts] = useState<ConfiguredProduct[]>([]);
     const [activeConfigProductId, setActiveConfigProductId] = useState<string | null>(null);
@@ -144,7 +151,19 @@ export function QuoteBuilder({
     const [isDeliveryCostFinal, setIsDeliveryCostFinal] = useState(false);
     const [installationCost, setInstallationCost] = useState(0);
     const [techniciansRequired, setTechniciansRequired] = useState(0);
-    const [currentStep, setCurrentStep] = useState<number>(1);
+    const [currentStep, setCurrentStep] = useState<number>(() => {
+      if (initialWorkflowStep) {
+        const stepMap: Record<string, number> = {
+          'produits-recommandes': 1,
+          'resume-estimation': 2,
+          'contrat-signature': 5,
+          'verification-securite': 6,
+          'projet-termine': 7,
+        };
+        return stepMap[initialWorkflowStep] || 1;
+      }
+      return 1;
+    });
     const [includeDelivery, setIncludeDelivery] = useState(true);
 
     const [previewMode, setPreviewMode] = useState<PreviewMode>('dimension');
