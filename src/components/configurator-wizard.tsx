@@ -1238,6 +1238,12 @@ export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, 
               <DetailItem icon={<Zap className="w-5 h-5 text-green-500" />} iconBg="bg-green-50" label={t('wizard.summary.powerMax')} value={`${powerMax.toFixed(1)} kW`} />
               <DetailItem icon={<Zap className="w-5 h-5 text-sky-500" />} iconBg="bg-sky-50" label={t('wizard.summary.powerAvg')} value={`${powerAvg.toFixed(1)} kW`} />
               <DetailItem icon={<Zap className="w-5 h-5 text-orange-500" />} iconBg="bg-orange-50" label={t('wizard.summary.breaker')} value={`${amps}A ${t('wizard.summary.breakerType') || 'Tripolaire'}`} />
+              {state.projectType === 'location' && state.rentalStartDate && state.rentalEndDate && (
+                <>
+                  <DetailItem icon={<CalendarIcon className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label="Période de location" value={`${format(new Date(state.rentalStartDate), 'dd/MM/yyyy', { locale: dateLocale })} - ${format(new Date(state.rentalEndDate), 'dd/MM/yyyy', { locale: dateLocale })}`} />
+                  <DetailItem icon={<Clock className="w-5 h-5 text-indigo-500" />} iconBg="bg-indigo-50" label="Horaires" value={`${state.rentalStartTime || '08:00'} à ${state.rentalEndTime || '18:00'}`} />
+                </>
+              )}
 
               <div className="col-span-1 md:col-span-3 h-px bg-slate-100 my-2"></div>
             </div>
