@@ -15,6 +15,8 @@ interface ContractDocumentProps {
   rentalPeriod?: { from: Date | string; to: Date | string };
   rentalStartTime?: string | null;
   rentalEndTime?: string | null;
+  productImage?: string | null;
+  allPacks?: Pack[];
 }
 
 export default function ContractDocument({
@@ -25,7 +27,9 @@ export default function ContractDocument({
   projectMode = 'location',
   rentalPeriod,
   rentalStartTime,
-  rentalEndTime
+  rentalEndTime,
+  productImage,
+  allPacks
 }: ContractDocumentProps) {
   const contractDate = "29 mai 2026";
 
@@ -128,7 +132,7 @@ export default function ContractDocument({
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-1">•</span>
                     <span>
-                      Loyer mensuel : <strong className="text-zinc-900">{pack.price.toLocaleString('fr-FR')}€ TTC/mois</strong> (Sans engagement de durée)
+                      Coût de la période : <strong className="text-zinc-900">{pack.price.toLocaleString('fr-FR')}€ TTC</strong> (Sans engagement de durée)
                     </span>
                   </li>
                   <li className="flex items-start gap-2">

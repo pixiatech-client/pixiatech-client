@@ -467,23 +467,47 @@ export default function SignatureFlow({
     }
   };
 
+  // ============================================
+  // CALCULS CONTRACTUELS - COMMENTAIRES DÉVELOPPEUR
+  // ============================================
+  // Variables principales :
+  // - surface = width * height (m²)
+  // - dalles = surface * 4 (nombre de dalles LED 50x50cm par m²)
+  // - quantity = nombre d'écrans identiques
+  // - projectMode = 'vente' ou 'location'
+  //
+  // Formules :
+  // - Prix unitaire vente : 2000€ TTC / m²
+  // - Prix unitaire location : 12€ TTC / m² / mois
+  // - subtotalProducts = surface * pricePerSqm
+  // - deliveryFee = 250€ par écran
+  // - techniciansCount = max(1, ceil(surface / 40)) = 1 technicien par 40m²
+  // - installationFee = techniciansCount * 50€ (seulement si isInstallationIncluded = true)
+  // - totalAmount = (subtotalProducts * quantity) + (deliveryFee * quantity) + (installationFee * quantity)
+  //
+  // Caution/Dépôt location = 50% du sous-total matériel
+  // ============================================
+
   // Live Calculations based on width & height
   const surface = width * height;
   const dalles = Math.round(surface * 4); // 4 dalles of 50x50cm per m²
 
-  // Price calculation model (matches image values: surface 78m², purchase total 156 350,00€)
-  const pricePerSqm = projectMode === 'vente' ? 2000 : 12; // 2000€ purchase or 12€ lease per sqm per month
+  // Price calculation model
+  const pricePerSqm = projectMode === 'vente' ? 2000 : 12; // 2000€ purchase or 12€ lease per sqm
   const subtotalProducts = surface * pricePerSqm;
   const deliveryFee = 250;
   
-  // Dynamic installation fee calculation matching Image 1 & 2
+  // Dynamic installation fee calculation
+  // 1 technicien par 40m², 50€ par technicien
   const techniciansCount = Math.max(1, Math.ceil(surface / 40));
   const installationFee = isInstallationIncluded ? (techniciansCount * 50) : 0;
   
   // Total price calculations including shipment and installation for N screens
   const totalAmount = (subtotalProducts * quantity) + (250 * quantity) + (installationFee * quantity);
 
-  // Active Pack Helper matching current metrics or custom selection
+  // Get product info for images and specs
+  const mainProduct = allProducts.find(p => p.id === configuredProduct.productId);
+  const productPhoto = mainProduct?.imageUrl || mainProduct?.image || null;
   const activePack: Pack = {
     id: 'custom-led-78',
     name: projectMode === 'vente' ? 'Caissons LED Série Extra Plat' : 'Location Écran LED Sur-Mesure',
@@ -1403,6 +1427,7 @@ export default function SignatureFlow({
                   rentalPeriod={{ from: rentalStartDate, to: rentalEndDate }}
                   rentalStartTime={rentalStartTime}
                   rentalEndTime={rentalEndTime}
+                  productImage={productPhoto}
                 />
 
                 {/* Scroll checkbox verification with custom error styling */}
@@ -1627,9 +1652,9 @@ export default function SignatureFlow({
                         </strong>
                       </div>
                       <div className="flex justify-between items-center leading-normal">
-                        <span className="text-zinc-400">Prélèvements mensuels réguliers :</span>
+                        <span className="text-zinc-400">Coût de la période :</span>
                         <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
-                          {activePack.price.toLocaleString('fr-FR')}€ TTC/mois
+                          {activePack.price.toLocaleString('fr-FR')}€ TTC
                         </strong>
                       </div>
                       <div className="flex justify-between items-center leading-normal">
@@ -2017,35 +2042,37 @@ export default function SignatureFlow({
 
               </div>
 
-              {/* Confirm actions buttons layout */}
-              <div className="flex flex-col sm:flex-row gap-3.5 pt-2">
-                
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSignatureValidated(false);
-                    setSignatureDataUrl(null);
-                    setAcceptedCgl(false);
-                    setInputOtpCode('');
-                    setIsOtpCompleted(false);
-                    setCurrentStep('informations');
-                  }}
-                  className="w-full sm:w-auto px-6 py-3 bg-zinc-950 hover:bg-zinc-800 text-white font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <RefreshCw size={14} className="animate-spin-slow" />
-                  <span>Créer un nouveau devis</span>
-                </button>
+               {/* Confirm actions buttons layout */}
+               <div className="flex flex-col sm:flex-row gap-3.5 pt-2">
+                 
+                 <button
+                   type="button"
+                   onClick={onBackToConfigurator}
+                   className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-zinc-50 text-zinc-700 font-bold border border-zinc-200 text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                 >
+                   <ArrowLeft size={14} />
+                   <span>Retour aux produits recommandés</span>
+                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleContractDownload}
-                  className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-zinc-50 text-zinc-700 font-bold border border-zinc-200 text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Download size={14} className="text-blue-600" />
-                  <span>Télécharger PDF</span>
-                </button>
+                 <button
+                   type="button"
+                   onClick={onBackToConfigurator}
+                   className="w-full sm:w-auto px-6 py-3 bg-zinc-950 hover:bg-zinc-800 text-white font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                 >
+                   <RefreshCw size={14} className="animate-spin-slow" />
+                   <span>Créer un nouveau devis</span>
+                 </button>
 
-              </div>
+                 <button
+                   type="button"
+                   onClick={handleContractDownload}
+                   className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold border border-blue-600 text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                 >
+                   <Download size={14} />
+                   <span>Télécharger PDF</span>
+                 </button>
+
+               </div>
 
             </div>
 

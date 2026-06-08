@@ -33,17 +33,26 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
 
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const scaleX = canvas.width / canvas.offsetWidth;
+    const scaleY = canvas.height / canvas.offsetHeight;
     
+    // Mouse events: use offsetX/offsetY (most reliable, relative to element)
+    if (e.offsetX !== undefined && e.offsetY !== undefined) {
+      return {
+        x: e.offsetX * scaleX,
+        y: e.offsetY * scaleY
+      };
+    }
+    
+    // Touch events fallback
+    const rect = canvas.getBoundingClientRect();
     if (e.touches && e.touches.length > 0) {
       return {
         x: (e.touches[0].clientX - rect.left) * scaleX,
         y: (e.touches[0].clientY - rect.top) * scaleY
       };
     }
-
+    
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY
