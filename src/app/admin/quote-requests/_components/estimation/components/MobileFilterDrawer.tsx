@@ -50,7 +50,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop avec flou prononcé */}
+          {/* Backdrop with pronounced blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -90,10 +90,10 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-black uppercase tracking-tight text-zinc-900 dark:text-white leading-none">
-                    Statuts
+                    Statuses
                   </h3>
                   <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">
-                    Filtrer par catégorie
+                    Filter by category
                   </p>
                 </div>
               </div>

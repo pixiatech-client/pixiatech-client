@@ -295,7 +295,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (role === UserRole.ADMINISTRATEUR && onSaveLogo) {
         onSaveLogo(tempLogoConfig);
     }
-    toast.success('Configuration du logo mise à jour !');
+    toast.success('Logo configuration updated!');
   };
 
   const sidebarClasses = `

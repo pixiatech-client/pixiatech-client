@@ -17,9 +17,9 @@ interface ImpersonationDrawerProps {
 }
 
 const roleConfig: Record<string, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
-  admin: { label: 'Administrateur', color: '#a855f7', bgColor: '#2e1065', icon: Shield },
-  fournisseur: { label: 'Fournisseur', color: '#3b82f6', bgColor: '#1e293b', icon: Truck },
-  commercial: { label: 'Commercial', color: '#f59e0b', bgColor: '#2a1f00', icon: UserCircle },
+  admin: { label: 'Administrator', color: '#a855f7', bgColor: '#2e1065', icon: Shield },
+  fournisseur: { label: 'Supplier', color: '#3b82f6', bgColor: '#1e293b', icon: Truck },
+  commercial: { label: 'Sales Rep', color: '#f59e0b', bgColor: '#2a1f00', icon: UserCircle },
 };
 
 export function ImpersonationDrawer({ isOpen, onClose, onImpersonate, currentUserId, userRole }: ImpersonationDrawerProps) {
@@ -63,7 +63,7 @@ export function ImpersonationDrawer({ isOpen, onClose, onImpersonate, currentUse
       await onImpersonate(selectedUser.uid);
       onClose();
     } catch (error) {
-      toast.error("Erreur lors de l'impersonation");
+      toast.error('Error during impersonation');
     } finally {
       setIsImpersonating(false);
     }
@@ -96,7 +96,7 @@ export function ImpersonationDrawer({ isOpen, onClose, onImpersonate, currentUse
           >
             <div className="p-6 border-b border-zinc-800">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white">Se connecter en tant que</h2>
+                <h2 className="text-xl font-bold text-white">Log in as</h2>
                 <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-xl transition-colors">
                   <X className="w-5 h-5 text-zinc-500" />
                 </button>
@@ -105,7 +105,7 @@ export function ImpersonationDrawer({ isOpen, onClose, onImpersonate, currentUse
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Rechercher un utilisateur..."
+                  placeholder="Search for a user..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#95d230]/20 focus:border-[#95d230] text-sm text-white placeholder-zinc-500"
@@ -173,7 +173,7 @@ export function ImpersonationDrawer({ isOpen, onClose, onImpersonate, currentUse
                                   </div>
                                 )}
                                 <div className="flex-1 min-w-0 text-left">
-                                  <div className="text-sm font-semibold text-white truncate">{user.displayName || 'Sans nom'}</div>
+                                  <div className="text-sm font-semibold text-white truncate">{user.displayName || 'No name'}</div>
                                   <div className="text-xs text-zinc-500 truncate">{user.email}</div>
                                 </div>
                               </button>
@@ -189,7 +189,7 @@ export function ImpersonationDrawer({ isOpen, onClose, onImpersonate, currentUse
               {filteredUsers.length === 0 && (
                 <div className="py-12 text-center text-zinc-600">
                   <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">Aucun utilisateur trouvé</p>
+                  <p className="text-sm">No user found</p>
                 </div>
               )}
             </div>
@@ -221,7 +221,7 @@ export function ImpersonationDrawer({ isOpen, onClose, onImpersonate, currentUse
                 className="w-full py-4 bg-black hover:bg-zinc-800 text-white border border-zinc-800 hover:border-[#95d230] rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed group"
               >
                 <LogIn className="w-4 h-4 group-hover:text-[#95d230] transition-colors" />
-                {isImpersonating ? 'Connexion...' : 'Se connecter'}
+                {isImpersonating ? 'Logging in...' : 'Log in'}
               </button>
             </div>
           </motion.div>

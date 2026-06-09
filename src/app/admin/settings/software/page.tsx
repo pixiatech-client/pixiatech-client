@@ -21,8 +21,8 @@ export default function SoftwareSettingsPage() {
     if (!testEmail) {
       toast({
         variant: 'destructive',
-        title: 'Erreur',
-        description: 'Veuillez saisir une adresse email pour le test.',
+        title: 'Error',
+        description: 'Please enter an email address for the test.',
       });
       return;
     }
@@ -36,23 +36,23 @@ export default function SoftwareSettingsPage() {
       
       if (result.success) {
         toast({
-          title: 'Test SMTP réussi',
+          title: 'SMTP test successful',
           description: result.message,
           variant: 'success',
         });
       } else {
         toast({
           variant: 'destructive',
-          title: 'Test SMTP échoué',
+          title: 'SMTP test failed',
           description: result.message,
         });
       }
     } catch (error) {
-      setSmtpTestResult({ success: false, message: 'Erreur inattendue lors du test SMTP' });
+      setSmtpTestResult({ success: false, message: 'Unexpected error during SMTP test' });
       toast({
         variant: 'destructive',
-        title: 'Erreur',
-        description: 'Une erreur inattendue est survenue.',
+        title: 'Error',
+        description: 'An unexpected error occurred.',
       });
     } finally {
       setIsTestingSmtp(false);
@@ -64,10 +64,10 @@ export default function SoftwareSettingsPage() {
       <CardHeader className="pb-6 border-b border-slate-100 bg-white">
         <CardTitle className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
           <Server className="w-6 h-6 text-slate-700" />
-          Paramètres Logiciel
+          Software Settings
         </CardTitle>
         <CardDescription className="text-sm font-medium text-slate-500 mt-1">
-          Configuration SMTP et outils de diagnostic pour l'envoi d'emails.
+          SMTP configuration and diagnostic tools for sending emails.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6 md:p-8 space-y-6">
@@ -76,10 +76,10 @@ export default function SoftwareSettingsPage() {
         <div className="space-y-4">
           <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
             <Mail className="w-5 h-5 text-blue-600" />
-            Paramètres SMTP
+            SMTP Settings
           </h3>
           <p className="text-xs text-slate-500">
-            Ces paramètres sont configurés via les variables d'environnement du serveur.
+            These settings are configured via server environment variables.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,17 +134,17 @@ export default function SoftwareSettingsPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors"
-                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[10px] text-slate-400">Le mot de passe n'est jamais affiché en clair pour des raisons de sécurité.</p>
+              <p className="text-[10px] text-slate-400">The password is never displayed in plain text for security reasons.</p>
             </div>
 
-            {/* Email expéditeur */}
+            {/* Sender email */}
             <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-700">Email expéditeur</Label>
+              <Label className="text-xs font-bold text-slate-700">Sender email</Label>
               <Input
                 type="email"
                 placeholder={process.env.SMTP_USER || ''}
@@ -154,11 +154,11 @@ export default function SoftwareSettingsPage() {
               />
             </div>
 
-            {/* Sécurité */}
+            {/* Security */}
             <div className="space-y-2">
               <Label className="text-xs font-bold text-slate-700 flex items-center gap-2">
                 <Shield className="w-4 h-4" />
-                Sécurité
+                Security
               </Label>
               <Input
                 type="text"
@@ -173,13 +173,13 @@ export default function SoftwareSettingsPage() {
         {/* SMTP Test Section */}
         <div className="border-t border-slate-100 pt-6 mt-6">
           <h3 className="text-lg font-black text-slate-900 mb-4">
-            Tester l'envoi d'email
+            Test email sending
           </h3>
           
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="test-email" className="text-xs font-bold text-slate-700">
-                Adresse email de test
+                Test email address
               </Label>
               <Input
                 id="test-email"
@@ -197,20 +197,20 @@ export default function SoftwareSettingsPage() {
               className="w-full md:w-auto min-w-[200px] h-12 rounded-xl font-black bg-slate-900 text-white hover:bg-slate-800 shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isTestingSmtp && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              Envoyer un test
+              Send a test
             </Button>
 
             {smtpTestResult && (
               <div className={`p-4 rounded-xl border ${smtpTestResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                 <div className={`text-sm font-bold ${smtpTestResult.success ? 'text-green-800' : 'text-red-800'}`}>
-                  {smtpTestResult.success ? '✅ Succès' : '❌ Échec'}
+                  {smtpTestResult.success ? '✅ Success' : '❌ Failure'}
                 </div>
                 <p className={`text-sm mt-1 ${smtpTestResult.success ? 'text-green-600' : 'text-red-600'}`}>
                   {smtpTestResult.message}
                 </p>
                 {smtpTestResult.details && (
                   <div className="mt-3 p-3 bg-white/50 rounded-lg">
-                    <p className="text-xs font-bold text-slate-600 mb-2">Diagnostic détaillé :</p>
+                    <p className="text-xs font-bold text-slate-600 mb-2">Detailed diagnostic:</p>
                     <pre className="text-[10px] text-slate-500 whitespace-pre-wrap overflow-x-auto">
                       {JSON.stringify(smtpTestResult.details, null, 2)}
                     </pre>
@@ -220,7 +220,7 @@ export default function SoftwareSettingsPage() {
             )}
 
             <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl">
-              💡 Le test enverra un email de confirmation à l'adresse saisie. Si la configuration SMTP n'est pas définie (variables d'environnement), le test échouera avec un message explicite.
+              💡 The test will send a confirmation email to the entered address. If the SMTP configuration is not set (environment variables), the test will fail with an explicit message.
             </p>
           </div>
         </div>

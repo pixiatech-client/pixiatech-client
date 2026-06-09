@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Mail, Phone, User as UserIcon, Shield, Clock, Lock, Save, FileText, UserCircle, PlusCircle } from 'lucide-react';
+import { X, Camera, Mail, Phone, User as UserIcon, Shield, Clock, Lock, Save, UserCircle, PlusCircle } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import { useToast } from '@/hooks/use-toast';
 import type { UserRole } from '@/lib/types';
 import { CustomSelect } from './custom-select';
 import getCroppedImg from '@/lib/cropImage';
 import type { AdaptedUser } from './user-card';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface UserProfileDrawerProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface UserProfileDrawerProps {
 
 export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = false, roles, isAdmin }: UserProfileDrawerProps) {
   const { toast } = useToast();
+  const { t } = useAdminT();
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [password, setPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -41,8 +43,8 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
   }));
 
   const statusOptions = [
-    { value: 'approved', label: 'Approuvé', color: '#00a86b' },
-    { value: 'pending', label: 'En attente', color: '#f97316' },
+    { value: 'approved', label: t('Approved'), color: '#00a86b' },
+    { value: 'pending', label: t('Pending'), color: '#f97316' },
   ];
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -96,11 +98,11 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.displayName?.trim()) newErrors.displayName = 'Le nom est obligatoire';
-    if (!formData.email?.trim()) newErrors.email = "L'email est obligatoire";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Email invalide';
-    if (isAddMode && !password?.trim()) newErrors.password = 'Le mot de passe est obligatoire';
-    if (isAddMode && password && password.length < 6) newErrors.password = 'Minimum 6 caractères';
+    if (!formData.displayName?.trim()) newErrors.displayName = t('Name is required');
+    if (!formData.email?.trim()) newErrors.email = t('Email is required');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = t('Invalid email');
+    if (isAddMode && !password?.trim()) newErrors.password = t('Password is required');
+    if (isAddMode && password && password.length < 6) newErrors.password = t('Minimum 6 characters');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -108,7 +110,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Veuillez remplir tous les champs obligatoires.' });
+      toast({ variant: 'destructive', title: t('Error'), description: t('Please fill in all required fields.') });
       return;
     }
 
@@ -132,7 +134,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
 
       await onSave(saveData);
       onClose();
-    } catch (error) {
+    } catch {
       // Error handled by parent
     } finally {
       setIsSaving(false);
@@ -156,13 +158,19 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md bg-white border-l border-gray-200 shadow-2xl z-[60] overflow-hidden flex flex-col"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="drawer-title"
+            className="fixed right-0 top-0 h-full w-full max-w-md bg-theme-card border-l border-theme-card-border shadow-2xl z-[60] overflow-hidden flex flex-col"
           >
             <form onSubmit={handleSubmit} className="h-full flex flex-col overflow-y-auto custom-scrollbar">
               {/* HEADER IMAGE SECTION */}
               <div
+                role="button"
+                tabIndex={0}
                 className={`relative h-48 w-full group cursor-pointer shrink-0 ${isAddMode ? 'bg-gradient-to-br from-blue-500 to-blue-700' : ''}`}
                 onClick={() => bgInputRef.current?.click()}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bgInputRef.current?.click(); } }}
               >
                 {!isAddMode && (
                   <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500" />
@@ -172,6 +180,8 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onClose(); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onClose(); } }}
+                  aria-label={t('Close')}
                   className="absolute top-4 left-4 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-all"
                 >
                   <X size={20} />
@@ -182,13 +192,16 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
               <div className="px-6 -mt-12 pb-12 relative flex-1">
                 <div className="flex justify-between items-end mb-6">
                   <div
-                    className="relative inline-block group cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    className="relative inline-block group cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-3xl"
                     onClick={() => avatarInputRef.current?.click()}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); avatarInputRef.current?.click(); } }}
                   >
-                    <div className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden bg-gray-100 shadow-xl">
+                    <div className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden bg-theme-card shadow-xl">
                       <img
                         src={formData.photoURL || (user?.photoURL) || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.displayName || 'U')}&background=random&size=96`}
-                        alt="Avatar"
+                        alt={t('User avatar')}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -212,63 +225,72 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                 </div>
 
                 <div className="mb-8">
-                  <h2 className="text-2xl font-bold uppercase tracking-tight text-gray-900 leading-tight">
-                    {isAddMode ? 'AJOUTER UN NOUVEL UTILISATEUR' : 'MODIFIER L\'UTILISATEUR'}
+                  <h2 id="drawer-title" className="text-2xl font-bold uppercase tracking-tight text-theme-card-text leading-tight">
+                    {isAddMode ? t('ADD A NEW USER') : t('EDIT USER')}
                   </h2>
-                  <p className="text-gray-500 text-sm font-medium">
-                    {isAddMode ? 'Créez un compte qui sera en attente de validation.' : 'Modifiez les informations de l\'utilisateur'}
+                  <p className="text-theme-card-text/60 text-sm font-medium">
+                    {isAddMode ? t('Create an account that will be pending validation.') : t('Edit user information')}
                   </p>
                 </div>
 
                 <div className="space-y-8">
                   {/* BASIC INFO */}
                   <div className="space-y-6">
-                    <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                      <UserCircle size={18} className="text-blue-500" />
-                      <h3 className="text-sm font-bold uppercase tracking-widest text-gray-900">Informations de base</h3>
+                    <div className="flex items-center gap-2 pb-2 border-b border-theme-card-border">
+                      <UserCircle size={18} className="text-theme-card-text/60" />
+                      <h3 className="text-sm font-bold uppercase tracking-widest text-theme-card-text">{t('Basic information')}</h3>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-gray-500">
+                      <label htmlFor="drawer-name" className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-theme-card-text/60">
                         <UserIcon size={14} className="text-blue-500" />
-                        NOM D'UTILISATEUR <span className="text-rose-500">*</span>
+                        {t('USERNAME')} <span className="text-rose-500">*</span>
                       </label>
                       <input
+                        id="drawer-name"
                         type="text"
                         value={formData.displayName || ''}
                         onChange={(e) => { setFormData({ ...formData, displayName: e.target.value }); if (errors.displayName) setErrors({ ...errors, displayName: '' }); }}
                         className={`w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-semibold bg-gray-50 text-gray-900 placeholder:text-gray-400 ${errors.displayName ? 'border-rose-500' : 'border-gray-200'}`}
-                        placeholder="Ex: Jean Dupont"
+                        placeholder={t('E.g. John Doe')}
+                        aria-required="true"
+                        aria-invalid={!!errors.displayName}
+                        aria-describedby={errors.displayName ? 'drawer-name-error' : undefined}
                       />
-                      {errors.displayName && <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-1 ml-2">{errors.displayName}</p>}
+                      {errors.displayName && <p id="drawer-name-error" className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-1 ml-2">{errors.displayName}</p>}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-gray-500">
+                      <label htmlFor="drawer-email" className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-theme-card-text/60">
                         <Mail size={14} className="text-purple-500" />
-                        ADRESSE EMAIL <span className="text-rose-500">*</span>
+                        {t('EMAIL ADDRESS')} <span className="text-rose-500">*</span>
                       </label>
                       <input
+                        id="drawer-email"
                         type="email"
                         value={formData.email || ''}
                         onChange={(e) => { setFormData({ ...formData, email: e.target.value }); if (errors.email) setErrors({ ...errors, email: '' }); }}
                         className={`w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-semibold bg-gray-50 text-gray-900 placeholder:text-gray-400 ${errors.email ? 'border-rose-500' : 'border-gray-200'}`}
-                        placeholder="jean@exemple.com"
+                        placeholder={t('john@example.com')}
                         disabled={!isAddMode}
+                        aria-required="true"
+                        aria-invalid={!!errors.email}
+                        aria-describedby={errors.email ? 'drawer-email-error' : undefined}
                       />
-                      {errors.email && <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-1 ml-2">{errors.email}</p>}
+                      {errors.email && <p id="drawer-email-error" className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-1 ml-2">{errors.email}</p>}
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-gray-500">
+                      <label htmlFor="drawer-phone" className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-theme-card-text/60">
                         <Phone size={14} className="text-emerald-500" />
-                        NUMÉRO DE TÉLÉPHONE
+                        {t('PHONE NUMBER')}
                       </label>
                       <input
+                        id="drawer-phone"
                         type="tel"
                         value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+33 6 00 00 00 00"
+                        placeholder={t('+1 555 000 0000')}
                         className="w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-semibold bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                       />
                     </div>
@@ -277,15 +299,15 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                   {/* ADMIN ONLY FIELDS */}
                   {isAdmin && (
                     <div className="space-y-6">
-                      <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                      <div className="flex items-center gap-2 pb-2 border-b border-theme-card-border">
                         <Shield size={18} className="text-indigo-500" />
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-gray-900">Permissions & Statut</h3>
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-theme-card-text">{t('Permissions & Status')}</h3>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <CustomSelect
-                          label="Rôle"
-                          icon={<Shield className="w-3.5 h-3.5 text-blue-500" />}
-                          placeholder="Sélectionner un rôle"
+                          label={t('Role')}
+                          icon={<Shield className="w-3.5 h-3.5 text-theme-card-text/60" />}
+                          placeholder={t('Select a role')}
                           options={roleOptions}
                           value={formData.role || ''}
                           onChange={(val) => setFormData({ ...formData, role: val })}
@@ -293,9 +315,9 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                         />
 
                         <CustomSelect
-                          label="Statut"
-                          icon={<Clock className="w-3.5 h-3.5 text-purple-500" />}
-                          placeholder="Sélectionner un statut"
+                          label={t('Status')}
+                          icon={<Clock className="w-3.5 h-3.5 text-theme-card-text/60" />}
+                          placeholder={t('Select a status')}
                           options={statusOptions}
                           value={formData.status || ''}
                           onChange={(val) => setFormData({ ...formData, status: val })}
@@ -307,24 +329,28 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
 
                   {/* SECURITY */}
                   <div className="space-y-6">
-                    <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                    <div className="flex items-center gap-2 pb-2 border-b border-theme-card-border">
                       <Lock size={18} className="text-rose-500" />
-                      <h3 className="text-sm font-bold uppercase tracking-widest text-gray-900">Sécurité</h3>
+                      <h3 className="text-sm font-bold uppercase tracking-widest text-theme-card-text">{t('Security')}</h3>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-gray-500">
+                      <label htmlFor="drawer-password" className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-theme-card-text/60">
                         <Lock size={14} className="text-rose-500" />
-                        {isAddMode ? 'MOT DE PASSE *' : 'NOUVEAU MOT DE PASSE'}
+                        {isAddMode ? t('PASSWORD *') : t('NEW PASSWORD')}
                       </label>
                       <input
+                        id="drawer-password"
                         type="password"
                         value={password}
                         onChange={(e) => { setPassword(e.target.value); if (errors.password) setErrors({ ...errors, password: '' }); }}
-                        placeholder="••••••••"
+                        placeholder={t('••••••••')}
+                        aria-required={isAddMode ? 'true' : undefined}
+                        aria-invalid={!!errors.password}
+                        aria-describedby={errors.password ? 'drawer-password-error' : undefined}
                         className={`w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-semibold bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 ${errors.password ? 'border-rose-500' : ''}`}
                       />
-                      {errors.password && <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-1 ml-2">{errors.password}</p>}
+                      {errors.password && <p id="drawer-password-error" className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-1 ml-2">{errors.password}</p>}
                     </div>
                   </div>
                 </div>
@@ -342,7 +368,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                         <Save size={12} className="text-current" />
                       )}
                     </div>
-                    {isSaving ? 'ENREGISTREMENT...' : (isAddMode ? 'AJOUTER L\'UTILISATEUR' : 'SAUVEGARDER LES CHANGEMENTS')}
+                    {isSaving ? t('SAVING...') : (isAddMode ? t('ADD USER') : t('SAVE CHANGES'))}
                   </button>
                 </div>
               </div>
@@ -350,7 +376,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
           </motion.div>
 
           {imageToCrop && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4">
+            <div role="dialog" aria-modal="true" aria-label={t('Crop image')} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4">
               <div className="relative w-full max-w-lg aspect-square bg-gray-900 rounded-3xl overflow-hidden shadow-2xl">
                 <Cropper
                   image={imageToCrop}
@@ -366,13 +392,13 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                     onClick={() => setImageToCrop(null)}
                     className="px-6 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white rounded-xl font-bold transition-all"
                   >
-                    Annuler
+                    {t('Cancel')}
                   </button>
                   <button
                     onClick={handleCropSave}
                     className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all"
                   >
-                    Recadrer & Appliquer
+                    {t('Crop & Apply')}
                   </button>
                 </div>
               </div>

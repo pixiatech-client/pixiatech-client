@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Camera, Mail, Phone, User as UserIcon, Shield, Clock, Calendar, CheckCircle, Image as ImageIcon, Lock, UserCircle, PlusCircle, Save, FileText, ChevronDown, Loader2 } from 'lucide-react';
@@ -9,6 +11,7 @@ import { CustomSelect } from '@/components/ui/custom-select';
 import { uploadImage } from '@/lib/uploadImage';
 import { useRoles } from '@/contexts/RoleContext';
 import { CreateRoleDrawer } from './CreateRoleDrawer';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface UserProfileDrawerProps {
   isOpen: boolean;
@@ -29,6 +32,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
   const bgInputRef = useRef<HTMLInputElement>(null);
 
   const { roles } = useRoles();
+  const { t } = useAdminT();
 
   const roleOptions = roles.map(r => ({
     value: r.id,
@@ -38,10 +42,10 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
   }));
 
   const statusOptions = [
-    { value: UserStatus.APPROUVE, label: 'Approuvé', color: '#00a86b', bgColor: '#e6f7f1' },
-    { value: UserStatus.EN_ATTENTE, label: 'En attente', color: '#f97316', bgColor: '#fff7ed' },
-    { value: UserStatus.REJETE, label: 'Rejeté', color: '#ef4444', bgColor: '#fef2f2' },
-    { value: UserStatus.SUSPENDU, label: 'Suspendu', color: '#8744E0', bgColor: '#f5f3ff' },
+    { value: UserStatus.APPROVED, label: t('Approved'), color: '#00a86b', bgColor: '#e6f7f1' },
+    { value: UserStatus.PENDING, label: t('Pending'), color: '#f97316', bgColor: '#fff7ed' },
+    { value: UserStatus.REJECTED, label: t('Rejected'), color: '#ef4444', bgColor: '#fef2f2' },
+    { value: UserStatus.SUSPENDED, label: t('Suspended'), color: '#8744E0', bgColor: '#f5f3ff' },
   ];
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -65,7 +69,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
         phone: '',
         description: '',
         role: 'commercial',
-        status: UserStatus.EN_ATTENTE,
+        status: UserStatus.PENDING,
         avatar: 'https://picsum.photos/seed/new/100/100',
         backgroundImage: 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1000&auto=format&fit=crop',
         createdAt: new Date().toISOString(),
@@ -76,9 +80,9 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.name?.trim()) newErrors.name = 'Le nom est obligatoire';
-    if (!formData.email?.trim()) newErrors.email = 'L\'email est obligatoire';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Email invalide';
+    if (!formData.name?.trim()) newErrors.name = t('Name is required');
+    if (!formData.email?.trim()) newErrors.email = t('Email is required');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = t('Invalid email');
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -87,7 +91,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
+      toast.error(t('Please fill in all required fields'));
       return;
     }
     onSave({ ...user, ...formData } as User);
@@ -127,7 +131,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                 {!isAddMode && (
                   <img
                     src={formData.backgroundImage || 'https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=1000&auto=format&fit=crop'}
-                    alt="Profile Background"
+                    alt={t('Profile Background')}
                     className="w-full h-full object-cover"
                   />
                 )}
@@ -145,13 +149,13 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
                     <div className="flex items-center gap-3 text-white">
                       <Loader2 className="w-6 h-6 animate-spin" />
-                      <span className="text-sm font-bold">Téléchargement...</span>
+                      <span className="text-sm font-bold">{t('Uploading...')}</span>
                     </div>
                   </div>
                 )}
                 <div className="absolute bottom-4 right-4 p-2 bg-black/20 hover:bg-theme-sidebar-active-bg backdrop-blur-md rounded-full text-white transition-all flex items-center gap-2">
                   <Camera size={20} />
-                  <span className="text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Changer l'arrière-plan</span>
+                  <span className="text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">{t('Change background')}</span>
                 </div>
                 <input
                   ref={bgInputRef}
@@ -165,9 +169,9 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                       try {
                         const url = await uploadImage(file);
                         setFormData({ ...formData, backgroundImage: url });
-                        toast.success('Image d\'arrière-plan téléchargée');
+                        toast.success(t('Background image uploaded'));
                       } catch (err) {
-                        toast.error('Erreur lors du téléchargement');
+                        toast.error(t('Upload error'));
                       } finally {
                         setIsUploading(false);
                       }
@@ -186,7 +190,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                     <div className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden bg-gray-100 shadow-xl transition-colors">
                       <img
                         src={formData.avatar || (user?.avatar || 'https://picsum.photos/seed/new/100/100')}
-                        alt="Avatar"
+                        alt={t('Avatar')}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -205,9 +209,9 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                           try {
                             const url = await uploadImage(file);
                             setFormData({ ...formData, avatar: url });
-                            toast.success('Avatar téléchargé');
+                            toast.success(t('Avatar uploaded'));
                           } catch (err) {
-                            toast.error('Erreur lors du téléchargement');
+                            toast.error(t('Upload error'));
                           } finally {
                             setIsUploading(false);
                           }
@@ -219,10 +223,10 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
 
                 <div className="mb-8">
                   <h2 className="text-2xl font-black uppercase tracking-tighter text-gray-900 leading-tight">
-                    {isAddMode ? 'AJOUTER UN NOUVEL UTILISATEUR' : 'MODIFIER L\'UTILISATEUR'}
+                    {isAddMode ? t('ADD A NEW USER') : t('EDIT USER')}
                   </h2>
                   <p className="text-gray-500 text-sm font-medium">
-                    {isAddMode ? 'Créez un compte qui sera en attente de validation.' : 'Modifiez les informations et le mot de passe'}
+                    {isAddMode ? t('Create an account that will be pending validation.') : t('Edit information and password')}
                   </p>
                 </div>
 
@@ -231,13 +235,13 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
                       <UserCircle size={18} className="text-blue-500" />
-                      <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Informations de base</h3>
+                      <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">{t('Basic information')}</h3>
                     </div>
 
                     <div className="space-y-2">
                       <label className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
                         <UserIcon size={14} className="text-blue-500" />
-                        NOM D'UTILISATEUR <span className="text-rose-500">*</span>
+                        {t('USERNAME')} <span className="text-rose-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -247,7 +251,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                           if (errors.name) setErrors({ ...errors, name: '' });
                         }}
                         className={`w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-bold bg-gray-50 text-gray-900 placeholder:text-gray-400 ${errors.name ? 'border-rose-500' : 'border-gray-200'}`}
-                        placeholder="Ex: Jean Dupont"
+                        placeholder={t('E.g. John Doe')}
                       />
                       {errors.name && <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-1 ml-2">{errors.name}</p>}
                     </div>
@@ -255,7 +259,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                     <div className="space-y-2">
                       <label className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
                         <Mail size={14} className="text-purple-500" />
-                        ADRESSE EMAIL <span className="text-rose-500">*</span>
+                        {t('EMAIL ADDRESS')} <span className="text-rose-500">*</span>
                       </label>
                       <input
                         type="email"
@@ -265,7 +269,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                           if (errors.email) setErrors({ ...errors, email: '' });
                         }}
                         className={`w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-bold bg-gray-50 text-gray-900 placeholder:text-gray-400 ${errors.email ? 'border-rose-500' : 'border-gray-200'}`}
-                        placeholder="jean@exemple.com"
+                        placeholder={t('john@example.com')}
                       />
                       {errors.email && <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-1 ml-2">{errors.email}</p>}
                     </div>
@@ -273,13 +277,13 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                     <div className="space-y-2">
                       <label className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
                         <Phone size={14} className="text-emerald-500" />
-                        NUMÉRO DE TÉLÉPHONE
+                        {t('PHONE NUMBER')}
                       </label>
                       <input
                         type="tel"
                         value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="+33 6 00 00 00 00"
+                        placeholder={t('+1 555 000 0000')}
                         className="w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-bold bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                       />
                     </div>
@@ -287,12 +291,12 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                     <div className="space-y-2">
                       <label className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
                         <FileText size={14} className="text-blue-400" />
-                        DESCRIPTION
+                        {t('DESCRIPTION')}
                       </label>
                       <textarea
                         value={formData.description || ''}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Parlez-nous un peu de vous..."
+                        placeholder={t('Tell us about yourself...')}
                         className="w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-bold resize-none h-24 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                       />
                     </div>
@@ -303,7 +307,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                     <div className="flex items-center justify-between pb-2 border-b border-gray-100">
                       <div className="flex items-center gap-2">
                         <Shield size={18} className="text-indigo-500" />
-                        <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Rôles & Statut</h3>
+                        <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">{t('Roles & Status')}</h3>
                       </div>
                       <button
                         type="button"
@@ -311,14 +315,14 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                         className="text-xs font-black uppercase tracking-widest text-blue-600 flex items-center gap-1 hover:text-blue-700 transition-colors bg-blue-50 px-3 py-1.5 rounded-full"
                       >
                         <PlusCircle size={14} />
-                        Ajouter un rôle
+                        {t('Add role')}
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <CustomSelect
-                        label="Rôle"
+                        label={t('Role')}
                         icon={<Shield className="w-3.5 h-3.5 text-blue-500" />}
-                        placeholder="Sélectionner un rôle"
+                        placeholder={t('Select a role')}
                         options={roleOptions}
                         value={formData.role || ''}
                         onChange={(val) => setFormData({ ...formData, role: val as UserRole })}
@@ -326,9 +330,9 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                       />
 
                       <CustomSelect
-                        label="Statut"
+                        label={t('Status')}
                         icon={<Clock className="w-3.5 h-3.5 text-purple-500" />}
-                        placeholder="Sélectionner un statut"
+                        placeholder={t('Select a status')}
                         options={statusOptions}
                         value={formData.status || ''}
                         onChange={(val) => setFormData({ ...formData, status: val as UserStatus })}
@@ -341,19 +345,19 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
                       <Lock size={18} className="text-rose-500" />
-                      <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">Sécurité</h3>
+                      <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">{t('Security')}</h3>
                     </div>
 
                     <div className="space-y-2">
                       <label className="text-xs font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
                         <Lock size={14} className="text-rose-500" />
-                        {isAddMode ? 'MOT DE PASSE' : 'NOUVEAU MOT DE PASSE'}
+                        {isAddMode ? t('PASSWORD') : t('NEW PASSWORD')}
                       </label>
                       <input
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
+                        placeholder={t('••••••••')}
                         className="w-full px-4 py-3 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-bold bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"
                       />
                     </div>
@@ -371,7 +375,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                     ) : (
                       <Save size={18} className="text-current" />
                     )}
-                    {isAddMode ? 'Ajouter' : 'Sauvegarder'}
+                    {isAddMode ? t('Add') : t('Save')}
                   </button>
                 </div>
               </div>

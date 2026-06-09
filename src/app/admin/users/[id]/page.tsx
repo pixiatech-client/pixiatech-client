@@ -6,8 +6,10 @@ import { UserProfileLayout } from './_components/user-profile-layout';
 import { useDoc, useMemoFirebase } from '@/firebase';
 import { doc, getFirestore } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
+import { useI18n } from '@/lib/i18n';
 
 export default function UserProfilePage({ params }: { params: { id: string } }) {
+  const { t } = useI18n();
   const db = getFirestore();
   const userRef = useMemoFirebase(() => doc(db, 'users', params.id), [db, params.id]);
   const { data: user, isLoading, error } = useDoc<UserProfile>(userRef);
@@ -32,9 +34,9 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
             <div className="w-20 h-20 bg-rose-50 rounded-[1.5rem] flex items-center justify-center">
               <AlertTriangle className="h-10 w-10 text-rose-400" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">Utilisateur non trouvé</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{t('profile.userNotFound')}</h2>
             <p className="text-sm text-gray-400">
-              Impossible de trouver l'utilisateur avec l'ID : {params.id}
+              {t('profile.unableToFindUser')} {params.id}
             </p>
           </div>
         </div>

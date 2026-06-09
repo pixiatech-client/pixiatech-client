@@ -15,9 +15,9 @@ import { Label } from '@/components/ui/label';
 
 const laborRuleSchema = z.object({
   id: z.string(),
-  minSqM: z.coerce.number().min(0, 'Doit être positif'),
-  technicians: z.coerce.number().min(1, 'Au moins 1 technicien'),
-  price: z.coerce.number().min(0, 'Doit être positif'),
+  minSqM: z.coerce.number().min(0, 'Must be positive'),
+  technicians: z.coerce.number().min(1, 'At least 1 technician'),
+  price: z.coerce.number().min(0, 'Must be positive'),
 });
 
 const laborSettingsSchema = z.object({
@@ -47,9 +47,9 @@ export function LaborForm({ initialSettings }: { initialSettings: LaborSettings 
     
     const result = await updateLaborSettings({ ...data, rules: sortedRules });
     if (result.success) {
-      toast({ title: 'Succès', description: 'Règles de main-d\'œuvre mises à jour.', variant: 'success' });
+      toast({ title: 'Success', description: 'Labor rules updated.', variant: 'success' });
     } else {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Une erreur est survenue.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'An error occurred.' });
     }
   };
 
@@ -59,25 +59,25 @@ export function LaborForm({ initialSettings }: { initialSettings: LaborSettings 
       ...ruleToClone,
       id: `rule_${Date.now()}`, // Ensure a new unique ID
     });
-    toast({ title: 'Règle clonée', description: 'La règle a été dupliquée.', variant: 'info' });
+    toast({ title: 'Rule cloned', description: 'The rule has been duplicated.', variant: 'info' });
   };
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
       <Card>
         <CardContent className="pt-6 space-y-4">
-            <h3 className="font-medium">Barème de main d'oeuvre</h3>
+            <h3 className="font-medium">Labor scale</h3>
             <div className="hidden sm:grid grid-cols-[1fr_1fr_1fr_auto_auto] items-center gap-4 px-3 py-2 font-medium text-muted-foreground">
-                <Label>À partir de (m²)</Label>
-                <Label>Nb. Techniciens</Label>
-                <Label>Tarif (€)</Label>
+                <Label>From (m²)</Label>
+                <Label>No. Technicians</Label>
+                <Label>Rate (€)</Label>
                 <span className="w-9"></span>
                 <span className="w-9"></span>
             </div>
             <div className="space-y-3">
               {fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto_auto] items-center gap-4 p-3 rounded-lg border bg-slate-50/80 dark:bg-slate-800/20">
-                  <div className='sm:hidden'><Label>À partir de (m²)</Label></div>
+                  <div className='sm:hidden'><Label>From (m²)</Label></div>
                   <Controller
                     control={form.control}
                     name={`rules.${index}.minSqM`}
@@ -85,7 +85,7 @@ export function LaborForm({ initialSettings }: { initialSettings: LaborSettings 
                       <Input type="number" placeholder="0" {...inputField} />
                     )}
                   />
-                  <div className='sm:hidden'><Label>Nb. Techniciens</Label></div>
+                  <div className='sm:hidden'><Label>No. Technicians</Label></div>
                   <Controller
                     control={form.control}
                     name={`rules.${index}.technicians`}
@@ -93,7 +93,7 @@ export function LaborForm({ initialSettings }: { initialSettings: LaborSettings 
                       <Input type="number" placeholder="2" {...inputField} />
                     )}
                   />
-                   <div className='sm:hidden'><Label>Tarif (€)</Label></div>
+                   <div className='sm:hidden'><Label>Rate (€)</Label></div>
                   <Controller
                     control={form.control}
                     name={`rules.${index}.price`}
@@ -117,14 +117,14 @@ export function LaborForm({ initialSettings }: { initialSettings: LaborSettings 
               onClick={() => append({ id: `rule_${Date.now()}`, minSqM: 0, technicians: 2, price: 100 })}
             >
               <PlusCircle className="mr-2 h-4 w-4" />
-              Ajouter une règle
+              Add a rule
             </Button>
         </CardContent>
       </Card>
 
       <div className="flex justify-end pt-4">
         <Button variant="styled" type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Sauvegarde...' : 'Sauvegarder les règles'}
+          {form.formState.isSubmitting ? 'Saving...' : 'Save rules'}
         </Button>
       </div>
     </form>

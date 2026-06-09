@@ -11,6 +11,7 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
+import { useAdminT } from '@/hooks/useAdminT';
 
 import { FiltersBar } from './FiltersBar';
 import { UserCard } from './UserCard';
@@ -25,6 +26,7 @@ const ITEMS_PER_PAGE = 8;
 
 export function UserManager() {
   const { t } = useI18n();
+  const { t: ta } = useAdminT();
   const { userProfile, isUserLoading } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
@@ -62,7 +64,7 @@ export function UserManager() {
       setUsers(result.users);
       setTotalCount(result.totalCount);
     } catch (error) {
-      toast.error('Impossible de charger les utilisateurs.');
+      toast.error(ta('Unable to load users.'));
     } finally {
       setIsLoading(false);
     }
@@ -75,9 +77,9 @@ export function UserManager() {
   // Adapt Firebase UserProfile to local User type
   const adaptUser = useCallback((profile: UserProfile): User => {
     const roleId = profile.role;
-    const mappedStatus = profile.status === 'approved' ? UserStatus.APPROUVE
-      : profile.status === 'pending' ? UserStatus.EN_ATTENTE
-      : UserStatus.EN_ATTENTE;
+    const mappedStatus = profile.status === 'approved' ? UserStatus.APPROVED
+      : profile.status === 'pending' ? UserStatus.PENDING
+      : UserStatus.PENDING;
     return {
       id: profile.uid,
       name: profile.displayName || '',
@@ -166,9 +168,9 @@ export function UserManager() {
       await deleteUsers([userToDelete.id]);
       setUsers(prev => prev.filter(u => u.uid !== userToDelete.id));
       setTotalCount(prev => prev - 1);
-      toast.success('Utilisateur supprimé avec succès.');
+      toast.success(ta('User deleted successfully.'));
     } catch (error) {
-      toast.error('Impossible de supprimer l\'utilisateur.');
+      toast.error(ta('Unable to delete user.'));
     } finally {
       setDeletingUserId(null);
       setUserToDelete(null);
@@ -179,10 +181,10 @@ export function UserManager() {
     try {
       const result = await updateUser({ uid: id, status: 'approved' });
       if (!result.success) throw new Error(result.error);
-      toast.success('Utilisateur approuvé avec succès.');
+      toast.success(ta('User approved successfully.'));
       await fetchUsers();
     } catch (error: any) {
-      toast.error(error.message || 'Impossible d\'approuver l\'utilisateur.');
+      toast.error(error.message || ta('Unable to approve user.'));
     }
   };
 
@@ -190,10 +192,10 @@ export function UserManager() {
     try {
       const result = await updateUser({ uid: id, status: 'suspended' });
       if (!result.success) throw new Error(result.error);
-      toast.success('Utilisateur suspendu.');
+      toast.success(ta('User suspended.'));
       await fetchUsers();
     } catch (error: any) {
-      toast.error(error.message || 'Impossible de suspendre l\'utilisateur.');
+      toast.error(error.message || ta('Unable to suspend user.'));
     }
   };
 
@@ -218,9 +220,9 @@ export function UserManager() {
         // Immediately update with role and status chosen by the admin
         const fbRole = data.role; // Now role is the ID directly
         const fbRoleTemplate = getRoleTemplate(fbRole);
-        const fbStatus = data.status === UserStatus.APPROUVE ? 'approved'
-          : data.status === UserStatus.EN_ATTENTE ? 'pending'
-          : data.status === UserStatus.SUSPENDU ? 'suspended'
+        const fbStatus = data.status === UserStatus.APPROVED ? 'approved'
+          : data.status === UserStatus.PENDING ? 'pending'
+          : data.status === UserStatus.SUSPENDED ? 'suspended'
           : 'pending';
 
         const updateResult = await updateUser({
@@ -236,14 +238,14 @@ export function UserManager() {
         });
         if (!updateResult.success) throw new Error(updateResult.error);
 
-        toast.success('Utilisateur créé avec succès.');
+        toast.success(ta('User created successfully.'));
         await fetchUsers();
       } else {
         const fbRole = data.role; // Now role is the ID directly
         const fbRoleTemplate = getRoleTemplate(fbRole);
-        const fbStatus = data.status === UserStatus.APPROUVE ? 'approved'
-          : data.status === UserStatus.EN_ATTENTE ? 'pending'
-          : data.status === UserStatus.SUSPENDU ? 'suspended'
+        const fbStatus = data.status === UserStatus.APPROVED ? 'approved'
+          : data.status === UserStatus.PENDING ? 'pending'
+          : data.status === UserStatus.SUSPENDED ? 'suspended'
           : 'pending';
 
         const updateResult = await updateUser({
@@ -258,14 +260,14 @@ export function UserManager() {
           status: fbStatus as any,
         });
 
-        if (!updateResult.success) throw new Error(updateResult.error || 'Erreur lors de la mise à jour.');
+        if (!updateResult.success) throw new Error(updateResult.error || ta('Error during update.'));
 
-        toast.success('Profil mis à jour avec succès.');
+        toast.success(ta('Profile updated successfully.'));
         // Re-fetch from Firestore to ensure data is fresh
         await fetchUsers();
       }
     } catch (error: any) {
-      toast.error(error.message || 'Une erreur est survenue.');
+      toast.error(error.message || ta('An error occurred.'));
       throw error;
     }
   };

@@ -19,21 +19,21 @@ import { validatePhone } from '@/lib/phone-validation';
 import { buildOtpEmailHtml, buildVerificationEmailHtml } from '@/lib/email-templates';
 
 const formSchema = z.object({
-  companyName: z.string().min(1, "Le nom de l'entreprise est requis"),
-  email: z.string().email('Adresse e-mail invalide'),
-  phone: z.string().min(1, 'Le numéro de téléphone est requis').superRefine((val, ctx) => {
+  companyName: z.string().min(1, "Company name is required"),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().min(1, 'Phone number is required').superRefine((val, ctx) => {
     const result = validatePhone(val);
     if (!result.isValid) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: result.error || "Numéro de téléphone invalide",
+        message: result.error || "Invalid phone number",
       });
     }
   }),
-  address: z.string().min(1, "L'adresse est requise"),
+  address: z.string().min(1, "Address is required"),
   notes: z.string().optional(),
   termsAccepted: z.boolean().refine(val => val === true, {
-    message: "Vous devez accepter les conditions pour continuer.",
+    message: "You must accept the terms to continue.",
   }),
 });
 
@@ -170,7 +170,7 @@ export async function testSmtpConnection(
   if (!smtpHost || !smtpUser || !smtpPass) {
     return {
       success: false,
-      message: 'Configuration SMTP manquante (SMTP_HOST, SMTP_USER ou SMTP_PASS absents).',
+      message: 'Missing SMTP configuration (SMTP_HOST, SMTP_USER or SMTP_PASS not set).',
       details: {
         hostPresent: !!smtpHost,
         userPresent: !!smtpUser,
@@ -197,36 +197,36 @@ export async function testSmtpConnection(
       const info = await transporter.sendMail({
         from: `"PixiaTech Test" <${smtpUser}>`,
         to: testEmail,
-        subject: 'Test SMTP PixiaTech - Connexion réussie',
-        text: 'Ce message confirme que la configuration SMTP est opérationnelle.',
+        subject: 'Test SMTP PixiaTech - Connection Successful',
+        text: 'This message confirms that the SMTP configuration is operational.',
       });
       return {
         success: true,
-        message: `Connexion SMTP réussie. Email de test envoyé à ${testEmail}.`,
+        message: `SMTP connection successful. Test email sent to ${testEmail}.`,
         details: { messageId: info.messageId },
       };
     }
 
     return {
       success: true,
-      message: `Connexion SMTP réussie (${smtpHost}:${smtpPort}).`,
+      message: `SMTP connection successful (${smtpHost}:${smtpPort}).`,
     };
   } catch (error: any) {
     const code = error.code;
     const errno = error.errno;
     const responseCode = error.responseCode;
-    let diagnosticMessage = 'Erreur lors de la connexion SMTP.';
+    let diagnosticMessage = 'Error during SMTP connection.';
 
     if (code === 'ECONNECTION' || errno === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED')) {
-      diagnosticMessage = 'Port bloqué ou hôte introuvable (connexion refusée).';
+      diagnosticMessage = 'Port blocked or host not found (connection refused).';
     } else if (responseCode === 535 || error.message?.includes('Invalid login') || error.message?.includes('535')) {
-      diagnosticMessage = 'Authentification refusée : utilisateur ou mot de passe incorrect.';
+      diagnosticMessage = 'Authentication refused: incorrect username or password.';
     } else if (error.message?.includes('self signed certificate') || error.message?.includes('certificate')) {
-      diagnosticMessage = 'Erreur de certificat SSL/TLS. Essayez le port 587 sans SSL.';
+      diagnosticMessage = 'SSL/TLS certificate error. Try port 587 without SSL.';
     } else if (error.message?.includes('ETIMEDOUT') || error.message?.includes('ESOCKETTIMEDOUT')) {
-      diagnosticMessage = 'Délai dépassé : hôte ou port bloqué par le firewall.';
+      diagnosticMessage = 'Timeout: host or port blocked by firewall.';
     } else if (error.message?.includes('ENOTFOUND') || error.message?.includes('getaddrinfo')) {
-      diagnosticMessage = 'Hôte introuvable : vérifiez SMTP_HOST.';
+      diagnosticMessage = 'Host not found: check SMTP_HOST.';
     }
 
     return {
@@ -306,7 +306,7 @@ async function createQuoteDocument(
       console.error("Error updating stats on create:", statsError);
     }
 
-    // Create notifications for admins, commerciaux, and fournisseurs
+      // Create notifications for admins, sales reps, and suppliers
     try {
       const usersSnapshot = await adminDb.collection('users')
         .where('role', 'in', ['admin', 'commercial', 'fournisseur'])
@@ -353,7 +353,7 @@ async function createQuoteDocument(
 
 export async function createQuoteRequest(userId: string, formData: FormValues, quoteDetails: QuoteDetails, skipVerification: boolean = false): Promise<{ id: string | null; success: boolean, requiresVerification: boolean, error?: string }> {
   if (!userId) {
-    return { id: null, success: false, requiresVerification: true, error: 'Session utilisateur invalide. Veuillez rafraîchir la page.' };
+    return { id: null, success: false, requiresVerification: true, error: 'Invalid user session. Please refresh the page.' };
   }
 
   const generalSettings = await getSettings();
@@ -371,15 +371,15 @@ export async function createQuoteRequest(userId: string, formData: FormValues, q
         await sendQuoteEmail(formData.email, token, quoteDetails.lang || 'en');
       } catch (e) {
         console.error("Critical email error:", e);
-        // On peut décider de retourner une erreur ici ou de laisser l'utilisateur voir le message de succès
-        // Pour le débug, on va retourner l'erreur
-        return { id, success: false, requiresVerification: true, error: "Erreur lors de l'envoi de l'email de confirmation. Veuillez vérifier la configuration SMTP." };
+        // We can either return an error here or let the user see the success message
+        // For debugging, return the error
+        return { id, success: false, requiresVerification: true, error: "Error sending confirmation email. Please verify the SMTP configuration." };
       }
     }
     return { id, success: true, requiresVerification: emailVerificationEnabled };
   }
 
-  return { id: null, success: false, requiresVerification: emailVerificationEnabled, error: "Une erreur est survenue lors de la création de l'estimation." };
+  return { id: null, success: false, requiresVerification: emailVerificationEnabled, error: "An error occurred while creating the estimate." };
 }
 
 export async function getProductBlockedPeriodsAction(
@@ -654,21 +654,21 @@ export async function verifyQuoteOtp(quoteId: string, otpCode: string): Promise<
     const docSnap = await docRef.get();
 
     if (!docSnap.exists) {
-      return { success: false, error: 'Estimation introuvable.' };
+      return { success: false, error: 'Estimate not found.' };
     }
 
     const quoteData = docSnap.data();
     if (!quoteData) {
-      return { success: false, error: 'Estimation invalide.' };
+      return { success: false, error: 'Invalid estimate.' };
     }
 
     if (quoteData.otpCode !== otpCode) {
-      return { success: false, error: 'Validation automatique impossible. Entrez le code reçu par e-mail.' };
+      return { success: false, error: 'Automatic validation failed. Enter the code received by email.' };
     }
 
     const expiresTimestamp = quoteData.otpExpires;
     if (expiresTimestamp && new Date() > expiresTimestamp.toDate()) {
-      return { success: false, error: 'Le code de vérification a expiré.' };
+      return { success: false, error: 'The verification code has expired.' };
     }
 
     if (!quoteData.emailVerified) {
@@ -678,7 +678,7 @@ export async function verifyQuoteOtp(quoteId: string, otpCode: string): Promise<
     return { success: true };
   } catch (error: any) {
     console.error("Error in verifyQuoteOtp:", error);
-    return { success: false, error: 'Erreur lors de la vérification.' };
+    return { success: false, error: 'Error during verification.' };
   }
 }
 
@@ -691,12 +691,12 @@ export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolea
     const docSnap = await docRef.get();
 
     if (!docSnap.exists) {
-      return { success: false, error: 'Estimation introuvable.' };
+      return { success: false, error: 'Estimate not found.' };
     }
 
     const quoteData = docSnap.data();
     if (!quoteData) {
-      return { success: false, error: 'Estimation invalide.' };
+      return { success: false, error: 'Invalid estimate.' };
     }
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();

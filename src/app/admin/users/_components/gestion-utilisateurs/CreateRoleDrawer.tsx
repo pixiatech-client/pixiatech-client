@@ -6,6 +6,7 @@ import { X, Shield, PlusCircle, Copy, Lock, Trash2, AlertTriangle, ChevronDown, 
 import { toast } from 'sonner';
 import { createCustomRole, deleteCustomRole } from '@/app/admin/actions';
 import { useRoles } from '@/contexts/RoleContext';
+import { useAdminT } from '@/hooks/useAdminT';
 
 const ROLE_COLORS = [
   "#EAB308", "#8B5CF6", "#06B6D4", "#F43F5E",
@@ -13,9 +14,9 @@ const ROLE_COLORS = [
 ];
 
 const TEMPLATE_OPTIONS = [
-  { value: 'commercial', label: 'Commercial', color: '#f59e0b', description: 'Accès limité aux devis' },
-  { value: 'fournisseur', label: 'Fournisseur', color: '#3b82f6', description: 'Suivi production & livraison' },
-  { value: 'admin', label: 'Administrateur', color: '#a855f7', description: 'Accès complet à la plateforme' },
+  { value: 'commercial', label: 'Sales', color: '#f59e0b', description: 'Limited access to quotes' },
+  { value: 'fournisseur', label: 'Supplier', color: '#3b82f6', description: 'Production & delivery tracking' },
+  { value: 'admin', label: 'Administrator', color: '#a855f7', description: 'Full platform access' },
 ];
 
 interface CreateRoleDrawerProps {
@@ -32,6 +33,7 @@ interface DeleteConfirmState {
 
 export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleDrawerProps) {
   const { roles } = useRoles();
+  const { t } = useAdminT();
 
   // Create form state
   const [name, setName] = useState('');
@@ -60,14 +62,14 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) { toast.error('Veuillez entrer un nom pour le rôle.'); return; }
-    if (!template) { toast.error('Veuillez choisir un rôle à cloner.'); return; }
+    if (!name.trim()) { toast.error(t('Please enter a name for the role.')); return; }
+    if (!template) { toast.error(t('Please choose a role to clone.')); return; }
 
     setIsSubmitting(true);
     try {
       const result = await createCustomRole({ name: name.trim(), roleTemplate: template, color: getAvailableColor() });
       if (result.success) {
-        toast.success(`Rôle "${name}" créé avec succès.`);
+        toast.success(t(`Role "${name}" created successfully.`));
         onRoleCreated();
         setName('');
         setTemplate('');
@@ -76,7 +78,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
         throw new Error(result.error);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Impossible de créer le rôle.');
+      toast.error(error.message || t('Unable to create role.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -94,9 +96,9 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
       if (result.success) {
         const migrated = (result as any).migratedCount;
         if (migrated > 0) {
-          toast.success(`Rôle supprimé. ${migrated} utilisateur(s) réaffecté(s) à "${deleteConfirm.fallbackName}".`);
+          toast.success(t(`Role deleted. ${migrated} user(s) reassigned to "${deleteConfirm.fallbackName}".`));
         } else {
-          toast.success(`Rôle "${deleteConfirm.roleName}" supprimé.`);
+          toast.success(t(`Role "${deleteConfirm.roleName}" deleted.`));
         }
         onRoleCreated();
         setDeleteConfirm(null);
@@ -104,7 +106,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
         throw new Error(result.error);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Impossible de supprimer le rôle.');
+      toast.error(error.message || t('Unable to delete role.'));
     } finally {
       setIsDeleting(false);
     }
@@ -136,8 +138,8 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight">Gestion des rôles</h2>
-                  <p className="text-xs text-gray-400 font-medium">{roles.length} rôle(s) au total</p>
+                  <h2 className="text-xl font-bold tracking-tight">{t('Role management')}</h2>
+                  <p className="text-xs text-gray-400 font-medium">{t(`${roles.length} role(s) total`)}</p>
                 </div>
               </div>
               <button
@@ -155,7 +157,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
               <div className="space-y-3">
                 <div className="flex items-center gap-2 mb-1">
                   <Lock size={13} className="text-gray-500" />
-                  <p className="text-xs font-black uppercase tracking-widest text-gray-500">Rôles par défaut</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-500">{t('Default roles')}</p>
                 </div>
                 {defaultRoles.map(role => (
                   <div
@@ -171,14 +173,14 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                       </div>
                       <div>
                         <p className="font-bold text-sm text-white">{role.name}</p>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">Rôle système</p>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">{t('System role')}</p>
                       </div>
                     </div>
                     <div
                       className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/10 flex items-center gap-1 text-gray-500"
                     >
                       <Lock size={10} />
-                      Fixé
+                      {t('Fixed')}
                     </div>
                   </div>
                 ))}
@@ -189,7 +191,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 mb-1">
                     <Shield size={13} className="text-gray-400" />
-                    <p className="text-xs font-black uppercase tracking-widest text-gray-400">Rôles personnalisés</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-gray-400">{t('Custom roles')}</p>
                   </div>
                   {customRoles.map(role => {
                     const baseTemplateName = TEMPLATE_OPTIONS.find(t => t.value === role.roleTemplate)?.label || role.roleTemplate;
@@ -208,7 +210,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                           <div>
                             <p className="font-bold text-sm text-white">{role.name}</p>
                             <p className="text-[10px] text-gray-500 uppercase tracking-widest">
-                              Clone de {baseTemplateName}
+                              {t(`Clone of ${baseTemplateName}`)}
                             </p>
                           </div>
                         </div>
@@ -235,7 +237,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                     <div className="w-8 h-8 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center">
                       <PlusCircle size={15} className="text-blue-400" />
                     </div>
-                    <span className="text-sm font-bold text-white">Créer un nouveau rôle</span>
+                    <span className="text-sm font-bold text-white">{t('Create a new role')}</span>
                   </div>
                   {showCreateForm ? (
                     <ChevronUp size={16} className="text-gray-400" />
@@ -260,7 +262,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                           <div className="flex items-center gap-2">
                             <Copy size={13} className="text-gray-400" />
                             <label className="text-xs font-black uppercase tracking-widest text-gray-400">
-                              1. Cloner à partir de <span className="text-rose-500">*</span>
+                              {t('1. Clone from ')}<span className="text-rose-500">*</span>
                             </label>
                           </div>
                           <div className="grid gap-2">
@@ -282,8 +284,8 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                                     <Shield size={13} />
                                   </div>
                                   <div>
-                                    <p className="font-bold text-sm text-white">{opt.label}</p>
-                                    <p className="text-[10px] text-gray-500">{opt.description}</p>
+                                    <p className="font-bold text-sm text-white">{t(opt.label)}</p>
+                                    <p className="text-[10px] text-gray-500">{t(opt.description)}</p>
                                   </div>
                                 </div>
                                 <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${template === opt.value ? 'border-theme-sidebar-active-bg' : 'border-gray-600'}`}>
@@ -297,22 +299,21 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                         {/* Name input */}
                         <div className="space-y-2">
                           <label className="text-xs font-black uppercase tracking-widest text-gray-400">
-                            2. Nom du rôle <span className="text-rose-500">*</span>
+                            {t('2. Role name ')}<span className="text-rose-500">*</span>
                           </label>
                           <input
                             type="text"
                             value={name}
                             onChange={e => setName(e.target.value)}
-                            placeholder="Ex: Technicien, Conseiller..."
+                            placeholder={t('E.g. Technician, Consultant...')}
                             className="w-full px-4 py-3.5 border rounded-2xl focus:ring-2 focus:ring-white/20 outline-none font-bold bg-[#1A1D24] text-white border-white/10 placeholder:text-gray-600 shadow-inner"
                           />
                         </div>
 
                         {name && template && (
                           <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-gray-300 leading-relaxed">
-                            Le rôle <span className="font-bold text-white">"{name}"</span> héritera des accès{' '}
-                            <span className="font-bold text-white">{TEMPLATE_OPTIONS.find(t => t.value === template)?.label}</span>.
-                            Si supprimé, ses utilisateurs retourneront automatiquement à ce rôle de base.
+                            {t('The role ')}<span className="font-bold text-white">&quot;{name}&quot;</span>{t(' will inherit accesses from ')}
+                            <span className="font-bold text-white">{TEMPLATE_OPTIONS.find(t => t.value === template)?.label}</span>{t('. If deleted, its users will automatically revert to this base role.')}
                           </div>
                         )}
 
@@ -326,7 +327,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                           ) : (
                             <PlusCircle size={16} />
                           )}
-                          Créer le rôle
+                          {t('Create role')}
                         </button>
                       </div>
                     </motion.form>
@@ -357,14 +358,13 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                       <AlertTriangle size={18} className="text-rose-400" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-white">Supprimer « {deleteConfirm.roleName} » ?</h3>
-                      <p className="text-xs text-gray-400">Cette action est irréversible</p>
+                      <h3 className="font-bold text-white">{t(`Delete "${deleteConfirm.roleName}"?`)}</h3>
+                      <p className="text-xs text-gray-400">{t('This action is irreversible')}</p>
                     </div>
                   </div>
 
                   <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-5 text-xs text-amber-300 leading-relaxed">
-                    Tous les utilisateurs ayant le rôle <span className="font-bold">"{deleteConfirm.roleName}"</span> seront
-                    automatiquement réaffectés au rôle <span className="font-bold">"{deleteConfirm.fallbackName}"</span> (rôle de base).
+                    {t('All users with the role ')}<span className="font-bold">&quot;{deleteConfirm.roleName}&quot;</span>{t(' will be automatically reassigned to the ')}<span className="font-bold">&quot;{deleteConfirm.fallbackName}&quot;</span>{t(' role (base role).')}
                   </div>
 
                   <div className="flex gap-3">
@@ -373,7 +373,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                       disabled={isDeleting}
                       className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-bold transition-all text-sm"
                     >
-                      Annuler
+                      {t('Cancel')}
                     </button>
                     <button
                       onClick={handleDeleteConfirm}
@@ -385,7 +385,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                       ) : (
                         <Trash2 size={15} />
                       )}
-                      Supprimer
+                      {t('Delete')}
                     </button>
                   </div>
                 </motion.div>

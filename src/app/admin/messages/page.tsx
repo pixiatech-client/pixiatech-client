@@ -145,8 +145,8 @@ export default function MessagesPage() {
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md rounded-[40px] bg-white p-10 shadow-2xl border border-gray-100 text-center">
           <div className="mb-8 flex justify-center text-red-600"><Shield size={48} /></div>
-          <h1 className="mb-4 text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-emerald-600">Accès Refusé</h1>
-          <p className="text-gray-500 font-medium">L'administrateur vous a retiré l'accès au Chat.</p>
+          <h1 className="mb-4 text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-emerald-600">Access Denied</h1>
+          <p className="text-gray-500 font-medium">The administrator has removed your access to Chat.</p>
         </div>
       </div>
     );
@@ -199,7 +199,7 @@ export default function MessagesPage() {
                 strokeWidth={3} 
                 className={cn(activeMobileTab === 'annuaire' ? "text-[#15bcd7]" : "text-gray-400")}
               />
-              <span className="uppercase tracking-[0.15em]">Annuaire</span>
+              <span className="uppercase tracking-[0.15em]">Directory</span>
             </button>
           </div>
         </div>
@@ -248,8 +248,8 @@ export default function MessagesPage() {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
               <div className="w-24 h-24 bg-white rounded-[32px] flex items-center justify-center text-blue-600 mb-6 shadow-xl"><MessageSquare size={48} /></div>
-              <h2 className="text-4xl font-black text-[#1a1d21] tracking-tighter">Sélectionnez une conversation</h2>
-              <p className="text-gray-400 max-w-sm mt-4 text-lg font-medium leading-relaxed">Choisissez une discussion dans la liste pour commencer à échanger avec votre équipe.</p>
+              <h2 className="text-4xl font-black text-[#1a1d21] tracking-tighter">Select a conversation</h2>
+              <p className="text-gray-400 max-w-sm mt-4 text-lg font-medium leading-relaxed">Choose a discussion from the list to start chatting with your team.</p>
             </div>
           )}
         </div>

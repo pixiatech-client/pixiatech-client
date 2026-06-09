@@ -24,21 +24,22 @@ import {
 import { createSession, registerUser, handleGoogleSignIn as googleSignInAction, updateGoogleUserProfile } from '@/app/admin/actions';
 import { useAuth } from '@/firebase';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAdminT } from '@/hooks/useAdminT';
 
 type AuthMode = 'login' | 'signup';
 
-function getFirebaseErrorMessage(error: any, fallback: string) {
+function getFirebaseErrorMessage(error: any, fallback: string, t: (s: string) => string) {
   const code = error?.code;
 
   switch (code) {
     case 'auth/user-not-found':
     case 'auth/wrong-password':
     case 'auth/invalid-credential':
-      return 'Email ou mot de passe incorrect.';
+      return t('Incorrect email or password.');
     case 'auth/too-many-requests':
-      return 'Trop de tentatives. Veuillez réessayer dans quelques instants.';
+      return t('Too many attempts. Please try again in a few moments.');
     case 'auth/network-request-failed':
-      return 'Problème réseau. Vérifiez votre connexion et réessayez.';
+      return t('Network issue. Check your connection and try again.');
     default:
       return fallback;
   }
@@ -47,6 +48,7 @@ function getFirebaseErrorMessage(error: any, fallback: string) {
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
+  const { t } = useAdminT();
 
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [isSigningOut, setIsSigningOut] = useState(true);
@@ -122,13 +124,13 @@ export default function LoginPage() {
   }, [auth]);
 
   const activeTitle = useMemo(() => {
-    return authMode === 'login' ? 'Connexion' : 'Créer un compte';
+    return authMode === 'login' ? t('Login') : t('Create an account');
   }, [authMode]);
 
   const activeDescription = useMemo(() => {
     return authMode === 'login'
-      ? 'Accédez à votre espace administrateur et gérez votre catalogue.'
-      : 'Créez votre compte administrateur avec les informations demandées.';
+      ? t('Access your admin space and manage your catalog.')
+      : t('Create your admin account with the required information.');
   }, [authMode]);
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -138,7 +140,7 @@ export default function LoginPage() {
     setIsLoggingIn(true);
 
     if (!auth) {
-      setLoginError("Le service d'authentification n'est pas disponible.");
+      setLoginError(t('The authentication service is not available.'));
       setIsLoggingIn(false);
       return;
     }
@@ -156,19 +158,19 @@ export default function LoginPage() {
       if (!statusResult.success) {
         console.warn('[Login] checkUserStatus returned failure:', statusResult.error);
         await signOut(auth);
-        throw new Error(statusResult.error || 'Compte non trouvé.');
+        throw new Error(statusResult.error || t('Account not found.'));
       }
 
       if (statusResult.status === 'pending') {
         console.warn('[Login] Account pending approval');
         await signOut(auth);
-        throw new Error('Votre compte est en attente d\'approbation par un administrateur.');
+        throw new Error(t('Your account is pending approval by an administrator.'));
       }
 
       if (statusResult.status === 'suspended') {
         console.warn('[Login] Account suspended');
         await signOut(auth);
-        throw new Error('Votre compte a été suspendu.');
+        throw new Error(t('Your account has been suspended.'));
       }
 
       console.log('[Login] All checks passed, creating session...');
@@ -177,7 +179,7 @@ export default function LoginPage() {
 
       if (!sessionResult.success) {
         console.error('[Login] createSession failed:', sessionResult.error);
-        throw new Error(sessionResult.error || 'La création de la session a échoué.');
+        throw new Error(sessionResult.error || t('Session creation failed.'));
       }
 
       console.log('[Login] Session created, redirecting to /admin');
@@ -193,7 +195,7 @@ export default function LoginPage() {
       router.refresh();
     } catch (error: any) {
       console.error('[Login] handleLogin Error:', error);
-      setLoginError(getFirebaseErrorMessage(error, error.message || 'Une erreur est survenue. Veuillez réessayer.'));
+      setLoginError(getFirebaseErrorMessage(error, error.message || t('An error occurred. Please try again.'), t));
     } finally {
       setIsLoggingIn(false);
     }
@@ -207,22 +209,22 @@ export default function LoginPage() {
 
     try {
       if (!signupName.trim()) {
-        throw new Error('Le nom est obligatoire.');
+        throw new Error(t('Name is required.'));
       }
       if (signupName.trim().length < 2) {
-        throw new Error('Le nom doit contenir au moins 2 caractères.');
+        throw new Error(t('Name must be at least 2 characters.'));
       }
       if (!signupEmail.trim()) {
-        throw new Error("L'email est obligatoire.");
+        throw new Error(t('Email is required.'));
       }
       if (signupPassword.length < 6) {
-        throw new Error('Le mot de passe doit contenir au moins 6 caractères.');
+        throw new Error(t('Password must be at least 6 characters.'));
       }
       if (!signupPhone.trim()) {
-        throw new Error('Le numéro de téléphone est obligatoire.');
+        throw new Error(t('Phone number is required.'));
       }
       if (!/^(\+33|0)[1-9][0-9]{8}$/.test(signupPhone.replace(/\s/g, ''))) {
-        throw new Error('Le format du numéro de téléphone est invalide. Exemple: 06 12 34 56 78');
+        throw new Error(t('Invalid phone number format. Example: 06 12 34 56 78'));
       }
 
       const result = await registerUser({
@@ -233,10 +235,10 @@ export default function LoginPage() {
       });
 
       if (!result.success) {
-        throw new Error(result.error || "Une erreur est survenue lors de l'inscription.");
+        throw new Error(result.error || t('An error occurred during registration.'));
       }
 
-      setSignupSuccess('Compte créé avec succès. Un administrateur doit approuver votre compte avant de pouvoir vous connecter.');
+      setSignupSuccess(t('Account created successfully. An administrator must approve your account before you can log in.'));
       setAuthMode('login');
       setLoginEmail(signupEmail);
       setLoginPassword('');
@@ -246,7 +248,7 @@ export default function LoginPage() {
       setSignupPhone('');
     } catch (error: any) {
       console.error('Signup failed:', error);
-      setSignupError(error?.message || "Une erreur est survenue lors de l'inscription.");
+      setSignupError(error?.message || t('An error occurred during registration.'));
     } finally {
       setIsSigningUp(false);
     }
@@ -258,7 +260,7 @@ export default function LoginPage() {
     setIsSigningInWithGoogle(true);
 
     if (!auth) {
-      setLoginError("Le service d'authentification n'est pas disponible.");
+      setLoginError(t('The authentication service is not available.'));
       setIsSigningInWithGoogle(false);
       return;
     }
@@ -276,13 +278,13 @@ export default function LoginPage() {
       });
 
       if (!result.success) {
-        throw new Error(result.error || 'Erreur lors de la connexion Google.');
+        throw new Error(result.error || t('Error during Google sign-in.'));
       }
 
       if (result.status === 'approved') {
         const sessionResult = await createSession(idToken);
         if (!sessionResult.success) {
-          throw new Error(sessionResult.error || 'La création de la session a échoué.');
+throw new Error(sessionResult.error || t('Session creation failed.'));
         }
         router.push('/admin');
         router.refresh();
@@ -302,9 +304,9 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error('Google sign-in failed:', error);
       if (error?.code === 'auth/popup-closed-by-user') {
-        setLoginError('Connexion annulée.');
+        setLoginError(t('Sign-in cancelled.'));
       } else {
-        setLoginError(getFirebaseErrorMessage(error, 'Une erreur est survenue avec Google.'));
+        setLoginError(getFirebaseErrorMessage(error, t('An error occurred with Google.'), t));
       }
     } finally {
       setIsSigningInWithGoogle(false);
@@ -330,7 +332,7 @@ export default function LoginPage() {
       setShowGoogleProfileForm(false);
       setShowPendingMessage(true);
     } catch (error: any) {
-      setLoginError(error?.message || 'Erreur lors de la mise à jour.');
+      setLoginError(error?.message || t('Error during update.'));
     } finally {
       setIsSavingGoogleProfile(false);
     }
@@ -353,17 +355,16 @@ export default function LoginPage() {
             <div className="max-w-xl space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-slate-600 shadow-sm backdrop-blur">
                 <ShieldCheck className="h-4 w-4 text-blue-600" />
-                Espace administrateur
+                {t('Admin Space')}
               </div>
 
               <div className="space-y-4">
                 <h1 className="text-5xl font-black tracking-tight text-slate-900">
-                  Interface sécurisée
+                  {t('Secure Interface')}
                   <span className="block text-blue-600">PixiaTech</span>
                 </h1>
                 <p className="max-w-lg text-base leading-7 text-slate-500">
-                  Cet espace est réservé exclusivement aux fournisseurs, aux commerciaux et aux administrateurs,
-                  afin de gérer le catalogue professionnel dans un environnement sécurisé.
+              {t('This space is reserved exclusively for suppliers, sales representatives, and administrators, to manage the professional catalog in a secure environment.')}
                 </p>
               </div>
 
@@ -372,9 +373,9 @@ export default function LoginPage() {
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-900 text-blue-400">
                     <UserPlus className="h-6 w-6" />
                   </div>
-                  <h2 className="text-sm font-bold text-slate-900">Connexion rapide</h2>
+                  <h2 className="text-sm font-bold text-slate-900">{t('Quick Login')}</h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    Authentification par email et mot de passe avec session sécurisée côté serveur.
+                    {t('Email and password authentication with a secure server-side session.')}
                   </p>
                 </div>
 
@@ -382,9 +383,9 @@ export default function LoginPage() {
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-500/20">
                     <KeyRound className="h-9 w-9" />
                   </div>
-                  <h2 className="text-sm font-bold text-slate-900">Inscription intégrée</h2>
+                  <h2 className="text-sm font-bold text-slate-900">{t('Integrated Registration')}</h2>
                   <p className="mt-1 text-sm text">
-                    Création de compte via le backend existant avec provisioning du profil et du rôle.
+                    {t('Account creation via the existing backend with profile and role provisioning.')}
                   </p>
                 </div>
               </div>
@@ -394,7 +395,7 @@ export default function LoginPage() {
                 className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-900"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Retour au site
+                {t('Back to site')}
               </Link>
             </div>
           </motion.div>
@@ -428,11 +429,11 @@ export default function LoginPage() {
                     <TabsList activeTab={authMode} className="rounded-2xl border border-slate-200 bg-slate-100 p-1.5">
                       <TabsTrigger value="login" className="rounded-xl py-2.5 text-sm font-bold data-[state=active]:bg-black data-[state=active]:text-white">
                         <LogIn className={`mr-2 h-4 w-4 transition-colors ${authMode === 'login' ? 'text-blue-500' : 'text-slate-400'}`} />
-                        Connexion
+                        {t('Login')}
                       </TabsTrigger>
                       <TabsTrigger value="signup" className="rounded-xl py-2.5 text-sm font-bold data-[state=active]:bg-black data-[state=active]:text-white">
                         <UserPlus className={`mr-2 h-4 w-4 transition-colors ${authMode === 'signup' ? 'text-emerald-600' : 'text-slate-400'}`} />
-                        Inscription
+                        {t('Sign up')}
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
@@ -460,7 +461,7 @@ export default function LoginPage() {
                     >
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="login-email">
-                          Email
+                          {t('Email')}
                         </label>
                         <div className="relative">
                           <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -470,7 +471,7 @@ export default function LoginPage() {
                             required
                             value={loginEmail}
                             onChange={(event) => setLoginEmail(event.target.value)}
-                            placeholder="admin@example.com"
+                            placeholder={t('admin@example.com')}
                             className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                           />
                         </div>
@@ -478,7 +479,7 @@ export default function LoginPage() {
 
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="login-password">
-                          Mot de passe
+                          {t('Password')}
                         </label>
                         <div className="relative">
                           <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -488,14 +489,14 @@ export default function LoginPage() {
                             required
                             value={loginPassword}
                             onChange={(event) => setLoginPassword(event.target.value)}
-                            placeholder="••••••••"
+                            placeholder={t('••••••••')}
                             className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                           />
                           <button
                             type="button"
                             onClick={() => setShowLoginPassword((value) => !value)}
                             className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
-                            aria-label={showLoginPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                            aria-label={showLoginPassword ? t('Hide password') : t('Show password')}
                           >
                             {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
@@ -510,7 +511,7 @@ export default function LoginPage() {
                             onChange={(e) => setRememberMe(e.target.checked)}
                             className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                           />
-                          <span className="text-xs font-medium text-slate-500">Se souvenir de moi</span>
+                          <span className="text-xs font-medium text-slate-500">{t('Remember me')}</span>
                         </label>
                       </div>
 
@@ -529,12 +530,12 @@ export default function LoginPage() {
                         {isLoggingIn || isSigningOut ? (
                           <>
                             <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-                            Connexion...
+                            Logging in...
                           </>
                         ) : (
                           <>
                             <LogIn className="h-5 w-5 text-blue-500" />
-                            Se connecter
+                            Log in
                           </>
                         )}
                       </button>
@@ -551,7 +552,7 @@ export default function LoginPage() {
                     >
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="signup-name">
-                          Nom complet
+                          Full name
                         </label>
                         <div className="relative">
                           <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -561,7 +562,7 @@ export default function LoginPage() {
                             required
                             value={signupName}
                             onChange={(event) => setSignupName(event.target.value)}
-                            placeholder="Nom et prénom"
+                            placeholder="First and last name"
                             className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                           />
                         </div>
@@ -587,7 +588,7 @@ export default function LoginPage() {
 
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="signup-password">
-                          Mot de passe
+                          Password
                         </label>
                         <div className="relative">
                           <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -598,14 +599,14 @@ export default function LoginPage() {
                             minLength={6}
                             value={signupPassword}
                             onChange={(event) => setSignupPassword(event.target.value)}
-                            placeholder="Minimum 6 caractères"
+                            placeholder="Minimum 6 characters"
                             className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                           />
                           <button
                             type="button"
                             onClick={() => setShowSignupPassword((value) => !value)}
                             className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
-                            aria-label={showSignupPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                            aria-label={showSignupPassword ? 'Hide password' : 'Show password'}
                           >
                             {showSignupPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
@@ -614,7 +615,7 @@ export default function LoginPage() {
 
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="signup-phone">
-                          Téléphone
+                          Phone
                         </label>
                         <div className="relative">
                           <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -645,12 +646,12 @@ export default function LoginPage() {
                         {isSigningUp ? (
                           <>
                             <Loader2 className="h-5 w-5 animate-spin" />
-                            Inscription...
+                            Signing up...
                           </>
                         ) : (
                           <>
                             <UserPlus className="h-5 w-5" />
-                            Créer mon compte
+                            Create my account
                           </>
                         )}
                       </button>
@@ -665,14 +666,14 @@ export default function LoginPage() {
                     className="space-y-4"
                   >
                     <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                      <p className="font-bold">Complétez votre profil</p>
-                      <p className="mt-1 text-xs">Votre compte sera soumis à l&apos;approbation d&apos;un administrateur.</p>
+                      <p className="font-bold">Complete your profile</p>
+                      <p className="mt-1 text-xs">Your account will be submitted for administrator approval.</p>
                     </div>
 
                     <form onSubmit={handleSaveGoogleProfile} className="space-y-4">
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">
-                          Nom complet
+                          Full name
                         </label>
                         <div className="relative">
                           <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -681,7 +682,7 @@ export default function LoginPage() {
                             required
                             value={googleDisplayName}
                             onChange={(e) => setGoogleDisplayName(e.target.value)}
-                            placeholder="Votre nom"
+                            placeholder="Your name"
                             className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                           />
                         </div>
@@ -689,7 +690,7 @@ export default function LoginPage() {
 
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">
-                          Téléphone <span className="normal-case tracking-normal text-slate-400">(optionnel)</span>
+                          Phone <span className="normal-case tracking-normal text-slate-400">(optional)</span>
                         </label>
                         <div className="relative">
                           <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -711,10 +712,10 @@ export default function LoginPage() {
                         {isSavingGoogleProfile ? (
                           <>
                             <Loader2 className="h-5 w-5 animate-spin" />
-                            Enregistrement...
+                            Saving...
                           </>
                         ) : (
-                          'Enregistrer et soumettre'
+                          'Save and submit'
                         )}
                       </button>
                     </form>
@@ -732,9 +733,9 @@ export default function LoginPage() {
                         <ShieldCheck className="h-8 w-8 text-amber-600" />
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-amber-900">Compte en attente</p>
+                        <p className="text-lg font-bold text-amber-900">Pending account</p>
                         <p className="mt-2 text-sm text-amber-700">
-                          Votre compte a été créé avec succès. Un administrateur doit approuver votre compte et vous attribuer un rôle avant que vous puissiez vous connecter.
+                          Your account has been created successfully. An administrator must approve your account and assign you a role before you can log in.
                         </p>
                       </div>
                       <button
@@ -744,7 +745,7 @@ export default function LoginPage() {
                         }}
                         className="mt-2 text-sm font-semibold text-amber-600 hover:text-amber-800"
                       >
-                        Retour à la connexion
+                        Back to login
                       </button>
                     </div>
                   </motion.div>
@@ -754,7 +755,7 @@ export default function LoginPage() {
                   <>
                     <div className="relative mt-6 flex items-center">
                       <div className="flex-1 border-t border-slate-200" />
-                      <span className="px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">ou</span>
+                      <span className="px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">or</span>
                       <div className="flex-1 border-t border-slate-200" />
                     </div>
 
@@ -774,7 +775,7 @@ export default function LoginPage() {
                           <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                         </svg>
                       )}
-                      Continuer avec Google
+                      Continue with Google
                     </button>
 
                     <div className="mt-6 border-t border-slate-100 pt-5 text-center">
@@ -783,7 +784,7 @@ export default function LoginPage() {
                         className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-900 lg:hidden"
                       >
                         <ArrowLeft className="h-4 w-4" />
-                        Retour au site
+                        Back to site
                       </Link>
                     </div>
                   </>
@@ -792,7 +793,7 @@ export default function LoginPage() {
 
               <div className="border-t border-slate-100 bg-slate-50 px-6 py-4 text-center sm:px-8">
                 <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">
-                  Accès réservé à l&apos;administration PixiaTech
+                  Access reserved for PixiaTech administration
                 </p>
               </div>
             </div>

@@ -15,15 +15,15 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
-  { href: '/admin/settings/general', label: 'Général', icon: Settings },
+  { href: '/admin/settings/general', label: 'General', icon: Settings },
   { href: '/admin/settings/images', label: 'Images', icon: ImageIcon },
-  { href: '/admin/settings/content', label: 'Contenu', icon: FileText },
+  { href: '/admin/settings/content', label: 'Content', icon: FileText },
   { href: '/admin/settings/wizard', label: 'Wizard', icon: Wand2 },
-  { href: '/admin/settings/livraison', label: 'Livraison', icon: Truck },
-  { href: '/admin/settings/main-doeuvre', label: 'Main d\'œuvre', icon: HardHat },
+  { href: '/admin/settings/livraison', label: 'Delivery', icon: Truck },
+  { href: '/admin/settings/main-doeuvre', label: 'Labor', icon: HardHat },
   { href: '/admin/settings/pdf', label: 'PDF', icon: FileText },
-  { href: '/admin/settings/themes', label: 'Thèmes', icon: Palette },
-  { href: '/admin/settings/emergency', label: 'Urgence', icon: AlertTriangle },
+  { href: '/admin/settings/themes', label: 'Themes', icon: Palette },
+  { href: '/admin/settings/emergency', label: 'Emergency', icon: AlertTriangle },
 ];
 
 export function SettingsNav() {

@@ -7,7 +7,9 @@ import { updateUser } from '@/app/admin/actions';
 import { useCollection, useMemoFirebase, useUser, useFirestore, useAuth } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { User as UserIcon, Mail, Phone, Shield, Clock, Save, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { CustomSelect } from '../../_components/custom-select';
+import { useI18n } from '@/lib/i18n';
 
 interface UserProfileFormProps {
   user: UserProfile;
@@ -15,6 +17,7 @@ interface UserProfileFormProps {
 }
 
 export function UserProfileForm({ user, onUpdate }: UserProfileFormProps) {
+  const { t } = useI18n();
   const { toast } = useToast();
   const { userProfile: currentAdminUser, isUserLoading } = useUser();
   const auth = useAuth();
@@ -36,8 +39,8 @@ export function UserProfileForm({ user, onUpdate }: UserProfileFormProps) {
   }));
 
   const statusOptions = [
-    { value: 'approved', label: 'Approuvé', color: '#00a86b' },
-    { value: 'pending', label: 'En attente', color: '#f97316' },
+    { value: 'approved', label: t('profile.approved'), color: '#00a86b' },
+    { value: 'pending', label: t('profile.pending'), color: '#f97316' },
   ];
 
   const onProfileSubmit = async (data: UserProfile) => {
@@ -51,7 +54,7 @@ export function UserProfileForm({ user, onUpdate }: UserProfileFormProps) {
     });
 
     if (result.success) {
-      toast({ title: 'Profil mis à jour', variant: 'success' });
+      toast({ title: t('profile.profileUpdated'), variant: 'success' });
       onUpdate({
         displayName: data.displayName,
         phone: data.phone,
@@ -60,44 +63,48 @@ export function UserProfileForm({ user, onUpdate }: UserProfileFormProps) {
         status: data.status,
       });
     } else {
-      toast({ title: 'Erreur', description: result.error, variant: 'destructive' });
+      toast({ title: t('profile.error'), description: result.error, variant: 'destructive' });
     }
   };
 
   return (
     <form onSubmit={form.handleSubmit(onProfileSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-gray-500">
+        <label htmlFor="displayName" className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-theme-card-text/60">
           <UserIcon size={14} className="text-blue-500" />
-          NOM D'UTILISATEUR
+          {t('profile.username')}
         </label>
-        <input
+        <Input
+          id="displayName"
+          aria-required="true"
           {...form.register('displayName')}
-          className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-semibold bg-gray-50 text-gray-900"
+          className="font-semibold bg-gray-50"
         />
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-gray-500">
+        <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-theme-card-text/60">
           <Mail size={14} className="text-purple-500" />
-          ADRESSE EMAIL
+          {t('profile.emailAddress')}
         </label>
-        <input
+        <Input
+          id="email"
           {...form.register('email')}
           disabled
-          className="w-full px-4 py-3 border border-gray-200 rounded-2xl font-semibold bg-gray-100 text-gray-500 cursor-not-allowed"
+          className="font-semibold bg-gray-100 text-gray-500 cursor-not-allowed"
         />
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-gray-500">
+        <label htmlFor="phone" className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-theme-card-text/60">
           <Phone size={14} className="text-emerald-500" />
-          NUMÉRO DE TÉLÉPHONE
+          {t('profile.phoneNumber')}
         </label>
-        <input
+        <Input
+          id="phone"
+          placeholder={t('profile.phonePlaceholder')}
           {...form.register('phone')}
-          placeholder="+33 6 00 00 00 00"
-          className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-semibold bg-gray-50 text-gray-900"
+          className="font-semibold bg-gray-50"
         />
       </div>
 
@@ -108,9 +115,9 @@ export function UserProfileForm({ user, onUpdate }: UserProfileFormProps) {
             name="role"
             render={({ field }) => (
               <CustomSelect
-                label="Rôle"
-                icon={<Shield className="w-3.5 h-3.5 text-blue-500" />}
-                placeholder="Sélectionner un rôle"
+                label={t('profile.role')}
+                icon={<Shield className="w-3.5 h-3.5 text-theme-card-text/60" />}
+                placeholder={t('profile.selectRole')}
                 options={roleOptions}
                 value={field.value || ''}
                 onChange={field.onChange}
@@ -123,9 +130,9 @@ export function UserProfileForm({ user, onUpdate }: UserProfileFormProps) {
             name="status"
             render={({ field }) => (
               <CustomSelect
-                label="Statut"
-                icon={<Clock className="w-3.5 h-3.5 text-purple-500" />}
-                placeholder="Sélectionner un statut"
+                label={t('profile.status')}
+                icon={<Clock className="w-3.5 h-3.5 text-theme-card-text/60" />}
+                placeholder={t('profile.selectStatus')}
                 options={statusOptions}
                 value={field.value || ''}
                 onChange={field.onChange}
@@ -137,10 +144,10 @@ export function UserProfileForm({ user, onUpdate }: UserProfileFormProps) {
       )}
 
       {isCurrentUser && (
-        <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
-          <AlertCircle className="h-5 w-5 text-blue-500 shrink-0" />
-          <p className="text-sm text-blue-700 font-medium">
-            Vous ne pouvez pas modifier votre propre rôle ou statut.
+        <div role="alert" className="flex items-center gap-3 p-4 bg-theme-card border border-theme-card-border rounded-2xl">
+          <AlertCircle className="h-5 w-5 text-amber-500 shrink-0" />
+          <p className="text-sm text-theme-card-text font-medium">
+            {t('profile.cannotModify')}
           </p>
         </div>
       )}
@@ -152,7 +159,7 @@ export function UserProfileForm({ user, onUpdate }: UserProfileFormProps) {
           className="px-8 py-3.5 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-2xl text-sm font-bold transition-all shadow-lg hover:opacity-90 flex items-center gap-3 active:scale-[0.98] disabled:opacity-60"
         >
           <Save size={16} />
-          {form.formState.isSubmitting ? 'Sauvegarde...' : 'Sauvegarder les changements'}
+          {form.formState.isSubmitting ? t('profile.saving') : t('profile.saveChanges')}
         </button>
       </div>
     </form>

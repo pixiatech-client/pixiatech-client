@@ -16,7 +16,7 @@ import { Info } from 'lucide-react';
 
 const defaultFeeSchema = z.object({
   isDefaultFeeEnabled: z.boolean(),
-  defaultFee: z.coerce.number().min(0, 'Doit être positif'),
+  defaultFee: z.coerce.number().min(0, 'Must be positive'),
 });
 
 type FormValues = z.infer<typeof defaultFeeSchema>;
@@ -43,9 +43,9 @@ export function DefaultFeeForm({ initialSettings }: { initialSettings: DeliveryS
 
     const result = await updateDeliverySettings(formattedData);
     if (result.success) {
-      toast({ title: 'Succès', description: 'Frais par défaut mis à jour.', variant: 'success' });
+      toast({ title: 'Success', description: 'Default fees updated.', variant: 'success' });
     } else {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Une erreur est survenue.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'An error occurred.' });
     }
   };
 
@@ -56,15 +56,15 @@ export function DefaultFeeForm({ initialSettings }: { initialSettings: DeliveryS
               <Alert variant="info">
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                      La livraison gratuite totale est activée. Les frais par défaut sont ignorés et ne peuvent être modifiés.
+                       Total free shipping is enabled. Default fees are ignored and cannot be modified.
                   </AlertDescription>
               </Alert>
           )}
           <div className="rounded-none md:rounded-lg border-x-0 md:border-x border-y p-4 transition-opacity group-disabled:opacity-50">
             <div className="flex items-center justify-between">
               <div>
-                  <Label htmlFor="isDefaultFeeEnabled" className="font-semibold">Frais de livraison par défaut</Label>
-                  <p className="text-sm text-muted-foreground">Appliquer un tarif de base pour toutes les livraisons.</p>
+                  <Label htmlFor="isDefaultFeeEnabled" className="font-semibold">Default shipping fees</Label>
+                  <p className="text-sm text-muted-foreground">Apply a base rate for all deliveries.</p>
               </div>
               <div className='flex items-center gap-4'>
                   <Input
@@ -92,14 +92,14 @@ export function DefaultFeeForm({ initialSettings }: { initialSettings: DeliveryS
             <Alert variant="info">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                L'activation de cette option désactivera les tarifs par zone et appliquera ces frais généraux à la place.
+                Enabling this option will disable zone rates and apply these general fees instead.
                 </AlertDescription>
             </Alert>
           )}
        </fieldset>
       <div className="flex justify-end pt-4">
         <Button variant="styled" type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
+          {form.formState.isSubmitting ? 'Saving...' : 'Save'}
         </Button>
       </div>
     </form>

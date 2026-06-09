@@ -16,9 +16,9 @@ interface Tab {
 
 const tabs: Tab[] = [
   { href: '/admin/delivery/zones', label: 'Zones', icon: Map },
-  { href: '/admin/delivery/tarifs', label: 'Tarifs par Zone', icon: Truck },
-  { href: '/admin/delivery/default', label: 'Frais par Défaut', icon: Settings },
-  { href: '/admin/delivery/gratuite', label: 'Livraison Gratuite', icon: Percent },
+  { href: '/admin/delivery/tarifs', label: 'Zone Rates', icon: Truck },
+  { href: '/admin/delivery/default', label: 'Default Fees', icon: Settings },
+  { href: '/admin/delivery/gratuite', label: 'Free Shipping', icon: Percent },
 ];
 
 export function DeliveryNav() {

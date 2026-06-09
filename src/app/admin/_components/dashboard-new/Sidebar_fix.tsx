@@ -235,7 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const saveLogoConfig = () => {
     setLogoConfig(tempLogoConfig);
     setIsEditingLogo(false);
-    toast.success('Configuration du logo mise à jour !');
+    toast.success('Logo configuration updated!');
   };
 
   const sidebarClasses = `
@@ -420,7 +420,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={() => setIsEditingOrder(!isEditingOrder)}
                 className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                title="Réorganiser"
+                title="Reorder"
               >
                 <GripVertical className="h-4 w-4 text-gray-400" />
               </button>
@@ -436,7 +436,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         >
           {isCompact ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-          {!isCompact && <span className="font-medium">Réduire</span>}
+          {!isCompact && <span className="font-medium">Collapse</span>}
         </button>
 
         {onLogout && (
@@ -448,7 +448,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           >
             <LogOut className="h-5 w-5" />
-            {!isCompact && <span className="font-medium">Déconnexion</span>}
+            {!isCompact && <span className="font-medium">Log out</span>}
           </button>
         )}
       </div>
@@ -471,7 +471,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-6 w-full max-w-md shadow-2xl"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold">Modifier le Logo</h3>
+                <h3 className="text-lg font-bold">Edit Logo</h3>
                 <button
                   onClick={() => setIsEditingLogo(false)}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10"
@@ -482,7 +482,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Texte</label>
+                  <label className="block text-sm font-medium mb-2">Text</label>
                   <input
                     type="text"
                     value={tempLogoConfig.text}
@@ -492,7 +492,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Lettre</label>
+                  <label className="block text-sm font-medium mb-2">Letter</label>
                   <input
                     type="text"
                     maxLength={1}
@@ -503,7 +503,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Couleur</label>
+                  <label className="block text-sm font-medium mb-2">Color</label>
                   <div className="flex flex-wrap gap-2">
                     {logoColors.map((color) => (
                       <button
@@ -520,7 +520,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Image (optionnel)</label>
+                  <label className="block text-sm font-medium mb-2">Image (optional)</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -546,14 +546,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => setIsEditingLogo(false)}
                   className="flex-1 px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                 >
-                  Annuler
+                  Cancel
                 </button>
                 <button
                   onClick={saveLogoConfig}
                   className="flex-1 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                 >
                   <Check className="h-4 w-4" />
-                  Sauvegarder
+                  Save
                 </button>
               </div>
             </motion.div>

@@ -41,7 +41,7 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
         const guestProfile: UserProfileChat = {
           uid: user.uid,
           email: 'guest@pixiatech.com',
-          displayName: 'Visiteur',
+          displayName: 'Visitor',
           role: 'client',
           status: 'approved',
           createdAt: serverTimestamp(),
@@ -164,7 +164,7 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
           senderId: userId,
           senderName: 'Bot Lumi',
           senderRole: 'admin',
-          content: 'Bonjour ! 👋 Je suis votre assistant pour votre projet d\'écran LED.',
+          content: 'Hello! 👋 I am your assistant for your LED screen project.',
           type: 'text',
           status: 'sent',
           createdAt: serverTimestamp()
@@ -176,15 +176,15 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
           senderId: userId,
           senderName: 'Bot Lumi',
           senderRole: 'admin',
-          content: 'Commençons par le début : s\'agit-il d\'un projet de location ou d\'un achat définitif ?',
+          content: 'Let\'s start at the beginning: is this a rental or a purchase project?',
           type: 'text',
           status: 'sent',
           createdAt: serverTimestamp(),
-          options: ['Location', 'Achat'] // Adding options to message
+          options: ['Rental', 'Purchase'] // Adding options to message
         });
 
         await updateDoc(doc(db, 'chats', docRef.id), {
-          lastMessage: 'Commençons par le début...',
+          lastMessage: 'Let\'s start at the beginning...',
           lastMessageAt: serverTimestamp()
         });
       }

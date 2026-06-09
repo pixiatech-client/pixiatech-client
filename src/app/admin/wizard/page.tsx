@@ -35,12 +35,12 @@ export default function WizardPage() {
     try {
       const result = await updateWizardSettings(settings);
       if (result.success) {
-        toast({ title: 'Paramètres enregistrés', variant: 'success' });
+        toast({ title: 'Settings saved', variant: 'success' });
       } else {
-        toast({ title: 'Erreur', description: 'Échec de la sauvegarde', variant: 'destructive' });
+        toast({ title: 'Error', description: 'Save failed', variant: 'destructive' });
       }
     } catch (error) {
-      toast({ title: 'Erreur', description: 'Échec de la sauvegarde', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Save failed', variant: 'destructive' });
     }
     setIsSaving(false);
   };
@@ -105,20 +105,20 @@ export default function WizardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 hidden md:block">Paramètres du Wizard</h1>
-          <p className="text-slate-500 mt-1 hidden md:block">Configurez les options et le contenu du configurateur guidé.</p>
+          <h1 className="text-3xl font-black text-slate-900 hidden md:block">Wizard Settings</h1>
+          <p className="text-slate-500 mt-1 hidden md:block">Configure the options and content of the guided configurator.</p>
         </div>
         <Button onClick={handleSave} disabled={isSaving} className="bg-indigo-600 hover:bg-indigo-700">
           {isSaving ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
-          Enregistrer
+          Save
         </Button>
       </div>
 
       {/* Project Types */}
       <Card className="rounded-xl border border-slate-200/60">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold">Types de projet</CardTitle>
-          <CardDescription>Configurez les types de projet disponibles dans le wizard.</CardDescription>
+          <CardTitle className="text-lg font-bold">Project Types</CardTitle>
+          <CardDescription>Configure the available project types in the wizard.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -132,7 +132,7 @@ export default function WizardPage() {
                       projectTypes: { ...settings.projectTypes, [key]: { ...value, enabled: checked } }
                     })}
                   />
-                  <Label className="font-medium capitalize">{key === 'location' ? 'Location' : 'Vente'}</Label>
+                  <Label className="font-medium capitalize">{key === 'location' ? 'Rental' : 'Sale'}</Label>
                 </div>
               </div>
             ))}
@@ -143,18 +143,18 @@ export default function WizardPage() {
       {/* Environments */}
       <Card className="rounded-xl border border-slate-200/60">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold">Environnements</CardTitle>
-          <CardDescription>Configurez les images pour chaque environnement.</CardDescription>
+          <CardTitle className="text-lg font-bold">Environments</CardTitle>
+          <CardDescription>Configure images for each environment.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {Object.entries(settings.environments).map(([key, value]) => (
               <div key={key} className="space-y-2">
                 <Label className="text-xs font-bold uppercase text-slate-400">
-                  {key === 'interieur' ? 'Intérieur' : key === 'semi-exterieur' ? 'Semi-extérieur' : 'Extérieur'}
+                  {key === 'interieur' ? 'Indoor' : key === 'semi-exterieur' ? 'Semi-outdoor' : 'Outdoor'}
                 </Label>
                 <InputWithUpload
-                  placeholder="URL de l'image"
+                  placeholder="Image URL"
                   value={value.imageUrl || ''}
                   onChange={(newUrl) => setSettings({
                     ...settings,
@@ -170,12 +170,12 @@ export default function WizardPage() {
       {/* Step Images */}
       <Card className="rounded-xl border border-slate-200/60">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold">Images des étapes</CardTitle>
-          <CardDescription>Configurez les images affichées dans les étapes Distance de visionnage et Pixel Pitch.</CardDescription>
+          <CardTitle className="text-lg font-bold">Step Images</CardTitle>
+          <CardDescription>Configure images displayed in the Viewing Distance and Pixel Pitch steps.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase text-slate-400">Distance de visionnage</Label>
+            <Label className="text-xs font-bold uppercase text-slate-400">Viewing Distance</Label>
             <InputWithUpload
               placeholder="URL de l'image"
               value={settings.viewingDistanceImageUrl || ''}
@@ -183,7 +183,7 @@ export default function WizardPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase text-slate-400">Pixel Pitch recommandé</Label>
+            <Label className="text-xs font-bold uppercase text-slate-400">Recommended Pixel Pitch</Label>
             <InputWithUpload
               placeholder="URL de l'image"
               value={settings.pixelPitchImageUrl || ''}
@@ -198,10 +198,10 @@ export default function WizardPage() {
         <CardHeader className="pb-4 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-lg font-bold">Pixel Pitches</CardTitle>
-            <CardDescription>Configurez les pixel pitches disponibles.</CardDescription>
+            <CardDescription>Configure the available pixel pitches.</CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={addPixelPitch} className="gap-2">
-            <Plus className="w-4 h-4" /> Ajouter
+            <Plus className="w-4 h-4" /> Add
           </Button>
         </CardHeader>
         <CardContent>
@@ -220,7 +220,7 @@ export default function WizardPage() {
                     checked={pp.recommended}
                     onCheckedChange={(checked) => updatePixelPitch(pp.id, 'recommended', checked)}
                   />
-                  <Label className="text-xs text-slate-500">Recommandé</Label>
+                  <Label className="text-xs text-slate-500">Recommended</Label>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => removePixelPitch(pp.id)} className="ml-auto text-red-500 hover:text-red-600">
                   <Trash2 className="w-4 h-4" />
@@ -235,11 +235,11 @@ export default function WizardPage() {
       <Card className="rounded-xl border border-slate-200/60">
         <CardHeader className="pb-4 flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-bold">Distances de visionnage</CardTitle>
-            <CardDescription>Configurez les distances de visionnage disponibles.</CardDescription>
+            <CardTitle className="text-lg font-bold">Viewing Distances</CardTitle>
+            <CardDescription>Configure the available viewing distances.</CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={addViewingDistance} className="gap-2">
-            <Plus className="w-4 h-4" /> Ajouter
+            <Plus className="w-4 h-4" /> Add
           </Button>
         </CardHeader>
         <CardContent>

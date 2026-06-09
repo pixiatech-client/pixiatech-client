@@ -1,20 +1,20 @@
 export enum UserRole {
-  ADMINISTRATEUR = 'Administrateur',
-  FOURNISSEUR = 'Fournisseur',
+  ADMINISTRATEUR = 'Administrator',
+  FOURNISSEUR = 'Supplier',
   COMMERCIAL = 'Commercial',
 }
 
 export enum UserStatus {
-  APPROUVE = 'Approuvé',
-  EN_ATTENTE = 'En attente',
-  REJETE = 'Rejeté',
-  SUSPENDU = 'Suspendu',
+  APPROUVE = 'Approved',
+  EN_ATTENTE = 'Pending',
+  REJETE = 'Rejected',
+  SUSPENDU = 'Suspended',
 }
 
 export enum QuoteStatus {
-  EN_ATTENTE = 'En attente',
-  TRAITE = 'Traité',
-  CORBEILLE = 'Corbeille',
+  EN_ATTENTE = 'Pending',
+  TRAITE = 'Processed',
+  CORBEILLE = 'Trash',
   ARCHIVE = 'Archive',
 }
 

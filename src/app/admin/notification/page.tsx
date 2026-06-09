@@ -8,10 +8,12 @@ import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebas
 import { collection, query, where, orderBy, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import Link from 'next/link';
 import { NotificationFirestore } from '@/lib/types';
+import { useI18n } from '@/lib/i18n';
 
 type NotificationCategory = 'all' | 'unread' | 'messages' | 'system';
 
 function NotificationPage() {
+  const { t } = useI18n();
   const [activeCategory, setActiveCategory] = useState<NotificationCategory>('all');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,7 +35,7 @@ function NotificationPage() {
 
   const notifications = useMemo(() => {
     if (!firestoreNotifications) return [];
-    // Tri manuel par date décroissante (évite les erreurs d'index Firestore)
+    // Manual sort by descending date (avoids Firestore index errors)
     const sorted = [...firestoreNotifications].sort((a, b) => {
       const aTime = a.createdAt?.toDate?.() ?? new Date(0);
       const bTime = b.createdAt?.toDate?.() ?? new Date(0);
@@ -92,6 +94,20 @@ function NotificationPage() {
     }
   };
 
+  const getRelativeTime = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHr = Math.floor(diffMs / 3600000);
+    const diffDay = Math.floor(diffMs / 86400000);
+
+    if (diffMin < 1) return t('notification.justNow');
+    if (diffMin < 60) return t('notification.minAgo', { min: String(diffMin) });
+    if (diffHr < 24) return t('notification.hAgo', { h: String(diffHr) });
+    if (diffDay < 7) return t('notification.dAgo', { d: String(diffDay) });
+    return date.toLocaleDateString('en-US');
+  };
+
   const markAsRead = async (id: string) => {
     if (!firestore) return;
     try {
@@ -113,10 +129,10 @@ function NotificationPage() {
       });
       
       await batch.commit();
-      sonnerToast.success(`${unreadNotifs.length} notifications marquées comme lues`);
+      sonnerToast.success(t('notification.markedAsRead', { count: unreadNotifs.length }));
     } catch (error: any) {
       console.error('Error marking all as read:', error);
-      sonnerToast.error('Erreur lors du marquage comme lu: ' + error.message);
+      sonnerToast.error(t('notification.errorMarkRead', { message: error.message }));
     }
     setIsLoading(false);
   };
@@ -132,11 +148,11 @@ function NotificationPage() {
 
   const handleDeleteAll = async () => {
     if (!firestore || !notifications || notifications.length === 0) {
-      sonnerToast.error("Aucune notification à supprimer");
+      sonnerToast.error(t('notification.noNotifsToDelete'));
       return;
     }
     
-    if (!window.confirm(`Voulez-vous vraiment supprimer TOUTES vos notifications (${notifications.length}) ? Cette action est irréversible.`)) return;
+    if (!window.confirm(t('notification.confirmDeleteAll', { count: notifications.length }))) return;
     
     setIsLoading(true);
     try {
@@ -156,10 +172,10 @@ function NotificationPage() {
         await batch.commit();
       }
       
-      sonnerToast.success(`${notifications.length} notifications supprimées avec succès`);
+      sonnerToast.success(t('notification.deletedSuccess', { count: notifications.length }));
     } catch (error: any) {
-      console.error('Erreur lors de la suppression groupée:', error);
-      sonnerToast.error('Erreur lors de la suppression : ' + error.message);
+      console.error('Error during bulk delete:', error);
+      sonnerToast.error(t('notification.errorDeleting', { message: error.message }));
     } finally {
       setIsLoading(false);
     }
@@ -167,22 +183,22 @@ function NotificationPage() {
 
   const sections = [
     {
-      title: "Boîte de réception",
+        title: t('notification.inbox'),
       items: [
-        { id: 'all' as const, label: 'Tous', icon: Bell, count: unreadCounts.all },
-        { id: 'unread' as const, label: 'Non lu', icon: Mail, count: unreadCounts.unread },
+        { id: 'all' as const, label: t('notification.all'), icon: Bell, count: unreadCounts.all },
+        { id: 'unread' as const, label: t('notification.unread'), icon: Mail, count: unreadCounts.unread },
       ]
     },
     {
-      title: "Communication",
+      title: t('notification.communication'),
       items: [
-        { id: 'messages' as const, label: 'Messages directs', icon: MessageSquare, count: unreadCounts.messages },
+        { id: 'messages' as const, label: t('notification.directMessages'), icon: MessageSquare, count: unreadCounts.messages },
       ]
     },
     {
-      title: "Opérations Système",
+      title: t('notification.systemOperations'),
       items: [
-        { id: 'system' as const, label: 'Activités & Estimations', icon: Settings, count: unreadCounts.system },
+        { id: 'system' as const, label: t('notification.activitiesEstimates'), icon: Settings, count: unreadCounts.system },
       ]
     }
   ];
@@ -192,8 +208,8 @@ function NotificationPage() {
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-10">
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight hidden md:block" style={{ color: 'var(--theme-sidebar-text)' }}>Notifications</h1>
-            <p className="mt-1 text-sm opacity-60 hidden md:block">Restez informé des dernières activités de votre plateforme.</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight hidden md:block" style={{ color: 'var(--theme-sidebar-text)' }}>{t('notification.title')}</h1>
+            <p className="mt-1 text-sm opacity-60 hidden md:block">{t('notification.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
             <button 
@@ -202,16 +218,16 @@ function NotificationPage() {
               className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs md:text-sm font-bold text-gray-700 shadow-sm transition-all hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <CheckCircle2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Marquer tout comme lu</span>
-              <span className="sm:hidden">Tout lire</span>
+              <span className="hidden sm:inline">{t('notification.markAllAsRead')}</span>
+              <span className="sm:hidden">{t('notification.readAll')}</span>
             </button>
             <button 
               onClick={handleDeleteAll}
               className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-600 px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-lg transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
             >
               <Trash2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Effacer tout</span>
-              <span className="sm:hidden">Tout effacer</span>
+              <span className="hidden sm:inline">{t('notification.deleteAll')}</span>
+              <span className="sm:hidden">{t('notification.deleteAll')}</span>
             </button>
           </div>
         </div>
@@ -298,14 +314,14 @@ function NotificationPage() {
                             onClick={() => !notif.read && markAsRead(notif.id)}
                             className="text-xs font-black uppercase tracking-widest text-blue-600 hover:text-theme-sidebar-active-bg transition-colors"
                           >
-                            Détails
+                            {t('notification.details')}
                           </Link>
                           {!notif.read && (
                             <button
                               onClick={() => markAsRead(notif.id)}
                               className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-blue-600 transition-colors"
                             >
-                              Marquer lu
+                              {t('notification.markRead')}
                             </button>
                           )}
                           <button
@@ -329,11 +345,11 @@ function NotificationPage() {
                 <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white text-gray-200 shadow-inner">
                   <Bell className="h-10 w-10" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">Aucune notification</h3>
+                <h3 className="text-xl font-bold text-gray-900">{t('notification.noNotifications')}</h3>
                 <p className="mt-2 text-sm text-gray-500 max-w-xs">
                   {activeCategory === 'unread' 
-                    ? "Génial ! Vous avez lu toutes vos notifications importantes." 
-                    : "Votre boîte de réception est vide pour le moment."}
+                    ? t('notification.allRead')
+                    : t('notification.inboxEmpty')}
                 </p>
               </div>
             )}
@@ -346,20 +362,6 @@ function NotificationPage() {
 
 function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(' ');
-}
-
-function getRelativeTime(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
-
-  if (diffMin < 1) return "À l'instant";
-  if (diffMin < 60) return `Il y a ${diffMin} min`;
-  if (diffHr < 24) return `Il y a ${diffHr}h`;
-  if (diffDay < 7) return `Il y a ${diffDay}j`;
-  return date.toLocaleDateString('fr-FR');
 }
 
 export default NotificationPage;

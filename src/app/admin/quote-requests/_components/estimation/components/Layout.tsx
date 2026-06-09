@@ -44,7 +44,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ total, selectedCount, 
                 e.stopPropagation();
                 onResync();
               }}
-              title="Recalculer les statistiques"
+              title="Recalculate statistics"
               className="flex items-center justify-center"
             >
               <Calculator className="w-4 h-4 text-theme-sidebar-active-text group-hover:scale-110 transition-transform" />
@@ -56,7 +56,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ total, selectedCount, 
       </div>
       <div className="flex flex-col flex-1 min-w-0">
         <span className="text-[7px] uppercase tracking-[0.15em] text-zinc-500 font-bold leading-none mb-0.5">
-          {selectedCount > 0 ? `SÉLECTION (${selectedCount})` : 'TOTAL'}
+          {selectedCount > 0 ? `SELECTED (${selectedCount})` : 'TOTAL'}
         </span>
         <span className="text-sm font-black text-theme-sidebar-active-text leading-none tracking-tight truncate">
           {total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}

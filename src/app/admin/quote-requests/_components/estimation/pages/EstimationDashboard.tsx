@@ -88,7 +88,7 @@ function quoteToEstimation(q: QuoteRequest): Estimation {
    return {
      id: q.id,
      number: q.number || `DEV-${idShort}`,
-     client: typeof q.client === 'string' ? q.client : (q.client?.companyName || (q.client as any)?.name || 'Client Inconnu'),
+      client: typeof q.client === 'string' ? q.client : (q.client?.companyName || (q.client as any)?.name || 'Unknown Client'),
      phone: (q.client && typeof q.client === 'object' ? q.client.phone : (q as any).phone) || '',
      email: (q.client && typeof q.client === 'object' ? q.client.email : (q as any).email) || '',
      status: estStatus,
@@ -163,7 +163,7 @@ const isFournisseur = userRole === 'fournisseur';
    const isAdmin = userRole === 'admin';
    const { t } = useI18n();
 
-   // Pour le fournisseur: afficher "Fournisseur" et "Retourné" par défaut
+   // For supplier: show "Fournisseur" and "Retourné" by default
    const defaultTab = isFournisseur ? 'Fournisseur' : 'En attente';
    const [activeTab, setActiveTab] = useState<EstimationStatus>(defaultTab as EstimationStatus);
    const [estimationMode, setEstimationMode] = useState<'vente' | 'location'>('vente');
@@ -183,7 +183,7 @@ const isFournisseur = userRole === 'fournisseur';
    const currentUser = useMemo(() => ({
      uid: userId || userName || 'unknown',
      email: '',
-     displayName: userName || (userRole === 'admin' ? 'Admin' : userRole === 'commercial' ? 'Commercial' : 'Fournisseur'),
+      displayName: userName || (userRole === 'admin' ? 'Admin' : userRole === 'commercial' ? 'Commercial' : 'Supplier'),
      photoURL: '',
      role: userRole === 'fournisseur' ? 'prestataire' : (userRole as any),
    }), [userId, userName, userRole]);
@@ -449,8 +449,8 @@ const filteredEstimations = useMemo(() => {
    }, []);
 
     /* ============================================
-       REGLES METIER - Validation des transitions
-       Cf. README-METIER.md Section 3.3
+       BUSINESS RULES - Status transition validation
+       See README-METIER.md Section 3.3
        ============================================ */
     
     const validateStatusTransition = (
@@ -460,36 +460,36 @@ const filteredEstimations = useMemo(() => {
       userRole: string
     ): { valid: boolean; error?: string } => {
       
-      // Règle #1: Impossible de passer à 'Traité' sans fournisseur (Sauf pour l'Admin)
+      // Rule #1: Cannot move to 'Traité' without a supplier (Except for Admin)
       if (currentStatus === 'En attente' && targetStatus === 'Traité') {
         if (!estimation.supplierId && !estimation.supplier && userRole !== 'admin') {
-          return { valid: false, error: 'Veuillez ASSIGNER UN FOURNISSEUR avant de traiter cette estimation' };
+          return { valid: false, error: 'Please ASSIGN A SUPPLIER before processing this estimation' };
         }
       }
       
-      // Règle #2: Impossible de passer à 'Livraison' sans trackingNumber + deliveryDate
+      // Rule #2: Cannot move to 'Livraison' without trackingNumber + deliveryDate
       if (currentStatus === 'Fournisseur' && targetStatus === 'Livraison') {
         if (!estimation.trackingNumber || !estimation.trackingInfo?.deliveryDate) {
-          return { valid: false, error: 'Veuillez saisir le NUMÉRO DE SUIVI et la DATE DE LIVRAISON avant de passer en livraison' };
+          return { valid: false, error: 'Please enter the TRACKING NUMBER and DELIVERY DATE before moving to delivery' };
         }
       }
       
-      // Règle #3: Seul ADMIN peut supprimer définitivement depuis Corbeille
+      // Rule #3: Only ADMIN can restore from Trash
       if (currentStatus === 'Corbeille' && targetStatus === 'En attente') {
         if (userRole !== 'admin') {
-          return { valid: false, error: 'Seul l\'ADMINISTRATEUR peut restaurer depuis la Corbeille' };
+          return { valid: false, error: 'Only the ADMINISTRATOR can restore from the Trash' };
         }
       }
       
-      // Règle #4: Pas de retour automatique vers En attente depuis Livraison
+      // Rule #4: No automatic return to En attente from Livraison
       if (currentStatus === 'Livraison' && targetStatus === 'En attente') {
-        return { valid: false, error: 'Transition non autorisée: impossible de retourner vers "En attente" depuis "Livraison"' };
+        return { valid: false, error: 'Unauthorized transition: cannot return to "En attente" from "Livraison"' };
       }
       
-      // Règle #5: Seul l'ADMIN peut supprimer définitivement
+      // Rule #5: Only ADMIN can permanently delete
       if (targetStatus === 'Corbeille' && currentStatus === 'Corbeille') {
         if (userRole !== 'admin') {
-          return { valid: false, error: 'Seul l\'ADMINISTRATEUR peut supprimer définitivement' };
+          return { valid: false, error: 'Only the ADMINISTRATOR can permanently delete' };
         }
       }
 
@@ -536,7 +536,7 @@ const filteredEstimations = useMemo(() => {
 
       // LOCATION MODE specific transitions
       if (estimationMode === 'location') {
-        // 1. EN ATTENTE -> TRAITÉ: transition directe sans popup ni fenêtre Modifier
+        // 1. PENDING -> PROCESSED: direct transition without popup or Edit window
         if (est.status === 'En attente') {
           const firestoreStatus = estimationToStatus['Traité'];
           try {
@@ -583,7 +583,7 @@ const filteredEstimations = useMemo(() => {
         // 2. TRAITÉ -> FOURNISSEUR (Action: Send icon)
         else if (est.status === 'Traité' || est.status === 'Retourné') {
           setActiveEstimationId(id);
-          setIsSupplierPanelOpen(true); // Ouvre la modale de transmission
+          setIsSupplierPanelOpen(true); // Opens the transmission modal
           return;
         } 
         // 3. FOURNISSEUR -> LIVRAISON (Action: Truck icon)
@@ -604,12 +604,12 @@ const filteredEstimations = useMemo(() => {
         }
       }
 
-      // Appliquer les règles métier avant transition
+      // Apply business rules before transition
       const validation = validateStatusTransition(est.status, nextStatus, est, currentUser.role);
       if (!validation.valid) {
         setPopupData({
-          title: 'Action refusée',
-          message: validation.error || 'Cette action est impossible.',
+          title: 'Action denied',
+          message: validation.error || 'This action is impossible.',
           subtitle: `Estimation ${est.number}`,
           variant: 'alert'
         });
@@ -619,7 +619,7 @@ const filteredEstimations = useMemo(() => {
 
       const firestoreStatus = estimationToStatus[nextStatus];
       try {
-        // Capture "traité par" lors du premier passage En attente → Traité
+        // Capture "processed by" on first transition Pending → Processed
         const isFirstTreatment = est.status === 'En attente' && nextStatus === 'Traité';
         
         const updateData: any = { status: firestoreStatus };
@@ -640,7 +640,7 @@ const filteredEstimations = useMemo(() => {
         
         setEstimations(prev => prev.filter(e => e.id !== id));
         
-        // Changer automatiquement l'onglet après transition
+        // Automatically switch tab after transition
         setActiveTab(nextStatus);
       } catch (error) {
         console.error('Failed to update status:', error);
@@ -750,15 +750,15 @@ const filteredEstimations = useMemo(() => {
       
       if (isReturned) {
         setPopupData({
-          title: 'Motif du Retour',
-          message: est.returnReason || quoteToUse?.returnReason || 'Aucun motif précisé.',
+          title: 'Return Reason',
+          message: est.returnReason || quoteToUse?.returnReason || 'No reason specified.',
           subtitle: `Réf: ${est.number}`,
           variant: 'alert'
         });
       } else {
         setPopupData({
-          title: 'Instructions Fournisseur',
-          message: est.supplierNotes || quoteToUse?.supplierNotes || 'Aucune instruction technique.',
+          title: 'Supplier Instructions',
+          message: est.supplierNotes || quoteToUse?.supplierNotes || 'No technical instructions.',
           subtitle: `Réf: ${est.number}`,
           variant: 'default'
         });
@@ -774,10 +774,10 @@ const filteredEstimations = useMemo(() => {
       });
     }, []);
 
-// Règle #3: Seul ADMIN peut restaurer depuis Corbeille
+// Rule #3: Only ADMIN can restore from Trash
     const handleRestore = useCallback(async (id: string) => {
       if (currentUser.role !== 'admin') {
-        alert('Seul l\'ADMINISTRATEUR peut restaurer depuis la Corbeille');
+        alert('Only the ADMINISTRATOR can restore from the Trash');
         return;
       }
       
@@ -798,7 +798,7 @@ const filteredEstimations = useMemo(() => {
           next.delete(id);
           return next;
         });
-        // Après restauration, aller vers l'onglet En attente
+        // After restoration, go to the En attente tab
         setActiveTab('En attente');
      } catch (error) {
        console.error('Failed to restore:', error);
@@ -807,8 +807,8 @@ const filteredEstimations = useMemo(() => {
 
    const handleBulkRestore = useCallback(async () => {
      if (selectedItems.size === 0) return;
-     if (currentUser.role !== 'admin') {
-       alert('Seul l\'ADMINISTRATEUR peut restaurer des estimations');
+      if (currentUser.role !== 'admin') {
+        alert('Only the ADMINISTRATOR can restore estimations');
        return;
      }
 
@@ -857,13 +857,13 @@ const filteredEstimations = useMemo(() => {
      if (failedIds.length === 0) setActiveTab('En attente');
    }, [selectedItems, currentUser.role, clearCache, updateCountsLocally]);
 
-   // handleArchive: archive = verrouiller (save previousStatus), désarchiver = restaurer statut précédent
+   // handleArchive: archive = lock (save previousStatus), unarchive = restore previous status
    const handleArchive = useCallback(async (id: string) => {
      const est = estimations.find(e => e.id === id);
      if (!est) return;
      try {
        if (est.status === 'Archivé') {
-         // Désarchiver: restaure le statut métier précédent (sans changer le workflow)
+          // Unarchive: restore the previous business status (without changing the workflow)
          const prevStatus = (est as any).previousStatus || 'delivered';
          const prevDisplayStatus = {
            'pending': 'En attente', 'processed': 'Traité', 'in_progress': 'Fournisseur',
@@ -901,7 +901,7 @@ const filteredEstimations = useMemo(() => {
          : Array.from(selectedItems.values());
 
        if (itemsToProcess.length === 0) {
-         alert('Erreur: aucune estimation trouvée');
+          alert('Error: no estimation found');
          setIsSupplierPanelOpen(false);
          return;
        }
@@ -911,8 +911,8 @@ const filteredEstimations = useMemo(() => {
 
        try {
          for (const activeEstimation of itemsToProcess) {
-           if (currentUser.role !== 'admin' && activeEstimation.treatedBy && currentUser.uid !== activeEstimation.treatedBy) {
-             alert(`Seul le commercial responsable peut transférer l'estimation ${activeEstimation.number} au fournisseur.`);
+          if (currentUser.role !== 'admin' && activeEstimation.treatedBy && currentUser.uid !== activeEstimation.treatedBy) {
+              alert(`Only the responsible commercial can transfer estimation ${activeEstimation.number} to the supplier.`);
              failedIds.push(activeEstimation.id);
              continue;
            }
@@ -946,7 +946,7 @@ const filteredEstimations = useMemo(() => {
 
        } catch (error) {
          console.error('Error transferring to supplier:', error);
-         alert('Erreur lors du transfert');
+          alert('Error during transfer');
        } finally {
          setIsLoading(false);
          setIsSupplierPanelOpen(false);
@@ -1033,7 +1033,7 @@ const filteredEstimations = useMemo(() => {
                supplierId: undefined,
                returnReason: data?.subject && data?.reason 
                  ? `${data.subject}: ${data.reason}` 
-                 : (data?.subject || data?.reason || 'Aucun motif précisé')
+              : (data?.subject || data?.reason || 'No reason specified')
              });
            }
          }
@@ -1051,7 +1051,7 @@ const filteredEstimations = useMemo(() => {
            } else {
              const finalReason = data?.subject && data?.reason && data.reason.trim() !== ""
                ? `${data.subject}: ${data.reason}` 
-               : (data?.subject || data?.reason || 'Aucun motif précisé');
+               : (data?.subject || data?.reason || 'No specific reason');
                
              return {
                ...est,
@@ -1080,7 +1080,7 @@ const filteredEstimations = useMemo(() => {
            setEstimations(prev => prev.filter(est => !ids.includes(est.id)));
            if (action === 'refuse') clearCache('Retourné');
 
-          // Changer d'onglet selon l'action si ce n'est pas un fournisseur
+           // Switch tab according to action if not a supplier
           if (!isFournisseur) {
             if (action === 'approve') {
               setActiveTab('Livraison');
@@ -1099,7 +1099,7 @@ const filteredEstimations = useMemo(() => {
         setEstimations(prev => prev.map(est =>
           est.id === id ? { ...est, status: 'Archivé' as EstimationStatus, isLocked: true } : est
         ));
-        // Changer vers l'onglet Archive
+        // Switch to Archive tab
         setActiveTab('Archivé');
       } catch (error) {
         console.error('Failed to mark as delivered:', error);
@@ -1197,7 +1197,7 @@ const filteredEstimations = useMemo(() => {
    };
 
    const handleDelete = useCallback(async (id: string, skipConfirm: boolean = false) => {
-     if (!skipConfirm && !window.confirm(activeTab === 'Corbeille' ? 'Supprimer définitivement ?' : 'Mettre à la corbeille ?')) return;
+      if (!skipConfirm && !window.confirm(activeTab === 'Corbeille' ? 'Permanently delete?' : 'Move to trash?')) return;
      
      try {
        setIsLoading(true);
@@ -1228,7 +1228,7 @@ const filteredEstimations = useMemo(() => {
         });
      } catch (error) {
        console.error('Error during deletion:', error);
-       alert('Une erreur est survenue lors de la suppression.');
+        alert('An error occurred during deletion.');
      } finally {
        setIsLoading(false);
      }
@@ -1236,7 +1236,7 @@ const filteredEstimations = useMemo(() => {
 
    const handleBulkDelete = useCallback(async (skipConfirm: boolean = false) => {
      if (selectedItems.size === 0) return;
-     if (!skipConfirm && !window.confirm(`Voulez-vous vraiment supprimer ces ${selectedItems.size} estimations ?`)) return;
+      if (!skipConfirm && !window.confirm(`Are you sure you want to delete these ${selectedItems.size} estimations?`)) return;
      
      try {
        setIsLoading(true);
@@ -1273,25 +1273,25 @@ const filteredEstimations = useMemo(() => {
         });
      } catch (error) {
        console.error('Error during bulk deletion:', error);
-       alert('Une erreur est survenue lors de la suppression groupée.');
+        alert('An error occurred during bulk deletion.');
      } finally {
        setIsLoading(false);
      }
    }, [selectedItems, activeTab, clearCache, updateCountsLocally, currentPage, fetchPage, lastDocIds, serverTabCounts]);
 
    const handleResync = useCallback(async () => {
-    if (!window.confirm("Voulez-vous forcer le recalcul complet des statistiques ? Cette opération est lourde et écrasera les compteurs persistés avec les valeurs réelles de Firestore.")) return;
+     if (!window.confirm("Force a complete statistics recalculation? This operation is heavy and will overwrite persisted counters with real Firestore values.")) return;
     setIsLoading(true);
     try {
       const result = await calibrateQuoteStats();
       if (result) {
         setServerTabCounts(result.counts);
         setServerTabSums(result.sums);
-        alert("Recalcul terminé avec succès.");
+        alert("Recalculation completed successfully.");
       }
     } catch (e) {
       console.error(e);
-      alert("Erreur lors du recalcul.");
+      alert("Error during recalculation.");
     } finally {
       setIsLoading(false);
     }
@@ -1442,7 +1442,7 @@ const filteredEstimations = useMemo(() => {
         onConfirm={handleSupplierConfirm}
       />
 
-      {/* RentalTreatmentModal supprimé — le flux Traiter passe désormais par la fenêtre Modifier (DetailsApp) */}
+      {/* RentalTreatmentModal removed — the Treat flow now goes through the Edit window (DetailsApp) */}
 
       <SimpleMessagePopup
         isOpen={isMessagePopupOpen}
@@ -1479,7 +1479,7 @@ const filteredEstimations = useMemo(() => {
               setPageCache({});
               const startId = lastDocIds[currentPage];
               await fetchPage(currentPage, activeTab, startId, estimationMode);
-              // Si on était sur "En attente" et qu'on passe en "Traité", switcher l'onglet
+               // If we were on "En attente" and moved to "Traité", switch the tab
               if (activeTab === 'En attente' && newStatus === 'processed') {
                 setActiveTab('Traité' as EstimationStatus);
               }
@@ -1497,7 +1497,7 @@ const filteredEstimations = useMemo(() => {
         userRole={userRole}
       />
 
-      {/* MODAL CONFIRMATION VIDER LA CORBEILLE */}
+      {/* MODAL CONFIRMATION EMPTY TRASH */}
       {isEmptyTrashConfirming && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           {/* Backdrop */}
@@ -1515,17 +1515,17 @@ const filteredEstimations = useMemo(() => {
                 </svg>
               </div>
               <div>
-                <h3 className="text-white font-black text-lg leading-tight">Vider la corbeille</h3>
-                <p className="text-red-100 text-sm mt-1">Action irréversible</p>
+                <h3 className="text-white font-black text-lg leading-tight">{t('estimation.emptyTrash')}</h3>
+                <p className="text-red-100 text-sm mt-1">{t('estimation.irreversibleAction')}</p>
               </div>
             </div>
             {/* Body */}
             <div className="px-6 py-5">
               <p className="text-zinc-700 text-sm leading-relaxed">
-                Vous êtes sur le point de <span className="font-bold text-red-600">supprimer définitivement</span> toutes les estimations dans la corbeille.
+                {t('estimation.emptyTrashDesc')}
               </p>
               <p className="text-zinc-500 text-xs mt-2 leading-relaxed">
-                Cette action est <strong>irréversible</strong>. Les données supprimées ne pourront pas être récupérées.
+                {t('estimation.emptyTrashWarning')}
               </p>
             </div>
             {/* Footer */}
@@ -1534,7 +1534,7 @@ const filteredEstimations = useMemo(() => {
                 onClick={() => setIsEmptyTrashConfirming(false)}
                 className="flex-1 px-4 py-3 rounded-xl border-2 border-zinc-200 text-zinc-700 font-bold text-sm hover:bg-zinc-50 transition-all"
               >
-                Annuler
+                {t('estimation.cancel')}
               </button>
               <button
                 onClick={confirmEmptyTrash}
@@ -1543,7 +1543,7 @@ const filteredEstimations = useMemo(() => {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                 </svg>
-                Vider la corbeille
+                {t('estimation.emptyTrash')}
               </button>
             </div>
           </div>

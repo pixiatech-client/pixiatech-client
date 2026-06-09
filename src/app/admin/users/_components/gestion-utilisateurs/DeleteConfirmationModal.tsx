@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, X } from 'lucide-react';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   onConfirm,
   userName,
 }) => {
+  const { t } = useAdminT();
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -44,9 +47,9 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
                 <AlertTriangle size={36} strokeWidth={2.5} />
               </div>
 
-              <h3 className="text-[22px] font-extrabold text-[#1a1d21] mb-3 tracking-tight">Supprimer l'utilisateur ?</h3>
+              <h3 className="text-[22px] font-extrabold text-[#1a1d21] mb-3 tracking-tight">{t('Delete user?')}</h3>
               <p className="text-[#64748b] text-[15px] leading-relaxed mb-10 px-4">
-                Êtes-vous sûr de vouloir supprimer <span className="font-bold text-[#1a1d21]">"{userName}"</span> ? Cette action est irréversible.
+                {t('Are you sure you want to delete')} <span className="font-bold text-[#1a1d21]">&quot;{userName}&quot;</span>{t('? This action is irreversible.')}
               </p>
 
               <div className="flex gap-4 w-full">
@@ -54,13 +57,13 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
                   onClick={onClose}
                   className="flex-1 py-4 bg-[#f8f9fa] hover:bg-[#f1f3f5] text-[#495057] rounded-[20px] font-bold text-[15px] transition-all active:scale-[0.98]"
                 >
-                  Annuler
+                  {t('Cancel')}
                 </button>
                 <button
                   onClick={onConfirm}
                   className="flex-1 py-4 bg-[#ff2d55] hover:bg-[#f01d45] text-white rounded-[20px] font-bold text-[15px] transition-all shadow-lg shadow-[#ff2d55]/25 active:scale-[0.98]"
                 >
-                  Supprimer
+                  {t('Delete')}
                 </button>
               </div>
             </div>

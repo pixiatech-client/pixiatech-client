@@ -111,7 +111,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
     const res = await resetPerformancePoints();
     if (res.success) {
       toast({
-        title: t('admin.resetPerformanceSuccess', { defaultValue: 'Scores réinitialisés' }),
+        title: t('admin.resetPerformanceSuccess', { defaultValue: 'Scores reset' }),
         description: t('admin.resetPerformanceDesc'),
       });
       const newSettings = await getSettings();
@@ -131,7 +131,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
     const res = await resetConfiguratorStats();
     if (res.success) {
       toast({
-        title: t('admin.resetConfiguratorSuccess', { defaultValue: 'Compteurs réinitialisés' }),
+        title: t('admin.resetConfiguratorSuccess', { defaultValue: 'Counters reset' }),
         description: t('admin.resetConfiguratorDesc'),
       });
       const newSettings = await getSettings();
@@ -544,7 +544,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
       <div className="flex-1 space-y-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('admin.greetingAdmin', { userName: userName || 'Utilisateur' })}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('admin.greetingAdmin', { userName: userName || 'User' })}</h1>
             <p className="text-sm mt-1 text-gray-500">
               {t('admin.subtitleToday')}
             </p>
@@ -1125,7 +1125,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                       <div className="flex items-center gap-3">
                         <RefreshCw className="w-4 h-4 font-black group-hover:rotate-180 transition-transform duration-500" />
                         <span className="text-sm font-black uppercase tracking-widest text-left">
-                          Réinitialiser <span className="text-[9px] opacity-80 font-bold ml-2">— Remettre à 0</span>
+                          Reset <span className="text-[9px] opacity-80 font-bold ml-2">— Reset to zero</span>
                         </span>
                       </div>
                       <ChevronRight className="w-4 h-4 opacity-50" />

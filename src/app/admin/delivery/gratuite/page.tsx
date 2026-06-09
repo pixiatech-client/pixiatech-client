@@ -8,10 +8,10 @@ export default async function FreeShippingPage() {
   return (
     <Card>
         <CardHeader>
-            <CardTitle>Livraison Gratuite</CardTitle>
+            <CardTitle>Free Shipping</CardTitle>
             <CardDescription>
-                Configurez les conditions pour offrir la livraison à vos clients,
-                soit à partir d'un certain montant, soit pour toutes les commandes.
+                Configure conditions to offer free shipping to your customers,
+                either from a certain amount or for all orders.
             </CardDescription>
         </CardHeader>
         <CardContent>

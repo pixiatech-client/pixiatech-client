@@ -365,7 +365,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
               )}
             </div>
 
-            {/* Numéro & Ref */}
+            {/* Number & Ref */}
             <div className="w-32 px-3 flex items-center gap-3">
               <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900 dark:text-zinc-100'}`}>
                 {est.number}
@@ -431,7 +431,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     }`}
                   >
                     <Timer className="w-2.5 h-2.5" />
-                    {isExpired ? `Expiré (${Math.abs(days)}j)` : days === 0 ? "Aujourd'hui" : `${days}j restant${days > 1 ? 's' : ''}`}
+                    {isExpired ? `Expired (${Math.abs(days)}d)` : days === 0 ? "Today" : `${days}d left`}
                   </span>
                 );
               })()}
@@ -467,7 +467,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             {!isFournisseur && (
               <div className="hidden 2xl:flex w-28 px-4 items-center justify-center">
                 {(est.status === 'En attente' || est.status === 'Traité') && (
-                  <span title={est.emailVerified ? 'Email validé' : 'Email non confirmé'} className="flex items-center">
+                  <span title={est.emailVerified ? 'Email verified' : 'Email not confirmed'} className="flex items-center">
                     <Mail 
                       className={`w-5 h-5 transition-all ${
                         est.emailVerified ? 'text-emerald-500' : 'text-red-500'
@@ -633,7 +633,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                               ? (isSelected ? 'hover:bg-white/10 text-amber-400 hover:text-amber-300' : 'hover:bg-amber-50 text-amber-500 group-hover:hover:bg-amber-500/20 group-hover:hover:text-amber-400')
                               : (isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-zinc-300')
                           }`}
-                          title={est.isLocked ? 'Désarchiver (déverrouiller)' : 'Archiver (verrouiller)'}
+                          title={est.isLocked ? 'Unarchive (unlock)' : 'Archive (lock)'}
                         >
                           {est.isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                         </button>
@@ -1530,10 +1530,10 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                   </div>
                   <div className="grid grid-cols-1 gap-2">
                     {[
-                      { key: 'priceTooHigh', value: 'Prix trop élevé' },
-                      { key: 'outOfStock', value: 'Produit indisponible' },
-                      { key: 'longLeadTimes', value: 'Délais trop longs' },
-                      { key: 'otherReason', value: 'Autre raison' }
+                      { key: 'priceTooHigh', value: 'Price too high' },
+                      { key: 'outOfStock', value: 'Product unavailable' },
+                      { key: 'longLeadTimes', value: 'Lead times too long' },
+                      { key: 'otherReason', value: 'Other reason' }
                     ].map((item) => (
                       <button
                         key={item.key}

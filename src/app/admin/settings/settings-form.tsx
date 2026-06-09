@@ -37,13 +37,13 @@ const hintBubbleSchema = z.object({
 });
 
 const settingsSchema = z.object({
-  defaultWidth: z.coerce.number().min(1, "La largeur doit être d'au moins 1"),
-  defaultHeight: z.coerce.number().min(1, "La hauteur doit être d'au moins 1"),
-  maxWidth: z.coerce.number().min(1, "La largeur max doit être d'au moins 1"),
-  maxHeight: z.coerce.number().min(1, "La hauteur max doit être d'au moins 1"),
+  defaultWidth: z.coerce.number().min(1, "Width must be at least 1"),
+  defaultHeight: z.coerce.number().min(1, "Height must be at least 1"),
+  maxWidth: z.coerce.number().min(1, "Max width must be at least 1"),
+  maxHeight: z.coerce.number().min(1, "Max height must be at least 1"),
   maxRentalWidth: z.coerce.number().min(1).optional(),
   maxRentalHeight: z.coerce.number().min(1).optional(),
-  maxProductsPerQuote: z.coerce.number().min(1, 'Doit être au moins 1').optional(),
+  maxProductsPerQuote: z.coerce.number().min(1, 'Must be at least 1').optional(),
   previewScreenImageUrl: z.string().optional(),
   previewScreenVideoUrl: z.string().optional(),
   previewHumanScaleImageUrl: z.string().optional(),
@@ -123,27 +123,27 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
     const result = await updateSettings(form.getValues());
     if (result.success) {
       toast({
-        title: 'Paramètres sauvegardés',
-        description: `La section "${sectionName}" a été mise à jour.`,
+        title: 'Settings saved',
+        description: `Section "${sectionName}" has been updated.`,
         variant: 'success',
       });
     } else {
        toast({
         variant: 'destructive',
-        title: 'Erreur',
-        description: 'Une erreur est survenue lors de la sauvegarde.',
+        title: 'Error',
+        description: 'An error occurred while saving.',
       });
     }
   };
   
   const sectionLabels: Record<SettingsSection, string> = {
-      general: 'Général',
-      emergency: 'Urgence',
+      general: 'General',
+      emergency: 'Emergency',
       images: 'Images',
-      content: 'Contenu',
-      'hint-bubble': 'Bulle d\'Aide',
-      messaging: 'Messagerie',
-      software: 'Logiciel',
+      content: 'Content',
+      'hint-bubble': 'Hint Bubble',
+      messaging: 'Messaging',
+      software: 'Software',
   }
 
   return (
@@ -153,8 +153,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
             <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
                 <div className="space-y-1">
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight">Configuration de l'Estimation</h3>
-                    <p className="text-sm font-medium text-slate-500">Définissez les limites et les valeurs par défaut du configurateur.</p>
+                    <h3 className="text-lg font-black text-slate-900 tracking-tight">Estimation Configuration</h3>
+                    <p className="text-sm font-medium text-slate-500">Set the limits and default values for the configurator.</p>
                 </div>
                 <div className="flex items-center gap-3 bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
                     <button 
@@ -164,7 +164,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                             configMode === 'sale' ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200" : "text-slate-400 hover:text-slate-600"
                         )}
                     >
-                        Vente
+                        Sale
                     </button>
                     <button 
                         onClick={() => setConfigMode('rental')}
@@ -173,7 +173,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                             configMode === 'rental' ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200" : "text-slate-400 hover:text-slate-600"
                         )}
                     >
-                        Location
+                        Rental
                     </button>
                 </div>
             </div>
@@ -181,10 +181,10 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
             {configMode === 'sale' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                     <div className="space-y-6 p-4 md:p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
-                        <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">Valeurs par défaut</h4>
+                        <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">Default Values</h4>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="defaultWidth" className="text-xs font-bold text-slate-700">Largeur (m)</Label>
+                                <Label htmlFor="defaultWidth" className="text-xs font-bold text-slate-700">Width (m)</Label>
                                 <Input 
                                     id="defaultWidth" 
                                     type="number" 
@@ -193,7 +193,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="defaultHeight" className="text-xs font-bold text-slate-700">Hauteur (m)</Label>
+                                <Label htmlFor="defaultHeight" className="text-xs font-bold text-slate-700">Height (m)</Label>
                                 <Input 
                                     id="defaultHeight" 
                                     type="number" 
@@ -204,10 +204,10 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                         </div>
                     </div>
                     <div className="space-y-6 p-4 md:p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
-                        <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">Limites maximales</h4>
+                        <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">Maximum Limits</h4>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="maxWidth" className="text-xs font-bold text-slate-700">Largeur Max (m)</Label>
+                                <Label htmlFor="maxWidth" className="text-xs font-bold text-slate-700">Max Width (m)</Label>
                                 <Input 
                                     id="maxWidth" 
                                     type="number" 
@@ -216,7 +216,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="maxHeight" className="text-xs font-bold text-slate-700">Hauteur Max (m)</Label>
+                                <Label htmlFor="maxHeight" className="text-xs font-bold text-slate-700">Max Height (m)</Label>
                                 <Input 
                                     id="maxHeight" 
                                     type="number" 
@@ -229,10 +229,10 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                 </div>
             ) : (
                  <div className="space-y-6 p-4 md:p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
-                    <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">Limites Location</h4>
+                    <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">Rental Limits</h4>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="maxRentalWidth" className="text-xs font-bold text-slate-700">Largeur Max (m)</Label>
+                            <Label htmlFor="maxRentalWidth" className="text-xs font-bold text-slate-700">Max Width (m)</Label>
                             <Input 
                                 id="maxRentalWidth" 
                                 type="number" 
@@ -241,7 +241,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="maxRentalHeight" className="text-xs font-bold text-slate-700">Hauteur Max (m)</Label>
+                            <Label htmlFor="maxRentalHeight" className="text-xs font-bold text-slate-700">Max Height (m)</Label>
                             <Input 
                                 id="maxRentalHeight" 
                                 type="number" 
@@ -254,7 +254,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
             )}
 
             <div className="space-y-2 pt-4 border-t">
-                <Label htmlFor="maxProductsPerQuote">Nombre maximum de produits par estimation</Label>
+                <Label htmlFor="maxProductsPerQuote">Maximum number of products per quote</Label>
                 <Input 
                     id="maxProductsPerQuote" 
                     type="number" 
@@ -265,13 +265,13 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
             </div>
 
             <div className="space-y-4 pt-4 border-t">
-              <h4 className="font-medium">Processus d'estimation</h4>
+              <h4 className="font-medium">Estimation Process</h4>
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className='flex items-center gap-2'>
                   <MailCheck className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <Label htmlFor="isEmailVerificationEnabled" className="font-semibold">Activer la vérification par e-mail</Label>
-                    <p className="text-sm text-muted-foreground">Si désactivé, les clients accèdent directement au PDF.</p>
+                    <Label htmlFor="isEmailVerificationEnabled" className="font-semibold">Enable email verification</Label>
+                    <p className="text-sm text-muted-foreground">If disabled, customers go directly to the PDF.</p>
                   </div>
                 </div>
                 <Controller
@@ -290,8 +290,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                 <div className='flex items-center gap-2'>
                   <Truck className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <Label htmlFor="isDeliveryStepEnabled" className="font-semibold">Étape de Livraison</Label>
-                    <p className="text-sm text-muted-foreground">Afficher ou masquer l'étape de livraison.</p>
+                    <Label htmlFor="isDeliveryStepEnabled" className="font-semibold">Delivery Step</Label>
+                    <p className="text-sm text-muted-foreground">Show or hide the delivery step.</p>
                   </div>
                 </div>
                 <Controller
@@ -310,8 +310,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                 <div className='flex items-center gap-2'>
                   <Wrench className="h-5 w-5 text-muted-foreground" />
                   <div>
-                      <Label htmlFor="isInstallationStepEnabled" className="font-semibold">Étape d'Installation</Label>
-                      <p className="text-sm text-muted-foreground">Afficher ou masquer l'étape d'installation.</p>
+                      <Label htmlFor="isInstallationStepEnabled" className="font-semibold">Installation Step</Label>
+                      <p className="text-sm text-muted-foreground">Show or hide the installation step.</p>
                   </div>
                 </div>
                 <Controller
@@ -330,8 +330,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                 <div className='flex items-center gap-2'>
                   <EyeOff className="h-5 w-5 text-muted-foreground" />
                   <div>
-                      <Label htmlFor="isPriceHidden" className="font-semibold">Masquer le prix et afficher une animation</Label>
-                      <p className="text-sm text-muted-foreground">Remplace le prix par un texte animé "Estimation en cours...".</p>
+                      <Label htmlFor="isPriceHidden" className="font-semibold">Hide price and show animation</Label>
+                      <p className="text-sm text-muted-foreground">Replaces the price with an animated "Estimating..." text.</p>
                   </div>
                 </div>
                 <Controller
@@ -346,12 +346,12 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                     )}
                 />
               </div>
-              {/* Card Groupée avec style orange pour les modes d'estimation */}
+              {/* Card with orange style for estimation modes */}
               <div className="rounded-xl border border-amber-200 bg-amber-50/20 p-5 space-y-4 shadow-sm">
                 <div>
-                  <h5 className="font-semibold text-amber-900 text-base">Modes d'Accès au Configurateur</h5>
+                  <h5 className="font-semibold text-amber-900 text-base">Configurator Access Modes</h5>
                   <p className="text-sm text-amber-700/80">
-                    Déterminez les options d'accès disponibles pour vos clients. Au moins une option doit toujours rester activée.
+                    Determine the access options available for your customers. At least one option must always remain enabled.
                   </p>
                 </div>
                 
@@ -363,8 +363,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                         <Bot className="h-5 w-5 text-amber-700" />
                       </div>
                       <div>
-                        <Label htmlFor="isWizardBotEnabled" className="font-semibold text-slate-800">Activer le Wizard Bot Flow</Label>
-                        <p className="text-sm text-slate-500">Permet d'utiliser le chatbot conversationnel pour guider les clients.</p>
+                        <Label htmlFor="isWizardBotEnabled" className="font-semibold text-slate-800">Enable Wizard Bot Flow</Label>
+                        <p className="text-sm text-slate-500">Allows using the conversational chatbot to guide customers.</p>
                       </div>
                     </div>
                     <Controller
@@ -380,8 +380,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                               const manual = form.getValues('isManualConfigEnabled');
                               if (!guided && !manual) {
                                 toast({
-                                  title: "Action impossible",
-                                  description: "Vous devez laisser au moins une option d'accès activée.",
+                                  title: "Action unavailable",
+                                  description: "You must leave at least one access option enabled.",
                                   variant: "destructive",
                                 });
                                 return;
@@ -394,15 +394,15 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                     />
                   </div>
 
-                  {/* Option 2: Configuration Guidée */}
+                  {/* Option 2: Guided Configuration */}
                   <div className="flex items-center justify-between rounded-lg border border-amber-100 bg-white p-4 shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-amber-100/50 rounded-lg">
                         <Zap className="h-5 w-5 text-amber-700" />
                       </div>
                       <div>
-                        <Label htmlFor="isGuidedConfigEnabled" className="font-semibold text-slate-800">Configuration Guidée</Label>
-                        <p className="text-sm text-slate-500">Recommandé — Rapide, simple et sans prise de tête.</p>
+                        <Label htmlFor="isGuidedConfigEnabled" className="font-semibold text-slate-800">Guided Configuration</Label>
+                        <p className="text-sm text-slate-500">Recommended — Fast, simple, and hassle-free.</p>
                       </div>
                     </div>
                     <Controller
@@ -418,8 +418,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                               const manual = form.getValues('isManualConfigEnabled');
                               if (!bot && !manual) {
                                 toast({
-                                  title: "Action impossible",
-                                  description: "Vous devez laisser au moins une option d'accès activée.",
+                                  title: "Action unavailable",
+                                  description: "You must leave at least one access option enabled.",
                                   variant: "destructive",
                                 });
                                 return;
@@ -439,8 +439,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                         <SlidersHorizontal className="h-5 w-5 text-amber-700" />
                       </div>
                       <div>
-                        <Label htmlFor="isManualConfigEnabled" className="font-semibold text-slate-800">Configuration Manuelle</Label>
-                        <p className="text-sm text-slate-500">Avancé — Pour ceux qui savent déjà ce qu'ils veulent.</p>
+                        <Label htmlFor="isManualConfigEnabled" className="font-semibold text-slate-800">Manual Configuration</Label>
+                        <p className="text-sm text-slate-500">Advanced — For those who already know what they want.</p>
                       </div>
                     </div>
                     <Controller
@@ -456,8 +456,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                               const guided = form.getValues('isGuidedConfigEnabled');
                               if (!bot && !guided) {
                                 toast({
-                                  title: "Action impossible",
-                                  description: "Vous devez laisser au moins une option d'accès activée.",
+                                  title: "Action unavailable",
+                                  description: "You must leave at least one access option enabled.",
                                   variant: "destructive",
                                 });
                                 return;
@@ -477,14 +477,14 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
 
         {section === 'emergency' && (
             <div className="space-y-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
-            <h3 className="font-medium text-destructive flex items-center gap-2"><AlertCircle size={20}/>Arrêt d'Urgence</h3>
+            <h3 className="font-medium text-destructive flex items-center gap-2"><AlertCircle size={20}/>Emergency Stop</h3>
             <p className="text-sm text-muted-foreground">
-                Activez cette option pour désactiver immédiatement le formulaire d'estimation public et afficher un message de maintenance.
+                Enable this option to immediately disable the public estimation form and display a maintenance message.
             </p>
             <div className="flex items-center justify-between rounded-lg border bg-background p-4">
                     <div>
-                        <Label htmlFor="emergencyStopEnabled" className={cn("font-semibold", form.watch('emergencyStopEnabled') && "text-destructive")}>Désactiver le service d'estimation</Label>
-                        <p className="text-sm text-muted-foreground">Le formulaire ne sera plus accessible au public.</p>
+                        <Label htmlFor="emergencyStopEnabled" className={cn("font-semibold", form.watch('emergencyStopEnabled') && "text-destructive")}>Disable the estimation service</Label>
+                        <p className="text-sm text-muted-foreground">The form will no longer be accessible to the public.</p>
                     </div>
                     <Switch
                         id="emergencyStopEnabled"
@@ -494,16 +494,16 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                     />
                 </div>
                 <div className="space-y-2">
-                <Label htmlFor="emergencyStopMessage">Message d'arrêt d'urgence</Label>
+                <Label htmlFor="emergencyStopMessage">Emergency stop message</Label>
                 <Textarea
                     id="emergencyStopMessage"
-                    placeholder="Pour des raisons de maintenance..."
+                    placeholder="For maintenance reasons..."
                     {...form.register('emergencyStopMessage')}
                     rows={4}
                 />
                 </div>
             <div className="space-y-2">
-                <Label htmlFor="emergencyReturnUrl">URL de retour (page d'accueil)</Label>
+                <Label htmlFor="emergencyReturnUrl">Return URL (homepage)</Label>
                 <Controller
                     control={form.control}
                     name="emergencyReturnUrl"
@@ -511,7 +511,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                         <InputWithUpload
                             value={field.value}
                             onChange={field.onChange}
-                            placeholder="https://votresite.com"
+                            placeholder="https://yoursite.com"
                         />
                     )}
                 />
@@ -521,37 +521,37 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
         
         {section === 'images' && (
             <div className="space-y-4">
-            <h3 className="font-medium">Images de l'application</h3>
+            <h3 className="font-medium">Application Images</h3>
             <div className="space-y-2">
-                <Label>Image de l'écran (URL)</Label>
+                <Label>Screen Image (URL)</Label>
                 <Controller name="previewScreenImageUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
             </div>
             <div className="space-y-2">
-                <Label>Dimensions de l'écran (Vidéo URL)</Label>
+                <Label>Screen Dimensions (Video URL)</Label>
                 <Controller name="previewScreenVideoUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
             </div>
             <div className="space-y-2">
-                <Label>Image de l'échelle humaine (URL)</Label>
+                <Label>Human Scale Image (URL)</Label>
                 <Controller name="previewHumanScaleImageUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
             </div>
             <div className="space-y-2">
-                <Label>Image du technicien (URL)</Label>
+                <Label>Technician Image (URL)</Label>
                 <Controller name="technicianImageUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
             </div>
             <div className="space-y-2">
-                <Label>Image de livraison (URL)</Label>
+                <Label>Delivery Image (URL)</Label>
                 <Controller name="deliveryImageUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
             </div>
             <div className="space-y-2">
-                <Label>Image de félicitations (URL)</Label>
+                <Label>Congratulations Image (URL)</Label>
                 <Controller name="congratulationsImageUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
             </div>
             <div className="space-y-2 pt-4 border-t">
-                <Label>URL de l'icône de paiement</Label>
+                <Label>Payment Icon URL</Label>
                 <Controller name="paymentIconUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
             </div>
             <div className="space-y-2">
-                <Label>URL du logo de la carte</Label>
+                <Label>Card Logo URL</Label>
                 <Controller name="cardLogoUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
             </div>
             </div>
@@ -560,18 +560,18 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
         {section === 'content' && (
           <div className="space-y-6">
             <div className="flex items-center space-x-2">
-              <Label htmlFor="lang-switch" className={contentLang === 'fr' ? 'font-bold' : ''}>Français</Label>
+              <Label htmlFor="lang-switch" className={contentLang === 'fr' ? 'font-bold' : ''}>French</Label>
               <Switch
                   id="lang-switch"
                   checked={contentLang === 'en'}
                   onCheckedChange={(checked) => setContentLang(checked ? 'en' : 'fr')}
               />
-              <Label htmlFor="lang-switch" className={contentLang === 'en' ? 'font-bold' : ''}>Anglais</Label>
+              <Label htmlFor="lang-switch" className={contentLang === 'en' ? 'font-bold' : ''}>English</Label>
             </div>
             <div>
-              <h3 className="font-medium">Page de Félicitations</h3>
+              <h3 className="font-medium">Congratulations Page</h3>
               <div className="space-y-2 mt-2">
-                <Label htmlFor="congratulationsTitle">Titre</Label>
+                  <Label htmlFor="congratulationsTitle">Title</Label>
                 <Input 
                   id="congratulationsTitle"
                   value={form.watch('congratulationsTitle')?.[contentLang] || ''}
@@ -589,9 +589,9 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
               </div>
             </div>
             <div>
-              <h3 className="font-medium">Étape de Livraison</h3>
+              <h3 className="font-medium">Delivery Step</h3>
               <div className="space-y-2 mt-2">
-                <Label htmlFor="deliveryTitle">Titre</Label>
+                <Label htmlFor="deliveryTitle">Title</Label>
                 <Input 
                   id="deliveryTitle"
                   value={form.watch('deliveryTitle')?.[contentLang] || ''}
@@ -609,9 +609,9 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
               </div>
             </div>
             <div>
-              <h3 className="font-medium">Étape d'Installation</h3>
+              <h3 className="font-medium">Installation Step</h3>
               <div className="space-y-2 mt-2">
-                <Label htmlFor="installationTitle">Titre</Label>
+                <Label htmlFor="installationTitle">Title</Label>
                 <Input 
                   id="installationTitle"
                   value={form.watch('installationTitle')?.[contentLang] || ''}
@@ -629,9 +629,9 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
               </div>
             </div>
              <div>
-              <h3 className="font-medium">Formulaire d'Estimation</h3>
+              <h3 className="font-medium">Estimation Form</h3>
               <div className="space-y-2 mt-2">
-                <Label htmlFor="quoteFormNotesPlaceholder">Texte d'aide pour "Notes additionnelles"</Label>
+                <Label htmlFor="quoteFormNotesPlaceholder">Help text for "Additional notes"</Label>
                 <Textarea 
                   id="quoteFormNotesPlaceholder"
                   value={form.watch('quoteFormNotesPlaceholder')?.[contentLang] || ''}
@@ -646,15 +646,15 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
         {section === 'messaging' && (
             <div className="space-y-8">
                 <div className="space-y-1 pb-6 border-b border-slate-100">
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight">Configuration de la Messagerie</h3>
-                    <p className="text-sm font-medium text-slate-500">Gérez l'accès à la messagerie interne pour les différents rôles.</p>
+                    <h3 className="text-lg font-black text-slate-900 tracking-tight">Messaging Configuration</h3>
+                    <p className="text-sm font-medium text-slate-500">Manage access to internal messaging for different roles.</p>
                 </div>
 
                 <div className="space-y-6">
                     <div className="flex items-center justify-between p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
                         <div className="space-y-1">
-                            <Label htmlFor="messaging.enabled" className="text-sm font-black text-slate-900">Activer la messagerie globale</Label>
-                            <p className="text-xs text-slate-500">Si désactivé, le chat ne sera plus visible ni accessible pour personne.</p>
+                            <Label htmlFor="messaging.enabled" className="text-sm font-black text-slate-900">Enable global messaging</Label>
+                            <p className="text-xs text-slate-500">If disabled, the chat will no longer be visible or accessible to anyone.</p>
                         </div>
                         <Controller
                             control={form.control}
@@ -676,8 +676,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                         <div className="space-y-4 p-6 rounded-2xl border border-slate-100 bg-white shadow-sm">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
-                                    <Label htmlFor="messaging.allowCommercialMessaging" className="text-sm font-bold text-slate-900">Commerciaux</Label>
-                                    <p className="text-[11px] text-slate-500">Autoriser les commerciaux à utiliser le chat.</p>
+                                    <Label htmlFor="messaging.allowCommercialMessaging" className="text-sm font-bold text-slate-900">Commercial</Label>
+                                    <p className="text-[11px] text-slate-500">Allow commercial users to use the chat.</p>
                                 </div>
                                 <Controller
                                     control={form.control}
@@ -696,8 +696,8 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                         <div className="space-y-4 p-6 rounded-2xl border border-slate-100 bg-white shadow-sm">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
-                                    <Label htmlFor="messaging.allowSupplierMessaging" className="text-sm font-bold text-slate-900">Fournisseurs</Label>
-                                    <p className="text-[11px] text-slate-500">Autoriser les fournisseurs à utiliser le chat.</p>
+                                    <Label htmlFor="messaging.allowSupplierMessaging" className="text-sm font-bold text-slate-900">Suppliers</Label>
+                                    <p className="text-[11px] text-slate-500">Allow suppliers to use the chat.</p>
                                 </div>
                                 <Controller
                                     control={form.control}
@@ -717,9 +717,9 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                     <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 flex gap-3">
                         <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
                         <div className="space-y-1">
-                            <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">Note sur les rôles personnalisés</p>
+                            <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">Note about custom roles</p>
                             <p className="text-xs text-amber-700 leading-relaxed">
-                                Les rôles créés par clonage hériteront automatiquement de ces paramètres en fonction de leur modèle (Template) d'origine.
+                                Roles created by cloning will automatically inherit these settings based on their original template.
                             </p>
                         </div>
                     </div>
@@ -729,7 +729,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
 
         <div className="pt-8 border-t border-slate-100">
             <Button onClick={() => handleSave(sectionLabels[section])} className="w-full md:w-auto min-w-[200px] h-12 rounded-xl font-black bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all flex items-center justify-center gap-2">
-                Enregistrer les paramètres
+                Save settings
             </Button>
         </div>
       </CardContent>

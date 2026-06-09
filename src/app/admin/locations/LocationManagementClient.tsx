@@ -30,11 +30,11 @@ const MobileLocationCard = React.memo(({
   onClick 
 }: any) => {
   const statusConfig = {
-    pending: { label: 'En attente', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Clock },
-    processed: { label: 'Validée', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: CheckCircle2 },
-    sent: { label: 'Livrée', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: Truck },
-    delivered: { label: 'Livrée', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: Truck },
-    archived: { label: 'Archivée', color: 'bg-slate-100 text-slate-700 border-slate-200', icon: Archive },
+    pending: { label: 'Pending', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Clock },
+    processed: { label: 'Approved', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: CheckCircle2 },
+    sent: { label: 'Delivered', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: Truck },
+    delivered: { label: 'Delivered', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: Truck },
+    archived: { label: 'Archived', color: 'bg-slate-100 text-slate-700 border-slate-200', icon: Archive },
   };
 
   const status = (location.status as keyof typeof statusConfig) || 'pending';
@@ -53,7 +53,7 @@ const MobileLocationCard = React.memo(({
         <div className="space-y-1">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contrat #{location.number || location.id.slice(0, 8)}</p>
           <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none">
-            {location.client?.companyName || location.client?.name || 'Client Inconnu'}
+            {location.client?.companyName || location.client?.name || 'Unknown Client'}
           </h3>
         </div>
         <div className={cn("px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border", config.color)}>
@@ -64,13 +64,13 @@ const MobileLocationCard = React.memo(({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-slate-50 p-4 rounded-2xl">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Date début</p>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Start date</p>
           <p className="text-sm font-bold text-slate-900">
             {location.createdAt ? format(location.createdAt.toDate ? location.createdAt.toDate() : new Date(location.createdAt), 'dd MMMM yyyy', { locale: fr }) : '—'}
           </p>
         </div>
         <div className="bg-slate-50 p-4 rounded-2xl">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Montant Total</p>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Amount</p>
           <p className="text-sm font-bold text-blue-600">
             {location.totalAmount?.toLocaleString('fr-FR')} €
           </p>
@@ -82,7 +82,7 @@ const MobileLocationCard = React.memo(({
           <Package className="w-4 h-4" />
         </div>
         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-          {location.products?.length || 0} produits en location
+          {location.products?.length || 0} rental products
         </p>
         <ChevronRight className="w-4 h-4 text-slate-300 ml-auto" />
       </div>
@@ -93,11 +93,11 @@ const MobileLocationCard = React.memo(({
 // --- Location List Item Component ---
 const LocationListItem = ({ location, onClick }: any) => {
   const statusConfig = {
-    pending: { label: 'En attente', color: 'bg-amber-50 text-amber-600 border-amber-100', icon: Clock },
-    processed: { label: 'Validée', color: 'bg-blue-50 text-blue-600 border-blue-100', icon: CheckCircle2 },
-    sent: { label: 'Livrée', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', icon: Truck },
-    delivered: { label: 'Livrée', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', icon: Truck },
-    archived: { label: 'Archivée', color: 'bg-slate-50 text-slate-600 border-slate-100', icon: Archive },
+    pending: { label: 'Pending', color: 'bg-amber-50 text-amber-600 border-amber-100', icon: Clock },
+    processed: { label: 'Approved', color: 'bg-blue-50 text-blue-600 border-blue-100', icon: CheckCircle2 },
+    sent: { label: 'Delivered', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', icon: Truck },
+    delivered: { label: 'Delivered', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', icon: Truck },
+    archived: { label: 'Archived', color: 'bg-slate-50 text-slate-600 border-slate-100', icon: Archive },
   };
 
   const status = (location.status as keyof typeof statusConfig) || 'pending';
@@ -119,7 +119,7 @@ const LocationListItem = ({ location, onClick }: any) => {
         <div className="col-span-1">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Client</p>
           <h4 className="font-black text-slate-900 uppercase tracking-tighter truncate">
-            {location.client?.companyName || location.client?.name || 'Client Inconnu'}
+            {location.client?.companyName || location.client?.name || 'Unknown Client'}
           </h4>
         </div>
 
@@ -238,7 +238,7 @@ const GestionLocations = () => {
             <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Rechercher une location..."
+              placeholder="Search for a rental..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 h-10 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all"
@@ -250,28 +250,28 @@ const GestionLocations = () => {
           <div className="relative">
             <CustomSelect
               options={[
-                { value: 'all', label: 'Toutes', icon: LayoutGrid },
-                { value: 'pending', label: 'En attente', icon: Clock },
-                { value: 'processed', label: 'Validées', icon: CheckCircle2 },
-                { value: 'sent', label: 'Livrées', icon: Truck },
-                { value: 'archived', label: 'Archivées', icon: Archive },
+                { value: 'all', label: 'All', icon: LayoutGrid },
+                { value: 'pending', label: 'Pending', icon: Clock },
+                { value: 'processed', label: 'Approved', icon: CheckCircle2 },
+                { value: 'sent', label: 'Delivered', icon: Truck },
+                { value: 'archived', label: 'Archived', icon: Archive },
               ]}
               value={filterStatus}
               onChange={(val) => setFilterStatus(val as any)}
-              placeholder="Filtrer par statut"
+              placeholder="Filter by status"
               className="w-56"
             />
           </div>
 
           <CustomSelect
             options={[
-              { value: 'date', label: 'Par Date' },
-              { value: 'amount', label: 'Par Montant' },
-              { value: 'client', label: 'Par Client' },
+                { value: 'date', label: 'By Date' },
+                { value: 'amount', label: 'By Amount' },
+                { value: 'client', label: 'By Client' },
             ]}
             value={sortBy}
             onChange={setSortBy}
-            placeholder="Trier par"
+            placeholder="Sort by"
             className="w-40"
           />
         </div>
@@ -294,8 +294,8 @@ const GestionLocations = () => {
             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
               <Calendar className="w-10 h-10 text-slate-300" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Aucune location trouvée</h3>
-            <p className="text-slate-500 font-medium">Modifiez vos filtres ou lancez une nouvelle recherche</p>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No rentals found</h3>
+            <p className="text-slate-500 font-medium">Modify your filters or start a new search</p>
           </div>
         )}
       </div>
@@ -305,11 +305,11 @@ const GestionLocations = () => {
         {/* Filters Horizontal Scroll for Mobile (as requested "same as categories Produits") */}
         <div className="flex gap-2 overflow-x-auto pb-6 scrollbar-hide mb-4 no-scrollbar">
           {[
-            { id: 'all', label: 'Toutes', icon: LayoutGrid },
-            { id: 'pending', label: 'En attente', icon: Clock },
-            { id: 'processed', label: 'Validées', icon: CheckCircle2 },
-            { id: 'sent', label: 'Livrées', icon: Truck },
-            { id: 'archived', label: 'Archivées', icon: Archive },
+            { id: 'all', label: 'All', icon: LayoutGrid },
+            { id: 'pending', label: 'Pending', icon: Clock },
+            { id: 'processed', label: 'Approved', icon: CheckCircle2 },
+            { id: 'sent', label: 'Delivered', icon: Truck },
+            { id: 'archived', label: 'Archived', icon: Archive },
           ].map((opt) => (
             <button
               key={opt.id}
@@ -344,7 +344,7 @@ const GestionLocations = () => {
         {filteredLocations.length === 0 && (
           <div className="py-20 text-center">
             <Calendar className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-black uppercase tracking-widest">Aucune location</p>
+            <p className="text-slate-400 font-black uppercase tracking-widest">No rentals</p>
           </div>
         )}
       </div>
@@ -394,7 +394,7 @@ export default function LocationManagementClient() {
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
                 <Calendar className="w-4 h-4 z-20 text-theme-sidebar-active-text" />
-                <span className="z-20">Gestion des Locations</span>
+                <span className="z-20">Location Management</span>
               </button>
             </div>
           </div>

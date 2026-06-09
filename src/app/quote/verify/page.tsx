@@ -5,8 +5,10 @@ import { useSearchParams } from 'next/navigation';
 import { verifyQuoteToken } from '@/app/admin/actions';
 import { verifyQuoteOtp } from '@/app/actions/quote-actions';
 import { Loader2, CheckCircle2, XCircle, ShieldCheck, X } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 function VerifyContent() {
+    const { t } = useI18n();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
     const otp = searchParams.get('otp');
@@ -19,7 +21,7 @@ function VerifyContent() {
         async function verify() {
             if (!token && (!otp || !id)) {
                 setStatus('error');
-                setError('Paramètres de vérification manquants.');
+                setError(t('verify.missingParams'));
                 return;
             }
 
@@ -70,11 +72,11 @@ function VerifyContent() {
                     }, 2500);
                 } else {
                     setStatus('error');
-                    setError(result?.error || 'Erreur lors de la vérification.');
+                    setError(result?.error || t('verify.errorDefault'));
                 }
             } catch (err) {
                 setStatus('error');
-                setError('Une erreur interne est survenue.');
+                setError(t('verify.internalError'));
             }
         }
 
@@ -91,7 +93,7 @@ function VerifyContent() {
                     </div>
                     <span className="font-black text-xl tracking-tight text-slate-900">PIXIATECH</span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1 font-medium uppercase tracking-widest">Système de vérification sécurisé</p>
+                <p className="text-xs text-slate-400 mt-1 font-medium uppercase tracking-widest">{t('verify.title')}</p>
             </div>
 
             <div className="bg-white rounded-[28px] shadow-2xl shadow-slate-200/80 overflow-hidden border border-slate-100">
@@ -109,9 +111,9 @@ function VerifyContent() {
                                 </div>
                             </div>
                             <div>
-                                <h1 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Vérification en cours…</h1>
+                                <h1 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">{t('verify.loading')}</h1>
                                 <p className="text-slate-500 text-sm leading-relaxed">
-                                    Nous validons votre identité. Merci de patienter quelques instants.
+                                    {t('verify.loadingDesc')}
                                 </p>
                             </div>
                             <div className="flex gap-1.5">
@@ -137,10 +139,10 @@ function VerifyContent() {
                             </div>
 
                             <div>
-                                <h1 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Identité vérifiée !</h1>
+                                <h1 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">{t('verify.successTitle')}</h1>
                                 <p className="text-slate-500 text-sm leading-relaxed">
-                                    Votre code a été validé avec succès.<br />
-                                    Vous pouvez <strong className="text-slate-700">fermer cet onglet</strong> et retourner dans la fenêtre de votre estimateur PixiaTech.
+                                    {t('verify.successDesc1')}<br />
+                                    {t('verify.successDesc2')} <strong className="text-slate-700">{t('verify.closeTab')}</strong> {t('verify.successDesc3')}
                                 </p>
                             </div>
 
@@ -150,8 +152,8 @@ function VerifyContent() {
                                     <ShieldCheck size={16} className="text-emerald-600" />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider">Signature électronique confirmée</p>
-                                    <p className="text-[11px] text-emerald-600 font-medium mt-0.5">Certifiée et authentifiée par PandaDoc Secure Shield</p>
+                                    <p className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider">{t('verify.successBadge')}</p>
+                                    <p className="text-[11px] text-emerald-600 font-medium mt-0.5">{t('verify.successBadgeDesc')}</p>
                                 </div>
                             </div>
 
@@ -161,11 +163,11 @@ function VerifyContent() {
                                 className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
                             >
                                 <X size={15} />
-                                Fermer cet onglet
+                                {t('verify.closeTab')}
                             </button>
 
                             <p className="text-[10px] text-slate-400 font-medium">
-                                L'estimateur s'est automatiquement mis à jour dans votre autre onglet.
+                                {t('verify.autoUpdated')}
                             </p>
                         </div>
                     )}
@@ -178,10 +180,10 @@ function VerifyContent() {
                             </div>
 
                             <div>
-                                <h1 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Erreur de vérification</h1>
+                                <h1 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">{t('verify.errorTitle')}</h1>
                                 <p className="text-rose-500 font-semibold text-sm leading-relaxed">{error}</p>
                                 <p className="text-slate-400 text-xs mt-3 leading-relaxed">
-                                    Le code a peut-être expiré ou a déjà été utilisé. Retournez dans votre estimateur et demandez un nouveau code.
+                                    {t('verify.errorSuggestion')}
                                 </p>
                             </div>
 
@@ -190,7 +192,7 @@ function VerifyContent() {
                                 className="w-full py-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-all cursor-pointer border border-rose-200"
                             >
                                 <X size={14} />
-                                Fermer cet onglet
+                                {t('verify.closeTab')}
                             </button>
                         </div>
                     )}
@@ -199,7 +201,7 @@ function VerifyContent() {
                 {/* Footer brand strip */}
                 <div className="border-t border-slate-100 bg-slate-50/60 px-8 py-3 text-center">
                     <p className="text-[10px] text-slate-400 font-mono tracking-widest uppercase">
-                        PIXIATECH © 2026 — Système de vérification OTP sécurisé
+                        {t('verify.footer')}
                     </p>
                 </div>
             </div>
@@ -208,6 +210,7 @@ function VerifyContent() {
 }
 
 export default function VerifyPage() {
+    const { t } = useI18n();
     return (
         <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 flex items-center justify-center p-6">
             <Suspense fallback={
@@ -216,7 +219,7 @@ export default function VerifyPage() {
                         <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
                             <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                         </div>
-                        <h1 className="text-2xl font-black text-slate-900">Chargement…</h1>
+                        <h1 className="text-2xl font-black text-slate-900">{t('verify.fallback')}</h1>
                     </div>
                 </div>
             }>

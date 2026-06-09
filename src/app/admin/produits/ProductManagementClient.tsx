@@ -113,14 +113,14 @@ const MobileProductCard = React.memo(({
               <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
                 <AlertTriangle className="w-8 h-8 text-white" />
               </div>
-              <h4 className="text-white font-black text-lg mb-1 leading-tight uppercase">Supprimer ?</h4>
+              <h4 className="text-white font-black text-lg mb-1 leading-tight uppercase">Delete?</h4>
 
               <div className="flex items-center gap-4 w-full mt-8">
                 <button
                   onClick={(e) => { e.stopPropagation(); setDeletingId(null); }}
                   className="flex-1 py-4 text-[10px] font-black text-white bg-white/10 rounded-2xl uppercase tracking-widest active:bg-white/20"
                 >
-                  Non
+                  No
                 </button>
                 <button
                   onClick={(e) => {
@@ -131,7 +131,7 @@ const MobileProductCard = React.memo(({
                   }}
                   className="flex-1 py-4 text-[10px] font-black text-red-600 bg-white rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 transition-transform"
                 >
-                  Oui
+                  Yes
                 </button>
               </div>
             </motion.div>
@@ -207,8 +207,8 @@ const MobileProductCard = React.memo(({
               const val = String(m).toLowerCase();
               let label = m;
               let colors = "bg-emerald-50 text-emerald-700 border-emerald-100";
-              if (val.includes('vente') || val.includes('sale')) { label = 'Achat'; colors = "bg-emerald-50 text-emerald-700 border-emerald-100"; }
-              else if (val.includes('location') || val.includes('rental')) { label = 'Location'; colors = "bg-violet-50 text-violet-700 border-violet-100"; }
+              if (val.includes('vente') || val.includes('sale')) { label = 'Purchase'; colors = "bg-emerald-50 text-emerald-700 border-emerald-100"; }
+              else if (val.includes('location') || val.includes('rental')) { label = 'Rental'; colors = "bg-violet-50 text-violet-700 border-violet-100"; }
               return (
                 <div key={`mode-${idx}`} className={cn("px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest", colors)}>
                   {label}
@@ -223,7 +223,7 @@ const MobileProductCard = React.memo(({
                 product.screenType === '360' ? "bg-purple-50 text-purple-700 border-purple-100" :
                 product.screenType === 'curved' ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-slate-50 text-slate-500 border-slate-100"
               )}>
-                {product.screenType === '360' ? '360°' : product.screenType === 'curved' ? 'Incurvé' : 'Plat'}
+                {product.screenType === '360' ? '360°' : product.screenType === 'curved' ? 'Curved' : 'Flat'}
               </div>
             )}
           </div>
@@ -235,9 +235,9 @@ const MobileProductCard = React.memo(({
               let label = t;
               let colors = "bg-slate-50 text-slate-500 border-slate-100";
 
-              if (val.includes('interieur') || val.includes('indoor')) { label = 'Intérieur'; colors = "bg-purple-50 text-purple-700 border-purple-100"; }
-              else if (val.includes('exterieur') || val.includes('outdoor')) { label = 'Extérieur'; colors = "bg-orange-50 text-orange-700 border-orange-100"; }
-              else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = 'Vitrine'; colors = "bg-cyan-50 text-cyan-700 border-cyan-100"; }
+              if (val.includes('interieur') || val.includes('indoor')) { label = 'Indoor'; colors = "bg-purple-50 text-purple-700 border-purple-100"; }
+              else if (val.includes('exterieur') || val.includes('outdoor')) { label = 'Outdoor'; colors = "bg-orange-50 text-orange-700 border-orange-100"; }
+              else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = 'Showcase'; colors = "bg-cyan-50 text-cyan-700 border-cyan-100"; }
 
               return (
                 <div key={`type-${idx}`} className={cn("px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest", colors)}>
@@ -306,15 +306,15 @@ const ProductActionsDrawer = ({ isOpen, onClose, product, onEdit, onDuplicate, o
                 <div className="grid grid-cols-1 gap-3">
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => { onEdit(product); onClose(); }} className="w-full flex items-center gap-4 p-4 bg-slate-50 rounded-xl text-slate-900 active:bg-black active:text-white transition-all">
                     <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center"><Edit2 className="w-4 h-4" /></div>
-                    <span className="font-black text-xs uppercase tracking-widest">Modifier</span>
+                    <span className="font-black text-xs uppercase tracking-widest">Edit</span>
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => { onDuplicate(product); onClose(); }} className="w-full flex items-center gap-4 p-4 bg-slate-50 rounded-xl text-slate-900 active:bg-black active:text-white transition-all">
                     <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center"><Copy className="w-4 h-4" /></div>
-                    <span className="font-black text-xs uppercase tracking-widest">Dupliquer</span>
+                    <span className="font-black text-xs uppercase tracking-widest">Duplicate</span>
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => { onDelete(product.id); onClose(); }} className="w-full flex items-center gap-4 p-4 bg-red-50 rounded-xl text-red-600 active:bg-red-600 active:text-white transition-all">
                     <div className="w-8 h-8 bg-red-100 text-red-600 rounded-lg flex items-center justify-center"><Trash2 className="w-4 h-4" /></div>
-                    <span className="font-black text-xs uppercase tracking-widest">Supprimer</span>
+                    <span className="font-black text-xs uppercase tracking-widest">Delete</span>
                   </motion.button>
                 </div>
               )}
@@ -406,7 +406,7 @@ const ProductListItem = ({
           <h3 className="font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-slate-900 transition-colors truncate flex items-center gap-1.5">
             {product.name}
             {product.isHidden && (
-              <span title="Produit masqué" className="text-orange-500 shrink-0">
+              <span title="Hidden product" className="text-orange-500 shrink-0">
                 <EyeOff className="w-3.5 h-3.5 animate-pulse" />
               </span>
             )}
@@ -418,9 +418,9 @@ const ProductListItem = ({
               let label = t;
               let colors = "bg-slate-100 text-slate-600";
 
-              if (val.includes('interieur') || val.includes('indoor')) { label = 'Intérieur'; colors = "bg-purple-100 text-purple-700 border-purple-200"; }
-              else if (val.includes('exterieur') || val.includes('outdoor')) { label = 'Extérieur'; colors = "bg-orange-100 text-orange-700 border-orange-200"; }
-              else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = 'Vitrine'; colors = "bg-cyan-100 text-cyan-700 border-cyan-200"; }
+              if (val.includes('interieur') || val.includes('indoor')) { label = 'Indoor'; colors = "bg-purple-100 text-purple-700 border-purple-200"; }
+              else if (val.includes('exterieur') || val.includes('outdoor')) { label = 'Outdoor'; colors = "bg-orange-100 text-orange-700 border-orange-200"; }
+              else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = 'Showcase'; colors = "bg-cyan-100 text-cyan-700 border-cyan-200"; }
 
               return (
                 <span key={`type-${idx}`} className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors", colors)}>
@@ -435,8 +435,8 @@ const ProductListItem = ({
               let label = m;
               let colors = "bg-slate-100 text-slate-600";
 
-              if (val.includes('vente') || val.includes('sale')) { label = 'Achat'; colors = "bg-emerald-100 text-emerald-700 border-emerald-200"; }
-              else if (val.includes('location') || val.includes('rental')) { label = 'Location'; colors = "bg-violet-100 text-violet-700 border-violet-200"; }
+              if (val.includes('vente') || val.includes('sale')) { label = 'Purchase'; colors = "bg-emerald-100 text-emerald-700 border-emerald-200"; }
+              else if (val.includes('location') || val.includes('rental')) { label = 'Rental'; colors = "bg-violet-100 text-violet-700 border-violet-200"; }
 
               return (
                 <span key={`mode-${idx}`} className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors", colors)}>
@@ -452,7 +452,7 @@ const ProductListItem = ({
                 product.screenType === '360' ? "bg-purple-100 text-purple-700 border-purple-200" :
                 product.screenType === 'curved' ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-slate-100 text-slate-500 border-slate-200"
               )}>
-                {product.screenType === '360' ? '360°' : product.screenType === 'curved' ? 'Incurvé' : 'Plat'}
+                {product.screenType === '360' ? '360°' : product.screenType === 'curved' ? 'Curved' : 'Flat'}
               </span>
             )}
           </div>
@@ -469,7 +469,7 @@ const ProductListItem = ({
         </div>
 
         <div className="hidden md:flex flex-col gap-1 items-center">
-          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">Vente /m²</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">Sale /m²</span>
           <span className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-slate-900 transition-colors duration-300">
             {product.oldPrice && (
               <span className="text-xs font-semibold text-orange-500 line-through mr-1.5">{product.oldPrice} €</span>
@@ -483,21 +483,21 @@ const ProductListItem = ({
         <button
           onClick={(e) => { e.stopPropagation(); onEditProduct(product); }}
           className="p-2 text-slate-400 hover:text-[#a3e635] transition-colors"
-          title="Modifier"
+          title="Edit"
         >
           <Edit2 className="w-4 h-4" />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); onDuplicateProduct(product); }}
           className="p-2 text-blue-500 hover:text-blue-400 transition-colors"
-          title="Dupliquer"
+          title="Duplicate"
         >
           <Copy className="w-4 h-4" />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); setDeletingId(product.id); }}
           className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-          title="Supprimer"
+          title="Delete"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -517,8 +517,8 @@ const ProductListItem = ({
                 <AlertTriangle className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h4 className="text-white font-bold text-sm">Supprimer ce produit ?</h4>
-                <p className="text-red-100 text-[10px] uppercase font-bold tracking-wider">Cette action est irréversible</p>
+                <h4 className="text-white font-bold text-sm">Delete this product?</h4>
+                <p className="text-red-100 text-[10px] uppercase font-bold tracking-wider">This action is irreversible</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -526,7 +526,7 @@ const ProductListItem = ({
                 onClick={() => setDeletingId(null)}
                 className="px-4 py-2 text-xs font-bold text-white hover:bg-white/10 rounded-xl transition-colors"
               >
-                Annuler
+                Cancel
               </button>
               <button
                 onClick={() => {
@@ -535,7 +535,7 @@ const ProductListItem = ({
                 }}
                 className="px-4 py-2 text-xs font-bold bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all shadow-lg"
               >
-                Supprimer
+                Delete
               </button>
             </div>
           </motion.div>
@@ -570,7 +570,7 @@ const DEFAULT_AI_SETTINGS: AISettings = {
 };
 
 
-// --- Composant NumberInput Personnalisé ---
+// --- Custom NumberInput Component ---
 const NumberInput = ({ value, onChange, placeholder, className, isDark, compact, colorTheme = 'default' }: { value: string, onChange: (val: string) => void, placeholder?: string, className?: string, isDark?: boolean, compact?: boolean, colorTheme?: 'default' | 'orange' | 'cyan' }) => {
   const handleIncrement = () => {
     const val = parseFloat(value) || 0;
@@ -614,7 +614,7 @@ const NumberInput = ({ value, onChange, placeholder, className, isDark, compact,
   );
 };
 
-// --- Composant Paramètres IA ---
+// --- AI Settings Component ---
 const AISettingsSheet = ({
   isOpen,
   onClose,
@@ -723,8 +723,8 @@ const AISettingsSheet = ({
                   <Brain className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">Configuration IA</h2>
-                  <p className="text-xs text-slate-500">Paramètres d'analyse et d'extraction</p>
+                  <h2 className="text-lg font-bold text-slate-900">AI Configuration</h2>
+                  <p className="text-xs text-slate-500">Analysis & extraction settings</p>
                 </div>
               </div>
               <button
@@ -743,8 +743,8 @@ const AISettingsSheet = ({
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-slate-900">Activer l'IA</div>
-                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Analyse automatique</div>
+                    <div className="text-sm font-bold text-slate-900">Enable AI</div>
+                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Automatic Analysis</div>
                   </div>
                 </div>
                 <button
@@ -765,7 +765,7 @@ const AISettingsSheet = ({
                 {/* Fournisseur */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                    <Globe className="w-3 h-3" /> Fournisseur
+                    <Globe className="w-3 h-3" /> Provider
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {(['gemini', 'openai', 'anthropic'] as AIProvider[]).map(p => (
@@ -788,7 +788,7 @@ const AISettingsSheet = ({
                 {/* API Key */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                    <ShieldCheck className="w-3 h-3" /> Clé API
+                    <ShieldCheck className="w-3 h-3" /> API Key
                   </label>
                   <div className="relative">
                     <input
@@ -797,7 +797,7 @@ const AISettingsSheet = ({
                       onChange={e => setLocalSettings(prev => ({ ...prev, apiKey: e.target.value }))}
                       onBlur={() => fetchModels(localSettings.provider, localSettings.apiKey)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-12 text-sm font-medium focus:outline-none focus:border-slate-900 transition-colors"
-                      placeholder={`Entrez votre clé ${localSettings.provider}`}
+                      placeholder={`Enter your ${localSettings.provider} key`}
                     />
                     <button
                       type="button"
@@ -809,17 +809,17 @@ const AISettingsSheet = ({
                   </div>
                 </div>
 
-                {/* Modèle */}
+                {/* Model */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                    <ZapIcon className="w-3 h-3" /> Modèle
+                    <ZapIcon className="w-3 h-3" /> Model
                   </label>
                   <div className="relative">
                     <CustomSelect
                       options={models.map(m => ({ value: m, label: m }))}
                       value={localSettings.model}
                       onChange={val => setLocalSettings(prev => ({ ...prev, model: val }))}
-                      placeholder="Sélectionnez un modèle"
+                      placeholder="Select a model"
                       className="w-full"
                     />
                     {isLoadingModels && (
@@ -830,9 +830,9 @@ const AISettingsSheet = ({
                   </div>
                 </div>
 
-                {/* Paramètres Avancés */}
+                {/* Advanced Settings */}
                 <div className="pt-4 border-t border-slate-100 space-y-6">
-                  <h3 className="text-sm font-bold text-slate-900">Paramètres Avancés</h3>
+                  <h3 className="text-sm font-bold text-slate-900">Advanced Settings</h3>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -845,7 +845,7 @@ const AISettingsSheet = ({
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Taille PDF (MB)</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">PDF Size (MB)</label>
                       <input
                         type="number"
                         value={localSettings.pdfMaxSize}
@@ -861,8 +861,8 @@ const AISettingsSheet = ({
                         <PlusCircle className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-slate-900">Auto-création</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Caractéristiques</div>
+                        <div className="text-xs font-bold text-slate-900">Auto-creation</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Characteristics</div>
                       </div>
                     </div>
                     <button
@@ -902,13 +902,13 @@ const AISettingsSheet = ({
                 ) : (
                   <Activity className="w-4 h-4" />
                 )}
-                {testStatus === 'testing' ? 'Test...' : testStatus === 'success' ? 'Connexion OK' : testStatus === 'error' ? 'Erreur' : 'Tester l\'IA'}
+                {testStatus === 'testing' ? 'Testing...' : testStatus === 'success' ? 'Connection OK' : testStatus === 'error' ? 'Error' : 'Test AI'}
               </button>
               <button
                 onClick={() => { onSave(localSettings); onClose(); }}
                 className="flex-[2] bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
               >
-                <Save className="w-4 h-4" /> Sauvegarder
+                <Save className="w-4 h-4" /> Save
               </button>
             </div>
           </motion.div>
@@ -918,24 +918,24 @@ const AISettingsSheet = ({
   );
 };
 
-// Icône Minus manquante dans les imports, on la recrée ici ou on l'importe
+// Minus icon missing from imports, recreated here
 const Minus = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14" /></svg>
 );
 
 const ICON_LIBRARY = [
-  { name: 'écran', icon: Monitor },
+  { name: 'screen', icon: Monitor },
   { name: 'distance', icon: Eye },
   { name: 'puissance', icon: Zap },
-  { name: 'luminosité', icon: SunMedium },
+  { name: 'brightness', icon: SunMedium },
   { name: 'pixel', icon: Grid },
-  { name: 'résolution', icon: Maximize },
-  { name: 'paramètres', icon: Settings2 },
-  { name: 'activité', icon: Activity },
+  { name: 'resolution', icon: Maximize },
+  { name: 'settings', icon: Settings2 },
+  { name: 'activity', icon: Activity },
   { name: 'processeur', icon: Cpu },
   { name: 'couches', icon: Layers },
   { name: 'mobile', icon: Smartphone },
-  { name: 'télévision', icon: Tv },
+  { name: 'television', icon: Tv },
 ];
 
 const getIcon = (iconName: string) => {
@@ -993,14 +993,14 @@ const CaracteristiquesPage = ({
   const charDirection = charPage >= prevCharPage ? 1 : -1;
 
   const colors = [
-    { name: 'Bleu', class: 'text-blue-400', bg: 'bg-blue-400' },
-    { name: 'Violet', class: 'text-purple-400', bg: 'bg-purple-400' },
+    { name: 'Blue', class: 'text-blue-400', bg: 'bg-blue-400' },
+    { name: 'Purple', class: 'text-purple-400', bg: 'bg-purple-400' },
     { name: 'Orange', class: 'text-orange-400', bg: 'bg-orange-400' },
-    { name: 'Jaune', class: 'text-yellow-400', bg: 'bg-yellow-400' },
-    { name: 'Rouge', class: 'text-red-400', bg: 'bg-red-400' },
-    { name: 'Vert', class: 'text-green-400', bg: 'bg-green-400' },
+    { name: 'Yellow', class: 'text-yellow-400', bg: 'bg-yellow-400' },
+    { name: 'Red', class: 'text-red-400', bg: 'bg-red-400' },
+    { name: 'Green', class: 'text-green-400', bg: 'bg-green-400' },
     { name: 'Cyan', class: 'text-cyan-400', bg: 'bg-cyan-400' },
-    { name: 'Rose', class: 'text-pink-400', bg: 'bg-pink-400' },
+    { name: 'Pink', class: 'text-pink-400', bg: 'bg-pink-400' },
   ];
 
   const handleEdit = (char: any) => {
@@ -1026,11 +1026,11 @@ const CaracteristiquesPage = ({
   const handleDelete = async (id: string) => {
     const char = characteristics.find(c => c.id === id);
     if (char?.locked) {
-      alert("Cette caractéristique est verrouillée et ne peut pas être supprimée.");
+      alert(t('admin.productManagement.characteristicLocked'));
       return;
     }
     if (char?.name === 'Distance de visionnage' || char?.name === 'Pixel pitch') {
-      alert("Cette caractéristique est obligatoire et verrouillée et ne peut pas être supprimée.");
+      alert(t('admin.productManagement.characteristicLockedRequired'));
       return;
     }
     await deleteDoc(doc(db, "characteristics", id));
@@ -1078,8 +1078,8 @@ const CaracteristiquesPage = ({
     if (!name.trim() || variants.every(v => !v.value.trim())) return;
     if (!user) {
       toast({
-        title: "Connexion requise",
-        description: "Vous devez être connecté pour enregistrer une caractéristique.",
+        title: "Login required",
+        description: "You must be logged in to save a characteristic.",
         variant: "destructive"
       });
       return;
@@ -1097,7 +1097,7 @@ const CaracteristiquesPage = ({
 
       const charData: any = {
         name,
-        iconName: ICON_LIBRARY.find(i => i.icon === selectedIcon)?.name || 'paramètres',
+        iconName: ICON_LIBRARY.find(i => i.icon === selectedIcon)?.name || 'settings',
         customIcon,
         color: selectedColor,
         border: (selectedColor || 'text-blue-400').replace('text-', 'focus:border-'),
@@ -1290,7 +1290,7 @@ const CaracteristiquesPage = ({
                 className="bg-white rounded-3xl p-6 w-full max-w-md relative z-10 shadow-2xl border border-slate-200"
               >
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-slate-900">Choisir une icône</h3>
+                  <h3 className="text-xl font-bold text-slate-900">Choose an icon</h3>
                   <button onClick={() => setShowIconPicker(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                     <X className="w-5 h-5 text-slate-500" />
                   </button>
@@ -1320,7 +1320,7 @@ const CaracteristiquesPage = ({
                   })}
                   {/* Upload Custom Icon Option */}
                   <div className="col-span-4 mt-4 pt-4 border-t border-slate-100">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Ou téléverser une icône personnalisée</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Or upload a custom icon</label>
                     <input
                       type="file"
                       id="custom-icon-upload"
@@ -1332,7 +1332,7 @@ const CaracteristiquesPage = ({
                       htmlFor="custom-icon-upload"
                       className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all text-sm font-bold text-slate-600 group"
                     >
-                      <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Téléverser une icône
+                      <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Upload an icon
                     </label>
                   </div>
                 </div>
@@ -1346,7 +1346,7 @@ const CaracteristiquesPage = ({
           <div className="lg:col-span-5 flex flex-col space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Tag className="w-4 h-4 text-slate-500" /> Caractéristiques disponibles ({characteristics.length})
+                <Tag className="w-4 h-4 text-slate-500" /> Available Characteristics ({characteristics.length})
               </h3>
               <div className="flex items-center gap-2">
                 <button
@@ -1385,10 +1385,10 @@ const CaracteristiquesPage = ({
                       }
                     }
                     setIsSaving(false);
-                    toast({ title: "Synchronisation", description: "Les réglages Pixiatech et le Wizard ont été synchronisés." });
+                    toast({ title: t('admin.productManagement.syncTitle'), description: t('admin.productManagement.syncDesc') });
                   }}
                   className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-sm group mr-2"
-                  title="Rétablir les réglages Pixiatech"
+                  title={t('admin.productManagement.restoreTitle')}
                 >
                   <RefreshCw className="w-5 h-5 transition-colors group-hover:text-[#a3e635]" />
                 </button>
@@ -1466,13 +1466,13 @@ const CaracteristiquesPage = ({
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDelete(char.id); }}
                               className="p-2 text-slate-400 group-hover:text-white hover:!text-red-500 hover:bg-white/10 rounded-lg transition-colors"
-                              title="Supprimer"
+                              title="Delete"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                           {(char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && (
-                            <div className="p-2 text-slate-300 group-hover:text-white/20 cursor-not-allowed" title="Caractéristique système (Verrouillée)">
+                            <div className="p-2 text-slate-300 group-hover:text-white/20 cursor-not-allowed" title="System characteristic (Locked)">
                               <Trash2 className="w-4 h-4" />
                             </div>
                           )}
@@ -1499,22 +1499,22 @@ const CaracteristiquesPage = ({
                     <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
                       <Check className="w-8 h-8" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">Caractéristique enregistrée !</h3>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">Characteristic saved!</h3>
                     <p className="text-slate-500 text-sm mb-8 max-w-sm">
-                      La caractéristique "{name}" a été {editingId ? 'modifiée' : 'ajoutée'} avec succès.
+                      The characteristic "{name}" has been {editingId ? 'modified' : 'added'} successfully.
                     </p>
                     <div className="flex items-center gap-4">
                       <button
                         onClick={handleReset}
                         className="px-6 h-10 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-2"
                       >
-                        <Plus className="w-4 h-4" /> Créer une nouvelle
+                        <Plus className="w-4 h-4" /> Create new
                       </button>
                       <button
                         onClick={() => setIsSaved(false)}
                         className="px-6 h-10 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2 group"
                       >
-                        <Edit2 className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Continuer l'édition
+                        <Edit2 className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Continue editing
                       </button>
                     </div>
                   </motion.div>
@@ -1523,14 +1523,14 @@ const CaracteristiquesPage = ({
 
               <h3 className="text-sm font-bold text-slate-900 mb-6 flex items-center gap-2">
                 <Settings2 className="w-4 h-4 text-slate-500" />
-                {editingId ? 'Modifier la caractéristique' : 'Créer une caractéristique'}
+                {editingId ? 'Edit characteristic' : 'Create a characteristic'}
               </h3>
 
               <div className="space-y-6">
-                {/* Icône et Nom */}
+                {/* Icon and Name */}
                 <div className="flex flex-col sm:flex-row gap-6">
                   <div className="shrink-0">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Icône</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Icon</label>
                     <button
                       onClick={() => setShowIconPicker(true)}
                       className={cn(
@@ -1546,13 +1546,13 @@ const CaracteristiquesPage = ({
                     </button>
                   </div>
                   <div className="flex-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Nom de la caractéristique</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Characteristic name</label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       disabled={editingId && ['Pixel pitch', 'Distance de visionnage'].includes(characteristics.find(c => c.id === editingId)?.name)}
-                      placeholder="Ex: Distance de visionnage, Pixel pitch..."
+                      placeholder="E.g.: Viewing distance, Pixel pitch..."
                       className={cn(
                         "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all",
                         editingId && ['Pixel pitch', 'Distance de visionnage'].includes(characteristics.find(c => c.id === editingId)?.name) && "opacity-60 cursor-not-allowed"
@@ -1561,7 +1561,7 @@ const CaracteristiquesPage = ({
                   </div>
                 </div>
 
-                {/* Options Additionnelles : Verrouillage & Épinglage */}
+                {/* Additional Options: Locking & Pinning */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
                     <div className="flex items-center gap-3">
@@ -1569,8 +1569,8 @@ const CaracteristiquesPage = ({
                         {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-slate-900">Verrouiller</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Empêcher suppression</div>
+                        <div className="text-sm font-bold text-slate-900">Lock</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Prevent deletion</div>
                       </div>
                     </div>
                     <button
@@ -1593,8 +1593,8 @@ const CaracteristiquesPage = ({
                         <Pin className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-slate-900">Épingler</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Ajout par défaut</div>
+                        <div className="text-sm font-bold text-slate-900">Pin</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Add by default</div>
                       </div>
                     </div>
                     <button
@@ -1614,7 +1614,7 @@ const CaracteristiquesPage = ({
 
                 {/* Palette de couleurs */}
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">Couleur de l'icône</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">Icon color</label>
                   <div className="flex flex-wrap gap-3">
                     {colors.map((color) => (
                       <button
@@ -1634,7 +1634,7 @@ const CaracteristiquesPage = ({
 
                 {/* Variantes */}
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">Variantes de la caractéristique</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">Characteristic variants</label>
 
                   <div className="space-y-3">
                     {variants.map((variant) => (
@@ -1644,7 +1644,7 @@ const CaracteristiquesPage = ({
                             type="text"
                             value={variant.value}
                             onChange={(e) => updateVariant(variant.id, 'value', e.target.value)}
-                            placeholder="Ex: 2 mètres, 4 mètres..."
+                            placeholder="E.g.: 2 meters, 4 meters..."
                             className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
                           />
                         </div>
@@ -1664,7 +1664,7 @@ const CaracteristiquesPage = ({
                               "flex items-center justify-center w-10 h-10 rounded-lg border border-dashed cursor-pointer transition-colors overflow-hidden",
                               variant.image ? "border-slate-300 bg-slate-100" : "border-slate-300 hover:border-slate-400 hover:bg-slate-100 text-slate-400"
                             )}
-                            title="Ajouter une image/icône"
+                            title="Add an image/icon"
                           >
                             {variant.image ? (
                               <img src={variant.image.url} alt="Variant" className="w-full h-full object-cover" />
@@ -1700,7 +1700,7 @@ const CaracteristiquesPage = ({
                     onClick={addVariant}
                     className="mt-4 w-full h-10 bg-white border border-slate-200 border-dashed rounded-xl text-slate-600 font-black text-[10px] uppercase tracking-widest hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
                   >
-                    <Plus className="w-4 h-4" /> Ajouter une variante
+                    <Plus className="w-4 h-4" /> Add a variant
                   </button>
                 </div>
               </div>
@@ -1711,7 +1711,7 @@ const CaracteristiquesPage = ({
                   onClick={handleReset}
                   className="px-6 h-10 bg-white border border-transparent text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900 hover:border-slate-200 transition-all flex items-center gap-2"
                 >
-                  <PlusCircle className="w-4 h-4" /> Nouveau
+                  <PlusCircle className="w-4 h-4" /> New
                 </button>
                 <div className="flex-1" />
                 <button
@@ -1724,7 +1724,7 @@ const CaracteristiquesPage = ({
                   ) : (
                     <Save className="w-4 h-4 group-hover:text-[#a3e635] group-hover:drop-shadow-[0_0_8px_rgba(163,230,53,0.8)] transition-all" />
                   )}
-                  <span>{isSaving ? 'Enregistrement...' : (editingId ? 'Mettre à jour' : 'Enregistrer')}</span>
+                  <span>{isSaving ? 'Saving...' : (editingId ? 'Update' : 'Save')}</span>
                 </button>
               </div>
 
@@ -1744,7 +1744,7 @@ const CaracteristiquesPage = ({
                       className="flex-1 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-[18px] flex items-center px-6 transition-all group shadow-lg overflow-hidden relative disabled:opacity-50"
                     >
                       <span className="relative z-10 font-black uppercase tracking-[0.3em] text-[10px] ml-2">
-                        {editingId ? 'Enregistrer' : 'Ajouter'}
+                        {editingId ? 'Save' : 'Add'}
                       </span>
                       <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center">
                         {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-current" />}
@@ -1881,12 +1881,12 @@ const ProduitPage = ({
 
             {/* 1. Nom du produit */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Nom du produit</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Product name</label>
               <input
                 type="text"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
-                placeholder="Nom Du Produits"
+                placeholder="Product Name"
                 className="w-full border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white transition-all"
               />
             </div>
@@ -1910,15 +1910,15 @@ const ProduitPage = ({
                   </div>
                 </div>
                 <div className="relative z-10 text-center">
-                  <span className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-900 block mb-0.5">Mode & Environnement</span>
-                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Paramètres de commercialisation</div>
+                  <span className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-900 block mb-0.5">Mode & Environment</span>
+                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Marketing settings</div>
                 </div>
               </button>
             </div>
 
             {/* Desktop Only: Mode de commercialisation */}
             <div className="hidden md:block space-y-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Mode de commercialisation</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Sales mode</label>
               <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
                 <button
                   onClick={() => {
@@ -1941,7 +1941,7 @@ const ProduitPage = ({
                     />
                   )}
                   <ShoppingCart className={cn("w-4 h-4 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                  <span className="z-20 whitespace-nowrap">Vente</span>
+                  <span className="z-20 whitespace-nowrap">Sale</span>
                 </button>
                 <button
                   onClick={() => {
@@ -1964,14 +1964,14 @@ const ProduitPage = ({
                     />
                   )}
                   <Calendar className={cn("w-4 h-4 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                  <span className="z-20 whitespace-nowrap">Location</span>
+                  <span className="z-20 whitespace-nowrap">Rental</span>
                 </button>
               </div>
             </div>
 
-            {/* Desktop Only: Type d'écran */}
+            {/* Desktop Only: Screen type */}
             <div className="hidden md:block space-y-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Type d'écran</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Screen type</label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setScreenType('flat')}
@@ -1981,7 +1981,7 @@ const ProduitPage = ({
                   )}
                 >
                   <Monitor className={cn("w-4 h-4", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-300")} />
-                  <span>Plat</span>
+                  <span>Flat</span>
                 </button>
                 <button
                   onClick={() => setScreenType('curved')}
@@ -1994,7 +1994,7 @@ const ProduitPage = ({
                     <path d="M2 17C2 17 4 15 12 15C20 15 22 17 22 17V7C22 7 20 5 12 5C4 5 2 7 2 7V17Z" />
                     <path d="M12 15V19M10 19H14" />
                   </svg>
-                  <span>Incurvé</span>
+                  <span>Curved</span>
                 </button>
                 <button
                   onClick={() => setScreenType('360')}
@@ -2014,12 +2014,12 @@ const ProduitPage = ({
 
             {/* Desktop Only: Environnement */}
             <div className="hidden md:block space-y-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Environnement</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Environment</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: 'interieur', label: 'Intérieur', icon: Monitor, color: 'text-blue-400' },
-                  { id: 'semi-exterieur', label: 'Semi-extérieur', icon: Store, color: 'text-purple-400' },
-                  { id: 'exterieur', label: 'Extérieur', icon: Sun, color: 'text-yellow-400' }
+                  { id: 'interieur', label: 'Indoor', icon: Monitor, color: 'text-blue-400' },
+                  { id: 'semi-exterieur', label: 'Semi-outdoor', icon: Store, color: 'text-purple-400' },
+                  { id: 'exterieur', label: 'Outdoor', icon: Sun, color: 'text-yellow-400' }
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -2045,7 +2045,7 @@ const ProduitPage = ({
             {/* Technical Specs Grid */}
             <div className="space-y-3 pt-1">
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Spécifications Techniques</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Technical Specifications</label>
                 {totalSpecPages > 1 && (
                   <div className="flex items-center gap-2">
                     <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.max(prev - 1, 1)); }} disabled={specPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
@@ -2057,7 +2057,7 @@ const ProduitPage = ({
               <div className="relative mb-2">
                 <input
                   type="text"
-                  placeholder="Rechercher une spécification..."
+                  placeholder="Search for a specification..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -2136,7 +2136,7 @@ const ProduitPage = ({
                   className="w-full h-10 bg-white hover:bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all border border-slate-200 border-dashed hover:border-slate-400"
                 >
                   <PlusCircle className="w-4 h-4 text-[#a3e635]" />
-                  <span>Ajouter une caractéristique</span>
+                  <span>Add a characteristic</span>
                 </button>
               </div>
             </div>
@@ -2154,7 +2154,7 @@ const ProduitPage = ({
                   <div className="w-10 h-10 bg-cyan-400/10 rounded-xl flex items-center justify-center border border-cyan-400/20">
                     <Tag className="w-5 h-5 text-cyan-400 transform -rotate-90" />
                   </div>
-                  <h3 className="text-2xl font-black text-white uppercase tracking-tight">Tarification</h3>
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tight">Pricing</h3>
                 </div>
 
                 <div className="space-y-4 flex-1">
@@ -2162,14 +2162,14 @@ const ProduitPage = ({
                   {/* Prix de Vente (Teal Box like screenshot) */}
                   <div className="bg-cyan-950/40 p-4 rounded-2xl border border-cyan-500/20 relative group overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-transparent pointer-events-none" />
-                    <label className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1.5 block">Prix de vente (€)</label>
+                    <label className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1.5 block">Selling price (€)</label>
                     <NumberInput
                       value={prixVente}
                       onChange={setPrixVente}
                       placeholder="Ex: 1200"
                       isDark
                     />
-                    <div className="text-[9px] text-cyan-400/40 mt-1 font-medium italic tracking-tight">Prix public conseillé par m².</div>
+                    <div className="text-[9px] text-cyan-400/40 mt-1 font-medium italic tracking-tight">Recommended retail price per m².</div>
                   </div>
 
                   {/* Ancien Prix de Vente (Optionnel) */}
@@ -2177,7 +2177,7 @@ const ProduitPage = ({
                     <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
                     <label className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_6px_rgba(249,115,22,0.8)]" />
-                      Ancien prix de vente (€) (Optionnel)
+                      Old selling price (€) (Optional)
                     </label>
                     <NumberInput
                       value={oldPrice}
@@ -2186,7 +2186,7 @@ const ProduitPage = ({
                       isDark
                       colorTheme="orange"
                     />
-                    <div className="text-[9px] text-orange-400 mt-1 font-medium italic tracking-tight">Saisir un ancien prix pour afficher une réduction barré.</div>
+                    <div className="text-[9px] text-orange-400 mt-1 font-medium italic tracking-tight">Enter an old price to show a strikethrough discount.</div>
                   </div>
 
                   {Array.isArray(mode) && mode.includes('location') && (
@@ -2194,7 +2194,7 @@ const ProduitPage = ({
                       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
                       <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
-                        Quantité disponible
+                        Available quantity
                       </label>
                       <NumberInput
                         value={rentalStock}
@@ -2210,10 +2210,10 @@ const ProduitPage = ({
                     <div className="pr-4">
                       <div className="text-xs font-black text-white uppercase tracking-tight flex items-center gap-1.5">
                         <EyeOff className="w-4 h-4 text-orange-400" />
-                        Masquer le produit
+                        Hide product
                       </div>
                       <div className="text-[9px] text-slate-400 mt-1 leading-tight">
-                        Masque ce produit des suggestions du configurateur et du robot.
+                        Hides this product from configurator and robot suggestions.
                       </div>
                     </div>
                     <button
@@ -2227,13 +2227,13 @@ const ProduitPage = ({
 
                   {/* Surface Minimum */}
                   <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Surface Minimum Requise (M²)</label>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Minimum Required Area (M²)</label>
                     <NumberInput
                       value={surfaceMinRequise || surface.toString()}
                       onChange={(val) => { setSurfaceMinRequise(val); setSurface(parseFloat(val) || 0); }}
                       isDark
                     />
-                    <p className="text-[9px] text-slate-500 mt-1 px-1 leading-relaxed">Définit la surface minimale pour le calcul du devis.</p>
+                    <p className="text-[9px] text-slate-500 mt-1 px-1 leading-relaxed">Defines the minimum area for quote calculation.</p>
                   </div>
 
                   <div className="h-px bg-slate-800/50 my-0.5" />
@@ -2243,8 +2243,8 @@ const ProduitPage = ({
                     <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
                       <div className="flex justify-between items-center mb-4">
                         <div className="pr-4">
-                          <div className="text-xs font-black text-white uppercase tracking-tight">Gérer les dimensions et le prix par dalle</div>
-                          <div className="text-[9px] text-slate-500 mt-1 leading-tight">Activez cette option pour calculer le prix selon les dimensions des dalles.</div>
+                          <div className="text-xs font-black text-white uppercase tracking-tight">Manage dimensions and price per tile</div>
+                          <div className="text-[9px] text-slate-500 mt-1 leading-tight">Enable this to calculate the price based on tile dimensions.</div>
                         </div>
                         <button
                           onClick={() => setDimensionsEnabled(!dimensionsEnabled)}
@@ -2258,16 +2258,16 @@ const ProduitPage = ({
                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-4 pt-2 overflow-hidden">
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Largeur dalle (cm)</label>
+                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tile width (cm)</label>
                               <NumberInput value={largeurDalle} onChange={setLargeurDalle} isDark compact />
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Hauteur dalle (cm)</label>
+                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tile height (cm)</label>
                               <NumberInput value={hauteurDalle} onChange={setHauteurDalle} isDark compact />
                             </div>
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Prix par dalle (€)</label>
+                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Price per tile (€)</label>
                             <NumberInput value={prixDalle} onChange={setPrixDalle} isDark compact />
                           </div>
                         </motion.div>
@@ -2279,11 +2279,11 @@ const ProduitPage = ({
                   {mode.includes('location') && (
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800/50">
                       <div className="space-y-2">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Prix par heure (€)</label>
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Price per hour (€)</label>
                         <NumberInput value={prixLocationHeure} onChange={setPrixLocationHeure} placeholder="Ex: 50" isDark compact />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Prix par jour (€)</label>
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Price per day (€)</label>
                         <NumberInput value={prixLocationJour} onChange={setPrixLocationJour} placeholder="Ex: 300" isDark compact />
                       </div>
                     </div>
@@ -2306,7 +2306,7 @@ const ProduitPage = ({
                   <div className="w-full h-full cursor-pointer" onClick={triggerUpload}>
                     <img src={previewSrc} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="px-6 py-3 bg-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl">Remplacer la photo</div>
+                      <div className="px-6 py-3 bg-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl">Replace photo</div>
                     </div>
                   </div>
                 ) : (
@@ -2330,7 +2330,7 @@ const ProduitPage = ({
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <Video className="w-16 h-16 text-white/20" />
-                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Aucune vidéo</p>
+                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">No video</p>
                       </div>
                     )}
 
@@ -2340,29 +2340,29 @@ const ProduitPage = ({
                       className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-md text-slate-900 rounded-xl shadow-xl border border-white/20 opacity-0 group-hover:opacity-100 transition-all active:scale-95 flex items-center gap-2 z-30"
                     >
                       <RefreshCw className="w-4 h-4 text-blue-500" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Remplacer la vidéo</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">Replace video</span>
                     </button>
                   </div>
                 )}
-                <div className="absolute top-4 left-4 px-4 py-2 bg-black/60 backdrop-blur-md text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 z-20 pointer-events-none">Aperçu du média</div>
+                <div className="absolute top-4 left-4 px-4 py-2 bg-black/60 backdrop-blur-md text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 z-20 pointer-events-none">Media preview</div>
               </div>
 
               {/* Media Settings Card */}
               <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3">
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Type de média visuel</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Media type</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button onClick={() => setMediaType('photo')} className={cn("h-10 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all border", mediaType === 'photo' ? "bg-black text-white border-black" : "bg-slate-50 text-slate-500 border-slate-200")}>
                       <Camera className={cn("w-4 h-4", mediaType === 'photo' ? "text-cyan-400" : "")} /> Photo
                     </button>
                     <button onClick={() => setMediaType('video')} className={cn("h-10 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all border", mediaType === 'video' ? "bg-black text-white border-black" : "bg-slate-50 text-slate-500 border-slate-200")}>
-                      <Video className={cn("w-4 h-4", mediaType === 'video' ? "text-blue-400" : "")} /> Vidéo
+                      <Video className={cn("w-4 h-4", mediaType === 'video' ? "text-blue-400" : "")} /> Video
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Lien du média (URL)</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Media link (URL)</label>
                   <div className="flex gap-2">
                     <input type="text" value={currentMediaUrl} onChange={handleUrlChange} placeholder="data:image/..." className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900" />
                     <button onClick={triggerUpload} className="p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100 shadow-sm active:scale-95 transition-all"><Upload className="w-4 h-4" /></button>
@@ -2380,11 +2380,11 @@ const ProduitPage = ({
                     <LinkIcon className="w-5 h-5 text-slate-400" />
                   </div>
                   <div className="flex flex-col">
-                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Fiche Produit</h4>
+                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Product Sheet</h4>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Taille Max :</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Max Size:</span>
                   <CustomSelect
                     options={[{ value: '1', label: '1 MB' }, { value: '5', label: '5 MB' }, { value: '10', label: '10 MB' }, { value: '20', label: '20 MB' }, { value: '50', label: '50 MB' }]}
                     value={String(aiSettings.pdfMaxSize)}
@@ -2420,10 +2420,10 @@ const ProduitPage = ({
                     )}
                   </div>
                   <span className="text-xs font-black text-slate-900 uppercase tracking-widest mb-1">
-                    {(pdfUrl || uploadedPdf) ? 'Fiche technique présente' : 'Ajouter la fiche produit (PDF)'}
+                    {(pdfUrl || uploadedPdf) ? 'Technical sheet added' : 'Add product sheet (PDF)'}
                   </span>
                   <span className="text-[9px] text-slate-400 uppercase tracking-widest">
-                    {(pdfUrl || uploadedPdf) ? (uploadedPdf ? uploadedPdf.name : 'Fichier enregistré') : 'Fiche technique officielle'}
+                    {(pdfUrl || uploadedPdf) ? (uploadedPdf ? uploadedPdf.name : 'File saved') : 'Official technical sheet'}
                   </span>
 
                   {(pdfUrl || uploadedPdf) && (
@@ -2432,13 +2432,13 @@ const ProduitPage = ({
                         onClick={() => window.open(uploadedPdf ? URL.createObjectURL(uploadedPdf) : pdfUrl, '_blank')}
                         className="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-600 hover:text-white transition-all"
                       >
-                        Voir le PDF
+                        View PDF
                       </button>
                       <button
                         onClick={() => { setPdfUrl(''); setUploadedPdf(null); }}
                         className="px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all"
                       >
-                        Supprimer
+                        Delete
                       </button>
                     </div>
                   )}
@@ -2453,13 +2453,13 @@ const ProduitPage = ({
                   className="w-full h-10 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl font-black uppercase tracking-[0.2em] text-xs hover:shadow-2xl hover:shadow-black/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
                   {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus className="w-5 h-5 text-theme-sidebar-active-text" />}
-                  {editingProduct ? 'Enregistrer les modifications' : 'Ajouter au catalogue'}
+                  {editingProduct ? 'Save changes' : 'Add to catalog'}
                 </button>
                 <button
                   onClick={() => { setEditingProduct(null); setActivePage('gestion'); }}
                   className="w-full h-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] hover:text-slate-900 transition-colors border border-transparent hover:border-slate-200 rounded-xl"
                 >
-                  Annuler
+                  Cancel
                 </button>
               </div>
             </div>
@@ -2491,8 +2491,8 @@ const ProduitPage = ({
                       <Settings className="w-5 h-5 text-cyan-600" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Réglages Avancés</h3>
-                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Mode & Environnement</p>
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Advanced Settings</h3>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Mode & Environment</p>
                     </div>
                   </div>
                   <button onClick={() => setIsPricingMediaOpen(false)} className="p-2 bg-slate-100 text-slate-500 rounded-xl"><X className="w-5 h-5" /></button>
@@ -2502,7 +2502,7 @@ const ProduitPage = ({
 
                   {/* Mode de commercialisation */}
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Mode de commercialisation</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Sales mode</label>
                     <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
                       <button
                         onClick={() => {
@@ -2525,7 +2525,7 @@ const ProduitPage = ({
                           />
                         )}
                         <ShoppingCart className={cn("w-4 h-4 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                        <span className="z-20 whitespace-nowrap">Vente</span>
+                        <span className="z-20 whitespace-nowrap">Sale</span>
                       </button>
 
                       <button
@@ -2549,14 +2549,14 @@ const ProduitPage = ({
                           />
                         )}
                         <Calendar className={cn("w-4 h-4 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                        <span className="z-20 whitespace-nowrap">Location</span>
+                        <span className="z-20 whitespace-nowrap">Rental</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* Type d'écran (Mobile) */}
+                  {/* Screen Type (Mobile) */}
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Type d'écran</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Screen type</label>
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => setScreenType('flat')}
@@ -2568,7 +2568,7 @@ const ProduitPage = ({
                         <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'flat' ? "bg-white/10" : "bg-slate-200")}>
                           <Monitor className={cn("w-3.5 h-3.5", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-400")} />
                         </div>
-                        <span className="text-[9px] font-black uppercase tracking-widest truncate">Plat</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest truncate">Flat</span>
                       </button>
                       <button
                         onClick={() => setScreenType('curved')}
@@ -2583,7 +2583,7 @@ const ProduitPage = ({
                             <path d="M12 15V19M10 19H14" />
                           </svg>
                         </div>
-                        <span className="text-[9px] font-black uppercase tracking-widest truncate">Incurvé</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest truncate">Curved</span>
                       </button>
                       <button
                         onClick={() => setScreenType('360')}
@@ -2605,12 +2605,12 @@ const ProduitPage = ({
 
                   {/* Environnement */}
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Environnement</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Environment</label>
                     <div className="grid grid-cols-1 gap-2">
                       {[
-                        { id: 'interieur', label: 'Intérieur', icon: Monitor, color: 'text-blue-400' },
-                        { id: 'semi-exterieur', label: 'Semi-extérieur', icon: Store, color: 'text-purple-400' },
-                        { id: 'exterieur', label: 'Extérieur', icon: Sun, color: 'text-yellow-400' }
+                        { id: 'interieur', label: 'Indoor', icon: Monitor, color: 'text-blue-400' },
+                        { id: 'semi-exterieur', label: 'Semi-outdoor', icon: Store, color: 'text-purple-400' },
+{ id: 'exterieur', label: 'Outdoor', icon: Sun, color: 'text-yellow-400' }
                       ].map((item) => (
                         <button
                           key={item.id}
@@ -2637,7 +2637,7 @@ const ProduitPage = ({
                 </div>
 
                 <div className="shrink-0 p-4 bg-white border-t border-slate-100">
-                  <button onClick={() => setIsPricingMediaOpen(false)} className="w-full h-12 bg-black text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-black/20">Valider et Fermer</button>
+                  <button onClick={() => setIsPricingMediaOpen(false)} className="w-full h-12 bg-black text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-black/20">Confirm & Close</button>
                 </div>
               </motion.div>
             </div>
@@ -2660,7 +2660,7 @@ const ProduitPage = ({
                 className="flex-1 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-[18px] flex items-center px-6 transition-all group shadow-lg overflow-hidden relative disabled:opacity-50"
               >
                 <span className="relative z-10 font-black uppercase tracking-[0.3em] text-[10px] ml-2">
-                  {editingProduct ? 'Enregistrer' : 'Ajouter'}
+                  {editingProduct ? 'Save' : 'Add'}
                 </span>
                 <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center">
                   {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-current" />}
@@ -2726,10 +2726,10 @@ const GestionProduits = ({
   }, [emblaApi]);
 
   const filterOptions = [
-    { id: 'all', label: 'Tous les types', icon: Layers },
-    { id: 'interieur', label: 'Intérieur', icon: Monitor },
-    { id: 'exterieur', label: 'Extérieur', icon: Sun },
-    { id: 'semi-exterieur', label: 'Semi-extérieur', icon: Store },
+{ id: 'all', label: 'All types', icon: Layers },
+    { id: 'interieur', label: 'Indoor', icon: Monitor },
+    { id: 'exterieur', label: 'Outdoor', icon: Sun },
+    { id: 'semi-exterieur', label: 'Semi-outdoor', icon: Store },
   ];
 
   const handleBulkDelete = () => {
@@ -2783,7 +2783,7 @@ const GestionProduits = ({
             <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Rechercher un produit..."
+              placeholder="Search for a product..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 h-10 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all"
@@ -2794,7 +2794,7 @@ const GestionProduits = ({
             className="flex items-center gap-3 px-6 h-10 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl text-sm font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg active:scale-[0.98] shrink-0"
           >
             <Plus className="w-5 h-5" />
-            <span>Ajouter un produit</span>
+            <span>Add a product</span>
           </button>
         </div>
 
@@ -2810,13 +2810,13 @@ const GestionProduits = ({
                     exit={{ opacity: 0, scale: 0.9 }}
                     className="flex items-center gap-2 bg-red-600 p-1 rounded-xl border border-red-500 shadow-xl shadow-red-500/20"
                   >
-                    <span className="text-[10px] font-black text-white px-2">Supprimer {selectedIds.length} ?</span>
-                    <button onClick={() => setShowBulkConfirm(false)} className="px-2 py-1 text-[10px] font-bold text-white hover:bg-white/10 rounded-lg">Non</button>
-                    <button onClick={handleBulkDelete} className="bg-white text-red-600 px-3 py-1 text-[10px] font-black rounded-lg">Oui</button>
+                    <span className="text-[10px] font-black text-white px-2">Delete {selectedIds.length}?</span>
+                    <button onClick={() => setShowBulkConfirm(false)} className="px-2 py-1 text-[10px] font-bold text-white hover:bg-white/10 rounded-lg">No</button>
+                    <button onClick={handleBulkDelete} className="bg-white text-red-600 px-3 py-1 text-[10px] font-black rounded-lg">Yes</button>
                   </motion.div>
                 ) : (
                   <button onClick={() => setShowBulkConfirm(true)} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm font-bold hover:bg-red-600 hover:text-white transition-all">
-                    <Trash2 className="w-4 h-4" /> Supprimer ({selectedIds.length})
+                    <Trash2 className="w-4 h-4" /> Delete ({selectedIds.length})
                   </button>
                 )}
               </AnimatePresence>
@@ -2826,28 +2826,28 @@ const GestionProduits = ({
           <div className="relative">
             <CustomSelect
               options={[
-                { value: 'all', label: 'Tous les types', icon: Layers },
-                { value: 'interieur', label: 'Intérieur', icon: Monitor },
-                { value: 'exterieur', label: 'Extérieur', icon: Sun },
-                { value: 'semi-exterieur', label: 'Semi-extérieur', icon: Store },
+{ value: 'all', label: 'All types', icon: Layers },
+                { value: 'interieur', label: 'Indoor', icon: Monitor },
+                { value: 'exterieur', label: 'Outdoor', icon: Sun },
+                { value: 'semi-exterieur', label: 'Semi-outdoor', icon: Store },
               ]}
               value={filterType}
               onChange={(val) => setFilterType(val as any)}
-              placeholder="Filtrer par type"
+              placeholder="Filter by type"
               className="w-56"
             />
           </div>
 
           <CustomSelect
             options={[
-              { value: 'manual', label: 'Manuel' },
-              { value: 'name', label: 'Nom' },
-              { value: 'price', label: 'Prix' },
+              { value: 'manual', label: 'Manual' },
+              { value: 'name', label: 'Name' },
+              { value: 'price', label: 'Price' },
               { value: 'date', label: 'Date' },
             ]}
             value={sortBy}
             onChange={setSortBy}
-            placeholder="Trier par"
+            placeholder="Sort by"
             className="w-40"
           />
         </div>
@@ -2872,7 +2872,7 @@ const GestionProduits = ({
               )}
             >
               <Filter className="w-4 h-4" />
-              <span>Filtres</span>
+              <span>Filters</span>
             </button>
           </div>
 
@@ -2884,7 +2884,7 @@ const GestionProduits = ({
             )}
           >
             <ArrowUpDown className="w-4 h-4" />
-            <span>Trier</span>
+            <span>Sort</span>
           </button>
         </div>
       </div>
@@ -2928,7 +2928,7 @@ const GestionProduits = ({
               >
                 <div className="absolute inset-0 bg-theme-sidebar-active-bg opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
                 <span className="relative z-10 font-black uppercase tracking-[0.3em] text-[10px] ml-2 transition-colors duration-300">
-                  Ajouter un produit
+                  Add a product
                 </span>
                 <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:scale-105">
                   <Plus size={14} strokeWidth={3} className="text-current" />
@@ -2954,7 +2954,7 @@ const GestionProduits = ({
         </div>
       </div>
 
-      <ProductActionsDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} title="Filtrer par type">
+      <ProductActionsDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} title="Filter by type">
         <div className="grid grid-cols-1 gap-3">
           {filterOptions.map((opt) => (
             <button key={opt.id} onClick={() => { setFilterType(opt.id as any); setIsFilterOpen(false); }} className={cn("w-full flex items-center justify-between p-5 rounded-2xl transition-all", filterType === opt.id ? "bg-black text-white" : "bg-slate-50 text-slate-600")}>
@@ -2965,9 +2965,9 @@ const GestionProduits = ({
         </div>
       </ProductActionsDrawer>
 
-      <ProductActionsDrawer isOpen={isSortOpen} onClose={() => setIsSortOpen(false)} title="Trier la liste">
+      <ProductActionsDrawer isOpen={isSortOpen} onClose={() => setIsSortOpen(false)} title="Sort list">
         <div className="grid grid-cols-1 gap-3">
-          {[{ value: 'manual', label: 'Ordre Manuel', icon: GripVertical }, { value: 'name', label: 'Par Nom', icon: FileText }, { value: 'price', label: 'Par Prix', icon: Zap }, { value: 'date', label: 'Par Date', icon: Calendar }].map((opt) => (
+          {[{ value: 'manual', label: 'Manual Order', icon: GripVertical }, { value: 'name', label: 'By Name', icon: FileText }, { value: 'price', label: 'By Price', icon: Zap }, { value: 'date', label: 'By Date', icon: Calendar }].map((opt) => (
             <button key={opt.value} onClick={() => { setSortBy(opt.value as any); setIsSortOpen(false); }} className={cn("w-full flex items-center justify-between p-5 rounded-2xl transition-all", sortBy === opt.value ? "bg-black text-white" : "bg-slate-50 text-slate-600")}>
               <div className="flex items-center gap-4"><opt.icon className="w-6 h-6" /> <span className="text-lg font-black uppercase tracking-widest">{opt.label}</span></div>
               {sortBy === opt.value && <Check className="w-5 h-5 text-[#c6ff00]" />}
@@ -3010,7 +3010,7 @@ const GestionProduits = ({
                   <input
                     autoFocus
                     type="text"
-                    placeholder="Rechercher un produit..."
+                    placeholder="Search for a product..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-14 pr-6 py-4 bg-slate-100 border-2 border-transparent focus:border-black rounded-[1.5rem] text-lg font-black uppercase tracking-widest transition-all"
@@ -3020,7 +3020,7 @@ const GestionProduits = ({
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Résultats suggérés</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Suggested results</p>
               {products
                 .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
                 .map(p => (
@@ -3047,7 +3047,7 @@ const GestionProduits = ({
               {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
                 <div className="py-20 text-center">
                   <Package className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-                  <p className="text-slate-400 font-black uppercase tracking-widest">Aucun résultat</p>
+                  <p className="text-slate-400 font-black uppercase tracking-widest">No results</p>
                 </div>
               )}
             </div>
@@ -3057,7 +3057,7 @@ const GestionProduits = ({
                 onClick={() => setIsSearchOpen(false)}
                 className="w-full py-5 bg-black text-white rounded-[2rem] font-black uppercase tracking-[0.3em] shadow-2xl"
               >
-                Terminer
+                Done
               </button>
             </div>
           </motion.div>
@@ -3080,9 +3080,9 @@ const GestionProduits = ({
         {filteredProducts.length === 0 && (
           <div className="bg-white rounded-[32px] border border-slate-200 border-dashed p-12 text-center group/empty">
             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover/empty:bg-black/5 transition-colors"><Package className="w-10 h-10 text-slate-300" /></div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Aucun produit</h3>
-            <p className="text-slate-500 font-medium mb-8">Commencez par créer votre premier produit</p>
-            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>Créer un produit</span></button>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No products</h3>
+            <p className="text-slate-500 font-medium mb-8">Start by creating your first product</p>
+            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>Create a product</span></button>
           </div>
         )}
       </div>
@@ -3106,7 +3106,7 @@ const GestionProduits = ({
 const MOCK_USER = {
   uid: 'mock-user-123',
   email: 'demo@pixiatech.com',
-  displayName: 'Utilisateur Démo',
+  displayName: 'Demo User',
   emailVerified: true
 };
 
@@ -3363,7 +3363,7 @@ export default function ProductManagementClient() {
 
   const handlePageChange = (newPage: 'gestion' | 'produit' | 'caracteristiques') => {
     if (!user) {
-      toast({ title: "Accès restreint", description: "Veuillez vous connecter pour accéder à cette section.", variant: "destructive" });
+      toast({ title: t('admin.productManagement.restrictedAccess'), description: t('admin.productManagement.loginRequired'), variant: "destructive" });
       return;
     }
     setPrevActivePage(activePage);
@@ -3377,18 +3377,18 @@ export default function ProductManagementClient() {
 
   const handleFirestoreError = (error: any, action: string, collection: string) => {
     console.error(`Firestore error ${action} ${collection}:`, error);
-    let message = `Erreur lors de l'accès à ${collection}.`;
+    let message = `Error accessing ${collection}.`;
 
     if (error.code === 'permission-denied') {
-      message = `Accès refusé à ${collection}. Vérifiez vos droits Firestore (Projet: ${auth.app.options.projectId})`;
+      message = `Access denied to ${collection}. Check your Firestore permissions (Project: ${auth.app.options.projectId})`;
     } else if (error.code === 'unavailable') {
-      message = "La base de données est temporairement indisponible.";
+      message = "The database is temporarily unavailable.";
     } else {
-      message = `Erreur Firebase (${error.code}) : ${error.message}`;
+      message = `Firebase error (${error.code}): ${error.message}`;
     }
 
     toast({
-      title: "Erreur Base de données",
+      title: "Database error",
       description: message,
       variant: "destructive"
     });
@@ -3515,7 +3515,7 @@ export default function ProductManagementClient() {
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error("Login failed", error);
-      setAuthError("La connexion avec Google a échoué.");
+      setAuthError("Google login failed.");
     } finally {
       setIsAuthenticating(false);
     }
@@ -3530,7 +3530,7 @@ export default function ProductManagementClient() {
     const loginPassword = typeof e === 'string' ? maybePassword : password;
 
     if (!loginEmail || !loginPassword) {
-      setAuthError("Veuillez remplir tous les champs.");
+      setAuthError("Please fill in all fields.");
       return;
     }
 
@@ -3541,7 +3541,7 @@ export default function ProductManagementClient() {
       await signInWithEmailAndPassword(auth, loginEmail.trim(), loginPassword);
     } catch (error: any) {
       console.error("Email login failed", error);
-      setAuthError("Email ou mot de passe incorrect.");
+      setAuthError("Incorrect email or password.");
     } finally {
       setIsAuthenticating(false);
     }
@@ -3556,7 +3556,7 @@ export default function ProductManagementClient() {
       setResetEmailSent(true);
     } catch (error: any) {
       console.error("Password reset failed", error);
-      setAuthError("Erreur lors de l'envoi de l'email de réinitialisation.");
+      setAuthError("Error sending reset email.");
     } finally {
       setIsAuthenticating(false);
     }
@@ -3571,7 +3571,7 @@ export default function ProductManagementClient() {
       await createUserWithEmailAndPassword(auth, email.trim(), password);
     } catch (error: any) {
       console.error("Email sign up failed", error);
-      setAuthError("Erreur lors de la création du compte.");
+      setAuthError("Error creating account.");
     } finally {
       setIsAuthenticating(false);
     }
@@ -3590,8 +3590,8 @@ export default function ProductManagementClient() {
     if (!user) return;
     if (Array.isArray(mode) && mode.includes('location') && (!rentalStock || Number(rentalStock) <= 0)) {
       toast({
-        title: "Stock requis",
-        description: "Veuillez renseigner une quantité de stock pour la location.",
+        title: "Stock required",
+        description: "Please enter a stock quantity for rental.",
         variant: "destructive"
       });
       return;
@@ -3694,15 +3694,15 @@ export default function ProductManagementClient() {
         console.log("Updating product:", editingProduct.id, productData);
         await updateDoc(doc(db, "products", editingProduct.id), productData);
         toast({
-          title: "Produit mis à jour",
-          description: `${productName} a été modifié avec succès.`,
+          title: "Product updated",
+          description: `${productName} has been successfully updated.`,
           variant: "success"
         });
       } else {
         await addDoc(collection(db, "products"), productData);
         toast({
-          title: "Produit ajouté",
-          description: `${productName} a été ajouté au catalogue.`,
+          title: "Product added",
+          description: `${productName} has been added to the catalog.`,
           variant: "success"
         });
       }
@@ -3716,8 +3716,8 @@ export default function ProductManagementClient() {
     } catch (error: any) {
       console.error('Error saving product:', error);
       toast({
-        title: "Erreur de sauvegarde",
-        description: error.message || "Une erreur est survenue lors de l'enregistrement.",
+        title: "Save error",
+        description: error.message || "An error occurred while saving.",
         variant: "destructive"
       });
     } finally {
@@ -3729,7 +3729,7 @@ export default function ProductManagementClient() {
     const { id, ...prodData } = product;
     const newProduct = {
       ...prodData,
-      name: `Copie — ${product.name}`,
+      name: `Copy — ${product.name}`,
       date: new Date().toISOString(),
     };
     await addDoc(collection(db, "products"), newProduct);
@@ -3765,24 +3765,24 @@ export default function ProductManagementClient() {
 
   const handleAIAnalysis = async () => {
     if (!aiSettings.enabled) {
-      setPdfError('L\'IA est désactivée dans les paramètres.');
+      setPdfError('AI is disabled in settings.');
       setIsAISettingsOpen(true);
       return;
     }
 
     if (!aiSettings.apiKey) {
-      setPdfError('Veuillez configurer votre clé API dans les paramètres IA.');
+      setPdfError('Please configure your API key in AI settings.');
       setIsAISettingsOpen(true);
       return;
     }
 
     if (!uploadedPdf) {
-      setPdfError('Veuillez d\'abord uploader un fichier PDF.');
+      setPdfError('Please upload a PDF file first.');
       return;
     }
 
     if (uploadedPdf.size > aiSettings.pdfMaxSize * 1024 * 1024) {
-      setPdfError(`Le fichier est trop volumineux (max ${aiSettings.pdfMaxSize} MB).`);
+      setPdfError(`File is too large (max ${aiSettings.pdfMaxSize} MB).`);
       return;
     }
 
@@ -3797,21 +3797,21 @@ export default function ProductManagementClient() {
 
           setAnalysisProgress(30);
 
-          const prompt = `Analyse cette fiche technique d'écran LED. 
-          Extrais les informations suivantes au format JSON :
+          const prompt = `Analyze this LED screen technical datasheet. 
+          Extract the following information in JSON format:
           {
-            "name": "Nom du produit",
+            "name": "Product name",
             "viewingDistance": "ex: 4m",
             "pixelPitch": "ex: P2.5",
             "powerMax": "ex: 10.8 kW",
             "powerMin": "ex: 3.8 kW",
             "resolution": "ex: 1920x1080",
             "brightness": "ex: 1200 nits",
-            "type": "interieur | semi-exterieur | exterieur",
+            "type": "indoor | semi-outdoor | outdoor",
             "dimensions": { "width": 50, "height": 50 },
-            "newCharacteristic": { "name": "Nom", "variants": ["v1", "v2"] }
+            "newCharacteristic": { "name": "Name", "variants": ["v1", "v2"] }
           }
-          Sois précis. Utilise les mêmes unités que demandées. Réponds en ${aiSettings.language === 'fr' ? 'français' : 'anglais'}.`;
+          Be precise. Use the same units as requested. Answer in ${aiSettings.language === 'fr' ? 'French' : 'English'}.`;
 
           let data;
 
@@ -3835,7 +3835,7 @@ export default function ProductManagementClient() {
             data = JSON.parse(result.text || '{}');
           } else {
             // Placeholder for other providers
-            throw new Error(`Le fournisseur ${aiSettings.provider} n'est pas encore pleinement supporté pour l'analyse PDF directe.`);
+            throw new Error(`The ${aiSettings.provider} provider is not yet fully supported for direct PDF analysis.`);
           }
 
           setAnalysisProgress(90);
@@ -3899,14 +3899,14 @@ export default function ProductManagementClient() {
           }, 500);
         } catch (error) {
           console.error(error);
-          setPdfError(error instanceof Error ? error.message : 'Erreur lors de l\'analyse du PDF.');
+          setPdfError(error instanceof Error ? error.message : 'Error analyzing PDF.');
           setIsAnalyzing(false);
         }
       };
       reader.readAsDataURL(uploadedPdf);
     } catch (e) {
       console.error(e);
-      setPdfError('Une erreur est survenue lors de la lecture du fichier.');
+      setPdfError('An error occurred while reading the file.');
       setIsAnalyzing(false);
     }
   };
@@ -3947,10 +3947,10 @@ export default function ProductManagementClient() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.size > aiSettings.pdfMaxSize * 1024 * 1024) {
-        setPdfError(`Le fichier dépasse la limite de ${aiSettings.pdfMaxSize} MB.`);
+        setPdfError(`File exceeds the ${aiSettings.pdfMaxSize} MB limit.`);
         setUploadedPdf(null);
       } else if (file.type !== 'application/pdf') {
-        setPdfError('Veuillez sélectionner un fichier PDF.');
+        setPdfError('Please select a PDF file.');
         setUploadedPdf(null);
       } else {
         setUploadedPdf(file);
@@ -4167,7 +4167,7 @@ export default function ProductManagementClient() {
               <Zap className="w-10 h-10 text-blue-600 group-hover:text-white transition-colors relative z-10" />
             </motion.div>
             <h1 className="text-4xl font-black text-white tracking-tight mb-2">PIXIATECH<span className="text-blue-500">.</span></h1>
-            <p className="text-slate-400 font-medium">Gestion du Catalogue Audiovisuel</p>
+            <p className="text-slate-400 font-medium">Audiovisual Catalog Management</p>
           </div>
 
           {/* Auth Card */}
@@ -4182,8 +4182,8 @@ export default function ProductManagementClient() {
                   className="space-y-6"
                 >
                   <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900">Bienvenue</h2>
-                    <p className="text-slate-500 text-sm">Connectez-vous pour continuer</p>
+                    <h2 className="text-2xl font-bold text-slate-900">Welcome</h2>
+                    <p className="text-slate-500 text-sm">Log in to continue</p>
                   </div>
 
                   <div className="space-y-4">
@@ -4198,17 +4198,17 @@ export default function ProductManagementClient() {
                         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
                         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                       </svg>
-                      Continuer avec Google
+                      Continue with Google
                     </button>
 
                     <div className="relative flex items-center justify-center py-2">
                       <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                      <span className="relative bg-white px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">ou avec email</span>
+                      <span className="relative bg-white px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">or with email</span>
                     </div>
 
                     <form onSubmit={handleEmailLogin} className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Email professionnel</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Professional email</label>
                         <div className="relative">
                           <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                           <input
@@ -4222,13 +4222,13 @@ export default function ProductManagementClient() {
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between ml-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Mot de passe</label>
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Password</label>
                           <button
                             type="button"
                             onClick={() => setAuthView('forgot-password')}
                             className="text-[10px] font-bold text-blue-600 hover:text-blue-700"
                           >
-                            Oublié ?
+                            Forgot?
                           </button>
                         </div>
                         <div className="relative">
@@ -4265,7 +4265,7 @@ export default function ProductManagementClient() {
                           onChange={(e) => setRememberMe(e.target.checked)}
                           className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <label htmlFor="remember" className="text-xs text-slate-500 font-medium cursor-pointer">Maintenir la session ouverte</label>
+                        <label htmlFor="remember" className="text-xs text-slate-500 font-medium cursor-pointer">Keep me signed in</label>
                       </div>
 
                       <button
@@ -4276,18 +4276,18 @@ export default function ProductManagementClient() {
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
-                          <>Se connecter <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
+                          <>Log in <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
                         )}
                       </button>
                     </form>
 
                     <p className="text-center text-xs text-slate-500 font-medium">
-                      Pas encore de compte ?{' '}
+                      No account yet?{' '}
                       <button
                         onClick={() => setAuthView('signup')}
                         className="text-blue-600 font-bold hover:underline"
                       >
-                        Créer un accès
+                        Create an account
                       </button>
                     </p>
                   </div>
@@ -4303,13 +4303,13 @@ export default function ProductManagementClient() {
                   className="space-y-6"
                 >
                   <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900">Demander un accès</h2>
-                    <p className="text-slate-500 text-sm">Créez votre compte administrateur</p>
+                    <h2 className="text-2xl font-bold text-slate-900">Request access</h2>
+                    <p className="text-slate-500 text-sm">Create your admin account</p>
                   </div>
 
                   <form onSubmit={handleEmailSignUp} className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Email professionnel</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Professional email</label>
                       <div className="relative">
                         <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                         <input
@@ -4331,7 +4331,7 @@ export default function ProductManagementClient() {
                           type="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Minimum 8 caractères"
+                          placeholder="Minimum 8 characters"
                           className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
                           required
                           minLength={8}
@@ -4354,18 +4354,18 @@ export default function ProductManagementClient() {
                       {isAuthenticating ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
-                        "Créer le compte"
+                        "Create account"
                       )}
                     </button>
                   </form>
 
                   <p className="text-center text-xs text-slate-500 font-medium">
-                    Déjà un compte ?{' '}
+                    Already have an account?{' '}
                     <button
                       onClick={() => setAuthView('login')}
                       className="text-blue-600 font-bold hover:underline"
                     >
-                      Se connecter
+                      Log in
                     </button>
                   </p>
                 </motion.div>
@@ -4380,8 +4380,8 @@ export default function ProductManagementClient() {
                   className="space-y-6"
                 >
                   <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900">Mot de passe oublié ?</h2>
-                    <p className="text-slate-500 text-sm">Entrez votre email pour demander une réinitialisation</p>
+                    <h2 className="text-2xl font-bold text-slate-900">Forgot password?</h2>
+                    <p className="text-slate-500 text-sm">Enter your email to request a reset</p>
                   </div>
 
                   {resetEmailSent ? (
@@ -4393,19 +4393,19 @@ export default function ProductManagementClient() {
                       <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Mail className="w-6 h-6" />
                       </div>
-                      <h4 className="text-sm font-bold text-green-800 mb-1">Email envoyé !</h4>
-                      <p className="text-xs text-green-600 mb-6">Vérifiez votre boîte de réception pour les instructions.</p>
+                      <h4 className="text-sm font-bold text-green-800 mb-1">Email sent!</h4>
+                      <p className="text-xs text-green-600 mb-6">Check your inbox for instructions.</p>
                       <button
                         onClick={() => { setResetEmailSent(false); setAuthView('login'); }}
                         className="text-xs font-bold text-slate-900 hover:underline"
                       >
-                        Retour à la connexion
+                        Back to login
                       </button>
                     </motion.div>
                   ) : (
                     <form onSubmit={handleResetPassword} className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Email associé au compte</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Account email</label>
                         <div className="relative">
                           <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                           <input
@@ -4434,7 +4434,7 @@ export default function ProductManagementClient() {
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
-                          "Envoyer le lien"
+                          "Send link"
                         )}
                       </button>
 
@@ -4468,9 +4468,9 @@ export default function ProductManagementClient() {
           <div className="flex items-center justify-between mb-8">
             <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full md:w-auto overflow-hidden shadow-sm">
               {[
-                { id: 'gestion', label: t('admin.products.managementTitle'), icon: Package },
-                { id: 'produit', label: t('admin.products.productFormTitle'), icon: FileText },
-                { id: 'caracteristiques', label: t('admin.products.characteristicsTitle'), icon: Settings2 },
+                { id: 'gestion', label: t('admin.productManagement.managementTitle'), icon: Package },
+                { id: 'produit', label: t('admin.productManagement.productFormTitle'), icon: FileText },
+                { id: 'caracteristiques', label: t('admin.productManagement.characteristicsTitle'), icon: Settings2 },
               ].map((tab) => {
                 const isActive = activePage === tab.id;
                 return (
@@ -4658,17 +4658,17 @@ export default function ProductManagementClient() {
                   <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
                     <Zap className="w-8 h-8" />
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-2">Nouvelle caractéristique détectée !</h3>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-2">New characteristic detected!</h3>
                   <p className="text-slate-500 mb-6">
-                    L'IA a détecté une caractéristique : <span className="font-bold text-slate-900">"{aiSuggestion.name}"</span>.
-                    Voulez-vous l'ajouter avec les variantes suivantes : <span className="italic">{aiSuggestion.variants.join(', ')}</span> ?
+                    AI detected a characteristic: <span className="font-bold text-slate-900">"{aiSuggestion.name}"</span>.
+                    Add it with the following variants: <span className="italic">{aiSuggestion.variants.join(', ')}</span>?
                   </p>
                   <div className="flex gap-3">
                     <button
                       onClick={() => setAiSuggestion(null)}
                       className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors"
                     >
-                      Ignorer
+                      Ignore
                     </button>
                     <button
                       onClick={() => {
@@ -4686,7 +4686,7 @@ export default function ProductManagementClient() {
                       }}
                       className="flex-1 py-3.5 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl font-bold hover:opacity-90 transition-colors shadow-lg"
                     >
-                      Oui, ajouter
+                      Yes, add
                     </button>
                   </div>
                 </motion.div>
@@ -4720,8 +4720,8 @@ export default function ProductManagementClient() {
                   {/* Header */}
                   <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
-                      <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Ajouter des caractéristiques</h3>
-                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">SÉLECTIONNEZ LES ÉLÉMENTS À AJOUTER À LA FICHE</p>
+                      <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Add characteristics</h3>
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">SELECT ITEMS TO ADD TO THE SHEET</p>
                     </div>
                     <button onClick={() => setShowCharPanel(false)} className="p-3 bg-white hover:bg-slate-100 rounded-2xl transition-colors shadow-sm">
                       <X className="w-5 h-5 text-slate-500" />
@@ -4735,7 +4735,7 @@ export default function ProductManagementClient() {
                         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                           <Settings2 className="w-8 h-8 text-slate-200" />
                         </div>
-                        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Toutes les caractéristiques sont déjà ajoutées</p>
+                        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">All characteristics already added</p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -4770,7 +4770,7 @@ export default function ProductManagementClient() {
                                   {char.name}
                                 </div>
                                 <div className={cn("text-[10px] font-bold", isSelected ? "text-theme-sidebar-active-text/40" : "text-slate-400")}>
-                                  {char.options.length} options disponibles
+                                  {char.options.length} options available
                                 </div>
                               </div>
                               {isSelected && (
@@ -4788,14 +4788,14 @@ export default function ProductManagementClient() {
                   {/* Footer */}
                   <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      {tempSelectedChars.length} sélectionnée(s)
+                      {tempSelectedChars.length} selected
                     </div>
                     <div className="flex gap-3">
                       <button
                         onClick={() => setShowCharPanel(false)}
                         className="px-6 h-12 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900 transition-colors"
                       >
-                        Annuler
+                        Cancel
                       </button>
                       <button
                         disabled={tempSelectedChars.length === 0}
@@ -4810,7 +4810,7 @@ export default function ProductManagementClient() {
                         }}
                         className="px-8 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-black/20 hover:opacity-90 transition-all disabled:opacity-30 flex items-center gap-2"
                       >
-                        <Plus className="w-4 h-4 text-theme-sidebar-active-text" /> Ajouter à la fiche
+                        <Plus className="w-4 h-4 text-theme-sidebar-active-text" /> Add to sheet
                       </button>
                     </div>
                   </div>

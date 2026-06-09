@@ -26,10 +26,10 @@ export const geminiService = {
         model: modelName,
         contents: prompt,
       });
-      return response.text || "Erreur de traduction";
+      return response.text || "Translation error";
     } catch (error) {
       console.error("Gemini Error:", error);
-      return "Désolé, impossible de traduire pour le moment.";
+      return "Sorry, unable to translate at the moment.";
     }
   },
 
@@ -50,10 +50,10 @@ export const geminiService = {
         model: modelName,
         contents: prompt,
       });
-      return response.text || "Erreur de génération du résumé";
+      return response.text || "Error generating summary";
     } catch (error) {
       console.error("Gemini Error:", error);
-      return "Désolé, impossible de générer le résumé pour le moment.";
+      return "Sorry, unable to generate the summary at the moment.";
     }
   }
 };

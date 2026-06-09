@@ -18,6 +18,7 @@ import { getUsers, updateQuoteStatus } from '@/app/admin/actions';
 import type { UserProfile, QuoteRequest } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface TransmitToSupplierDialogProps {
   quotes: QuoteRequest[];
@@ -31,6 +32,7 @@ export function TransmitToSupplierDialog({ quotes, children, onSuccess }: Transm
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { t } = useAdminT();
 
   useEffect(() => {
     if (isOpen) {
@@ -48,7 +50,7 @@ export function TransmitToSupplierDialog({ quotes, children, onSuccess }: Transm
 
   const handleTransmitSubmit = async () => {
     if (quotes.length === 0 || !selectedSupplierId) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner un fournisseur et des estimations.", variant: "destructive" });
+      toast({ title: t("Error"), description: t("Please select a supplier and estimations."), variant: "destructive" });
       return;
     }
 
@@ -58,11 +60,11 @@ export function TransmitToSupplierDialog({ quotes, children, onSuccess }: Transm
           updateQuoteStatus(quote.id, { supplierId: selectedSupplierId, status: 'in_progress' })
         )
       );
-      toast({ title: "Succès", description: `${quotes.length} estimation(s) envoyée(s) au fournisseur.`, variant: "success" });
+      toast({ title: t("Success"), description: t(`${quotes.length} estimation(s) sent to supplier.`), variant: "success" });
       onSuccess();
       setIsOpen(false);
     } catch (e: any) {
-      toast({ title: "Erreur", description: e.message || "Impossible de transmettre les estimations.", variant: "destructive" });
+      toast({ title: t("Error"), description: e.message || t("Unable to transmit the estimations."), variant: "destructive" });
     }
   };
 
@@ -73,15 +75,15 @@ export function TransmitToSupplierDialog({ quotes, children, onSuccess }: Transm
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Envoyer au fournisseur</DialogTitle>
+          <DialogTitle>{t("Send to supplier")}</DialogTitle>
           <DialogDescription>
-            Sélectionnez un fournisseur pour lui assigner {quotes.length > 1 ? `les ${quotes.length} estimations sélectionnées` : `l'estimation`}.
+            {t("Select a supplier to assign")} {quotes.length > 1 ? t(`the ${quotes.length} selected estimations`) : t("the estimation")} {t("to.")}
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
           <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId} disabled={isLoading}>
             <SelectTrigger>
-              <SelectValue placeholder={isLoading ? 'Chargement...' : 'Choisir un fournisseur...'} />
+              <SelectValue placeholder={isLoading ? t('Loading...') : t('Choose a supplier...')} />
             </SelectTrigger>
             <SelectContent>
               {isLoading ? (
@@ -101,15 +103,15 @@ export function TransmitToSupplierDialog({ quotes, children, onSuccess }: Transm
                   </SelectItem>
                 ))
               ) : (
-                <div className="p-4 text-center text-sm text-muted-foreground">Aucun fournisseur trouvé.</div>
+                <div className="p-4 text-center text-sm text-muted-foreground">{t("No supplier found.")}</div>
               )}
             </SelectContent>
           </Select>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>{t("Cancel")}</Button>
           <Button onClick={handleTransmitSubmit} disabled={!selectedSupplierId || isLoading}>
-            Envoyer
+            {t("Send")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, UserStatus } from './types';
 import { RoleBadge } from './RoleBadge';
 import { StatusBadge } from './StatusBadge';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface UserRowProps {
   user: User;
@@ -22,6 +23,7 @@ export const UserRow: React.FC<UserRowProps> = ({
   onSuspend,
   onChangeRole,
 }) => {
+  const { t } = useAdminT();
   const [showActions, setShowActions] = useState(false);
 
   const formatDate = (dateString: string) => {
@@ -85,7 +87,7 @@ export const UserRow: React.FC<UserRowProps> = ({
                 className="absolute right-4 top-12 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-20 py-1 overflow-hidden"
               >
                 <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                  <Eye className="w-4 h-4" /> Voir profil
+                  <Eye className="w-4 h-4" /> {t('View profile')}
                 </button>
                 <button
                   onClick={() => {
@@ -94,7 +96,7 @@ export const UserRow: React.FC<UserRowProps> = ({
                   }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
-                  <Edit2 className="w-4 h-4" /> Modifier
+                  <Edit2 className="w-4 h-4" /> {t('Edit')}
                 </button>
                 <button
                   onClick={() => {
@@ -103,9 +105,9 @@ export const UserRow: React.FC<UserRowProps> = ({
                   }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
-                  <Shield className="w-4 h-4" /> Changer rôle
+                  <Shield className="w-4 h-4" /> {t('Change role')}
                 </button>
-                {user.status === UserStatus.EN_ATTENTE && (
+                {user.status === UserStatus.PENDING && (
                   <button
                     onClick={() => {
                       onApprove(user.id);
@@ -113,10 +115,10 @@ export const UserRow: React.FC<UserRowProps> = ({
                     }}
                     className="w-full flex items-center gap-2 px-4 py-2 text-sm text-emerald-400 hover:bg-emerald-400/10 transition-colors"
                   >
-                    <CheckCircle className="w-4 h-4" /> Approuver
+                    <CheckCircle className="w-4 h-4" /> {t('Approve')}
                   </button>
                 )}
-                {user.status !== UserStatus.SUSPENDU && (
+                {user.status !== UserStatus.SUSPENDED && (
                   <button
                     onClick={() => {
                       onSuspend(user.id);
@@ -124,7 +126,7 @@ export const UserRow: React.FC<UserRowProps> = ({
                     }}
                     className="w-full flex items-center gap-2 px-4 py-2 text-sm text-orange-400 hover:bg-orange-400/10 transition-colors"
                   >
-                    <Ban className="w-4 h-4" /> Suspendre
+                    <Ban className="w-4 h-4" /> {t('Suspend')}
                   </button>
                 )}
                 <button
@@ -134,7 +136,7 @@ export const UserRow: React.FC<UserRowProps> = ({
                   }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-rose-400 hover:bg-rose-400/10 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4" /> Supprimer
+                  <Trash2 className="w-4 h-4" /> {t('Delete')}
                 </button>
               </motion.div>
             </>

@@ -7,20 +7,23 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { Lock, Save } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { useI18n } from '@/lib/i18n';
 
 interface UserPasswordFormProps {
   userId: string;
 }
 
 const passwordFormSchema = z.object({
-  password: z.string().min(6, 'Le mot de passe doit faire au moins 6 caractères.'),
-  confirmPassword: z.string().min(1, 'Veuillez confirmer le mot de passe.'),
+  password: z.string().min(6, 'Password must be at least 6 characters.'),
+  confirmPassword: z.string().min(1, 'Please confirm the password.'),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: 'Les mots de passe ne correspondent pas.',
+  message: 'Passwords do not match.',
   path: ['confirmPassword'],
 });
 
 export function UserPasswordForm({ userId }: UserPasswordFormProps) {
+  const { t } = useI18n();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,25 +42,27 @@ export function UserPasswordForm({ userId }: UserPasswordFormProps) {
     setIsSaving(false);
 
     if (result.success) {
-      toast({ title: 'Mot de passe modifié', variant: 'success' });
+      toast({ title: t('profile.passwordUpdated'), variant: 'success' });
       form.reset();
     } else {
-      setError(result.error || 'Une erreur est survenue.');
+      setError(result.error || t('profile.anErrorOccurred'));
     }
   };
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-gray-500">
+        <label htmlFor="newPassword" className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-theme-card-text/60">
           <Lock size={14} className="text-rose-500" />
-          NOUVEAU MOT DE PASSE
+          {t('profile.newPassword')}
         </label>
-        <input
+        <Input
+          id="newPassword"
           type="password"
+          aria-required="true"
           {...form.register('password')}
           placeholder="••••••••"
-          className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-semibold bg-gray-50 text-gray-900 placeholder:text-gray-400"
+          className="font-semibold bg-gray-50"
         />
         {form.formState.errors.password && (
           <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-1 ml-2">
@@ -67,15 +72,17 @@ export function UserPasswordForm({ userId }: UserPasswordFormProps) {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-gray-500">
+        <label htmlFor="confirmPassword" className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 text-theme-card-text/60">
           <Lock size={14} className="text-rose-500" />
-          CONFIRMER LE MOT DE PASSE
+          {t('profile.confirmPassword')}
         </label>
-        <input
+        <Input
+          id="confirmPassword"
           type="password"
+          aria-required="true"
           {...form.register('confirmPassword')}
           placeholder="••••••••"
-          className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-semibold bg-gray-50 text-gray-900 placeholder:text-gray-400"
+          className="font-semibold bg-gray-50"
         />
         {form.formState.errors.confirmPassword && (
           <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-1 ml-2">
@@ -85,7 +92,7 @@ export function UserPasswordForm({ userId }: UserPasswordFormProps) {
       </div>
 
       {error && (
-        <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100">
+        <div role="alert" className="p-4 bg-rose-50 rounded-2xl border border-rose-100">
           <p className="text-sm text-rose-600 font-medium">{error}</p>
         </div>
       )}
@@ -97,7 +104,7 @@ export function UserPasswordForm({ userId }: UserPasswordFormProps) {
           className="px-8 py-3.5 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-2xl text-sm font-bold transition-all shadow-lg hover:opacity-90 flex items-center gap-3 active:scale-[0.98] disabled:opacity-60"
         >
           <Save size={16} />
-          {isSaving ? 'Sauvegarde...' : 'Mettre à jour le mot de passe'}
+          {isSaving ? t('profile.saving') : t('profile.updatePassword')}
         </button>
       </div>
     </form>

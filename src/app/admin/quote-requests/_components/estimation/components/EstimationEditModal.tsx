@@ -32,6 +32,7 @@ import {
   SendHorizontal
 } from 'lucide-react';
 import { Estimation, type EstimationStatus } from '../types';
+import { useI18n } from '@/lib/i18n';
 
 interface EstimationEditModalProps {
   estimation: Estimation | null;
@@ -65,6 +66,7 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
   onClose,
   onSave 
 }) => {
+  const { t } = useI18n();
   const [isEditMode, setIsEditMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'client' | 'products' | 'logistics' | 'summary'>('client');
   const [localEstimation, setLocalEstimation] = useState<Estimation | null>(estimation);
@@ -147,11 +149,11 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                   </button>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-bold text-white">Détails de l'estimation</h2>
+                      <h2 className="text-lg font-bold text-white">{t('estimation.editModal.title')}</h2>
                       <span className="text-zinc-500 font-mono tracking-wide text-xs uppercase">{localEstimation.number}</span>
                     </div>
                     <p className="text-xs text-zinc-500">
-                      Créé le {localEstimation.date}
+                      {t('estimation.editModal.createdOn', { date: localEstimation.date })}
                     </p>
                   </div>
                 </div>
@@ -165,7 +167,7 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                     }`}
                   >
                     <Pencil size={14} />
-                    <span className="text-xs font-bold uppercase">{isEditMode ? 'Quitter' : 'Éditer'}</span>
+                    <span className="text-xs font-bold uppercase">{isEditMode ? t('estimation.editModal.quit') : t('estimation.editModal.edit')}</span>
                   </button>
                   {isEditMode && (
                     <button
@@ -174,7 +176,7 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                       className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white transition-all"
                     >
                       <Save size={14} />
-                      <span className="text-xs font-bold uppercase">{isSaving ? '...' : 'Enregistrer'}</span>
+                      <span className="text-xs font-bold uppercase">{isSaving ? t('estimation.editModal.saving') : t('estimation.editModal.save')}</span>
                     </button>
                   )}
                   <button
@@ -197,7 +199,7 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                   }`}
                 >
                   <User size={14} />
-                  Client
+                  {t('estimation.editModal.tabClient')}
                 </button>
                 <button
                   onClick={() => setActiveTab('products')}
@@ -208,7 +210,7 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                   }`}
                 >
                   <Box size={14} />
-                  Produits
+                  {t('estimation.editModal.tabProducts')}
                 </button>
                 <button
                   onClick={() => setActiveTab('logistics')}
@@ -219,7 +221,7 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                   }`}
                 >
                   <Truck size={14} />
-                  Logistique
+                  {t('estimation.editModal.tabLogistics')}
                 </button>
                 <button
                   onClick={() => setActiveTab('summary')}
@@ -230,7 +232,7 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                   }`}
                 >
                   <Calculator size={14} />
-                  Résumé
+                  {t('estimation.editModal.tabSummary')}
                 </button>
               </div>
             </div>
@@ -248,11 +250,11 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                   >
                     <div className="bg-[#18181b] rounded-xl p-4 border border-[#27272a]">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-base font-bold text-white">Informations client</h3>
+                        <h3 className="text-base font-bold text-white">{t('estimation.editModal.clientInfo')}</h3>
                       </div>
                       <div className="space-y-3">
                         <div>
-                          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Nom</label>
+                          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">{t('estimation.editModal.name')}</label>
                           <input
                             type="text"
                             value={localEstimation.client || ''}
@@ -262,7 +264,7 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Email</label>
+                          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">{t('details.email')}</label>
                           <input
                             type="email"
                             value={localEstimation.email || ''}
@@ -272,7 +274,7 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">Téléphone</label>
+                          <label className="text-xs font-bold text-zinc-500 uppercase tracking-wide">{t('estimation.editModal.phone')}</label>
                           <input
                             type="tel"
                             value={localEstimation.phone || ''}
@@ -296,11 +298,11 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                   >
                     <div className="bg-[#18181b] rounded-xl p-4 border border-[#27272a]">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-base font-bold text-white">Produits</h3>
+                        <h3 className="text-base font-bold text-white">{t('estimation.editModal.products')}</h3>
                         {isEditMode && (
                           <button className="flex items-center gap-1 px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded text-xs text-white">
                             <Plus size={12} />
-                            Ajouter
+                            {t('estimation.editModal.add')}
                           </button>
                         )}
                       </div>
@@ -328,14 +330,14 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                     className="space-y-4"
                   >
                     <div className="bg-[#18181b] rounded-xl p-4 border border-[#27272a]">
-                      <h3 className="text-base font-bold text-white mb-4">Frais de logistique</h3>
+                      <h3 className="text-base font-bold text-white mb-4">{t('estimation.editModal.logisticsFees')}</h3>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-zinc-400">Achats</span>
+                          <span className="text-sm text-zinc-400">{t('estimation.editModal.purchases')}</span>
                           <span className="text-sm font-bold text-white">{formatCurrency(localEstimation.totalPurchase)}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-zinc-400">Frais de port</span>
+                          <span className="text-sm text-zinc-400">{t('estimation.editModal.shipping')}</span>
                           <span className="text-sm font-bold text-white">-</span>
                         </div>
                       </div>
@@ -352,19 +354,19 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                     className="space-y-4"
                   >
                     <div className="bg-[#18181b] rounded-xl p-4 border border-[#27272a]">
-                      <h3 className="text-base font-bold text-white mb-4">Résumé financier</h3>
+                      <h3 className="text-base font-bold text-white mb-4">{t('estimation.editModal.financialSummary')}</h3>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-zinc-400">Total HT</span>
+                          <span className="text-sm text-zinc-400">{t('estimation.editModal.totalExclTax')}</span>
                           <span className="text-sm font-bold text-white">{formatCurrency(calculations.subtotalHT)}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-zinc-400">TVA (20%)</span>
+                          <span className="text-sm text-zinc-400">{t('estimation.editModal.vat')}</span>
                           <span className="text-sm font-bold text-white">{formatCurrency(calculations.tva)}</span>
                         </div>
                         <div className="border-t border-[#27272a] pt-2 mt-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-base font-bold text-white">Total TTC</span>
+                            <span className="text-base font-bold text-white">{t('estimation.editModal.totalInclTax')}</span>
                             <span className="text-lg font-bold text-green-500">{formatCurrency(calculations.totalTTC)}</span>
                           </div>
                         </div>
@@ -372,23 +374,23 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                     </div>
 
                     <div className="bg-[#18181b] rounded-xl p-4 border border-[#27272a]">
-                      <h3 className="text-base font-bold text-white mb-4">Actions</h3>
+                      <h3 className="text-base font-bold text-white mb-4">{t('estimation.editModal.actions')}</h3>
                       <div className="grid grid-cols-2 gap-2">
                         <button className="flex items-center justify-center gap-2 px-3 py-2 bg-[#27272a] hover:bg-[#3f3f46] rounded-lg text-sm text-white transition-colors">
                           <Download size={14} />
-                          PDF
+                          {t('estimation.editModal.pdf')}
                         </button>
                         <button className="flex items-center justify-center gap-2 px-3 py-2 bg-[#27272a] hover:bg-[#3f3f46] rounded-lg text-sm text-white transition-colors">
                           <Share2 size={14} />
-                          Partager
+                          {t('estimation.editModal.share')}
                         </button>
                         <button className="flex items-center justify-center gap-2 px-3 py-2 bg-[#27272a] hover:bg-[#3f3f46] rounded-lg text-sm text-white transition-colors">
                           <Languages size={14} />
-                          Traduire
+                          {t('estimation.editModal.translate')}
                         </button>
                         <button className="flex items-center justify-center gap-2 px-3 py-2 bg-[#27272a] hover:bg-[#3f3f46] rounded-lg text-sm text-white transition-colors">
                           <Send size={14} />
-                          Transmettre
+                          {t('estimation.editModal.transmit')}
                         </button>
                       </div>
                     </div>

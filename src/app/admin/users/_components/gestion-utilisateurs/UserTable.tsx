@@ -1,6 +1,9 @@
+'use client';
+
 import React from 'react';
 import { User } from './types';
 import { UserRow } from './UserRow';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface UserTableProps {
   users: User[];
@@ -19,19 +22,20 @@ export const UserTable: React.FC<UserTableProps> = ({
   onSuspend,
   onChangeRole,
 }) => {
+  const { t } = useAdminT();
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-50/50 border-b border-gray-200">
-              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Utilisateur</th>
-              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Rôle</th>
-              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
-              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Dernier Accès</th>
-              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Création</th>
-              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('ID')}</th>
+              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('User')}</th>
+              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('Role')}</th>
+              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('Status')}</th>
+              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('Last Access')}</th>
+              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('Created')}</th>
+              <th className="py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">{t('Actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -50,7 +54,7 @@ export const UserTable: React.FC<UserTableProps> = ({
             ) : (
               <tr>
                 <td colSpan={7} className="py-12 text-center text-gray-400 italic">
-                  Aucun utilisateur trouvé.
+                  {t('No users found.')}
                 </td>
               </tr>
             )}

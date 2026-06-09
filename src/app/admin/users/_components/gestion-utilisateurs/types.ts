@@ -1,10 +1,10 @@
 export type UserRole = string;
 
 export enum UserStatus {
-  APPROUVE = 'Approuvé',
-  EN_ATTENTE = 'En attente',
-  REJETE = 'Rejeté',
-  SUSPENDU = 'Suspendu',
+  APPROVED = 'Approved',
+  PENDING = 'Pending',
+  REJECTED = 'Rejected',
+  SUSPENDED = 'Suspended',
 }
 
 export interface User {

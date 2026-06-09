@@ -81,14 +81,14 @@ export async function checkUserStatus(uid: string) {
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
     console.error('[checkUserStatus Action] adminDb is not initialized');
-    return { success: false, error: 'Service indisponible.' };
+    return { success: false, error: 'Service unavailable.' };
   }
 
   try {
     const userDoc = await adminDb.collection('users').doc(uid).get();
     if (!userDoc.exists) {
       console.warn('[checkUserStatus Action] User document NOT FOUND for UID:', uid);
-      return { success: false, error: 'Compte non trouvé.' };
+      return { success: false, error: 'Account not found.' };
     }
     const userData = userDoc.data();
     console.log('[checkUserStatus Action] User status found:', userData?.status || 'pending');
@@ -123,14 +123,14 @@ export async function revertImpersonation() {
   const { adminAuth } = getFirebaseAdmin();
   const sessionCookie = cookies().get('session')?.value;
 
-  if (!sessionCookie) return { success: false, error: "Pas de session active." };
+  if (!sessionCookie) return { success: false, error: "No active session." };
 
   try {
     const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
     const originalAdminUid = decodedClaims.original_admin_uid;
 
     if (!originalAdminUid) {
-      return { success: false, error: "Ce n'est pas une session d'impersonation." };
+      return { success: false, error: "This is not an impersonation session." };
     }
 
     const idToken = await adminAuth.createCustomToken(originalAdminUid);
@@ -176,7 +176,7 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   displayName: z.string().min(2),
-  phone: z.string().min(1, 'Le téléphone est obligatoire'),
+  phone: z.string().min(1, 'Phone is required'),
   description: z.string().optional(),
 });
 
@@ -204,14 +204,14 @@ export async function registerUser(data: unknown) {
   const result = registerSchema.safeParse(data);
 
   if (!result.success) {
-    return { success: false, error: "Données invalides." };
+    return { success: false, error: "Invalid data." };
   }
 
   const { email, password, displayName, phone } = result.data;
   const { adminAuth, adminDb, FieldValue } = getFirebaseAdmin();
 
   if (!adminAuth || !adminDb) {
-    return { success: false, error: 'Service indisponible.' };
+    return { success: false, error: 'Service unavailable.' };
   }
 
   let userRecord;
@@ -222,7 +222,7 @@ export async function registerUser(data: unknown) {
     // Check if user already exists in Auth
     try {
       await adminAuth.getUserByEmail(email);
-      return { success: false, error: 'Un utilisateur avec cet email existe déjà.' };
+      return { success: false, error: 'A user with this email already exists.' };
     } catch (error: any) {
       if (error.code !== 'auth/user-not-found') {
         throw error; // Re-throw unexpected errors
@@ -281,10 +281,10 @@ export async function registerUser(data: unknown) {
     }
 
     if (error.code === 'auth/invalid-phone-number') {
-      return { success: false, error: "Le format du numéro de téléphone est invalide. Veuillez utiliser un format international (ex: +33612345678)." };
+      return { success: false, error: "The phone number format is invalid. Please use an international format (e.g., +33612345678)." };
     }
 
-    return { success: false, error: error.message || "Une erreur est survenue lors de l'inscription." };
+    return { success: false, error: error.message || "An error occurred during registration." };
   }
 }
 
@@ -298,14 +298,14 @@ const googleSignInSchema = z.object({
 export async function handleGoogleSignIn(data: unknown) {
   const result = googleSignInSchema.safeParse(data);
   if (!result.success) {
-    return { success: false, error: 'Données invalides' };
+    return { success: false, error: 'Invalid data' };
   }
 
   const { uid, email, displayName, photoURL } = result.data;
   const { adminDb, adminAuth } = getFirebaseAdmin();
 
   if (!adminDb || !adminAuth) {
-    return { success: false, error: 'Service indisponible.' };
+    return { success: false, error: 'Service unavailable.' };
   }
 
   try {
@@ -377,14 +377,14 @@ export async function updateGoogleUserProfile(data: unknown) {
 
   const result = schema.safeParse(data);
   if (!result.success) {
-    return { success: false, error: 'Données invalides' };
+    return { success: false, error: 'Invalid data' };
   }
 
   const { uid, displayName, phone } = result.data;
   const { adminDb } = getFirebaseAdmin();
 
   if (!adminDb) {
-    return { success: false, error: 'Service indisponible.' };
+    return { success: false, error: 'Service unavailable.' };
   }
 
   try {
@@ -415,14 +415,14 @@ const updateUserSchema = z.object({
 export async function updateUser(data: unknown) {
   const result = updateUserSchema.safeParse(data);
   if (!result.success) {
-    return { success: false, error: 'Données invalides' };
+    return { success: false, error: 'Invalid data' };
   }
 
   const { uid, ...updateData } = result.data;
   const { adminDb, adminAuth } = getFirebaseAdmin();
 
   if (!adminDb || !adminAuth) {
-    return { success: false, error: 'Service indisponible.' };
+    return { success: false, error: 'Service unavailable.' };
   }
 
   try {
@@ -468,18 +468,18 @@ export async function updateUser(data: unknown) {
 }
 
 const customRoleSchema = z.object({
-  name: z.string().min(1, 'Le nom est obligatoire'),
+  name: z.string().min(1, 'Name is required'),
   roleTemplate: z.enum(['admin', 'fournisseur', 'commercial']),
   color: z.string().min(4),
 });
 
 export async function createCustomRole(data: unknown) {
   const result = customRoleSchema.safeParse(data);
-  if (!result.success) return { success: false, error: 'Données invalides' };
+  if (!result.success) return { success: false, error: 'Invalid data' };
 
   const { name, roleTemplate, color } = result.data;
   const { adminDb } = getFirebaseAdmin();
-  if (!adminDb) return { success: false, error: 'Service indisponible.' };
+  if (!adminDb) return { success: false, error: 'Service unavailable.' };
 
   try {
     const roleId = `role_${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now().toString().slice(-4)}`;
@@ -500,18 +500,18 @@ export async function createCustomRole(data: unknown) {
 
 export async function updateCustomRole(roleId: string, data: unknown) {
   const result = customRoleSchema.safeParse(data);
-  if (!result.success) return { success: false, error: 'Données invalides' };
+  if (!result.success) return { success: false, error: 'Invalid data' };
 
   const { name, color } = result.data; // Only allow updating name and color
   const { adminDb } = getFirebaseAdmin();
-  if (!adminDb) return { success: false, error: 'Service indisponible.' };
+  if (!adminDb) return { success: false, error: 'Service unavailable.' };
 
   try {
     const roleRef = adminDb.collection('roles').doc(roleId);
     const docSnap = await roleRef.get();
     
-    if (!docSnap.exists) return { success: false, error: 'Rôle introuvable' };
-    if (docSnap.data()?.isDefault) return { success: false, error: 'Impossible de modifier un rôle par défaut' };
+    if (!docSnap.exists) return { success: false, error: 'Role not found' };
+    if (docSnap.data()?.isDefault) return { success: false, error: 'Cannot modify a default role' };
 
     await roleRef.update({ name, color, updatedAt: new Date() });
     return { success: true };
@@ -522,14 +522,14 @@ export async function updateCustomRole(roleId: string, data: unknown) {
 
 export async function deleteCustomRole(roleId: string) {
   const { adminDb } = getFirebaseAdmin();
-  if (!adminDb) return { success: false, error: 'Service indisponible.' };
+  if (!adminDb) return { success: false, error: 'Service unavailable.' };
 
   try {
     const roleRef = adminDb.collection('roles').doc(roleId);
     const docSnap = await roleRef.get();
 
-    if (!docSnap.exists) return { success: false, error: 'Rôle introuvable' };
-    if (docSnap.data()?.isDefault) return { success: false, error: 'Impossible de supprimer un rôle par défaut' };
+    if (!docSnap.exists) return { success: false, error: 'Role not found' };
+    if (docSnap.data()?.isDefault) return { success: false, error: 'Cannot delete a default role' };
 
     const roleData = docSnap.data()!;
     // Fall back to the base template this role was cloned from, then 'commercial' as last resort
@@ -560,12 +560,12 @@ const passwordSchema = z.object({
 export async function updatePassword(data: unknown) {
   const result = passwordSchema.safeParse(data);
   if (!result.success) {
-    return { success: false, error: 'Mot de passe invalide.' };
+    return { success: false, error: 'Invalid password.' };
   }
 
   const { adminAuth } = getFirebaseAdmin();
   if (!adminAuth) {
-    return { success: false, error: 'Service indisponible.' };
+    return { success: false, error: 'Service unavailable.' };
   }
 
   try {
@@ -579,7 +579,7 @@ export async function updatePassword(data: unknown) {
 export async function deleteUsers(uids: string[]) {
   const { adminAuth, adminDb } = getFirebaseAdmin();
   if (!adminAuth || !adminDb) {
-    return { success: false, error: 'Service indisponible.' };
+    return { success: false, error: 'Service unavailable.' };
   }
 
   try {
@@ -603,7 +603,7 @@ export async function deleteUsers(uids: string[]) {
 export async function deleteAllUsersAndData() {
   const { adminAuth, adminDb } = getFirebaseAdmin();
   if (!adminAuth || !adminDb) {
-    return { success: false, error: "Admin SDK non initialisé" };
+    return { success: false, error: "Admin SDK not initialized" };
   }
 
   try {
@@ -641,10 +641,10 @@ export async function deleteAllUsersAndData() {
     // Clear session cookie
     cookies().delete('session');
 
-    return { success: true, message: "Toutes les données (utilisateurs, rôles, estimations) ont été supprimées. La page va se rafraîchir." };
+    return { success: true, message: "All data (users, roles, estimates) has been deleted. The page will refresh." };
 
   } catch (error: any) {
-    console.error("Erreur lors de la réinitialisation de la BDD :", error);
+    console.error("Error resetting database:", error);
     return { success: false, error: error.message };
   }
 }
@@ -867,13 +867,13 @@ function translateStatus(status: 'pending' | 'processed' | 'trashed' | 'in_progr
     case 'pending':
       return 'en attente';
     case 'processed':
-      return 'traité';
+      return 'processed';
     case 'trashed':
-      return 'mis à la corbeille';
+      return 'moved to trash';
     case 'in_progress':
-      return 'en cours';
+      return 'in progress';
     case 'sent':
-      return 'envoyé';
+      return 'sent';
     default:
       return status;
   }
@@ -1079,7 +1079,7 @@ export async function getQuoteCounts(clientSupplierId?: string, transactionType?
     return { counts, sums };
   }
 
-  // Phase 3: Zéro recalcul global
+  // Phase 3: No global recalculation
   try {
     const stats = await getQuoteStats();
     for (const [key, value] of Object.entries(stats)) {
@@ -1168,7 +1168,7 @@ export async function getPaginatedQuotes({
     return {
       id: doc.id,
       number: data.number || `EST-${doc.id.substring(0, 6).toUpperCase()}`,
-      client: data.client?.companyName || data.companyName || 'Client Inconnu',
+      client: data.client?.companyName || data.companyName || 'Unknown Client',
       email: data.client?.email || data.email || '',
       phone: data.client?.phone || data.phone || '',
       status: data.status || 'pending',
@@ -1356,7 +1356,7 @@ export async function getQuoteRequests({
           id: doc.id,
           // Flat aliases for optimization guide compatibility
           numero: data.number || `EST-${doc.id.substring(0, 6).toUpperCase()}`,
-          clientName: data.client?.companyName || data.companyName || 'Inconnu',
+          clientName: data.client?.companyName || data.companyName || 'Unknown',
           clientPhone: data.client?.phone || data.phone || '',
           clientEmail: data.client?.email || data.email || '',
           total: data.totalQuote || 0,
@@ -1364,7 +1364,7 @@ export async function getQuoteRequests({
           // Existing structure for UI compatibility
           number: data.number || `EST-${doc.id.substring(0, 6).toUpperCase()}`,
           client: {
-            companyName: data.client?.companyName || data.companyName || 'Inconnu',
+            companyName: data.client?.companyName || data.companyName || 'Unknown',
             phone: data.client?.phone || data.phone || '',
             email: data.client?.email || data.email || '',
           },
@@ -1536,14 +1536,14 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
   const notifications: any[] = [];
 
   if (data.status) {
-    let details = `Statut changé vers ${translateStatus(data.status)}`;
+    let details = `Status changed to ${translateStatus(data.status)}`;
     const now = new Date();
     const dateStr = now.toLocaleDateString('fr-FR');
     const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
     if (data.status === 'in_progress' && data.supplierId) {
       const supplier = await getUser(data.supplierId);
-      details = `Transmis au fournisseur: ${supplier?.displayName || 'Inconnu'}`;
+      details = `Submitted to supplier: ${supplier?.displayName || 'Unknown'}`;
       updatePayload.assignedAt = FieldValue.serverTimestamp();
       if (data.treatedBy && !data.treatedAt) {
         updatePayload.treatedAt = FieldValue.serverTimestamp();
@@ -1554,8 +1554,8 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
         notifications.push({
           userId: supplier.uid,
           type: 'estimation_sent',
-          title: 'Nouvelle estimation reçue',
-          description: `Le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}) vous a été transmis le ${dateStr} à ${timeStr}.`,
+          title: 'New estimate received',
+          description: `Quote N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}) has been submitted to you on ${dateStr} at ${timeStr}.`,
           href: `/admin/quotes/${quoteId}`,
           read: false,
           createdAt: FieldValue.serverTimestamp(),
@@ -1577,8 +1577,8 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
         notifications.push({
           userId: uid,
           type: 'estimation',
-          title: 'Estimation complétée par le fournisseur',
-          description: `Le fournisseur a renvoyé ses prix pour le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}).`,
+          title: 'Estimation completed by supplier',
+          description: `The supplier has returned prices for quote N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}).`,
           href: `/admin/quotes/${quoteId}`,
           read: false,
           createdAt: FieldValue.serverTimestamp(),
@@ -1594,8 +1594,8 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
         notifications.push({
           userId: uid,
           type: 'delivery',
-          title: 'Estimation en cours de livraison',
-          description: `Le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}) est passé en statut livraison.`,
+          title: 'Estimation in delivery',
+          description: `Quote N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}) has been marked as in delivery.`,
           href: `/admin/quotes/${quoteId}`,
           read: false,
           createdAt: FieldValue.serverTimestamp(),
@@ -1611,8 +1611,8 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
         notifications.push({
           userId: uid,
           type: 'estimation_rejected',
-          title: 'Estimation refusée',
-          description: `Le fournisseur a refusé le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}).`,
+          title: 'Estimation rejected',
+          description: `The supplier has rejected quote N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}).`,
           href: `/admin/quotes/${quoteId}`,
           read: false,
           createdAt: FieldValue.serverTimestamp(),
@@ -1628,8 +1628,8 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
         notifications.push({
           userId: uid,
           type: 'order_created',
-          title: 'Commande validée par le fournisseur',
-          description: `Une commande a été créée pour le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}).`,
+          title: 'Order confirmed by supplier',
+          description: `An order has been created for quote N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}).`,
           href: `/admin/quotes/${quoteId}`,
           read: false,
           createdAt: FieldValue.serverTimestamp(),
@@ -1645,8 +1645,8 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
         notifications.push({
           userId: uid,
           type: 'estimation',
-          title: `Devis ${data.status === 'processed' ? 'traité' : 'livré'}`,
-          description: `Le devis N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}) a été marqué comme ${data.status === 'processed' ? 'traité' : 'livré'}.`,
+          title: `Quote ${data.status === 'processed' ? 'processed' : 'delivered'}`,
+          description: `Quote N°${quoteId.substring(0, 8)} (${quoteData?.client?.companyName || 'Client'}) has been marked as ${data.status === 'processed' ? 'processed' : 'delivered'}.`,
           href: `/admin/quotes/${quoteId}`,
           read: false,
           createdAt: FieldValue.serverTimestamp(),
@@ -1741,8 +1741,8 @@ export async function moveQuotesToTrash(quoteIds: string[]) {
           userId: adminUser.uid,
           userName: adminUser.displayName || 'Admin',
           userPhotoUrl: adminUser.photoURL || '',
-          action: 'Mise à jour du statut',
-          details: `Statut changé pour ${quoteData?.client?.companyName} vers ${translateStatus('trashed')}`,
+          action: 'Status update',
+          details: `Status changed for ${quoteData?.client?.companyName} to ${translateStatus('trashed')}`,
           timestamp: Timestamp.fromDate(new Date()),
         };
         batch.update(docRef, {
@@ -1761,8 +1761,8 @@ export async function moveQuotesToTrash(quoteIds: string[]) {
           quoteNotifications.push({
             userId: quoteData.userId,
             type: 'estimation_archived',
-            title: 'Estimation archivée',
-            description: `L'estimation N°${id.substring(0, 8)} pour le client ${quoteData?.client?.companyName || 'Client'} a été mise à la corbeille par ${adminUser.displayName || 'un administrateur'} le ${dateStr} à ${timeStr}.`,
+            title: 'Estimation archived',
+            description: `Estimate N°${id.substring(0, 8)} for client ${quoteData?.client?.companyName || 'Client'} has been moved to trash by ${adminUser.displayName || 'an administrator'} on ${dateStr} at ${timeStr}.`,
             href: '/admin/quote-requests',
             read: false,
             createdAt: FieldValue.serverTimestamp(),
@@ -1843,8 +1843,8 @@ export async function restoreQuotes(quoteIds: string[]) {
         quoteNotifications.push({
           userId: quoteData.userId,
           type: 'estimation_unarchived',
-          title: 'Estimation désarchivée',
-          description: `Votre estimation pour ${quoteData?.client?.companyName || 'Client'} a été désarchivée`,
+          title: 'Estimation unarchived',
+          description: `Your estimate for ${quoteData?.client?.companyName || 'Client'} has been unarchived`,
           href: '/admin/quote-requests',
           read: false,
           createdAt: FieldValue.serverTimestamp(),
@@ -1991,21 +1991,21 @@ export async function permanentDeleteAllTrashedQuotes() {
 }
 
 const clientDetailsSchema = z.object({
-  companyName: z.string().min(1, "Le nom de l'entreprise est requis"),
-  email: z.string().email('Adresse e-mail invalide'),
-  phone: z.string().min(1, 'Le numéro de téléphone est requis'),
-  address: z.string().min(1, "L'adresse est requise"),
+  companyName: z.string().min(1, 'Company name is required'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().min(1, 'Phone number is required'),
+  address: z.string().min(1, 'Address is required'),
   notes: z.string().optional(),
 });
 
 export async function updateQuoteClientDetails(quoteId: string, clientData: unknown) {
   const result = clientDetailsSchema.safeParse(clientData);
   if (!result.success) {
-    return { success: false, error: 'Données client invalides.' };
+    return { success: false, error: 'Invalid client data.' };
   }
 
   const { adminDb, FieldValue, Timestamp } = getFirebaseAdmin();
-  if (!adminDb) return { success: false, error: 'Service indisponible.' };
+  if (!adminDb) return { success: false, error: 'Service unavailable.' };
 
   try {
     const docRef = await findQuoteRef(adminDb, quoteId);
@@ -2016,8 +2016,8 @@ export async function updateQuoteClientDetails(quoteId: string, clientData: unkn
         userId: adminUser.uid,
         userName: adminUser.displayName || 'Admin',
         userPhotoUrl: adminUser.photoURL || '',
-        action: 'Mise à jour',
-        details: 'a modifié les informations du client',
+        action: 'Update',
+        details: 'modified client information',
         timestamp: Timestamp.fromDate(new Date()),
       };
 
@@ -2035,10 +2035,10 @@ export async function updateQuoteClientDetails(quoteId: string, clientData: unkn
        }
        return { success: true };
     }
-    return { success: false, error: 'Estimation non trouvée ou utilisateur non autorisé.' };
+      return { success: false, error: 'Estimate not found or user not authorized.' };
   } catch (error: any) {
     console.error('Error updating client details:', error);
-    return { success: false, error: error.message || 'Impossible de mettre à jour le client.' };
+    return { success: false, error: error.message || 'Unable to update the client.' };
   }
 }
 
@@ -2050,7 +2050,7 @@ export async function verifyQuoteToken(token: string): Promise<{ success: boolea
     const querySnapshot = await quotesRef.where('verificationToken', '==', hashedToken).limit(1).get();
 
     if (querySnapshot.empty) {
-      return { success: false, error: "Jeton invalide ou expiré." };
+      return { success: false, error: "Invalid or expired token." };
     }
 
     const quoteDoc = querySnapshot.docs[0];
@@ -2058,7 +2058,7 @@ export async function verifyQuoteToken(token: string): Promise<{ success: boolea
 
     const expiresTimestamp = quoteData.verificationTokenExpires;
     if (expiresTimestamp && new Date() > expiresTimestamp.toDate()) {
-      return { success: false, error: "Le lien de vérification a expiré." };
+      return { success: false, error: "The verification link has expired." };
     }
 
     if (!quoteData.emailVerified) {
@@ -2066,13 +2066,13 @@ export async function verifyQuoteToken(token: string): Promise<{ success: boolea
     }
 
     if (!quoteData.userId) {
-      return { success: false, error: "Aucun utilisateur associé à cette estimation." };
+      return { success: false, error: "No user associated with this estimate." };
     }
 
     return { success: true, quoteId: quoteDoc.id, userId: quoteData.userId };
   } catch (error) {
-    console.error("Erreur de vérification de l'estimation:", error);
-    return { success: false, error: 'Erreur interne du serveur.' };
+    console.error("Error verifying estimate:", error);
+    return { success: false, error: 'Internal server error.' };
   }
 }
 
@@ -2080,15 +2080,15 @@ export async function verifyQuoteToken(token: string): Promise<{ success: boolea
 // --- PDF Settings Actions ---
 
 const pdfSettingsSchema = z.object({
-  logoUrl: z.string().url("URL du logo invalide").or(z.literal('')).optional(),
+  logoUrl: z.string().url("Invalid logo URL").or(z.literal('')).optional(),
   logoWidth: z.coerce.number().min(20).max(300).optional(),
-  backgroundUrl: z.string().url("URL de l'arrière-plan invalide").or(z.literal('')).optional(),
-  companyName: z.string().min(1, "Le nom de l'entreprise est requis"),
+  backgroundUrl: z.string().url("Invalid background URL").or(z.literal('')).optional(),
+  companyName: z.string().min(1, "Company name is required"),
   siret: z.string().optional(),
   capital: z.string().optional(),
-  address: z.string().min(1, "L'adresse est requise"),
-  phone: z.string().min(1, "Le téléphone est requis"),
-  email: z.string().email("Email invalide"),
+  address: z.string().min(1, "Address is required"),
+  phone: z.string().min(1, "Phone is required"),
+  email: z.string().email("Invalid email"),
   textColor: z.string().optional(),
   titleColor: z.string().optional(),
   headerColor: z.string().optional(),
@@ -2153,11 +2153,11 @@ export async function updatePdfSettings(data: unknown) {
 
 const productSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(3, 'Le nom doit contenir au moins 3 caractères'),
-  type: z.array(z.enum(['indoor', 'outdoor', 'showcase'])).min(1, 'Au moins un type doit être sélectionné'),
-  availableFor: z.array(z.enum(['sale', 'rental'])).min(1, 'Au moins une option de disponibilité doit être sélectionnée'),
-  productUrl: z.string().url('URL invalide').or(z.literal('')).optional(),
-  videoUrl: z.string().url('URL invalide pour le média').or(z.literal('')).optional(),
+  name: z.string().min(3, 'Name must contain at least 3 characters'),
+  type: z.array(z.enum(['indoor', 'outdoor', 'showcase'])).min(1, 'At least one type must be selected'),
+  availableFor: z.array(z.enum(['sale', 'rental'])).min(1, 'At least one availability option must be selected'),
+  productUrl: z.string().url('Invalid URL').or(z.literal('')).optional(),
+  videoUrl: z.string().url('Invalid media URL').or(z.literal('')).optional(),
 
   salePricePerSqM: z.coerce.number().optional().default(0),
   rentalPricePerDay: z.coerce.number().optional().default(0),
@@ -2168,7 +2168,7 @@ const productSchema = z.object({
   pricePerTile: z.coerce.number().optional().default(0),
 
   maxRentalArea: z.coerce.number().optional().default(0),
-  minArea: z.coerce.number().min(0, "La surface minimum doit être positive.").optional(),
+  minArea: z.coerce.number().min(0, "Minimum area must be positive.").optional(),
   hasDimensions: z.boolean().optional().default(true),
   isHidden: z.boolean().optional().default(false),
 }).superRefine((data, ctx) => {
@@ -2284,7 +2284,7 @@ export async function addProduct(data: unknown) {
 
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
-    return { success: false, error: { formErrors: { _errors: ['Service de base de données non disponible.'] } } };
+    return { success: false, error: { formErrors: { _errors: ['Database service unavailable.'] } } };
   }
 
   const { id, ...newProductData } = result.data;
@@ -2295,7 +2295,7 @@ export async function addProduct(data: unknown) {
     return { success: true, id: docRef.id };
   } catch (error) {
     console.error("Error adding product to Firestore:", error);
-    return { success: false, error: { formErrors: { _errors: ["Échec de l'ajout du produit à la base de données."] } } };
+    return { success: false, error: { formErrors: { _errors: ["Failed to add product to database."] } } };
   }
 }
 
@@ -2307,7 +2307,7 @@ export async function updateProduct(data: unknown) {
 
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
-    return { success: false, error: { formErrors: ['Service de base de données non disponible.'] } };
+    return { success: false, error: { formErrors: ['Database service unavailable.'] } };
   }
 
   const { id, ...updatedData } = result.data;
@@ -2318,7 +2318,7 @@ export async function updateProduct(data: unknown) {
     return { success: true };
   } catch (error) {
     console.error("Error updating product in Firestore:", error);
-    return { success: false, error: { formErrors: ["Échec de la mise à jour du produit."] } };
+    return { success: false, error: { formErrors: ["Product update failed."] } };
   }
 }
 
@@ -2326,7 +2326,7 @@ export async function updateProduct(data: unknown) {
 export async function deleteProducts(ids: string[]) {
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
-    return { success: false, error: "Service de base de données non disponible." };
+    return { success: false, error: "Database service unavailable." };
   }
   try {
     const batch = adminDb.batch();
@@ -2354,12 +2354,12 @@ export async function cloneProduct(id: string) {
     const productRef = adminDb.collection('products').doc(id);
     const productSnap = await productRef.get();
     if (!productSnap.exists) {
-      return { success: false, error: 'Produit non trouvé.' };
+      return { success: false, error: 'Product not found.' };
     }
 
     const productToClone = productSnap.data();
     if (!productToClone) {
-      return { success: false, error: 'Données du produit introuvables.' };
+      return { success: false, error: 'Product data not found.' };
     }
 
     const clonedProductData = {
@@ -2381,8 +2381,8 @@ export async function cloneProduct(id: string) {
 
 const specItemSchema = z.object({
   id: z.string(),
-  key: z.string().min(1, "La caractéristique ne peut pas être vide."),
-  value: z.string().min(1, "La valeur ne peut pas être vide."),
+  key: z.string().min(1, "Feature key cannot be empty."),
+  value: z.string().min(1, "Feature value cannot be empty."),
 });
 
 const productSpecSchema = z.object({
@@ -2455,13 +2455,13 @@ const messagingSchema = z.object({
 });
 
 const settingsSchema = z.object({
-  defaultWidth: z.coerce.number().min(1, "La largeur doit être d'au moins 1"),
-  defaultHeight: z.coerce.number().min(1, "La hauteur doit être d'au moins 1"),
-  maxWidth: z.coerce.number().min(1, "La largeur max doit être d'au moins 1"),
-  maxHeight: z.coerce.number().min(1, "La hauteur max doit être d'au moins 1"),
+  defaultWidth: z.coerce.number().min(1, "Width must be at least 1"),
+  defaultHeight: z.coerce.number().min(1, "Height must be at least 1"),
+  maxWidth: z.coerce.number().min(1, "Max width must be at least 1"),
+  maxHeight: z.coerce.number().min(1, "Max height must be at least 1"),
   maxRentalWidth: z.coerce.number().min(1).optional(),
   maxRentalHeight: z.coerce.number().min(1).optional(),
-  maxProductsPerQuote: z.coerce.number().min(1, 'Doit être au moins 1').optional(),
+  maxProductsPerQuote: z.coerce.number().min(1, 'Must be at least 1').optional(),
   previewScreenImageUrl: z.string().optional(),
   previewScreenVideoUrl: z.string().optional(),
   previewHumanScaleImageUrl: z.string().optional(),
@@ -2512,12 +2512,12 @@ const wizardEnvironmentSettingSchema = z.object({
 
 const viewingDistanceOptionSchema = z.object({
   id: z.string(),
-  value: z.string().min(1, "La valeur ne peut être vide."),
+  value: z.string().min(1, "Value cannot be empty."),
 });
 
 const pixelPitchOptionSchema = z.object({
   id: z.string(),
-  value: z.string().min(1, "La valeur ne peut être vide."),
+  value: z.string().min(1, "Value cannot be empty."),
   recommended: z.boolean(),
 });
 
@@ -2664,7 +2664,7 @@ export async function saveSidebarConfig(data: unknown) {
   // Verify caller is admin
   const currentUser = await getCurrentAdminUser();
   if (!currentUser || 'error' in currentUser || currentUser.role !== 'admin') {
-    return { success: false, error: 'Accès refusé. Seul un administrateur peut modifier cette configuration.' };
+    return { success: false, error: 'Access denied. Only an administrator can modify this configuration.' };
   }
 
   const result = sidebarConfigSchema.safeParse(data);
@@ -2679,7 +2679,7 @@ export async function saveSidebarConfig(data: unknown) {
     return { success: true };
   } catch (error) {
     console.error('Failed to save sidebar config in Firestore:', error);
-    return { success: false, error: 'Échec de la sauvegarde de la configuration.' };
+    return { success: false, error: 'Failed to save configuration.' };
   }
 }
 
@@ -2780,10 +2780,10 @@ export async function updateWizardSettings(data: unknown) {
 // --- Theme Actions ---
 
 const defaultThemes: Omit<Theme, 'id' | 'createdAt'>[] = [
-  { name: 'Défaut', colors: { adminBackground: '240 10% 97%' } },
-  { name: 'Sombre', colors: { adminBackground: '222.2 84% 4.9%' } },
-  { name: 'Violet', colors: { adminBackground: '262 84% 58%' } },
-  { name: 'Vert', colors: { adminBackground: '142 76% 36%' } },
+  { name: 'Default', colors: { adminBackground: '240 10% 97%' } },
+  { name: 'Dark', colors: { adminBackground: '222.2 84% 4.9%' } },
+  { name: 'Purple', colors: { adminBackground: '262 84% 58%' } },
+  { name: 'Green', colors: { adminBackground: '142 76% 36%' } },
   { name: 'Orange', colors: { adminBackground: '25 95% 53%' } },
 ];
 
@@ -3056,7 +3056,7 @@ export async function impersonateUser(targetUserId: string) {
 
   const sessionCookie = cookies().get('session')?.value;
   if (!sessionCookie) {
-    return { success: false, error: 'Accès refusé. Session invalide.' };
+    return { success: false, error: 'Access denied. Invalid session.' };
   }
 
   try {
@@ -3066,7 +3066,7 @@ export async function impersonateUser(targetUserId: string) {
     const originalAdminUserRecord = await adminAuth.getUser(originalAdminUid);
 
     if (originalAdminUserRecord.customClaims?.role !== 'admin') {
-      return { success: false, error: 'Accès refusé. Seul un administrateur peut utiliser cette fonction.' };
+      return { success: false, error: 'Access denied. Only an administrator can use this function.' };
     }
 
     const impersonationToken = await adminAuth.createCustomToken(targetUserId, {

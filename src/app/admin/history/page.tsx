@@ -13,6 +13,18 @@ import { format, formatDistanceToNow, isWithinInterval, startOfDay, endOfDay } f
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { useI18n } from '@/lib/i18n';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Combobox } from '@/components/ui/combobox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -23,6 +35,7 @@ import type { DateRange } from 'react-day-picker';
 const ITEMS_PER_PAGE = 10;
 
 export default function HistoryPage() {
+    const { t } = useI18n();
     const [allQuotes, setAllQuotes] = useState<QuoteRequest[]>([]);
     const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -50,8 +63,8 @@ useEffect(() => {
                 console.error('Failed to load history data', err);
                 toast({
                     variant: 'destructive',
-                    title: 'Erreur',
-                    description: 'Impossible de charger les données de l\'historique.',
+                    title: t('history.error'),
+                    description: t('history.unableToLoad'),
                 });
                 setIsLoading(false);
             });
@@ -64,7 +77,7 @@ useEffect(() => {
                 history.push({
                     ...h,
                     quoteId: quote.id,
-                    quoteName: `pour ${quote.client.companyName}`,
+                    quoteName: `${t('history.for')} ${quote.client.companyName}`,
                 });
             });
         });
@@ -138,11 +151,11 @@ useEffect(() => {
         const word = status.split(' ').pop() || '';
         switch (word) {
             case 'pending':
-                return 'en attente';
+                return t('history.pending');
             case 'processed':
-                return 'traité';
+                return t('history.processed');
             case 'trashed':
-                return 'mis à la corbeille';
+                return t('history.trashed');
             default:
                 return status;
         }
@@ -152,8 +165,8 @@ useEffect(() => {
         return (
             <Card className="bg-theme-card border-theme-card-border text-theme-card-text">
                 <CardHeader>
-                    <CardTitle>Historique des activités</CardTitle>
-                    <CardDescription>Chargement de l’historique…</CardDescription>
+                    <CardTitle>{t('history.title')}</CardTitle>
+                    <CardDescription>{t('history.loading')}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center p-12">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -167,21 +180,35 @@ useEffect(() => {
       <CardHeader>
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
             <div>
-                <CardTitle>Historique des activités</CardTitle>
-                <CardDescription>Consultez l'historique de toutes les modifications apportées aux estimations.</CardDescription>
+                <CardTitle>{t('history.title')}</CardTitle>
+                <CardDescription>{t('history.description')}</CardDescription>
             </div>
-            <Button variant="destructive-ghost" onClick={handleClearHistory} disabled={isClearing || fullHistory.length === 0}>
-                {isClearing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                Vider l'historique
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive-ghost" disabled={isClearing || fullHistory.length === 0}>
+                  {isClearing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                  {t('history.clear')}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('history.clearConfirmTitle')}</AlertDialogTitle>
+                  <AlertDialogDescription>{t('history.clearConfirmDesc')}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('history.cancel')}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleClearHistory}>{t('history.confirmClear')}</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
             <Combobox
                 items={userOptions}
                 value={selectedUserId}
                 onValueChange={setSelectedUserId}
-                placeholder="Filtrer par utilisateur..."
-                searchPlaceholder="Rechercher un utilisateur..."
+                placeholder={t('history.filterByUser')}
+                searchPlaceholder={t('history.searchUser')}
             />
              <Popover>
                 <PopoverTrigger asChild>
@@ -194,7 +221,7 @@ useEffect(() => {
                                 format(dateRange.from, "dd/MM/yyyy")
                             )
                         ) : (
-                            <span>Filtrer par date...</span>
+                            <span>{t('history.filterByDate')}</span>
                         )}
                     </Button>
                 </PopoverTrigger>
@@ -210,7 +237,7 @@ useEffect(() => {
             </Popover>
             {(selectedUserId || dateRange?.from) && (
                 <Button variant="ghost" onClick={() => { setSelectedUserId(''); setDateRange(undefined); }}>
-                    Réinitialiser les filtres
+                    {t('history.resetFilters')}
                 </Button>
             )}
         </div>
@@ -222,17 +249,17 @@ useEffect(() => {
                     paginatedHistory.map((entry, index) => (
                         <div key={index} className="grid grid-cols-[auto_1fr_auto] items-start gap-4 p-5 border-b border-theme-card-border last:border-b-0 hover:bg-theme-hover transition-colors">
                             <Avatar className="h-10 w-10 border border-theme-card-border shadow-sm">
-                                <AvatarImage src={entry.userPhotoUrl} />
+                                <AvatarImage src={entry.userPhotoUrl} alt={entry.userName} />
                                 <AvatarFallback className="bg-theme-app text-theme-text">{entry.userName.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="text-sm">
                                 <p className="text-theme-card-text">
                                     <span className="font-bold">{entry.userName}</span>
-                                    <span className="opacity-60"> a modifié le statut de </span>
+                                    <span className="opacity-60"> {t('history.changedStatus')} </span>
                                     <Link href={`/admin/quotes/${entry.quoteId}`} className="font-bold text-aura-accent hover:underline">
-                                       l'estimation {entry.quoteName}
+                                       {t('history.theEstimate')} {entry.quoteName}
                                     </Link>
-                                    <span className="opacity-60"> vers </span>
+                                    <span className="opacity-60"> {t('history.to')} </span>
                                     <span className="font-bold">{translateStatus(entry.details)}</span>.
                                 </p>
                                 <TooltipProvider>
@@ -257,8 +284,8 @@ useEffect(() => {
                 ) : (
                     <div className="text-center text-muted-foreground py-12 flex flex-col items-center">
                         <SlidersHorizontal className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                        <p className="font-semibold">Aucune activité à afficher.</p>
-                        <p>Essayez d'ajuster vos filtres ou effectuez une recherche.</p>
+                        <p className="font-semibold">{t('history.noActivity')}</p>
+                        <p>{t('history.adjustFilters')}</p>
                     </div>
                 )}
             </ScrollArea>

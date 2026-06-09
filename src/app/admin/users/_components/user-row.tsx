@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { RoleBadge } from './role-badge';
 import { StatusBadge } from './status-badge';
 import type { AdaptedUser } from './user-card';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface UserRowProps {
   user: AdaptedUser;
@@ -20,6 +21,7 @@ export const UserRow: React.FC<UserRowProps> = ({
   onDelete,
   isAdmin,
 }) => {
+  const { t } = useAdminT();
   const [showActions, setShowActions] = useState(false);
 
   const formatDate = (dateString: string) => {
@@ -30,7 +32,7 @@ export const UserRow: React.FC<UserRowProps> = ({
         day: 'numeric',
       });
     } catch {
-      return 'N/A';
+      return t('N/A');
     }
   };
 
@@ -82,14 +84,14 @@ export const UserRow: React.FC<UserRowProps> = ({
                   onClick={() => { onEdit(user); setShowActions(false); }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                 >
-                  <Edit2 className="w-4 h-4" /> Modifier
+                                  <Edit2 className="w-4 h-4" /> {t('Edit')}
                 </button>
                 {isAdmin && (
                   <button
                     onClick={() => { onDelete(user.uid); setShowActions(false); }}
                     className="w-full flex items-center gap-2 px-4 py-2 text-sm text-rose-400 hover:bg-rose-400/10 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4" /> Supprimer
+                                    <Trash2 className="w-4 h-4" /> {t('Delete')}
                   </button>
                 )}
               </motion.div>

@@ -51,10 +51,10 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
   ];
 
   const recentEstimations = [
-    { id: 'EST-2026-001', client: 'Jean Dupont', status: t('admin.fournisseurDashboard.statInProgress'), amount: '1 250,50 €', date: '25 mars 2026' },
-    { id: 'EST-2026-003', client: 'Robert Martin', status: t('admin.fournisseurDashboard.statDelivered'), amount: '2 100,25 €', date: '27 mars 2026' },
-    { id: 'EST-2026-008', client: 'Emma Leroy', status: t('admin.fournisseurDashboard.statInProgress'), amount: '1 750,00 €', date: '30 mars 2026' },
-    { id: 'EST-2026-009', client: 'Lucas Bernard', status: t('admin.fournisseurDashboard.statReceived'), amount: '890,00 €', date: '01 avr. 2026' },
+    { id: 'EST-2026-001', client: 'Jean Dupont', status: t('admin.fournisseurDashboard.statInProgress'), amount: '1 250,50 €', date: 'March 25, 2026' },
+    { id: 'EST-2026-003', client: 'Robert Martin', status: t('admin.fournisseurDashboard.statDelivered'), amount: '2 100,25 €', date: 'March 27, 2026' },
+    { id: 'EST-2026-008', client: 'Emma Leroy', status: t('admin.fournisseurDashboard.statInProgress'), amount: '1 750,00 €', date: 'March 30, 2026' },
+    { id: 'EST-2026-009', client: 'Lucas Bernard', status: t('admin.fournisseurDashboard.statReceived'), amount: '890,00 €', date: 'Apr 1, 2026' },
   ];
 
   const topProducts = [
@@ -67,9 +67,9 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
   const quickActions: { label: string; action: string; icon: any; color: string; href: string; bg: string }[] = [];
 
   const activities = [
-    { id: 1, user: 'Jean Dupont', action: t('admin.fournisseurDashboard.newRequest'), details: `Estimation #EST-2026-009 pour 890€`, time: '10:32', type: 'client' },
-    { id: 2, user: 'Admin', action: t('admin.fournisseurDashboard.processed'), details: 'Estimation #EST-2026-003 approuvée', time: '09:15', type: 'admin' },
-    { id: 3, user: 'Sophie Durand', action: t('admin.fournisseurDashboard.paymentReceived'), details: 'Montant: 2 100€ pour #EST-2026-003', time: '14:22', type: 'payment' },
+    { id: 1, user: 'Jean Dupont', action: t('admin.fournisseurDashboard.newRequest'), details: `Estimate #EST-2026-009 for €890`, time: '10:32', type: 'client' },
+    { id: 2, user: 'Admin', action: t('admin.fournisseurDashboard.processed'), details: 'Estimate #EST-2026-003 approved', time: '09:15', type: 'admin' },
+    { id: 3, user: 'Sophie Durand', action: t('admin.fournisseurDashboard.paymentReceived'), details: 'Amount: €2,100 for #EST-2026-003', time: '14:22', type: 'payment' },
   ];
 
   return (
@@ -78,7 +78,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('admin.fournisseurDashboard.greeting', { userName: userName || 'Fournisseur' })}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('admin.fournisseurDashboard.greeting', { userName: userName || 'Supplier' })}</h1>
             <p className="text-sm mt-1 text-gray-500">
               {t('admin.fournisseurDashboard.subtitle')}
             </p>
@@ -257,21 +257,21 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                 <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-bold text-gray-900">{t('admin.fournisseurDashboard.alertLowStock')}</p>
-                  <p className="text-xs text-gray-500">Module Solar X1 - 3 unités restantes</p>
+                   <p className="text-xs text-gray-500">Module Solar X1 - 3 units remaining</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
                 <Clock className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-bold text-gray-900">{t('admin.fournisseurDashboard.alertPendingEstimate')}</p>
-                  <p className="text-xs text-gray-500">EST-2026-009 en attente depuis 2 jours</p>
+                   <p className="text-xs text-gray-500">EST-2026-009 pending for 2 days</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 p-3 bg-green-50 rounded-xl border border-green-100">
                 <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-bold text-gray-900">{t('admin.fournisseurDashboard.alertPaymentReceived')}</p>
-                  <p className="text-xs text-gray-500">2 100€ pour estimation #EST-2026-003</p>
+                   <p className="text-xs text-gray-500">€2,100 for estimate #EST-2026-003</p>
                 </div>
               </div>
             </div>
@@ -301,7 +301,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
               </div>
             )}
           </div>
-          <h3 className="text-lg font-bold">{userName || 'Fournisseur'}</h3>
+          <h3 className="text-lg font-bold">{userName || 'Supplier'}</h3>
           <p className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('admin.supplier')}</p>
 
           <div className="flex items-center justify-center gap-4 mt-6">

@@ -22,6 +22,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useRouter } from "next/navigation";
+import { useI18n } from '@/lib/i18n';
 import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -42,6 +43,7 @@ import { EditTrackingNumberDialog } from "@/app/admin/quote-requests/_components
 
 
 function EditClientDialog({ quote, onUpdate }: { quote: QuoteRequest; onUpdate: (updatedClient: QuoteRequest['client']) => void }) {
+    const { t } = useI18n();
     const [isOpen, setIsOpen] = useState(false);
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
@@ -57,9 +59,9 @@ function EditClientDialog({ quote, onUpdate }: { quote: QuoteRequest; onUpdate: 
             if (result.success) {
                 onUpdate(formData);
                 setIsOpen(false);
-                toast({ title: "Client mis à jour", description: "Les informations du client ont été sauvegardées.", variant: 'success' });
+                toast({ title: t('admin.quoteDetails.editClientSuccess'), description: t('admin.quoteDetails.editClientSuccessDesc'), variant: 'success' });
             } else {
-                toast({ title: "Erreur", description: result.error, variant: 'destructive' });
+                toast({ title: t('admin.quoteDetails.editClientError'), description: result.error, variant: 'destructive' });
             }
         });
     };
@@ -73,35 +75,35 @@ function EditClientDialog({ quote, onUpdate }: { quote: QuoteRequest; onUpdate: 
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Modifier les informations du client</DialogTitle>
+                    <DialogTitle>{t('admin.quoteDetails.editClientTitle')}</DialogTitle>
                     <DialogDescription>
-                        Mettez à jour les détails du contact et de l'entreprise pour cette estimation.
+                        {t('admin.quoteDetails.editClientDesc')}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="companyName">Entreprise</Label>
+                        <Label htmlFor="companyName">{t('admin.quoteDetails.companyLabel')}</Label>
                         <Input id="companyName" value={formData.companyName} onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email">{t('admin.quoteDetails.emailLabel')}</Label>
                         <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="phone">Téléphone</Label>
+                        <Label htmlFor="phone">{t('admin.quoteDetails.phoneLabel')}</Label>
                         <Input id="phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="address">Adresse</Label>
+                        <Label htmlFor="address">{t('admin.quoteDetails.addressLabel')}</Label>
                         <Input id="address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="notes">Notes</Label>
+                        <Label htmlFor="notes">{t('admin.quoteDetails.notesLabel')}</Label>
                         <Textarea id="notes" value={formData.notes || ''} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} />
                     </div>
                     {formData.sitePhoto && (
                         <div className="space-y-2">
-                            <Label>Photo du site</Label>
+                            <Label>{t('admin.quoteDetails.sitePhotoLabel')}</Label>
                             <div className="relative aspect-video rounded-lg overflow-hidden border">
                                 <img src={formData.sitePhoto} alt="Site" className="object-cover w-full h-full" />
                             </div>
@@ -109,8 +111,8 @@ function EditClientDialog({ quote, onUpdate }: { quote: QuoteRequest; onUpdate: 
                     )}
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsOpen(false)}>Annuler</Button>
-                    <Button onClick={handleSave} disabled={isPending}>{isPending ? 'Sauvegarde...' : 'Sauvegarder'}</Button>
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>{t('admin.quoteDetails.cancel')}</Button>
+                    <Button onClick={handleSave} disabled={isPending}>{isPending ? t('admin.quoteDetails.saving') : t('admin.quoteDetails.save')}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -118,10 +120,11 @@ function EditClientDialog({ quote, onUpdate }: { quote: QuoteRequest; onUpdate: 
 }
 
 function HistoryTimeline({ history }: { history: QuoteHistoryEntry[] }) {
+    const { t } = useI18n();
     if (!history || history.length === 0) {
         return (
             <div className="text-center text-sm text-muted-foreground py-4">
-                Aucun historique pour cette estimation.
+                {t('admin.quoteDetails.noHistory')}
             </div>
         );
     }
@@ -163,6 +166,7 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
     allProducts: Product[];
     deliverySettings: DeliverySettings;
 }) {
+  const { t } = useI18n();
   const [quote, setQuote] = useState<QuoteRequest | undefined>(initialQuote);
   
   const [deliveryCost, setDeliveryCost] = useState(0);
@@ -391,7 +395,7 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
   if (!quote) {
     return (
         <div className="flex items-center justify-center p-8">
-            <Loader2 className="animate-spin mr-2"/> Chargement de l'estimation...
+            <Loader2 className="animate-spin mr-2"/> {t('admin.quoteDetails.loading')}
         </div>
     );
   }
@@ -405,21 +409,21 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
                 <ArrowLeft className="h-4 w-4" />
             </Button>
             <CardTitle>
-              Détails de l'estimation <span className="font-mono text-base text-muted-foreground">EST-{quote.id.substring(0, 6).toUpperCase()}</span>
+              {t('admin.quoteDetails.title')} <span className="font-mono text-base text-muted-foreground">EST-{quote.id.substring(0, 6).toUpperCase()}</span>
             </CardTitle>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" className="sm:hidden" onClick={() => router.back()}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Retour
+                {t('admin.quoteDetails.back')}
             </Button>
             <Button variant="outline" onClick={() => setIsClientModalOpen(true)}>
                 <User className="mr-2 h-4 w-4" />
-                Client
+                {t('admin.quoteDetails.clientSection')}
             </Button>
             <Button variant="outline" onClick={() => setIsSupplierModalOpen(true)}>
                 <Users className="mr-2 h-4 w-4" />
-                Fournisseur
+                {t('admin.supplier')}
             </Button>
             <TransmitToSupplierDialog
                 quotes={[quote]}
@@ -431,7 +435,7 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
             >
               <Button variant="outline" disabled={quote.status !== 'processed'}>
                 <Truck className="mr-2 h-4 w-4" />
-                Transmettre
+                {t('admin.quoteDetails.transmit')}
               </Button>
             </TransmitToSupplierDialog>
           </div>
@@ -441,18 +445,18 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2">
             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2"><User size={20}/> Client</CardTitle>
+                <CardTitle className="flex items-center gap-2"><User size={20}/> {t('admin.quoteDetails.clientSection')}</CardTitle>
                  <EditClientDialog quote={quote} onUpdate={(updatedClient) => setQuote({ ...quote, client: updatedClient })} />
             </CardHeader>
             <CardContent className="text-sm space-y-1">
-                <p><strong>Entreprise:</strong> {quote.client.companyName}</p>
-                <p><strong>Email:</strong> {quote.client.email}</p>
-                <p><strong>Téléphone:</strong> {quote.client.phone}</p>
-                <p><strong>Adresse:</strong> {quote.client.address}</p>
-                {quote.client.notes && <p><strong>Notes:</strong> {quote.client.notes}</p>}
+                <p><strong>{t('admin.quoteDetails.company')}</strong> {quote.client.companyName}</p>
+                <p><strong>{t('admin.quoteDetails.email')}</strong> {quote.client.email}</p>
+                <p><strong>{t('admin.quoteDetails.phone')}</strong> {quote.client.phone}</p>
+                <p><strong>{t('admin.quoteDetails.address')}</strong> {quote.client.address}</p>
+                {quote.client.notes && <p><strong>{t('admin.quoteDetails.notes')}</strong> {quote.client.notes}</p>}
                 {quote.client.sitePhoto && (
                     <div className="mt-4">
-                        <p className="font-semibold mb-2">Photo du site:</p>
+                        <p className="font-semibold mb-2">{t('admin.quoteDetails.sitePhoto')}</p>
                         <div className="relative group cursor-pointer" onClick={() => window.open(quote.client.sitePhoto, '_blank')}>
                             <img 
                                 src={quote.client.sitePhoto} 
@@ -467,7 +471,7 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
                 )}
                 {quote.trackingNumber && (
                   <div className="flex items-center gap-2 pt-2">
-                    <strong>N° de suivi:</strong> <span>{quote.trackingNumber}</span>
+                    <strong>{t('admin.quoteDetails.trackingNumber')}</strong> <span>{quote.trackingNumber}</span>
                     <EditTrackingNumberDialog quote={quote} onUpdate={(updatedData) => setQuote(prev => ({...prev!, ...updatedData}))} />
                   </div>
                 )}
@@ -475,7 +479,7 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
         </Card>
         <Card>
              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><History size={20}/> Historique</CardTitle>
+                <CardTitle className="flex items-center gap-2"><History size={20}/> {t('admin.quoteDetails.historySection')}</CardTitle>
             </CardHeader>
             <CardContent>
                 <HistoryTimeline history={quote.history || []} />
@@ -489,8 +493,8 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
            <Card>
             <AccordionTrigger className="p-6">
                 <CardHeader className="p-0 text-left">
-                    <CardTitle className="flex items-center gap-2"><Package size={20}/> Produits</CardTitle>
-                    <CardDescription>Total initial: {formatCurrency(productsTotal)}</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Package size={20}/> {t('admin.quoteDetails.products')}</CardTitle>
+                    <CardDescription>{t('admin.quoteDetails.initialTotal')} {formatCurrency(productsTotal)}</CardDescription>
                 </CardHeader>
             </AccordionTrigger>
             <AccordionContent className="p-6 pt-0">
@@ -501,11 +505,12 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
 
                             if (p.transactionType === 'rental') {
                                 if (p.rentalUnit === 'day' && p.rentalPeriod?.from && p.rentalPeriod?.to) {
-                                    const from = new Date(p.rentalPeriod.from);
-                                    const to = new Date(p.rentalPeriod.to);
-                                    durationText = `Période: du ${format(from, "dd/MM/yy", { locale: fr })} au ${format(to, "dd/MM/yy", { locale: fr })} (${p.rentalDuration} j)`;
+                                    const from = format(new Date(p.rentalPeriod.from), "dd/MM/yy", { locale: fr });
+                                    const to = format(new Date(p.rentalPeriod.to), "dd/MM/yy", { locale: fr });
+                                    durationText = t('admin.quoteDetails.period', { from, to, duration: String(p.rentalDuration) });
                                 } else if (p.rentalUnit === 'hour' && p.rentalDate) {
-                                    durationText = `Le ${format(new Date(p.rentalDate), 'dd/MM/yy', { locale: fr })} de ${p.rentalStartTime} à ${p.rentalEndTime} (${p.rentalDuration}h)`;
+                                    const date = format(new Date(p.rentalDate), 'dd/MM/yy', { locale: fr });
+                                    durationText = t('admin.quoteDetails.onDate', { date, startTime: p.rentalStartTime, endTime: p.rentalEndTime, duration: String(p.rentalDuration) });
                                 }
                             }
 
@@ -515,10 +520,10 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
                                         <p className="font-semibold">{p.productName} × {p.quantity}</p>
                                         <div className="flex items-center gap-2">
                                             {productInfo?.hasDimensions !== false && p.width > 0 && p.height > 0 && (
-                                                <p className="text-muted-foreground">Dimensions: {p.width}m x {p.height}m</p>
+                                                <p className="text-muted-foreground">{t('admin.quoteDetails.dimensions')} {p.width}m x {p.height}m</p>
                                             )}
                                             <Badge variant={p.transactionType === 'sale' ? 'default' : 'secondary'} className={p.transactionType === 'sale' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}>
-                                                {p.transactionType === 'sale' ? 'Vente' : 'Location'}
+                                                {p.transactionType === 'sale' ? t('admin.quoteDetails.sale') : t('admin.quoteDetails.rental')}
                                             </Badge>
                                         </div>
                                         {durationText && <p className="text-muted-foreground text-xs">{durationText}</p>}
@@ -529,13 +534,13 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
                         })
                     ) : (
                         <div className="py-8 text-center text-muted-foreground bg-slate-50 rounded-lg border-2 border-dashed">
-                             Aucun produit configuré pour cette estimation.
+                             {t('admin.quoteDetails.noProducts')}
                         </div>
                     )}
                 <div className="border p-4 rounded-lg mt-4 bg-muted/20">
-                    <Label htmlFor="productDiscount" className="font-medium">Remise Produits (%)</Label>
+                    <Label htmlFor="productDiscount" className="font-medium">{t('admin.quoteDetails.productDiscount')}</Label>
                     <Input id="productDiscount" type="number" value={productDiscount} onChange={e => setProductDiscount(Number(e.target.value))} className="mt-2" />
-                    <p className="text-sm mt-2">Nouveau total: <strong className="text-base">{formatCurrency(calculateDiscount(productsTotal, productDiscount))}</strong></p>
+                    <p className="text-sm mt-2">{t('admin.quoteDetails.newTotal')} <strong className="text-base">{formatCurrency(calculateDiscount(productsTotal, productDiscount))}</strong></p>
                 </div>
             </AccordionContent>
           </Card>
@@ -547,11 +552,11 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
             <Card>
                 <AccordionTrigger className="p-6">
                     <CardHeader className="p-0 text-left">
-                        <CardTitle className="flex items-center gap-2"><Truck size={20}/> Livraison</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Truck size={20}/> {t('admin.quoteDetails.delivery')}</CardTitle>
                         <CardDescription>
                             {!quote.isDeliveryCostFinal
-                                ? <span className="font-semibold text-red-500">À confirmer</span>
-                                : `Coût configuré: ${formatCurrency(quote.deliveryCost ?? 0)}`
+                                ? <span className="font-semibold text-red-500">{t('admin.quoteDetails.toBeConfirmed')}</span>
+                                : `${t('admin.quoteDetails.configuredCost')} ${formatCurrency(quote.deliveryCost ?? 0)}`
                             }
                         </CardDescription>
                     </CardHeader>
@@ -559,26 +564,26 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
                 <AccordionContent className="p-6 pt-0">
                     {selectedCity ? (
                         <div className="mb-4 p-3 border border-green-200 bg-green-50 dark:bg-green-950 rounded-md text-sm">
-                            <p className="font-semibold text-green-800 dark:text-green-300">Destination configurée :</p>
+                            <p className="font-semibold text-green-800 dark:text-green-300">{t('admin.quoteDetails.configuredDestination')}</p>
                             <p className="text-green-700 dark:text-green-400">
                                 {selectedCity.name} ({selectedCity.postalCode})
                             </p>
                         </div>
                     ) : quote.unconfiguredCityQuery ? (
                         <div className="mb-4 p-3 border border-blue-200 bg-blue-50 dark:bg-blue-950 rounded-md text-sm">
-                            <p className="font-semibold text-blue-800 dark:text-blue-300">Demande pour :</p>
+                            <p className="font-semibold text-blue-800 dark:text-blue-300">{t('admin.quoteDetails.requestFor')}</p>
                             <p className="text-blue-700 dark:text-blue-400">{quote.unconfiguredCityQuery}</p>
                         </div>
                     ) : null}
                     
                     <div className="space-y-2">
-                        <Label htmlFor="deliveryCost">Coût de livraison (€)</Label>
+                        <Label htmlFor="deliveryCost">{t('admin.quoteDetails.deliveryCost')}</Label>
                         <Input id="deliveryCost" type="number" value={deliveryCost} onChange={e => setDeliveryCost(Number(e.target.value))} />
                     </div>
                     <div className="border p-4 rounded-lg mt-4 bg-muted/20">
-                        <Label htmlFor="deliveryDiscount">Remise Livraison (%)</Label>
+                        <Label htmlFor="deliveryDiscount">{t('admin.quoteDetails.deliveryDiscount')}</Label>
                         <Input id="deliveryDiscount" type="number" value={deliveryDiscount} onChange={e => setDeliveryDiscount(Number(e.target.value))} className="mt-2"/>
-                        <p className="text-sm mt-2">Nouveau total: <strong className="text-base">{formatCurrency(calculateDiscount(deliveryCost, deliveryDiscount))}</strong></p>
+                        <p className="text-sm mt-2">{t('admin.quoteDetails.newTotal')} <strong className="text-base">{formatCurrency(calculateDiscount(deliveryCost, deliveryDiscount))}</strong></p>
                     </div>
                 </AccordionContent>
             </Card>
@@ -591,22 +596,22 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
             <Card>
                 <AccordionTrigger className="p-6">
                     <CardHeader className="p-0 text-left">
-                        <CardTitle className="flex items-center gap-2"><Wrench size={20}/> Main d'œuvre</CardTitle>
-                        <CardDescription>Coût configuré: {formatCurrency(quote.installationCost || 0)}</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Wrench size={20}/> {t('admin.quoteDetails.labor')}</CardTitle>
+                        <CardDescription>{t('admin.quoteDetails.configuredCostPrefix')} {formatCurrency(quote.installationCost || 0)}</CardDescription>
                     </CardHeader>
                 </AccordionTrigger>
                 <AccordionContent className="p-6 pt-0 space-y-4">
                     <p className="text-sm text-muted-foreground p-3 border rounded-lg bg-slate-50">
-                        Pour une surface totale de {totalArea.toFixed(2)} m², votre projet nécessite {quote.techniciansRequired} technicien(s).
+                        {t('admin.quoteDetails.areaInfo', { area: totalArea.toFixed(2), technicians: String(quote.techniciansRequired) })}
                     </p>
                     <div className="space-y-2">
-                        <Label htmlFor="laborCost">Coût de main d'œuvre (€)</Label>
+                        <Label htmlFor="laborCost">{t('admin.quoteDetails.laborCost')}</Label>
                         <Input id="laborCost" type="number" value={laborCost} onChange={e => setLaborCost(Number(e.target.value))} />
                     </div>
                     <div className="border p-4 rounded-lg mt-4 bg-muted/20">
-                        <Label htmlFor="laborDiscount">Remise Main d'œuvre (%)</Label>
+                        <Label htmlFor="laborDiscount">{t('admin.quoteDetails.laborDiscount')}</Label>
                         <Input id="laborDiscount" type="number" value={laborDiscount} onChange={e => setLaborDiscount(Number(e.target.value))} className="mt-2"/>
-                        <p className="text-sm mt-2">Nouveau total: <strong className="text-base">{formatCurrency(calculateDiscount(laborCost, laborDiscount))}</strong></p>
+                        <p className="text-sm mt-2">{t('admin.quoteDetails.newTotal')} <strong className="text-base">{formatCurrency(calculateDiscount(laborCost, laborDiscount))}</strong></p>
                     </div>
                 </AccordionContent>
             </Card>
@@ -616,13 +621,13 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
                 <Card>
                     <AccordionTrigger className="p-6">
                         <CardHeader className="p-0 text-left">
-                            <CardTitle className="flex items-center gap-2"><Wrench size={20}/> Main d'œuvre</CardTitle>
-                            <CardDescription>Étape désactivée lors de l'estimation.</CardDescription>
+                            <CardTitle className="flex items-center gap-2"><Wrench size={20}/> {t('admin.quoteDetails.labor')}</CardTitle>
+                            <CardDescription>{t('admin.quoteDetails.stepDisabled')}</CardDescription>
                         </CardHeader>
                     </AccordionTrigger>
                      <AccordionContent className="p-6 pt-0">
                         <div className="text-sm text-muted-foreground p-4 border rounded-lg bg-slate-50">
-                            L'option d'installation n'a pas été présentée au client car elle était désactivée dans les paramètres généraux au moment de la création de l'estimation. Le coût devra être négocié manuellement.
+                            {t('admin.quoteDetails.stepDisabledDesc')}
                         </div>
                      </AccordionContent>
                 </Card>
@@ -663,16 +668,16 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
         <div className={cn("relative z-10 space-y-4", !isSummaryExpanded && "hidden")}>
             <div className="flex justify-between items-center text-right">
                 <div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">Total Initial (HT)</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{t('admin.quoteDetails.initialTotalExclTax')}</p>
                     <p className="text-lg font-bold dark:text-white">{formatCurrency(quote.totalQuote)}</p>
                 </div>
                 <div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">Total Final (HT)</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{t('admin.quoteDetails.finalTotalExclTax')}</p>
                     <p className="text-2xl font-bold dark:text-white">{formatCurrency(finalTotal)}</p>
                 </div>
             </div>
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/20">
-                <Label htmlFor="vatRate" className="text-sm text-gray-700 dark:text-gray-300">TVA (%):</Label>
+                <Label htmlFor="vatRate" className="text-sm text-gray-700 dark:text-gray-300">{t('admin.quoteDetails.vatPercent')}</Label>
                 <Input 
                     id="vatRate" 
                     type="number" 
@@ -682,7 +687,7 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
                 />
             </div>
              <div>
-                <p className="text-sm text-gray-700 dark:text-gray-300 text-right">Total Final (TTC)</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 text-right">{t('admin.quoteDetails.finalTotalInclTax')}</p>
                 <p className="text-xl font-bold dark:text-white text-right">{formatCurrency(finalTotal * (1 + vatRate / 100))}</p>
             </div>
         </div>
@@ -707,19 +712,19 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
         <Dialog open={isClientModalOpen} onOpenChange={setIsClientModalOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Options PDF Client</DialogTitle>
+                    <DialogTitle>{t('admin.quoteDetails.clientPdfTitle')}</DialogTitle>
                     <DialogDescription>
-                       Prévisualisez ou téléchargez l'estimation formatée pour le client.
+                       {t('admin.quoteDetails.clientPdfDesc')}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter className="sm:justify-start gap-2">
                     <Button variant="outline" onClick={() => handleViewPdf('client')}>
                         <Eye className="mr-2 h-4 w-4" />
-                        Prévisualiser
+                        {t('admin.quoteDetails.preview')}
                     </Button>
                     <Button onClick={() => handleDownloadPdf('client')}>
                         <Download className="mr-2 h-4 w-4" />
-                        Télécharger
+                        {t('admin.quoteDetails.download')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -728,9 +733,9 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
         <Dialog open={isSupplierModalOpen} onOpenChange={setIsSupplierModalOpen}>
             <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Vue Fournisseur</DialogTitle>
+                    <DialogTitle>{t('admin.quoteDetails.supplierViewTitle')}</DialogTitle>
                     <DialogDescription>
-                       Prévisualisez et téléchargez la fiche technique simplifiée.
+                       {t('admin.quoteDetails.supplierViewDesc')}
                     </DialogDescription>
                 </DialogHeader>
                  <div className="flex-grow overflow-auto bg-gray-200 p-4 rounded-md">
@@ -741,11 +746,11 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
                 <DialogFooter className="sm:justify-start gap-2 pt-4 border-t">
                     <Button variant="outline" onClick={() => handleViewPdf('supplier')}>
                         <Eye className="mr-2 h-4 w-4" />
-                        Prévisualiser
+                        {t('admin.quoteDetails.preview')}
                     </Button>
                     <Button onClick={() => handleDownloadPdf('supplier')}>
                         <Download className="mr-2 h-4 w-4" />
-                        Télécharger
+                        {t('admin.quoteDetails.download')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

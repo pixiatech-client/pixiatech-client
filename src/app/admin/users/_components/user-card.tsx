@@ -5,6 +5,7 @@ import { Phone, Mail, Contact, Trash2, AlertTriangle, MessageSquare } from 'luci
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleBadge } from './role-badge';
 import { StatusBadge } from './status-badge';
+import { useAdminT } from '@/hooks/useAdminT';
 
 export interface AdaptedUser {
   uid: string;
@@ -35,6 +36,7 @@ export const UserCard: React.FC<UserCardProps> = ({
   isAdmin,
 }) => {
   const [isConfirmingDelete, setIsConfirmingDelete] = React.useState(false);
+  const { t } = useAdminT();
 
   return (
     <motion.div
@@ -57,8 +59,8 @@ export const UserCard: React.FC<UserCardProps> = ({
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
             <AlertTriangle size={32} />
           </div>
-          <h3 className="text-lg font-bold mb-1">Suppression...</h3>
-          <p className="text-xs opacity-70">Action irréversible</p>
+          <h3 className="text-lg font-bold mb-1">{t('Deleting...')}</h3>
+          <p className="text-xs opacity-70">{t('Irreversible action')}</p>
         </div>
       )}
 
@@ -74,22 +76,22 @@ export const UserCard: React.FC<UserCardProps> = ({
             <div className="w-20 h-20 bg-white/20 rounded-[24px] flex items-center justify-center mb-6">
               <AlertTriangle size={40} strokeWidth={2.5} />
             </div>
-            <h3 className="text-xl font-bold uppercase tracking-tight mb-2">Supprimer l'utilisateur ?</h3>
+            <h3 className="text-xl font-bold uppercase tracking-tight mb-2">{t('Delete user?')}</h3>
             <p className="text-xs font-medium opacity-90 leading-relaxed mb-8 px-4">
-              Êtes-vous sûr de vouloir supprimer <span className="font-bold">&quot;{user.displayName}&quot;</span> ? Cette action est irréversible.
+              Are you sure you want to delete <span className="font-bold">&quot;{user.displayName}&quot;</span>? This action is irreversible.
             </p>
             <div className="flex gap-3 w-full">
               <button
                 onClick={(e) => { e.stopPropagation(); setIsConfirmingDelete(false); }}
                 className="flex-1 py-3.5 bg-[#ff2d55] border-2 border-white/30 hover:bg-white/10 text-white rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
               >
-                Annuler
+                {t('Cancel')}
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(user.uid); setIsConfirmingDelete(false); }}
                 className="flex-1 py-3.5 bg-black text-white rounded-2xl font-bold text-sm transition-all shadow-xl shadow-black/20 active:scale-[0.98]"
               >
-                Supprimer
+                {t('Delete')}
               </button>
             </div>
           </motion.div>
@@ -143,9 +145,9 @@ export const UserCard: React.FC<UserCardProps> = ({
             <Phone className={`w-4 h-4 ${isDeleting ? 'text-white' : 'text-emerald-500'}`} />
           </div>
           <div className="flex flex-col">
-            <span className={`text-[10px] uppercase tracking-wider font-bold ${isDeleting ? 'text-white/60' : 'text-gray-400 group-hover:text-gray-500'}`}>Téléphone</span>
+            <span className={`text-[10px] uppercase tracking-wider font-bold ${isDeleting ? 'text-white/60' : 'text-gray-400 group-hover:text-gray-500'}`}>{t('Phone')}</span>
             <p className={`text-xs transition-colors ${isDeleting ? 'text-white/80' : 'text-gray-600 group-hover:text-gray-300 group-hover/item:text-emerald-600'}`}>
-              {user.phone || 'Non renseigné'}
+              {user.phone || t('Not provided')}
             </p>
           </div>
         </a>
@@ -155,7 +157,7 @@ export const UserCard: React.FC<UserCardProps> = ({
             <Mail className={`w-4 h-4 ${isDeleting ? 'text-white' : 'text-purple-500'}`} />
           </div>
           <div className="flex flex-col">
-            <span className={`text-[10px] uppercase tracking-wider font-bold ${isDeleting ? 'text-white/60' : 'text-gray-400 group-hover:text-gray-500'}`}>Email</span>
+            <span className={`text-[10px] uppercase tracking-wider font-bold ${isDeleting ? 'text-white/60' : 'text-gray-400 group-hover:text-gray-500'}`}>{t('Email')}</span>
             <p className={`text-xs line-clamp-1 ${isDeleting ? 'text-white/80' : 'text-gray-600 group-hover:text-gray-300'}`}>
               {user.email}
             </p>
@@ -173,7 +175,7 @@ export const UserCard: React.FC<UserCardProps> = ({
         }`}
       >
         <Contact size={18} className={`transition-colors ${isDeleting ? 'text-white' : 'text-white group-hover/btn:text-blue-400'}`} />
-        <span className="relative z-10">{isDeleting ? 'Suppression...' : 'Gérer le profil'}</span>
+        <span className="relative z-10">{isDeleting ? t('Deleting...') : t('Manage profile')}</span>
       </button>
     </motion.div>
   );

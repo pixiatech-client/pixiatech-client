@@ -210,7 +210,7 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
         <header className="h-20 border-b border-[#27272a] flex items-center justify-between px-10 bg-[#18181b]/50 backdrop-blur-md">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-xl font-bold">Détails Techniques & Commerciaux</h1>
+              <h1 className="text-xl font-bold">Technical & Commercial Details</h1>
               <p className="text-xs text-[#a1a1aa]">Estimation #{currentEstimation?.id || 'N/A'}</p>
             </div>
           </div>
@@ -233,7 +233,7 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
               onClick={() => setIsEditMode(!isEditMode)}
               className={`h-11 px-4 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${isEditMode ? 'bg-amber-500/20 border-amber-500/50 text-amber-500' : 'bg-white/5 border-[#27272a] text-[#a1a1aa] hover:text-white'}`}
             >
-              <Pencil size={14} /> {isEditMode ? 'Quitter' : 'Éditer'}
+              <Pencil size={14} /> {isEditMode ? 'Exit' : 'Edit'}
             </button>
           </div>
         </header>
@@ -267,7 +267,7 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                   <p className="font-medium">{currentEstimation?.client?.email || '-'}</p>
                 </div>
                 <div>
-                  <span className="text-[#a1a1aa]">Téléphone</span>
+                  <span className="text-[#a1a1aa]">Phone</span>
                   <p className="font-medium">{currentEstimation?.client?.phone || '-'}</p>
                 </div>
                 <div className="col-span-2">
@@ -342,33 +342,33 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                 <div className="w-10 h-10 bg-[#10b981]/20 rounded-xl flex items-center justify-center">
                   <Calculator size={20} className="text-[#10b981]" />
                 </div>
-                <h2 className="text-lg font-bold">Résumé Financier</h2>
+                <h2 className="text-lg font-bold">Financial Summary</h2>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#a1a1aa]">Sous-total produits</span>
+                    <span className="text-[#a1a1aa]">Product subtotal</span>
                     <span>{formatCurrency(calculations.productsTotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#a1a1aa]">Livraison</span>
+                    <span className="text-[#a1a1aa]">Delivery</span>
                     <span>{formatCurrency(calculations.deliveryTotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#a1a1aa]">Main d'œuvre</span>
+                    <span className="text-[#a1a1aa]">Labor</span>
                     <span>{formatCurrency(calculations.laborTotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#a1a1aa]">TVA ({currentEstimation.taxRate}%)</span>
+                    <span className="text-[#a1a1aa]">VAT ({currentEstimation.taxRate}%)</span>
                     <span>{formatCurrency(calculations.tva)}</span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-[#a1a1aa]">Total TTC</div>
+                  <div className="text-sm text-[#a1a1aa]">Total incl. tax</div>
                   <div className="text-2xl font-bold text-green-500">{formatCurrency(calculations.totalTTC)}</div>
                   {currentEstimation.globalDiscount > 0 && (
                     <div className="text-xs text-green-500">
-                      Économie: {formatCurrency(calculations.totalTTC - calculations.finalTotal)}
+                      Savings: {formatCurrency(calculations.totalTTC - calculations.finalTotal)}
                     </div>
                   )}
                 </div>

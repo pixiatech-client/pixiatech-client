@@ -2,6 +2,7 @@ import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { User } from './types';
 import { UserCard } from './UserCard';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface UserGridProps {
   users: User[];
@@ -24,6 +25,7 @@ export const UserGrid: React.FC<UserGridProps> = ({
   deletingUserId,
   onDirectDelete,
 }) => {
+  const { t } = useAdminT();
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
       <AnimatePresence mode="popLayout">
@@ -42,7 +44,7 @@ export const UserGrid: React.FC<UserGridProps> = ({
           ))
         ) : (
           <div className="col-span-full py-20 text-center text-gray-400 italic bg-white rounded-3xl border border-dashed border-gray-200">
-            Aucun utilisateur trouvé.
+            {t('No users found.')}
           </div>
         )}
       </AnimatePresence>

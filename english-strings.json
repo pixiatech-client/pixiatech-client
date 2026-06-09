@@ -1,0 +1,4514 @@
+{
+  "delivery/default/page.tsx": {
+    "default-fees": {
+      "en": "Default Fees",
+      "fr": ""
+    }
+  },
+  "delivery/page.tsx": {
+    "default-fees": {
+      "en": "Default Fees",
+      "fr": ""
+    },
+    "free-shipping": {
+      "en": "Free Shipping",
+      "fr": ""
+    },
+    "define-free-shipping-thresholds": {
+      "en": "Define free shipping thresholds",
+      "fr": ""
+    },
+    "define-transport-costs-by-zone-and-mode": {
+      "en": "Define transport costs by zone and mode",
+      "fr": ""
+    },
+    "delivery-zones": {
+      "en": "Delivery Zones",
+      "fr": ""
+    },
+    "global-configuration-for-undefined-zones": {
+      "en": "Global configuration for undefined zones",
+      "fr": ""
+    },
+    "manage-geographic-zones-and-departments": {
+      "en": "Manage geographic zones and departments",
+      "fr": ""
+    },
+    "zone-rates": {
+      "en": "Zone Rates",
+      "fr": ""
+    }
+  },
+  "delivery/_components/delivery-nav.tsx": {
+    "default-fees": {
+      "en": "Default Fees",
+      "fr": ""
+    },
+    "free-shipping": {
+      "en": "Free Shipping",
+      "fr": ""
+    },
+    "zone-rates": {
+      "en": "Zone Rates",
+      "fr": ""
+    },
+    "zones": {
+      "en": "Zones",
+      "fr": ""
+    }
+  },
+  "_components/delivery-redirect.tsx": {
+    "default-fees": {
+      "en": "Default Fees",
+      "fr": ""
+    },
+    "free-shipping": {
+      "en": "Free Shipping",
+      "fr": ""
+    },
+    "logistics-delivery": {
+      "en": "Logistics & Delivery",
+      "fr": ""
+    },
+    "delivery-zones": {
+      "en": "Delivery Zones",
+      "fr": ""
+    },
+    "zone-rates": {
+      "en": "Zone Rates",
+      "fr": ""
+    },
+    "geographic-areas": {
+      "en": "Geographic areas",
+      "fr": ""
+    },
+    "manage-your-delivery-zones-rates-and-fre": {
+      "en": "Manage your delivery zones, rates, and free shipping thresholds in one place.",
+      "fr": ""
+    },
+    "specific-transport-prices": {
+      "en": "Specific transport prices",
+      "fr": ""
+    },
+    "thresholds-and-conditions": {
+      "en": "Thresholds and conditions",
+      "fr": ""
+    },
+    "unconfigured-zone": {
+      "en": "Unconfigured zone",
+      "fr": ""
+    }
+  },
+  "delivery/gratuite/page.tsx": {
+    "free-shipping": {
+      "en": "Free Shipping",
+      "fr": ""
+    }
+  },
+  "delivery/layout.tsx": {
+    "configure-zones-rates-and-carriers-for-y": {
+      "en": "Configure zones, rates, and carriers for your estimates.",
+      "fr": ""
+    },
+    "logistics-delivery": {
+      "en": "Logistics & Delivery",
+      "fr": ""
+    }
+  },
+  "delivery/_components/department-fees-form.tsx": {
+    "zone-rates": {
+      "en": "Zone Rates",
+      "fr": ""
+    },
+    "an-error-occurred": {
+      "en": "An error occurred.",
+      "fr": ""
+    },
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "success": {
+      "en": "Success",
+      "fr": ""
+    },
+    "add-a-rate-rule": {
+      "en": "Add a rate rule",
+      "fr": ""
+    },
+    "are-you-sure": {
+      "en": "Are you sure?",
+      "fr": ""
+    },
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "city-optional": {
+      "en": "City (Optional)",
+      "fr": ""
+    },
+    "delete": {
+      "en": "Delete",
+      "fr": ""
+    },
+    "entire-zone": {
+      "en": "Entire zone",
+      "fr": ""
+    },
+    "loading": {
+      "en": "Loading...",
+      "fr": ""
+    },
+    "rate": {
+      "en": "Rate (€)",
+      "fr": ""
+    },
+    "rate-2": {
+      "en": "Rate €",
+      "fr": ""
+    },
+    "rule-cloned": {
+      "en": "Rule cloned",
+      "fr": ""
+    },
+    "set-specific-delivery-costs-for-each-zon": {
+      "en": "Set specific delivery costs for each zone or city.",
+      "fr": ""
+    },
+    "the-rule-has-been-duplicated": {
+      "en": "The rule has been duplicated.",
+      "fr": ""
+    },
+    "zone": {
+      "en": "Zone",
+      "fr": ""
+    },
+    "zone-rates-updated": {
+      "en": "Zone rates updated.",
+      "fr": ""
+    }
+  },
+  "delivery/_components/default-fee-form.tsx": {
+    "an-error-occurred": {
+      "en": "An error occurred.",
+      "fr": ""
+    },
+    "apply-a-base-rate-for-all-deliveries": {
+      "en": "Apply a base rate for all deliveries.",
+      "fr": ""
+    },
+    "default-fees-updated": {
+      "en": "Default fees updated.",
+      "fr": ""
+    },
+    "default-shipping-fees": {
+      "en": "Default shipping fees",
+      "fr": ""
+    },
+    "enabling-this-option-will-disable-zone-r": {
+      "en": "Enabling this option will disable zone rates and apply these general fees instead.",
+      "fr": ""
+    },
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "success": {
+      "en": "Success",
+      "fr": ""
+    }
+  },
+  "delivery/_components/free-shipping-form.tsx": {
+    "an-error-occurred": {
+      "en": "An error occurred.",
+      "fr": ""
+    },
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "success": {
+      "en": "Success",
+      "fr": ""
+    },
+    "enable-free-shipping-by-threshold": {
+      "en": "Enable free shipping by threshold",
+      "fr": ""
+    },
+    "enable-free-shipping-for-everyone": {
+      "en": "Enable free shipping for everyone",
+      "fr": ""
+    },
+    "free-shipping-by-threshold": {
+      "en": "Free shipping by threshold",
+      "fr": ""
+    },
+    "free-shipping-settings-updated": {
+      "en": "Free shipping settings updated.",
+      "fr": ""
+    },
+    "makes-shipping-free-for-all-orders-ignor": {
+      "en": "Makes shipping free for all orders, ignoring other fees.",
+      "fr": ""
+    },
+    "message-for-unconfigured-zone": {
+      "en": "Message for unconfigured zone",
+      "fr": ""
+    },
+    "offer-free-shipping-for-orders-exceeding": {
+      "en": "Offer free shipping for orders exceeding a certain amount.",
+      "fr": ""
+    },
+    "this-message-will-appear-if-a-customer-s": {
+      "en": "This message will appear if a customer searches for a city not yet in your database.",
+      "fr": ""
+    },
+    "total-free-shipping": {
+      "en": "Total Free Shipping",
+      "fr": ""
+    }
+  },
+  "labor/_components/labor-form.tsx": {
+    "an-error-occurred": {
+      "en": "An error occurred.",
+      "fr": ""
+    },
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "success": {
+      "en": "Success",
+      "fr": ""
+    },
+    "rate": {
+      "en": "Rate (€)",
+      "fr": ""
+    },
+    "rule-cloned": {
+      "en": "Rule cloned",
+      "fr": ""
+    },
+    "the-rule-has-been-duplicated": {
+      "en": "The rule has been duplicated.",
+      "fr": ""
+    },
+    "add-a-rule": {
+      "en": "Add a rule",
+      "fr": ""
+    },
+    "from-m": {
+      "en": "From (m²)",
+      "fr": ""
+    },
+    "labor-rules-updated": {
+      "en": "Labor rules updated.",
+      "fr": ""
+    },
+    "labor-scale": {
+      "en": "Labor scale",
+      "fr": ""
+    },
+    "no-technicians": {
+      "en": "No. Technicians",
+      "fr": ""
+    }
+  },
+  "delivery/_components/zone-manager.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "delete": {
+      "en": "Delete",
+      "fr": ""
+    },
+    "loading": {
+      "en": "Loading...",
+      "fr": ""
+    },
+    "zone": {
+      "en": "Zone",
+      "fr": ""
+    },
+    "add-edit-and-assign-cities-to-your-deliv": {
+      "en": "Add, edit, and assign cities to your delivery zones.",
+      "fr": ""
+    },
+    "assignment-error": {
+      "en": "Assignment error",
+      "fr": ""
+    },
+    "assignment-successful": {
+      "en": "Assignment successful",
+      "fr": ""
+    },
+    "associated-cities-have-been-unassigned": {
+      "en": "Associated cities have been unassigned.",
+      "fr": ""
+    },
+    "choose-a-zone": {
+      "en": "Choose a zone...",
+      "fr": ""
+    },
+    "city-management": {
+      "en": "City Management",
+      "fr": ""
+    },
+    "city-name": {
+      "en": "City name",
+      "fr": ""
+    },
+    "city-updated": {
+      "en": "City updated",
+      "fr": ""
+    },
+    "city-ies-deleted": {
+      "en": "City(ies) deleted",
+      "fr": ""
+    },
+    "create-geographic-zones-and-assign-them": {
+      "en": "Create geographic zones and assign them a color for better organization.",
+      "fr": ""
+    },
+    "deletion-error": {
+      "en": "Deletion error",
+      "fr": ""
+    },
+    "edit": {
+      "en": "Edit",
+      "fr": ""
+    },
+    "edit-city": {
+      "en": "Edit city",
+      "fr": ""
+    },
+    "invalid-format": {
+      "en": "Invalid format",
+      "fr": ""
+    },
+    "loading-error": {
+      "en": "Loading error",
+      "fr": ""
+    },
+    "move-to-zone": {
+      "en": "Move to zone",
+      "fr": ""
+    },
+    "name-of-the-new-zone-e-g-zone-a-south-pa": {
+      "en": "Name of the new zone (e.g., Zone A, South Paris...)",
+      "fr": ""
+    },
+    "no-cities-added": {
+      "en": "No cities added.",
+      "fr": ""
+    },
+    "no-zones-created": {
+      "en": "No zones created.",
+      "fr": ""
+    },
+    "none": {
+      "en": "None",
+      "fr": ""
+    },
+    "please-use-the-format": {
+      "en": "Please use the format",
+      "fr": ""
+    },
+    "quick-options": {
+      "en": "Quick options",
+      "fr": ""
+    },
+    "select-all": {
+      "en": "Select all",
+      "fr": ""
+    },
+    "unable-to-add-cities": {
+      "en": "Unable to add cities.",
+      "fr": ""
+    },
+    "unable-to-add-zone": {
+      "en": "Unable to add zone.",
+      "fr": ""
+    },
+    "unable-to-delete-zone": {
+      "en": "Unable to delete zone.",
+      "fr": ""
+    },
+    "unable-to-load-cities": {
+      "en": "Unable to load cities.",
+      "fr": ""
+    },
+    "unable-to-update-city": {
+      "en": "Unable to update city.",
+      "fr": ""
+    },
+    "zone-management": {
+      "en": "Zone Management",
+      "fr": ""
+    },
+    "zone-added": {
+      "en": "Zone added",
+      "fr": ""
+    },
+    "zone-deleted": {
+      "en": "Zone deleted",
+      "fr": ""
+    }
+  },
+  "history/page.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "activity-history": {
+      "en": "Activity History",
+      "fr": ""
+    },
+    "filter-by-date": {
+      "en": "Filter by date...",
+      "fr": ""
+    },
+    "filter-by-user": {
+      "en": "Filter by user...",
+      "fr": ""
+    },
+    "loading-history": {
+      "en": "Loading history…",
+      "fr": ""
+    },
+    "no-activity-to-display": {
+      "en": "No activity to display.",
+      "fr": ""
+    },
+    "reset-filters": {
+      "en": "Reset filters",
+      "fr": ""
+    },
+    "try-adjusting-your-filters-or-perform-a": {
+      "en": "Try adjusting your filters or perform a search.",
+      "fr": ""
+    },
+    "unable-to-load-history-data": {
+      "en": "Unable to load history data.",
+      "fr": ""
+    },
+    "view-the-history-of-all-changes-made-to": {
+      "en": "View the history of all changes made to estimates.",
+      "fr": ""
+    },
+    "changed-the-status-of": {
+      "en": "changed the status of",
+      "fr": ""
+    },
+    "to-2": {
+      "en": "to",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/edit-tracking-number-dialog.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "edit-tracking-number": {
+      "en": "Edit tracking number",
+      "fr": ""
+    },
+    "enter-the-new-number": {
+      "en": "Enter the new number...",
+      "fr": ""
+    },
+    "tracking-number-2": {
+      "en": "Tracking number",
+      "fr": ""
+    },
+    "tracking-number-updated": {
+      "en": "Tracking number updated",
+      "fr": ""
+    },
+    "unable-to-save-tracking-number": {
+      "en": "Unable to save tracking number.",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/supplier-quote-dialog.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "loading-technical-sheet": {
+      "en": "Loading technical sheet...",
+      "fr": ""
+    },
+    "pdf-content-not-found": {
+      "en": "PDF content not found.",
+      "fr": ""
+    },
+    "preview-and-download-the-simplified-tech": {
+      "en": "Preview and download the simplified technical sheet.",
+      "fr": ""
+    },
+    "supplier-view": {
+      "en": "Supplier View",
+      "fr": ""
+    },
+    "unable-to-load-details": {
+      "en": "Unable to load details.",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/transmit-to-supplier-dialog.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "success": {
+      "en": "Success",
+      "fr": ""
+    },
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "send": {
+      "en": "Send",
+      "fr": ""
+    },
+    "send-to-supplier-2": {
+      "en": "Send to supplier",
+      "fr": ""
+    },
+    "no-supplier-found-2": {
+      "en": "No supplier found.",
+      "fr": ""
+    },
+    "please-select-a-supplier-and-estimations": {
+      "en": "Please select a supplier and estimations.",
+      "fr": ""
+    }
+  },
+  "quotes/[id]/page.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "back-to-list": {
+      "en": "Back to list",
+      "fr": ""
+    },
+    "estimation-not-found": {
+      "en": "Estimation not found",
+      "fr": ""
+    },
+    "missing-estimation-id": {
+      "en": "Missing estimation ID.",
+      "fr": ""
+    }
+  },
+  "quotes/[id]/_components/admin-quote-details.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "client": {
+      "en": "Client",
+      "fr": ""
+    },
+    "phone": {
+      "en": "Phone",
+      "fr": ""
+    },
+    "delivery": {
+      "en": "Delivery",
+      "fr": ""
+    },
+    "labor": {
+      "en": "Labor",
+      "fr": ""
+    },
+    "site": {
+      "en": "Site",
+      "fr": ""
+    },
+    "delivery-cost": {
+      "en": "Delivery cost (€)",
+      "fr": ""
+    },
+    "email": {
+      "en": "Email:",
+      "fr": ""
+    },
+    "estimation-details": {
+      "en": "Estimation Details",
+      "fr": ""
+    },
+    "labor-cost": {
+      "en": "Labor cost (€)",
+      "fr": ""
+    },
+    "phone-2": {
+      "en": "Phone:",
+      "fr": ""
+    },
+    "history": {
+      "en": "History",
+      "fr": ""
+    },
+    "supplier": {
+      "en": "Supplier",
+      "fr": ""
+    },
+    "preview-and-download-the-simplified-tech": {
+      "en": "Preview and download the simplified technical sheet.",
+      "fr": ""
+    },
+    "supplier-view": {
+      "en": "Supplier View",
+      "fr": ""
+    },
+    "quote-unconfiguredcityquery": {
+      "en": ") : quote.unconfiguredCityQuery ? (",
+      "fr": ""
+    },
+    "address": {
+      "en": "Address",
+      "fr": ""
+    },
+    "address-2": {
+      "en": "Address:",
+      "fr": ""
+    },
+    "back": {
+      "en": "Back",
+      "fr": ""
+    },
+    "client-pdf-options": {
+      "en": "Client PDF Options",
+      "fr": ""
+    },
+    "client-information-has-been-saved": {
+      "en": "Client information has been saved.",
+      "fr": ""
+    },
+    "client-updated": {
+      "en": "Client updated",
+      "fr": ""
+    },
+    "company": {
+      "en": "Company",
+      "fr": ""
+    },
+    "company-2": {
+      "en": "Company:",
+      "fr": ""
+    },
+    "configured-destination": {
+      "en": "Configured destination:",
+      "fr": ""
+    },
+    "delivery-discount": {
+      "en": "Delivery Discount (%)",
+      "fr": ""
+    },
+    "download": {
+      "en": "Download",
+      "fr": ""
+    },
+    "edit-client-information": {
+      "en": "Edit client information",
+      "fr": ""
+    },
+    "final-total-excl-tax": {
+      "en": "Final Total (excl. tax)",
+      "fr": ""
+    },
+    "final-total-incl-tax": {
+      "en": "Final Total (incl. tax)",
+      "fr": ""
+    },
+    "initial-total-excl-tax": {
+      "en": "Initial Total (excl. tax)",
+      "fr": ""
+    },
+    "labor-discount": {
+      "en": "Labor Discount (%)",
+      "fr": ""
+    },
+    "loading-estimation": {
+      "en": "Loading estimation...",
+      "fr": ""
+    },
+    "new-total": {
+      "en": "New total:",
+      "fr": ""
+    },
+    "no-history-for-this-estimation": {
+      "en": "No history for this estimation.",
+      "fr": ""
+    },
+    "no-products-configured-for-this-estimati": {
+      "en": "No products configured for this estimation.",
+      "fr": ""
+    },
+    "notes": {
+      "en": "Notes:",
+      "fr": ""
+    },
+    "preview": {
+      "en": "Preview",
+      "fr": ""
+    },
+    "preview-or-download-the-estimation-forma": {
+      "en": "Preview or download the estimation formatted for the client.",
+      "fr": ""
+    },
+    "product-discount": {
+      "en": "Product Discount (%)",
+      "fr": ""
+    },
+    "products": {
+      "en": "Products",
+      "fr": ""
+    },
+    "request-for": {
+      "en": "Request for:",
+      "fr": ""
+    },
+    "site-photo": {
+      "en": "Site photo",
+      "fr": ""
+    },
+    "site-photo-2": {
+      "en": "Site photo:",
+      "fr": ""
+    },
+    "step-disabled-during-estimation": {
+      "en": "Step disabled during estimation.",
+      "fr": ""
+    },
+    "the-installation-option-was-not-presente": {
+      "en": "The installation option was not presented to the client because it was disabled in the general settings at the time of estimation creation. The cost will need to be negotiated manually.",
+      "fr": ""
+    },
+    "to-be-confirmed": {
+      "en": "To be confirmed",
+      "fr": ""
+    },
+    "tracking-2": {
+      "en": "Tracking #:",
+      "fr": ""
+    },
+    "transmit": {
+      "en": "Transmit",
+      "fr": ""
+    },
+    "update-the-contact-and-company-details-f": {
+      "en": "Update the contact and company details for this estimation.",
+      "fr": ""
+    }
+  },
+  "quotes/[id]/_components/supplier-quote-pdf.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "product-name-2": {
+      "en": "Product name",
+      "fr": ""
+    },
+    "qty": {
+      "en": "Qty",
+      "fr": ""
+    },
+    "site": {
+      "en": "Site",
+      "fr": ""
+    },
+    "city": {
+      "en": "City:",
+      "fr": ""
+    },
+    "not-configured": {
+      "en": "(Not configured)",
+      "fr": ""
+    },
+    "request-unconfiguredcityquery": {
+      "en": ") : request.unconfiguredCityQuery ? (",
+      "fr": ""
+    },
+    "add-a-note-for-the-supplier": {
+      "en": "Add a note for the supplier...",
+      "fr": ""
+    },
+    "client-name-2": {
+      "en": "Client name",
+      "fr": ""
+    },
+    "client-2": {
+      "en": "Client:",
+      "fr": ""
+    },
+    "date-2": {
+      "en": "Date:",
+      "fr": ""
+    },
+    "destination": {
+      "en": "Destination",
+      "fr": ""
+    },
+    "equipment-request": {
+      "en": "Equipment Request",
+      "fr": ""
+    },
+    "estimation-3": {
+      "en": "Estimation #:",
+      "fr": ""
+    },
+    "field-saved": {
+      "en": "Field saved",
+      "fr": ""
+    },
+    "installation-photo": {
+      "en": "Installation photo",
+      "fr": ""
+    },
+    "main-title": {
+      "en": "Main title",
+      "fr": ""
+    },
+    "no-delivery-destination-specified": {
+      "en": "No delivery destination specified.",
+      "fr": ""
+    },
+    "requested-destination": {
+      "en": "Requested destination:",
+      "fr": ""
+    },
+    "subtitle": {
+      "en": "Subtitle",
+      "fr": ""
+    },
+    "supplier-technical-sheet": {
+      "en": "Supplier Technical Sheet",
+      "fr": ""
+    },
+    "surface-area": {
+      "en": "Surface area",
+      "fr": ""
+    },
+    "technical-details": {
+      "en": "Technical details:",
+      "fr": ""
+    },
+    "transaction": {
+      "en": "Transaction",
+      "fr": ""
+    },
+    "unable-to-save-the-field": {
+      "en": "Unable to save the field.",
+      "fr": ""
+    }
+  },
+  "settings/settings-form.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "rental": {
+      "en": "Rental",
+      "fr": ""
+    },
+    "sale": {
+      "en": "Sale",
+      "fr": ""
+    },
+    "height-m": {
+      "en": "Height (m)",
+      "fr": ""
+    },
+    "width-m": {
+      "en": "Width (m)",
+      "fr": ""
+    },
+    "action-unavailable": {
+      "en": "Action unavailable",
+      "fr": ""
+    },
+    "advanced-for-those-who-already-know-what": {
+      "en": "Advanced — For those who already know what they want.",
+      "fr": ""
+    },
+    "allow-commercial-users-to-use-the-chat": {
+      "en": "Allow commercial users to use the chat.",
+      "fr": ""
+    },
+    "allow-suppliers-to-use-the-chat": {
+      "en": "Allow suppliers to use the chat.",
+      "fr": ""
+    },
+    "allows-using-the-conversational-chatbot": {
+      "en": "Allows using the conversational chatbot to guide customers.",
+      "fr": ""
+    },
+    "an-error-occurred-while-saving": {
+      "en": "An error occurred while saving.",
+      "fr": ""
+    },
+    "application-images": {
+      "en": "Application Images",
+      "fr": ""
+    },
+    "card-logo-url": {
+      "en": "Card Logo URL",
+      "fr": ""
+    },
+    "configurator-access-modes": {
+      "en": "Configurator Access Modes",
+      "fr": ""
+    },
+    "congratulations-image-url": {
+      "en": "Congratulations Image (URL)",
+      "fr": ""
+    },
+    "congratulations-page": {
+      "en": "Congratulations Page",
+      "fr": ""
+    },
+    "default-values": {
+      "en": "Default Values",
+      "fr": ""
+    },
+    "delivery-image-url": {
+      "en": "Delivery Image (URL)",
+      "fr": ""
+    },
+    "delivery-step": {
+      "en": "Delivery Step",
+      "fr": ""
+    },
+    "determine-the-access-options-available-f": {
+      "en": "Determine the access options available for your customers. At least one option must always remain enabled.",
+      "fr": ""
+    },
+    "disable-the-estimation-service": {
+      "en": "Disable the estimation service",
+      "fr": ""
+    },
+    "emergency-stop": {
+      "en": "Emergency Stop",
+      "fr": ""
+    },
+    "emergency-stop-message": {
+      "en": "Emergency stop message",
+      "fr": ""
+    },
+    "enable-wizard-bot-flow": {
+      "en": "Enable Wizard Bot Flow",
+      "fr": ""
+    },
+    "enable-email-verification": {
+      "en": "Enable email verification",
+      "fr": ""
+    },
+    "enable-global-messaging": {
+      "en": "Enable global messaging",
+      "fr": ""
+    },
+    "enable-this-option-to-immediately-disabl": {
+      "en": "Enable this option to immediately disable the public estimation form and display a maintenance message.",
+      "fr": ""
+    },
+    "english": {
+      "en": "English",
+      "fr": ""
+    },
+    "estimation-configuration": {
+      "en": "Estimation Configuration",
+      "fr": ""
+    },
+    "estimation-form": {
+      "en": "Estimation Form",
+      "fr": ""
+    },
+    "estimation-process": {
+      "en": "Estimation Process",
+      "fr": ""
+    },
+    "for-maintenance-reasons": {
+      "en": "For maintenance reasons...",
+      "fr": ""
+    },
+    "french": {
+      "en": "French",
+      "fr": ""
+    },
+    "guided-configuration": {
+      "en": "Guided Configuration",
+      "fr": ""
+    },
+    "help-text-for-additional-notes": {
+      "en": "Help text for \"Additional notes\"",
+      "fr": ""
+    },
+    "hide-price-and-show-animation": {
+      "en": "Hide price and show animation",
+      "fr": ""
+    },
+    "human-scale-image-url": {
+      "en": "Human Scale Image (URL)",
+      "fr": ""
+    },
+    "if-disabled-customers-go-directly-to-the": {
+      "en": "If disabled, customers go directly to the PDF.",
+      "fr": ""
+    },
+    "if-disabled-the-chat-will-no-longer-be-v": {
+      "en": "If disabled, the chat will no longer be visible or accessible to anyone.",
+      "fr": ""
+    },
+    "installation-step": {
+      "en": "Installation Step",
+      "fr": ""
+    },
+    "manage-access-to-internal-messaging-for": {
+      "en": "Manage access to internal messaging for different roles.",
+      "fr": ""
+    },
+    "manual-configuration": {
+      "en": "Manual Configuration",
+      "fr": ""
+    },
+    "max-height-m": {
+      "en": "Max Height (m)",
+      "fr": ""
+    },
+    "max-width-m": {
+      "en": "Max Width (m)",
+      "fr": ""
+    },
+    "maximum-limits": {
+      "en": "Maximum Limits",
+      "fr": ""
+    },
+    "maximum-number-of-products-per-quote": {
+      "en": "Maximum number of products per quote",
+      "fr": ""
+    },
+    "messaging-configuration": {
+      "en": "Messaging Configuration",
+      "fr": ""
+    },
+    "note-about-custom-roles": {
+      "en": "Note about custom roles",
+      "fr": ""
+    },
+    "payment-icon-url": {
+      "en": "Payment Icon URL",
+      "fr": ""
+    },
+    "recommended-fast-simple-and-hassle-free": {
+      "en": "Recommended — Fast, simple, and hassle-free.",
+      "fr": ""
+    },
+    "rental-limits": {
+      "en": "Rental Limits",
+      "fr": ""
+    },
+    "replaces-the-price-with-an-animated-esti": {
+      "en": "Replaces the price with an animated \"Estimating...\" text.",
+      "fr": ""
+    },
+    "return-url-homepage": {
+      "en": "Return URL (homepage)",
+      "fr": ""
+    },
+    "roles-created-by-cloning-will-automatica": {
+      "en": "Roles created by cloning will automatically inherit these settings based on their original template.",
+      "fr": ""
+    },
+    "save-settings": {
+      "en": "Save settings",
+      "fr": ""
+    },
+    "screen-dimensions-video-url": {
+      "en": "Screen Dimensions (Video URL)",
+      "fr": ""
+    },
+    "screen-image-url": {
+      "en": "Screen Image (URL)",
+      "fr": ""
+    },
+    "set-the-limits-and-default-values-for-th": {
+      "en": "Set the limits and default values for the configurator.",
+      "fr": ""
+    },
+    "settings-saved": {
+      "en": "Settings saved",
+      "fr": ""
+    },
+    "show-or-hide-the-delivery-step": {
+      "en": "Show or hide the delivery step.",
+      "fr": ""
+    },
+    "show-or-hide-the-installation-step": {
+      "en": "Show or hide the installation step.",
+      "fr": ""
+    },
+    "suppliers": {
+      "en": "Suppliers",
+      "fr": ""
+    },
+    "technician-image-url": {
+      "en": "Technician Image (URL)",
+      "fr": ""
+    },
+    "the-form-will-no-longer-be-accessible-to": {
+      "en": "The form will no longer be accessible to the public.",
+      "fr": ""
+    },
+    "title": {
+      "en": "Title",
+      "fr": ""
+    },
+    "you-must-leave-at-least-one-access-optio": {
+      "en": "You must leave at least one access option enabled.",
+      "fr": ""
+    }
+  },
+  "settings/software/page.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "an-unexpected-error-occurred": {
+      "en": "An unexpected error occurred.",
+      "fr": ""
+    },
+    "detailed-diagnostic": {
+      "en": "Detailed diagnostic:",
+      "fr": ""
+    },
+    "please-enter-an-email-address-for-the-te": {
+      "en": "Please enter an email address for the test.",
+      "fr": ""
+    },
+    "smtp-host": {
+      "en": "SMTP Host",
+      "fr": ""
+    },
+    "smtp-password": {
+      "en": "SMTP Password",
+      "fr": ""
+    },
+    "smtp-port": {
+      "en": "SMTP Port",
+      "fr": ""
+    },
+    "smtp-settings": {
+      "en": "SMTP Settings",
+      "fr": ""
+    },
+    "smtp-user": {
+      "en": "SMTP User",
+      "fr": ""
+    },
+    "smtp-configuration-and-diagnostic-tools": {
+      "en": "SMTP configuration and diagnostic tools for sending emails.",
+      "fr": ""
+    },
+    "smtp-test-failed": {
+      "en": "SMTP test failed",
+      "fr": ""
+    },
+    "smtp-test-successful": {
+      "en": "SMTP test successful",
+      "fr": ""
+    },
+    "security": {
+      "en": "Security",
+      "fr": ""
+    },
+    "sender-email": {
+      "en": "Sender email",
+      "fr": ""
+    },
+    "software-settings": {
+      "en": "Software Settings",
+      "fr": ""
+    },
+    "test-email-address": {
+      "en": "Test email address",
+      "fr": ""
+    },
+    "test-email-sending": {
+      "en": "Test email sending",
+      "fr": ""
+    },
+    "these-settings-are-configured-via-server": {
+      "en": "These settings are configured via server environment variables.",
+      "fr": ""
+    },
+    "smtp-example-com": {
+      "en": "smtp.example.com",
+      "fr": ""
+    },
+    "test-example-com": {
+      "en": "test@example.com",
+      "fr": ""
+    },
+    "user-example-com": {
+      "en": "user@example.com",
+      "fr": ""
+    }
+  },
+  "settings/themes/page.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "customize-the-appearance-of-the-estimati": {
+      "en": "Customize the appearance of the estimation app in real time.",
+      "fr": ""
+    },
+    "theme-management": {
+      "en": "Theme Management",
+      "fr": ""
+    },
+    "unable-to-load-theme-data": {
+      "en": "Unable to load theme data.",
+      "fr": ""
+    }
+  },
+  "settings/themes/_components/theme-editor.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "delete": {
+      "en": "Delete",
+      "fr": ""
+    },
+    "action-unavailable": {
+      "en": "Action unavailable",
+      "fr": ""
+    },
+    "admin-background": {
+      "en": "Admin Background",
+      "fr": ""
+    },
+    "admin-interface-colors": {
+      "en": "Admin Interface Colors",
+      "fr": ""
+    },
+    "choose-a-default-theme-for-light-mode-an": {
+      "en": "Choose a default theme for light mode and dark mode.",
+      "fr": ""
+    },
+    "choose-a-theme": {
+      "en": "Choose a theme...",
+      "fr": ""
+    },
+    "create-first-theme": {
+      "en": "Create first theme",
+      "fr": ""
+    },
+    "delete-theme": {
+      "en": "Delete theme?",
+      "fr": ""
+    },
+    "theme-created": {
+      "en": "Theme created",
+      "fr": ""
+    },
+    "theme-deleted": {
+      "en": "Theme deleted",
+      "fr": ""
+    },
+    "theme-for-dark-mode": {
+      "en": "Theme for dark mode",
+      "fr": ""
+    },
+    "theme-for-light-mode": {
+      "en": "Theme for light mode",
+      "fr": ""
+    },
+    "themes-by-display-mode": {
+      "en": "Themes by display mode",
+      "fr": ""
+    },
+    "unable-to-create-theme": {
+      "en": "Unable to create theme.",
+      "fr": ""
+    },
+    "you-must-keep-at-least-one-theme": {
+      "en": "You must keep at least one theme.",
+      "fr": ""
+    }
+  },
+  "users/[id]/_components/user-profile-form.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "approved": {
+      "en": "Approved",
+      "fr": ""
+    },
+    "pending": {
+      "en": "Pending",
+      "fr": ""
+    },
+    "status": {
+      "en": "Status",
+      "fr": ""
+    },
+    "profile-updated": {
+      "en": "Profile updated",
+      "fr": ""
+    },
+    "role": {
+      "en": "Role",
+      "fr": ""
+    },
+    "select-a-role": {
+      "en": "Select a role",
+      "fr": ""
+    },
+    "select-a-status": {
+      "en": "Select a status",
+      "fr": ""
+    },
+    "you-cannot-modify-your-own-role-or-statu": {
+      "en": "You cannot modify your own role or status.",
+      "fr": ""
+    }
+  },
+  "users/_components/user-manager.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "success": {
+      "en": "Success",
+      "fr": ""
+    },
+    "status": {
+      "en": "Status",
+      "fr": ""
+    },
+    "phone": {
+      "en": "Phone",
+      "fr": ""
+    },
+    "role": {
+      "en": "Role",
+      "fr": ""
+    },
+    "all-roles": {
+      "en": "All Roles",
+      "fr": ""
+    },
+    "viewmode-grid": {
+      "en": ") : viewMode === 'grid' ? (",
+      "fr": ""
+    },
+    "user": {
+      "en": "User",
+      "fr": ""
+    },
+    "no-users-found": {
+      "en": "No users found",
+      "fr": ""
+    },
+    "profile-updated-successfully": {
+      "en": "Profile updated successfully.",
+      "fr": ""
+    },
+    "unable-to-delete-user": {
+      "en": "Unable to delete user.",
+      "fr": ""
+    },
+    "unable-to-load-users": {
+      "en": "Unable to load users.",
+      "fr": ""
+    },
+    "user-created-successfully": {
+      "en": "User created successfully.",
+      "fr": ""
+    },
+    "user-deleted-successfully": {
+      "en": "User deleted successfully.",
+      "fr": ""
+    }
+  },
+  "users/_components/user-profile-drawer.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "approved": {
+      "en": "Approved",
+      "fr": ""
+    },
+    "pending": {
+      "en": "Pending",
+      "fr": ""
+    },
+    "status": {
+      "en": "Status",
+      "fr": ""
+    },
+    "security": {
+      "en": "Security",
+      "fr": ""
+    },
+    "role": {
+      "en": "Role",
+      "fr": ""
+    },
+    "select-a-role": {
+      "en": "Select a role",
+      "fr": ""
+    },
+    "select-a-status": {
+      "en": "Select a status",
+      "fr": ""
+    },
+    "avatar": {
+      "en": "Avatar",
+      "fr": ""
+    },
+    "basic-information": {
+      "en": "Basic information",
+      "fr": ""
+    },
+    "e-g-john-doe": {
+      "en": "E.g. John Doe",
+      "fr": ""
+    },
+    "john-example-com": {
+      "en": "john@example.com",
+      "fr": ""
+    },
+    "crop-apply": {
+      "en": "Crop & Apply",
+      "fr": ""
+    },
+    "permissions-status": {
+      "en": "Permissions & Status",
+      "fr": ""
+    },
+    "please-fill-in-all-required-fields": {
+      "en": "Please fill in all required fields.",
+      "fr": ""
+    }
+  },
+  "wizard/page.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "settings-saved": {
+      "en": "Settings saved",
+      "fr": ""
+    },
+    "add": {
+      "en": "Add",
+      "fr": ""
+    },
+    "configure-images-displayed-in-the-viewin": {
+      "en": "Configure images displayed in the Viewing Distance and Pixel Pitch steps.",
+      "fr": ""
+    },
+    "configure-images-for-each-environment": {
+      "en": "Configure images for each environment.",
+      "fr": ""
+    },
+    "configure-the-available-pixel-pitches": {
+      "en": "Configure the available pixel pitches.",
+      "fr": ""
+    },
+    "configure-the-available-project-types-in": {
+      "en": "Configure the available project types in the wizard.",
+      "fr": ""
+    },
+    "configure-the-available-viewing-distance": {
+      "en": "Configure the available viewing distances.",
+      "fr": ""
+    },
+    "configure-the-options-and-content-of-the": {
+      "en": "Configure the options and content of the guided configurator.",
+      "fr": ""
+    },
+    "environments": {
+      "en": "Environments",
+      "fr": ""
+    },
+    "image-url": {
+      "en": "Image URL",
+      "fr": ""
+    },
+    "pixel-pitches": {
+      "en": "Pixel Pitches",
+      "fr": ""
+    },
+    "project-types": {
+      "en": "Project Types",
+      "fr": ""
+    },
+    "recommended": {
+      "en": "Recommended",
+      "fr": ""
+    },
+    "recommended-pixel-pitch": {
+      "en": "Recommended Pixel Pitch",
+      "fr": ""
+    },
+    "save-failed": {
+      "en": "Save failed",
+      "fr": ""
+    },
+    "step-images": {
+      "en": "Step Images",
+      "fr": ""
+    },
+    "url-de-l": {
+      "en": "URL de l",
+      "fr": ""
+    },
+    "viewing-distance": {
+      "en": "Viewing Distance",
+      "fr": ""
+    },
+    "viewing-distances": {
+      "en": "Viewing Distances",
+      "fr": ""
+    },
+    "wizard-settings": {
+      "en": "Wizard Settings",
+      "fr": ""
+    }
+  },
+  "_components/admin-layout-content.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "emergency": {
+      "en": "Emergency",
+      "fr": ""
+    },
+    "software": {
+      "en": "Software",
+      "fr": ""
+    },
+    "calculator": {
+      "en": "Calculator",
+      "fr": ""
+    },
+    "previous-page": {
+      "en": "Previous page",
+      "fr": ""
+    },
+    "show-menu": {
+      "en": "Show menu",
+      "fr": ""
+    },
+    "unable-to-load-initial-data": {
+      "en": "Unable to load initial data.",
+      "fr": ""
+    }
+  },
+  "_components/supplier-dashboard.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "success": {
+      "en": "Success",
+      "fr": ""
+    },
+    "loading": {
+      "en": "Loading...",
+      "fr": ""
+    },
+    "client": {
+      "en": "Client",
+      "fr": ""
+    },
+    "status": {
+      "en": "Status",
+      "fr": ""
+    },
+    "details": {
+      "en": "Details",
+      "fr": ""
+    },
+    "no": {
+      "en": "No",
+      "fr": ""
+    },
+    "unable-to-save-tracking-number": {
+      "en": "Unable to save tracking number.",
+      "fr": ""
+    },
+    "assignment-date": {
+      "en": "Assignment Date",
+      "fr": ""
+    },
+    "confirm-cancellation": {
+      "en": "Confirm cancellation",
+      "fr": ""
+    },
+    "enter-tracking-number": {
+      "en": "Enter tracking number...",
+      "fr": ""
+    },
+    "estimate-no": {
+      "en": "Estimate No.",
+      "fr": ""
+    },
+    "estimates-to-process": {
+      "en": "Estimates to process",
+      "fr": ""
+    },
+    "no-estimates-in-this-category": {
+      "en": "No estimates in this category.",
+      "fr": ""
+    },
+    "search-for-an-estimate": {
+      "en": "Search for an estimate...",
+      "fr": ""
+    },
+    "status-changed": {
+      "en": "Status changed",
+      "fr": ""
+    },
+    "tracking-number": {
+      "en": "Tracking Number",
+      "fr": ""
+    },
+    "tracking-number-saved": {
+      "en": "Tracking number saved.",
+      "fr": ""
+    },
+    "unable-to-change-status": {
+      "en": "Unable to change status.",
+      "fr": ""
+    },
+    "unable-to-update-status": {
+      "en": "Unable to update status.",
+      "fr": ""
+    },
+    "yes-cancel": {
+      "en": "Yes, cancel",
+      "fr": ""
+    }
+  },
+  "_components/supplier-quote-dialog.tsx": {
+    "error": {
+      "en": "Error",
+      "fr": ""
+    },
+    "pdf-content-not-found": {
+      "en": "PDF content not found.",
+      "fr": ""
+    },
+    "preview-and-download-the-simplified-tech": {
+      "en": "Preview and download the simplified technical sheet.",
+      "fr": ""
+    },
+    "supplier-view": {
+      "en": "Supplier View",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/quote-requests-table.tsx": {
+    "success": {
+      "en": "Success",
+      "fr": ""
+    },
+    "are-you-sure": {
+      "en": "Are you sure?",
+      "fr": ""
+    },
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "delete": {
+      "en": "Delete",
+      "fr": ""
+    },
+    "all": {
+      "en": "All",
+      "fr": ""
+    },
+    "approved": {
+      "en": "Approved",
+      "fr": ""
+    },
+    "archived": {
+      "en": "Archived",
+      "fr": ""
+    },
+    "client": {
+      "en": "Client",
+      "fr": ""
+    },
+    "pending": {
+      "en": "Pending",
+      "fr": ""
+    },
+    "status": {
+      "en": "Status",
+      "fr": ""
+    },
+    "details": {
+      "en": "Details",
+      "fr": ""
+    },
+    "delivery": {
+      "en": "Delivery",
+      "fr": ""
+    },
+    "confirm": {
+      "en": "Confirm",
+      "fr": ""
+    },
+    "send": {
+      "en": "Send",
+      "fr": ""
+    },
+    "trash": {
+      "en": "Trash",
+      "fr": ""
+    },
+    "activetab-archived": {
+      "en": ") : activeTab === 'archived' ? (",
+      "fr": ""
+    },
+    "contact": {
+      "en": "Contact",
+      "fr": ""
+    },
+    "estimation-tracking": {
+      "en": "Estimation Tracking",
+      "fr": ""
+    },
+    "estimation-returned": {
+      "en": "Estimation returned",
+      "fr": ""
+    },
+    "excl-tax-2": {
+      "en": "Excl. tax",
+      "fr": ""
+    },
+    "generated-by-lumi-ai": {
+      "en": "Generated by Lumi AI",
+      "fr": ""
+    },
+    "generated-via-guided-configurator-wizard": {
+      "en": "Generated via guided configurator (Wizard)",
+      "fr": ""
+    },
+    "generated-via-manual-configuration": {
+      "en": "Generated via manual configuration",
+      "fr": ""
+    },
+    "grouped-total": {
+      "en": "Grouped Total",
+      "fr": ""
+    },
+    "reason-for-refusal-e-g-unavailable-techn": {
+      "en": "Reason for refusal (e.g., Unavailable, technical error...)",
+      "fr": ""
+    },
+    "ref": {
+      "en": "Ref.",
+      "fr": ""
+    },
+    "restore": {
+      "en": "Restore",
+      "fr": ""
+    },
+    "returned": {
+      "en": "Returned",
+      "fr": ""
+    },
+    "search": {
+      "en": "Search...",
+      "fr": ""
+    },
+    "select-all-rows-on-this-page": {
+      "en": "Select all rows on this page",
+      "fr": ""
+    },
+    "send-to-supplier-2": {
+      "en": "Send to supplier",
+      "fr": ""
+    },
+    "sent": {
+      "en": "Sent",
+      "fr": ""
+    },
+    "sent-to-supplier": {
+      "en": "Sent to supplier",
+      "fr": ""
+    },
+    "supplier": {
+      "en": "Supplier",
+      "fr": ""
+    },
+    "supplier-view-2": {
+      "en": "Supplier view",
+      "fr": ""
+    },
+    "time-date": {
+      "en": "Time / Date",
+      "fr": ""
+    },
+    "total-excl-tax": {
+      "en": "Total (excl. tax)",
+      "fr": ""
+    },
+    "tracking": {
+      "en": "Tracking",
+      "fr": ""
+    },
+    "view-and-manage-the-lifecycle-of-estimat": {
+      "en": "View and manage the lifecycle of estimations.",
+      "fr": ""
+    }
+  },
+  "produits/ProductManagementClient.tsx": {
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "delete": {
+      "en": "Delete",
+      "fr": ""
+    },
+    "edit": {
+      "en": "Edit",
+      "fr": ""
+    },
+    "aura-admin-v3-2-pixiatech-ecosystem": {
+      "en": "Aura Admin v3.2 • Pixiatech Ecosystem",
+      "fr": ""
+    },
+    "by-date": {
+      "en": "By Date",
+      "fr": ""
+    },
+    "date": {
+      "en": "Date",
+      "fr": ""
+    },
+    "sort-by": {
+      "en": "Sort by",
+      "fr": ""
+    },
+    "back-to-login": {
+      "en": "Back to login",
+      "fr": ""
+    },
+    "log-in": {
+      "en": "Log in",
+      "fr": ""
+    },
+    "password": {
+      "en": "Password",
+      "fr": ""
+    },
+    "isvideourl-product-videourl": {
+      "en": ") : isVideoUrl(product.videoUrl) ? (",
+      "fr": ""
+    },
+    "teststatus-error": {
+      "en": ") : testStatus === 'error' ? (",
+      "fr": ""
+    },
+    "teststatus-success": {
+      "en": ") : testStatus === 'success' ? (",
+      "fr": ""
+    },
+    "ai-configuration": {
+      "en": "AI Configuration",
+      "fr": ""
+    },
+    "ai-detected-a-characteristic": {
+      "en": "AI detected a characteristic:",
+      "fr": ""
+    },
+    "api-key": {
+      "en": "API Key",
+      "fr": ""
+    },
+    "account-email": {
+      "en": "Account email",
+      "fr": ""
+    },
+    "add-a-characteristic": {
+      "en": "Add a characteristic",
+      "fr": ""
+    },
+    "add-a-product": {
+      "en": "Add a product",
+      "fr": ""
+    },
+    "add-a-variant": {
+      "en": "Add a variant",
+      "fr": ""
+    },
+    "add-an-image-icon": {
+      "en": "Add an image/icon",
+      "fr": ""
+    },
+    "add-by-default": {
+      "en": "Add by default",
+      "fr": ""
+    },
+    "add-characteristics": {
+      "en": "Add characteristics",
+      "fr": ""
+    },
+    "add-to-sheet": {
+      "en": "Add to sheet",
+      "fr": ""
+    },
+    "advanced-settings": {
+      "en": "Advanced Settings",
+      "fr": ""
+    },
+    "all-characteristics-already-added": {
+      "en": "All characteristics already added",
+      "fr": ""
+    },
+    "all-types": {
+      "en": "All types",
+      "fr": ""
+    },
+    "analysis-extraction-settings": {
+      "en": "Analysis & extraction settings",
+      "fr": ""
+    },
+    "audiovisual-catalog-management": {
+      "en": "Audiovisual Catalog Management",
+      "fr": ""
+    },
+    "auto-creation": {
+      "en": "Auto-creation",
+      "fr": ""
+    },
+    "automatic-analysis": {
+      "en": "Automatic Analysis",
+      "fr": ""
+    },
+    "available-quantity": {
+      "en": "Available quantity",
+      "fr": ""
+    },
+    "by-name": {
+      "en": "By Name",
+      "fr": ""
+    },
+    "by-price": {
+      "en": "By Price",
+      "fr": ""
+    },
+    "characteristic-name": {
+      "en": "Characteristic name",
+      "fr": ""
+    },
+    "characteristic-saved": {
+      "en": "Characteristic saved!",
+      "fr": ""
+    },
+    "characteristic-variants": {
+      "en": "Characteristic variants",
+      "fr": ""
+    },
+    "characteristics": {
+      "en": "Characteristics",
+      "fr": ""
+    },
+    "check-your-inbox-for-instructions": {
+      "en": "Check your inbox for instructions.",
+      "fr": ""
+    },
+    "choose-an-icon": {
+      "en": "Choose an icon",
+      "fr": ""
+    },
+    "confirm-close": {
+      "en": "Confirm & Close",
+      "fr": ""
+    },
+    "continue-editing": {
+      "en": "Continue editing",
+      "fr": ""
+    },
+    "continue-with-google": {
+      "en": "Continue with Google",
+      "fr": ""
+    },
+    "create-a-product": {
+      "en": "Create a product",
+      "fr": ""
+    },
+    "create-an-account": {
+      "en": "Create an account",
+      "fr": ""
+    },
+    "create-new": {
+      "en": "Create new",
+      "fr": ""
+    },
+    "create-your-admin-account": {
+      "en": "Create your admin account",
+      "fr": ""
+    },
+    "curved": {
+      "en": "Curved",
+      "fr": ""
+    },
+    "custom-icon": {
+      "en": "Custom Icon",
+      "fr": ""
+    },
+    "database-error": {
+      "en": "Database error",
+      "fr": ""
+    },
+    "defines-the-minimum-area-for-quote-calcu": {
+      "en": "Defines the minimum area for quote calculation.",
+      "fr": ""
+    },
+    "delete-this-product": {
+      "en": "Delete this product?",
+      "fr": ""
+    },
+    "delete-2": {
+      "en": "Delete?",
+      "fr": ""
+    },
+    "distance": {
+      "en": "Distance",
+      "fr": ""
+    },
+    "done": {
+      "en": "Done",
+      "fr": ""
+    },
+    "duplicate": {
+      "en": "Duplicate",
+      "fr": ""
+    },
+    "e-g-2-meters-4-meters": {
+      "en": "E.g.: 2 meters, 4 meters...",
+      "fr": ""
+    },
+    "e-g-viewing-distance-pixel-pitch": {
+      "en": "E.g.: Viewing distance, Pixel pitch...",
+      "fr": ""
+    },
+    "email-sent": {
+      "en": "Email sent!",
+      "fr": ""
+    },
+    "enable-ai": {
+      "en": "Enable AI",
+      "fr": ""
+    },
+    "enable-this-to-calculate-the-price-based": {
+      "en": "Enable this to calculate the price based on tile dimensions.",
+      "fr": ""
+    },
+    "enter-an-old-price-to-show-a-strikethrou": {
+      "en": "Enter an old price to show a strikethrough discount.",
+      "fr": ""
+    },
+    "enter-your-email-to-request-a-reset": {
+      "en": "Enter your email to request a reset",
+      "fr": ""
+    },
+    "environment": {
+      "en": "Environment",
+      "fr": ""
+    },
+    "ex-10": {
+      "en": "Ex: 10",
+      "fr": ""
+    },
+    "ex-1200": {
+      "en": "Ex: 1200",
+      "fr": ""
+    },
+    "ex-1500": {
+      "en": "Ex: 1500",
+      "fr": ""
+    },
+    "ex-300": {
+      "en": "Ex: 300",
+      "fr": ""
+    },
+    "ex-50": {
+      "en": "Ex: 50",
+      "fr": ""
+    },
+    "filter-by-type": {
+      "en": "Filter by type",
+      "fr": ""
+    },
+    "filters": {
+      "en": "Filters",
+      "fr": ""
+    },
+    "flat": {
+      "en": "Flat",
+      "fr": ""
+    },
+    "forgot-password": {
+      "en": "Forgot password?",
+      "fr": ""
+    },
+    "forgot": {
+      "en": "Forgot?",
+      "fr": ""
+    },
+    "hidden-product": {
+      "en": "Hidden product",
+      "fr": ""
+    },
+    "hide-product": {
+      "en": "Hide product",
+      "fr": ""
+    },
+    "hides-this-product-from-configurator-and": {
+      "en": "Hides this product from configurator and robot suggestions.",
+      "fr": ""
+    },
+    "icon": {
+      "en": "Icon",
+      "fr": ""
+    },
+    "icon-color": {
+      "en": "Icon color",
+      "fr": ""
+    },
+    "ignore": {
+      "en": "Ignore",
+      "fr": ""
+    },
+    "indoor": {
+      "en": "Indoor",
+      "fr": ""
+    },
+    "keep-me-signed-in": {
+      "en": "Keep me signed in",
+      "fr": ""
+    },
+    "lock": {
+      "en": "Lock",
+      "fr": ""
+    },
+    "log-in-to-continue": {
+      "en": "Log in to continue",
+      "fr": ""
+    },
+    "login-required": {
+      "en": "Login required",
+      "fr": ""
+    },
+    "manage-dimensions-and-price-per-tile": {
+      "en": "Manage dimensions and price per tile",
+      "fr": ""
+    },
+    "manual": {
+      "en": "Manual",
+      "fr": ""
+    },
+    "manual-order": {
+      "en": "Manual Order",
+      "fr": ""
+    },
+    "marketing-settings": {
+      "en": "Marketing settings",
+      "fr": ""
+    },
+    "max-size": {
+      "en": "Max Size:",
+      "fr": ""
+    },
+    "max-tokens": {
+      "en": "Max Tokens",
+      "fr": ""
+    },
+    "media-link-url": {
+      "en": "Media link (URL)",
+      "fr": ""
+    },
+    "media-preview": {
+      "en": "Media preview",
+      "fr": ""
+    },
+    "media-type": {
+      "en": "Media type",
+      "fr": ""
+    },
+    "minimum-8-characters": {
+      "en": "Minimum 8 characters",
+      "fr": ""
+    },
+    "minimum-required-area-m": {
+      "en": "Minimum Required Area (M²)",
+      "fr": ""
+    },
+    "mode-environment": {
+      "en": "Mode & Environment",
+      "fr": ""
+    },
+    "model": {
+      "en": "Model",
+      "fr": ""
+    },
+    "mot-de-passe": {
+      "en": "Mot de passe",
+      "fr": ""
+    },
+    "name": {
+      "en": "Name",
+      "fr": ""
+    },
+    "new": {
+      "en": "New",
+      "fr": ""
+    },
+    "new-characteristic-detected": {
+      "en": "New characteristic detected!",
+      "fr": ""
+    },
+    "no": {
+      "en": "No",
+      "fr": ""
+    },
+    "no-products": {
+      "en": "No products",
+      "fr": ""
+    },
+    "no-results": {
+      "en": "No results",
+      "fr": ""
+    },
+    "no-video": {
+      "en": "No video",
+      "fr": ""
+    },
+    "old-selling-price-optional": {
+      "en": "Old selling price (€) (Optional)",
+      "fr": ""
+    },
+    "or-upload-a-custom-icon": {
+      "en": "Or upload a custom icon",
+      "fr": ""
+    },
+    "outdoor": {
+      "en": "Outdoor",
+      "fr": ""
+    },
+    "pdf-size-mb": {
+      "en": "PDF Size (MB)",
+      "fr": ""
+    },
+    "photo": {
+      "en": "Photo",
+      "fr": ""
+    },
+    "pin": {
+      "en": "Pin",
+      "fr": ""
+    },
+    "pitch": {
+      "en": "Pitch",
+      "fr": ""
+    },
+    "pixiatech-settings-and-wizard-have-been": {
+      "en": "Pixiatech settings and Wizard have been synced.",
+      "fr": ""
+    },
+    "please-enter-a-stock-quantity-for-rental": {
+      "en": "Please enter a stock quantity for rental.",
+      "fr": ""
+    },
+    "please-log-in-to-access-this-section": {
+      "en": "Please log in to access this section.",
+      "fr": ""
+    },
+    "prevent-deletion": {
+      "en": "Prevent deletion",
+      "fr": ""
+    },
+    "price": {
+      "en": "Price",
+      "fr": ""
+    },
+    "price-per-day": {
+      "en": "Price per day (€)",
+      "fr": ""
+    },
+    "price-per-hour": {
+      "en": "Price per hour (€)",
+      "fr": ""
+    },
+    "price-per-tile": {
+      "en": "Price per tile (€)",
+      "fr": ""
+    },
+    "pricing": {
+      "en": "Pricing",
+      "fr": ""
+    },
+    "product-name": {
+      "en": "Product Name",
+      "fr": ""
+    },
+    "product-sheet": {
+      "en": "Product Sheet",
+      "fr": ""
+    },
+    "product-added": {
+      "en": "Product added",
+      "fr": ""
+    },
+    "product-name-2": {
+      "en": "Product name",
+      "fr": ""
+    },
+    "product-updated": {
+      "en": "Product updated",
+      "fr": ""
+    },
+    "professional-email": {
+      "en": "Professional email",
+      "fr": ""
+    },
+    "provider": {
+      "en": "Provider",
+      "fr": ""
+    },
+    "recommended-retail-price-per-m": {
+      "en": "Recommended retail price per m².",
+      "fr": ""
+    },
+    "rental": {
+      "en": "Rental",
+      "fr": ""
+    },
+    "replace-photo": {
+      "en": "Replace photo",
+      "fr": ""
+    },
+    "replace-video": {
+      "en": "Replace video",
+      "fr": ""
+    },
+    "request-access": {
+      "en": "Request access",
+      "fr": ""
+    },
+    "restore-pixiatech-settings": {
+      "en": "Restore Pixiatech settings",
+      "fr": ""
+    },
+    "restricted-access": {
+      "en": "Restricted access",
+      "fr": ""
+    },
+    "sale": {
+      "en": "Sale",
+      "fr": ""
+    },
+    "sale-m": {
+      "en": "Sale /m²",
+      "fr": ""
+    },
+    "sales-mode": {
+      "en": "Sales mode",
+      "fr": ""
+    },
+    "save": {
+      "en": "Save",
+      "fr": ""
+    },
+    "save-error": {
+      "en": "Save error",
+      "fr": ""
+    },
+    "screen-type": {
+      "en": "Screen type",
+      "fr": ""
+    },
+    "search-for-a-product": {
+      "en": "Search for a product...",
+      "fr": ""
+    },
+    "search-for-a-specification": {
+      "en": "Search for a specification...",
+      "fr": ""
+    },
+    "select-a-model": {
+      "en": "Select a model",
+      "fr": ""
+    },
+    "selling-price": {
+      "en": "Selling price (€)",
+      "fr": ""
+    },
+    "semi-outdoor": {
+      "en": "Semi-outdoor",
+      "fr": ""
+    },
+    "sort": {
+      "en": "Sort",
+      "fr": ""
+    },
+    "sort-list": {
+      "en": "Sort list",
+      "fr": ""
+    },
+    "start-by-creating-your-first-product": {
+      "en": "Start by creating your first product",
+      "fr": ""
+    },
+    "stock-required": {
+      "en": "Stock required",
+      "fr": ""
+    },
+    "suggested-results": {
+      "en": "Suggested results",
+      "fr": ""
+    },
+    "sync": {
+      "en": "Sync",
+      "fr": ""
+    },
+    "system-characteristic-locked": {
+      "en": "System characteristic (Locked)",
+      "fr": ""
+    },
+    "technical-specifications": {
+      "en": "Technical Specifications",
+      "fr": ""
+    },
+    "tile-height-cm": {
+      "en": "Tile height (cm)",
+      "fr": ""
+    },
+    "tile-width-cm": {
+      "en": "Tile width (cm)",
+      "fr": ""
+    },
+    "upload-an-icon": {
+      "en": "Upload an icon",
+      "fr": ""
+    },
+    "variant": {
+      "en": "Variant",
+      "fr": ""
+    },
+    "video": {
+      "en": "Video",
+      "fr": ""
+    },
+    "view-pdf": {
+      "en": "View PDF",
+      "fr": ""
+    },
+    "welcome": {
+      "en": "Welcome",
+      "fr": ""
+    },
+    "yes": {
+      "en": "Yes",
+      "fr": ""
+    },
+    "yes-add": {
+      "en": "Yes, add",
+      "fr": ""
+    },
+    "you-must-be-logged-in-to-save-a-characte": {
+      "en": "You must be logged in to save a characteristic.",
+      "fr": ""
+    },
+    "youtube-video-player": {
+      "en": "YouTube video player",
+      "fr": ""
+    },
+    "admin-pixiatech-com": {
+      "en": "admin@pixiatech.com",
+      "fr": ""
+    },
+    "data-image": {
+      "en": "data:image/...",
+      "fr": ""
+    },
+    "or-with-email": {
+      "en": "or with email",
+      "fr": ""
+    },
+    "votre-email-com": {
+      "en": "votre@email.com",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/estimation/components/SupplierPanel.tsx": {
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "check-that-users-with-the-supplier-role": {
+      "en": "Check that users with the supplier role exist",
+      "fr": ""
+    },
+    "confirm": {
+      "en": "Confirm",
+      "fr": ""
+    },
+    "loading-suppliers": {
+      "en": "Loading suppliers...",
+      "fr": ""
+    },
+    "no-supplier-found": {
+      "en": "No supplier found",
+      "fr": ""
+    },
+    "notes-for-the-supplier-optional": {
+      "en": "Notes for the supplier (optional)",
+      "fr": ""
+    },
+    "select-a-supplier": {
+      "en": "Select a supplier",
+      "fr": ""
+    },
+    "send-to-supplier": {
+      "en": "Send to Supplier",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/estimation/pages/EstimationDashboard.tsx": {
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "deleted-data-cannot-be-recovered": {
+      "en": ". Deleted data cannot be recovered.",
+      "fr": ""
+    },
+    "action-denied": {
+      "en": "Action denied",
+      "fr": ""
+    },
+    "empty-trash": {
+      "en": "Empty trash",
+      "fr": ""
+    },
+    "irreversible-action": {
+      "en": "Irreversible action",
+      "fr": ""
+    },
+    "return-reason": {
+      "en": "Return Reason",
+      "fr": ""
+    },
+    "supplier-instructions": {
+      "en": "Supplier Instructions",
+      "fr": ""
+    },
+    "this-action-is": {
+      "en": "This action is",
+      "fr": ""
+    },
+    "you-are-about-to": {
+      "en": "You are about to",
+      "fr": ""
+    },
+    "all-estimations-in-the-trash": {
+      "en": "all estimations in the trash.",
+      "fr": ""
+    },
+    "irreversible": {
+      "en": "irreversible",
+      "fr": ""
+    },
+    "permanently-delete": {
+      "en": "permanently delete",
+      "fr": ""
+    }
+  },
+  "users/_components/delete-confirmation-modal.tsx": {
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "delete": {
+      "en": "Delete",
+      "fr": ""
+    },
+    "are-you-sure-you-want-to-delete": {
+      "en": "Are you sure you want to delete",
+      "fr": ""
+    },
+    "delete-user": {
+      "en": "Delete user?",
+      "fr": ""
+    }
+  },
+  "users/_components/gestion-utilisateurs/CreateRoleDrawer.tsx": {
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "supplier": {
+      "en": "Supplier",
+      "fr": ""
+    },
+    "1-clone-from": {
+      "en": "1. Clone from",
+      "fr": ""
+    },
+    "2-role-name": {
+      "en": "2. Role name",
+      "fr": ""
+    },
+    "administrator": {
+      "en": "Administrator",
+      "fr": ""
+    },
+    "all-users-with-the-role": {
+      "en": "All users with the role",
+      "fr": ""
+    },
+    "create-a-new-role": {
+      "en": "Create a new role",
+      "fr": ""
+    },
+    "custom-roles": {
+      "en": "Custom roles",
+      "fr": ""
+    },
+    "default-roles": {
+      "en": "Default roles",
+      "fr": ""
+    },
+    "e-g-technician-consultant": {
+      "en": "E.g. Technician, Consultant...",
+      "fr": ""
+    },
+    "fixed": {
+      "en": "Fixed",
+      "fr": ""
+    },
+    "full-platform-access": {
+      "en": "Full platform access",
+      "fr": ""
+    },
+    "limited-access-to-quotes": {
+      "en": "Limited access to quotes",
+      "fr": ""
+    },
+    "production-delivery-tracking": {
+      "en": "Production & delivery tracking",
+      "fr": ""
+    },
+    "role-management": {
+      "en": "Role management",
+      "fr": ""
+    },
+    "sales": {
+      "en": "Sales",
+      "fr": ""
+    },
+    "system-role": {
+      "en": "System role",
+      "fr": ""
+    },
+    "the-role": {
+      "en": "The role",
+      "fr": ""
+    },
+    "role-base-role": {
+      "en": "role (base role).",
+      "fr": ""
+    }
+  },
+  "users/_components/gestion-utilisateurs/DeleteConfirmationModal.tsx": {
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "delete": {
+      "en": "Delete",
+      "fr": ""
+    },
+    "are-you-sure-you-want-to-delete": {
+      "en": "Are you sure you want to delete",
+      "fr": ""
+    },
+    "delete-user": {
+      "en": "Delete user?",
+      "fr": ""
+    }
+  },
+  "users/_components/gestion-utilisateurs/UserCard.tsx": {
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "delete": {
+      "en": "Delete",
+      "fr": ""
+    },
+    "irreversible-action": {
+      "en": "Irreversible action",
+      "fr": ""
+    },
+    "phone-number": {
+      "en": "Phone number",
+      "fr": ""
+    },
+    "are-you-sure-you-want-to-delete": {
+      "en": "Are you sure you want to delete",
+      "fr": ""
+    },
+    "delete-user": {
+      "en": "Delete user?",
+      "fr": ""
+    },
+    "deleting": {
+      "en": "Deleting...",
+      "fr": ""
+    },
+    "description": {
+      "en": "Description",
+      "fr": ""
+    },
+    "background": {
+      "en": "background",
+      "fr": ""
+    }
+  },
+  "users/_components/user-card.tsx": {
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "delete": {
+      "en": "Delete",
+      "fr": ""
+    },
+    "phone": {
+      "en": "Phone",
+      "fr": ""
+    },
+    "irreversible-action": {
+      "en": "Irreversible action",
+      "fr": ""
+    },
+    "are-you-sure-you-want-to-delete": {
+      "en": "Are you sure you want to delete",
+      "fr": ""
+    },
+    "delete-user": {
+      "en": "Delete user?",
+      "fr": ""
+    },
+    "deleting": {
+      "en": "Deleting...",
+      "fr": ""
+    }
+  },
+  "_components/dashboard-new/Sidebar_fix.tsx": {
+    "cancel": {
+      "en": "Cancel",
+      "fr": ""
+    },
+    "save": {
+      "en": "Save",
+      "fr": ""
+    },
+    "logo": {
+      "en": "Logo",
+      "fr": ""
+    },
+    "preview": {
+      "en": "Preview",
+      "fr": ""
+    },
+    "log-out": {
+      "en": "Log out",
+      "fr": ""
+    },
+    "collapse": {
+      "en": "Collapse",
+      "fr": ""
+    },
+    "color": {
+      "en": "Color",
+      "fr": ""
+    },
+    "edit-logo": {
+      "en": "Edit Logo",
+      "fr": ""
+    },
+    "image-optional": {
+      "en": "Image (optional)",
+      "fr": ""
+    },
+    "letter": {
+      "en": "Letter",
+      "fr": ""
+    },
+    "reorder": {
+      "en": "Reorder",
+      "fr": ""
+    },
+    "text": {
+      "en": "Text",
+      "fr": ""
+    }
+  },
+  "users/_components/gestion-utilisateurs/UserRow.tsx": {
+    "delete": {
+      "en": "Delete",
+      "fr": ""
+    },
+    "edit": {
+      "en": "Edit",
+      "fr": ""
+    },
+    "approve": {
+      "en": "Approve",
+      "fr": ""
+    },
+    "change-role": {
+      "en": "Change role",
+      "fr": ""
+    },
+    "suspend": {
+      "en": "Suspend",
+      "fr": ""
+    },
+    "view-profile": {
+      "en": "View profile",
+      "fr": ""
+    }
+  },
+  "users/_components/user-row.tsx": {
+    "delete": {
+      "en": "Delete",
+      "fr": ""
+    },
+    "edit": {
+      "en": "Edit",
+      "fr": ""
+    }
+  },
+  "labor/page.tsx": {
+    "configure-costs-and-the-number-of-techni": {
+      "en": "Configure costs and the number of technicians required based on screen area.",
+      "fr": ""
+    },
+    "labor-installation": {
+      "en": "Labor & Installation",
+      "fr": ""
+    }
+  },
+  "locations/LocationManagementClient.tsx": {
+    "all": {
+      "en": "All",
+      "fr": ""
+    },
+    "approved": {
+      "en": "Approved",
+      "fr": ""
+    },
+    "archived": {
+      "en": "Archived",
+      "fr": ""
+    },
+    "aura-admin-v3-2-pixiatech-ecosystem": {
+      "en": "Aura Admin v3.2 • Pixiatech Ecosystem",
+      "fr": ""
+    },
+    "by-amount": {
+      "en": "By Amount",
+      "fr": ""
+    },
+    "by-client": {
+      "en": "By Client",
+      "fr": ""
+    },
+    "by-date": {
+      "en": "By Date",
+      "fr": ""
+    },
+    "client": {
+      "en": "Client",
+      "fr": ""
+    },
+    "date": {
+      "en": "Date",
+      "fr": ""
+    },
+    "delivered": {
+      "en": "Delivered",
+      "fr": ""
+    },
+    "filter-by-status": {
+      "en": "Filter by status",
+      "fr": ""
+    },
+    "location-management": {
+      "en": "Location Management",
+      "fr": ""
+    },
+    "modify-your-filters-or-start-a-new-searc": {
+      "en": "Modify your filters or start a new search",
+      "fr": ""
+    },
+    "no-rentals": {
+      "en": "No rentals",
+      "fr": ""
+    },
+    "no-rentals-found": {
+      "en": "No rentals found",
+      "fr": ""
+    },
+    "pending": {
+      "en": "Pending",
+      "fr": ""
+    },
+    "search-for-a-rental": {
+      "en": "Search for a rental...",
+      "fr": ""
+    },
+    "sort-by": {
+      "en": "Sort by",
+      "fr": ""
+    },
+    "start-date": {
+      "en": "Start date",
+      "fr": ""
+    },
+    "status": {
+      "en": "Status",
+      "fr": ""
+    },
+    "total-amount": {
+      "en": "Total Amount",
+      "fr": ""
+    }
+  },
+  "notification/page.tsx": {
+    "all": {
+      "en": "All",
+      "fr": ""
+    },
+    "activities-estimates": {
+      "en": "Activities & Estimates",
+      "fr": ""
+    },
+    "communication": {
+      "en": "Communication",
+      "fr": ""
+    },
+    "delete-all": {
+      "en": "Delete all",
+      "fr": ""
+    },
+    "details": {
+      "en": "Details",
+      "fr": ""
+    },
+    "direct-messages": {
+      "en": "Direct Messages",
+      "fr": ""
+    },
+    "inbox": {
+      "en": "Inbox",
+      "fr": ""
+    },
+    "mark-read": {
+      "en": "Mark read",
+      "fr": ""
+    },
+    "no-notifications": {
+      "en": "No notifications",
+      "fr": ""
+    },
+    "read-all": {
+      "en": "Read all",
+      "fr": ""
+    },
+    "stay-informed-about-the-latest-platform": {
+      "en": "Stay informed about the latest platform activities.",
+      "fr": ""
+    },
+    "system-operations": {
+      "en": "System Operations",
+      "fr": ""
+    },
+    "unread": {
+      "en": "Unread",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/estimation/components/EstimationDrawer.tsx": {
+    "approved": {
+      "en": "Approved",
+      "fr": ""
+    },
+    "client": {
+      "en": "Client",
+      "fr": ""
+    },
+    "pending": {
+      "en": "Pending",
+      "fr": ""
+    },
+    "phone": {
+      "en": "Phone",
+      "fr": ""
+    },
+    "ajouter": {
+      "en": "+ Ajouter",
+      "fr": ""
+    },
+    "acompte-30": {
+      "en": "Acompte (30%)",
+      "fr": ""
+    },
+    "bon-de-commande": {
+      "en": "Bon de Commande",
+      "fr": ""
+    },
+    "commentaires-client": {
+      "en": "Commentaires Client",
+      "fr": ""
+    },
+    "console-de-modification-aura-pro": {
+      "en": "Console de Modification \"Aura Pro\"",
+      "fr": ""
+    },
+    "entreprise-nom": {
+      "en": "Entreprise / Nom",
+      "fr": ""
+    },
+    "estimation": {
+      "en": "Estimation",
+      "fr": ""
+    },
+    "generated": {
+      "en": "Generated",
+      "fr": ""
+    },
+    "hardware": {
+      "en": "Hardware",
+      "fr": ""
+    },
+    "hauteur": {
+      "en": "Hauteur",
+      "fr": ""
+    },
+    "historique-transactions": {
+      "en": "Historique Transactions",
+      "fr": ""
+    },
+    "largeur": {
+      "en": "Largeur",
+      "fr": ""
+    },
+    "manufacturing-instructions-wiring-struct": {
+      "en": "Manufacturing instructions, wiring, structure...",
+      "fr": ""
+    },
+    "paid": {
+      "en": "Paid",
+      "fr": ""
+    },
+    "paiement": {
+      "en": "Paiement",
+      "fr": ""
+    },
+    "prix-ht": {
+      "en": "Prix (HT)",
+      "fr": ""
+    },
+    "quantity": {
+      "en": "Quantity",
+      "fr": ""
+    },
+    "solde": {
+      "en": "Solde",
+      "fr": ""
+    },
+    "these-specifications-are-sent-to-the-sup": {
+      "en": "These specifications are sent to the supplier for feasibility validation.",
+      "fr": ""
+    },
+    "valider-modification": {
+      "en": "Valider Modification",
+      "fr": ""
+    }
+  },
+  "users/_components/filters-bar.tsx": {
+    "approved": {
+      "en": "Approved",
+      "fr": ""
+    },
+    "pending": {
+      "en": "Pending",
+      "fr": ""
+    },
+    "status": {
+      "en": "Status",
+      "fr": ""
+    },
+    "role": {
+      "en": "Role",
+      "fr": ""
+    },
+    "add-user": {
+      "en": "Add User",
+      "fr": ""
+    },
+    "all-roles": {
+      "en": "All Roles",
+      "fr": ""
+    },
+    "all-statuses": {
+      "en": "All Statuses",
+      "fr": ""
+    },
+    "search-by-name-or-email": {
+      "en": "Search by name or email...",
+      "fr": ""
+    }
+  },
+  "users/_components/gestion-utilisateurs/FiltersBar.tsx": {
+    "approved": {
+      "en": "Approved",
+      "fr": ""
+    },
+    "pending": {
+      "en": "Pending",
+      "fr": ""
+    },
+    "status": {
+      "en": "Status",
+      "fr": ""
+    },
+    "role": {
+      "en": "Role",
+      "fr": ""
+    },
+    "add-user": {
+      "en": "Add User",
+      "fr": ""
+    },
+    "all-roles": {
+      "en": "All Roles",
+      "fr": ""
+    },
+    "all-statuses": {
+      "en": "All Statuses",
+      "fr": ""
+    },
+    "search-by-name-or-email": {
+      "en": "Search by name or email...",
+      "fr": ""
+    },
+    "rejected": {
+      "en": "Rejected",
+      "fr": ""
+    },
+    "suspended": {
+      "en": "Suspended",
+      "fr": ""
+    }
+  },
+  "users/_components/gestion-utilisateurs/UserProfileDrawer.tsx": {
+    "approved": {
+      "en": "Approved",
+      "fr": ""
+    },
+    "pending": {
+      "en": "Pending",
+      "fr": ""
+    },
+    "status": {
+      "en": "Status",
+      "fr": ""
+    },
+    "security": {
+      "en": "Security",
+      "fr": ""
+    },
+    "role": {
+      "en": "Role",
+      "fr": ""
+    },
+    "select-a-role": {
+      "en": "Select a role",
+      "fr": ""
+    },
+    "select-a-status": {
+      "en": "Select a status",
+      "fr": ""
+    },
+    "rejected": {
+      "en": "Rejected",
+      "fr": ""
+    },
+    "suspended": {
+      "en": "Suspended",
+      "fr": ""
+    },
+    "add-role": {
+      "en": "Add role",
+      "fr": ""
+    },
+    "avatar": {
+      "en": "Avatar",
+      "fr": ""
+    },
+    "basic-information": {
+      "en": "Basic information",
+      "fr": ""
+    },
+    "change-background": {
+      "en": "Change background",
+      "fr": ""
+    },
+    "e-g-john-doe": {
+      "en": "E.g. John Doe",
+      "fr": ""
+    },
+    "profile-background": {
+      "en": "Profile Background",
+      "fr": ""
+    },
+    "roles-status": {
+      "en": "Roles & Status",
+      "fr": ""
+    },
+    "tell-us-about-yourself": {
+      "en": "Tell us about yourself...",
+      "fr": ""
+    },
+    "uploading": {
+      "en": "Uploading...",
+      "fr": ""
+    },
+    "john-example-com": {
+      "en": "john@example.com",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/estimation/components/DetailsInterface.tsx": {
+    "client": {
+      "en": "Client",
+      "fr": ""
+    },
+    "phone": {
+      "en": "Phone",
+      "fr": ""
+    },
+    "delivery": {
+      "en": "Delivery",
+      "fr": ""
+    },
+    "financial-summary": {
+      "en": "Financial Summary",
+      "fr": ""
+    },
+    "fullscreen": {
+      "en": "Fullscreen",
+      "fr": ""
+    },
+    "labor": {
+      "en": "Labor",
+      "fr": ""
+    },
+    "partager": {
+      "en": "Partager",
+      "fr": ""
+    },
+    "product-subtotal": {
+      "en": "Product subtotal",
+      "fr": ""
+    },
+    "site": {
+      "en": "Site",
+      "fr": ""
+    },
+    "technical-commercial-details": {
+      "en": "Technical & Commercial Details",
+      "fr": ""
+    },
+    "total-incl-tax": {
+      "en": "Total incl. tax",
+      "fr": ""
+    },
+    "traduire": {
+      "en": "Traduire",
+      "fr": ""
+    },
+    "transmettre": {
+      "en": "Transmettre",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/estimation/components/EstimationDetails.tsx": {
+    "client": {
+      "en": "Client",
+      "fr": ""
+    },
+    "transmettre": {
+      "en": "Transmettre",
+      "fr": ""
+    },
+    "aucun-historique": {
+      "en": "Aucun historique.",
+      "fr": ""
+    },
+    "delivery-cost": {
+      "en": "Delivery cost (€)",
+      "fr": ""
+    },
+    "email": {
+      "en": "Email:",
+      "fr": ""
+    },
+    "estimation-details": {
+      "en": "Estimation Details",
+      "fr": ""
+    },
+    "historique": {
+      "en": "Historique",
+      "fr": ""
+    },
+    "labor-cost": {
+      "en": "Labor cost (€)",
+      "fr": ""
+    },
+    "main-d-oeuvre": {
+      "en": "Main d'oeuvre",
+      "fr": ""
+    },
+    "nom": {
+      "en": "Nom:",
+      "fr": ""
+    },
+    "phone-2": {
+      "en": "Phone:",
+      "fr": ""
+    },
+    "remise-main-d-oeuvre": {
+      "en": "Remise Main d'oeuvre (%)",
+      "fr": ""
+    },
+    "total-final-ht": {
+      "en": "Total Final (HT)",
+      "fr": ""
+    },
+    "total-final-ttc": {
+      "en": "Total Final (TTC)",
+      "fr": ""
+    },
+    "total-initial-ht": {
+      "en": "Total Initial (HT)",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/estimation/components/EstimationEditModal.tsx": {
+    "client": {
+      "en": "Client",
+      "fr": ""
+    },
+    "phone": {
+      "en": "Phone",
+      "fr": ""
+    },
+    "financial-summary": {
+      "en": "Financial Summary",
+      "fr": ""
+    },
+    "total-incl-tax": {
+      "en": "Total incl. tax",
+      "fr": ""
+    },
+    "traduire": {
+      "en": "Traduire",
+      "fr": ""
+    },
+    "transmettre": {
+      "en": "Transmettre",
+      "fr": ""
+    },
+    "estimation-details": {
+      "en": "Estimation Details",
+      "fr": ""
+    },
+    "achats": {
+      "en": "Achats",
+      "fr": ""
+    },
+    "frais-de-logistique": {
+      "en": "Frais de logistique",
+      "fr": ""
+    },
+    "frais-de-port": {
+      "en": "Frais de port",
+      "fr": ""
+    },
+    "informations-client": {
+      "en": "Informations client",
+      "fr": ""
+    },
+    "logistique": {
+      "en": "Logistique",
+      "fr": ""
+    },
+    "share": {
+      "en": "Share",
+      "fr": ""
+    },
+    "summary": {
+      "en": "Summary",
+      "fr": ""
+    },
+    "total-excl-tax-3": {
+      "en": "Total excl. tax",
+      "fr": ""
+    }
+  },
+  "quote-pdf.tsx": {
+    "date": {
+      "en": "Date",
+      "fr": ""
+    },
+    "30-days": {
+      "en": "30 days",
+      "fr": ""
+    },
+    "delivery": {
+      "en": "Delivery",
+      "fr": ""
+    },
+    "detailed-description": {
+      "en": "Detailed Description",
+      "fr": ""
+    },
+    "digital-solutions": {
+      "en": "Digital Solutions",
+      "fr": ""
+    },
+    "excl-tax": {
+      "en": "Excl. Tax",
+      "fr": ""
+    },
+    "logo": {
+      "en": "Logo",
+      "fr": ""
+    },
+    "number": {
+      "en": "Number",
+      "fr": ""
+    },
+    "payment-terms": {
+      "en": "Payment Terms",
+      "fr": ""
+    },
+    "qty": {
+      "en": "Qty",
+      "fr": ""
+    },
+    "recipient-client": {
+      "en": "Recipient Client",
+      "fr": ""
+    },
+    "subtotal-excl-tax": {
+      "en": "Subtotal Excl. Tax",
+      "fr": ""
+    },
+    "total-excl-tax-2": {
+      "en": "Total Excl. Tax",
+      "fr": ""
+    },
+    "unit-excl-tax": {
+      "en": "Unit Excl. Tax",
+      "fr": ""
+    },
+    "validity": {
+      "en": "Validity",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/estimation/details/App.tsx": {
+    "start-date": {
+      "en": "Start date",
+      "fr": ""
+    },
+    "phone": {
+      "en": "Phone",
+      "fr": ""
+    },
+    "rental": {
+      "en": "Rental",
+      "fr": ""
+    },
+    "sale": {
+      "en": "Sale",
+      "fr": ""
+    },
+    "technical-specifications": {
+      "en": "Technical Specifications",
+      "fr": ""
+    },
+    "financial-summary": {
+      "en": "Financial Summary",
+      "fr": ""
+    },
+    "labor": {
+      "en": "Labor",
+      "fr": ""
+    },
+    "site": {
+      "en": "Site",
+      "fr": ""
+    },
+    "estimation": {
+      "en": "Estimation",
+      "fr": ""
+    },
+    "quantity": {
+      "en": "Quantity",
+      "fr": ""
+    },
+    "add-line": {
+      "en": "Add Line",
+      "fr": ""
+    },
+    "approve-and-permanently-save": {
+      "en": "Approve and Permanently Save",
+      "fr": ""
+    },
+    "article-reference": {
+      "en": "Article Reference",
+      "fr": ""
+    },
+    "case-summary": {
+      "en": "Case Summary",
+      "fr": ""
+    },
+    "choose-a-city": {
+      "en": "Choose a city...",
+      "fr": ""
+    },
+    "city": {
+      "en": "City:",
+      "fr": ""
+    },
+    "client-name": {
+      "en": "Client Name",
+      "fr": ""
+    },
+    "client-profile": {
+      "en": "Client Profile",
+      "fr": ""
+    },
+    "close": {
+      "en": "Close",
+      "fr": ""
+    },
+    "copy": {
+      "en": "Copy",
+      "fr": ""
+    },
+    "delete-perm": {
+      "en": "Delete Perm.",
+      "fr": ""
+    },
+    "delivery-address": {
+      "en": "Delivery Address",
+      "fr": ""
+    },
+    "destination-city": {
+      "en": "Destination City",
+      "fr": ""
+    },
+    "discount": {
+      "en": "Discount (%)",
+      "fr": ""
+    },
+    "duration-days": {
+      "en": "Duration (Days)",
+      "fr": ""
+    },
+    "duration-hours": {
+      "en": "Duration (Hours)",
+      "fr": ""
+    },
+    "end": {
+      "en": "End",
+      "fr": ""
+    },
+    "end-date": {
+      "en": "End date",
+      "fr": ""
+    },
+    "end-time": {
+      "en": "End time",
+      "fr": ""
+    },
+    "estimation-2": {
+      "en": "Estimation #",
+      "fr": ""
+    },
+    "exceptional-discount-applied": {
+      "en": "Exceptional discount applied",
+      "fr": ""
+    },
+    "expert-installation": {
+      "en": "Expert installation",
+      "fr": ""
+    },
+    "for-a-total-area-of": {
+      "en": "For a total area of",
+      "fr": ""
+    },
+    "from": {
+      "en": "From",
+      "fr": ""
+    },
+    "height-m": {
+      "en": "Height (m)",
+      "fr": ""
+    },
+    "hide-notes-from-supplier": {
+      "en": "Hide notes from supplier",
+      "fr": ""
+    },
+    "hide-photo-from-supplier": {
+      "en": "Hide photo from supplier",
+      "fr": ""
+    },
+    "history": {
+      "en": "History",
+      "fr": ""
+    },
+    "new-payment": {
+      "en": "New payment",
+      "fr": ""
+    },
+    "no-visuals-available": {
+      "en": "No visuals available",
+      "fr": ""
+    },
+    "on": {
+      "en": "On",
+      "fr": ""
+    },
+    "period-days": {
+      "en": "Period (Days)",
+      "fr": ""
+    },
+    "price-2": {
+      "en": "Price (€)",
+      "fr": ""
+    },
+    "priced-data-hidden-per-commercial-policy": {
+      "en": "Priced data hidden per commercial policy.",
+      "fr": ""
+    },
+    "product-designation": {
+      "en": "Product / Designation",
+      "fr": ""
+    },
+    "rental-mode": {
+      "en": "Rental Mode",
+      "fr": ""
+    },
+    "rental-period": {
+      "en": "Rental Period",
+      "fr": ""
+    },
+    "sale-mode": {
+      "en": "Sale Mode",
+      "fr": ""
+    },
+    "select-a-product": {
+      "en": "Select a product...",
+      "fr": ""
+    },
+    "send": {
+      "en": "Send",
+      "fr": ""
+    },
+    "single-payment": {
+      "en": "Single Payment",
+      "fr": ""
+    },
+    "specific-day-hours": {
+      "en": "Specific Day (Hours)",
+      "fr": ""
+    },
+    "start": {
+      "en": "Start",
+      "fr": ""
+    },
+    "start-time": {
+      "en": "Start time",
+      "fr": ""
+    },
+    "subtotal-excl-tax-2": {
+      "en": "Subtotal excl. tax",
+      "fr": ""
+    },
+    "supplier-profile": {
+      "en": "Supplier Profile",
+      "fr": ""
+    },
+    "supplier-technical-mode-active": {
+      "en": "Supplier Technical Mode Active",
+      "fr": ""
+    },
+    "technical-translation-chinese": {
+      "en": "Technical Translation (Chinese)",
+      "fr": ""
+    },
+    "to": {
+      "en": "To",
+      "fr": ""
+    },
+    "to-pay-incl-tax": {
+      "en": "To Pay (incl. tax)",
+      "fr": ""
+    },
+    "total-for-this-line": {
+      "en": "Total for this line",
+      "fr": ""
+    },
+    "trash": {
+      "en": "Trash",
+      "fr": ""
+    },
+    "unarchive": {
+      "en": "Unarchive",
+      "fr": ""
+    },
+    "unit-price": {
+      "en": "Unit Price (€)",
+      "fr": ""
+    },
+    "whatsapp": {
+      "en": "WhatsApp",
+      "fr": ""
+    },
+    "width-m": {
+      "en": "Width (m)",
+      "fr": ""
+    },
+    "write-your-notes-here": {
+      "en": "Write your notes here...",
+      "fr": ""
+    },
+    "technician-s": {
+      "en": "technician(s).",
+      "fr": ""
+    },
+    "your-project-requires": {
+      "en": "your project requires",
+      "fr": ""
+    }
+  },
+  "users/_components/gestion-utilisateurs/UserTable.tsx": {
+    "status": {
+      "en": "Status",
+      "fr": ""
+    },
+    "role": {
+      "en": "Role",
+      "fr": ""
+    },
+    "no-users-found-2": {
+      "en": "No users found.",
+      "fr": ""
+    },
+    "created": {
+      "en": "Created",
+      "fr": ""
+    },
+    "last-access": {
+      "en": "Last Access",
+      "fr": ""
+    },
+    "user": {
+      "en": "User",
+      "fr": ""
+    }
+  },
+  "login/page.tsx": {
+    "optional": {
+      "en": "(optional)",
+      "fr": ""
+    },
+    "access-reserved-for-pixiatech-administra": {
+      "en": "Access reserved for PixiaTech administration",
+      "fr": ""
+    },
+    "account-creation-via-the-existing-backen": {
+      "en": "Account creation via the existing backend with profile and role provisioning.",
+      "fr": ""
+    },
+    "admin-space": {
+      "en": "Admin Space",
+      "fr": ""
+    },
+    "back-to-login": {
+      "en": "Back to login",
+      "fr": ""
+    },
+    "back-to-site": {
+      "en": "Back to site",
+      "fr": ""
+    },
+    "complete-your-profile": {
+      "en": "Complete your profile",
+      "fr": ""
+    },
+    "create-my-account": {
+      "en": "Create my account",
+      "fr": ""
+    },
+    "email-and-password-authentication-with-a": {
+      "en": "Email and password authentication with a secure server-side session.",
+      "fr": ""
+    },
+    "first-and-last-name": {
+      "en": "First and last name",
+      "fr": ""
+    },
+    "full-name": {
+      "en": "Full name",
+      "fr": ""
+    },
+    "integrated-registration": {
+      "en": "Integrated Registration",
+      "fr": ""
+    },
+    "log-in": {
+      "en": "Log in",
+      "fr": ""
+    },
+    "logging-in": {
+      "en": "Logging in...",
+      "fr": ""
+    },
+    "login": {
+      "en": "Login",
+      "fr": ""
+    },
+    "minimum-6-characters": {
+      "en": "Minimum 6 characters",
+      "fr": ""
+    },
+    "password": {
+      "en": "Password",
+      "fr": ""
+    },
+    "pending-account": {
+      "en": "Pending account",
+      "fr": ""
+    },
+    "phone": {
+      "en": "Phone",
+      "fr": ""
+    },
+    "pixiatech": {
+      "en": "PixiaTech",
+      "fr": ""
+    },
+    "quick-login": {
+      "en": "Quick Login",
+      "fr": ""
+    },
+    "remember-me": {
+      "en": "Remember me",
+      "fr": ""
+    },
+    "saving": {
+      "en": "Saving...",
+      "fr": ""
+    },
+    "secure-interface": {
+      "en": "Secure Interface",
+      "fr": ""
+    },
+    "sign-up": {
+      "en": "Sign up",
+      "fr": ""
+    },
+    "signing-up": {
+      "en": "Signing up...",
+      "fr": ""
+    },
+    "your-account-has-been-created-successful": {
+      "en": "Your account has been created successfully. An administrator must approve your account and assign you a role before you can log in.",
+      "fr": ""
+    },
+    "your-account-will-be-submitted-for-admin": {
+      "en": "Your account will be submitted for administrator approval.",
+      "fr": ""
+    },
+    "your-name": {
+      "en": "Your name",
+      "fr": ""
+    },
+    "admin-example-com": {
+      "en": "admin@example.com",
+      "fr": ""
+    },
+    "or": {
+      "en": "or",
+      "fr": ""
+    }
+  },
+  "register/page.tsx": {
+    "back-to-site": {
+      "en": "Back to site",
+      "fr": ""
+    },
+    "full-name": {
+      "en": "Full name",
+      "fr": ""
+    },
+    "log-in": {
+      "en": "Log in",
+      "fr": ""
+    },
+    "password": {
+      "en": "Password",
+      "fr": ""
+    },
+    "create-an-account": {
+      "en": "Create an account",
+      "fr": ""
+    },
+    "already-have-an-account": {
+      "en": "Already have an account?",
+      "fr": ""
+    },
+    "john-doe": {
+      "en": "John Doe",
+      "fr": ""
+    },
+    "join-the-platform-to-create-estimates": {
+      "en": "Join the platform to create estimates.",
+      "fr": ""
+    },
+    "phone-number": {
+      "en": "Phone number",
+      "fr": ""
+    },
+    "registration-successful": {
+      "en": "Registration successful",
+      "fr": ""
+    },
+    "jean-dupont-example-com": {
+      "en": "jean.dupont@example.com",
+      "fr": ""
+    }
+  },
+  "messages/page.tsx": {
+    "access-denied": {
+      "en": "Access Denied",
+      "fr": ""
+    },
+    "choose-a-discussion-from-the-list-to-sta": {
+      "en": "Choose a discussion from the list to start chatting with your team.",
+      "fr": ""
+    },
+    "directory": {
+      "en": "Directory",
+      "fr": ""
+    },
+    "discussions": {
+      "en": "Discussions",
+      "fr": ""
+    },
+    "select-a-conversation": {
+      "en": "Select a conversation",
+      "fr": ""
+    },
+    "the-administrator-has-removed-your-acces": {
+      "en": "The administrator has removed your access to Chat.",
+      "fr": ""
+    }
+  },
+  "_components/NotificationBell.tsx": {
+    "no-notifications": {
+      "en": "No notifications",
+      "fr": ""
+    },
+    "view-all-notifications": {
+      "en": "View all notifications",
+      "fr": ""
+    },
+    "you-are-up-to-date": {
+      "en": "You are up to date!",
+      "fr": ""
+    }
+  },
+  "users/[id]/_components/user-profile-layout.tsx": {
+    "mot-de-passe": {
+      "en": "Mot de passe",
+      "fr": ""
+    },
+    "informations": {
+      "en": "Informations",
+      "fr": ""
+    },
+    "log-out": {
+      "en": "Log out",
+      "fr": ""
+    }
+  },
+  "settings/personalization/_components/personalization-editor.tsx": {
+    "save": {
+      "en": "Save",
+      "fr": ""
+    },
+    "accent": {
+      "en": "Accent",
+      "fr": ""
+    },
+    "accent-color": {
+      "en": "Accent Color",
+      "fr": ""
+    },
+    "action": {
+      "en": "Action",
+      "fr": ""
+    },
+    "buttons": {
+      "en": "Buttons",
+      "fr": ""
+    },
+    "card-background": {
+      "en": "Card Background",
+      "fr": ""
+    },
+    "card-border": {
+      "en": "Card Border",
+      "fr": ""
+    },
+    "card-text": {
+      "en": "Card Text",
+      "fr": ""
+    },
+    "cards-containers": {
+      "en": "Cards & Containers",
+      "fr": ""
+    },
+    "customize-internal-elements-the-sidebar": {
+      "en": "Customize internal elements. The sidebar and menu remain fixed.",
+      "fr": ""
+    },
+    "customize-the-appearance-of-main-content": {
+      "en": "Customize the appearance of main content elements.",
+      "fr": ""
+    },
+    "customize-the-colors-of-your-main-naviga": {
+      "en": "Customize the colors of your main navigation menu.",
+      "fr": ""
+    },
+    "final-touches-for-a-consistent-interface": {
+      "en": "Final touches for a consistent interface.",
+      "fr": ""
+    },
+    "global-accents": {
+      "en": "Global & Accents",
+      "fr": ""
+    },
+    "hover-active-background": {
+      "en": "Hover/Active Background",
+      "fr": ""
+    },
+    "hover-active-text": {
+      "en": "Hover/Active Text",
+      "fr": ""
+    },
+    "live-preview": {
+      "en": "Live Preview",
+      "fr": ""
+    },
+    "menu-background": {
+      "en": "Menu Background",
+      "fr": ""
+    },
+    "menu-border": {
+      "en": "Menu Border",
+      "fr": ""
+    },
+    "menu-text": {
+      "en": "Menu Text",
+      "fr": ""
+    },
+    "page-background": {
+      "en": "Page Background",
+      "fr": ""
+    },
+    "primary-background": {
+      "en": "Primary Background",
+      "fr": ""
+    },
+    "primary-hover": {
+      "en": "Primary Hover",
+      "fr": ""
+    },
+    "primary-text": {
+      "en": "Primary Text",
+      "fr": ""
+    },
+    "real-time": {
+      "en": "Real time",
+      "fr": ""
+    },
+    "reset": {
+      "en": "Reset",
+      "fr": ""
+    },
+    "secondary": {
+      "en": "Secondary",
+      "fr": ""
+    },
+    "secondary-background": {
+      "en": "Secondary Background",
+      "fr": ""
+    },
+    "secondary-hover": {
+      "en": "Secondary Hover",
+      "fr": ""
+    },
+    "secondary-text": {
+      "en": "Secondary Text",
+      "fr": ""
+    },
+    "set-the-colors-for-your-primary-and-seco": {
+      "en": "Set the colors for your primary and secondary actions.",
+      "fr": ""
+    },
+    "side-menu": {
+      "en": "Side Menu",
+      "fr": ""
+    },
+    "the-preview-shows-how-your-internal-elem": {
+      "en": "The preview shows how your internal elements integrate into the original design.",
+      "fr": ""
+    },
+    "top-bar-background": {
+      "en": "Top Bar Background",
+      "fr": ""
+    },
+    "top-bar-text": {
+      "en": "Top Bar Text",
+      "fr": ""
+    },
+    "unsaved-changes": {
+      "en": "Unsaved changes",
+      "fr": ""
+    }
+  },
+  "settings/_components/settings-content.tsx": {
+    "delivery": {
+      "en": "Delivery",
+      "fr": ""
+    },
+    "labor": {
+      "en": "Labor",
+      "fr": ""
+    },
+    "content": {
+      "en": "Content",
+      "fr": ""
+    },
+    "emergency": {
+      "en": "Emergency",
+      "fr": ""
+    },
+    "general": {
+      "en": "General",
+      "fr": ""
+    },
+    "hint-bubbles": {
+      "en": "Hint Bubbles",
+      "fr": ""
+    },
+    "manage-global-options-resources-and-secu": {
+      "en": "Manage global options, resources, and security settings for your platform.",
+      "fr": ""
+    },
+    "messaging": {
+      "en": "Messaging",
+      "fr": ""
+    },
+    "personalization": {
+      "en": "Personalization",
+      "fr": ""
+    },
+    "software": {
+      "en": "Software",
+      "fr": ""
+    },
+    "system-configuration": {
+      "en": "System Configuration",
+      "fr": ""
+    }
+  },
+  "settings/_components/settings-nav.tsx": {
+    "delivery": {
+      "en": "Delivery",
+      "fr": ""
+    },
+    "labor": {
+      "en": "Labor",
+      "fr": ""
+    },
+    "content": {
+      "en": "Content",
+      "fr": ""
+    },
+    "emergency": {
+      "en": "Emergency",
+      "fr": ""
+    },
+    "general": {
+      "en": "General",
+      "fr": ""
+    },
+    "themes": {
+      "en": "Themes",
+      "fr": ""
+    }
+  },
+  "_components/dashboard-new/Sidebar.tsx": {
+    "logo": {
+      "en": "Logo",
+      "fr": ""
+    },
+    "preview": {
+      "en": "Preview",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/estimation/components/EstimationChat.tsx": {
+    "chargement": {
+      "en": "Chargement...",
+      "fr": ""
+    },
+    "full-screen": {
+      "en": "Full screen",
+      "fr": ""
+    },
+    "start-a-conversation": {
+      "en": "Start a conversation",
+      "fr": ""
+    },
+    "votre-message": {
+      "en": "Votre message...",
+      "fr": ""
+    },
+    "sent-2": {
+      "en": "• Sent",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/estimation/components/Layout.tsx": {
+    "corbeille": {
+      "en": "Corbeille",
+      "fr": ""
+    },
+    "recalculate-statistics": {
+      "en": "Recalculate statistics",
+      "fr": ""
+    }
+  },
+  "quote-requests/_components/estimation/components/MobileFilterDrawer.tsx": {
+    "corbeille": {
+      "en": "Corbeille",
+      "fr": ""
+    },
+    "filter-by-category": {
+      "en": "Filter by category",
+      "fr": ""
+    },
+    "statuses": {
+      "en": "Statuses",
+      "fr": ""
+    }
+  },
+  "_components/dashboard-new/ImpersonationDrawer.tsx": {
+    "supplier": {
+      "en": "Supplier",
+      "fr": ""
+    },
+    "administrator": {
+      "en": "Administrator",
+      "fr": ""
+    },
+    "log-in-as": {
+      "en": "Log in as",
+      "fr": ""
+    },
+    "no-user-found": {
+      "en": "No user found",
+      "fr": ""
+    },
+    "sales-rep": {
+      "en": "Sales Rep",
+      "fr": ""
+    },
+    "search-for-a-user": {
+      "en": "Search for a user...",
+      "fr": ""
+    }
+  },
+  "settings/_components/input-with-upload.tsx": {
+    "preview": {
+      "en": "Preview",
+      "fr": ""
+    },
+    "remove-image": {
+      "en": "Remove image",
+      "fr": ""
+    },
+    "upload-a-file": {
+      "en": "Upload a file",
+      "fr": ""
+    },
+    "upload-error": {
+      "en": "Upload error",
+      "fr": ""
+    },
+    "upload-successful": {
+      "en": "Upload successful",
+      "fr": ""
+    },
+    "youtube-link": {
+      "en": "YouTube Link",
+      "fr": ""
+    }
+  },
+  "quotes/[id]/_components/supplier-quote-details.tsx": {
+    "dimensions": {
+      "en": "Dimensions",
+      "fr": ""
+    },
+    "lieu-de-l": {
+      "en": "Lieu de l",
+      "fr": ""
+    },
+    "notes-additionnelles-du-client": {
+      "en": "Notes additionnelles du client",
+      "fr": ""
+    },
+    "photo-de-l-installation": {
+      "en": "Photo de l'installation",
+      "fr": ""
+    },
+    "retour": {
+      "en": "Retour",
+      "fr": ""
+    }
+  },
+  "_components/dashboard-new/Dashboard.tsx": {
+    "reset": {
+      "en": "Reset",
+      "fr": ""
+    },
+    "reset-to-zero": {
+      "en": "— Reset to zero",
+      "fr": ""
+    }
+  },
+  "users/[id]/page.tsx": {
+    "user-not-found": {
+      "en": "User not found",
+      "fr": ""
+    }
+  },
+  "users/[id]/_components/user-password-form.tsx": {
+    "password-updated": {
+      "en": "Password updated",
+      "fr": ""
+    }
+  },
+  "users/_components/gestion-utilisateurs/UserGrid.tsx": {
+    "no-users-found-2": {
+      "en": "No users found.",
+      "fr": ""
+    }
+  },
+  "users/_components/gestion-utilisateurs/UserManager.tsx": {
+    "viewmode-grid": {
+      "en": ") : viewMode === 'grid' ? (",
+      "fr": ""
+    }
+  },
+  "_components/dashboard-new/CommercialDashboard.tsx": {
+    "profile": {
+      "en": "Profile",
+      "fr": ""
+    }
+  },
+  "_components/dashboard-new/FournisseurDashboard.tsx": {
+    "profile": {
+      "en": "Profile",
+      "fr": ""
+    },
+    "est-2026-009-pending-for-2-days": {
+      "en": "EST-2026-009 pending for 2 days",
+      "fr": ""
+    },
+    "module-solar-x1-3-units-remaining": {
+      "en": "Module Solar X1 - 3 units remaining",
+      "fr": ""
+    }
+  }
+}

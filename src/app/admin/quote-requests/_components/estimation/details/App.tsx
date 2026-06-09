@@ -97,8 +97,8 @@ import './details.css';
 // Mock initial data as fallback
 const FALLBACK_ESTIMATION: Estimation = {
   id: 'DEV-XXXXXX',
-  client: {
-    name: 'Chargement...',
+    client: {
+      name: 'Loading...',
     email: '',
     phone: '',
     company: '',
@@ -275,7 +275,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
       // Handle both raw QuoteRequest and simplified Estimation objects
       const clientObj = typeof initialEstimation.client === 'object' ? initialEstimation.client : null;
-      const clientName = clientObj?.companyName || clientObj?.name || (typeof initialEstimation.client === 'string' ? initialEstimation.client : '') || 'Client Inconnu';
+      const clientName = clientObj?.companyName || clientObj?.name || (typeof initialEstimation.client === 'string' ? initialEstimation.client : '') || 'Unknown Client';
       const clientEmail = clientObj?.email || initialEstimation.email || '';
       const clientPhone = clientObj?.phone || initialEstimation.phone || '';
       const clientAddress = clientObj?.address || initialEstimation.address || '';
@@ -285,13 +285,13 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       const taxRate = initialEstimation.taxRate ?? 0;
       const dbTotalClient = initialEstimation.totalClient || initialEstimation.totalQuote || 0;
 
-      // Auto-détecter si les prix unitaires en base sont déjà TTC
+      // Auto-detect if base unit prices are already tax-included
       const dbProducts = initialEstimation.products || [];
       const sumProductsHT = dbProducts.reduce((acc: number, p: any) => acc + (p.unitPrice || (p.lineTotal / (p.quantity || 1)) || 0) * (p.quantity || 1), 0);
       const deliveryCost = initialEstimation.deliveryCost || 0;
       const laborCost = initialEstimation.laborCost || initialEstimation.installationCost || 0;
 
-      // Si le total affiché (TTC) est égal à la somme des lignes + frais, c'est que les lignes sont déjà TTC
+      // If the displayed total (incl. tax) equals sum of lines + fees, the lines are already tax-inclusive
       const isActuallyTTC = dbTotalClient > 0 && Math.abs(dbTotalClient - (sumProductsHT + deliveryCost + laborCost)) < 0.1;
       const divisor = isActuallyTTC ? (1 + taxRate / 100) : 1;
 
@@ -309,7 +309,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         products: initialEstimation.products?.map((p: any) => ({
           id: p.id || Math.random().toString(36).substr(2, 9),
           productId: p.productId || p.id || '',
-          name: p.productName || p.name || 'Produit',
+          name: p.productName || p.name || 'Product',
           quantity: p.quantity || 1,
           unitPrice: (p.unitPrice || (p.lineTotal / (p.quantity || 1)) || 0) / divisor,
           discount: p.discount || 0,
@@ -350,12 +350,12 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         taxRate: taxRate,
         globalDiscount: initialEstimation.globalDiscount || 0,
         history: initialEstimation.history || [
-          { id: 'h1', timestamp: new Date().toLocaleString('fr-FR'), action: 'Ouverture du dossier', user: 'Système', userId: 'sys', type: 'local' }
+          { id: 'h1', timestamp: new Date().toLocaleString('fr-FR'), action: 'Dossier opened', user: 'System', userId: 'sys', type: 'local' }
         ],
         payments: initialEstimation.payments || {
           totalPaid: initialEstimation.paidAmount || 0,
           steps: [
-            { id: 'p1', label: 'Echéance Unique', amount: initialEstimation.totalClient || initialEstimation.totalQuote || 0, status: 'pending' }
+            { id: 'p1', label: 'Single Payment', amount: initialEstimation.totalClient || initialEstimation.totalQuote || 0, status: 'pending' }
           ]
         },
         status: initialEstimation.status,
@@ -374,7 +374,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
     }
   }, [startOpen]);
 
-  // Auto-activer le mode édition si lancé depuis le bouton "Traiter"
+  // Auto-enable edit mode if launched from the "Process" button
   useEffect(() => {
     if (autoEditMode) {
       setIsEditMode(true);
@@ -451,7 +451,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       id: Math.random().toString(36).substr(2, 9),
       timestamp: new Date(),
       action,
-      user: userProfile?.displayName || 'Système',
+      user: userProfile?.displayName || 'System',
       userId: userProfile?.uid || 'sys',
       userPhoto: userProfile?.photoURL || undefined,
       type: 'local'
@@ -474,7 +474,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ...prev,
       products: prev.products.filter(p => p.id !== id)
     }));
-    addHistory(`Suppression produit ID: ${id}`);
+    addHistory(`Deleted product ID: ${id}`);
   };
 
   const addProduct = () => {
@@ -482,7 +482,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
     const newProduct: LocalProduct = {
       id: Math.random().toString(36).substr(2, 9),
       productId: lastProduct?.productId || '',
-      name: lastProduct?.name || 'Nouvel Écran LED',
+      name: lastProduct?.name || 'New LED Screen',
       quantity: 1,
       width: lastProduct?.width || 2.0,
       height: lastProduct?.height || 2.0,
@@ -493,7 +493,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       rentalDuration: lastProduct?.rentalDuration || 1,
       specs: {
         pixelPitch: (lastProduct?.specs?.pixelPitch as string) || '2.5',
-        environment: (lastProduct?.specs?.environment as string) || 'Intérieur',
+        environment: (lastProduct?.specs?.environment as string) || 'Indoor',
         projectType: (lastProduct?.specs?.projectType as string) || 'Vente'
       }
     };
@@ -501,7 +501,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ...prev,
       products: [...prev.products, newProduct]
     }));
-    addHistory('Ajout nouveau produit (Héritage dimensions)');
+    addHistory('Added new product (Dimensions inherited)');
   };
 
   const formatCurrency = (val: number) => {
@@ -511,24 +511,24 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
   const handleTranslate = async () => {
     setIsAiLoading(true);
-    addHistory('Demande de traduction Chinois');
+    addHistory('Chinese translation requested');
     const result = await geminiService.translateToChinese(estimation);
-    setAiResult({ title: 'Traduction Technique (Chinois)', content: result });
+    setAiResult({ title: 'Technical Translation (Chinese)', content: result });
     setIsAiLoading(false);
   };
 
   const handleSummary = async () => {
     setIsAiLoading(true);
-    addHistory('Génération synthèse dossier');
+    addHistory('Generating dossier summary');
     const result = await geminiService.generateSummary(estimation);
-    setAiResult({ title: 'Synthèse du Dossier', content: result });
+    setAiResult({ title: 'Case Summary', content: result });
     setIsAiLoading(false);
   };
 
   const addPaymentStep = () => {
     const newStep: PaymentStep = {
       id: Math.random().toString(36).substr(2, 9),
-      label: 'Nouvelle échéance',
+      label: 'New payment',
       amount: 0,
       status: 'pending',
       date: new Date().toLocaleDateString('fr-FR')
@@ -543,7 +543,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         steps: [newStep]
       }
     }));
-    addHistory('Ajout étape de paiement');
+    addHistory('Payment step added');
   };
 
   const updatePaymentStep = (id: string, field: keyof PaymentStep, value: any) => {
@@ -582,7 +582,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         }
       };
     });
-    addHistory('Suppression étape de paiement');
+    addHistory('Payment step removed');
   };
 
   const togglePaymentStatus = (id: string) => {
@@ -604,7 +604,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         }
       };
     });
-    addHistory('Mise à jour statut paiement');
+    addHistory('Payment status updated');
   };
 
   const shareTranslatedText = (platform: 'whatsapp' | 'telegram', text: string) => {
@@ -613,21 +613,21 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ? `https://wa.me/${estimation.client.phone.replace(/\s+/g, '')}?text=${encoded}`
       : `https://t.me/share/url?url=${window.location.href}&text=${encoded}`;
     window.open(url, '_blank');
-    addHistory(`Partage résultat sur ${platform}`);
+    addHistory(`Shared result on ${platform}`);
   };
 
   const shareEstimation = (platform: 'whatsapp' | 'telegram') => {
     let message = '';
 
     if (profile === 'client') {
-      message = `Bonjour ${estimation.client.name}, voici votre estimation ${estimation.id} d'un montant de ${formatCurrency(calculations.totalTTC)}. Ref: ${estimation.id}\n\nDate: ${new Date().toLocaleString('fr-FR')}`;
+      message = `Hello ${estimation.client.name}, here is your estimate ${estimation.id} for ${formatCurrency(calculations.totalTTC)}. Ref: ${estimation.id}\n\nDate: ${new Date().toLocaleString('fr-FR')}`;
     } else {
-      message = `COMMANDE TECHNIQUE - Estimation #${estimation.id}\n`;
-      message += `Date d'envoi: ${new Date().toLocaleString('fr-FR')}\n\n`;
-      message += `Détails des produits :\n`;
+      message = `TECHNICAL ORDER - Estimation #${estimation.id}\n`;
+      message += `Date sent: ${new Date().toLocaleString('fr-FR')}\n\n`;
+      message += `Product details:\n`;
       estimation.products.forEach(p => {
         message += `- ${p.quantity}x ${p.name}\n`;
-        message += `  Spécifications techniques:\n`;
+        message += `  Technical specifications:\n`;
         if (p.specs) {
           Object.entries(p.specs).forEach(([key, val]) => {
             if (val) message += `  * ${key}: ${val}\n`;
@@ -636,7 +636,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         message += `\n`;
       });
       if (estimation.supplierNotes) {
-        message += `Notes complémentaires: ${estimation.supplierNotes}\n`;
+        message += `Additional notes: ${estimation.supplierNotes}\n`;
       }
     }
 
@@ -646,7 +646,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       : `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodedMessage}`;
 
     window.open(url, '_blank');
-    addHistory(`Partage estimation sur ${platform} (${profile})`);
+    addHistory(`Shared estimation on ${platform} (${profile})`);
   };
 
   return (
@@ -679,7 +679,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     </h2>
                     <div className="flex items-center gap-3 mt-0.5">
                       <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">
-                        DOSSIER TECHNIQUE
+                        TECHNICAL FILE
                       </span>
                       {estimation.status && (
                         <div className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${estimation.status === 'returned' ? 'bg-orange-500/20 border-orange-500/30 text-orange-400' :
@@ -689,13 +689,13 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   estimation.status === 'archived' ? 'bg-slate-100 border-slate-200 text-slate-400' :
                                     'bg-amber-500/20 border-amber-500/30 text-amber-400'
                           }`}>
-                          {estimation.status === 'returned' ? 'Retourné' :
-                            estimation.status === 'processed' ? 'Approuvé' :
-                              estimation.status === 'in_progress' ? 'Envoyé au fournisseur' :
-                                estimation.status === 'sent' ? 'Envoyé' :
-                                  estimation.status === 'archived' ? 'Archivé' :
-                                    estimation.status === 'trashed' ? 'Corbeille' :
-                                      estimation.status === 'pending' ? 'En cours' : estimation.status}
+                          {estimation.status === 'returned' ? 'Returned' :
+                            estimation.status === 'processed' ? 'Approved' :
+                              estimation.status === 'in_progress' ? 'Sent to supplier' :
+                                estimation.status === 'sent' ? 'Sent' :
+                                  estimation.status === 'archived' ? 'Archived' :
+                                    estimation.status === 'trashed' ? 'Trash' :
+                                      estimation.status === 'pending' ? 'Pending' : estimation.status}
                         </div>
                       )}
                     </div>
@@ -707,12 +707,12 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   {initialEstimation?.transactionType === 'sale' ? (
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 shadow-sm">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.25em]">Mode Vente</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em]">Sale Mode</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-50 border border-violet-100 text-violet-700 shadow-sm">
                       <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.25em]">Mode Location</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em]">Rental Mode</span>
                     </div>
                   )}
                 </div>
@@ -724,7 +724,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         onClick={() => setIsTransmitModalOpen(true)}
                         className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all text-emerald-500 flex items-center gap-1.5 md:gap-2"
                       >
-                        <SendHorizontal size={14} /> <span className="hidden sm:inline">Envoyer</span>
+                        <SendHorizontal size={14} /> <span className="hidden sm:inline">Send</span>
                       </button>
                     )}
 
@@ -733,7 +733,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         onClick={() => setIsHistoryPanelOpen(true)}
                         className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-slate-100 border border-slate-200 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all text-slate-900 flex items-center gap-1.5 md:gap-2"
                       >
-                        <HistoryIcon size={14} className="text-aura-accent" /> <span className="hidden sm:inline">Historique</span>
+                        <HistoryIcon size={14} className="text-aura-accent" /> <span className="hidden sm:inline">History</span>
                       </button>
                     )}
 
@@ -744,19 +744,19 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             if (!initialEstimation?.id) return;
                             await updateQuoteStatus(initialEstimation.id, { status: 'processed' });
                             setEstimation(prev => ({ ...prev, status: 'processed' }));
-                            addHistory('Restauration du dossier');
+                                  addHistory('Dossier restored');
                             if (onStatusChange) onStatusChange('processed');
                           }}
                           className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-blue-500/20 transition-all text-blue-500 flex items-center gap-1.5 md:gap-2"
                         >
-                          <Eraser size={14} /> <span className="hidden sm:inline">Désarchiver</span>
+                          <Eraser size={14} /> <span className="hidden sm:inline">Unarchive</span>
                         </button>
 
                         {estimation.status === 'archived' ? (
                           <button
                             onClick={async () => {
                               if (!initialEstimation?.id) return;
-                              if (confirm('Déplacer ce dossier vers la corbeille ?')) {
+                              if (confirm('Move this case to the trash?')) {
                                 await updateQuoteStatus(initialEstimation.id, { status: 'trashed' });
                                 handleClose();
                                 if (onStatusChange) onStatusChange('trashed');
@@ -764,22 +764,22 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             }}
                             className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-rose-500/20 transition-all text-rose-500 flex items-center gap-1.5 md:gap-2"
                           >
-                            <Trash2 size={14} /> <span className="hidden sm:inline">Corbeille</span>
+                            <Trash2 size={14} /> <span className="hidden sm:inline">Trash</span>
                           </button>
                         ) : (
                           <button
                             onClick={async () => {
                               if (!initialEstimation?.id) return;
-                              if (confirm('Attention : Cette action est irréversible. Supprimer définitivement ce dossier ?')) {
+                              if (confirm('Warning: This action is irreversible. Permanently delete this case?')) {
                                 // Deleting permanent is best done from the dashboard where we have delete access,
                                 // but we can simulate it or alert for safety here.
-                                alert("Veuillez utiliser le tableau de bord principal (onglet Corbeille) pour effectuer une suppression définitive.");
+                                alert("Please use the main dashboard (Trash tab) to perform a permanent deletion.");
                                 handleClose();
                               }
                             }}
                             className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-red-600/20 border border-red-500/50 text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-red-600/40 transition-all text-red-500 flex items-center gap-1.5 md:gap-2"
                           >
-                            <Trash2 size={14} /> <span className="hidden sm:inline">Supprimer Def.</span>
+                            <Trash2 size={14} /> <span className="hidden sm:inline">Delete Perm.</span>
                           </button>
                         )}
                       </div>
@@ -792,7 +792,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           disabled={estimation.status === 'archived' || estimation.status === 'trashed'}
                           className={`h-9 md:h-11 px-3 md:px-4 rounded-xl border text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 md:gap-2 ${isEditMode ? 'bg-amber-500/10 border-amber-500/30 text-amber-600' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-900'} ${(estimation.status === 'archived' || estimation.status === 'trashed') ? 'opacity-30 cursor-not-allowed' : ''}`}
                         >
-                          <Pencil size={14} /> <span className="hidden sm:inline">{isEditMode ? 'Quitter' : 'Éditer'}</span>
+                          <Pencil size={14} /> <span className="hidden sm:inline">{isEditMode ? 'Exit' : 'Edit'}</span>
                         </button>
 
                         <button
@@ -832,17 +832,17 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     <div className="flex p-1 bg-slate-100 border border-slate-200 rounded-xl shadow-sm w-full sm:w-auto">
                       {userProfile?.role !== 'supplier' && (
                         <button
-                          onClick={() => { setProfile('client'); addHistory('Switch Profil: Client'); }}
+                          onClick={() => { setProfile('client'); addHistory('Switched to: Client Profile'); }}
                           className={`flex-1 sm:flex-none px-2 sm:px-8 py-2 md:py-2.5 rounded-lg text-[9px] md:text-xs font-bold uppercase transition-all tracking-widest flex justify-center items-center gap-1.5 md:gap-2 ${profile === 'client' ? 'bg-white text-slate-900 shadow-md border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                         >
-                          <User size={14} className={profile === 'client' ? "text-aura-accent" : ""} /> <span className="truncate">Profil Client</span>
+                          <User size={14} className={profile === 'client' ? "text-aura-accent" : ""} /> <span className="truncate">Client Profile</span>
                         </button>
                       )}
                       <button
-                        onClick={() => { setProfile('supplier'); addHistory('Switch Profil: Fournisseur (Vérification)'); }}
+                        onClick={() => { setProfile('supplier'); addHistory('Switched to: Supplier Profile (Verification)'); }}
                         className={`flex-1 sm:flex-none px-2 sm:px-8 py-2 md:py-2.5 rounded-lg text-[9px] md:text-xs font-bold uppercase transition-all tracking-widest flex justify-center items-center gap-1.5 md:gap-2 ${profile === 'supplier' ? 'bg-white text-slate-900 shadow-md border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                       >
-                        <Truck size={14} className={profile === 'supplier' ? "text-aura-accent" : ""} /> <span className="truncate">Profil Fournisseur</span>
+                        <Truck size={14} className={profile === 'supplier' ? "text-aura-accent" : ""} /> <span className="truncate">Supplier Profile</span>
                       </button>
                     </div>
                   </div>
@@ -857,11 +857,11 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       className="space-y-4"
                     >
                       <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2">
-                        <User size={14} /> INFORMATIONS DU DOSSIER
+                        <User size={14} /> CASE INFORMATION
                       </h3>
                       <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 grid grid-cols-1 md:grid-cols-2 gap-6 relative">
                         <div className="space-y-1">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Nom du Client</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Client Name</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
@@ -871,7 +871,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           />
                         </div>
                         <div className="space-y-1">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">N° Estimation</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Estimation #</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
@@ -891,7 +891,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           />
                         </div>
                         <div className="space-y-1">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Téléphone</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Phone</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
@@ -901,7 +901,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           />
                         </div>
                         <div className="md:col-span-2 space-y-1">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Adresse de livraison</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Delivery Address</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
@@ -923,7 +923,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 />
                                 <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-aura-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 transition-all duration-300"></div>
                               </div>
-                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Masquer notes au fournisseur</span>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Hide notes from supplier</span>
                             </label>
 
                             <label className="flex items-center gap-3 cursor-pointer group">
@@ -936,7 +936,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 />
                                 <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-aura-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 transition-all duration-300"></div>
                               </div>
-                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Masquer photo au fournisseur</span>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Hide photo from supplier</span>
                             </label>
                           </div>
                         </div>
@@ -954,7 +954,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       className="space-y-4 overflow-hidden"
                     >
                       <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2">
-                        <ImageIcon size={14} /> PHOTO DU LIEU
+                        <ImageIcon size={14} /> SITE PHOTO
                       </h3>
                       <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 relative group">
                         <div className="relative h-[300px] rounded-2xl overflow-hidden border border-slate-200 group/img bg-slate-100">
@@ -977,7 +977,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   <button
                                     onClick={() => {
                                       setEstimation({ ...estimation, client: { ...estimation.client, sitePhoto: undefined } });
-                                      addHistory("Suppression photo du site");
+                                      addHistory("Site photo deleted");
                                     }}
                                     className="w-10 h-10 flex items-center justify-center bg-red-500/10 backdrop-blur rounded-xl text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition-all hover:scale-110 shadow-xl"
                                   >
@@ -991,7 +991,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center border border-dashed border-slate-200">
                                 <ImageIcon size={32} />
                               </div>
-                              <span className="font-bold uppercase tracking-widest opacity-50 text-[10px]">Aucun visuel disponible</span>
+                              <span className="font-bold uppercase tracking-widest opacity-50 text-[10px]">No visuals available</span>
                             </div>
                           )}
                         </div>
@@ -1008,7 +1008,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       className="p-6 bg-slate-50 border border-slate-200 rounded-[2rem]"
                     >
                       <h4 className="text-[10px] font-bold text-aura-accent uppercase mb-2 flex items-center gap-2">
-                        <StickyNote size={12} /> NOTES DU CLIENT
+                        <StickyNote size={12} /> CLIENT NOTES
                       </h4>
                       {estimation.client.notes && (
                         <p className="text-xs text-slate-700 italic leading-relaxed whitespace-pre-wrap mb-4">{estimation.client.notes}</p>
@@ -1020,7 +1020,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             onChange={(e) => updateClient('notes', e.target.value)}
                             className="neon-input w-full bg-slate-100 p-4 text-xs resize-none text-slate-900"
                             rows={4}
-                            placeholder="Écrivez vos notes ici..."
+                            placeholder="Write your notes here..."
                           />
                         </div>
                       )}
@@ -1032,17 +1032,17 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2">
-                        <Box size={14} /> {profile === 'supplier' ? 'Dossier Technique Produit' : 'Lignes de Produits'}
+                        <Box size={14} /> {profile === 'supplier' ? 'Product Technical File' : 'Product Lines'}
                       </h3>
                       {estimation.products.length > 0 && (
                         <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                          {estimation.products.length} {estimation.products.length > 1 ? 'Produits' : 'Produit'}
+                          {estimation.products.length} {estimation.products.length > 1 ? 'Products' : 'Product'}
                         </span>
                       )}
                     </div>
                     {isEditMode && (
                       <button onClick={addProduct} className="h-10 px-6 rounded-xl bg-aura-accent/10 border border-aura-accent/30 text-[10px] font-bold text-aura-accent flex items-center gap-2 hover:bg-aura-accent hover:text-white transition-all shadow-lg active:scale-95">
-                        <Plus size={14} /> Ajouter Ligne
+                        <Plus size={14} /> Add Line
                       </button>
                     )}
                   </div>
@@ -1062,14 +1062,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-3 mb-2">
                                 <span className="px-1.5 py-0.5 rounded bg-aura-accent text-white text-[8px] font-black uppercase tracking-widest">
-                                  Produit {(index + 1).toString().padStart(2, '0')}
+                                  Item {(index + 1).toString().padStart(2, '0')}
                                 </span>
-                                <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.3em]">Produit / Désignation</span>
+                                <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.3em]">Product / Designation</span>
                               </div>
                               {isEditMode ? (
                                 <CustomSelect
                                   value={p.productId || ''}
-                                  placeholder="Sélectionner un produit..."
+                                  placeholder="Select a product..."
                                   options={allProducts
                                     .filter(prod => {
                                       if (prod.id === p.productId) return true;
@@ -1118,7 +1118,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         specs: enrichedSpecs,
                                       } : prod);
                                       setEstimation({ ...estimation, products: newProducts });
-                                      addHistory(`Changement produit: ${selectedProd.name}`);
+                                      addHistory(`Product changed: ${selectedProd.name}`);
                                     }
                                   }}
                                   renderOption={(opt) => (
@@ -1155,7 +1155,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 </div>
                               )}
                               
-                              {/* VENTE / LOCATION TOGGLE — masqué en mode Vente, affiché uniquement en mode Location */}
+                              {/* SALE / RENTAL TOGGLE — hidden in Sale mode, shown only in Rental mode */}
                               {isEditMode && initialEstimation?.transactionType === 'rental' && (
                                 <div className="mt-4 flex items-center gap-2">
                                   <div className="flex p-1 bg-slate-100/80 border border-slate-200/80 rounded-xl backdrop-blur-sm shadow-sm">
@@ -1170,7 +1170,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                       }}
                                       className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.transactionType !== 'rental' ? 'bg-black text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
-                                      Vente
+                                      Sale
                                     </button>
                                     <button
                                       onClick={() => {
@@ -1183,7 +1183,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                       }}
                                       className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.transactionType === 'rental' ? 'bg-black text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
-                                      Location
+                                      Rental
                                     </button>
                                   </div>
                                 </div>
@@ -1203,7 +1203,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             {isEditMode && (
                               <>
                                 <NumericControl
-                                  label="Largeur (m)"
+                                  label="Width (m)"
                                   value={p.width || 0}
                                   unit="m"
                                   onChange={(val) => {
@@ -1212,7 +1212,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   }}
                                 />
                                 <NumericControl
-                                  label="Hauteur (m)"
+                                  label="Height (m)"
                                   value={p.height || 0}
                                   unit="m"
                                   onChange={(val) => {
@@ -1223,7 +1223,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </>
                             )}
                             <NumericControl
-                              label="Quantité"
+                              label="Quantity"
                               value={p.quantity}
                               onChange={(val) => {
                                 const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, quantity: val } : prod);
@@ -1232,7 +1232,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             />
                             {profile === 'client' && (
                               <NumericControl
-                                label="Prix Unitaire (€)"
+                                label="Unit Price (€)"
                                 unit="€"
                                 value={p.unitPrice}
                                 onChange={(val) => {
@@ -1243,7 +1243,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             )}
                           </div>
 
-                          {/* RENTAL OPTIONS — affiché uniquement en mode Location */}
+                          {/* RENTAL OPTIONS — shown only in Rental mode */}
                           <AnimatePresence>
                             {isEditMode && initialEstimation?.transactionType === 'rental' && p.transactionType === 'rental' && (
                               <motion.div 
@@ -1261,16 +1261,16 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                        }}
                                        className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit !== 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
                                      >
-                                       Période (Jours)
-                                     </button>
-                                     <button
-                                       onClick={() => {
-                                         const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'hour' } : prod);
-                                         setEstimation({ ...estimation, products: newProducts as any });
-                                       }}
-                                       className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit === 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
-                                     >
-                                       Jour précis (Heures)
+                                        Period (Days)
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'hour' } : prod);
+                                          setEstimation({ ...estimation, products: newProducts as any });
+                                        }}
+                                        className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit === 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
+                                      >
+                                        Specific Day (Hours)
                                      </button>
                                    </div>
                                 </div>
@@ -1279,7 +1279,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   {p.rentalUnit !== 'hour' ? (
                                     <>
                                       <div className="space-y-1">
-                                        <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Du</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">From</span>
                                         <input 
                                           type="date"
                                           className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1299,7 +1299,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         />
                                       </div>
                                       <div className="space-y-1">
-                                        <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Au</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">To</span>
                                         <input 
                                           type="date"
                                           className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1319,7 +1319,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         />
                                       </div>
                                       <NumericControl
-                                        label="Durée (Jours)"
+                                        label="Duration (Days)"
                                         value={p.rentalDuration || 1}
                                         onChange={(val) => {
                                           const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalDuration: Math.max(1, val) } : prod);
@@ -1330,7 +1330,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   ) : (
                                     <>
                                       <div className="space-y-1">
-                                        <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Le</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">On</span>
                                         <input 
                                           type="date"
                                           className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1345,7 +1345,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                       </div>
                                       <div className="flex gap-2">
                                         <div className="space-y-1 flex-1">
-                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Début</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Start</span>
                                           <input 
                                             type="time"
                                             className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1357,7 +1357,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                           />
                                         </div>
                                         <div className="space-y-1 flex-1">
-                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Fin</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">End</span>
                                           <input 
                                             type="time"
                                             className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1370,7 +1370,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         </div>
                                       </div>
                                       <NumericControl
-                                        label="Durée (Heures)"
+                                        label="Duration (Hours)"
                                         value={p.rentalDuration || 1}
                                         onChange={(val) => {
                                           const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalDuration: Math.max(1, val) } : prod);
@@ -1386,12 +1386,12 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                           <div className="mt-8 pt-6 border-t border-slate-200 flex items-end justify-between">
                             <div className="space-y-1">
-                              <span className="text-[13px] text-slate-400 font-bold uppercase tracking-widest block">Référence Article</span>
+                              <span className="text-[13px] text-slate-400 font-bold uppercase tracking-widest block">Article Reference</span>
                               <div className="text-sm font-display font-black text-slate-900 uppercase tracking-tight">{p.productId || 'N/A'}</div>
                             </div>
                             {profile === 'client' && (
                               <div className="text-right">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1">Total pour cette ligne</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1">Total for this line</span>
                                 <div className="flex items-center gap-3 justify-end">
                                   {(p.discount || 0) > 0 && (
                                     <span className="text-sm text-red-500/40 line-through font-mono">
@@ -1411,7 +1411,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
                             <div className="p-8 pb-0 flex items-center justify-between mb-8">
                               <h4 className="text-[11px] font-black text-aura-accent uppercase tracking-[0.3em] flex items-center gap-3">
-                                <Settings size={16} /> Spécifications Techniques
+                                <Settings size={16} /> Technical Specifications
                               </h4>
                               <div className="w-2.5 h-2.5 rounded-full bg-aura-success shadow-[0_0_12px_rgba(34,197,94,0.6)]" />
                             </div>
@@ -1480,15 +1480,15 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 const amps = Math.ceil((powerMax * 1000) / 230 / 3);
 
                                 const baseSpecs = [
-                                  { label: "SURFACE TOTALE", value: `${area.toFixed(2)} m²`, icon: <Maximize2 size={16} />, color: "text-blue-400", bgColor: "bg-blue-400/10" },
-                                  { label: "RÉSOLUTION", value: `${resX} x ${resY} pixels`, icon: <Monitor size={16} />, color: "text-violet-400", bgColor: "bg-violet-400/10" },
-                                  { label: "NOMBRE DE MODULES LED", value: modules.toString(), icon: <Cpu size={16} />, color: "text-fuchsia-400", bgColor: "bg-fuchsia-400/10" },
-                                  { label: "PUISSANCE MAXIMALE", value: `${powerMax.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-emerald-400", bgColor: "bg-emerald-400/10" },
-                                  { label: "PUISSANCE MOYENNE", value: `${powerAvg.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-sky-400", bgColor: "bg-sky-400/10" },
-                                  { label: "DISJONCTEUR RECOMMANDÉ", value: `${amps}A Tripolaire`, icon: <Zap size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
-                                  { label: "TYPE DE PROJET", value: projectType, icon: <Truck size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
-                                  { label: "ENVIRONNEMENT", value: environment, icon: <Sun size={16} />, color: "text-teal-400", bgColor: "bg-teal-400/10" },
-                                  { label: "DISTANCE DE VISIONNAGE", value: visionDistance, icon: <Eye size={16} />, color: "text-cyan-400", bgColor: "bg-cyan-400/10" },
+                                  { label: "TOTAL SURFACE", value: `${area.toFixed(2)} m²`, icon: <Maximize2 size={16} />, color: "text-blue-400", bgColor: "bg-blue-400/10" },
+                                  { label: "RESOLUTION", value: `${resX} x ${resY} pixels`, icon: <Monitor size={16} />, color: "text-violet-400", bgColor: "bg-violet-400/10" },
+                                  { label: "NUMBER OF LED MODULES", value: modules.toString(), icon: <Cpu size={16} />, color: "text-fuchsia-400", bgColor: "bg-fuchsia-400/10" },
+                                  { label: "MAX POWER", value: `${powerMax.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-emerald-400", bgColor: "bg-emerald-400/10" },
+                                  { label: "AVG POWER", value: `${powerAvg.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-sky-400", bgColor: "bg-sky-400/10" },
+                                  { label: "RECOMMENDED BREAKER", value: `${amps}A 3-Pole`, icon: <Zap size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
+                                  { label: "PROJECT TYPE", value: projectType, icon: <Truck size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
+                                  { label: "ENVIRONMENT", value: environment, icon: <Sun size={16} />, color: "text-teal-400", bgColor: "bg-teal-400/10" },
+                                  { label: "VIEWING DISTANCE", value: visionDistance, icon: <Eye size={16} />, color: "text-cyan-400", bgColor: "bg-cyan-400/10" },
                                   { label: "PIXEL PITCH", value: pixelPitchStr, icon: <LayoutGrid size={16} />, color: "text-red-400", bgColor: "bg-red-400/10" },
                                 ];
 
@@ -1535,8 +1535,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Info size={20} /></div>
                         <div>
-                          <div className="text-xs font-bold uppercase tracking-wider">Mode Technique Fournisseur Active</div>
-                          <div className="text-[10px] text-aura-text-dim mt-1 font-mono uppercase tracking-[0.2em]">Données chiffrées masquées conformément à la politique commerciale.</div>
+                          <div className="text-xs font-bold uppercase tracking-wider">Supplier Technical Mode Active</div>
+                          <div className="text-[10px] text-aura-text-dim mt-1 font-mono uppercase tracking-[0.2em]">Priced data hidden per commercial policy.</div>
                         </div>
                       </div>
                     </div>
@@ -1551,7 +1551,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       className="space-y-4"
                     >
                       <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2 uppercase">
-                        <Truck size={14} /> LOGISTIQUE & SERVICES
+                        <Truck size={14} /> LOGISTICS & SERVICES
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="bg-slate-50 border border-slate-200 p-6 rounded-[2rem] space-y-4">
@@ -1559,8 +1559,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Truck size={20} /></div>
                               <div>
-                                <div className="text-xs font-bold uppercase text-slate-900">LIVRAISON</div>
-                                <div className="text-[10px] text-slate-400 uppercase">Ville: <b className="text-slate-900">{estimation.deliveryCity || 'Non spécifiée'}</b></div>
+                              <div className="text-xs font-bold uppercase text-slate-900">DELIVERY</div>
+                              <div className="text-[10px] text-slate-400 uppercase">City: <b className="text-slate-900">{estimation.deliveryCity || 'Not specified'}</b></div>
                               </div>
                             </div>
                             <span className="text-lg font-bold font-mono text-aura-accent">{formatCurrency(calculations.deliveryTotal)}</span>
@@ -1568,9 +1568,9 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           {isEditMode && (
                             <div className="space-y-6 pt-6 border-t border-slate-200">
                               <div className="space-y-1.5 flex-1 min-w-0">
-                                <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Ville de Destination</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Destination City</span>
                                 <CustomSelect
-                                  placeholder="Choisir une ville..."
+                                  placeholder="Choose a city..."
                                   value={estimation.deliveryCity || ''}
                                   onChange={(val) => setEstimation({ ...estimation, deliveryCity: val })}
                                   options={villes}
@@ -1579,13 +1579,13 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                               <div className="grid grid-cols-2 gap-4">
                                 <NumericControl
-                                  label="Prix (€)"
+                                  label="Price (€)"
                                   unit="€"
                                   value={estimation.deliveryCost}
                                   onChange={(val) => setEstimation({ ...estimation, deliveryCost: val })}
                                 />
                                 <NumericControl
-                                  label="Remise (%)"
+                                  label="Discount (%)"
                                   unit="%"
                                   value={estimation.deliveryDiscount}
                                   onChange={(val) => setEstimation({ ...estimation, deliveryDiscount: val })}
@@ -1600,8 +1600,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Wrench size={20} /></div>
                               <div>
-                                <div className="text-xs font-bold uppercase text-slate-900">Main d'œuvre</div>
-                                <div className="text-slate-400 uppercase">Installation experte</div>
+                              <div className="text-xs font-bold uppercase text-slate-900">Labor</div>
+                              <div className="text-slate-400 uppercase">Expert installation</div>
                               </div>
                             </div>
                             <span className="text-lg font-bold font-mono text-aura-accent">{formatCurrency(calculations.laborTotal)}</span>
@@ -1610,21 +1610,21 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="space-y-4 pt-4 border-t border-slate-200">
                               <div className="py-4 border-b border-slate-200 mb-2">
                                 <div className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] leading-relaxed">
-                                  Pour une surface totale de <span className="text-aura-accent">{calculations.totalArea.toFixed(2)} m²</span>
+                                  For a total area of <span className="text-aura-accent">{calculations.totalArea.toFixed(2)} m²</span>
                                 </div>
                                 <div className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] leading-relaxed">
-                                  votre projet nécessite <span className="text-aura-accent">{calculations.techniciansCount}</span> technicien(s).
+                                  your project requires <span className="text-aura-accent">{calculations.techniciansCount}</span> technician(s).
                                 </div>
                               </div>
                               <div className="grid grid-cols-2 gap-3">
                                 <NumericControl
-                                  label="Prix (€)"
+                                  label="Price (€)"
                                   unit="€"
                                   value={estimation.laborCost}
                                   onChange={(val) => setEstimation({ ...estimation, laborCost: val })}
                                 />
                                 <NumericControl
-                                  label="Remise (%)"
+                                  label="Discount (%)"
                                   unit="%"
                                   value={estimation.laborDiscount}
                                   onChange={(val) => setEstimation({ ...estimation, laborDiscount: val })}
@@ -1635,7 +1635,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         </div>
                       </div>
 
-                      {/* CARTE PÉRIODE DE LOCATION - visible uniquement en mode Location */}
+                      {/* RENTAL PERIOD CARD - visible only in Rental mode */}
                       {initialEstimation?.transactionType === 'rental' && (
                         <div className="bg-violet-50 border border-violet-200 p-6 rounded-[2rem] space-y-4">
                           <div className="flex items-center gap-3">
@@ -1643,15 +1643,15 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <Calendar size={20} className="text-violet-600" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold uppercase text-slate-900">Période de Location</div>
-                              <div className="text-[10px] text-slate-400 uppercase">Dates &amp; Horaires</div>
+                              <div className="text-xs font-bold uppercase text-slate-900">Rental Period</div>
+                              <div className="text-[10px] text-slate-400 uppercase">Dates &amp; Times</div>
                             </div>
                           </div>
 
                           {!isEditMode ? (
                             <div className="grid grid-cols-2 gap-3">
                               <div className="bg-white border border-violet-100 rounded-2xl p-3 space-y-0.5">
-                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Début</div>
+                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Start</div>
                                 <div className="text-sm font-bold text-slate-900">
                                   {estimation.rentalPeriod?.from
                                     ? new Date(estimation.rentalPeriod.from).toLocaleDateString('fr-FR')
@@ -1660,7 +1660,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 <div className="text-[10px] text-slate-500">{estimation.rentalStartTime || '—'}</div>
                               </div>
                               <div className="bg-white border border-violet-100 rounded-2xl p-3 space-y-0.5">
-                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Fin</div>
+                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">End</div>
                                 <div className="text-sm font-bold text-slate-900">
                                   {estimation.rentalPeriod?.to
                                     ? new Date(estimation.rentalPeriod.to).toLocaleDateString('fr-FR')
@@ -1673,7 +1673,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="space-y-4 pt-2 border-t border-violet-200">
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de début</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Start date</label>
                                   <input
                                     type="date"
                                     min={new Date().toISOString().split('T')[0]}
@@ -1687,7 +1687,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   />
                                 </div>
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de fin</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">End date</label>
                                   <input
                                     type="date"
                                     min={new Date().toISOString().split('T')[0]}
@@ -1703,7 +1703,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Heure de début</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Start time</label>
                                   <input
                                     type="time"
                                     value={estimation.rentalStartTime || '08:00'}
@@ -1712,7 +1712,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   />
                                 </div>
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Heure de fin</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">End time</label>
                                   <input
                                     type="time"
                                     value={estimation.rentalEndTime || '18:00'}
@@ -1754,7 +1754,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           <ChevronDown size={14} className="text-slate-900" />
                         </motion.div>
                         <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-900">
-                          Résumé Financier
+                          Financial Summary
                         </span>
                         <div className="w-px h-3 bg-slate-200" />
                         <span className="text-[10px] font-black font-mono text-slate-700 tracking-tight group-hover:text-slate-900 transition-colors">
@@ -1779,28 +1779,28 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <div className="space-y-4">
                                 <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b border-slate-200 pb-4 gap-4 sm:gap-0">
                                   <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] font-display">Sous-total HT</span>
+                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] font-display">Subtotal excl. tax</span>
                                     <span className="text-2xl font-display font-black text-slate-900 tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
                                   </div>
                                   <div className="text-left sm:text-right flex flex-col sm:items-end gap-1">
-                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] font-display">TVA ({estimation.taxRate}%)</span>
+                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] font-display">VAT ({estimation.taxRate}%)</span>
                                     <span className="font-mono text-base text-aura-accent font-bold">+{formatCurrency(calculations.tva)}</span>
                                   </div>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  <NumericControl label="TVA (%)" unit="%" value={estimation.taxRate} onChange={(val) => setEstimation({ ...estimation, taxRate: val })} />
-                                  <NumericControl label="REMISE GLOBALE (%)" unit="%" value={estimation.globalDiscount} onChange={(val) => setEstimation({ ...estimation, globalDiscount: val })} />
+                                  <NumericControl label="VAT (%)" unit="%" value={estimation.taxRate} onChange={(val) => setEstimation({ ...estimation, taxRate: val })} />
+                                  <NumericControl label="GLOBAL DISCOUNT (%)" unit="%" value={estimation.globalDiscount} onChange={(val) => setEstimation({ ...estimation, globalDiscount: val })} />
                                 </div>
                               </div>
                             </div>
                             <div className="text-left md:text-right flex flex-col justify-end min-w-0 md:min-w-[220px] flex-shrink-0 relative">
-                              <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">À Payer (TTC)</div>
+                              <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">To Pay (incl. tax)</div>
                               <div className="text-4xl sm:text-5xl md:text-6xl font-display font-black tracking-tighter neon-text-emerald relative z-10 truncate">
                                 {formatCurrency(calculations.finalTotal)}
                               </div>
                               {estimation.globalDiscount > 0 && (
                                 <div className="text-[10px] text-emerald-400/80 font-bold mt-2 uppercase tracking-[0.2em] font-display relative z-10">
-                                  Remise exceptionnelle appliquée
+                                  Exceptional discount applied
                                 </div>
                               )}
                             </div>
@@ -1810,7 +1810,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               onClick={async () => {
                                 setIsAiLoading(true);
                                 try {
-                                  addHistory('Validation Modifications et Sauvegarde');
+                                  addHistory('Validated modifications and saved');
                                   const isRentalPending =
                                     initialEstimation?.transactionType === 'rental' &&
                                     (initialEstimation?.status === 'pending' || initialEstimation?.status === 'En attente');
@@ -1826,7 +1826,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                     rentalPeriod: (estimation as any).rentalPeriod || null,
                                     rentalStartTime: (estimation as any).rentalStartTime || null,
                                     rentalEndTime: (estimation as any).rentalEndTime || null,
-                                    // Transition automatique En attente -> Traité pour les locations
+                                    // Auto-transition Pending -> Processed for rentals
                                     ...(isRentalPending ? { status: 'processed' } : {}),
                                   };
                                   // Actual DB Save
@@ -1840,14 +1840,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                     onStatusChange('processed');
                                   }
                                 } catch (err) {
-                                  console.error("Erreur sauvegarde:", err);
+                                  console.error("Save error:", err);
                                 } finally {
                                   setIsAiLoading(false);
                                 }
                               }}
                               className="futuristic-btn-primary w-full group py-4 flex items-center justify-center gap-3"
                             >
-                              {isAiLoading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 size={18} /> Approuver et Sauvegarder Définitivement</>}
+                              {isAiLoading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 size={18} /> Approve and Permanently Save</>}
                             </button>
                           )}
                         </motion.div>
@@ -1900,12 +1900,12 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                 </div>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => { if (aiResult) { navigator.clipboard.writeText(aiResult.content); addHistory('Copie résultat IA'); } }}
+                    onClick={() => { if (aiResult) { navigator.clipboard.writeText(aiResult.content);     addHistory('Copied AI result'); } }}
                     className="px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
                   >
-                    Copier
+                    Copy
                   </button>
-                  <button onClick={() => setAiResult(null)} className="px-6 py-3 rounded-xl bg-aura-accent text-white text-xs font-bold uppercase tracking-widest transition-all">Fermer</button>
+                  <button onClick={() => setAiResult(null)} className="px-6 py-3 rounded-xl bg-aura-accent text-white text-xs font-bold uppercase tracking-widest transition-all">Close</button>
                 </div>
               </div>
             </motion.div>
@@ -1949,7 +1949,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
               // Get the raw ID from the initialEstimation object (not the formatted display ID)
               const rawId = initialEstimation?.id;
               if (!rawId) {
-                alert('Erreur: identifiant de devis introuvable.');
+                alert('Error: quote ID not found.');
                 return;
               }
               try {
@@ -1967,20 +1967,20 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   supplierNotes: notes,
                   status: 'in_progress'
                 } as any));
-                addHistory(`Transmission au fournisseur ${supplierName} validée`);
+                addHistory(`Transmitted to supplier ${supplierName} successfully`);
                 setIsTransmitModalOpen(false);
                 setProfile('supplier');
                 if (onStatusChange) onStatusChange('in_progress');
                 // Success toast
                 const toast = document.createElement('div');
-                toast.innerHTML = `✅ Devis transmis à <strong>${supplierName}</strong> avec succès !`;
+                toast.innerHTML = `✅ Quote transmitted to <strong>${supplierName}</strong> successfully!`;
                 toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:14px 28px;border-radius:16px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 8px 32px rgba(16,185,129,0.4);animation:fadeIn 0.3s ease';
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 4000);
               } catch (err: any) {
                 console.error('[TransmitModal] Error saving transmission:', err);
                 const toast = document.createElement('div');
-                toast.textContent = `❌ Erreur lors du transfert: ${err?.message || 'Veuillez réessayer'}`;
+                toast.textContent = `❌ Transfer error: ${err?.message || 'Please try again'}`;
                 toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#ef4444;color:white;padding:14px 28px;border-radius:16px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 8px 32px rgba(239,68,68,0.4)';
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 5000);
@@ -2003,8 +2003,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
               <div className="flex items-center gap-4">
                 <button onClick={() => setIsHistoryPanelOpen(false)} className="w-10 h-10 hover:bg-aura-accent hover:text-white rounded-xl flex items-center justify-center transition-all bg-aura-accent/10 text-aura-accent"><ChevronLeft size={24} /></button>
                 <div>
-                  <h2 className="text-2xl font-display font-black uppercase tracking-tighter text-slate-900">Historique</h2>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Dossier: {estimation.id}</div>
+                  <h2 className="text-2xl font-display font-black uppercase tracking-tighter text-slate-900">History</h2>
+                  <div className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Case: {estimation.id}</div>
                 </div>
               </div>
               <button onClick={() => setIsHistoryPanelOpen(false)} className="w-12 h-12 flex items-center justify-center hover:bg-white/5 rounded-full transition-all text-aura-accent hover:scale-110">
@@ -2039,7 +2039,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
             </div>
 
             <div className="p-8 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Page {historyPage} sur {Math.ceil(estimation.history.length / itemsPerPage)}</div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Page {historyPage} of {Math.ceil(estimation.history.length / itemsPerPage)}</div>
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setHistoryPage(prev => Math.max(1, prev - 1))}

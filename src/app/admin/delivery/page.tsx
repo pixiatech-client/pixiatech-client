@@ -28,8 +28,8 @@ export default async function DeliveryPage() {
                 <Map className="w-5 h-5 text-blue-600" />
               </div>
               <div className="text-left">
-                <div className="text-base font-bold text-slate-900">Zones de Livraison</div>
-                <div className="text-xs text-slate-500 font-medium">Gérez les zones géographiques et les départements</div>
+                <div className="text-base font-bold text-slate-900">Delivery Zones</div>
+                <div className="text-xs text-slate-500 font-medium">Manage geographic zones and departments</div>
               </div>
             </div>
           </AccordionTrigger>
@@ -46,8 +46,8 @@ export default async function DeliveryPage() {
                 <Truck className="w-5 h-5 text-amber-600" />
               </div>
               <div className="text-left">
-                <div className="text-base font-bold text-slate-900">Tarifs par Zone</div>
-                <div className="text-xs text-slate-500 font-medium">Définissez les frais de transport par zone et mode</div>
+                <div className="text-base font-bold text-slate-900">Zone Rates</div>
+                <div className="text-xs text-slate-500 font-medium">Define transport costs by zone and mode</div>
               </div>
             </div>
           </AccordionTrigger>
@@ -56,7 +56,7 @@ export default async function DeliveryPage() {
           </AccordionContent>
         </AccordionItem>
 
-        {/* Frais par Défaut Section */}
+        {/* Default Fees Section */}
         <AccordionItem value="default" className="border-x-0 border-t md:border rounded-none md:rounded-xl bg-white overflow-hidden shadow-none md:shadow-sm">
           <AccordionTrigger className="px-4 md:px-6 hover:no-underline hover:bg-slate-50/50 transition-colors">
             <div className="flex items-center gap-3">
@@ -64,8 +64,8 @@ export default async function DeliveryPage() {
                 <Settings className="w-5 h-5 text-slate-600" />
               </div>
               <div className="text-left">
-                <div className="text-base font-bold text-slate-900">Frais par Défaut</div>
-                <div className="text-xs text-slate-500 font-medium">Configuration globale pour les zones non définies</div>
+                <div className="text-base font-bold text-slate-900">Default Fees</div>
+                <div className="text-xs text-slate-500 font-medium">Global configuration for undefined zones</div>
               </div>
             </div>
           </AccordionTrigger>
@@ -82,8 +82,8 @@ export default async function DeliveryPage() {
                 <Percent className="w-5 h-5 text-green-600" />
               </div>
               <div className="text-left">
-                <div className="text-base font-bold text-slate-900">Livraison Gratuite</div>
-                <div className="text-xs text-slate-500 font-medium">Définissez les seuils de gratuité totale</div>
+                <div className="text-base font-bold text-slate-900">Free Shipping</div>
+                <div className="text-xs text-slate-500 font-medium">Define free shipping thresholds</div>
               </div>
             </div>
           </AccordionTrigger>

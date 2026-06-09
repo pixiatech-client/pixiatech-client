@@ -476,7 +476,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
                   <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4">
                     <Shield className="w-8 h-8 text-zinc-600" />
                   </div>
-                  <h3 className="text-zinc-300 text-sm font-bold mb-1">Démarrer une conversation</h3>
+                  <h3 className="text-zinc-300 text-sm font-bold mb-1">Start a conversation</h3>
                   <p className="text-zinc-600 text-xs">
                     Envoyez un message au {otherUser?.role === 'prestataire' ? 'fournisseur' : 'client'}
                   </p>
@@ -515,7 +515,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
                       <span className="text-[10px] text-zinc-500 mt-1 px-1">
                         {formatTime(msg.createdAt)}
                         {isMine && (
-                          <span className="ml-1 text-[#95d230]">• Envoyé</span>
+                          <span className="ml-1 text-[#95d230]">• Sent</span>
                         )}
                       </span>
                     </div>

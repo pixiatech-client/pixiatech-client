@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Lock, LogOut, Mail, Phone, Shield, Clock, Calendar } from 'lucide-react';
+import { User, Lock, LogOut } from 'lucide-react';
 import type { UserProfile, UserRole } from '@/lib/types';
 import { UserProfileForm } from './user-profile-form';
 import { UserPasswordForm } from './user-password-form';
@@ -11,12 +11,14 @@ import { useFirestore, useAuth, useCollection, useMemoFirebase, useUser } from '
 import { collection, query, orderBy } from 'firebase/firestore';
 import { RoleBadge } from '@/app/admin/users/_components/role-badge';
 import { StatusBadge } from '@/app/admin/users/_components/status-badge';
+import { useI18n } from '@/lib/i18n';
 
 interface UserProfileLayoutProps {
   user: UserProfile;
 }
 
 export function UserProfileLayout({ user: initialUser }: UserProfileLayoutProps) {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<'personal' | 'password'>('personal');
   const [user, setUser] = useState(initialUser);
   const { userProfile: currentAdminUser } = useUser();
@@ -39,7 +41,7 @@ export function UserProfileLayout({ user: initialUser }: UserProfileLayoutProps)
         month: 'long',
         year: 'numeric',
       })
-    : 'Date inconnue';
+      : t('profile.unknownDate');
 
   const roleObj = allRoles?.find(r => r.id === user.role);
   const isCurrentUser = currentAdminUser?.uid === user.uid;
@@ -55,7 +57,7 @@ export function UserProfileLayout({ user: initialUser }: UserProfileLayoutProps)
             animate={{ opacity: 1, y: 0 }}
             className="bg-theme-card border border-theme-card-border rounded-[2rem] p-6 flex flex-col items-center text-center sticky top-24 shadow-xl"
           >
-            <div className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden bg-gray-100 shadow-xl mb-4">
+            <div className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden bg-theme-card shadow-xl mb-4">
               <img
                 src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=random&size=96`}
                 alt={user.displayName}
@@ -63,44 +65,52 @@ export function UserProfileLayout({ user: initialUser }: UserProfileLayoutProps)
               />
             </div>
             <h2 className="text-xl font-bold text-theme-card-text">{user.displayName}</h2>
-            <p className="text-sm text-gray-400 mt-1">Inscrit le {creationDate}</p>
+            <p className="text-sm text-theme-card-text/60 mt-1">{t('profile.memberSince', { date: creationDate })}</p>
 
             <div className="flex items-center gap-2 mt-4">
               {roleObj && <RoleBadge roleName={roleObj.name} roleColor={roleObj.color} />}
               <StatusBadge status={user.status} />
             </div>
 
-            <div className="w-full space-y-2 mt-8 text-left">
+            <div className="w-full space-y-2 mt-8 text-left" role="tablist" aria-label={t('profile.tabsLabel')}>
               <button
+                role="tab"
+                aria-selected={activeTab === 'personal'}
+                aria-controls="tabpanel-personal"
+                id="tab-personal"
                 onClick={() => setActiveTab('personal')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
                   activeTab === 'personal'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                    ? 'bg-theme-sidebar-active-bg text-theme-sidebar-active-text'
+                    : 'text-theme-card-text/60 hover:bg-theme-hover hover:text-theme-card-text'
                 }`}
               >
                 <User className="h-4 w-4" />
-                Informations
+                {t('profile.info')}
               </button>
               <button
+                role="tab"
+                aria-selected={activeTab === 'password'}
+                aria-controls="tabpanel-password"
+                id="tab-password"
                 onClick={() => setActiveTab('password')}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium ${
                   activeTab === 'password'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                    ? 'bg-theme-sidebar-active-bg text-theme-sidebar-active-text'
+                    : 'text-theme-card-text/60 hover:bg-theme-hover hover:text-theme-card-text'
                 }`}
               >
                 <Lock className="h-4 w-4" />
-                Mot de passe
+                {t('profile.password')}
               </button>
               {!isCurrentUser && (
                 <form action={logout}>
                   <button
                     type="submit"
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium text-rose-500 hover:bg-rose-50"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium text-rose-500 hover:bg-rose-50/20"
                   >
                     <LogOut className="h-4 w-4" />
-                    Se déconnecter
+                    {t('profile.logOut')}
                   </button>
                 </form>
               )}
@@ -116,17 +126,22 @@ export function UserProfileLayout({ user: initialUser }: UserProfileLayoutProps)
             transition={{ delay: 0.1 }}
             className="bg-theme-card border border-theme-card-border rounded-[2rem] shadow-xl"
           >
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-theme-card-text">
-                {activeTab === 'personal' ? 'Informations Personnelles' : 'Connexion & Mot de passe'}
+            <div className="p-6 border-b border-theme-card-border">
+              <h2 id={`tabpanel-${activeTab}-title`} className="text-xl font-bold text-theme-card-text">
+                {activeTab === 'personal' ? t('profile.personalInfo') : t('profile.loginPassword')}
               </h2>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-sm text-theme-card-text/60 mt-1">
                 {activeTab === 'personal'
-                  ? "Mettez à jour les informations de l'utilisateur."
-                  : 'Gérez le mot de passe de l\'utilisateur.'}
+                  ? t('profile.updateInfo')
+                  : t('profile.managePassword')}
               </p>
             </div>
-            <div className="p-6">
+            <div
+              className="p-6"
+              role="tabpanel"
+              id={`tabpanel-${activeTab}`}
+              aria-labelledby={`tab-${activeTab}`}
+            >
               {activeTab === 'personal' && <UserProfileForm user={user} onUpdate={handleProfileUpdate} />}
               {activeTab === 'password' && <UserPasswordForm userId={user.uid} />}
             </div>

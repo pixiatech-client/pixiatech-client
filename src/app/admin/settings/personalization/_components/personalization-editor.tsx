@@ -57,57 +57,57 @@ const ColorInput = ({
 
 const sections = [
     {
-        title: "Cartes & Conteneurs",
-        description: "Personnalisez l'apparence des éléments de contenu principaux.",
+        title: "Cards & Containers",
+        description: "Customize the appearance of main content elements.",
         icon: Layout,
         color: "text-blue-500",
         bg: "bg-blue-500/10",
         items: [
-            { id: 'cardBg', label: 'Fond des Cartes', key: 'cardBg' as const },
-            { id: 'cardBorder', label: 'Bordure des Cartes', key: 'cardBorder' as const },
-            { id: 'cardText', label: 'Texte des Cartes', key: 'cardText' as const },
+            { id: 'cardBg', label: 'Card Background', key: 'cardBg' as const },
+            { id: 'cardBorder', label: 'Card Border', key: 'cardBorder' as const },
+            { id: 'cardText', label: 'Card Text', key: 'cardText' as const },
         ]
     },
     {
-        title: "Boutons",
-        description: "Définissez les couleurs pour vos actions principales et secondaires.",
+        title: "Buttons",
+        description: "Set the colors for your primary and secondary actions.",
         icon: MousePointer2,
         color: "text-purple-500",
         bg: "bg-purple-500/10",
         items: [
-            { id: 'btnPrimaryBg', label: 'Fond Primaire', key: 'btnPrimaryBg' as const },
-            { id: 'btnPrimaryText', label: 'Texte Primaire', key: 'btnPrimaryText' as const },
-            { id: 'btnPrimaryHover', label: 'Survol Primaire', key: 'btnPrimaryHover' as const },
-            { id: 'btnSecondaryBg', label: 'Fond Secondaire', key: 'btnSecondaryBg' as const },
-            { id: 'btnSecondaryText', label: 'Texte Secondaire', key: 'btnSecondaryText' as const },
-            { id: 'btnSecondaryHover', label: 'Survol Secondaire', key: 'btnSecondaryHover' as const },
+            { id: 'btnPrimaryBg', label: 'Primary Background', key: 'btnPrimaryBg' as const },
+            { id: 'btnPrimaryText', label: 'Primary Text', key: 'btnPrimaryText' as const },
+            { id: 'btnPrimaryHover', label: 'Primary Hover', key: 'btnPrimaryHover' as const },
+            { id: 'btnSecondaryBg', label: 'Secondary Background', key: 'btnSecondaryBg' as const },
+            { id: 'btnSecondaryText', label: 'Secondary Text', key: 'btnSecondaryText' as const },
+            { id: 'btnSecondaryHover', label: 'Secondary Hover', key: 'btnSecondaryHover' as const },
         ]
     },
     {
-        title: "Menu Latéral",
-        description: "Personnalisez les couleurs de votre menu de navigation principal.",
+        title: "Side Menu",
+        description: "Customize the colors of your main navigation menu.",
         icon: MenuIcon,
         color: "text-amber-500",
         bg: "bg-amber-500/10",
         items: [
-            { id: 'sidebarBg', label: 'Fond du Menu', key: 'sidebarBg' as const },
-            { id: 'sidebarText', label: 'Texte du Menu', key: 'sidebarText' as const },
-            { id: 'sidebarBorder', label: 'Bordure du Menu', key: 'sidebarBorder' as const },
-            { id: 'sidebarActiveBg', label: 'Survol/Actif Fond', key: 'sidebarActiveBg' as const },
-            { id: 'sidebarActiveText', label: 'Survol/Actif Texte', key: 'sidebarActiveText' as const },
+            { id: 'sidebarBg', label: 'Menu Background', key: 'sidebarBg' as const },
+            { id: 'sidebarText', label: 'Menu Text', key: 'sidebarText' as const },
+            { id: 'sidebarBorder', label: 'Menu Border', key: 'sidebarBorder' as const },
+            { id: 'sidebarActiveBg', label: 'Hover/Active Background', key: 'sidebarActiveBg' as const },
+            { id: 'sidebarActiveText', label: 'Hover/Active Text', key: 'sidebarActiveText' as const },
         ]
     },
     {
         title: "Global & Accents",
-        description: "Touches finales pour une interface cohérente.",
+        description: "Final touches for a consistent interface.",
         icon: Sparkles,
         color: "text-pink-500",
         bg: "bg-pink-500/10",
         items: [
-            { id: 'accentPrimary', label: 'Couleur d\'Accent', key: 'accentPrimary' as const },
-            { id: 'pageBg', label: 'Fond de Page', key: 'pageBg' as const },
-            { id: 'navBg', label: 'Fond Barre Haute', key: 'navBg' as const },
-            { id: 'navText', label: 'Texte Barre Haute', key: 'navText' as const },
+            { id: 'accentPrimary', label: 'Accent Color', key: 'accentPrimary' as const },
+            { id: 'pageBg', label: 'Page Background', key: 'pageBg' as const },
+            { id: 'navBg', label: 'Top Bar Background', key: 'navBg' as const },
+            { id: 'navText', label: 'Top Bar Text', key: 'navText' as const },
         ]
     }
 ];
@@ -126,7 +126,7 @@ export const PersonalizationEditor = () => {
         });
         updateTheme(updates);
         setHasChanges(true);
-        toast.success('Section réinitialisée !');
+        toast.success('Section reset!');
     };
 
     const handleColorChange = (key: keyof typeof themeSettings, value: string) => {
@@ -138,16 +138,16 @@ export const PersonalizationEditor = () => {
         try {
             await saveTheme();
             setHasChanges(false);
-            toast.success('Préférences de personnalisation enregistrées !');
+            toast.success('Personalization preferences saved!');
         } catch (error) {
-            toast.error('Erreur lors de l\'enregistrement.');
+            toast.error('Error during saving.');
         }
     };
 
     const handleReset = () => {
         resetToDefault();
         setHasChanges(false);
-        toast.info('Réinitialisation aux paramètres par défaut.');
+        toast.info('Reset to default settings.');
     };
 
 
@@ -157,9 +157,9 @@ export const PersonalizationEditor = () => {
                 <div>
                     <h2 className="text-3xl font-black tracking-tight flex items-center gap-3 italic">
                         <Palette className="w-8 h-8 text-pink-500" />
-                        PERSONNALISATION
+                        PERSONALIZATION
                     </h2>
-                    <p className="text-gray-500 font-medium mt-1">Personnalisez les éléments internes. La barre latérale et le menu restent fixes.</p>
+                    <p className="text-gray-500 font-medium mt-1">Customize internal elements. The sidebar and menu remain fixed.</p>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -169,7 +169,7 @@ export const PersonalizationEditor = () => {
                         className="rounded-2xl border-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all font-bold uppercase tracking-wider text-xs"
                     >
                         <RotateCcw className="w-4 h-4 mr-2" />
-                        Réinitialiser
+                        Reset
                     </Button>
                     
                     <Button 
@@ -188,7 +188,7 @@ export const PersonalizationEditor = () => {
                         ) : (
                             <Save className="w-4 h-4 mr-2" />
                         )}
-                        {isSaving ? 'Enregistrement...' : 'Sauvegarder'}
+                        {isSaving ? 'Saving...' : 'Save'}
                     </Button>
                 </div>
             </div>
@@ -258,7 +258,7 @@ export const PersonalizationEditor = () => {
                                                 )}
                                             >
                                             <RotateCcw className="w-3.5 h-3.5" />
-                                            <span className="text-[10px] font-bold uppercase tracking-widest">Réinitialiser</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest">Reset</span>
                                         </Button>
                                     </div>
                                 </CardHeader>
@@ -293,10 +293,10 @@ export const PersonalizationEditor = () => {
                 <div className="xl:col-span-5 relative h-full">
                     <div className="sticky top-24 self-start space-y-6">
                         <div className="flex items-center justify-between px-2">
-                            <h3 className="text-sm font-black uppercase tracking-widest text-gray-500 italic">Aperçu en direct</h3>
+                            <h3 className="text-sm font-black uppercase tracking-widest text-gray-500 italic">Live Preview</h3>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Temps réel</span>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Real time</span>
                             </div>
                         </div>
 
@@ -304,7 +304,7 @@ export const PersonalizationEditor = () => {
                             <CardContent className="p-4 flex items-start gap-3">
                                 <Sparkles className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                                 <p className="text-xs font-medium text-emerald-800 leading-relaxed">
-                                    L'aperçu montre comment vos éléments internes s'intègrent dans le design original.
+                                    The preview shows how your internal elements integrate into the original design.
                                 </p>
                             </CardContent>
                         </Card>
@@ -357,7 +357,7 @@ export const PersonalizationEditor = () => {
                                                     className="flex-1 h-6 rounded-md flex items-center justify-center text-[6px] font-bold uppercase cursor-pointer" 
                                                     style={{ backgroundColor: themeSettings.btnSecondaryBg, color: themeSettings.btnSecondaryText }}
                                                 >
-                                                    Secondaire
+                                                    Secondary
                                                 </motion.div>
                                                 <div className="w-12 h-6 rounded-md flex items-center justify-center text-[6px] font-bold uppercase" style={{ backgroundColor: themeSettings.accentPrimary, color: '#fff' }}>
                                                     Accent
@@ -383,7 +383,7 @@ export const PersonalizationEditor = () => {
                         <div className="bg-black/90 backdrop-blur-xl text-white p-4 rounded-3xl shadow-2xl flex items-center justify-between border border-white/10">
                             <div className="flex items-center gap-3">
                                 <div className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
-                                <span className="text-sm font-bold tracking-tight uppercase">Modifications non sauvegardées</span>
+                                <span className="text-sm font-bold tracking-tight uppercase">Unsaved changes</span>
                             </div>
                             <Button 
                                 onClick={handleSave}
@@ -391,7 +391,7 @@ export const PersonalizationEditor = () => {
                                 className="rounded-xl bg-pink-500 hover:bg-pink-600 text-white font-black text-xs uppercase tracking-widest h-10 px-6"
                             >
                                 <Check className="w-4 h-4 mr-2" />
-                                Enregistrer
+                                Save
                             </Button>
                         </div>
                     </motion.div>

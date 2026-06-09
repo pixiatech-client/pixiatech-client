@@ -31,9 +31,9 @@ const EditableField = ({ value, onSave, multiline = false, className, placeholde
     const debouncedSave = debounce(async (newValue: string | number) => {
         try {
             await onSave(newValue);
-            toast({ title: "Champ sauvegardé", variant: 'success', duration: 2000 });
+            toast({ title: "Field saved", variant: 'success', duration: 2000 });
         } catch (error) {
-            toast({ title: "Erreur", description: "Impossible de sauvegarder le champ.", variant: 'destructive' });
+            toast({ title: "Error", description: "Unable to save the field.", variant: 'destructive' });
         }
     }, 1000);
 
@@ -83,17 +83,17 @@ export function SupplierQuotePdf({ id, request: initialRequest, specs: initialSp
   }, [initialSpecs]);
 
   const [editableContent, setEditableContent] = useState({
-    title: "Fiche Technique Fournisseur",
-    subtitle: "Demande de matériel",
+    title: "Supplier Technical Sheet",
+    subtitle: "Equipment Request",
     destinationTitle: "Destination",
-    productsTitle: "Liste des produits requis",
-    notesTitle: "Notes pour le fournisseur",
-    qtyHeader: "Quantité",
-    dimHeader: "Dimensions (L x H)",
+    productsTitle: "List of required products",
+    notesTitle: "Notes for the supplier",
+    qtyHeader: "Quantity",
+    dimHeader: "Dimensions (W x H)",
     transHeader: "Transaction",
-    specsTitle: "Spécifications Techniques",
-    specKeyHeader: "Caractéristique",
-    specValueHeader: "Valeur",
+    specsTitle: "Technical Specifications",
+    specKeyHeader: "Characteristic",
+    specValueHeader: "Value",
   });
 
   const handleContentSave = (field: keyof typeof editableContent) => async (value: string | number) => {
@@ -150,22 +150,22 @@ export function SupplierQuotePdf({ id, request: initialRequest, specs: initialSp
       <header className="flex justify-between items-start pb-8 border-b">
         <div>
           <h1 className="text-2xl font-bold">
-              <EditableField value={editableContent.title} onSave={handleContentSave('title')} placeholder="Titre principal"/>
+              <EditableField value={editableContent.title} onSave={handleContentSave('title')} placeholder="Main title"/>
           </h1>
           <p className="text-muted-foreground">
-             <EditableField value={editableContent.subtitle} onSave={handleContentSave('subtitle')} placeholder="Sous-titre"/>
+             <EditableField value={editableContent.subtitle} onSave={handleContentSave('subtitle')} placeholder="Subtitle"/>
           </p>
         </div>
         <div className="text-right text-sm">
           <p>
-            <span className="font-bold">Estimation N°:</span> {request.id.substring(0, 6).toUpperCase()}
+            <span className="font-bold">Estimation #:</span> {request.id.substring(0, 6).toUpperCase()}
           </p>
           <p>
             <span className="font-bold">Date:</span> {createdAtDate.toLocaleDateString('fr-FR')}
           </p>
            <p className='flex items-center gap-1 justify-end'>
             <span className="font-bold">Client:</span>
-            <EditableField value={request.client.companyName} onSave={handleClientFieldSave('companyName')} placeholder="Nom du client"/>
+            <EditableField value={request.client.companyName} onSave={handleClientFieldSave('companyName')} placeholder="Client name"/>
           </p>
         </div>
       </header>
@@ -175,11 +175,11 @@ export function SupplierQuotePdf({ id, request: initialRequest, specs: initialSp
           <EditableField value={editableContent.destinationTitle} onSave={handleContentSave('destinationTitle')} />
         </h2>
          {selectedCity ? (
-            <p><strong>Ville:</strong> {selectedCity.name} ({selectedCity.postalCode})</p>
+            <p><strong>City:</strong> {selectedCity.name} ({selectedCity.postalCode})</p>
           ) : request.unconfiguredCityQuery ? (
-            <p className='flex items-center gap-1'><strong>Destination demandée:</strong> <EditableField value={request.unconfiguredCityQuery} onSave={handleFieldSave('unconfiguredCityQuery')} placeholder="Destination"/> (Non configurée)</p>
+            <p className='flex items-center gap-1'><strong>Requested destination:</strong> <EditableField value={request.unconfiguredCityQuery} onSave={handleFieldSave('unconfiguredCityQuery')} placeholder="Destination"/> (Not configured)</p>
           ) : (
-            <p className="text-muted-foreground">Aucune destination de livraison spécifiée.</p>
+            <p className="text-muted-foreground">No delivery destination specified.</p>
           )}
       </div>
 
@@ -194,13 +194,13 @@ export function SupplierQuotePdf({ id, request: initialRequest, specs: initialSp
             const tileArea = (p.tileWidth && p.tileHeight) ? (p.tileWidth / 100) * (p.tileHeight / 100) : 0;
             const tilesNeeded = tileArea > 0 ? Math.ceil(area / tileArea) : 0;
 
-            const transactionText = p.transactionType === 'sale' ? 'Vente' : (p.rentalUnit === 'day' ? `Location ${p.rentalDuration} jour(s)` : `Location ${p.rentalDuration} heure(s)`);
+            const transactionText = p.transactionType === 'sale' ? 'Sale' : (p.rentalUnit === 'day' ? `Rental ${p.rentalDuration} day(s)` : `Rental ${p.rentalDuration} hour(s)`);
             const productsLength = (request.products || []).length;
 
             return (
               <div key={p.id} className={`py-4 ${index < productsLength - 1 ? 'border-b' : ''}`}>
                 <h3 className="text-md font-semibold text-gray-800">
-                    <EditableField value={p.productName} onSave={handleProductFieldSave(p.id, 'productName')} placeholder="Nom du produit" />
+                    <EditableField value={p.productName} onSave={handleProductFieldSave(p.id, 'productName')} placeholder="Product name" />
                 </h3>
                 <table className="w-full text-left mt-2">
                   <thead className="border-b bg-gray-50">
@@ -218,9 +218,9 @@ export function SupplierQuotePdf({ id, request: initialRequest, specs: initialSp
                   </thead>
                   <tbody>
                     <tr className="border-b last:border-b-0">
-                      <td className="p-2 text-center align-top"><EditableField type="number" value={p.quantity} onSave={handleProductFieldSave(p.id, 'quantity')} placeholder="Qté" className="text-center" /></td>
+                      <td className="p-2 text-center align-top"><EditableField type="number" value={p.quantity} onSave={handleProductFieldSave(p.id, 'quantity')} placeholder="Qty" className="text-center" /></td>
                       <td className="p-2 text-center align-top flex gap-1 items-center justify-center">
-                          <EditableField type="number" value={p.width} onSave={handleProductFieldSave(p.id, 'width')} placeholder="L" className="text-center" />
+                          <EditableField type="number" value={p.width} onSave={handleProductFieldSave(p.id, 'width')} placeholder="W" className="text-center" />
                            x 
                           <EditableField type="number" value={p.height} onSave={handleProductFieldSave(p.id, 'height')} placeholder="H" className="text-center" />
                           m
@@ -232,8 +232,8 @@ export function SupplierQuotePdf({ id, request: initialRequest, specs: initialSp
                      {tilesNeeded > 0 && (
                         <tr className="border-b last:border-b-0 bg-gray-50">
                             <td colSpan={3} className="p-2 text-xs">
-                                <span className="font-semibold">Détails techniques:</span> Surface de <strong>{area.toFixed(2)} m²</strong>,
-                                nécessitant <strong>{tilesNeeded} dalles</strong> de {p.tileWidth}cm x {p.tileHeight}cm.
+                                <span className="font-semibold">Technical details:</span> Surface area <strong>{area.toFixed(2)} m²</strong>,
+                                requiring <strong>{tilesNeeded} tiles</strong> of {p.tileWidth}cm x {p.tileHeight}cm.
                             </td>
                         </tr>
                      )}
@@ -274,7 +274,7 @@ export function SupplierQuotePdf({ id, request: initialRequest, specs: initialSp
 
         {request.client.sitePhoto && (
             <div className="mt-8 border-t pt-8">
-                <h3 className="text-md font-semibold mb-4">Photo de l'installation</h3>
+                <h3 className="text-md font-semibold mb-4">Installation photo</h3>
                 <div className="w-full h-auto max-h-[100mm] rounded-lg overflow-hidden border">
                     <img src={request.client.sitePhoto} alt="Site" className="w-full h-full object-contain bg-gray-50" />
                 </div>
@@ -288,7 +288,7 @@ export function SupplierQuotePdf({ id, request: initialRequest, specs: initialSp
             <EditableField 
                 value={request.supplierNotes || ''} 
                 onSave={handleFieldSave('supplierNotes')}
-                placeholder="Ajouter une note pour le fournisseur..."
+                placeholder="Add a note for the supplier..."
                 multiline
                 className="w-full border p-2 rounded-md h-24 focus:bg-yellow-100"
             />

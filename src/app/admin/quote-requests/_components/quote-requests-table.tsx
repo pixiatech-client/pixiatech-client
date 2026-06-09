@@ -38,16 +38,17 @@ import { useToast } from '@/hooks/use-toast';
 import { TransmitToSupplierDialog } from './transmit-to-supplier-dialog';
 import { EditTrackingNumberDialog } from './edit-tracking-number-dialog';
 import { SupplierQuoteDialog } from './supplier-quote-dialog';
+import { useAdminT } from '@/hooks/useAdminT';
 
 
 const statusConfig = {
-    pending: { label: "En cours", color: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200", iconColor: "text-yellow-500", selectedIconColor: "text-white" },
-    processed: { label: "Approuvé", color: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200", iconColor: "text-green-600", selectedIconColor: "text-white" },
-    trashed: { label: "Corbeille", color: "bg-red-100 text-red-800 border-red-300", iconColor: "text-red-600", selectedIconColor: "text-white" },
-    in_progress: { label: "Envoyé au fournisseur", color: "bg-cyan-100 text-cyan-800 border-cyan-300", iconColor: "text-cyan-600", selectedIconColor: "text-white" },
-    sent: { label: "Envoyé", color: "bg-blue-100 text-blue-800 border-blue-300", iconColor: "text-blue-600", selectedIconColor: "text-white" },
-    returned: { label: "Retourné", color: "bg-rose-100 text-rose-800 border-rose-300", iconColor: "text-rose-600", selectedIconColor: "text-white" },
-    archived: { label: "Archivé", color: "bg-gray-100 text-gray-800 border-gray-300", iconColor: "text-gray-600", selectedIconColor: "text-white" },
+    pending: { label: "Pending", color: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200", iconColor: "text-yellow-500", selectedIconColor: "text-white" },
+    processed: { label: "Approved", color: "bg-green-100 text-green-800 border-green-200 hover:bg-green-200", iconColor: "text-green-600", selectedIconColor: "text-white" },
+    trashed: { label: "Trash", color: "bg-red-100 text-red-800 border-red-300", iconColor: "text-red-600", selectedIconColor: "text-white" },
+    in_progress: { label: "Sent to supplier", color: "bg-cyan-100 text-cyan-800 border-cyan-300", iconColor: "text-cyan-600", selectedIconColor: "text-white" },
+    sent: { label: "Sent", color: "bg-blue-100 text-blue-800 border-blue-300", iconColor: "text-blue-600", selectedIconColor: "text-white" },
+    returned: { label: "Returned", color: "bg-rose-100 text-rose-800 border-rose-300", iconColor: "text-rose-600", selectedIconColor: "text-white" },
+    archived: { label: "Archived", color: "bg-gray-100 text-gray-800 border-gray-300", iconColor: "text-gray-600", selectedIconColor: "text-white" },
 };
 
 type Status = 'pending' | 'processed' | 'trashed' | 'in_progress' | 'sent' | 'archived' | 'returned';
@@ -57,6 +58,7 @@ const ITEMS_PER_PAGE = 6;
 export function QuoteRequestsTable() {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useAdminT();
   const [allRequests, setAllRequests] = useState<QuoteRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,7 +80,7 @@ export function QuoteRequestsTable() {
   const { userProfile } = useUser();
   const isAdmin = userProfile?.role === 'admin';
   const isSupplier = userProfile?.role === 'fournisseur';
-  const [refusalMessage, setRefusalMessage] = useState('Refus groupé par le fournisseur');
+  const [refusalMessage, setRefusalMessage] = useState('Group refusal by supplier');
   
   // ✅ ZERO dependencies — fetchRequests is stable and never recreated
   const fetchRequests = useCallback(async (
@@ -225,7 +227,7 @@ export function QuoteRequestsTable() {
                 returnReason: refusalMessage 
             } as any)
         ));
-        toast({ title: 'Succès', description: `${dialogAction.ids.length} estimation(s) refusée(s).` });
+        toast({ title: t('Success'), description: t(`${dialogAction.ids.length} estimation(s) refused.`) });
     } else if (dialogAction.type === 'deleteAll') {
         if (isAdmin) {
             await permanentDeleteAllTrashedQuotes();
@@ -250,8 +252,8 @@ export function QuoteRequestsTable() {
   const handleRevertToProcessed = async (quoteId: string) => {
     await updateQuoteStatus(quoteId, { status: 'processed', supplierId: undefined });
     toast({
-        title: 'Estimation retournée',
-        description: "L'estimation est de nouveau dans la liste 'Approuvé'.",
+        title: t('Estimation returned'),
+        description: t("The estimation is back in the 'Approved' list."),
         variant: 'info',
     });
     fetchRequests(currentPage, activeTab);
@@ -266,8 +268,8 @@ export function QuoteRequestsTable() {
       <CardHeader className="pb-6 border-b border-slate-100 bg-white">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div>
-                <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">Suivi des Estimations</CardTitle>
-                <CardDescription className="text-sm font-medium text-slate-500 mt-1">Consultez et gérez le cycle de vie des estimations.</CardDescription>
+                <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">{t("Estimation Tracking")}</CardTitle>
+                <CardDescription className="text-sm font-medium text-slate-500 mt-1">{t("View and manage the lifecycle of estimations.")}</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
                 <div className="relative flex-grow lg:flex-none flex items-center gap-3">
@@ -278,12 +280,12 @@ export function QuoteRequestsTable() {
                             onCheckedChange={handleSelectAll}
                             className="h-5 w-5 rounded-md border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
                         />
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tous</span>
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t("All")}</span>
                     </div>
                     <div className="relative flex-grow">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <Input 
-                            placeholder="Rechercher..."
+                            placeholder={t("Search...")}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-10 w-full lg:w-72 h-11 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white transition-all shadow-sm focus:ring-slate-900"
@@ -291,7 +293,7 @@ export function QuoteRequestsTable() {
                     </div>
                 </div>
                  <div className="bg-slate-900 text-white py-2 px-5 rounded-xl flex flex-col items-end shadow-lg shadow-slate-200">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">Total Groupé</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">{t("Grouped Total")}</span>
                     <span className="text-xl font-black text-blue-400 leading-none">{formatCurrency(mainListTotal)}</span>
                 </div>
             </div>
@@ -303,27 +305,27 @@ export function QuoteRequestsTable() {
                 <TabsList className="bg-white border border-slate-200 h-11 p-1 rounded-xl shadow-sm">
                     <TabsTrigger value="pending" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-xs px-4">
                         <Clock className="mr-2 h-3.5 w-3.5" />
-                        En attente
+                        {t("Pending")}
                     </TabsTrigger>
                     <TabsTrigger value="processed" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-xs px-4">
                         <CheckCircle className="mr-2 h-3.5 w-3.5" />
-                        Approuvé
+                        {t("Approved")}
                     </TabsTrigger>
                      <TabsTrigger value="returned" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-xs px-4">
                         <Undo2 className="mr-2 h-3.5 w-3.5" />
-                        Retourné
+                        {t("Returned")}
                     </TabsTrigger>
                      <TabsTrigger value="delivery" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-xs px-4">
                         <Truck className="mr-2 h-3.5 w-3.5" />
-                        Livraison
+                        {t("Delivery")}
                     </TabsTrigger>
                     <TabsTrigger value="archived" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-xs px-4">
                         <FileText className="mr-2 h-3.5 w-3.5" />
-                        Archivé
+                        {t("Archived")}
                     </TabsTrigger>
                     <TabsTrigger value="trashed" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white font-bold text-xs px-4">
                         <Trash className="mr-2 h-3.5 w-3.5" />
-                         Corbeille
+                         {t("Trash")}
                     </TabsTrigger>
                 </TabsList>
 
@@ -332,13 +334,13 @@ export function QuoteRequestsTable() {
                         <TransmitToSupplierDialog quotes={allRequests.filter(r => selectedRequests.includes(r.id))} onSuccess={handleRefreshData}>
                             <Button variant="outline" size="sm" className="rounded-lg font-bold border-slate-200 shadow-sm hover:bg-slate-50">
                                 <SendHorizontal className="mr-2 h-4 w-4" />
-                                Transmettre ({selectedRequests.length})
+                                {t(`Transmit (${selectedRequests.length})`)}
                             </Button>
                         </TransmitToSupplierDialog>
                     )}
                     {activeTab !== 'trashed' && selectedRequests.length > 0 && (
                         <Button variant="destructive" size="sm" className="rounded-lg font-bold shadow-sm" onClick={() => setDialogAction({ type: 'trash', ids: selectedRequests })}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Corbeille ({selectedRequests.length})
+                            <Trash2 className="mr-2 h-4 w-4" /> {t(`Trash (${selectedRequests.length})`)}
                         </Button>
                     )}
                     {isSupplier && selectedRequests.length > 0 && activeTab !== 'trashed' && (
@@ -348,17 +350,17 @@ export function QuoteRequestsTable() {
                             className="rounded-lg font-bold shadow-sm bg-orange-600 hover:bg-orange-700 border-0" 
                             onClick={() => setDialogAction({ type: 'refuse', ids: selectedRequests })}
                         >
-                            <Ban className="mr-2 h-4 w-4" /> Refuser ({selectedRequests.length})
+                            <Ban className="mr-2 h-4 w-4" /> {t(`Refuse (${selectedRequests.length})`)}
                         </Button>
                     )}
                     {activeTab === 'trashed' && selectedRequests.length > 0 && (
                          <div className='flex gap-2'>
                             <Button variant="outline" size="sm" className="rounded-lg font-bold border-slate-200 shadow-sm" onClick={() => setDialogAction({ type: 'restore', ids: selectedRequests })}>
-                                <Undo2 className="mr-2 h-4 w-4" /> Restaurer ({selectedRequests.length})
+                                <Undo2 className="mr-2 h-4 w-4" /> {t(`Restore (${selectedRequests.length})`)}
                             </Button>
                             {isAdmin && (
                                 <Button variant="destructive" size="sm" className="rounded-lg font-bold shadow-sm" onClick={() => setDialogAction({ type: 'delete', ids: selectedRequests })}>
-                                    <Ban className="mr-2 h-4 w-4" /> Supprimer
+                                    <Ban className="mr-2 h-4 w-4" /> Delete
                                 </Button>
                             )}
                         </div>
@@ -379,17 +381,17 @@ export function QuoteRequestsTable() {
                                 aria-label="Select all rows on this page"
                             />
                         </TableHead>
-                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Réf.</TableHead>
+                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Ref.</TableHead>
                         <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Client</TableHead>
                         {activeTab === 'delivery' ? (
-                            <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Suivi</TableHead>
+                            <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Tracking</TableHead>
                         ) : (
                             <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Contact</TableHead>
                         )}
-                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Statut</TableHead>
-                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Fournisseur</TableHead>
-                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Heure / Date</TableHead>
-                        <TableHead className="text-right text-[11px] font-black uppercase tracking-widest text-slate-400 pr-6">Total (HT)</TableHead>
+                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Status</TableHead>
+                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Supplier</TableHead>
+                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Time / Date</TableHead>
+                        <TableHead className="text-right text-[11px] font-black uppercase tracking-widest text-slate-400 pr-6">Total (excl. tax)</TableHead>
                         <TableHead className="w-[100px] text-right pr-6"></TableHead>
                     </TableRow>
                     </TableHeader>
@@ -441,7 +443,7 @@ export function QuoteRequestsTable() {
                                      </div>
                                    </TooltipTrigger>
                                    <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                     <p className="font-medium text-xs">Généré via configurateur guidé (Wizard)</p>
+                                      <p className="font-medium text-xs">Generated via guided configurator (Wizard)</p>
                                    </TooltipContent>
                                  </Tooltip>
                                </TooltipProvider>
@@ -455,7 +457,7 @@ export function QuoteRequestsTable() {
                                      </div>
                                    </TooltipTrigger>
                                    <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                     <p className="font-medium text-xs">Généré via configuration manuelle</p>
+                                      <p className="font-medium text-xs">Generated via manual configuration</p>
                                    </TooltipContent>
                                  </Tooltip>
                                </TooltipProvider>
@@ -469,7 +471,7 @@ export function QuoteRequestsTable() {
                                      </div>
                                    </TooltipTrigger>
                                    <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                     <p className="font-medium text-xs">Généré par Lumi AI</p>
+                                      <p className="font-medium text-xs">Generated by Lumi AI</p>
                                    </TooltipContent>
                                  </Tooltip>
                                </TooltipProvider>
@@ -493,7 +495,7 @@ export function QuoteRequestsTable() {
                                             )}
                                         </TooltipTrigger>
                                         <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                            <p className="font-medium text-xs">{req.emailVerified ? "Email vérifié" : "Email non vérifié"}</p>
+                                            <p className="font-medium text-xs">{req.emailVerified ? "Verified email" : "Unverified email"}</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
@@ -555,7 +557,7 @@ export function QuoteRequestsTable() {
                                         </SupplierQuoteDialog>
                                     </TooltipTrigger>
                                     <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                        <p className="font-medium text-xs">Vue fournisseur</p>
+                                        <p className="font-medium text-xs">Supplier view</p>
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
@@ -569,7 +571,7 @@ export function QuoteRequestsTable() {
                         <TableCell className="text-right pr-6">
                             <div className="flex flex-col items-end">
                                 <span className="text-lg font-black text-slate-900 tracking-tight whitespace-nowrap">{formatCurrency(req.totalQuote)}</span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">HT</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Excl. tax</span>
                             </div>
                         </TableCell>
                         <TableCell className="text-right pr-6">
@@ -581,11 +583,11 @@ export function QuoteRequestsTable() {
                                                 <TooltipTrigger asChild>
                                                     <Button variant="outline" size="sm" className='rounded-lg font-bold border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-9 px-3'>
                                                         <SendHorizontal className="h-4 w-4 mr-2 text-blue-500" />
-                                                        Envoyer
+                                                        Send
                                                     </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                                    <p className="font-medium text-xs">Envoyer au fournisseur</p>
+                                                    <p className="font-medium text-xs">Send to supplier</p>
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
@@ -598,15 +600,15 @@ export function QuoteRequestsTable() {
                                             className="rounded-lg font-bold border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-9 px-4"
                                             onClick={(e) => { e.stopPropagation(); handleStatusToggle(req); }}
                                         >
-                                            <Undo2 className="h-3.5 w-3.5 mr-2" /> Restaurer
+                                            <Undo2 className="h-3.5 w-3.5 mr-2" /> Restore
                                         </Button>
                                         <Button asChild variant="outline" size="sm" className="rounded-lg font-bold border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-9 px-4">
-                                            <Link href={`/admin/quotes/${req.id}`}>Détails</Link>
+                                            <Link href={`/admin/quotes/${req.id}`}>Details</Link>
                                         </Button>
                                     </div>
                                 ) : (
                                     <Button asChild variant="outline" size="sm" className="rounded-lg font-bold border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-9 px-4">
-                                        <Link href={`/admin/quotes/${req.id}`}>Détails</Link>
+                                        <Link href={`/admin/quotes/${req.id}`}>Details</Link>
                                     </Button>
                                 )}
                                 {activeTab !== 'trashed' && (
@@ -629,8 +631,8 @@ export function QuoteRequestsTable() {
                                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
                                     <FileText className="h-8 w-8 text-slate-300" />
                                 </div>
-                                <p className="font-bold text-slate-900">{searchQuery ? "Aucun résultat trouvé." : "Liste vide"}</p>
-                                <p className="text-xs text-slate-400 mt-1">{searchQuery ? "Essayez avec d'autres termes." : "Aucune demande d'estimation dans cette catégorie."}</p>
+                                <p className="font-bold text-slate-900">{searchQuery ? "No results found." : "Empty list"}</p>
+                                <p className="text-xs text-slate-400 mt-1">{searchQuery ? "Try different search terms." : "No estimation requests in this category."}</p>
                             </div>
                         </TableCell>
                         </TableRow>
@@ -656,19 +658,19 @@ export function QuoteRequestsTable() {
       <AlertDialog open={!!dialogAction} onOpenChange={(open) => !open && setDialogAction(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              {dialogAction?.type === 'trash' && `Vous êtes sur le point de déplacer ${dialogAction.ids?.length} estimation(s) vers la corbeille.`}
-              {dialogAction?.type === 'delete' && `Cette action est irréversible. Les estimations seront supprimées définitivement.`}
-              {dialogAction?.type === 'deleteAll' && "Cette action est irréversible. TOUTES les estimations dans la corbeille seront supprimées définitivement."}
-              {dialogAction?.type === 'restore' && `Vous êtes sur le point de restaurer ${dialogAction.ids?.length} estimation(s).`}
+              {dialogAction?.type === 'trash' && `You are about to move ${dialogAction.ids?.length} estimation(s) to the trash.`}
+              {dialogAction?.type === 'delete' && `This action is irreversible. The estimations will be permanently deleted.`}
+              {dialogAction?.type === 'deleteAll' && "This action is irreversible. ALL estimations in the trash will be permanently deleted."}
+              {dialogAction?.type === 'restore' && `You are about to restore ${dialogAction.ids?.length} estimation(s).`}
               {dialogAction?.type === 'refuse' && (
                 <div className="space-y-3 mt-2">
-                    <p>Vous allez refuser {dialogAction.ids?.length} estimation(s). Veuillez indiquer la raison :</p>
+                    <p>You are about to refuse {dialogAction.ids?.length} estimation(s). Please state the reason:</p>
                     <Input 
                         value={refusalMessage}
                         onChange={(e) => setRefusalMessage(e.target.value)}
-                        placeholder="Raison du refus (ex: Indisponible, erreur technique...)"
+                        placeholder="Reason for refusal (e.g., Unavailable, technical error...)"
                         className="mt-2 border-slate-200 focus:ring-orange-500"
                     />
                 </div>
@@ -676,7 +678,7 @@ export function QuoteRequestsTable() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className={cn(
                 (dialogAction?.type === 'delete' || dialogAction?.type === 'deleteAll' || dialogAction?.type === 'trash') && "bg-destructive hover:bg-destructive/90",
@@ -684,7 +686,7 @@ export function QuoteRequestsTable() {
               )}
               onClick={handleDialogConfirm}
             >
-              Confirmer
+              Confirm
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

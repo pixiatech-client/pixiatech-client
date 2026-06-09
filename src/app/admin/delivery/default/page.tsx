@@ -10,10 +10,10 @@ export default async function DefaultFeePage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Frais par Défaut</CardTitle>
+        <CardTitle>Default Fees</CardTitle>
         <CardDescription>
-          Activez un coût de livraison de base qui s'appliquera à toutes les commandes,
-          sauf si un tarif de zone spécifique ou la gratuité est applicable.
+          Enable a base shipping cost that will apply to all orders,
+          unless a specific zone rate or free shipping applies.
         </CardDescription>
       </CardHeader>
       <CardContent>

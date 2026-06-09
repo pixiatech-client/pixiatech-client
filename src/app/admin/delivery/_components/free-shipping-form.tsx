@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 const freeShippingSchema = z.object({
   isFreeDeliveryEnabled: z.boolean(),
-  freeDeliveryThreshold: z.coerce.number().min(0, 'Doit être positif'),
+  freeDeliveryThreshold: z.coerce.number().min(0, 'Must be positive'),
   isTotalFreeDeliveryEnabled: z.boolean(),
   unconfiguredZoneMessage: z.string().optional(),
 });
@@ -46,9 +46,9 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
 
     const result = await updateDeliverySettings(formattedData);
     if (result.success) {
-      toast({ title: 'Succès', description: 'Paramètres de gratuité mis à jour.', variant: 'success' });
+      toast({ title: 'Success', description: 'Free shipping settings updated.', variant: 'success' });
     } else {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Une erreur est survenue.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'An error occurred.' });
     }
   };
 
@@ -56,14 +56,14 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <Card className="border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white">
             <CardHeader className="px-0 md:px-6">
-                <CardTitle>Livraison gratuite par seuil</CardTitle>
-                <CardDescription>Offrir la livraison pour les commandes dépassant un certain montant.</CardDescription>
+                <CardTitle>Free shipping by threshold</CardTitle>
+                <CardDescription>Offer free shipping for orders exceeding a certain amount.</CardDescription>
             </CardHeader>
             <CardContent className="px-0 md:px-6">
                 <fieldset disabled={isTotalFreeDeliveryEnabled} className="space-y-6 group">
                     <div className="flex items-center justify-between rounded-none md:rounded-lg border-x-0 md:border-x border-y p-4 group-disabled:opacity-50 transition-opacity">
                         <div>
-                            <Label htmlFor="isFreeDeliveryEnabled" className="font-semibold">Activer la livraison gratuite par seuil</Label>
+                            <Label htmlFor="isFreeDeliveryEnabled" className="font-semibold">Enable free shipping by threshold</Label>
                         </div>
                         <div className='flex items-center gap-4'>
                             <Input
@@ -92,13 +92,13 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
 
         <Card className="border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white">
             <CardHeader className="px-0 md:px-6">
-                <CardTitle>Livraison Gratuite Totale</CardTitle>
-                <CardDescription>Rend la livraison gratuite pour toutes les commandes, ignorant les autres frais.</CardDescription>
+                <CardTitle>Total Free Shipping</CardTitle>
+                <CardDescription>Makes shipping free for all orders, ignoring other fees.</CardDescription>
             </CardHeader>
             <CardContent className="px-0 md:px-6">
                 <div className="flex items-center justify-between rounded-none md:rounded-lg border-x-0 md:border-x border-y p-4">
                     <div>
-                        <Label htmlFor="isTotalFreeDeliveryEnabled" className="font-semibold">Activer la livraison gratuite pour tous</Label>
+                        <Label htmlFor="isTotalFreeDeliveryEnabled" className="font-semibold">Enable free shipping for everyone</Label>
                     </div>
                     <Controller
                         control={form.control}
@@ -117,9 +117,9 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
         
         <Card className="border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white">
           <CardHeader className="px-0 md:px-6">
-            <CardTitle>Message pour zone non configurée</CardTitle>
+            <CardTitle>Message for unconfigured zone</CardTitle>
             <CardDescription>
-              Ce message s'affichera si un client recherche une ville qui n'est pas encore dans votre base de données.
+              This message will appear if a customer searches for a city not yet in your database.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-0 md:px-6">
@@ -130,7 +130,7 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
                 <Textarea
                   {...field}
                   rows={4}
-                  placeholder="Cette zone n’est pas encore configurée..."
+                  placeholder="This zone is not yet configured..."
                 />
               )}
             />
@@ -139,7 +139,7 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
 
       <div className="flex justify-end pt-4">
         <Button variant="styled" type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
+          {form.formState.isSubmitting ? 'Saving...' : 'Save'}
         </Button>
       </div>
     </form>

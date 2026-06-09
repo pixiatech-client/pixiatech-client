@@ -21,9 +21,9 @@ export default async function DeliveryLayout({ children }: { children: React.Rea
   return (
     <Card className="rounded-xl border border-slate-200/60 shadow-sm bg-white overflow-hidden">
       <CardHeader className="pb-6 border-b border-slate-100 bg-white">
-        <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">Logistique & Livraison</CardTitle>
+        <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">Logistics & Delivery</CardTitle>
         <CardDescription className="text-sm font-medium text-slate-500 mt-1">
-          Configurez les zones, les tarifs et les transporteurs pour vos estimations.
+          Configure zones, rates, and carriers for your estimates.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-8">

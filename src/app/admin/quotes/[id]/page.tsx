@@ -17,13 +17,13 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
         <Card className="m-auto">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive">
-                    <AlertTriangle/> Erreur
+                    <AlertTriangle/> Error
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <p>ID d'estimation manquant.</p>
+                <p>Missing estimation ID.</p>
                 <Button asChild variant="link" className="mt-4">
-                    <Link href="/admin/quote-requests">Retour à la liste</Link>
+                    <Link href="/admin/quote-requests">Back to list</Link>
                 </Button>
             </CardContent>
         </Card>
@@ -43,13 +43,13 @@ export default async function QuoteDetailPage({ params }: { params: { id: string
         <Card className="m-auto">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-destructive">
-                    <AlertTriangle/> Estimation non trouvée
+                    <AlertTriangle/> Estimation not found
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <p>Impossible de trouver l'estimation ou les produits avec l'ID : {id}</p>
+                <p>Unable to find estimation or products with ID: {id}</p>
                  <Button asChild variant="link" className="mt-4">
-                    <Link href="/admin/quote-requests">Retour à la liste</Link>
+                    <Link href="/admin/quote-requests">Back to list</Link>
                 </Button>
             </CardContent>
         </Card>

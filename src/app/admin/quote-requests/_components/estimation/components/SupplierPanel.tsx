@@ -44,7 +44,7 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
   const handleConfirm = () => {
     const selected = suppliers.find(s => s.uid === selectedSupplier);
     if (!selected) {
-      alert('Veuillez sélectionner un fournisseur');
+      alert('Please select a supplier');
       return;
     }
     onConfirm(selected.uid, selected.displayName || selected.email, notes, notes);
@@ -73,9 +73,9 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
                 </div>
                 <div>
                   <h2 className="text-xl font-['Space_Grotesk'] font-bold text-white uppercase">
-                    Transmettre au Fournisseur
+                    Send to Supplier
                   </h2>
-                  <p className="text-[10px] text-zinc-500 font-['JetBrains_Mono']">Sélectionner un fournisseur</p>
+                  <p className="text-[10px] text-zinc-500 font-['JetBrains_Mono']">Select a supplier</p>
                 </div>
               </div>
               <button
@@ -88,12 +88,12 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
 
             <div className="space-y-6 max-h-[50vh] overflow-y-auto">
               {isLoading ? (
-                <div className="text-center py-8 text-zinc-500">Chargement des fournisseurs...</div>
+                <div className="text-center py-8 text-zinc-500">Loading suppliers...</div>
               ) : suppliers.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-zinc-500">
                   <AlertCircle size={32} className="mb-3 text-red-500" />
-                  <p className="text-sm">Aucun fournisseur trouvé</p>
-                  <p className="text-xs text-zinc-600 mt-1">Vérifiez qu'il existe des utilisateurs avec le rôle fournisseur</p>
+                  <p className="text-sm">No supplier found</p>
+                  <p className="text-xs text-zinc-600 mt-1">Check that users with the supplier role exist</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-2">
@@ -133,7 +133,7 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
 
               <div className="space-y-2">
                 <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-wider">
-                  Notes pour le fournisseur (optionnel)
+                  Notes for the supplier (optional)
                 </label>
                 <textarea
                   value={notes}
@@ -149,14 +149,14 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
                 onClick={onClose}
                 className="flex-1 py-4 rounded-2xl border border-white/10 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:bg-white/5 transition-all"
               >
-                Annuler
+                Cancel
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={!selectedSupplier}
                 className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white text-xs font-bold uppercase tracking-wider shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <Send size={16} /> Confirmer
+                <Send size={16} /> Confirm
               </button>
             </div>
           </motion.div>

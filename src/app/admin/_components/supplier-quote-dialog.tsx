@@ -38,7 +38,7 @@ export function SupplierQuoteDialog({ quote, allProducts, productSpecs, children
   const generatePdf = async () => {
     const quoteContainer = document.getElementById(`supplier-pdf-view-${quote.id}`);
     if (!quoteContainer) {
-      toast({ variant: 'destructive', title: "Erreur", description: "Contenu du PDF non trouvé." });
+      toast({ variant: 'destructive', title: 'Error', description: 'PDF content not found.' });
       return null;
     }
 
@@ -83,9 +83,9 @@ export function SupplierQuoteDialog({ quote, allProducts, productSpecs, children
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Vue Fournisseur</DialogTitle>
+          <DialogTitle>Supplier View</DialogTitle>
           <DialogDescription>
-            Prévisualisez et téléchargez la fiche technique simplifiée.
+            Preview and download the simplified technical sheet.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-auto bg-gray-200 p-4 rounded-md">
@@ -102,11 +102,11 @@ export function SupplierQuoteDialog({ quote, allProducts, productSpecs, children
         <DialogFooter className="sm:justify-start gap-2 pt-4 border-t">
           <Button variant="outline" onClick={handlePreview} disabled={isPdfRendering}>
             {isPdfRendering ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
-            Prévisualiser
+            Preview
           </Button>
           <Button onClick={handleDownload} disabled={isPdfRendering}>
             {isPdfRendering ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-            Télécharger
+            Download
           </Button>
         </DialogFooter>
         

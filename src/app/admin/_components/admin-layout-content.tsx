@@ -187,16 +187,16 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
       try {
         const result = await saveSidebarConfig({ logoConfig: newConfig });
         if (result.success) {
-          sonnerToast.success('Logo sauvegardé avec succès !', {
-            description: 'Le changement est appliqué pour tous les utilisateurs.',
+          sonnerToast.success('Logo saved successfully!', {
+            description: 'The change is applied for all users.',
           });
         } else {
-          sonnerToast.error('Erreur lors de la sauvegarde du logo.', {
-            description: typeof result.error === 'string' ? result.error : 'Veuillez réessayer.',
+          sonnerToast.error('Error saving logo.', {
+            description: typeof result.error === 'string' ? result.error : 'Please try again.',
           });
         }
       } catch (error) {
-        sonnerToast.error('Erreur réseau lors de la sauvegarde.');
+        sonnerToast.error('Network error while saving.');
       }
     }
   };
@@ -206,16 +206,16 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
       try {
         const result = await saveSidebarConfig({ sidebarOrder: newOrder });
         if (result.success) {
-          sonnerToast.success('Ordre du menu sauvegardé !', {
-            description: 'Le nouvel ordre est appliqué pour tous les utilisateurs.',
+          sonnerToast.success('Menu order saved!', {
+            description: 'The new order is applied for all users.',
           });
         } else {
-          sonnerToast.error('Erreur lors de la sauvegarde de l\'ordre.', {
-            description: typeof result.error === 'string' ? result.error : 'Veuillez réessayer.',
+          sonnerToast.error('Error saving order.', {
+            description: typeof result.error === 'string' ? result.error : 'Please try again.',
           });
         }
       } catch (error) {
-        sonnerToast.error('Erreur réseau lors de la sauvegarde.');
+        sonnerToast.error('Network error while saving.');
       }
     }
   };
@@ -300,7 +300,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     "group flex items-center justify-center h-11 w-11 rounded-xl mt-1 border-0 shadow-sm transition-all duration-200 cursor-pointer",
                     "bg-white hover:bg-theme-sidebar-active-bg text-gray-700 hover:text-emerald-500"
                   )}
-                  aria-label="Afficher le menu"
+                  aria-label="Show menu"
                 >
                   <Menu className="h-5 w-5 pointer-events-none" />
                 </button>
@@ -329,7 +329,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   "bg-white hover:bg-theme-sidebar-active-bg"
                 )}
                 onClick={() => router.back()}
-                title="Page précédente"
+                title="Previous page"
               >
                 <ChevronDown className="h-5 w-5 transition-all duration-200 text-gray-500 group-hover:text-emerald-500 rotate-90" />
               </Button>
@@ -355,7 +355,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsCalculatorOpen(prev => !prev)}
-                title="Calculatrice"
+                title="Calculator"
                 className={cn(
                   "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
                   isCalculatorOpen
@@ -369,7 +369,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     ? "text-indigo-400"
                     : "text-gray-500 group-hover:text-indigo-400"
                 )} />
-                <span className="sr-only">Calculatrice</span>
+                <span className="sr-only">Calculator</span>
               </Button>
 
               {/* ── 2. Notifications ── */}
@@ -387,7 +387,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 </Button>
               )}
 
-              {/* ── 4. Accéder au site front-end (icône Globe) ── */}
+              {/* ── 4. Access the front-end site (Globe icon) ── */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -618,8 +618,8 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   { id: 'labor', label: t('admin.settingsMenu.labor'), icon: HardHat, color: 'text-orange-600', bg: 'bg-orange-100/80', href: '/admin/settings/main-doeuvre' },
                   { id: 'pdf', label: t('admin.settingsMenu.pdf'), icon: FileType, color: 'text-rose-600', bg: 'bg-rose-100/80', href: '/admin/settings/pdf' },
                   { id: 'messaging', label: t('admin.settingsMenu.messaging'), icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-100/80', href: '/admin/settings/messaging' },
-{ id: 'emergency', label: 'Urgence', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100/80', href: '/admin/settings/emergency' },
-                   { id: 'software', label: 'Logiciel', icon: Settings, color: 'text-slate-600', bg: 'bg-slate-100/80', href: '/admin/settings/software' },
+{ id: 'emergency', label: 'Emergency', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100/80', href: '/admin/settings/emergency' },
+{ id: 'software', label: 'Software', icon: Settings, color: 'text-slate-600', bg: 'bg-slate-100/80', href: '/admin/settings/software' },
                  ].map((item) => (
                   <Link
                     key={item.id}
@@ -686,7 +686,7 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
     setActiveSettingsSection(section);
   };
 
-  // Timeout fallback - si le chargement prennent plus de 15s, on affiche le contenu quand même
+  // Timeout fallback - if loading takes more than 15s, display the content anyway
   const [forceLoaded, setForceLoaded] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -731,7 +731,7 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
         setThemes(fetchedThemes);
         setSettings(fetchedSettings);
       } catch (error) {
-        toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de charger les données initiales.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Unable to load initial data.' });
       } finally {
         setLocalLoading(false);
       }

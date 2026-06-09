@@ -15,12 +15,14 @@ import { UserCard, type AdaptedUser } from './user-card';
 import { UserRow } from './user-row';
 import { DeleteConfirmationModal } from './delete-confirmation-modal';
 import { UserProfileDrawer } from './user-profile-drawer';
+import { useAdminT } from '@/hooks/useAdminT';
 
 const ITEMS_PER_PAGE = 8;
 
 export function UserManager() {
   const { userProfile, isUserLoading } = useUser();
   const { toast } = useToast();
+  const { t } = useAdminT();
   const firestore = useFirestore();
   const auth = useAuth();
 
@@ -60,7 +62,7 @@ export function UserManager() {
 
   // Build role options for filters
   const roleOptions: { value: string; label: string; color?: string }[] = useMemo(() => {
-    const options: { value: string; label: string; color?: string }[] = [{ value: '', label: 'Tous les Rôles' }];
+    const options: { value: string; label: string; color?: string }[] = [{ value: '', label: t('All Roles') }];
     if (roles) {
       roles.forEach(r => {
         options.push({
@@ -83,7 +85,7 @@ export function UserManager() {
       setLastVisibleId(result.lastId);
       setHasMore(result.users.length === ITEMS_PER_PAGE);
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de charger les utilisateurs.' });
+      toast({ variant: 'destructive', title: t('Error'), description: t('Unable to load users.') });
     } finally {
       setIsLoading(false);
     }
@@ -175,9 +177,9 @@ export function UserManager() {
       await deleteUsers([userToDelete.uid]);
       setUsers(prev => prev.filter(u => u.uid !== userToDelete.uid));
       setTotalCount(prev => prev - 1);
-      toast({ title: 'Succès', description: 'Utilisateur supprimé avec succès.' });
+      toast({ title: t('Success'), description: t('User deleted successfully.') });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de supprimer l\'utilisateur.' });
+      toast({ variant: 'destructive', title: t('Error'), description: t('Unable to delete user.') });
     } finally {
       setDeletingUserId(null);
       setUserToDelete(null);
@@ -194,7 +196,7 @@ export function UserManager() {
           phone: data.phone,
         });
         if (!result.success) throw new Error(result.error);
-        toast({ title: 'Succès', description: 'Utilisateur créé avec succès.' });
+        toast({ title: t('Success'), description: t('User created successfully.') });
         await fetchUsers();
       } else {
         await updateUser({
@@ -210,10 +212,10 @@ export function UserManager() {
           await updatePassword({ uid: data.uid, password: data.password });
         }
         setUsers(prev => prev.map(u => u.uid === data.uid ? { ...u, ...data } : u));
-        toast({ title: 'Succès', description: 'Profil mis à jour avec succès.' });
+        toast({ title: t('Success'), description: t('Profile updated successfully.') });
       }
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Erreur', description: error.message || 'Une erreur est survenue.' });
+      toast({ variant: 'destructive', title: t('Error'), description: error.message || t('An error occurred.') });
       throw error;
     }
   };
@@ -260,9 +262,9 @@ export function UserManager() {
               <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           </div>
-          <p className="text-xl font-bold text-gray-900 mb-2">Aucun utilisateur trouvé</p>
+          <p className="text-xl font-bold text-gray-900 mb-2">{t('No users found')}</p>
           <p className="text-sm font-medium text-gray-400 max-w-xs">
-            {searchQuery ? 'Aucun résultat pour votre recherche.' : 'Aucun utilisateur enregistré pour le moment.'}
+            {searchQuery ? t('No results for your search.') : t('No registered users at the moment.')}
           </p>
         </div>
       ) : viewMode === 'grid' ? (
@@ -292,11 +294,11 @@ export function UserManager() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="text-left py-4 px-4 text-[10px] font-medium text-gray-400 uppercase tracking-widest">Utilisateur</th>
-                <th className="text-left py-4 px-4 text-[10px] font-medium text-gray-400 uppercase tracking-widest">Rôle</th>
-                <th className="text-left py-4 px-4 text-[10px] font-medium text-gray-400 uppercase tracking-widest">Statut</th>
-                <th className="text-left py-4 px-4 text-[10px] font-medium text-gray-400 uppercase tracking-widest">Téléphone</th>
-                <th className="text-right py-4 px-4 text-[10px] font-medium text-gray-400 uppercase tracking-widest">Actions</th>
+                <th className="text-left py-4 px-4 text-[10px] font-medium text-gray-400 uppercase tracking-widest">{t('User')}</th>
+                <th className="text-left py-4 px-4 text-[10px] font-medium text-gray-400 uppercase tracking-widest">{t('Role')}</th>
+                <th className="text-left py-4 px-4 text-[10px] font-medium text-gray-400 uppercase tracking-widest">{t('Status')}</th>
+                <th className="text-left py-4 px-4 text-[10px] font-medium text-gray-400 uppercase tracking-widest">{t('Phone')}</th>
+                <th className="text-right py-4 px-4 text-[10px] font-medium text-gray-400 uppercase tracking-widest">{t('Actions')}</th>
               </tr>
             </thead>
             <tbody>

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { QuoteRequest, ConfiguredProduct } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 
 interface EstimationDrawerProps {
   isOpen: boolean;
@@ -40,6 +41,8 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
   const [activeTab, setActiveTab] = useState<'client' | 'hardware' | 'tech' | 'payment'>('client');
   const [viewMode, setViewMode] = useState<'client' | 'supplier'>('client');
   const [localData, setLocalData] = useState<QuoteRequest | null>(null);
+
+  const { t } = useI18n();
 
   useEffect(() => {
     if (data) {
@@ -133,7 +136,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                       Estimation <span className="text-blue-500">{localData?.id.slice(0, 8).toUpperCase()}</span>
                     </h2>
                     <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.2em] mt-0.5">
-                      Console de Modification "Aura Pro"
+                      {t('estimation.drawer.consoleTitle')}
                     </p>
                   </div>
                 </div>
@@ -148,7 +151,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                     )}
                   >
                     {viewMode === 'client' ? <Eye size={14} /> : <EyeOff size={14} />}
-                    {viewMode === 'client' ? 'Vue Client' : 'Vue Fournisseur'}
+                    {viewMode === 'client' ? t('estimation.drawer.clientView') : t('estimation.drawer.supplierView')}
                   </button>
                   <button
                     onClick={onClose}
@@ -162,10 +165,10 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
               {/* Tabs */}
               <div className="flex items-center gap-2 p-1 bg-black/40 rounded-2xl border border-white/5">
                 {[
-                  { id: 'client', label: 'Client', icon: User },
-                  { id: 'hardware', label: 'Matériel', icon: Settings },
-                  { id: 'tech', label: 'Technique', icon: Cpu },
-                  { id: 'payment', label: 'Paiement', icon: CreditCard },
+                  { id: 'client', label: t('admin.client'), icon: User },
+                  { id: 'hardware', label: t('estimation.drawer.tabHardware'), icon: Settings },
+                  { id: 'tech', label: t('estimation.drawer.tabTech'), icon: Cpu },
+                  { id: 'payment', label: t('estimation.drawer.tabPayment'), icon: CreditCard },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -192,7 +195,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="grid grid-cols-2 gap-6 text-['Space_Grotesk']">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Entreprise / Nom</label>
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">{t('estimation.drawer.companyName')}</label>
                       <input 
                         className="w-full bg-[#18181b] border border-white/5 rounded-2xl px-5 py-3.5 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-all"
                         value={localData?.client.companyName}
@@ -200,7 +203,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Email</label>
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">{t('details.email')}</label>
                       <input 
                         className="w-full bg-[#18181b] border border-white/5 rounded-2xl px-5 py-3.5 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-all font-mono"
                         value={localData?.client.email}
@@ -208,7 +211,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Téléphone</label>
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">{t('estimation.drawer.phone')}</label>
                       <input 
                         className="w-full bg-[#18181b] border border-white/5 rounded-2xl px-5 py-3.5 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-all"
                         value={localData?.client.phone}
@@ -216,7 +219,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Statut</label>
+                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">{t('estimation.drawer.status')}</label>
                       <div className="h-[52px] bg-[#18181b] border border-white/5 rounded-2xl px-5 flex items-center justify-between">
                          <span className="text-sm font-bold text-blue-500 uppercase">{localData?.status}</span>
                          <Clock size={16} className="text-zinc-600" />
@@ -224,7 +227,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Commentaires Client</label>
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">{t('estimation.drawer.clientNotes')}</label>
                     <textarea 
                       className="w-full bg-[#18181b] border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-all h-32 resize-none"
                       value={localData?.client.notes}
@@ -238,11 +241,11 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
               {activeTab === 'hardware' && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="flex items-center justify-between mb-4">
-                     <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                       <Package size={16} className="text-blue-500" />
-                       Configuration Écrans
-                     </h3>
-                     <button className="text-[10px] text-blue-500 font-bold uppercase tracking-widest hover:underline">+ Ajouter</button>
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <Package size={16} className="text-blue-500" />
+                        {t('estimation.drawer.screenConfig')}
+                      </h3>
+                      <button className="text-[10px] text-blue-500 font-bold uppercase tracking-widest hover:underline">{t('estimation.drawer.add')}</button>
                   </div>
                   
                   <div className="space-y-4">
@@ -255,7 +258,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                              </div>
                              <div>
                                <h4 className="font-bold text-white text-base leading-tight">{product.productName}</h4>
-                               <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Série professionnelle {product.productType}</p>
+                               <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Professional series {product.productType}</p>
                              </div>
                            </div>
                            <button className="opacity-0 group-hover:opacity-100 p-2 text-zinc-500 hover:text-red-500 transition-all">
@@ -265,19 +268,19 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
 
                         <div className="grid grid-cols-4 gap-4">
                            <div className="space-y-1">
-                             <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Largeur</span>
-                             <div className="bg-black/20 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white border border-white/5 flex items-center justify-between">
-                               {product.width}m
-                             </div>
-                           </div>
-                           <div className="space-y-1">
-                             <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Hauteur</span>
-                             <div className="bg-black/20 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white border border-white/5 flex items-center justify-between">
-                               {product.height}m
-                             </div>
-                           </div>
-                           <div className="space-y-1">
-                             <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Quantité</span>
+                            <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{t('estimation.drawer.width')}</span>
+                            <div className="bg-black/20 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white border border-white/5 flex items-center justify-between">
+                              {product.width}m
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{t('estimation.drawer.height')}</span>
+                            <div className="bg-black/20 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white border border-white/5 flex items-center justify-between">
+                              {product.height}m
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{t('estimation.drawer.quantity')}</span>
                              <input 
                                type="number"
                                className="w-full bg-black/40 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white border border-white/10 focus:border-blue-500 focus:outline-none"
@@ -286,7 +289,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                              />
                            </div>
                            <div className="space-y-1">
-                             <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">Prix (HT)</span>
+                             <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{t('estimation.drawer.priceExclTax')}</span>
                              <div className="bg-black/20 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-[#10b981] font-bold border border-[#10b981]/10">
                                {product.lineTotal.toLocaleString('fr-FR')} €
                              </div>
@@ -303,7 +306,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
                            <Settings size={18} className="text-blue-500" />
                          </div>
-                         <span className="text-[10px] font-bold text-white uppercase tracking-widest">Installation</span>
+                          <span className="text-[10px] font-bold text-white uppercase tracking-widest">{t('estimation.drawer.installation')}</span>
                        </div>
                        <input 
                          className="w-24 bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white text-right focus:outline-none"
@@ -316,7 +319,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                            <Truck size={18} className="text-emerald-500" />
                          </div>
-                         <span className="text-[10px] font-bold text-white uppercase tracking-widest">Livraison</span>
+                          <span className="text-[10px] font-bold text-white uppercase tracking-widest">{t('estimation.drawer.delivery')}</span>
                        </div>
                        <input 
                          className="w-24 bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white text-right focus:outline-none"
@@ -336,23 +339,23 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                          <ShieldCheck size={28} className="text-blue-500" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-white uppercase tracking-wide">Validation Technique</h4>
-                        <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">Ces spécifications sont transmises au fournisseur pour la validation de faisabilité.</p>
+                         <h4 className="text-sm font-bold text-white uppercase tracking-wide">{t('estimation.drawer.techValidation')}</h4>
+                         <p className="text-[11px] text-zinc-500 leading-relaxed mt-1">{t('estimation.drawer.techValidationDesc')}</p>
                       </div>
                    </div>
 
                    <div className="space-y-4">
                      <div className="space-y-1.5">
-                       <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">Notes Internes / Fournisseur</label>
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">{t('estimation.drawer.supplierNotes')}</label>
                        <textarea 
                          className="w-full bg-[#18181b] border border-white/5 rounded-2xl px-5 py-4 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-all h-48 resize-none"
                          value={localData?.supplierNotes}
                          onChange={(e) => handleUpdateField('supplierNotes', e.target.value)}
-                         placeholder="Instructions de fabrication, câblage, structure..."
+                          placeholder={t('estimation.drawer.supplierNotesPlaceholder')}
                        />
                      </div>
                      <div className="p-5 bg-black/20 border border-white/5 rounded-2xl border-dashed">
-                        <p className="text-[10px] text-zinc-600 text-center font-bold uppercase tracking-[0.2em]">Cliquer pour joindre un plan technique (.PDF)</p>
+                         <p className="text-[10px] text-zinc-600 text-center font-bold uppercase tracking-[0.2em]">{t('estimation.drawer.attachTechPlan')}</p>
                      </div>
                    </div>
                 </div>
@@ -363,34 +366,34 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="grid grid-cols-3 gap-4">
                      <div className="bg-[#18181b] border border-white/5 rounded-3xl p-5 space-y-2">
-                        <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Acompte (30%)</span>
-                        <p className="text-base font-['Space_Grotesk'] font-bold text-white">{(totals.total * 0.3).toLocaleString('fr-FR')} €</p>
-                        <div className="flex items-center gap-1.5 text-emerald-500">
-                           <CheckCircle2 size={12} />
-                           <span className="text-[8px] font-black uppercase tracking-widest">Payé</span>
-                        </div>
-                     </div>
-                     <div className="bg-[#18181b] border border-white/5 rounded-3xl p-5 space-y-2">
-                        <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em]">Intermédiaire</span>
-                        <p className="text-base font-['Space_Grotesk'] font-bold text-white">{(totals.total * 0.4).toLocaleString('fr-FR')} €</p>
-                        <div className="flex items-center gap-1.5 text-zinc-600">
-                           <Clock size={12} />
-                           <span className="text-[8px] font-black uppercase tracking-widest">En attente</span>
-                        </div>
-                     </div>
-                     <div className="bg-[#18181b] border border-white/5 rounded-3xl p-5 space-y-2 border-emerald-500/20 bg-emerald-500/5">
-                        <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-[0.2em]">Solde</span>
-                        <p className="text-base font-['Space_Grotesk'] font-bold text-white">{(totals.total * 0.3).toLocaleString('fr-FR')} €</p>
-                        <div className="flex items-center gap-1.5 text-emerald-400">
-                           <CheckCircle2 size={12} />
-                           <span className="text-[8px] font-black uppercase tracking-widest">Généré</span>
-                        </div>
+                         <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em]">{t('estimation.drawer.deposit')}</span>
+                         <p className="text-base font-['Space_Grotesk'] font-bold text-white">{(totals.total * 0.3).toLocaleString('fr-FR')} €</p>
+                         <div className="flex items-center gap-1.5 text-emerald-500">
+                            <CheckCircle2 size={12} />
+                             <span className="text-[8px] font-black uppercase tracking-widest">{t('estimation.drawer.paid')}</span>
+                         </div>
+                      </div>
+                      <div className="bg-[#18181b] border border-white/5 rounded-3xl p-5 space-y-2">
+                          <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em]">{t('estimation.drawer.pending')}</span>
+                         <p className="text-base font-['Space_Grotesk'] font-bold text-white">{(totals.total * 0.4).toLocaleString('fr-FR')} €</p>
+                         <div className="flex items-center gap-1.5 text-zinc-600">
+                            <Clock size={12} />
+                            <span className="text-[8px] font-black uppercase tracking-widest">{t('estimation.drawer.waiting')}</span>
+                         </div>
+                      </div>
+                      <div className="bg-[#18181b] border border-white/5 rounded-3xl p-5 space-y-2 border-emerald-500/20 bg-emerald-500/5">
+                         <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-[0.2em]">{t('estimation.drawer.balance')}</span>
+                         <p className="text-base font-['Space_Grotesk'] font-bold text-white">{(totals.total * 0.3).toLocaleString('fr-FR')} €</p>
+                         <div className="flex items-center gap-1.5 text-emerald-400">
+                            <CheckCircle2 size={12} />
+                             <span className="text-[8px] font-black uppercase tracking-widest">{t('estimation.drawer.generated')}</span>
+                         </div>
                      </div>
                   </div>
 
                   <div className="bg-[#18181b] border border-white/5 rounded-3xl overflow-hidden">
                      <div className="p-5 border-b border-white/5 flex items-center justify-between bg-black/20">
-                        <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">Historique Transactions</h4>
+                         <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">{t('estimation.drawer.transactionHistory')}</h4>
                         <button className="p-2 text-zinc-500 hover:text-white"><Plus size={16} /></button>
                      </div>
                      <div className="divide-y divide-white/5">
@@ -401,13 +404,13 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                                   <CreditCard size={18} />
                                </div>
                                <div>
-                                 <p className="text-xs font-bold text-white">Virement SEPA #TRX-9482{i}</p>
+                                  <p className="text-xs font-bold text-white">{t('estimation.drawer.sepaTransfer')} #TRX-9482{i}</p>
                                  <p className="text-[9px] text-zinc-500 font-['JetBrains_Mono'] mt-0.5">20/04/2026 • 14:32</p>
                                </div>
                              </div>
                              <div className="text-right">
                                <p className="text-xs font-bold text-[#10b981] font-['Space_Grotesk']">+ 3 450,00 €</p>
-                               <span className="text-[8px] font-black uppercase tracking-widest text-[#10b981]/60">Validé</span>
+                                 <span className="text-[8px] font-black uppercase tracking-widest text-[#10b981]/60">{t('estimation.drawer.approved')}</span>
                              </div>
                           </div>
                         ))}
@@ -427,7 +430,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                   <div className="flex flex-col gap-1">
                      <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 bg-[#10b981] rounded-full animate-pulse" />
-                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">À PAYER (TTC)</span>
+                         <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">{t('estimation.drawer.toPay')}</span>
                      </div>
                      <div className="text-4xl font-['Space_Grotesk'] font-black text-white tracking-tighter">
                         {totals.total.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} <span className="text-lg text-zinc-600 ml-1">€</span>
@@ -436,7 +439,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                   
                   <div className="flex gap-3">
                      <button className="px-8 py-4 bg-white/5 border border-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-white transition-all">
-                        Bon de Commande
+                         {t('estimation.drawer.orderForm')}
                      </button>
                      <button 
                        onClick={() => {
@@ -445,7 +448,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                        }}
                        className="px-10 py-4 bg-gradient-to-br from-[#10b981] to-[#059669] hover:from-[#34d399] hover:to-[#10b981] text-white rounded-2xl text-[10px] font-bold uppercase tracking-widest shadow-xl shadow-emerald-900/20 transition-all active:scale-95"
                      >
-                        Valider Modification
+                        {t('estimation.drawer.validateChanges')}
                      </button>
                   </div>
                </div>

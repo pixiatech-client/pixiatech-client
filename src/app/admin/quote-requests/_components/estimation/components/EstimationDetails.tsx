@@ -45,7 +45,7 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                     </button>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold text-zinc-900 tracking-tight">Détails de l'estimation</h2>
+                        <h2 className="text-lg font-bold text-zinc-900 tracking-tight">Estimation Details</h2>
                         <span className="text-zinc-400 font-bold tracking-wide text-[10px] uppercase">{estimation.number}</span>
                       </div>
                     </div>
@@ -92,7 +92,7 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                       <span className="text-zinc-600">{estimation.email || '-'}</span>
                     </div>
                     <div className="flex gap-2">
-                      <span className="font-bold text-zinc-900">Téléphone:</span>
+                      <span className="font-bold text-zinc-900">Phone:</span>
                       <span className="text-zinc-600">{estimation.phone || '-'}</span>
                     </div>
                   </div>
@@ -148,7 +148,7 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
 
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1">
-                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">Coût de livraison (€)</label>
+                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">Delivery cost (€)</label>
                     <input
                       type="number"
                       defaultValue={0}
@@ -186,7 +186,7 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
 
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1">
-                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">Coût de main d'oeuvre (€)</label>
+                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">Labor cost (€)</label>
                     <input
                       type="number"
                       defaultValue={0}

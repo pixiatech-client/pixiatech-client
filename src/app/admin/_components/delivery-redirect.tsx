@@ -15,8 +15,10 @@ import { ZoneManager } from '../delivery/_components/zone-manager';
 import { DepartmentFeesForm } from '../delivery/_components/department-fees-form';
 import { DefaultFeeForm } from '../delivery/_components/default-fee-form';
 import { FreeShippingForm } from '../delivery/_components/free-shipping-form';
+import { useAdminT } from '@/hooks/useAdminT';
 
 export default function DeliveryContent() {
+    const { t } = useAdminT();
     const [settings, setSettings] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -38,9 +40,9 @@ export default function DeliveryContent() {
     return (
         <Card className="rounded-none md:rounded-[2.5rem] border-0 shadow-none md:shadow-[0_20px_50px_rgba(0,0,0,0.05)] bg-white overflow-hidden">
             <CardHeader className="pb-6 pt-8 px-0 md:px-10 border-b border-gray-50 bg-white">
-                <CardTitle className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight px-4 md:px-0">Logistique & Livraison</CardTitle>
+                <CardTitle className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight px-4 md:px-0">{t("Logistics & Delivery")}</CardTitle>
                 <CardDescription className="text-sm md:text-base font-medium text-slate-500 mt-2 px-4 md:px-0">
-                    Gérez vos zones de livraison, tarifs et seuils de gratuité en un seul endroit.
+                    {t("Manage your delivery zones, rates, and free shipping thresholds in one place.")}
                 </CardDescription>
             </CardHeader>
             <CardContent className="p-0 md:p-10 bg-gray-50/30">
@@ -54,8 +56,8 @@ export default function DeliveryContent() {
                                     <Map className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
                                 </div>
                                 <div className="text-left">
-                                    <div className="text-base md:text-lg font-bold text-slate-900 uppercase tracking-tight">Zones de Livraison</div>
-                                    <div className="text-[10px] md:text-sm text-slate-500 font-medium">Secteurs géographiques</div>
+                                    <div className="text-base md:text-lg font-bold text-slate-900 uppercase tracking-tight">{t("Delivery Zones")}</div>
+                                    <div className="text-[10px] md:text-sm text-slate-500 font-medium">{t("Geographic areas")}</div>
                                 </div>
                             </div>
                         </AccordionTrigger>
@@ -72,8 +74,8 @@ export default function DeliveryContent() {
                                     <Truck className="w-5 h-5 md:w-6 md:h-6 text-amber-600" />
                                 </div>
                                 <div className="text-left">
-                                    <div className="text-base md:text-lg font-bold text-slate-900 uppercase tracking-tight">Tarifs par Zone</div>
-                                    <div className="text-[10px] md:text-sm text-slate-500 font-medium">Prix de transport spécifiques</div>
+                                    <div className="text-base md:text-lg font-bold text-slate-900 uppercase tracking-tight">{t("Zone Rates")}</div>
+                                    <div className="text-[10px] md:text-sm text-slate-500 font-medium">{t("Specific transport prices")}</div>
                                 </div>
                             </div>
                         </AccordionTrigger>
@@ -82,7 +84,7 @@ export default function DeliveryContent() {
                         </AccordionContent>
                     </AccordionItem>
 
-                    {/* Frais par Défaut Section */}
+                    {/* Default Fees Section */}
                     <AccordionItem value="default" className="border-0 rounded-none md:rounded-[2rem] bg-white overflow-hidden shadow-sm md:shadow-[0_10px_30px_rgba(0,0,0,0.02)]">
                         <AccordionTrigger className="px-4 md:px-8 py-5 md:py-6 hover:no-underline hover:bg-gray-50/50 transition-all">
                             <div className="flex items-center gap-4 md:gap-5">
@@ -90,8 +92,8 @@ export default function DeliveryContent() {
                                     <Settings className="w-5 h-5 md:w-6 md:h-6 text-slate-600" />
                                 </div>
                                 <div className="text-left">
-                                    <div className="text-base md:text-lg font-bold text-slate-900 uppercase tracking-tight">Frais par Défaut</div>
-                                    <div className="text-[10px] md:text-sm text-slate-500 font-medium">Zone non configurée</div>
+                                    <div className="text-base md:text-lg font-bold text-slate-900 uppercase tracking-tight">{t("Default Fees")}</div>
+                                    <div className="text-[10px] md:text-sm text-slate-500 font-medium">{t("Unconfigured zone")}</div>
                                 </div>
                             </div>
                         </AccordionTrigger>
@@ -108,8 +110,8 @@ export default function DeliveryContent() {
                                     <Percent className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
                                 </div>
                                 <div className="text-left">
-                                    <div className="text-base md:text-lg font-bold text-slate-900 uppercase tracking-tight">Livraison Gratuite</div>
-                                    <div className="text-[10px] md:text-sm text-slate-500 font-medium">Seuils et conditions</div>
+                                    <div className="text-base md:text-lg font-bold text-slate-900 uppercase tracking-tight">{t("Free Shipping")}</div>
+                                    <div className="text-[10px] md:text-sm text-slate-500 font-medium">{t("Thresholds and conditions")}</div>
                                 </div>
                             </div>
                         </AccordionTrigger>

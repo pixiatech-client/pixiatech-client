@@ -42,18 +42,18 @@ interface TabItem {
 }
 
 const tabsConfig: TabItem[] = [
-    { id: 'general', label: 'Général', icon: Settings },
+    { id: 'general', label: 'General', icon: Settings },
     { id: 'images', label: 'Images', icon: ImageIcon },
-    { id: 'content', label: 'Contenu', icon: FileText },
-    { id: 'personalization', label: 'Personnalisation', icon: Palette },
+    { id: 'content', label: 'Content', icon: FileText },
+    { id: 'personalization', label: 'Personalization', icon: Palette },
     { id: 'wizard', label: 'Wizard', icon: Wand2 },
-    { id: 'livraison', label: 'Livraison', icon: Truck },
-    { id: 'main-doeuvre', label: 'Main d\'œuvre', icon: HardHat },
+    { id: 'livraison', label: 'Delivery', icon: Truck },
+    { id: 'main-doeuvre', label: 'Labor', icon: HardHat },
     { id: 'pdf', label: 'PDF', icon: FileType },
-    { id: 'messaging', label: 'Messagerie', icon: MessageSquare },
-    { id: 'emergency', label: 'Urgence', icon: AlertTriangle },
-    { id: 'hint-bubble', label: 'Bulles d\'aide', icon: MessageSquare },
-    { id: 'software', label: 'Logiciel', icon: Settings },
+    { id: 'messaging', label: 'Messaging', icon: MessageSquare },
+    { id: 'emergency', label: 'Emergency', icon: AlertTriangle },
+    { id: 'hint-bubble', label: 'Hint Bubbles', icon: MessageSquare },
+    { id: 'software', label: 'Software', icon: Settings },
 ];
 
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
@@ -186,8 +186,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
             <div className="flex-1 min-w-0 flex flex-col pt-2 lg:pt-0">
                 {!isMobile && (
                     <div className="mb-6 md:mb-8 px-4 lg:px-0">
-                        <h2 className="text-2xl md:text-3xl font-black text-[#1a1d21]">Configuration Système</h2>
-                        <p className="text-gray-400 font-medium text-xs md:text-sm mt-2">Gérez les options globales, les ressources et les paramètres de sécurité de votre plateforme.</p>
+                        <h2 className="text-2xl md:text-3xl font-black text-[#1a1d21]">System Configuration</h2>
+                        <p className="text-gray-400 font-medium text-xs md:text-sm mt-2">Manage global options, resources, and security settings for your platform.</p>
                     </div>
                 )}
                 

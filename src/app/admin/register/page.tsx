@@ -23,10 +23,10 @@ import { registerUser } from '@/app/admin/actions';
 import { Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 const formSchema = z.object({
-  displayName: z.string().min(2, "Le nom d'utilisateur est requis."),
-  email: z.string().email("L'email est invalide."),
+  displayName: z.string().min(2, 'Username is required.'),
+  email: z.string().email('Email is invalid.'),
   phone: z.string().optional(),
-  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères.'),
+  password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -53,21 +53,21 @@ function RegisterForm() {
 
     if (result.success) {
       toast({
-        title: 'Inscription réussie',
-        description: "Votre compte est maintenant en attente d'approbation par un administrateur.",
+        title: 'Registration successful',
+        description: 'Your account is now pending approval by an administrator.',
         variant: 'success',
       });
       router.push('/admin/login');
     } else {
-      setError(result.error || "Une erreur inconnue est survenue.");
+      setError(result.error || 'An unknown error occurred.');
     }
   };
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="displayName">Nom complet</Label>
-        <Input id="displayName" placeholder="Jean Dupont" {...form.register('displayName')} />
+        <Label htmlFor="displayName">Full name</Label>
+        <Input id="displayName" placeholder="John Doe" {...form.register('displayName')} />
         {form.formState.errors.displayName && <p className="text-sm text-destructive">{form.formState.errors.displayName.message}</p>}
       </div>
       <div className="space-y-2">
@@ -76,11 +76,11 @@ function RegisterForm() {
          {form.formState.errors.email && <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>}
       </div>
        <div className="space-y-2">
-        <Label htmlFor="phone">Numéro de téléphone</Label>
+        <Label htmlFor="phone">Phone number</Label>
         <Input id="phone" type="tel" placeholder="+33612345678" {...form.register('phone')} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Mot de passe</Label>
+        <Label htmlFor="password">Password</Label>
         <div className="relative">
             <Input 
                 id="password" 
@@ -105,7 +105,7 @@ function RegisterForm() {
       
       <div className="flex flex-col gap-4 pt-2">
         <Button type="submit" className="w-full" size="lg" disabled={form.formState.isSubmitting}>
-           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "S'inscrire"}
+           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Sign up'}
         </Button>
       </div>
     </form>
@@ -122,18 +122,18 @@ export default function RegisterPage() {
         </div>
         <Card className="relative shadow-lg sm:rounded-3xl sm:p-8 max-w-md w-full">
           <CardHeader className="text-center">
-            <CardTitle>Créer un compte</CardTitle>
+            <CardTitle>Create an account</CardTitle>
             <CardDescription>
-              Rejoignez la plateforme pour créer des estimations.
+              Join the platform to create estimates.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <RegisterForm />
           </CardContent>
            <CardFooter className="flex-col gap-4 items-center text-sm pt-6">
-            <p>Déjà un compte? <Link href="/admin/login" className="font-semibold underline">Se connecter</Link></p>
+            <p>Already have an account? <Link href="/admin/login" className="font-semibold underline">Log in</Link></p>
             <Button variant="link" asChild className="text-muted-foreground mt-4">
-              <Link href="/"><ArrowLeft className="mr-2 h-4 w-4"/> Retour au site</Link>
+              <Link href="/"><ArrowLeft className="mr-2 h-4 w-4"/> Back to site</Link>
           </Button>
           </CardFooter>
         </Card>

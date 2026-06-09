@@ -8,6 +8,7 @@ import { collection, query, where, limit, doc, updateDoc, orderBy } from 'fireba
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NotificationFirestore } from '@/lib/types';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface Notification {
   id: string;
@@ -25,6 +26,7 @@ interface NotificationBellProps {
 }
 
 export function NotificationBell({ isDark = false, userRole }: NotificationBellProps) {
+  const { t } = useAdminT();
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -60,7 +62,7 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
 
     return sorted.map((n) => {
       const createdAt = n.createdAt?.toDate ? n.createdAt.toDate() : null;
-      const timeAgo = createdAt ? getRelativeTime(createdAt) : '';
+      const timeAgo = createdAt ? getRelativeTime(createdAt, t) : '';
       return {
         id: n.id,
         type: n.type,
@@ -126,10 +128,10 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
             >
               <div className="p-6 border-b border-gray-50 dark:border-white/5 flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">Notifications</h3>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white">{t("Notifications")}</h3>
                   {unreadCount > 0 && (
                     <p className="text-[10px] font-bold text-[#ff4d4d] uppercase tracking-wider mt-0.5">
-                      {unreadCount} nouveau(x) notification(s)
+                      {t(`${unreadCount} new notification${unreadCount > 1 ? 's' : ''}`)}
                     </p>
                   )}
                 </div>
@@ -175,8 +177,8 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
                     <div className="w-16 h-16 bg-gray-50 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Bell className="w-8 h-8 text-gray-300 dark:text-gray-700" />
                     </div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">Aucune notification</p>
-                    <p className="text-xs text-gray-500 mt-1">Vous êtes à jour !</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{t("No notifications")}</p>
+                    <p className="text-xs text-gray-500 mt-1">{t("You are up to date!")}</p>
                   </div>
                 )}
               </div>
@@ -187,7 +189,7 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
                   onClick={() => setIsOpen(false)}
                   className="flex w-full items-center justify-center rounded-xl py-3 text-xs font-bold text-gray-600 dark:text-gray-400 transition-all hover:bg-white dark:hover:bg-white/10 hover:shadow-sm uppercase tracking-widest"
                 >
-                  Voir toutes les notifications
+                  {t("View all notifications")}
                 </Link>
               </div>
             </motion.div>
@@ -198,16 +200,16 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
   );
 }
 
-function getRelativeTime(date: Date): string {
+function getRelativeTime(date: Date, t: (s: string) => string): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMin = Math.floor(diffMs / 60000);
   const diffHr = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
 
-  if (diffMin < 1) return "À l'instant";
-  if (diffMin < 60) return `Il y a ${diffMin} min`;
-  if (diffHr < 24) return `Il y a ${diffHr}h`;
-  if (diffDay < 7) return `Il y a ${diffDay}j`;
-  return date.toLocaleDateString('fr-FR');
+  if (diffMin < 1) return t('Just now');
+  if (diffMin < 60) return `${diffMin} ${t('min ago')}`;
+  if (diffHr < 24) return `${diffHr}${t('h ago')}`;
+  if (diffDay < 7) return `${diffDay}${t('d ago')}`;
+  return date.toLocaleDateString('en-US');
 }

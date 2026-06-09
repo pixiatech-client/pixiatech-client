@@ -21,7 +21,7 @@ const ThemesPage = () => {
       setThemes(fetchedThemes);
       setSettings(fetchedSettings);
     } catch (error) {
-       toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de charger les données des thèmes.' });
+       toast({ variant: 'destructive', title: 'Error', description: 'Unable to load theme data.' });
     } finally {
        setIsLoading(false);
     }
@@ -48,9 +48,9 @@ const ThemesPage = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gestion des Thèmes</CardTitle>
+        <CardTitle>Theme Management</CardTitle>
         <CardDescription>
-          Personnalisez l'apparence de l'application d'estimation en temps réel.
+          Customize the appearance of the estimation app in real time.
         </CardDescription>
       </CardHeader>
       <CardContent>

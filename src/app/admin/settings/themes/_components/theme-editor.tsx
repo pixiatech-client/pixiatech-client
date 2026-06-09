@@ -168,7 +168,7 @@ export function ThemeEditor({ themes: initialThemes, settings: initialSettings, 
     }, [form, activeTheme, debouncedSaveTheme]);
 
     const handleNewTheme = async () => {
-        const newName = `Thème ${initialThemes.length + 1}`;
+        const newName = `Theme ${initialThemes.length + 1}`;
         const newThemeData: Omit<Theme, 'id' | 'createdAt'> = {
             name: newName,
             colors: { adminBackground: mode === 'dark' ? '222.2 84% 4.9%' : '240 10% 97%' }
@@ -176,27 +176,27 @@ export function ThemeEditor({ themes: initialThemes, settings: initialSettings, 
         startSaving(async () => {
              const result = await saveTheme(newThemeData);
              if (result.success && result.theme) {
-                toast({ title: "Thème créé", variant: 'success' });
+                toast({ title: "Theme created", variant: 'success' });
                 onDataChange(); // Refresh data to include the new theme
                 setActiveThemeId(result.theme.id);
              } else {
-                toast({ title: "Erreur", description: "Impossible de créer le thème.", variant: 'destructive' });
+                toast({ title: "Error", description: "Unable to create theme.", variant: 'destructive' });
              }
         });
     };
 
     const handleDeleteTheme = async (id: string) => {
         if (initialThemes.length <= 1) {
-            toast({ title: 'Action impossible', description: 'Vous devez conserver au moins un thème.' });
+            toast({ title: 'Action unavailable', description: 'You must keep at least one theme.' });
             return;
         }
         startSaving(async () => {
             const result = await deleteTheme(id);
             if (result.success) {
-                toast({ title: 'Thème supprimé', variant: 'info' });
+                toast({ title: 'Theme deleted', variant: 'info' });
                 onDataChange();
             } else {
-                 toast({ title: 'Erreur', description: result.error, variant: 'destructive' });
+                 toast({ title: 'Error', description: result.error, variant: 'destructive' });
             }
         });
     };
@@ -210,7 +210,7 @@ export function ThemeEditor({ themes: initialThemes, settings: initialSettings, 
     if (initialThemes.length === 0 && !isSaving) {
         return (
             <div className='text-center'>
-                <Button onClick={handleNewTheme}><PlusCircle className="mr-2 h-4 w-4"/> Créer un premier thème</Button>
+                <Button onClick={handleNewTheme}><PlusCircle className="mr-2 h-4 w-4"/> Create first theme</Button>
             </div>
         );
     }
@@ -223,17 +223,17 @@ export function ThemeEditor({ themes: initialThemes, settings: initialSettings, 
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Thèmes par mode d'affichage</CardTitle>
+                    <CardTitle>Themes by display mode</CardTitle>
                     <CardDescription>
-                        Choisissez un thème par défaut pour le mode clair et le mode sombre.
+                        Choose a default theme for light mode and dark mode.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label>Thème pour le mode clair</Label>
+                        <Label>Theme for light mode</Label>
                         <Select value={initialSettings.lightThemeId || ''} onValueChange={(value) => handleModeThemeChange(value, 'light')}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Choisir un thème..."/>
+                                <SelectValue placeholder="Choose a theme..."/>
                             </SelectTrigger>
                             <SelectContent>
                                 {initialThemes.map(theme => <SelectItem key={theme.id} value={theme.id}>{theme.name}</SelectItem>)}
@@ -241,10 +241,10 @@ export function ThemeEditor({ themes: initialThemes, settings: initialSettings, 
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label>Thème pour le mode sombre</Label>
+                        <Label>Theme for dark mode</Label>
                         <Select value={initialSettings.darkThemeId || ''} onValueChange={(value) => handleModeThemeChange(value, 'dark')}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Choisir un thème..."/>
+                                <SelectValue placeholder="Choose a theme..."/>
                             </SelectTrigger>
                             <SelectContent>
                                 {initialThemes.map(theme => <SelectItem key={theme.id} value={theme.id}>{theme.name}</SelectItem>)}
@@ -284,14 +284,14 @@ export function ThemeEditor({ themes: initialThemes, settings: initialSettings, 
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                        <AlertDialogTitle>Supprimer le thème?</AlertDialogTitle>
+                                        <AlertDialogTitle>Delete theme?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            Cette action est irréversible.
+                                            This action is irreversible.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeleteTheme(activeThemeId!)}>Supprimer</AlertDialogAction>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDeleteTheme(activeThemeId!)}>Delete</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
@@ -300,14 +300,14 @@ export function ThemeEditor({ themes: initialThemes, settings: initialSettings, 
                     <CardContent>
                         <div className="space-y-4">
                             <div>
-                                <h4 className="font-medium">Couleurs de l'interface d'administration</h4>
+                                <h4 className="font-medium">Admin Interface Colors</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mt-2">
                                     <Controller
                                         name="colors.adminBackground"
                                         control={form.control}
                                         render={({ field }) => (
                                             <ColorPickerInput 
-                                                label="Arrière-plan Admin"
+                                                label="Admin Background"
                                                 value={field.value || ''}
                                                 onChange={field.onChange}
                                             />

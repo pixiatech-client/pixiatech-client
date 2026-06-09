@@ -47,12 +47,12 @@ function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
     startTransition(async () => {
       try {
         await addDoc(collection(firestore, 'zones'), { name: newZoneName.trim(), color: newZoneColor });
-        toast({ title: "Zone ajoutée", variant: 'success' });
+        toast({ title: "Zone added", variant: 'success' });
         setNewZoneName('');
         setNewZoneColor(COLORS[0]);
         onZoneUpdate();
       } catch (error) {
-        toast({ title: "Erreur", description: "Impossible d'ajouter la zone.", variant: 'destructive' });
+        toast({ title: "Error", description: "Unable to add zone.", variant: 'destructive' });
       }
     });
   };
@@ -72,11 +72,11 @@ function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
 
             await deleteDoc(doc(firestore, 'zones', zoneId));
 
-            toast({ title: "Zone supprimée", description: "Les villes associées ont été désassignées.", variant: 'info' });
+            toast({ title: "Zone deleted", description: "Associated cities have been unassigned.", variant: 'info' });
             onZoneUpdate();
         } catch (error) {
             console.error("Error deleting zone: ", error);
-            toast({ title: "Erreur", description: "Impossible de supprimer la zone.", variant: 'destructive' });
+            toast({ title: "Error", description: "Unable to delete zone.", variant: 'destructive' });
         }
     });
   };
@@ -84,8 +84,8 @@ function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
   return (
     <Card className="border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white">
       <CardHeader className="px-0 md:px-6">
-        <CardTitle>Gestion des Zones</CardTitle>
-        <CardDescription>Créez des zones géographiques et assignez-leur une couleur pour une meilleure organisation.</CardDescription>
+        <CardTitle>Zone Management</CardTitle>
+        <CardDescription>Create geographic zones and assign them a color for better organization.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 px-0 md:px-6">
         <div className="flex gap-2">
@@ -109,20 +109,20 @@ function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
             </PopoverContent>
           </Popover>
           <Input
-            placeholder="Nom de la nouvelle zone (ex: Zone A, Paris Sud...)"
+            placeholder="Name of the new zone (e.g., Zone A, South Paris...)"
             value={newZoneName}
             onChange={(e) => setNewZoneName(e.target.value)}
           />
           <Button onClick={handleAddZone} disabled={isPending || !newZoneName.trim()}>
             {isPending ? <Loader2 className="animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-            Créer
+            Create
           </Button>
         </div>
         <div className="border rounded-md">
             <Table>
                 <TableBody>
                     {isLoadingZones ? (
-                         <TableRow><TableCell className="h-24 text-center"><Loader2 className="animate-spin inline-block mr-2" /> Chargement...</TableCell></TableRow>
+                         <TableRow><TableCell className="h-24 text-center"><Loader2 className="animate-spin inline-block mr-2" /> Loading...</TableCell></TableRow>
                     ) : zones && zones.length > 0 ? (
                         zones.map(zone => (
                             <TableRow key={zone.id}>
@@ -137,7 +137,7 @@ function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
                             </TableRow>
                         ))
                     ) : (
-                         <TableRow><TableCell className="text-center h-24">Aucune zone créée.</TableCell></TableRow>
+                         <TableRow><TableCell className="text-center h-24">No zones created.</TableCell></TableRow>
                     )}
                 </TableBody>
             </Table>
@@ -192,7 +192,7 @@ export function ZoneManager() {
       }
     } catch (error) {
       console.error("Error fetching cities: ", error);
-      toast({ title: "Erreur de chargement", description: "Impossible de charger les villes.", variant: 'destructive' });
+      toast({ title: "Loading error", description: "Unable to load cities.", variant: 'destructive' });
     } finally {
       setIsLoadingCities(false);
     }
@@ -224,7 +224,7 @@ export function ZoneManager() {
         }
 
         if (citiesToAdd.length === 0) {
-          toast({ title: "Format invalide", description: "Veuillez utiliser le format 'Ville, Code Postal'.", variant: 'destructive' });
+          toast({ title: "Invalid format", description: "Please use the format 'City, Postal Code'.", variant: 'destructive' });
           return;
         }
 
@@ -234,12 +234,12 @@ export function ZoneManager() {
         });
 
         await batch.commit();
-        toast({ title: `${citiesToAdd.length} ville(s) ajoutée(s)`, variant: 'success' });
+        toast({ title: `${citiesToAdd.length} city(ies) added`, variant: 'success' });
         setNewCitiesText('');
         refreshCurrentPage();
       } catch (error) {
         console.error("Error adding cities: ", error);
-        toast({ title: "Erreur", description: "Impossible d'ajouter les villes.", variant: 'destructive' });
+        toast({ title: "Error", description: "Unable to add cities.", variant: 'destructive' });
       }
     });
   };
@@ -255,13 +255,13 @@ export function ZoneManager() {
         });
         await batch.commit();
 
-        toast({ title: "Ville(s) supprimée(s)", variant: 'info' });
+        toast({ title: "City(ies) deleted", variant: 'info' });
         setCitiesToDelete(null);
         setSelectedCityIds([]);
         refreshCurrentPage();
       } catch (error) {
         console.error("Error deleting cities: ", error);
-        toast({ title: "Erreur de suppression", variant: 'destructive' });
+        toast({ title: "Deletion error", variant: 'destructive' });
       }
     });
   };
@@ -273,12 +273,12 @@ export function ZoneManager() {
       try {
         const cityRef = doc(firestore, 'cities', editingCity.id);
         await updateDoc(cityRef, { name: editingCity.name, postalCode: editingCity.postalCode });
-        toast({ title: "Ville mise à jour", variant: 'success' });
+        toast({ title: "City updated", variant: 'success' });
         setEditingCity(null);
         refreshCurrentPage();
       } catch (error) {
         console.error("Error updating city: ", error);
-        toast({ title: "Erreur", description: "Impossible de mettre à jour la ville.", variant: 'destructive' });
+        toast({ title: "Error", description: "Unable to update city.", variant: 'destructive' });
       }
     });
   };
@@ -294,13 +294,13 @@ export function ZoneManager() {
                 batch.update(cityRef, { zoneId: targetZoneId });
             });
             await batch.commit();
-            toast({ title: "Assignation réussie", description: `${selectedCityIds.length} ville(s) déplacée(s) vers la zone.`, variant: 'success'});
+            toast({ title: "Assignment successful", description: `${selectedCityIds.length} city(ies) moved to zone.`, variant: 'success'});
             setAssignmentModalOpen(false);
             setSelectedCityIds([]);
             refreshCurrentPage();
         } catch (error) {
             console.error("Error assigning cities to zone: ", error);
-            toast({ title: "Erreur d'assignation", variant: 'destructive' });
+            toast({ title: "Assignment error", variant: 'destructive' });
         }
     });
   }
@@ -321,13 +321,13 @@ export function ZoneManager() {
 
         <Card className="border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white">
         <CardHeader className="px-0 md:px-6">
-            <CardTitle>Gestion des Villes</CardTitle>
-            <CardDescription>Ajoutez, modifiez et assignez des villes à vos zones de livraison.</CardDescription>
+            <CardTitle>City Management</CardTitle>
+            <CardDescription>Add, edit, and assign cities to your delivery zones.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 px-0 md:px-6">
             <div className="flex flex-col sm:flex-row gap-2">
             <Textarea
-                placeholder={"Paris, 75001\nMarseille, 13001\n(une ville par ligne, séparée par une virgule)"}
+                placeholder={"Paris, 75001\nMarseille, 13001\n(one city per line, separated by a comma)"}
                 value={newCitiesText}
                 onChange={(e) => setNewCitiesText(e.target.value)}
                 rows={4}
@@ -335,7 +335,7 @@ export function ZoneManager() {
             />
             <Button onClick={handleAddCities} disabled={isPending || !newCitiesText.trim()} className="w-full sm:w-auto">
                 {isPending ? <Loader2 className="animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                Ajouter
+                Add
             </Button>
             </div>
 
@@ -343,11 +343,11 @@ export function ZoneManager() {
             <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setAssignmentModalOpen(true)}>
                     <FolderUp className="mr-2 h-4 w-4" />
-                    Déplacer ({selectedCityIds.length})
+                    Move ({selectedCityIds.length})
                 </Button>
                 <Button variant="destructive" onClick={() => setCitiesToDelete(selectedCityIds)}>
                 <Trash2 className="mr-2 h-4 w-4" />
-                Supprimer ({selectedCityIds.length})
+                Delete ({selectedCityIds.length})
                 </Button>
             </div>
             )}
@@ -360,7 +360,7 @@ export function ZoneManager() {
                       <Checkbox
                         checked={!!isAllSelected}
                         onCheckedChange={handleSelectAll}
-                        aria-label="Tout sélectionner"
+                        aria-label="Select all"
                       />
                     </TableHead>
                     <TableHead>Ville</TableHead>
@@ -371,7 +371,7 @@ export function ZoneManager() {
                 </TableHeader>
                 <TableBody>
                 {isLoadingCities ? (
-                    <TableRow><TableCell colSpan={5} className="text-center h-24"><Loader2 className="animate-spin inline-block mr-2" /> Chargement...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center h-24"><Loader2 className="animate-spin inline-block mr-2" /> Loading...</TableCell></TableRow>
                 ) : cities && cities.length > 0 ? (
                     cities.map(city => {
                         const zone = zones?.find(z => z.id === city.zoneId);
@@ -383,12 +383,12 @@ export function ZoneManager() {
                                     <Checkbox
                                         checked={selectedCityIds.includes(city.id)}
                                         onCheckedChange={(checked) => handleSelectOne(city.id, !!checked)}
-                                        aria-label={`Sélectionner ${city.name}`}
+                                        aria-label={`Select ${city.name}`}
                                     />
                                     </TableCell>
                                     <TableCell className="font-bold text-slate-900">{city.name}</TableCell>
                                     <TableCell className="font-medium text-slate-600">{city.postalCode}</TableCell>
-                                    <TableCell>{zone ? <Badge style={{ backgroundColor: zone.color, color: 'white' }}>{zone.name}</Badge> : <span className="text-muted-foreground italic">Aucune</span>}</TableCell>
+                                    <TableCell>{zone ? <Badge style={{ backgroundColor: zone.color, color: 'white' }}>{zone.name}</Badge> : <span className="text-muted-foreground italic">None</span>}</TableCell>
                                     <TableCell className="text-right">
                                     <Button variant="ghost" size="icon" onClick={() => setEditingCity(city)}><FilePen className="h-4 w-4" /></Button>
                                     <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setCitiesToDelete([city.id])}><Trash2 className="h-4 w-4" /></Button>
@@ -439,7 +439,7 @@ export function ZoneManager() {
                                                         className="overflow-hidden bg-slate-50/50 border-t border-slate-100"
                                                     >
                                                         <div className="px-4 py-3 flex items-center justify-between gap-4">
-                                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Options rapides</div>
+                                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quick options</div>
                                                             <div className="flex gap-2">
                                                                 <Button 
                                                                     variant="outline" 
@@ -447,7 +447,7 @@ export function ZoneManager() {
                                                                     onClick={(e) => { e.stopPropagation(); setEditingCity(city); }}
                                                                     className="h-8 px-3 text-[10px] font-black uppercase tracking-widest bg-white hover:bg-slate-900 hover:text-white transition-all rounded-lg"
                                                                 >
-                                                                    <FilePen className="w-3.5 h-3.5 mr-1.5" /> Éditer
+                                                                     <FilePen className="w-3.5 h-3.5 mr-1.5" /> Edit
                                                                 </Button>
                                                                 <Button 
                                                                     variant="outline" 
@@ -455,7 +455,7 @@ export function ZoneManager() {
                                                                     onClick={(e) => { e.stopPropagation(); setCitiesToDelete([city.id]); }}
                                                                     className="h-8 px-3 text-[10px] font-black uppercase tracking-widest bg-white text-destructive border-destructive/20 hover:bg-destructive hover:text-white transition-all rounded-lg"
                                                                 >
-                                                                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Supprimer
+                                                                     <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete
                                                                 </Button>
                                                             </div>
                                                         </div>
@@ -469,7 +469,7 @@ export function ZoneManager() {
                         )
                     })
                 ) : (
-                    <TableRow><TableCell colSpan={5} className="text-center h-24 text-slate-400 font-medium italic">Aucune ville ajoutée.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center h-24 text-slate-400 font-medium italic">No cities added.</TableCell></TableRow>
                 )}
                 </TableBody>
             </Table>
@@ -487,27 +487,27 @@ export function ZoneManager() {
         <AlertDialog open={!!editingCity} onOpenChange={(open) => !open && setEditingCity(null)}>
             <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Modifier la ville</AlertDialogTitle>
+                <AlertDialogTitle>Edit city</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Modifiez le nom ou le code postal de cette ville.
+                    Modify the name or postal code of this city.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="space-y-4">
                 <Input
-                placeholder="Nom de la ville"
+                placeholder="City name"
                 value={editingCity?.name || ''}
                 onChange={(e) => setEditingCity(prev => prev ? { ...prev, name: e.target.value } : null)}
                 />
                 <Input
-                placeholder="Code Postal"
+                placeholder="Postal Code"
                 value={editingCity?.postalCode || ''}
                 onChange={(e) => setEditingCity(prev => prev ? { ...prev, postalCode: e.target.value } : null)}
                 />
             </div>
             <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleUpdateCity} disabled={isPending}>
-                {isPending ? 'Sauvegarde...' : 'Sauvegarder'}
+                {isPending ? 'Saving...' : 'Save'}
                 </AlertDialogAction>
             </AlertDialogFooter>
             </AlertDialogContent>
@@ -517,13 +517,13 @@ export function ZoneManager() {
         <AlertDialog open={!!citiesToDelete} onOpenChange={(open) => !open && setCitiesToDelete(null)}>
             <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Êtes-vous sûr de vouloir supprimer {citiesToDelete?.length} ville(s) ?</AlertDialogTitle>
-                <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
+                <AlertDialogTitle>Are you sure you want to delete {citiesToDelete?.length} city(ies)?</AlertDialogTitle>
+                <AlertDialogDescription>This action is irreversible.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleDeleteCities} disabled={isPending}>
-                {isPending ? 'Suppression...' : 'Supprimer'}
+                {isPending ? 'Deleting...' : 'Delete'}
                 </AlertDialogAction>
             </AlertDialogFooter>
             </AlertDialogContent>
@@ -533,9 +533,9 @@ export function ZoneManager() {
         <Dialog open={assignmentModalOpen} onOpenChange={setAssignmentModalOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Déplacer vers une zone</DialogTitle>
+                    <DialogTitle>Move to zone</DialogTitle>
                     <DialogDescription>
-                        Sélectionnez une zone pour y assigner les {selectedCityIds.length} ville(s) sélectionnée(s).
+                        Select a zone to assign the {selectedCityIds.length} selected city(ies) to.
                     </DialogDescription>
                 </DialogHeader>
                  <div className="py-4">
@@ -543,14 +543,14 @@ export function ZoneManager() {
                       options={zones?.map(zone => ({ value: zone.id, label: zone.name, color: zone.color })) || []}
                       value={targetZoneId}
                       onChange={setTargetZoneId}
-                      placeholder="Choisir une zone..."
+                      placeholder="Choose a zone..."
                       className="w-full"
                     />
                  </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => setAssignmentModalOpen(false)}>Annuler</Button>
+                    <Button variant="outline" onClick={() => setAssignmentModalOpen(false)}>Cancel</Button>
                     <Button onClick={handleAssignToZone} disabled={isPending || !targetZoneId}>
-                        {isPending ? "Déplacement..." : "Déplacer"}
+                        {isPending ? "Moving..." : "Move"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

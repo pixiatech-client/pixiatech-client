@@ -1,4 +1,4 @@
-// Statuts estimation - cf. README-METIER.md Section 3.1
+// Estimation statuses - see README-METIER.md Section 3.1
 export type EstimationStatus = 
   | 'En attente'    // 1. En attente (pending)
   | 'Traité'       // 2. Traité (processed) - REQUIS: supplier
@@ -33,9 +33,9 @@ export interface Estimation {
   trackingNumber?: string;
   isReturned?: boolean;
   returnReason?: string;
-  sendDate?: string;          // Date d'envoi au fournisseur
-  expectedArrivalDate?: string;  // Date d'arrivée prévue
-  receiptDate?: string;       // Date de réception
+  sendDate?: string;          // Date sent to supplier
+  expectedArrivalDate?: string;  // Expected arrival date
+  receiptDate?: string;       // Receipt date
   trackingInfo?: TrackingInfo;
   isLocked?: boolean;
   treatedBy?: string;

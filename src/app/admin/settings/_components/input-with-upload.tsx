@@ -27,10 +27,10 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
     try {
       const downloadURL = await uploadImage(file);
       onChange(downloadURL);
-      toast({ variant: 'success', title: 'Téléversement réussi' });
+      toast({ variant: 'success', title: 'Upload successful' });
     } catch (error) {
       console.error('Upload failed', error);
-      toast({ variant: 'destructive', title: 'Erreur de téléversement', description: (error as Error).message });
+      toast({ variant: 'destructive', title: 'Upload error', description: (error as Error).message });
     } finally {
       setIsUploading(false);
     }
@@ -55,7 +55,7 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
             size="icon"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            title="Téléverser un fichier"
+            title="Upload a file"
           >
             {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           </Button>
@@ -65,7 +65,7 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
                 variant="destructive-ghost"
                 size="icon"
                 onClick={handleRemoveImage}
-                title="Supprimer l'image"
+                title="Remove image"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -83,12 +83,12 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
         <div className="relative w-28 h-20 shrink-0 rounded-md overflow-hidden border bg-slate-900 flex items-center justify-center">
            {value.includes('youtube.com') || value.includes('youtu.be') ? (
              <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-white text-[10px] p-2 text-center font-bold">
-               Lien YouTube
+                YouTube Link
              </div>
            ) : value.match(/\.(mp4|webm|ogg|mov)(\?|$)/i) || value.includes('Devis%20Ecran') || value.includes('.mp4') ? (
              <video src={value} className="w-full h-full object-cover" muted playsInline autoPlay loop />
            ) : (
-             <img src={value} alt="Aperçu" className="w-full h-full object-cover" />
+             <img src={value} alt="Preview" className="w-full h-full object-cover" />
            )}
         </div>
       )}

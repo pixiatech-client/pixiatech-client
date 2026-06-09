@@ -17,6 +17,7 @@ import { updateQuoteStatus } from '@/app/admin/actions';
 import type { QuoteRequest } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, FilePen } from 'lucide-react';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface EditTrackingNumberDialogProps {
   quote: QuoteRequest;
@@ -28,6 +29,7 @@ export function EditTrackingNumberDialog({ quote, onUpdate, children }: EditTrac
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const { t } = useAdminT();
   const [trackingNumber, setTrackingNumber] = useState(quote.trackingNumber || '');
 
   useEffect(() => {
@@ -43,9 +45,9 @@ export function EditTrackingNumberDialog({ quote, onUpdate, children }: EditTrac
         await updateQuoteStatus(quote.id, updatedData);
         onUpdate(updatedData);
         setIsOpen(false);
-        toast({ title: "Numéro de suivi mis à jour", variant: 'success' });
+        toast({ title: t("Tracking number updated"), variant: 'success' });
       } catch (e) {
-        toast({ title: "Erreur", description: "Impossible de sauvegarder le numéro de suivi.", variant: 'destructive' });
+        toast({ title: t("Error"), description: t("Unable to save tracking number."), variant: 'destructive' });
       }
     });
   };
@@ -61,21 +63,21 @@ export function EditTrackingNumberDialog({ quote, onUpdate, children }: EditTrac
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Modifier le numéro de suivi</DialogTitle>
+          <DialogTitle>{t("Edit tracking number")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <Label htmlFor="trackingNumber">Numéro de suivi</Label>
+          <Label htmlFor="trackingNumber">{t("Tracking number")}</Label>
           <Input
             id="trackingNumber"
             value={trackingNumber}
             onChange={(e) => setTrackingNumber(e.target.value)}
-            placeholder="Entrez le nouveau numéro..."
+            placeholder={t("Enter the new number...")}
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>{t("Cancel")}</Button>
           <Button onClick={handleSave} disabled={isPending}>
-            {isPending ? <Loader2 className="animate-spin" /> : 'Sauvegarder'}
+            {isPending ? <Loader2 className="animate-spin" /> : t("Save")}
           </Button>
         </DialogFooter>
       </DialogContent>
