@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Shield, LogIn, User } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useI18n, IntlHelpers } from '@/lib/i18n';
+import { LogIn } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 import settings from '@/data/settings.json';
 
 export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; pageIcon?: React.ElementType } = {}) {
@@ -44,17 +43,6 @@ export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; 
     );
   }
 
-  const Greeting = () => {
-    if (!isClient || isUserLoading || !user || user.isAnonymous) return null;
-    const displayName = user.displayName || t('common.user');
-    const greeting = IntlHelpers.formatGreeting(displayName, locale);
-    return (
-      <span className="text-sm font-bold text-zinc-700 truncate max-w-[200px] hidden md:block">
-        {greeting}
-      </span>
-    );
-  }
-
   // Get logo URL from settings
   const logoUrl = settings.cardLogoUrl || "";
 
@@ -85,11 +73,6 @@ export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; 
               </span>
             )}
           </Link>
-        </div>
-
-        {/* Center column: Greeting */}
-        <div className="flex w-1/3 justify-center shrink-0">
-          <Greeting />
         </div>
 
         {/* Right column: Language */}

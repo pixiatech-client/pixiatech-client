@@ -2499,6 +2499,13 @@ const settingsSchema = z.object({
     image: z.string().nullable(),
   }).optional(),
   messaging: messagingSchema.optional(),
+  emailVerification: z.object({
+    companyName: z.string(),
+    companySlogan: z.string(),
+    documentLabel: z.string(),
+    messageStyle: z.string(),
+    validityMinutes: z.number(),
+  }).optional(),
 });
 
 const wizardProjectTypeSettingSchema = z.object({

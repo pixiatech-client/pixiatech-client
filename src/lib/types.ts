@@ -196,6 +196,13 @@ export type Settings = {
   messaging?: MessagingSettings;
   performanceResetAt?: string;
   configuratorStatsResetAt?: string;
+  emailVerification?: {
+    companyName: string;
+    companySlogan: string;
+    documentLabel: string;
+    messageStyle: string;
+    validityMinutes: number;
+  };
 };
 
 export type City = {

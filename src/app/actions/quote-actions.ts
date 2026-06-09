@@ -16,7 +16,7 @@ type Locale = 'fr' | 'en';
 const translations = { fr, en };
 
 import { validatePhone } from '@/lib/phone-validation';
-import { buildOtpEmailHtml, buildVerificationEmailHtml } from '@/lib/email-templates';
+import { buildOtpEmailHtml, buildVerificationEmailHtml, buildSecureEmailHtml } from '@/lib/email-templates';
 
 const formSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -631,7 +631,15 @@ async function sendSignatureOtpEmail(
     tls: { rejectUnauthorized: false }
   });
 
-  const emailHtml = buildOtpEmailHtml(otpCode, verificationUrl, lang);
+  const emailHtml = buildSecureEmailHtml({
+    code: otpCode,
+    companyName: 'PIXIATECH',
+    companySlogan: 'TECHNOLOGY PRO',
+    documentLabel: 'estimation du projet',
+    validityMinutes: 10,
+    messageStyle: 'collaborative_trust',
+    lang,
+  });
 
   try {
     await transporter.sendMail({

@@ -1,0 +1,8 @@
+{
+  "name": "Security Verification Center",
+  "description": "Un simulateur d'e-mail de validation ultra-moderne pour Pixiatech avec compte à rebours en temps réel, système de copie en 1 clic et design de sécurité premium 2026.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

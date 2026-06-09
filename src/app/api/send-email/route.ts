@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
-import { buildOtpEmailHtml } from '@/lib/email-templates';
+import { buildSecureEmailHtml } from '@/lib/email-templates';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { to, code, smtpConfig } = body;
+    const { to, code, smtpConfig, companyName, companySlogan, documentLabel, validityMinutes, messageStyle, lang } = body;
 
     if (!to) {
       return NextResponse.json({ error: "L'adresse e-mail du destinataire est requise." }, { status: 400 });
@@ -45,12 +45,20 @@ export async function POST(request: NextRequest) {
       socketTimeout: 15000,
     });
 
-    const emailHtml = buildOtpEmailHtml(code);
+    const emailHtml = buildSecureEmailHtml({
+      code,
+      companyName: companyName || 'PIXIATECH',
+      companySlogan: companySlogan || 'TECHNOLOGY PRO',
+      documentLabel: documentLabel || 'estimation du projet',
+      validityMinutes: validityMinutes || 10,
+      messageStyle: messageStyle || 'collaborative_trust',
+      lang: lang || 'fr',
+    });
 
     const result = await transporter.sendMail({
       from: finalFrom,
       to,
-      subject: '🛡️ Authentification PixiaTech',
+      subject: `🛡️ ${companyName || 'PixiaTech'} — ${lang === 'en' ? 'Secure Code' : 'Code de sécurité'}`,
       html: emailHtml,
     });
 

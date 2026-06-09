@@ -3,12 +3,12 @@
 import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { getSettings } from '@/app/admin/actions';
 import type { Settings as AppSettings } from '@/lib/types';
-import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare } from 'lucide-react';
+import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging' | 'software';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -26,6 +26,7 @@ const EmergencyContent = lazy(() => import('../emergency/page'));
 const MessagingContent = lazy(() => import('../messaging/page'));
 const PersonalizationContent = lazy(() => import('../personalization/page'));
 const SoftwareContent = lazy(() => import('../software/page'));
+const EmailVerificationContent = lazy(() => import('../email-verification/page'));
 
 function LoadingFallback() {
     return (
@@ -54,6 +55,7 @@ const tabsConfig: TabItem[] = [
     { id: 'emergency', label: 'Emergency', icon: AlertTriangle },
     { id: 'hint-bubble', label: 'Hint Bubbles', icon: MessageSquare },
     { id: 'software', label: 'Software', icon: Settings },
+    { id: 'email-verification', label: 'Email Verification', icon: ShieldCheck },
 ];
 
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
@@ -124,6 +126,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <EmergencyContent />;
             case 'personalization':
                 return <PersonalizationContent />;
+            case 'email-verification':
+                return <EmailVerificationContent />;
             case 'software':
                 return <SoftwareContent />;
             default:
@@ -168,6 +172,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                         tab.id === 'livraison' ? "bg-cyan-100/80 text-cyan-600" :
                                         tab.id === 'messaging' ? "bg-blue-100/80 text-blue-600" :
                                         tab.id === 'personalization' ? "bg-pink-100/80 text-pink-600" :
+                                        tab.id === 'email-verification' ? "bg-indigo-100/80 text-indigo-600" :
                                         "bg-orange-100/80 text-orange-600"
                                     )}>
                                         <tab.icon className={cn(

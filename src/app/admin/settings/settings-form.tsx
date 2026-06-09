@@ -81,7 +81,7 @@ const settingsSchema = z.object({
 });
 
 
-type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'hint-bubble' | 'messaging' | 'software';
+type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification';
 type Language = 'fr' | 'en';
 type FormValues = z.infer<typeof settingsSchema>;
 
@@ -144,6 +144,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       'hint-bubble': 'Hint Bubble',
       messaging: 'Messaging',
       software: 'Software',
+      'email-verification': 'Email Verification',
   }
 
   return (
