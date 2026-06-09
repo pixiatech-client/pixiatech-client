@@ -209,16 +209,9 @@ export type Settings = {
     enableContractEditing: boolean;
     saleContractTemplate?: string;
     rentalContractTemplate?: string;
-    sale: {
-      taxMode: 'ht' | 'ttc';
-      taxEnabled: boolean;
-      taxRate: number;
-    };
-    rental: {
-      taxMode: 'ht' | 'ttc';
-      taxEnabled: boolean;
-      taxRate: number;
-    };
+    taxEnabled: boolean;
+    taxRate: number;
+    taxMode: 'ht' | 'ttc';
   };
 };
 

@@ -84,16 +84,9 @@ const settingsSchema = z.object({
     enableContractEditing: z.boolean(),
     saleContractTemplate: z.string().optional(),
     rentalContractTemplate: z.string().optional(),
-    sale: z.object({
-      taxMode: z.enum(['ht', 'ttc']),
-      taxEnabled: z.boolean(),
-      taxRate: z.coerce.number().min(0).max(100),
-    }),
-    rental: z.object({
-      taxMode: z.enum(['ht', 'ttc']),
-      taxEnabled: z.boolean(),
-      taxRate: z.coerce.number().min(0).max(100),
-    }),
+    taxEnabled: z.boolean(),
+    taxRate: z.coerce.number().min(0).max(100),
+    taxMode: z.enum(['ht', 'ttc']),
   }).optional(),
 });
 

@@ -41,12 +41,22 @@ import {
   Zap,
   Sun
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog';
 import { validatePhone } from '@/lib/phone-validation';
 import { Pack, RenterDetails, Step, StepId } from '@/lib/signature-types';
 import SignaturePad from './SignaturePad';
 import ContractDocument from './ContractDocument';
 import { ConfiguredProduct, Product, Settings } from '@/lib/types';
 import { createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp } from '@/app/actions/quote-actions';
+import { getSettings } from '@/app/admin/actions';
 import { jsPDF } from 'jspdf';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { FloatingFooterNav } from '@/components/ui/floating-footer-nav';
@@ -190,6 +200,7 @@ export default function SignatureFlow({
   };
 
   const [acceptedCgl, setAcceptedCgl] = useState<boolean>(false);
+  const [showConsentAlert, setShowConsentAlert] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [isSignatureValidated, setIsSignatureValidated] = useState<boolean>(false);
 
@@ -524,19 +535,27 @@ export default function SignatureFlow({
   const powerAvg = powerMax * 0.35;
   const amps = Math.ceil((powerMax * 1000) / 230 / 3);
 
-  // Flow settings & tax configuration
-  const flowSettings = settings?.estimationFlow || {
+  // Flow settings & tax configuration — refresh on mount to bypass router cache
+  const [serverFlowSettings, setServerFlowSettings] = useState<NonNullable<Settings['estimationFlow']> | null>(null);
+  useEffect(() => {
+    getSettings().then(s => {
+      if (s?.estimationFlow) setServerFlowSettings(s.estimationFlow);
+    }).catch(() => {});
+  }, []);
+  const flowSettings: NonNullable<Settings['estimationFlow']> = serverFlowSettings || settings?.estimationFlow || {
     enableRentalPeriod: true,
     enableDigitalSignature: true,
     enableContractEditing: false,
-    sale: { taxMode: 'ht' as const, taxEnabled: false, taxRate: 0 },
-    rental: { taxMode: 'ht' as const, taxEnabled: true, taxRate: 10 },
+    saleContractTemplate: undefined,
+    rentalContractTemplate: undefined,
+    taxEnabled: false,
+    taxRate: 19,
+    taxMode: 'ht' as const,
   };
   const isRentalPeriodEnabled = flowSettings.enableRentalPeriod;
   const isDigitalSignatureEnabled = flowSettings.enableDigitalSignature;
-  const taxConfig = projectMode === 'vente' ? flowSettings.sale : flowSettings.rental;
-  const taxRate = taxConfig.taxEnabled ? taxConfig.taxRate : 0;
-  const displayMode = taxConfig.taxMode;
+  const taxRate = flowSettings.taxEnabled ? flowSettings.taxRate : 0;
+  const displayMode = flowSettings.taxMode;
   const ttcMultiplier = taxRate > 0 ? (1 + taxRate / 100) : 1;
   const taxLabel = displayMode === 'ttc' ? 'TTC' : 'HT';
   const fmtPrice = (amount: number) => {
@@ -1298,14 +1317,39 @@ export default function SignatureFlow({
                     </div>
                   </div>
 
-                  {/* Total estimé box with soft blue tint */}
-                  <div className="p-4 sm:p-5 bg-blue-50/50 border border-blue-100/80 rounded-2xl flex items-center justify-between shadow-xs mt-4 select-none">
-                    <span className="text-xs font-black text-zinc-700 tracking-wider font-heading uppercase">
-                      Total estimé ({taxLabel})
-                    </span>
-                    <span className="text-2xl font-mono font-black text-blue-600">
-                      {fmtPrice(totalAmount)} €
-                    </span>
+                  {/* Total estimé box with animated gradient background */}
+                  <div className="relative mt-4 gradient-bg rounded-2xl overflow-hidden shadow-md">
+                    <svg className="absolute w-0 h-0" aria-hidden="true">
+                      <filter id="goo">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="40" result="blur" />
+                        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 28 -10" result="goo" />
+                        <feBlend in="SourceGraphic" in2="goo" />
+                      </filter>
+                    </svg>
+                    <div className="gradients-container">
+                      <div className="g1" />
+                      <div className="g2" />
+                      <div className="g3" />
+                      <div className="g4" />
+                      <div className="g5" />
+                    </div>
+                    <div className="relative z-10 p-4 sm:p-5 flex items-center justify-between select-none">
+                      <div className="flex flex-col gap-1">
+                        {settings?.paymentIconUrl && (
+                          <img
+                            src={settings.paymentIconUrl}
+                            className="h-6 md:h-7 opacity-80"
+                            alt="payment icon"
+                          />
+                        )}
+                        <span className="text-xs font-black text-white/80 tracking-wider font-heading uppercase drop-shadow-sm">
+                          Total estimé ({taxLabel})
+                        </span>
+                      </div>
+                      <span className="text-2xl font-mono font-black text-white drop-shadow-sm">
+                        {fmtPrice(totalAmount)} €
+                      </span>
+                    </div>
                   </div>
 
                 </div>
@@ -1475,6 +1519,8 @@ export default function SignatureFlow({
                   rentalStartTime={rentalStartTime}
                   rentalEndTime={rentalEndTime}
                   productImage={productPhoto}
+                  saleContractTemplate={flowSettings.saleContractTemplate}
+                  rentalContractTemplate={flowSettings.rentalContractTemplate}
                 />
 
                 {/* Scroll checkbox verification with custom error styling */}
@@ -1539,8 +1585,8 @@ export default function SignatureFlow({
                     <SignaturePad
                       isValidated={isSignatureValidated}
                       onSave={(dataUrl) => {
-                        if (!acceptedCgl) {
-                          alert("Veuillez d'abord déclarer accepter les conditions de traitement.");
+                          if (!acceptedCgl) {
+                          setShowConsentAlert(true);
                           setShowErrorTips(true);
                           return;
                         }
@@ -1684,7 +1730,7 @@ export default function SignatureFlow({
 
                 {/* Subtitle notes */}
                 <div className="text-[9px] text-zinc-500 font-sans tracking-wide leading-normal text-center pt-2 border-t border-zinc-900 select-none">
-                  {taxConfig.taxEnabled ? `TVA à ${taxRate}% entièrement incluse.` : 'HT - TVA non applicable.'} Devis et contrat juridiques générés.
+                  {flowSettings.taxEnabled ? `TVA à ${taxRate}% entièrement incluse.` : 'HT - TVA non applicable.'} Devis et contrat juridiques générés.
                 </div>
 
                 {/* Dynamic Configuration button inside the merged card */}
@@ -1699,7 +1745,7 @@ export default function SignatureFlow({
 
 
               {/* Navigation button banner hint */}
-              {!isSignatureValidated && (
+              {isDigitalSignatureEnabled && !isSignatureValidated && (
                 <div className="p-4 bg-amber-50/70 border border-amber-200 border-dashed text-amber-900 rounded-xl text-center text-xs font-semibold leading-normal">
                   Veuillez accepter les conditions générales de location/vente puis dessiner votre signature numérique pour continuer le dossier.
                 </div>
@@ -1722,7 +1768,7 @@ export default function SignatureFlow({
                   setCurrentStep('securite');
                   sendRealEmail(randomCode);
                 }}
-                nextDisabled={!acceptedCgl || (projectMode === 'location' && !isSignatureValidated)}
+                nextDisabled={!acceptedCgl || (projectMode === 'location' && isDigitalSignatureEnabled && !isSignatureValidated)}
                 nextLabel="Continuer vers la vérification"
               />
             </div>
@@ -2035,10 +2081,10 @@ export default function SignatureFlow({
 
         {/* STEP 4: CONFIRMATION & FÉLICITATIONS (Beautiful final dashboard validation) */}
         {currentStep === 'confirmation' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch animate-fade-in">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in">
             
             {/* Left Column: Success titles and descriptions (Écran 5 left) */}
-            <div className="lg:col-span-7 flex flex-col justify-center space-y-6 pr-0 lg:pr-6">
+            <div className="lg:col-span-7 flex flex-col justify-start space-y-6 pr-0 lg:pr-6">
               
               <div className="space-y-4">
                 
@@ -2113,57 +2159,8 @@ export default function SignatureFlow({
             {/* Right Column: per-product accordion details + photos */}
             <div className="lg:col-span-5 flex flex-col gap-5">
 
-              {/* Details Techniques card from Résumé de l'estimation */}
+              {/* Pricing summary card */}
               <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-6 shadow-sm space-y-5">
-                
-                {/* Visual header with VENTE state tag */}
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-4 select-none">
-                  <h3 className="text-[12px] sm:text-xs font-black font-heading text-zinc-950 uppercase tracking-wider">
-                    Détails Techniques
-                  </h3>
-                  <span className="bg-blue-50/60 text-blue-600 border border-blue-250/30 rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-widest font-mono">
-                    {projectMode === 'vente' ? 'Vente' : 'Location'}
-                  </span>
-                </div>
-
-                {/* Product list as accordion */}
-                <Accordion type="multiple" className="space-y-2">
-                  {productCalculations.map((pc, idx) => {
-                    const prod = pc.product;
-                    const totalProductPrice = pc.subtotal * pc.quantity;
-                    return (
-                      <AccordionItem
-                        key={idx}
-                        value={`product-${idx}`}
-                        className="border border-zinc-100 rounded-xl overflow-hidden data-[state=open]:border-zinc-200"
-                      >
-                        <AccordionTrigger className="px-3 py-2.5 hover:no-underline hover:bg-zinc-50/50 data-[state=open]:bg-zinc-50/50">
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {pc.photo && (
-                              <img src={pc.photo} alt="" className="w-8 h-8 rounded-lg object-cover border border-zinc-200 shrink-0" />
-                            )}
-                            <span className="text-[11px] font-black text-zinc-800 uppercase truncate">{prod?.name || `Produit ${idx + 1}`}</span>
-                            <span className="ml-auto text-[11px] font-black font-mono text-zinc-600 shrink-0">
-                              {fmtPrice(totalProductPrice)} €
-                            </span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-3 pb-3">
-                          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] font-semibold text-zinc-500 pt-1 border-t border-zinc-100">
-                            <span>Dimensions</span>
-                            <span className="text-zinc-800 font-black font-mono text-right">{pc.width}m x {pc.height}m</span>
-                            <span>Surface</span>
-                            <span className="text-zinc-800 font-black font-mono text-right">{(pc.surface * pc.quantity).toFixed(2)} m²</span>
-                            <span>Quantité</span>
-                            <span className="text-zinc-800 font-black font-mono text-right">x{pc.quantity}</span>
-                            <span>Sous-total</span>
-                            <span className="text-zinc-800 font-black font-mono text-right">{fmtPrice(totalProductPrice)} €</span>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    );
-                  })}
-                </Accordion>
 
                 {/* Période de location (Location only) */}
                 {projectMode === 'location' && rentalStartDate && rentalEndDate && (
@@ -2208,14 +2205,39 @@ export default function SignatureFlow({
                   </div>
                 </div>
 
-                {/* Total estimé box with soft blue tint */}
-                <div className="p-4 sm:p-5 bg-blue-50/50 border border-blue-100/80 rounded-2xl flex items-center justify-between shadow-xs mt-4 select-none">
-                  <span className="text-xs font-black text-zinc-700 tracking-wider font-heading uppercase">
-                    Total estimé ({taxLabel})
-                  </span>
-                  <span className="text-2xl font-mono font-black text-blue-600">
-                    {fmtPrice(totalAmount)} €
-                  </span>
+                {/* Total estimé box with animated gradient background */}
+                <div className="relative mt-4 gradient-bg rounded-2xl overflow-hidden shadow-md">
+                  <svg className="absolute w-0 h-0" aria-hidden="true">
+                    <filter id="goo">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="40" result="blur" />
+                      <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 28 -10" result="goo" />
+                      <feBlend in="SourceGraphic" in2="goo" />
+                    </filter>
+                  </svg>
+                  <div className="gradients-container">
+                    <div className="g1" />
+                    <div className="g2" />
+                    <div className="g3" />
+                    <div className="g4" />
+                    <div className="g5" />
+                  </div>
+                  <div className="relative z-10 p-4 sm:p-5 flex items-center justify-between select-none">
+                    <div className="flex flex-col gap-1">
+                      {settings?.paymentIconUrl && (
+                        <img
+                          src={settings.paymentIconUrl}
+                          className="h-6 md:h-7 opacity-80"
+                          alt="payment icon"
+                        />
+                      )}
+                      <span className="text-xs font-black text-white/80 tracking-wider font-heading uppercase drop-shadow-sm">
+                        Total estimé ({taxLabel})
+                      </span>
+                    </div>
+                    <span className="text-2xl font-mono font-black text-white drop-shadow-sm">
+                      {fmtPrice(totalAmount)} €
+                    </span>
+                  </div>
                 </div>
 
               </div>
@@ -2323,6 +2345,44 @@ export default function SignatureFlow({
         </div>
       </footer>
 
+      {/* Consent required alert dialog */}
+      <AlertDialog open={showConsentAlert} onOpenChange={setShowConsentAlert}>
+        <AlertDialogContent className="border-amber-200 dark:border-amber-900/60 shadow-2xl shadow-amber-900/10">
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-sm">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <AlertDialogHeader className="mt-4">
+            <AlertDialogTitle className="text-center text-lg text-slate-800 dark:text-slate-100">
+              Acceptation requise
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+              Veuillez d'abord déclarer accepter les conditions de traitement des données avant de signer le contrat numérique.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-center mt-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-200 dark:border-amber-800/50">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              Information importante
+            </span>
+          </div>
+          <AlertDialogFooter className="sm:justify-center mt-2">
+            <AlertDialogAction
+              onClick={() => setShowConsentAlert(false)}
+              className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-amber-500/25 transition-all duration-200 cursor-pointer"
+            >
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

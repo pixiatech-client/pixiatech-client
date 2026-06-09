@@ -2512,16 +2512,9 @@ const settingsSchema = z.object({
     enableContractEditing: z.boolean(),
     saleContractTemplate: z.string().optional(),
     rentalContractTemplate: z.string().optional(),
-    sale: z.object({
-      taxMode: z.enum(['ht', 'ttc']),
-      taxEnabled: z.boolean(),
-      taxRate: z.number().min(0).max(100),
-    }),
-    rental: z.object({
-      taxMode: z.enum(['ht', 'ttc']),
-      taxEnabled: z.boolean(),
-      taxRate: z.number().min(0).max(100),
-    }),
+    taxEnabled: z.boolean(),
+    taxRate: z.number().min(0).max(100),
+    taxMode: z.enum(['ht', 'ttc']),
   }).optional(),
 });
 
@@ -2614,8 +2607,9 @@ export async function getSettings(): Promise<Settings> {
       enableRentalPeriod: true,
       enableDigitalSignature: true,
       enableContractEditing: false,
-      sale: { taxMode: 'ht', taxEnabled: false, taxRate: 0 },
-      rental: { taxMode: 'ht', taxEnabled: true, taxRate: 10 },
+      taxEnabled: false,
+      taxRate: 19,
+      taxMode: 'ht',
     },
   };
 

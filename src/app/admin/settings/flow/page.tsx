@@ -1,7 +1,36 @@
-import { getSettings } from '@/app/admin/actions';
-import { FlowSettingsForm } from './flow-settings-form';
+'use client';
 
-export default async function FlowSettingsPage() {
-  const settings = await getSettings();
-  return <FlowSettingsForm initialSettings={settings} />;
+import { useState, useEffect } from 'react';
+import { getSettings } from '@/app/admin/actions';
+import type { Settings as AppSettings } from '@/lib/types';
+import { FlowSettingsForm } from './flow-settings-form';
+import { Loader2 } from 'lucide-react';
+
+export default function FlowSettingsPage() {
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const s = await getSettings();
+        setSettings(s);
+      } catch (err) {
+        console.error('Failed to load settings', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 text-slate-400 animate-spin" />
+      </div>
+    );
+  }
+
+  return <FlowSettingsForm initialSettings={settings!} />;
 }

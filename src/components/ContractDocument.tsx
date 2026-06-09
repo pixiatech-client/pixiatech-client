@@ -4,7 +4,6 @@
  */
 
 import { Pack, RenterDetails } from '@/lib/signature-types';
-import { Shield } from 'lucide-react';
 
 interface ContractDocumentProps {
   pack: Pack;
@@ -17,6 +16,8 @@ interface ContractDocumentProps {
   rentalEndTime?: string | null;
   productImage?: string | null;
   allPacks?: Pack[];
+  saleContractTemplate?: string;
+  rentalContractTemplate?: string;
 }
 
 export default function ContractDocument({
@@ -29,7 +30,9 @@ export default function ContractDocument({
   rentalStartTime,
   rentalEndTime,
   productImage,
-  allPacks
+  allPacks,
+  saleContractTemplate,
+  rentalContractTemplate
 }: ContractDocumentProps) {
   const contractDate = "29 mai 2026";
 
@@ -44,6 +47,152 @@ export default function ContractDocument({
   const rentalTo = rentalPeriod?.to ? formatRentalDate(rentalPeriod.to) : '';
   const rentalPeriodStr = rentalFrom && rentalTo ? `${rentalFrom} – ${rentalTo}` : '';
   const rentalHours = (rentalStartTime || rentalEndTime) ? `${rentalStartTime || '08:00'} à ${rentalEndTime || '18:00'}` : '';
+
+  const defaultRentalText = [
+    'CONDITIONS GÉNÉRALES DE VENTE, DE SERVICES ET DE LOCATION (CGV/CGL)',
+    'PIXIATECH • France • Dernière mise à jour : 30/11/2025',
+    '',
+    'ENTRE LES SOUSSIGNÉ(E)S :',
+    'La société PIXIATECH, SASU, 5 Rue La Fontaine, 93400 Saint-Ouen-sur-Seine, FRANCE, RCS Bobigny 993 747 161, TVA FR39993747161, contact@pixiatech.com / 07 56 81 66 26, ci-après « PIXIATECH » ou le « Bailleur ».',
+    '',
+    "D'UNE PART,",
+    '',
+    'Le client, ci-après « le Client » ou « le Preneur ».',
+    '',
+    "D'AUTRE PART,",
+    '',
+    'PIXIATECH et le Client sont collectivement dénommés les « Parties ».',
+    '',
+    'RÉCAPITULATIF DE LA LOCATION DE MATÉRIEL :',
+    '- Matériel loué : {{pack.name}} • Surface : {{pack.surface}}',
+    '- Période de location : {{rentalPeriod}}',
+    '- Horaires : {{rentalHours}}',
+    "- Coût de la période : {{pack.price}}€ TTC (Sans engagement de durée)",
+    '- Dépôt de garantie requis (Caution) : {{pack.deposit}}€ TTC',
+    '',
+    'IL A ÉTÉ EXPOSÉ ET CONVENU CE QUI SUIT :',
+    '',
+    'ARTICLE 1 – PRÉSENTATION ET CHAMP D\'APPLICATION',
+    'Les présentes conditions générales régissent l\'ensemble des relations commerciales (vente, prestation de service, location) entre la société PIXIATECH (ci-après « PIXIATECH ») et ses clients (ci-après « le Client »), qu\'ils soient professionnels ou consommateurs.',
+    '',
+    '• Dénomination : PIXIATECH (SASU)',
+    '• Siège social : 5 Rue La Fontaine, 93400 Saint-Ouen-sur-Seine, FRANCE.',
+    '• RCS : Bobigny 993 747 161',
+    '• TVA Intracommunautaire : FR39993747161',
+    '• Contact E-Mail : contact@pixiatech.com',
+    '• Contact Téléphone : 07 56 81 66 26',
+    '',
+    'La validation de toute commande implique l\'adhésion entière et sans réserve aux présentes conditions.',
+    '',
+    'ARTICLE 2 – VENTE : PRODUITS ET MODÈLE LOGISTIQUE',
+    'Les caractéristiques des produits sont indiquées sur le site ou le devis. PIXIATECH fonctionne en flux tendu. Certains produits sont expédiés directement depuis les entrepôts de fabrication partenaires.',
+    '',
+    'ARTICLE 3 – PRIX',
+    'Les prix sont indiqués en Euros.',
+    '- Particuliers : prix TTC.',
+    '- Professionnels : prix HT.',
+    '',
+    'ARTICLE 4 – PAIEMENT (VENTE ET PRESTATION)',
+    '4.1 Commandes en ligne : Paiement 100 % exigible au jour de la commande.',
+    '4.2 Commandes sur devis (B2B) : Acompte : 60 % à la signature. Solde : 40 % avant expédition.',
+    '',
+    'ARTICLE 5 – LIVRAISON ET DOUANES',
+    '5.1 Délais : Les délais sont indicatifs.',
+    '5.2 Douanes : Particuliers : Mode DDP = aucun frais supplémentaire. Professionnels : Droits de douane et TVA à l\'importation à la charge du client.',
+    '',
+    'ARTICLE 6 – DROIT DE RÉTRACTATION',
+    '6.1 Particuliers : Délai : 14 jours.',
+    '6.2 Professionnels : Pas de rétractation en B2B. Commande ferme.',
+    '',
+    'ARTICLE 7 – PRESTATION D\'INSTALLATION',
+    '7.1 Périmètre : Installation disponible dans un rayon de 150 km.',
+    '7.2 Réception : Un Bon de Réception marque la fin de l\'installation.',
+    "7.3 Installation par le Client : PIXIATECH décline toute responsabilité.",
+    '',
+    'ARTICLE 8 – LOCATION',
+    '8.1 Retard : Pénalité : 200 % du tarif/jour.',
+    '8.2 Caution : Caution encaissable en cas de dommages ou perte.',
+    '8.3 Assurance : Le client est gardien juridique du matériel loué.',
+    '8.4 Montage / Démontage : Accès garanti par le client.',
+    '',
+    'ARTICLE 9 – GARANTIES',
+    '- Particuliers : 2 ans de garantie légale.',
+    '- Professionnels : Garantie constructeur (pièces uniquement).',
+    '',
+    'ARTICLE 10 – LIMITATION DE RESPONSABILITÉ',
+    'En B2B, responsabilité plafonnée au montant de la commande.',
+    '',
+    'ARTICLE 11 – DONNÉES PERSONNELLES',
+    'Données utilisées pour traiter la commande. Conformité RGPD.',
+    '',
+    'ARTICLE 12 – DROIT APPLICABLE ET LITIGES',
+    '- Particuliers : juridiction du défendeur ou médiation.',
+    '- Professionnels : Tribunal de Commerce de Bobigny.',
+    '',
+    'Fait à Saint-Ouen-sur-Seine, le {{contractDate}}, en version électronique certifiée.',
+    '',
+    'Pour PIXIATECH (Bailleur)',
+    'PIXIATECH (SASU)',
+    '5 Rue La Fontaine, 93400 Saint-Ouen-sur-Seine',
+    'RCS Bobigny 993 747 161',
+    '',
+    'Le Client (Preneur)',
+    '{{renter.company}}',
+    '{{renter.representative}}',
+    '{{renter.email}}',
+  ].join('\n');
+
+  const defaultSaleText = [
+    'CONDITIONS GÉNÉRALES DE VENTE, DE SERVICES ET DE LOCATION (CGV/CGL)',
+    'PIXIATECH • France • Dernière mise à jour : 30/11/2025',
+    '',
+    'ARTICLE 1 – PRÉSENTATION ET CHAMP D\'APPLICATION',
+    'Les présentes conditions générales régissent l\'ensemble des relations commerciales...',
+    '',
+    'ARTICLE 2 – PRIX',
+    'Les prix sont indiqués en Euros. Particuliers : prix TTC. Professionnels : prix HT.',
+    '',
+    'ARTICLE 3 – PAIEMENT',
+    'Paiement 100 % exigible au jour de la commande.',
+    '',
+    'ARTICLE 4 – LIVRAISON ET DOUANES',
+    'Les délais sont indicatifs.',
+    '',
+    'ARTICLE 5 – DROIT DE RÉTRACTATION',
+    'Particuliers : 14 jours. Professionnels : Pas de rétractation.',
+    '',
+    'ARTICLE 6 – GARANTIES',
+    'Particuliers : 2 ans. Professionnels : Garantie constructeur (pièces).',
+    '',
+    'ARTICLE 7 – DONNÉES PERSONNELLES',
+    'Conformité RGPD.',
+    '',
+    'ARTICLE 8 – DROIT APPLICABLE ET LITIGES',
+    'Tribunal de Commerce de Bobigny.',
+    '',
+    'Considéré comme accepté suite à la validation du consentement de traitement des données commerciales.',
+  ].join('\n');
+
+  const templateText = isVente ? (saleContractTemplate || defaultSaleText) : (rentalContractTemplate || defaultRentalText);
+
+  const fillTemplate = (text: string) => {
+    return text
+      .replace(/\{\{renter\.company}}/g, renter.company || 'bilama')
+      .replace(/\{\{renter\.representative}}/g, renter.representative || 'Un représentant')
+      .replace(/\{\{renter\.address}}/g, renter.address || 'Adresse non renseignée')
+      .replace(/\{\{renter\.postcode}}/g, renter.postcode || '75000')
+      .replace(/\{\{renter\.city}}/g, renter.city || 'Paris')
+      .replace(/\{\{renter\.email}}/g, renter.email || 'contact@client.com')
+      .replace(/\{\{renter\.phone}}/g, renter.phone || 'Non spécifié')
+      .replace(/\{\{pack\.name}}/g, pack.name)
+      .replace(/\{\{pack\.surface}}/g, pack.surface)
+      .replace(/\{\{rentalPeriod}}/g, rentalPeriodStr)
+      .replace(/\{\{rentalHours}}/g, rentalHours)
+      .replace(/\{\{pack\.price}}/g, pack.price.toLocaleString('fr-FR'))
+      .replace(/\{\{pack\.deposit}}/g, pack.deposit.toLocaleString('fr-FR'))
+      .replace(/\{\{contractDate}}/g, contractDate)
+      .replace(/\{\{taxLabel}}/g, 'TTC');
+  };
 
   return (
     <div className="w-full flex flex-col">
@@ -62,217 +211,8 @@ export default function ContractDocument({
             </p>
           </div>
 
-          {!isVente && (
-            <>
-              <div className="space-y-4 mb-6 text-[11px] sm:text-xs leading-relaxed text-zinc-600">
-                <div>
-                  <h2 className="font-bold text-zinc-500 mb-2 font-heading tracking-wide text-[10px] uppercase">
-                    ENTRE LES SOUSSIGNÉ(E)S :
-                  </h2>
-                  <p className="pl-3 border-l-2 border-zinc-200">
-                    La société <strong className="text-zinc-900">PIXIATECH</strong>, Société par actions simplifiée à associé unique (SASU), dont le siège social se situe <span className="text-zinc-900 font-medium">5 Rue La Fontaine, 93400 Saint-Ouen-sur-Seine, FRANCE</span>, immatriculée au RCS de Bobigny sous le numéro <span className="text-zinc-900 font-medium">993 747 161</span>, TVA Intracommunautaire numéro <span className="text-zinc-900 font-medium">FR39993747161</span>, contact : <span className="text-zinc-900 underline font-medium">contact@pixiatech.com</span> / <span className="text-zinc-900 font-medium">07 56 81 66 26</span>.
-                    <br />
-                    <span className="italic text-zinc-400 mt-1 block">
-                      Ci-après dénommée, « PIXIATECH » ou le « Bailleur ».
-                    </span>
-                  </p>
-                </div>
-
-                <div className="text-center font-semibold text-zinc-400 tracking-widest text-[9px] my-3">
-                  D'UNE PART,
-                </div>
-
-                <div>
-                  <p className="pl-3 border-l-2 border-zinc-200">
-                    La société <strong className="text-zinc-900">{renter.company || 'bilama'}</strong>, représentée par <span className="text-zinc-900 font-medium">{renter.representative || 'Un représentant'}</span>, domiciliée au <span className="text-zinc-950">{renter.address || 'Adresse non renseignée'}</span>, {renter.postcode || '75000'}, {renter.city || 'Paris'}, email : <span className="text-zinc-950 underline font-medium">{renter.email || 'contact@client.com'}</span>, téléphone : <span className="text-zinc-950 font-medium">{renter.phone || 'Non spécifié'}</span>.
-                    <br />
-                    <span className="italic text-zinc-400 mt-1 block">
-                      Ci-après dénommé(e), « le Client » ou « le Preneur ».
-                    </span>
-                  </p>
-                </div>
-
-                <div className="text-center font-semibold text-zinc-400 tracking-widest text-[9px] my-3">
-                  D'AUTRE PART,
-                </div>
-
-                <p className="italic text-zinc-400">
-                  PIXIATECH et le Client sont collectivement dénommés les « Parties » et individuellement dénommés une « Partie ».
-                </p>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-105 rounded-xl p-4 sm:p-5 mb-8 text-zinc-700">
-                <h3 className="font-bold text-blue-900 mb-2.5 flex items-center gap-1.5 font-heading text-xs sm:text-sm">
-                  <span className="w-1.5 h-4 bg-blue-600 rounded-full block"></span>
-                  RÉCAPITULATIF DE LA LOCATION DE MATÉRIEL :
-                </h3>
-                <ul className="space-y-1.5 text-[11px] sm:text-xs">
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 mt-1">•</span>
-                    <span>
-                      Matériel loué : <strong className="text-zinc-900">{pack.name}</strong> • Surface d'affichage : <strong className="text-zinc-900">{pack.surface}</strong>
-                    </span>
-                  </li>
-                  {projectMode === 'location' && rentalPeriodStr && (
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600 mt-1">•</span>
-                      <span>
-                        Période de location : <strong className="text-zinc-900">{rentalPeriodStr}</strong>
-                      </span>
-                    </li>
-                  )}
-                  {projectMode === 'location' && rentalHours && (
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-600 mt-1">•</span>
-                      <span>
-                        Horaires : <strong className="text-zinc-900">{rentalHours}</strong>
-                      </span>
-                    </li>
-                  )}
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 mt-1">•</span>
-                    <span>
-                      Coût de la période : <strong className="text-zinc-900">{pack.price.toLocaleString('fr-FR')}€ TTC</strong> (Sans engagement de durée)
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 mt-1">•</span>
-                    <span>
-                      Dépôt de garantie requis (Caution) : <strong className="text-zinc-900">{pack.deposit.toLocaleString('fr-FR')}€ TTC</strong>
-                    </span>
-                  </li>
-                </ul>
-              </div>
-            </>
-          )}
-
-          <div className="text-[11px] sm:text-[12px] text-zinc-650 space-y-5 font-normal mt-6 border-t border-zinc-100 pt-5 text-left">
-            {!isVente && (
-              <p className="italic font-medium text-zinc-800 mb-4">
-                IL A ÉTÉ EXPOSÉ ET CONVENU CE QUI SUIT :
-              </p>
-            )}
-
-            <div className="space-y-5 text-zinc-600">
-              <div>
-                <h4 className="font-bold text-zinc-900 text-xs mb-1">ARTICLE 1 – PRÉSENTATION ET CHAMP D'APPLICATION</h4>
-                <p>
-                  Les présentes conditions générales régissent l'ensemble des relations commerciales (vente, prestation de service, location) entre la société PIXIATECH (ci-après « PIXIATECH ») et ses clients (ci-après « le Client »), qu'ils soient professionnels ou consommateurs.
-                </p>
-                <div className="my-2 pl-3 border-l-2 border-zinc-200 text-zinc-500 space-y-0.5">
-                  <p>• <strong>Dénomination :</strong> PIXIATECH (SASU)</p>
-                  <p>• <strong>Siège social :</strong> 5 Rue La Fontaine, 93400 Saint-Ouen-sur-Seine, FRANCE.</p>
-                  <p>• <strong>RCS :</strong> Bobigny 993 747 161</p>
-                  <p>• <strong>TVA Intracommunautaire :</strong> FR39993747161</p>
-                  <p>• <strong>Contact E-Mail :</strong> contact@pixiatech.com</p>
-                  <p>• <strong>Contact Téléphone :</strong> 07 56 81 66 26</p>
-                </div>
-                <p className="mt-1">
-                  La validation de toute commande (en ligne ou sur devis) implique l'adhésion entière et sans réserve aux présentes conditions.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-zinc-900 text-xs mb-1">ARTICLE 2 – VENTE : PRODUITS ET MODÈLE LOGISTIQUE</h4>
-                <p>
-                  Les caractéristiques des produits (écrans LED, éclairage, solutions numériques) sont indiquées sur le site ou le devis.
-                </p>
-                <p className="font-semibold text-zinc-850 mt-1.5 mb-0.5">Expédition Directe (Modèle Logistique)</p>
-                <p>
-                  Afin de garantir la disponibilité des produits et des tarifs compétitifs, PIXIATECH fonctionne en flux tendu. Certains produits sont expédiés directement depuis les entrepôts de fabrication partenaires (UE ou hors UE). Le Client accepte que sa commande puisse être livrée en plusieurs colis selon la provenance logistique.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-zinc-905 text-xs mb-1">ARTICLE 3 – PRIX</h4>
-                <p>
-                  Les prix sont indiqués en Euros.
-                  <br />- <strong>Particuliers :</strong> prix TTC.
-                  <br />- <strong>Professionnels :</strong> prix HT. PIXIATECH peut modifier les tarifs à tout moment. Le prix applicable est celui au moment de la commande.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-zinc-900 text-xs mb-1">ARTICLE 4 – PAIEMENT (VENTE ET PRESTATION)</h4>
-                <p>
-                  <strong>4.1 Commandes en ligne :</strong> Paiement 100 % exigible au jour de la commande. Traitement après encaissement complet.
-                  <br />
-                  <strong>4.2 Commandes sur devis (B2B) :</strong> Acompte : 60 % à la signature. Solde : 40 % avant expédition. En cas de non-paiement du solde, PIXIATECH reste propriétaire du matériel.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-zinc-900 text-xs mb-1">ARTICLE 5 – LIVRAISON ET DOUANES</h4>
-                <p>
-                  <strong>5.1 Délais :</strong> Les délais sont indicatifs. Un retard ne justifie pas une annulation (sauf dispositions légales B2C).
-                  <br />
-                  <strong>5.2 Douanes :</strong> Particuliers : Mode DDP = aucun frais supplémentaire. Prix final. Professionnels : Droits de douane et TVA à l'importation à la charge du client.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-zinc-900 text-xs mb-1">ARTICLE 6 – DROIT DE RÉTRACTATION</h4>
-                <p>
-                  <strong>6.1 Particuliers :</strong> Délai : 14 jours. Frais de retour à la charge du client. Produit neuf, complet, emballage intact. Contact préalable obligatoire.
-                  <br />
-                  <strong>6.2 Professionnels :</strong> Pas de rétractation en B2B. Commande ferme.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-zinc-900 text-xs mb-1">ARTICLE 7 – PRESTATION D'INSTALLATION</h4>
-                <p>
-                  <strong>7.1 Périmètre :</strong> Installation disponible dans un rayon de 150 km autour du siège. Au-delà : devis.
-                  <br />
-                  <strong>7.2 Réception :</strong> Un Bon de Réception marque la fin de l'installation. Le client devient responsable.
-                  <br />
-                  <strong>7.3 Installation par le Client :</strong> PIXIATECH décline toute responsabilité en cas de mauvaise installation par le client.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-zinc-900 text-xs mb-1">ARTICLE 8 – LOCATION</h4>
-                <p>
-                  <strong>8.1 Retard :</strong> Pénalité : 200 % du tarif/jour.
-                  <br />
-                  <strong>8.2 Caution :</strong> Caution encaissable en cas de dommages ou perte.
-                  <br />
-                  <strong>8.3 Assurance :</strong> Le client est gardien juridique du matériel loué.
-                  <br />
-                  <strong>8.4 Montage / Démontage :</strong> Accès garanti par le client. Responsabilité transférée après installation. PIXIATECH peut annuler en cas de risque sécurité.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-zinc-900 text-xs mb-1">ARTICLE 9 – GARANTIES</h4>
-                <p>
-                  - Pour les <strong>Particuliers :</strong> 2 ans de garantie légale.
-                  <br />- Pour les <strong>Professionnels :</strong> Garantie constructeur (pièces uniquement).
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-zinc-900 text-xs mb-1">ARTICLE 10 – LIMITATION DE RESPONSABILITÉ</h4>
-                <p>
-                  En B2B, responsabilité plafonnée au montant de la commande.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-zinc-900 text-xs mb-1">ARTICLE 11 – DONNÉES PERSONNELLES</h4>
-                <p>
-                  Données utilisées pour traiter la commande. Conformité RGPD.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-zinc-900 text-xs mb-1">ARTICLE 12 – DROIT APPLICABLE ET LITIGES</h4>
-                <p>
-                  - Pour les <strong>Particuliers :</strong> juridiction du défendeur ou médiation.
-                  <br />- Pour les <strong>Professionnels :</strong> Tribunal de Commerce de Bobigny.
-                </p>
-              </div>
-            </div>
+          <div className="text-[11px] sm:text-xs text-zinc-600 leading-relaxed whitespace-pre-wrap font-mono">
+            {fillTemplate(templateText)}
           </div>
 
           {!isVente ? (
