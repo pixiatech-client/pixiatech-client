@@ -1334,21 +1334,21 @@ export default function SignatureFlow({
                       <div className="g5" />
                     </div>
                     <div className="relative z-10 p-4 sm:p-5 flex items-center justify-between select-none">
-                      <div className="flex flex-col gap-1">
+                      <span className="text-xs font-black text-white/80 tracking-wider font-heading uppercase drop-shadow-sm">
+                        Total estimé ({taxLabel})
+                      </span>
+                      <div className="flex items-center gap-2">
                         {settings?.paymentIconUrl && (
                           <img
                             src={settings.paymentIconUrl}
-                            className="h-6 md:h-7 opacity-80"
+                            className="h-5 md:h-6 opacity-70"
                             alt="payment icon"
                           />
                         )}
-                        <span className="text-xs font-black text-white/80 tracking-wider font-heading uppercase drop-shadow-sm">
-                          Total estimé ({taxLabel})
+                        <span className="text-2xl font-mono font-black text-white drop-shadow-sm">
+                          {fmtPrice(totalAmount)} €
                         </span>
                       </div>
-                      <span className="text-2xl font-mono font-black text-white drop-shadow-sm">
-                        {fmtPrice(totalAmount)} €
-                      </span>
                     </div>
                   </div>
 
@@ -2222,21 +2222,21 @@ export default function SignatureFlow({
                     <div className="g5" />
                   </div>
                   <div className="relative z-10 p-4 sm:p-5 flex items-center justify-between select-none">
-                    <div className="flex flex-col gap-1">
+                    <span className="text-xs font-black text-white/80 tracking-wider font-heading uppercase drop-shadow-sm">
+                      Total estimé ({taxLabel})
+                    </span>
+                    <div className="flex items-center gap-2">
                       {settings?.paymentIconUrl && (
                         <img
                           src={settings.paymentIconUrl}
-                          className="h-6 md:h-7 opacity-80"
+                          className="h-5 md:h-6 opacity-70"
                           alt="payment icon"
                         />
                       )}
-                      <span className="text-xs font-black text-white/80 tracking-wider font-heading uppercase drop-shadow-sm">
-                        Total estimé ({taxLabel})
+                      <span className="text-2xl font-mono font-black text-white drop-shadow-sm">
+                        {fmtPrice(totalAmount)} €
                       </span>
                     </div>
-                    <span className="text-2xl font-mono font-black text-white drop-shadow-sm">
-                      {fmtPrice(totalAmount)} €
-                    </span>
                   </div>
                 </div>
 
