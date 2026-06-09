@@ -78,10 +78,27 @@ const settingsSchema = z.object({
     allowCommercialMessaging: z.boolean(),
     allowSupplierMessaging: z.boolean(),
   }).optional(),
+  estimationFlow: z.object({
+    enableRentalPeriod: z.boolean(),
+    enableDigitalSignature: z.boolean(),
+    enableContractEditing: z.boolean(),
+    saleContractTemplate: z.string().optional(),
+    rentalContractTemplate: z.string().optional(),
+    sale: z.object({
+      taxMode: z.enum(['ht', 'ttc']),
+      taxEnabled: z.boolean(),
+      taxRate: z.coerce.number().min(0).max(100),
+    }),
+    rental: z.object({
+      taxMode: z.enum(['ht', 'ttc']),
+      taxEnabled: z.boolean(),
+      taxRate: z.coerce.number().min(0).max(100),
+    }),
+  }).optional(),
 });
 
 
-type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification';
+type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification' | 'flow';
 type Language = 'fr' | 'en';
 type FormValues = z.infer<typeof settingsSchema>;
 
@@ -145,6 +162,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       messaging: 'Messaging',
       software: 'Software',
       'email-verification': 'Email Verification',
+      flow: 'Parcours client',
   }
 
   return (

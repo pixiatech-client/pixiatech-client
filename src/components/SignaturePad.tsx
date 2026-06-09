@@ -1,9 +1,4 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { Eraser, Check, PenTool } from 'lucide-react';
 
 interface SignaturePadProps {
@@ -16,6 +11,7 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
+  const lastPointRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -25,26 +21,20 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
 
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#2563eb';
-    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#1e293b';
   }, []);
 
-  const getCoordinates = (e: any) => {
+  const getCoordinates = useCallback((e: any) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
 
     const scaleX = canvas.width / canvas.offsetWidth;
     const scaleY = canvas.height / canvas.offsetHeight;
-    
-    // Mouse events: use offsetX/offsetY (most reliable, relative to element)
+
     if (e.offsetX !== undefined && e.offsetY !== undefined) {
-      return {
-        x: e.offsetX * scaleX,
-        y: e.offsetY * scaleY
-      };
+      return { x: e.offsetX * scaleX, y: e.offsetY * scaleY };
     }
-    
-    // Touch events fallback
+
     const rect = canvas.getBoundingClientRect();
     if (e.touches && e.touches.length > 0) {
       return {
@@ -52,14 +42,14 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
         y: (e.touches[0].clientY - rect.top) * scaleY
       };
     }
-    
+
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY
     };
-  };
+  }, []);
 
-  const startDrawing = (e: any) => {
+  const startDrawing = useCallback((e: any) => {
     e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -69,10 +59,11 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
     const { x, y } = getCoordinates(e);
     ctx.beginPath();
     ctx.moveTo(x, y);
+    lastPointRef.current = { x, y, time: performance.now() };
     setIsDrawing(true);
-  };
+  }, [getCoordinates]);
 
-  const draw = (e: any) => {
+  const draw = useCallback((e: any) => {
     if (!isDrawing) return;
     e.preventDefault();
 
@@ -82,18 +73,28 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
     if (!ctx) return;
 
     const { x, y } = getCoordinates(e);
+    const now = performance.now();
+    const last = lastPointRef.current;
+
+    ctx.lineWidth = 3;
     ctx.lineTo(x, y);
     ctx.stroke();
-    setHasDrawn(true);
-  };
 
-  const stopDrawing = () => {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+
+    lastPointRef.current = { x, y, time: now };
+    setHasDrawn(true);
+  }, [isDrawing, getCoordinates]);
+
+  const stopDrawing = useCallback(() => {
     if (isDrawing) {
       setIsDrawing(false);
+      lastPointRef.current = null;
     }
-  };
+  }, [isDrawing]);
 
-  const clearCanvas = () => {
+  const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -102,20 +103,20 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasDrawn(false);
     onClear();
-  };
+  }, [onClear]);
 
-  const validateSignature = () => {
+  const validateSignature = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !hasDrawn) return;
-    
+
     const dataUrl = canvas.toDataURL('image/png');
     onSave(dataUrl);
-  };
+  }, [hasDrawn, onSave]);
 
   return (
     <div className="w-full flex flex-col gap-4">
       <div className="relative border border-zinc-200 rounded-xl bg-zinc-50/50 shadow-inner overflow-hidden">
-        
+
         {!hasDrawn && !isValidated && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-zinc-400 text-xs sm:text-sm font-light select-none gap-2">
             <PenTool size={16} className="animate-pulse text-blue-600" />
@@ -146,7 +147,7 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
         />
-        
+
         <div className="absolute bottom-6 left-6 right-6 border-b border-dashed border-zinc-200 pointer-events-none select-none">
           <span className="absolute -top-4 left-0 text-[10px] text-zinc-400 font-mono tracking-wider">
             Signature

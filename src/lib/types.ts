@@ -203,6 +203,23 @@ export type Settings = {
     messageStyle: string;
     validityMinutes: number;
   };
+  estimationFlow?: {
+    enableRentalPeriod: boolean;
+    enableDigitalSignature: boolean;
+    enableContractEditing: boolean;
+    saleContractTemplate?: string;
+    rentalContractTemplate?: string;
+    sale: {
+      taxMode: 'ht' | 'ttc';
+      taxEnabled: boolean;
+      taxRate: number;
+    };
+    rental: {
+      taxMode: 'ht' | 'ttc';
+      taxEnabled: boolean;
+      taxRate: number;
+    };
+  };
 };
 
 export type City = {

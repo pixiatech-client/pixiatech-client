@@ -2506,6 +2506,23 @@ const settingsSchema = z.object({
     messageStyle: z.string(),
     validityMinutes: z.number(),
   }).optional(),
+  estimationFlow: z.object({
+    enableRentalPeriod: z.boolean(),
+    enableDigitalSignature: z.boolean(),
+    enableContractEditing: z.boolean(),
+    saleContractTemplate: z.string().optional(),
+    rentalContractTemplate: z.string().optional(),
+    sale: z.object({
+      taxMode: z.enum(['ht', 'ttc']),
+      taxEnabled: z.boolean(),
+      taxRate: z.number().min(0).max(100),
+    }),
+    rental: z.object({
+      taxMode: z.enum(['ht', 'ttc']),
+      taxEnabled: z.boolean(),
+      taxRate: z.number().min(0).max(100),
+    }),
+  }).optional(),
 });
 
 const wizardProjectTypeSettingSchema = z.object({
@@ -2593,6 +2610,13 @@ export async function getSettings(): Promise<Settings> {
     },
     lightThemeId: '',
     darkThemeId: '',
+    estimationFlow: {
+      enableRentalPeriod: true,
+      enableDigitalSignature: true,
+      enableContractEditing: false,
+      sale: { taxMode: 'ht', taxEnabled: false, taxRate: 0 },
+      rental: { taxMode: 'ht', taxEnabled: true, taxRate: 10 },
+    },
   };
 
   try {

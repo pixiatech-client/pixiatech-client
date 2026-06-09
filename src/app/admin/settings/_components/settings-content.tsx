@@ -3,12 +3,12 @@
 import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { getSettings } from '@/app/admin/actions';
 import type { Settings as AppSettings } from '@/lib/types';
-import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification' | 'flow';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -27,6 +27,7 @@ const MessagingContent = lazy(() => import('../messaging/page'));
 const PersonalizationContent = lazy(() => import('../personalization/page'));
 const SoftwareContent = lazy(() => import('../software/page'));
 const EmailVerificationContent = lazy(() => import('../email-verification/page'));
+const FlowContent = lazy(() => import('../flow/page'));
 
 function LoadingFallback() {
     return (
@@ -56,6 +57,7 @@ const tabsConfig: TabItem[] = [
     { id: 'hint-bubble', label: 'Hint Bubbles', icon: MessageSquare },
     { id: 'software', label: 'Software', icon: Settings },
     { id: 'email-verification', label: 'Email Verification', icon: ShieldCheck },
+    { id: 'flow', label: 'Parcours client', icon: Zap },
 ];
 
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
@@ -130,6 +132,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <EmailVerificationContent />;
             case 'software':
                 return <SoftwareContent />;
+            case 'flow':
+                return <FlowContent />;
             default:
                 return <GeneralContent />;
         }

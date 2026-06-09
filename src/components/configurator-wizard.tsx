@@ -749,16 +749,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
   const uniquePitches = Array.from(new Map(allPitches.map(p => [p.value, p])).values());
   const pixelPitches = uniquePitches;
   const pixelPitchImageUrl = wizardSettings?.pixelPitchImageUrl;
-  const [customImage, setCustomImage] = useState<string | null>(null);
-  const mainImage = customImage || pixelPitchImageUrl || "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&q=90&w=2000"; // City skyline
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setCustomImage(url);
-    }
-  };
+  const mainImage = pixelPitchImageUrl || "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&q=90&w=2000"; // City skyline
 
   // Mock technical details based on pitch and dimensions
   const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 0;
@@ -797,7 +788,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
         {/* Left: Image Preview */}
         <div className="space-y-4">
           <div className="w-full lg:max-w-[300px] lg:ml-auto h-72 md:h-[350px] lg:h-[480px] relative rounded-[2.5rem] overflow-hidden shadow-sm p-2 bg-transparent shrink-0">
-            <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative group">
+            <div className="w-full h-full rounded-[2.2rem] overflow-hidden relative">
               <img
                 src={mainImage}
                 alt="LED Content"
@@ -805,14 +796,28 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
                 referrerPolicy="no-referrer"
                 loading="eager"
               />
-              {userProfile?.role === 'admin' && (
-                <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white gap-2">
-                  <Maximize className="w-8 h-8 rotate-45" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-center px-2">Remplacer la photo</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                </label>
-              )}
               <div className="absolute inset-0 bg-blue-500/10 mix-blend-overlay pointer-events-none" />
+              {/* Technical specs at bottom of card */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center justify-center gap-5 pointer-events-none">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-[10px] bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg flex items-center justify-center shrink-0">
+                    <Maximize className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[7px] font-bold text-white/60 uppercase tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">{t('wizard.pixelPitch.resolution')}</span>
+                    <span className="text-[10px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] leading-tight">{resX}x{resY}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-[10px] bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg flex items-center justify-center shrink-0">
+                    <Sun className="w-4 h-4 text-orange-300" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[7px] font-bold text-white/60 uppercase tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">{t('wizard.pixelPitch.brightness')}</span>
+                    <span className="text-[10px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] leading-tight">{brightness.split(' ')[0]} nits</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <p className="text-center text-xs text-slate-500 leading-relaxed px-4 w-full lg:max-w-[300px] lg:ml-auto">
@@ -866,30 +871,7 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
               ))}
             </div>
 
-            {/* Technical Details Section */}
-            <div className="pt-4 border-t border-slate-100 space-y-3">
-              <h3 className="text-sm font-black text-slate-900 mb-2">{t('wizard.pixelPitch.technicalDetails')}</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 p-3 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-primary">
-                    <Maximize className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{t('wizard.pixelPitch.resolution')}</p>
-                    <p className="text-xs font-black text-slate-900">{resX}x{resY}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-orange-500">
-                    <Sun className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{t('wizard.pixelPitch.brightness')}</p>
-                    <p className="text-xs font-black text-slate-900">{brightness.split(' ')[0]} nits</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>
