@@ -5,7 +5,6 @@ import { Check, Calendar as CalendarIcon, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConfigState } from '@/lib/configurator-wizard-types';
 import { WizardSettings } from '@/lib/types';
-
 export function StepProjectType({ state, updateState, wizardSettings, t }: { state: ConfigState, updateState: any, wizardSettings: WizardSettings, t: any }) {
   const projectTypes = wizardSettings?.projectTypes;
   const images = {

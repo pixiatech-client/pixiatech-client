@@ -160,9 +160,8 @@ export default function SignatureFlow({
   const [width, setWidth] = useState<number>(mainConfig.width || 0);
   const [height, setHeight] = useState<number>(mainConfig.height || 0);
   const [quantity, setQuantity] = useState<number>(mainConfig.quantity || 1);
-  const [projectMode, setProjectMode] = useState<'vente' | 'location'>(
-    mainConfig.transactionType === 'sale' ? 'vente' : 'location'
-  );
+  const projectMode: 'vente' | 'location' = 
+    mainConfig.transactionType === 'sale' ? 'vente' : 'location';
 
   const [renterDetails, setRenterDetails] = useState<RenterDetails>({
     company: '',
@@ -180,7 +179,7 @@ export default function SignatureFlow({
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState<boolean>(false);
   const [isInstallationIncluded, setIsInstallationIncluded] = useState<boolean>(true);
   const [isInstallationAccordionOpen, setIsInstallationAccordionOpen] = useState<boolean>(true);
-  const [showRentalPeriodSection, setShowRentalPeriodSection] = useState<boolean>(false);
+  const showRentalPeriodSection = projectMode === 'location';
   const [emailError, setEmailError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
@@ -1118,7 +1117,6 @@ export default function SignatureFlow({
                       setWidth(12);
                       setHeight(6.5);
                       setQuantity(1);
-                      setProjectMode('vente');
                       setRenterDetails({
                         company: 'Pixia Tech Europe',
                         representative: 'Moulebhar',
@@ -1194,7 +1192,28 @@ export default function SignatureFlow({
                         </AccordionItem>
                       );
                     })}
-                  </Accordion>
+                    </Accordion>
+
+                  {/* Période de location (Location only) */}
+                  {projectMode === 'location' && rentalStartDate && rentalEndDate && (
+                    <div className="bg-amber-50/40 border border-amber-200/50 rounded-2xl p-4 space-y-2">
+                      <div className="flex items-center gap-2 text-amber-700">
+                        <Clock size={14} className="stroke-[2.5]" />
+                        <span className="text-[11px] font-black uppercase tracking-wider">Période de location</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-amber-900">
+                        <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
+                          Du {formatFrenchDate(rentalStartDate)}
+                        </span>
+                        <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
+                          Au {formatFrenchDate(rentalEndDate)}
+                        </span>
+                        <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
+                          {rentalStartTime} → {rentalEndTime}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* separator divider */}
                   <div className="border-t border-zinc-100 my-4" />
@@ -1363,6 +1382,7 @@ export default function SignatureFlow({
 
         {/* STEP 2: CONTRAT D'AFFICHAGE (Sleek document viewing, high contrast right sidebar summary) */}
         {currentStep === 'contrat' && (
+          <>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in">
             
             {/* Scrollable contract window & tactical card signature */}
@@ -1483,24 +1503,6 @@ export default function SignatureFlow({
                   </div>
                 )}
 
-                {/* Step 2 Bottom Navigation - Premium corporate spacing */}
-                <div className="mt-8 pt-6 border-t border-zinc-150 flex flex-col sm:flex-row-reverse justify-between gap-4 select-none">
-                  <FloatingFooterNav
-                    onBack={() => setCurrentStep('informations')}
-                    onNext={() => {
-                      const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
-                      setSentOtpCode(randomCode);
-                      setOtpTimeLeft(597);
-                      setOtpError(null);
-                      setInputOtpCode('');
-                      setCurrentStep('securite');
-                      sendRealEmail(randomCode);
-                    }}
-                    nextDisabled={!acceptedCgl || (projectMode === 'location' && !isSignatureValidated)}
-                    nextLabel="Continuer vers la vérification"
-                  />
-                </div>
-
               </div>
 
             </div>
@@ -1526,11 +1528,11 @@ export default function SignatureFlow({
                   </span>
                 </div>
 
-                {/* Product Photos Strip */}
-                <div className="flex gap-2.5 bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/60 select-none overflow-x-auto">
+                {/* Product Photos Strip — aligné à gauche, séparateurs entre chaque produit */}
+                <div className="flex flex-col bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/60 select-none">
                   {productCalculations.map((pc, idx) => (
-                    <div key={idx} className="flex items-center gap-2.5 shrink-0">
-                      {idx > 0 && <div className="w-px h-10 bg-zinc-800/60" />}
+                    <div key={idx} className="flex flex-col">
+                      {idx > 0 && <div className="w-full h-px bg-zinc-800/60 my-2" />}
                       <div className="flex items-center gap-2.5">
                         <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-950 border border-zinc-800/60 shrink-0 flex items-center justify-center">
                           {pc.photo ? (
@@ -1539,7 +1541,7 @@ export default function SignatureFlow({
                             <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-wider">LED</span>
                           )}
                         </div>
-                        <div className="min-w-0">
+                        <div className="flex flex-col min-w-0 flex-1">
                           <span className="text-[11px] font-bold text-white truncate block leading-tight">
                             {pc.product?.name || activePack.name}
                           </span>
@@ -1647,10 +1649,31 @@ export default function SignatureFlow({
             </div>
 
           </div>
+
+            {/* Navigation between the two cards */}
+            <div className="flex justify-center w-full">
+              <FloatingFooterNav
+                onBack={() => setCurrentStep('informations')}
+                onNext={() => {
+                  const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
+                  setSentOtpCode(randomCode);
+                  setOtpTimeLeft(597);
+                  setOtpError(null);
+                  setInputOtpCode('');
+                  setCurrentStep('securite');
+                  sendRealEmail(randomCode);
+                }}
+                nextDisabled={!acceptedCgl || (projectMode === 'location' && !isSignatureValidated)}
+                nextLabel="Continuer vers la vérification"
+              />
+            </div>
+
+        </>
         )}
 
         {/* STEP 3: VÉRIFICATION DE SÉCURITÉ & SIMULATED EMAIL INBOX (A dual layout masterpiece) */}
         {currentStep === 'securite' && (
+          <>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in">
             
             {/* Left Hand: High security validation page (Écran 4) */}
@@ -1738,13 +1761,6 @@ export default function SignatureFlow({
                   </div>
                 </div>
 
-                <button
-                  onClick={handlePrevStep}
-                  className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200/80 text-zinc-650 font-bold rounded-full text-xs transition-all cursor-pointer flex items-center gap-1.5 self-start"
-                >
-                  <ArrowLeft size={13} />
-                  <span>Retour au contrat</span>
-                </button>
               </div>
 
             </div>
@@ -1924,6 +1940,16 @@ export default function SignatureFlow({
             </div>
 
           </div>
+
+            {/* Navigation flottante — retour en large, suivant petit désactivé */}
+            <FloatingFooterNav
+              onBack={handlePrevStep}
+              onNext={() => {}}
+              nextDisabled
+              backIsPrimary
+            />
+
+          </>
         )}
 
         {/* STEP 4: CONFIRMATION & FÉLICITATIONS (Beautiful final dashboard validation) */}
