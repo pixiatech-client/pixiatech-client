@@ -30,6 +30,7 @@ import { ConfiguratorWizard } from './configurator-wizard';
 import { ConfiguratorModeSelection } from './configurator-mode-selection';
 import { preloadImages } from '@/lib/image-preload';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import { WizardBotFlow } from '@/components/chat/WizardBotFlow';
 import SignatureFlow from './SignatureFlow';
 
 
@@ -166,6 +167,7 @@ export function QuoteBuilder({
     const [mediaType, setMediaType] = useState<'video' | 'image' | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
     const [isSignatureFlowActive, setIsSignatureFlowActive] = useState(false);
+    const [isManualBotOpen, setIsManualBotOpen] = useState(false);
 
     console.log("DEBUG: QuoteBuilder Rendered", { isSuccess, currentStep });
 
@@ -746,7 +748,7 @@ export function QuoteBuilder({
 
         if (originalStep === 1) {
             if (activeMode === 'selection') {
-                return <ConfiguratorModeSelection onSelectMode={handleModeSelect} settings={initialSettings} />;
+                return <ConfiguratorModeSelection onSelectMode={handleModeSelect} onOpenBot={() => setIsManualBotOpen(true)} settings={initialSettings} />;
             }
             if (activeMode === 'wizard') {
                 return <ConfiguratorWizard onComplete={handleWizardComplete} onBack={handleGoToModeSelection} allProducts={allProducts} settings={initialSettings} wizardSettings={wizardSettings} initialStep={initialWizardStep} />;
@@ -969,6 +971,19 @@ export function QuoteBuilder({
                     onHome={handleGoToModeSelection}
                 />
             )}
+            <AnimatePresence>
+                {isManualBotOpen && (
+                    <WizardBotFlow
+                        onClose={() => setIsManualBotOpen(false)}
+                        onHome={() => { setIsManualBotOpen(false); handleGoToModeSelection(); }}
+                        allProducts={allProducts}
+                        settings={initialSettings}
+                        laborSettings={laborSettings}
+                        deliverySettings={deliverySettings}
+                        locations={locations}
+                    />
+                )}
+            </AnimatePresence>
         </>
     );
 }

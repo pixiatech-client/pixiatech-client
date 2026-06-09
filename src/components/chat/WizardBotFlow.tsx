@@ -21,7 +21,6 @@ import { SuccessView } from '@/components/success-view';
 import { ProductComparator } from '@/components/product-comparator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SparklesText } from '@/components/ui/sparkles-text';
 import { createQuoteRequest, getBlockedPeriods, getProductRentalAvailabilityAction } from '@/app/actions/quote-actions';
 import { useUser } from '@/firebase';
 import { useI18n } from '@/lib/i18n';
@@ -942,22 +941,6 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                 <SuccessView quoteId={quoteId} onNewQuote={() => window.location.reload()} initialEmail={formEmail} />
               ) : (
                 <>
-                  {/* Sparkle title for project type selection */}
-                  {step === STEP.PROJECT_TYPE && !isTyping && messages.length <= 2 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-center pt-4 pb-2"
-                    >
-                      <SparklesText
-                        text="CHOISISSEZ VOTRE MODE"
-                        sparklesCount={4}
-                        colors={{ first: "#6366f1", second: "#c084fc" }}
-                        className="text-[22px] md:text-[26px] font-black text-slate-900"
-                      />
-                    </motion.div>
-                  )}
-
                   {/* Chat messages */}
                   {messages.map((msg, idx) => (
                     <div key={msg.id}>

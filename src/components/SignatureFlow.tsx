@@ -57,6 +57,7 @@ import ContractDocument from './ContractDocument';
 import { ConfiguredProduct, Product, Settings } from '@/lib/types';
 import { createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp } from '@/app/actions/quote-actions';
 import { getSettings } from '@/app/admin/actions';
+import { useI18n } from '@/lib/i18n';
 import { jsPDF } from 'jspdf';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { FloatingFooterNav } from '@/components/ui/floating-footer-nav';
@@ -163,6 +164,7 @@ export default function SignatureFlow({
   onBackToConfigurator,
   onStepChange
 }: SignatureFlowProps) {
+  const { t, locale, setLocale } = useI18n();
   const [currentStep, setCurrentStep] = useState<StepId>('informations');
   const [quoteId, setQuoteId] = useState<string | null>(null);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
@@ -613,10 +615,10 @@ export default function SignatureFlow({
 
   // Cohesive stages in the upper header representation
   const steps: Step[] = [
-    { id: 'informations', label: 'Résumé de l’estimation', isCompleted: currentStep !== 'informations', isActive: currentStep === 'informations' },
-    { id: 'contrat', label: 'Contrat & Signature', isCompleted: currentStep === 'securite' || currentStep === 'confirmation', isActive: currentStep === 'contrat' },
-    { id: 'securite', label: 'Vérification de sécurité', isCompleted: currentStep === 'confirmation', isActive: currentStep === 'securite' },
-    { id: 'confirmation', label: 'Félicitations', isCompleted: false, isActive: currentStep === 'confirmation' }
+    { id: 'informations', label: t('signature.step1'), isCompleted: currentStep !== 'informations', isActive: currentStep === 'informations' },
+    { id: 'contrat', label: t('signature.step2'), isCompleted: currentStep === 'securite' || currentStep === 'confirmation', isActive: currentStep === 'contrat' },
+    { id: 'securite', label: t('signature.step3'), isCompleted: currentStep === 'confirmation', isActive: currentStep === 'securite' },
+    { id: 'confirmation', label: t('signature.step4'), isCompleted: false, isActive: currentStep === 'confirmation' }
   ];
 
   // Time format helper (MM:SS)
@@ -655,13 +657,13 @@ export default function SignatureFlow({
     if (!renterDetails.representative.trim()) hasError = true;
     
     if (!validateEmail(renterDetails.email)) {
-      setEmailError('Veuillez saisir une adresse email valide.');
+      setEmailError(t('signature.emailRequired'));
       hasError = true;
     }
     
     const phoneResult = validatePhone(renterDetails.phone);
     if (!phoneResult.isValid) {
-      setPhoneError(phoneResult.error || 'Numéro de téléphone invalide.');
+      setPhoneError(phoneResult.error || t('signature.phoneRequired'));
       hasError = true;
     }
     
@@ -681,7 +683,7 @@ export default function SignatureFlow({
         setCurrentStep('confirmation');
       }, 800);
     } else {
-      setOtpError("Validation automatique impossible. Entrez le code reçu par e-mail.");
+      setOtpError(t('signature.otpManualEntry'));
     }
   };
 
@@ -782,7 +784,7 @@ export default function SignatureFlow({
 
       {/* Stepper Progress Indicator */}
       {currentStep !== 'confirmation' && (
-        <div className="w-full bg-white border-b border-[#e2e8f0] py-3.5 px-4 overflow-x-auto select-none scrollbar-none">
+        <div className="w-full bg-white border-b border-[#e2e8f0] py-3.5 px-4 overflow-x-auto select-none scrollbar-none relative">
           <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 sm:gap-6 px-2 min-w-max">
             {steps.map((st, index) => {
               const active = st.isActive;
@@ -834,6 +836,7 @@ export default function SignatureFlow({
               );
             })}
           </div>
+
         </div>
       )}
 
@@ -855,17 +858,17 @@ export default function SignatureFlow({
                 <div className="flex items-center gap-1.5">
                   <ShieldAlert size={13} className="text-amber-600" />
                   <span className="text-xs font-mono font-bold text-amber-600 uppercase tracking-widest">
-                    Espace hautement sécurisé • Étape 1 sur 4
+                    {t('signature.secureBadge')}
                   </span>
                 </div>
 
                 {/* Left Pane Header */}
                 <div className="space-y-1">
                   <h2 className="text-lg sm:text-xl font-black font-heading tracking-tight text-zinc-905 uppercase">
-                    Informations Client
+                    {t('signature.clientInfo')}
                   </h2>
                   <p className="text-xs text-zinc-500 font-semibold">
-                    Tous les champs sont obligatoires sauf la note pour le vendeur.
+                    {t('signature.allFieldsRequired')}
                   </p>
                 </div>
 
@@ -874,12 +877,12 @@ export default function SignatureFlow({
                   {/* Entity Company name */}
                   <div className="space-y-1.5 md:col-span-2">
                     <label htmlFor="comp-name" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${attemptedSubmit && !renterDetails.company ? 'text-red-500' : 'text-zinc-700'}`}>
-                      Nom de l'entreprise *
+                      {t('signature.companyName')} *
                     </label>
                     <input
                       id="comp-name"
                       type="text"
-                      placeholder="Veuillez saisir le nom de l'entreprise"
+                      placeholder={t('signature.companyPlaceholder')}
                       value={renterDetails.company}
                       onChange={(e) => setRenterDetails({ ...renterDetails, company: e.target.value })}
                       className={`w-full rounded-[14px] px-4 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
@@ -890,7 +893,7 @@ export default function SignatureFlow({
                     />
                     {attemptedSubmit && !renterDetails.company && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
-                        <span>▲ Ce champ est obligatoire</span>
+                        <span>▲ {t('signature.fieldRequired')}</span>
                       </p>
                     )}
                   </div>
@@ -898,12 +901,12 @@ export default function SignatureFlow({
                   {/* Nom du contact */}
                   <div className="space-y-1.5 md:col-span-2">
                     <label htmlFor="comp-representative" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${attemptedSubmit && !renterDetails.representative ? 'text-red-500' : 'text-zinc-700'}`}>
-                      Nom du contact *
+                      {t('signature.contactName')} *
                     </label>
                     <input
                       id="comp-representative"
                       type="text"
-                      placeholder="Veuillez saisir le nom du contact"
+                      placeholder={t('signature.contactPlaceholder')}
                       value={renterDetails.representative}
                       onChange={(e) => setRenterDetails({ ...renterDetails, representative: e.target.value })}
                       className={`w-full rounded-[14px] px-4 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
@@ -914,7 +917,7 @@ export default function SignatureFlow({
                     />
                     {attemptedSubmit && !renterDetails.representative && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
-                        <span>▲ Ce champ est obligatoire</span>
+                        <span>▲ {t('signature.fieldRequired')}</span>
                       </p>
                     )}
                   </div>
@@ -922,12 +925,12 @@ export default function SignatureFlow({
                   {/* Corporate professional email */}
                   <div className="space-y-1.5 md:col-span-2">
                     <label htmlFor="comp-email" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${emailError || (attemptedSubmit && !renterDetails.email) ? 'text-red-500' : 'text-zinc-700'}`}>
-                      Email professionnel *
+                      {t('signature.professionalEmail')} *
                     </label>
                     <input
                       id="comp-email"
                       type="email"
-                      placeholder="Veuillez saisir l'email professionnel"
+                      placeholder={t('signature.emailPlaceholder')}
                       value={renterDetails.email}
                       onChange={(e) => setRenterDetails({ ...renterDetails, email: e.target.value })}
                       className={`w-full rounded-[14px] px-4 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
@@ -938,7 +941,7 @@ export default function SignatureFlow({
                     />
                     {(emailError || (attemptedSubmit && !renterDetails.email)) && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
-                        <span>▲ {emailError || 'Ce champ est obligatoire'}</span>
+                        <span>▲ {emailError || t('signature.fieldRequired')}</span>
                       </p>
                     )}
                   </div>
@@ -946,12 +949,12 @@ export default function SignatureFlow({
                   {/* Phone number */}
                   <div className="space-y-1.5 md:col-span-2">
                     <label htmlFor="comp-phone" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${phoneError || (attemptedSubmit && !renterDetails.phone) ? 'text-red-500' : 'text-zinc-700'}`}>
-                      Téléphone *
+                      {t('signature.phone')} *
                     </label>
                     <input
                       id="comp-phone"
                       type="tel"
-                      placeholder="Veuillez saisir le numéro de téléphone"
+                      placeholder={t('signature.phonePlaceholder')}
                       value={renterDetails.phone}
                       onChange={(e) => {
                         const val = e.target.value.replace(/[^\d]/g, '').slice(0, 14);
@@ -965,7 +968,7 @@ export default function SignatureFlow({
                     />
                     {(phoneError || (attemptedSubmit && !renterDetails.phone)) && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
-                        <span>▲ {phoneError || 'Ce champ est obligatoire'}</span>
+                        <span>▲ {phoneError || t('signature.fieldRequired')}</span>
                       </p>
                     )}
                   </div>
@@ -974,10 +977,10 @@ export default function SignatureFlow({
                   <div className="space-y-1.5 md:col-span-2 relative">
                     <div className="flex items-center gap-2">
                       <label className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${attemptedSubmit && !citySearchQuery ? 'text-red-500' : 'text-zinc-700'}`}>
-                        Ville de livraison *
+                        {t('signature.deliveryCity')} *
                       </label>
                       <span className="text-[9px] bg-orange-100 text-orange-700 border border-orange-200/60 px-2 py-0.5 rounded-md font-extrabold uppercase tracking-wider">
-                        IMPORTANT
+                        {t('signature.important')}
                       </span>
                     </div>
                     
@@ -987,7 +990,7 @@ export default function SignatureFlow({
                       </div>
                       <input
                         type="text"
-                        placeholder="Rechercher une ville ou un code postal (ex: Lyon, 75000)..."
+                        placeholder={t('signature.cityPlaceholder')}
                         value={citySearchQuery}
                         onChange={(e) => {
                           setCitySearchQuery(e.target.value);
@@ -1011,7 +1014,7 @@ export default function SignatureFlow({
 
                     {attemptedSubmit && !citySearchQuery && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
-                        <span>▲ Ce champ est obligatoire</span>
+                        <span>▲ {t('signature.fieldRequired')}</span>
                       </p>
                     )}
 
@@ -1047,8 +1050,8 @@ export default function SignatureFlow({
                           ))
                         ) : (
                           <div className="text-center p-4 text-zinc-500">
-                            <p className="font-bold text-zinc-700">Zone non configurée</p>
-                            <p className="text-[10px] text-zinc-400 mt-1">L'entreprise PixiaTech ne couvre pas encore cette zone pour les configurations automatisées.</p>
+                            <p className="font-bold text-zinc-700">{t('signature.zoneNotConfigured')}</p>
+                            <p className="text-[10px] text-zinc-400 mt-1">{t('signature.zoneNotConfiguredDesc')}</p>
                             <button
                               type="button"
                               onClick={() => {
@@ -1063,7 +1066,7 @@ export default function SignatureFlow({
                               }}
                               className="mt-3 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-[10px] font-bold transition-all"
                             >
-                              Réinitialiser à Paris
+                              {t('signature.resetToParis')}
                             </button>
                           </div>
                         )}
@@ -1074,12 +1077,12 @@ export default function SignatureFlow({
                   {/* Address */}
                   <div className="space-y-1.5 md:col-span-2">
                     <label htmlFor="comp-address" className={`font-black uppercase tracking-wide text-[10px] sm:text-[11px] ${attemptedSubmit && !renterDetails.address ? 'text-red-500' : 'text-zinc-700'}`}>
-                      Adresse de l'événement *
+                      {t('signature.eventAddress')} *
                     </label>
                     <input
                       id="comp-address"
                       type="text"
-                      placeholder="Veuillez saisir l'adresse de l'événement"
+                      placeholder={t('signature.addressPlaceholder')}
                       value={renterDetails.address}
                       onChange={(e) => setRenterDetails({ ...renterDetails, address: e.target.value })}
                       className={`w-full rounded-[14px] px-4 py-3.5 font-semibold focus:outline-none transition-all text-xs shadow-sm ${
@@ -1090,7 +1093,7 @@ export default function SignatureFlow({
                     />
                     {attemptedSubmit && !renterDetails.address && (
                       <p className="text-red-550 font-bold text-[10px] mt-1 flex items-center gap-1">
-                        <span>▲ Ce champ est obligatoire</span>
+                        <span>▲ {t('signature.fieldRequired')}</span>
                       </p>
                     )}
                   </div>
@@ -1101,7 +1104,7 @@ export default function SignatureFlow({
                       <div className="flex items-center gap-2 border-b border-blue-100/50 pb-2 select-none">
                         <span className="w-1.5 h-3.5 bg-blue-600 rounded-full block"></span>
                         <h4 className="font-bold text-[10px] sm:text-xs text-blue-900 uppercase tracking-wider">
-                          Période et Horaires de la Location
+                          {t('signature.rentalPeriod')}
                         </h4>
                       </div>
                       
@@ -1109,7 +1112,7 @@ export default function SignatureFlow({
                         {/* Dates */}
                         <div className="space-y-1.5">
                           <label className="font-extrabold uppercase tracking-wide text-[10px] text-zinc-650">
-                            Date de début de location *
+                            {t('signature.rentalStartDate')} *
                           </label>
                           <input
                             type="date"
@@ -1121,7 +1124,7 @@ export default function SignatureFlow({
 
                         <div className="space-y-1.5">
                           <label className="font-extrabold uppercase tracking-wide text-[10px] text-zinc-650">
-                            Date de fin de location *
+                            {t('signature.rentalEndDate')} *
                           </label>
                           <input
                             type="date"
@@ -1134,11 +1137,11 @@ export default function SignatureFlow({
                         {/* Times */}
                         <div className="space-y-1.5">
                           <label className="font-extrabold uppercase tracking-wide text-[10px] text-zinc-650">
-                            Heure de début *
+                            {t('signature.startTime')} *
                           </label>
                           <input
                             type="text"
-                            placeholder="ex: 08:00"
+                            placeholder={t('signature.timeExample')}
                             value={rentalStartTime}
                             onChange={(e) => setRentalStartTime(e.target.value)}
                             className="w-full rounded-xl px-4 py-2.5 font-semibold focus:outline-none bg-white border border-zinc-200 focus:border-blue-500 text-xs shadow-sm"
@@ -1147,11 +1150,11 @@ export default function SignatureFlow({
 
                         <div className="space-y-1.5">
                           <label className="font-extrabold uppercase tracking-wide text-[10px] text-zinc-650">
-                            Heure de fin *
+                            {t('signature.endTime')} *
                           </label>
                           <input
                             type="text"
-                            placeholder="ex: 18:00"
+                            placeholder={t('signature.timeExample')}
                             value={rentalEndTime}
                             onChange={(e) => setRentalEndTime(e.target.value)}
                             className="w-full rounded-xl px-4 py-2.5 font-semibold focus:outline-none bg-white border border-zinc-200 focus:border-blue-500 text-xs shadow-sm"
@@ -1165,22 +1168,22 @@ export default function SignatureFlow({
                   <div className="space-y-1.5 md:col-span-2 pt-1">
                     <div className="flex items-center gap-2">
                       <label htmlFor="comp-notes" className="font-black uppercase tracking-wide text-[10px] sm:text-[11.5px] text-zinc-550">
-                        Note pour le vendeur
+                        {t('signature.noteForSeller')}
                       </label>
                       <span className="text-[9px] bg-zinc-100 text-zinc-500 font-black px-1.5 py-0.5 rounded uppercase tracking-wider">
-                        Facultatif
+                        {t('signature.optional')}
                       </span>
                     </div>
                     <textarea
                       id="comp-notes"
                       rows={3}
-                      placeholder="Ajoutez toute information utile pour le vendeur (contraintes, disponibilités, accès au site, remarques particulières, etc.)"
+                      placeholder={t('signature.notesPlaceholder')}
                       value={additionalNotes}
                       onChange={(e) => setAdditionalNotes(e.target.value)}
                       className="w-full bg-[#edf2f7]/40 border-2 border-transparent hover:border-zinc-200 rounded-[14px] px-4 py-3.5 font-semibold focus:bg-white focus:border-blue-500 focus:outline-none transition-all text-xs shadow-sm resize-none h-24"
                     />
                     <p className="text-zinc-400 font-semibold text-[10px] sm:text-[11px] mt-1 leading-normal select-none">
-                      Ex : "Disponible après 16h30" — "Accès uniquement le matin" — "Je serai absent le vendredi"
+                      {t('signature.notesExample')}
                     </p>
                   </div>
 
@@ -1209,7 +1212,7 @@ export default function SignatureFlow({
                     className="text-xs font-semibold text-zinc-500 hover:text-zinc-950 underline underline-offset-4 decoration-zinc-250 hover:decoration-zinc-950 transition-all cursor-pointer flex items-center gap-1.5 self-start py-2"
                   >
                     <Sparkles size={13} className="text-blue-650" />
-                    <span>Remplir avec des données de démonstration</span>
+                    <span>{t('signature.demoData')}</span>
                   </button>
 
                 </div>
@@ -1225,10 +1228,10 @@ export default function SignatureFlow({
                   {/* Visual header with VENTE state tag */}
                   <div className="flex items-center justify-between border-b border-zinc-100 pb-4 select-none">
                     <h3 className="text-[12px] sm:text-xs font-black font-heading text-zinc-950 uppercase tracking-wider">
-                      Détails Techniques
+                      {t('signature.techDetails')}
                     </h3>
                     <span className="bg-blue-50/60 text-blue-600 border border-blue-250/30 rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-widest font-mono">
-                      {projectMode === 'vente' ? 'Vente' : 'Location'}
+                      {projectMode === 'vente' ? t('signature.sale') : t('signature.rental')}
                     </span>
                   </div>
 
@@ -1256,13 +1259,13 @@ export default function SignatureFlow({
                           </AccordionTrigger>
                           <AccordionContent className="px-3 pb-3">
                             <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] font-semibold text-zinc-500 pt-1 border-t border-zinc-100">
-                              <span>Dimensions</span>
+                              <span>{t('signature.dimensions')}</span>
                               <span className="text-zinc-800 font-black font-mono text-right">{pc.width}m x {pc.height}m</span>
-                              <span>Surface</span>
+                              <span>{t('signature.surface')}</span>
                               <span className="text-zinc-800 font-black font-mono text-right">{(pc.surface * pc.quantity).toFixed(2)} m²</span>
-                              <span>Quantité</span>
+                              <span>{t('signature.quantity')}</span>
                               <span className="text-zinc-800 font-black font-mono text-right">x{pc.quantity}</span>
-                              <span>Sous-total</span>
+                              <span>{t('signature.subtotal')}</span>
                               <span className="text-zinc-800 font-black font-mono text-right">{fmtPrice(totalProductPrice)} €</span>
                             </div>
                           </AccordionContent>
@@ -1276,14 +1279,14 @@ export default function SignatureFlow({
                     <div className="bg-amber-50/40 border border-amber-200/50 rounded-2xl p-4 space-y-2">
                       <div className="flex items-center gap-2 text-amber-700">
                         <Clock size={14} className="stroke-[2.5]" />
-                        <span className="text-[11px] font-black uppercase tracking-wider">Période de location</span>
+                        <span className="text-[11px] font-black uppercase tracking-wider">{t('signature.rentalPeriodLabel')}</span>
                       </div>
                       <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-amber-900">
                         <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                          Du {formatFrenchDate(rentalStartDate)}
+                          {t('signature.from')} {formatFrenchDate(rentalStartDate)}
                         </span>
                         <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                          Au {formatFrenchDate(rentalEndDate)}
+                          {t('signature.to')} {formatFrenchDate(rentalEndDate)}
                         </span>
                         <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
                           {rentalStartTime} → {rentalEndTime}
@@ -1298,19 +1301,19 @@ export default function SignatureFlow({
                   {/* Subtotals breakdowns */}
                   <div className="space-y-3 text-xs font-semibold">
                     <div className="flex justify-between items-center text-zinc-400">
-                      <span>Sous-total produits</span>
+                      <span>{t('signature.productsSubtotal')}</span>
                       <span className="text-zinc-800 font-bold font-mono">
                         {fmtPrice(totalSubtotalProducts)} €
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-zinc-400">
-                      <span>Livraison</span>
+                      <span>{t('signature.delivery')}</span>
                       <span className="text-zinc-800 font-bold font-mono">
                         {fmtPrice(totalDeliveryFee)} €
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-zinc-400">
-                      <span>Installation</span>
+                      <span>{t('signature.installation')}</span>
                       <span className="text-zinc-800 font-bold font-mono">
                         {isInstallationIncluded ? `${fmtPrice(installationFee)} €` : '0 €'}
                       </span>
@@ -1335,7 +1338,7 @@ export default function SignatureFlow({
                     </div>
                     <div className="relative z-10 p-4 sm:p-5 flex items-center justify-between select-none">
                       <span className="text-xs font-black text-white/80 tracking-wider font-heading uppercase drop-shadow-sm">
-                        Total estimé ({taxLabel})
+                        {t('signature.totalEstimate')} ({taxLabel})
                       </span>
                       <div className="flex items-center gap-2">
                         {settings?.paymentIconUrl && (
@@ -1362,10 +1365,10 @@ export default function SignatureFlow({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-extrabold text-zinc-950 text-sm uppercase tracking-wide">Installation</h3>
-                        <span className="text-[9px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">Recommandé</span>
+                        <h3 className="font-extrabold text-zinc-950 text-sm uppercase tracking-wide">{t('signature.installationTitle')}</h3>
+                        <span className="text-[9px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider">{t('signature.recommended')}</span>
                       </div>
-                      <p className="text-[10px] text-zinc-400 font-medium">Souhaitez-vous inclure l'installation par nos techniciens ?</p>
+                      <p className="text-[10px] text-zinc-400 font-medium">{t('signature.installationQuestion')}</p>
                     </div>
                   </div>
 
@@ -1382,8 +1385,8 @@ export default function SignatureFlow({
                     >
                       <div className="flex items-start justify-between">
                         <div className="space-y-0.5">
-                          <span className="font-extrabold text-zinc-950 text-sm block">Oui, inclure l'installation</span>
-                          <span className="text-zinc-500 font-medium text-xs block">Nos experts s'occupent de tout.</span>
+                          <span className="font-extrabold text-zinc-950 text-sm block">{t('signature.includeInstallation')}</span>
+                          <span className="text-zinc-500 font-medium text-xs block">{t('signature.includeInstallationDesc')}</span>
                         </div>
                         
                         <div className="pt-1">
@@ -1397,8 +1400,8 @@ export default function SignatureFlow({
 
                       {isInstallationIncluded && (
                         <div className="mt-4 pt-4 border-t border-zinc-100 space-y-1 text-zinc-800 font-medium animate-fade-in text-xs leading-relaxed">
-                          <p>Pour une surface totale de <strong className="text-zinc-955 font-black">{totalSurface.toFixed(2)} m²</strong>, votre projet nécessite <strong className="text-zinc-955 font-black">{techniciansCount} technicien(s)</strong>.</p>
-                          <p className="text-sm font-black text-zinc-955 mt-2">Coût : {fmtPrice(installationFee)} €</p>
+                          <p>{t('signature.surfaceTech', { area: totalSurface.toFixed(2), count: techniciansCount })}</p>
+                          <p className="text-sm font-black text-zinc-955 mt-2">{t('signature.costTech', { cost: fmtPrice(installationFee) })}</p>
                         </div>
                       )}
                     </button>
@@ -1415,8 +1418,8 @@ export default function SignatureFlow({
                     >
                       <div className="flex items-start justify-between">
                         <div className="space-y-0.5">
-                          <span className="font-extrabold text-zinc-955 text-sm block">Non, je m'en occupe</span>
-                          <span className="text-zinc-500 font-medium text-xs block">Vous gérez l'installation vous-même.</span>
+                          <span className="font-extrabold text-zinc-955 text-sm block">{t('signature.excludeInstallation')}</span>
+                          <span className="text-zinc-500 font-medium text-xs block">{t('signature.excludeInstallationDesc')}</span>
                         </div>
                         
                         <div className="pt-1">
@@ -1434,9 +1437,9 @@ export default function SignatureFlow({
                       <div className="p-4 bg-red-50/70 border border-red-200 rounded-2xl flex items-start gap-3 animate-fade-in shadow-xs select-none">
                         <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
                         <div className="space-y-1">
-                          <span className="text-red-700 font-black text-xs uppercase tracking-wider block">Attention</span>
+                          <span className="text-red-700 font-black text-xs uppercase tracking-wider block">{t('signature.installationWarning')}</span>
                           <p className="text-red-650 font-semibold leading-relaxed text-[11px]">
-                            L'entreprise <strong className="font-extrabold">PIXIATECH</strong> décline toute responsabilité en cas de problème lié à une installation non effectuée par ses techniciens.
+                            {t('signature.installationWarningText')}
                           </p>
                         </div>
                       </div>
@@ -1477,7 +1480,7 @@ export default function SignatureFlow({
                 }
                 handleNextStep();
               }}
-              nextLabel="Valider et continuer vers le contrat"
+              nextLabel={t('signature.nextStep')}
             />
           </div>
         )}
@@ -1494,10 +1497,10 @@ export default function SignatureFlow({
                 <div className="flex flex-col gap-1">
                   <span className="text-xs font-mono font-bold text-amber-600 uppercase tracking-widest flex items-center gap-1.5">
                     <ShieldAlert size={13} className="text-amber-600" />
-                    Espace hautement sécurisé • Étape 2 sur 4
+                    {t('signature.secureBadge2')}
                   </span>
                   <h2 className="text-xl sm:text-2xl font-black font-heading tracking-tight text-zinc-900">
-                    {projectMode === 'vente' ? "Contrat de vente d'affichage" : "Contrat de location d'affichage"}
+                    {projectMode === 'vente' ? t('signature.contractTitleSale') : t('signature.contractTitleRental')}
                   </h2>
                 </div>
               </div>
@@ -1556,11 +1559,11 @@ export default function SignatureFlow({
                     <span className="text-xs leading-relaxed">
                       {projectMode === 'vente' ? (
                         <span>
-                          J'accepte que ces données soient conservées et traitées dans le cadre de ma demande, et de la démarche commerciale qui en découle, conformément aux mentions légales.
+                          {t('signature.gdprSale')}
                         </span>
                       ) : (
                         <span>
-                          Je reconnais avoir lu et accepté les <strong className="text-zinc-900 font-semibold">Conditions Générales de Location</strong>. Je certifie que les informations fournies sont exactes et je m'engage à respecter les termes du contrat.
+                          {t('signature.cgvRental')}
                         </span>
                       )}
                     </span>
@@ -1578,7 +1581,7 @@ export default function SignatureFlow({
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-1.5 h-4 bg-blue-600 rounded-full"></div>
                       <h4 className="text-xs sm:text-sm font-heading font-extrabold uppercase tracking-widest text-zinc-900">
-                        Signature du contrat numérique
+                        {t('signature.signatureTitle')}
                       </h4>
                     </div>
 
@@ -1593,7 +1596,6 @@ export default function SignatureFlow({
                         setSignatureDataUrl(dataUrl);
                         setIsSignatureValidated(true);
                         setShowErrorTips(false);
-                        // Signature successfully saved. User will now use the button below to manually proceed.
                       }}
                       onClear={() => {
                         setSignatureDataUrl(null);
@@ -1602,7 +1604,7 @@ export default function SignatureFlow({
                     />
 
                     <div className="text-center mt-3 text-[10px] text-zinc-400 font-mono">
-                      Votre signature sera certifiée numériquement par PandaDoc — valeur juridique contractuelle
+                      {t('signature.signatureCert')}
                     </div>
 
                   </div>
@@ -1622,14 +1624,14 @@ export default function SignatureFlow({
                 <div className="flex justify-between items-center border-b border-zinc-800 pb-3 select-none">
                   <div>
                     <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest block font-mono">
-                      Pack & Récapitulatif
+                      {t('signature.packSummary')}
                     </span>
                     <h3 className="text-sm font-heading font-black text-white uppercase tracking-wider mt-0.5">
-                      Sélection & Tarification
+                      {t('signature.selectionPricing')}
                     </h3>
                   </div>
                   <span className="bg-blue-600/10 text-blue-400 border border-blue-600/30 font-bold px-2.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider">
-                    {projectMode === 'vente' ? 'Vente' : 'Location'}
+                    {projectMode === 'vente' ? t('signature.sale') : t('signature.rental')}
                   </span>
                 </div>
 
@@ -1660,24 +1662,24 @@ export default function SignatureFlow({
                 </div>
 
                 {/* Technical checkmarks included */}
-                <div className="grid grid-cols-2 gap-3 bg-zinc-950/40 p-3 rounded-xl text-[10px] text-zinc-400 leading-normal border border-zinc-800/30 select-none">
-                  <div className="flex items-start gap-1.5">
-                    <Check size={11} className="text-blue-400 shrink-0 mt-0.5 stroke-[2.5]" />
-                    <span>Logistique Pixiatech</span>
+                  <div className="grid grid-cols-2 gap-3 bg-zinc-950/40 p-3 rounded-xl text-[10px] text-zinc-400 leading-normal border border-zinc-800/30 select-none">
+                    <div className="flex items-start gap-1.5">
+                      <Check size={11} className="text-blue-400 shrink-0 mt-0.5 stroke-[2.5]" />
+                      <span>{t('signature.logisticsPixiatech')}</span>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <Check size={11} className="text-blue-400 shrink-0 mt-0.5 stroke-[2.5]" />
+                      <span>{t('signature.approvedFile')}</span>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <Check size={11} className="text-blue-400 shrink-0 mt-0.5 stroke-[2.5]" />
+                      <span>{t('signature.proWarranty')}</span>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                      <Check size={11} className="text-blue-400 shrink-0 mt-0.5 stroke-[2.5]" />
+                      <span>{t('signature.techSupport')}</span>
+                    </div>
                   </div>
-                  <div className="flex items-start gap-1.5">
-                    <Check size={11} className="text-blue-400 shrink-0 mt-0.5 stroke-[2.5]" />
-                    <span>Dossier homologué</span>
-                  </div>
-                  <div className="flex items-start gap-1.5">
-                    <Check size={11} className="text-blue-400 shrink-0 mt-0.5 stroke-[2.5]" />
-                    <span>Garantie Pro</span>
-                  </div>
-                  <div className="flex items-start gap-1.5">
-                    <Check size={11} className="text-blue-400 shrink-0 mt-0.5 stroke-[2.5]" />
-                    <span>Support Technique</span>
-                  </div>
-                </div>
 
                 {/* Cohesive Financial Recap */}
                 <div className="space-y-3.5 text-xs font-sans pt-1">
@@ -1685,19 +1687,19 @@ export default function SignatureFlow({
                   {projectMode === 'vente' ? (
                     <>
                       <div className="flex justify-between items-center bg-zinc-900/30 px-3 py-2 rounded-lg leading-normal">
-                        <span className="text-zinc-400">Montant d'achat global :</span>
+                        <span className="text-zinc-400">{t('signature.saleTotal')}</span>
                         <strong className="text-blue-400 font-mono text-[14px] sm:text-base font-black whitespace-nowrap">
                           {fmtPrice(totalAmount)}€ {taxLabel}
                         </strong>
                       </div>
                       <div className="flex justify-between items-center leading-normal">
-                        <span className="text-zinc-400">Acompte à la commande (60%) :</span>
+                        <span className="text-zinc-400">{t('signature.deposit60')}</span>
                         <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
                           {fmtPrice(Math.round(totalAmount * 0.6))}€ {taxLabel}
                         </strong>
                       </div>
                       <div className="flex justify-between items-center leading-normal">
-                        <span className="text-zinc-400">Solde avant livraison (40%) :</span>
+                        <span className="text-zinc-400">{t('signature.balance40')}</span>
                         <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
                           {fmtPrice(Math.round(totalAmount * 0.4))}€ {taxLabel}
                         </strong>
@@ -1706,19 +1708,19 @@ export default function SignatureFlow({
                   ) : (
                     <>
                       <div className="flex justify-between items-center bg-zinc-900/30 px-3 py-2 rounded-lg leading-normal">
-                        <span className="text-zinc-400">Premier règlement (Loyer + Caution) :</span>
+                        <span className="text-zinc-400">{t('signature.rentalFirstPayment')}</span>
                         <strong className="text-blue-400 font-mono text-[14px] sm:text-base font-black whitespace-nowrap">
                           {fmtPrice(activePack.price + activePack.deposit)}€ {taxLabel}
                         </strong>
                       </div>
                       <div className="flex justify-between items-center leading-normal">
-                        <span className="text-zinc-400">Coût de la période :</span>
+                        <span className="text-zinc-400">{t('signature.rentalCost')}</span>
                         <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
                           {fmtPrice(activePack.price)}€ {taxLabel}
                         </strong>
                       </div>
                       <div className="flex justify-between items-center leading-normal">
-                        <span className="text-zinc-400">Caution de garantie (Restituée) :</span>
+                        <span className="text-zinc-400">{t('signature.rentalDeposit')}</span>
                         <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
                           {fmtPrice(activePack.deposit)}€ {taxLabel}
                         </strong>
@@ -1730,7 +1732,7 @@ export default function SignatureFlow({
 
                 {/* Subtitle notes */}
                 <div className="text-[9px] text-zinc-500 font-sans tracking-wide leading-normal text-center pt-2 border-t border-zinc-900 select-none">
-                  {flowSettings.taxEnabled ? `TVA à ${taxRate}% entièrement incluse.` : 'HT - TVA non applicable.'} Devis et contrat juridiques générés.
+                  {flowSettings.taxEnabled ? t('signature.taxNotice', { rate: taxRate }) : t('signature.taxNoticeExempt')} {t('signature.contractLegal')}
                 </div>
 
                 {/* Dynamic Configuration button inside the merged card */}
@@ -1738,7 +1740,7 @@ export default function SignatureFlow({
                   onClick={() => setCurrentStep('informations')}
                   className="w-full text-center py-2.5 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-300 hover:text-white font-bold text-xs rounded-xl tracking-wide cursor-pointer transition-all active:scale-98"
                 >
-                  Changer de dimensions ou de pack LED
+                  {t('signature.changePack')}
                 </button>
               </div>
 
@@ -1747,7 +1749,7 @@ export default function SignatureFlow({
               {/* Navigation button banner hint */}
               {isDigitalSignatureEnabled && !isSignatureValidated && (
                 <div className="p-4 bg-amber-50/70 border border-amber-200 border-dashed text-amber-900 rounded-xl text-center text-xs font-semibold leading-normal">
-                  Veuillez accepter les conditions générales de location/vente puis dessiner votre signature numérique pour continuer le dossier.
+                  {t('signature.acceptTermsHint')}
                 </div>
               )}
 
@@ -1769,7 +1771,7 @@ export default function SignatureFlow({
                   sendRealEmail(randomCode);
                 }}
                 nextDisabled={!acceptedCgl || (projectMode === 'location' && isDigitalSignatureEnabled && !isSignatureValidated)}
-                nextLabel="Continuer vers la vérification"
+                nextLabel={t('signature.continueToVerification')}
               />
             </div>
 
@@ -1787,17 +1789,16 @@ export default function SignatureFlow({
               <div className="flex flex-col gap-2">
                 <span className="text-xs font-mono font-bold text-amber-600 uppercase tracking-widest block flex items-center gap-1.5">
                   <ShieldAlert size={13} className="text-amber-550" />
-                  Espace hautement sécurisé • Étape 3 sur 4
+                  {t('signature.secureBadge3')}
                 </span>
                 
                 {/* Visual Title matched in font hierarchy, weight, and size to confirmation screen */}
                 <h1 className="text-3xl sm:text-4xl font-black font-heading tracking-tight text-zinc-900 leading-[1.15]">
-                  Vérification de <br />
-                  <span className="text-blue-600">sécurité PixiaTech</span>
+                  {t('signature.securityTitle')}
                 </h1>
                 
                 <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed font-sans mt-1">
-                  Nous avons envoyé un code de sécurité à votre adresse e-mail. Consultez votre boîte de réception puis cliquez sur le lien reçu. Pensez également à vérifier vos courriers indésirables.
+                  {t('signature.securityDesc')}
                 </p>
               </div>
 
@@ -1807,8 +1808,8 @@ export default function SignatureFlow({
                   <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-2xl flex items-center gap-3 text-blue-900 shadow-sm animate-pulse">
                     <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
                     <div className="text-xs font-semibold leading-normal">
-                      <span className="font-extrabold block text-blue-850">✈️ Transmission sécurisée en cours...</span>
-                      Envoi d'un e-mail de sécurité à l'adresse <strong className="font-black text-blue-950">{renterDetails.email}</strong>.
+                      <span className="font-extrabold block text-blue-850">{t('signature.emailSending')}</span>
+                      {t('signature.emailSendingDesc', { email: renterDetails.email })}
                     </div>
                   </div>
                 )}
@@ -1817,8 +1818,8 @@ export default function SignatureFlow({
                   <div className="p-4 bg-emerald-50/80 border border-emerald-250/60 rounded-2xl flex items-start gap-3 text-emerald-900 shadow-sm animate-fade-in">
                     <CheckCircle size={18} className="text-emerald-600 shrink-0 mt-0.5" />
                     <div className="text-xs font-semibold leading-normal font-sans">
-                      <span className="font-black uppercase tracking-wide text-emerald-800 text-[10px] block mb-0.5">E-mail Réel Transmis !</span>
-                      Un e-mail de sécurité contenant votre code d'accès unique a été envoyé à l'adresse <strong className="font-black text-emerald-950 font-mono">{renterDetails.email}</strong> via SMTP. Consultez votre messagerie pour récupérer le code et valider l'accès. (Pensez à regarder vos spams).
+                      <span className="font-black uppercase tracking-wide text-emerald-800 text-[10px] block mb-0.5">{t('signature.emailSentTitle')}</span>
+                      {t('signature.emailSentDesc', { email: renterDetails.email })}
                     </div>
                   </div>
                 )}
@@ -1827,8 +1828,8 @@ export default function SignatureFlow({
                   <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-2xl flex items-start gap-3 text-blue-900 shadow-sm animate-fade-in">
                     <Info size={18} className="text-blue-600 shrink-0 mt-0.5" />
                     <div className="text-xs font-semibold leading-normal font-sans">
-                      <span className="font-black uppercase tracking-wide text-blue-800 text-[10px] block mb-0.5">Note</span>
-                      Aucun serveur SMTP n'est configuré. Veuillez vérifier vos variables d'environnement SMTP.
+                      <span className="font-black uppercase tracking-wide text-blue-800 text-[10px] block mb-0.5">{t('signature.emailSimulatedTitle')}</span>
+                      {t('signature.emailSimulatedDesc')}
                     </div>
                   </div>
                 )}
@@ -1837,8 +1838,8 @@ export default function SignatureFlow({
                   <div className="p-4 bg-red-450/10 border border-red-200 rounded-2xl flex items-start gap-3 text-red-950 shadow-sm animate-fade-in">
                     <AlertTriangle size={18} className="text-red-650 shrink-0 mt-0.5" />
                     <div className="text-xs font-semibold leading-normal font-sans">
-                      <span className="font-black uppercase tracking-wide text-red-800 text-[10px] block mb-0.5">Échec de transmission SMTP</span>
-                      Le serveur n'a pas pu émettre le courrier. Veuillez vérifier la configuration SMTP et réessayer.
+                      <span className="font-black uppercase tracking-wide text-red-800 text-[10px] block mb-0.5">{t('signature.emailFailedTitle')}</span>
+                      {t('signature.emailFailedDesc')}
                     </div>
                   </div>
                 )}
@@ -1851,8 +1852,8 @@ export default function SignatureFlow({
                     <KeyRound size={18} />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-900 font-heading">La validation automatique n'a pas fonctionné ?</h4>
-                    <span className="text-[11px] text-zinc-500 font-medium block mt-0.5">Saisissez le code reçu par e-mail dans les slots de vérification.</span>
+                    <h4 className="text-xs font-bold text-zinc-900 font-heading">{t('signature.autoValidationTitle')}</h4>
+                    <span className="text-[11px] text-zinc-500 font-medium block mt-0.5">{t('signature.autoValidationDesc')}</span>
                   </div>
                 </div>
 
@@ -1861,8 +1862,8 @@ export default function SignatureFlow({
                     <Clock size={18} />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-900 font-heading">Délai de session</h4>
-                    <span className="text-[11px] text-zinc-500 font-medium block mt-0.5">Le code envoyé est valide pour les 10 prochaines minutes.</span>
+                    <h4 className="text-xs font-bold text-zinc-900 font-heading">{t('signature.sessionTitle')}</h4>
+                    <span className="text-[11px] text-zinc-500 font-medium block mt-0.5">{t('signature.sessionDesc')}</span>
                   </div>
                 </div>
 
@@ -1884,22 +1885,22 @@ export default function SignatureFlow({
                 {isCopied && (
                   <div className="p-3 bg-emerald-50 border border-emerald-250 text-emerald-800 text-[11px] font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs animate-bounce leading-snug">
                     <CheckCircle size={14} className="text-emerald-600 shrink-0" />
-                    <span>Code d'accès copié automatiquement dans le presse-papier !</span>
+                    <span>{t('signature.codeCopied')}</span>
                   </div>
                 )}
 
                 <div className="space-y-1">
                   <h3 className="text-base font-bold text-zinc-900 font-heading">
-                    {isSimulatingLinkClick ? 'Validation du lien...' : 'Verification'}
+                    {isSimulatingLinkClick ? t('signature.validationInProgress') : t('signature.verificationTitle')}
                   </h3>
                   {isSimulatingLinkClick ? (
                     <div className="text-xs text-blue-600 font-black flex items-center justify-center gap-2 animate-pulse py-1">
                       <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0"></div>
-                      <span>Vérification et connexion sécurisée de votre lien en cours...</span>
+                      <span>{t('signature.verificationProgress')}</span>
                     </div>
                   ) : (
                     <p className="text-xs text-zinc-500 max-w-xs mx-auto">
-                      Entrez le code à 6 chiffres envoyé sur votre appareil de confiance.
+                      {t('signature.enterCode')}
                     </p>
                   )}
                 </div>
@@ -1964,21 +1965,21 @@ export default function SignatureFlow({
                           setTimeout(() => handleManualCodeVerify(digits), 100);
                         }
                       } catch {
-                        setOtpError("Impossible d'accéder au presse-papier. Collez manuellement avec Ctrl+V.");
+                        setOtpError(t('signature.clipboardError'));
                       }
                     }}
                     disabled={isSimulatingLinkClick || isOtpCompleted}
                     className="text-xs font-black text-white bg-zinc-950 hover:bg-zinc-800 transition-all flex items-center justify-center gap-1.5 rounded-xl px-6 py-2.5 cursor-pointer shadow-xs uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <Copy size={12} className="stroke-[2.5]" />
-                    <span>Coller le code</span>
+                    <span>{t('signature.pasteCode')}</span>
                   </button>
                 </div>
 
                 {/* Countdown display */}
                 <div className="flex items-center justify-center gap-1 text-[11px] text-zinc-400 font-medium">
                   <Clock size={12} />
-                  <span>Le code de validation expirera dans </span>
+                  <span>{t('signature.codeExpiresIn')} </span>
                   <span className="font-mono font-bold text-zinc-800 bg-zinc-100 px-1.5 py-0.5 rounded leading-none">
                     {formatTime(otpTimeLeft)}
                   </span>
@@ -1996,7 +1997,7 @@ export default function SignatureFlow({
                 {isOtpCompleted && (
                   <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-semibold flex items-center justify-center gap-1.5 animate-bounce">
                     <CheckCircle size={15} className="text-emerald-600" />
-                    <span>L'identité a été validée avec succès !</span>
+                    <span>{t('signature.identityValidated')}</span>
                   </div>
                 )}
 
@@ -2012,7 +2013,7 @@ export default function SignatureFlow({
                     }`}
                   >
                     <Lock size={12} />
-                    <span>Valider</span>
+                    <span>{t('signature.validate')}</span>
                     <ArrowRight size={12} className="stroke-[2.5]" />
                   </button>
                 </div>
@@ -2021,7 +2022,7 @@ export default function SignatureFlow({
                   {otpResent && (
                     <div className="text-[10px] text-emerald-700 font-extrabold bg-emerald-50 border border-emerald-150 px-3 py-1.5 rounded-xl animate-bounce flex items-center gap-1">
                       <CheckCircle size={10} className="text-emerald-600" />
-                      <span>Nouveau code expédié sur votre email !</span>
+                      <span>{t('signature.codeResent')}</span>
                     </div>
                   )}
 
@@ -2031,13 +2032,13 @@ export default function SignatureFlow({
                       disabled={isSimulatingLinkClick || isOtpCompleted}
                       className="text-blue-600 font-semibold hover:underline bg-transparent border-none cursor-pointer disabled:opacity-40"
                     >
-                      Code non reçu ? Renvoyer le code
+                      {t('signature.resendCode')}
                     </button>
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-zinc-100 text-[8px] tracking-widest text-zinc-400 font-mono">
-                  ACCÈS RÉSERVÉ À L'ADMINISTRATION PIXIATECH
+                  {t('signature.accessRestricted')}
                 </div>
 
               </div>
@@ -2047,22 +2048,22 @@ export default function SignatureFlow({
             {/* Hidden summary for PDF capture */}
             <div id="confirmation-summary" className="hidden">
               <div className="bg-white p-8">
-                <h1 className="text-2xl font-bold text-center mb-6">PIXIATECH — Récapitulatif de l'estimation</h1>
-                <p className="text-sm mb-4">Client : {renterDetails.company} — {renterDetails.email}</p>
+                <h1 className="text-2xl font-bold text-center mb-6">{t('signature.pdfCaptureTitle')}</h1>
+                <p className="text-sm mb-4">{t('signature.pdfCaptureClient')} {renterDetails.company} — {renterDetails.email}</p>
                 <hr className="mb-4" />
                 {productCalculations.map((pc, i) => (
                   <div key={i} className="mb-4 text-sm">
-                    <p className="font-bold">{pc.product?.name || `Produit ${i+1}`}</p>
-                    <p>Dimensions : {pc.width}m × {pc.height}m × {pc.quantity}</p>
-                    <p>Surface : {(pc.surface * pc.quantity).toFixed(2)} m²</p>
-                    <p>Sous-total : {fmtPrice(pc.subtotal)} €</p>
+                    <p className="font-bold">{pc.product?.name || `${t('signature.productLabel')} ${i+1}`}</p>
+                    <p>{t('signature.dimensions')} : {pc.width}m × {pc.height}m × {pc.quantity}</p>
+                    <p>{t('signature.surface')} : {(pc.surface * pc.quantity).toFixed(2)} m²</p>
+                    <p>{t('signature.subtotal')} : {fmtPrice(pc.subtotal)} €</p>
                   </div>
                 ))}
                 <hr className="mb-4" />
-                <p>Sous-total produits : {fmtPrice(totalSubtotalProducts)} €</p>
-                <p>Livraison : {fmtPrice(totalDeliveryFee)} €</p>
-                <p>Installation : {isInstallationIncluded ? `${fmtPrice(installationFee)} €` : '0 €'}</p>
-                <p className="text-lg font-bold mt-2">Total : {fmtPrice(totalAmount)} €</p>
+                <p>{t('signature.productsSubtotal')} : {fmtPrice(totalSubtotalProducts)} €</p>
+                <p>{t('signature.delivery')} : {fmtPrice(totalDeliveryFee)} €</p>
+                <p>{t('signature.installation')} : {isInstallationIncluded ? `${fmtPrice(installationFee)} €` : '0 €'}</p>
+                <p className="text-lg font-bold mt-2">{t('signature.totalEstimate')} : {fmtPrice(totalAmount)} €</p>
               </div>
             </div>
 
@@ -2081,7 +2082,7 @@ export default function SignatureFlow({
 
         {/* STEP 4: CONFIRMATION & FÉLICITATIONS (Beautiful final dashboard validation) */}
         {currentStep === 'confirmation' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in">
+          <div id="estimation-recap-main-card" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in">
             
             {/* Left Column: Success titles and descriptions (Écran 5 left) */}
             <div className="lg:col-span-7 flex flex-col justify-start space-y-6 pr-0 lg:pr-6">
@@ -2092,7 +2093,7 @@ export default function SignatureFlow({
                 <div className="flex items-center gap-1.5">
                   <ShieldAlert size={13} className="text-amber-600" />
                   <span className="text-xs font-mono font-bold text-amber-600 uppercase tracking-widest">
-                    Espace hautement sécurisé • Étape 4 sur 4
+                    {t('signature.secureBadge4')}
                   </span>
                 </div>
 
@@ -2103,10 +2104,10 @@ export default function SignatureFlow({
 
                 <div>
                   <h1 className="text-4xl sm:text-5xl font-black font-heading tracking-tight text-zinc-900 leading-[1.08] uppercase">
-                    Félicitations
+                    {t('signature.confirmationStep')}
                   </h1>
                   <span className="text-blue-600 lowercase normal-case text-3xl sm:text-4xl font-black font-heading tracking-tight block">
-                    votre projet est prêt.
+                    {t('signature.confirmationDesc')}
                   </span>
                   
                   <div className="max-w-lg mt-6">
@@ -2116,15 +2117,15 @@ export default function SignatureFlow({
                           <CheckCircle size={18} className="text-emerald-600 stroke-[2.5]" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-emerald-900">Estimation confirmée</p>
+                          <p className="text-sm font-bold text-emerald-900">{t('signature.estimationConfirmed')}</p>
                           <p className="text-xs text-emerald-700 mt-1 leading-relaxed">
-                            Votre estimation a été générée avec succès. Vous pouvez dès maintenant consulter ou télécharger votre estimation au format PDF.
+                            {t('signature.estimationConfirmedDesc')}
                           </p>
                         </div>
                       </div>
                     </div>
                     <p className="text-xs text-zinc-400 leading-relaxed font-sans mt-3">
-                      Merci de votre confiance et d'avoir choisi Pixiatech. Nous sommes ravis de vous accompagner dans la réalisation de votre projet.
+                      {t('signature.thankYouMessage')}
                     </p>
                   </div>
                 </div>
@@ -2139,8 +2140,8 @@ export default function SignatureFlow({
                    onClick={onBackToConfigurator}
                    className="px-6 py-3 bg-zinc-950 hover:bg-zinc-800 text-white font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
                  >
-                   <RefreshCw size={14} className="animate-spin-slow" />
-                   <span>Nouveau devis</span>
+                    <RefreshCw size={14} className="animate-spin-slow" />
+                    <span>{t('signature.newQuote')}</span>
                  </button>
 
                  <button
@@ -2148,8 +2149,8 @@ export default function SignatureFlow({
                    onClick={handleContractDownload}
                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold border border-blue-600 text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
                  >
-                   <Download size={14} />
-                   <span>Télécharger PDF</span>
+                    <Download size={14} />
+                    <span>{t('signature.downloadPdf')}</span>
                  </button>
 
                </div>
@@ -2165,17 +2166,17 @@ export default function SignatureFlow({
                 {/* Période de location (Location only) */}
                 {projectMode === 'location' && rentalStartDate && rentalEndDate && (
                   <div className="bg-amber-50/40 border border-amber-200/50 rounded-2xl p-4 space-y-2">
-                    <div className="flex items-center gap-2 text-amber-700">
-                      <Clock size={14} className="stroke-[2.5]" />
-                      <span className="text-[11px] font-black uppercase tracking-wider">Période de location</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-amber-900">
-                      <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                        Du {formatFrenchDate(rentalStartDate)}
-                      </span>
-                      <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                        Au {formatFrenchDate(rentalEndDate)}
-                      </span>
+                  <div className="flex items-center gap-2 text-amber-700">
+                    <Clock size={14} className="stroke-[2.5]" />
+                    <span className="text-[11px] font-black uppercase tracking-wider">{t('signature.rentalPeriodLabel')}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-amber-900">
+                    <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
+                      {t('signature.from')} {formatFrenchDate(rentalStartDate)}
+                    </span>
+                    <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
+                      {t('signature.to')} {formatFrenchDate(rentalEndDate)}
+                    </span>
                       <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
                         {rentalStartTime} → {rentalEndTime}
                       </span>
@@ -2186,19 +2187,19 @@ export default function SignatureFlow({
                 {/* Subtotals breakdowns */}
                 <div className="space-y-3 text-xs font-semibold">
                   <div className="flex justify-between items-center text-zinc-400">
-                    <span>Sous-total produits</span>
+                    <span>{t('signature.productsSubtotal')}</span>
                     <span className="text-zinc-800 font-bold font-mono">
                       {fmtPrice(totalSubtotalProducts)} €
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-zinc-400">
-                    <span>Livraison</span>
+                    <span>{t('signature.delivery')}</span>
                     <span className="text-zinc-800 font-bold font-mono">
                       {fmtPrice(totalDeliveryFee)} €
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-zinc-400">
-                    <span>Installation</span>
+                    <span>{t('signature.installation')}</span>
                     <span className="text-zinc-800 font-bold font-mono">
                       {isInstallationIncluded ? `${fmtPrice(installationFee)} €` : '0 €'}
                     </span>
@@ -2223,7 +2224,7 @@ export default function SignatureFlow({
                   </div>
                   <div className="relative z-10 p-4 sm:p-5 flex items-center justify-between select-none">
                     <span className="text-xs font-black text-white/80 tracking-wider font-heading uppercase drop-shadow-sm">
-                      Total estimé ({taxLabel})
+                      {t('signature.totalEstimate')} ({taxLabel})
                     </span>
                     <div className="flex items-center gap-2">
                       {settings?.paymentIconUrl && (
@@ -2292,13 +2293,13 @@ export default function SignatureFlow({
 
                           {/* Specs */}
                           <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] font-sans">
-                            <span className="text-zinc-500">Dimensions :</span>
+                            <span className="text-zinc-500">{t('signature.dimensions')} :</span>
                             <span className="text-zinc-900 font-medium text-right">{pc.width}m × {pc.height}m</span>
-                            <span className="text-zinc-500">Surface :</span>
+                            <span className="text-zinc-500">{t('signature.surface')} :</span>
                             <span className="text-zinc-900 font-medium text-right">{(pc.surface * pc.quantity).toFixed(2)} m²</span>
-                            <span className="text-zinc-500">Quantité :</span>
+                            <span className="text-zinc-500">{t('signature.quantity')} :</span>
                             <span className="text-zinc-900 font-medium text-right">×{pc.quantity}</span>
-                            <span className="text-zinc-500 border-t border-zinc-100 pt-1 font-semibold">Prix {projectMode === 'vente' ? 'vente' : 'location'} {taxLabel} :</span>
+                            <span className="text-zinc-500 border-t border-zinc-100 pt-1 font-semibold">{t('signature.priceLabel')} {projectMode === 'vente' ? t('signature.sale').toLowerCase() : t('signature.rental').toLowerCase()} {taxLabel} :</span>
                             <span className="text-zinc-950 border-t border-zinc-100 pt-1 font-bold font-mono text-right">
                               {fmtPrice(pc.subtotal)} € {taxLabel}
                             </span>
@@ -2307,10 +2308,10 @@ export default function SignatureFlow({
                           {projectMode === 'location' && (
                             <div className="flex flex-wrap gap-1.5 text-[9px] font-mono text-zinc-500 pt-1 border-t border-zinc-100">
                               <span className="bg-zinc-50 px-2 py-0.5 rounded-md border border-zinc-100">
-                                Du {formatFrenchDate(rentalStartDate)}
+                                {t('signature.from')} {formatFrenchDate(rentalStartDate)}
                               </span>
                               <span className="bg-zinc-50 px-2 py-0.5 rounded-md border border-zinc-100">
-                                Au {formatFrenchDate(rentalEndDate)}
+                                {t('signature.to')} {formatFrenchDate(rentalEndDate)}
                               </span>
                               <span className="bg-zinc-50 px-2 py-0.5 rounded-md border border-zinc-100">
                                 {rentalStartTime} - {rentalEndTime}
@@ -2334,14 +2335,14 @@ export default function SignatureFlow({
       {/* Primary footer bottom credits & links */}
       <footer className="w-full bg-white border-t border-[#e2e8f0] py-6 px-4 text-center mt-auto space-y-3 shadow-inner">
         <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 text-xs text-zinc-400 font-semibold uppercase tracking-wider">
-          <a href="https://pixiatech.com/gestion-cookies/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">Sécurité</a>
+          <a href="https://pixiatech.com/gestion-cookies/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">{t('signature.footerSecurity')}</a>
           <span>•</span>
-          <a href="https://pixiatech.com/politique-confidentialite/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">Conditions</a>
+          <a href="https://pixiatech.com/politique-confidentialite/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">{t('signature.footerTerms')}</a>
           <span>•</span>
-          <a href="https://pixiatech.com/mentions-legales/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">Politique</a>
+          <a href="https://pixiatech.com/mentions-legales/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">{t('signature.footerPolicy')}</a>
         </div>
         <div className="text-[10px] text-zinc-400 font-mono tracking-widest">
-          ACCÈS RÉSERVÉ À L'ADMINISTRATION PIXIATECH | @ 2026 PIXIA TECH. TOUS DROITS RÉSERVÉS.
+          {t('signature.accessRestricted')} | @ 2026 PIXIA TECH. {t('signature.allRightsReserved')}
         </div>
       </footer>
 
@@ -2356,11 +2357,11 @@ export default function SignatureFlow({
             </svg>
           </div>
           <AlertDialogHeader className="mt-4">
-            <AlertDialogTitle className="text-center text-lg text-slate-800 dark:text-slate-100">
-              Acceptation requise
+             <AlertDialogTitle className="text-center text-lg text-slate-800 dark:text-slate-100">
+              {t('signature.consentRequired')}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-center text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              Veuillez d'abord déclarer accepter les conditions de traitement des données avant de signer le contrat numérique.
+              {t('signature.consentRequiredDesc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex justify-center mt-2">
@@ -2370,7 +2371,7 @@ export default function SignatureFlow({
                 <line x1="12" y1="8" x2="12" y2="12"/>
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
               </svg>
-              Information importante
+              {t('signature.importantInfo')}
             </span>
           </div>
           <AlertDialogFooter className="sm:justify-center mt-2">

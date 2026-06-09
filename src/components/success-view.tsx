@@ -312,7 +312,16 @@ export function SuccessView({ quoteId, onNewQuote, initialEmail }: SuccessViewPr
           <div className="w-full min-h-screen bg-[#FAFAFA] font-sans">
               <VerificationView email={data.request.client?.email || initialEmail || ""} onNewQuote={onNewQuote} />
               {/* Pre-render PDF in background even while waiting for verification */}
-              <div className="absolute -left-[9999px] top-0 opacity-0 pointer-events-none">
+              <div
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  opacity: 0,
+                  pointerEvents: "none",
+                  zIndex: -9999,
+                }}
+              >
                   <QuotePDF id="quote-pdf-view-success" request={data.request} settings={data.pdfSettings} selectedCity={data.selectedCity} globalSettings={data.generalSettings} allProducts={data.allProducts} specs={data.allProductSpecs} />
               </div>
           </div>
@@ -377,7 +386,16 @@ export function SuccessView({ quoteId, onNewQuote, initialEmail }: SuccessViewPr
         </div>
 
         {!showSkeleton && data && (
-            <div className="absolute -left-[9999px] top-0 opacity-0 pointer-events-none">
+            <div
+              style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                opacity: 0,
+                pointerEvents: "none",
+                zIndex: -9999,
+              }}
+            >
                 <QuotePDF id="quote-pdf-view-success" request={data.request} settings={data.pdfSettings} selectedCity={data.selectedCity} globalSettings={data.generalSettings} allProducts={data.allProducts} specs={data.allProductSpecs} />
             </div>
         )}
