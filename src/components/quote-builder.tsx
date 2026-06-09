@@ -714,14 +714,15 @@ export function QuoteBuilder({
         setIsSignatureFlowActive(false);
     };
 
-    const handleWizardComplete = (product: ConfiguredProduct) => {
-        setConfiguredProducts([product]);
-        setActiveConfigProductId(product.id);
+    const handleWizardComplete = (product: ConfiguredProduct | ConfiguredProduct[]) => {
+        const products = Array.isArray(product) ? product : [product];
+        setConfiguredProducts(products);
+        setActiveConfigProductId(products[0]?.id);
         setIsSignatureFlowActive(true);
         setCurrentStep(5);
         saveQuoteState({
-            configuredProducts: [product],
-            activeConfigProductId: product.id,
+            configuredProducts: products,
+            activeConfigProductId: products[0]?.id,
             baseQuote: 0,
             includeInstallation: true,
             deliveryCost: 0,
@@ -841,7 +842,7 @@ export function QuoteBuilder({
 
 
 
-    if (isSignatureFlowActive && activeConfiguredProduct) {
+    if (isSignatureFlowActive && configuredProducts.length > 0) {
         return (
             <SignatureFlow
                 configuredProducts={configuredProducts}

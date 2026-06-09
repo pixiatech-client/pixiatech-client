@@ -68,7 +68,7 @@ import { ProductComparator } from './product-comparator';
 
 // --- Wizard Component ---
 interface ConfiguratorWizardProps {
-  onComplete: (product: ConfiguredProduct) => void;
+  onComplete: (product: ConfiguredProduct | ConfiguredProduct[]) => void;
   onBack: () => void;
   allProducts: Product[];
   settings: Settings;

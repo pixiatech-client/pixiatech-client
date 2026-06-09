@@ -503,15 +503,34 @@ export default function SignatureFlow({
   // ============================================
 
   // Live Calculations based on all configured products
-  const pricePerSqm = projectMode === 'vente' ? 2000 : 12;
   const productCalculations = configuredProducts.map(p => {
     const w = p.width || 0;
     const h = p.height || 0;
     const q = p.quantity || 1;
     const s = w * h;
     const d = Math.round(s * 4);
-    const sp = s * pricePerSqm;
     const prod = allProducts.find(ap => ap.id === p.productId);
+    let unitPrice = 0;
+    if (prod?.hasDimensions && prod?.tileWidth && prod?.tileHeight && prod?.pricePerTile && prod.pricePerTile > 0) {
+      const tilesPerWidth = Math.ceil((w * 100) / prod.tileWidth);
+      const tilesPerHeight = Math.ceil((h * 100) / prod.tileHeight);
+      const totalTiles = tilesPerWidth * tilesPerHeight;
+      unitPrice = totalTiles * prod.pricePerTile;
+    } else {
+      if (p.transactionType === 'sale') {
+        unitPrice = s * (prod?.salePricePerSqM && prod.salePricePerSqM > 0 ? prod.salePricePerSqM : 2000);
+      } else if (p.transactionType === 'rental') {
+        const ratePerUnit = p.rentalUnit === 'hour'
+          ? (prod?.rentalPricePerHour && prod.rentalPricePerHour > 0 ? prod.rentalPricePerHour : 1.5)
+          : (prod?.rentalPricePerDay && prod.rentalPricePerDay > 0 ? prod.rentalPricePerDay : 12);
+        unitPrice = s * ratePerUnit;
+      }
+    }
+    if (p.transactionType === 'rental') {
+      const duration = p.rentalDuration > 0 ? p.rentalDuration : 1;
+      unitPrice *= duration;
+    }
+    const sp = unitPrice;
     return {
       width: w,
       height: h,
@@ -1287,7 +1306,7 @@ export default function SignatureFlow({
                   {/* Total estimé box with soft blue tint */}
                   <div className="p-4 sm:p-5 bg-blue-50/50 border border-blue-100/80 rounded-2xl flex items-center justify-between shadow-xs mt-4 select-none">
                     <span className="text-xs font-black text-zinc-700 tracking-wider font-heading uppercase">
-                      Total estimé (TTC)
+                      Total estimé (HT)
                     </span>
                     <span className="text-2xl font-mono font-black text-blue-600">
                       {totalAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
