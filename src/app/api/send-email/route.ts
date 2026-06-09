@@ -5,7 +5,7 @@ import { buildOtpEmailHtml } from '@/lib/email-templates';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { to, code, appUrl, smtpConfig } = body;
+    const { to, code, smtpConfig } = body;
 
     if (!to) {
       return NextResponse.json({ error: "L'adresse e-mail du destinataire est requise." }, { status: 400 });
@@ -45,12 +45,12 @@ export async function POST(request: NextRequest) {
       socketTimeout: 15000,
     });
 
-    const emailHtml = buildOtpEmailHtml(code, appUrl);
+    const emailHtml = buildOtpEmailHtml(code);
 
     const result = await transporter.sendMail({
       from: finalFrom,
       to,
-      subject: '🔑 Authentification PixiaTech',
+      subject: '🛡️ Authentification PixiaTech',
       html: emailHtml,
     });
 

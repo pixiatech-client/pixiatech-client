@@ -74,13 +74,11 @@ function wrapper(content: string): string {
 </html>`;
 }
 
-export function buildOtpEmailHtml(code: string, cleanAppUrl: string, lang?: string) {
+export function buildOtpEmailHtml(code: string, _cleanAppUrl?: string, lang?: string) {
   const now = new Date();
   const emissionTime = formatTime(now);
   const expirationDate = new Date(now.getTime() + 10 * 60 * 1000);
   const expirationTime = formatTime(expirationDate);
-  const directConnectUrl = `${cleanAppUrl}?code=${code}`;
-  const copyConnectUrl = `${cleanAppUrl}?code=${code}&copy=true`;
 
   const body = `
     ${browserBar('Client Webmail Sécurisé')}
@@ -94,30 +92,18 @@ export function buildOtpEmailHtml(code: string, cleanAppUrl: string, lang?: stri
           ? 'A security code is required to access your Pixiatech estimate.'
           : 'Un code de sécurité est requis pour accéder à votre estimation Pixiatech.'}
       </p>
-      <div style="display: inline-block; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 9999px; padding: 6px 16px; font-family: sans-serif; font-size: 11px; font-weight: bold; color: #2563eb; margin-bottom: 25px; box-shadow: 0 1px 2px rgba(37,99,235,0.05);">
-        🕒 ${lang === 'en' ? `Issued at ${emissionTime} • Valid 10 min • Expires at ${expirationTime} (Europe/Paris)` : `Émis à ${emissionTime} • Valide 10 min • Expire à ${expirationTime} (Europe/Paris)`}
+      <div style="display: inline-flex; align-items: center; gap: 6px; background-color: #fef9c3; border: 1px solid #facc15; border-radius: 10px; padding: 10px 16px; font-family: 'Courier New', monospace; font-size: 13px; font-weight: 800; color: #92400e; margin: 0 auto 25px auto; width: fit-content; box-shadow: 0 2px 6px rgba(250,204,21,0.1);">
+        <span style="font-size: 14px;">⏳</span>
+        <span>${lang === 'en' ? 'Code expires in 09:59' : 'Code expire dans 09:59'}</span>
       </div>
-      <table style="margin: 0 auto 24px auto; text-align: center; border-collapse: collapse; width: 100%;">
-        <tr>
-          <td style="font-family: sans-serif; font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1.5px; padding-bottom: 12px; font-weight: bold; text-align: center;">
-            ${lang === 'en' ? 'Your temporary authentication code' : "Votre code temporaire d'authentification"}
-          </td>
-        </tr>
-        <tr>
-          <td style="text-align: center;">
-            <div style="margin: 0 auto 16px auto; display: inline-block; padding: 12px 24px; background-color: #f5fafd; border: 2.5px solid #3b82f6; border-radius: 14px; text-align: center; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.05);">
-              <span style="font-family: monospace, Courier, monospace; font-size: 26px; font-weight: 950; color: #2563eb; letter-spacing: 5px; text-transform: uppercase; user-select: all; -webkit-user-select: all; -moz-user-select: all; -ms-user-select: all;">${code}</span>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td style="text-align: center; padding-top: 2px;">
-            <a href="${copyConnectUrl}" style="display: inline-block; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 10px 20px; font-family: sans-serif; font-size: 11px; font-weight: bold; color: #2563eb; text-decoration: none; cursor: pointer; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.04);">
-              📋 ${lang === 'en' ? 'Copy code to clipboard' : 'Copier le code dans le presse-papier'}
-            </a>
-          </td>
-        </tr>
-      </table>
+      <div style="margin: 0 auto 24px auto; max-width: 320px;">
+        <div style="font-family: sans-serif; font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1.5px; padding-bottom: 12px; font-weight: bold; text-align: center;">
+          ${lang === 'en' ? 'Your temporary authentication code' : "Votre code temporaire d'authentification"}
+        </div>
+        <div style="text-align: center; padding: 12px 24px; background-color: #f5fafd; border: 2.5px solid #3b82f6; border-radius: 14px; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.05);">
+          <span style="font-family: monospace, Courier, monospace; font-size: 26px; font-weight: 950; color: #2563eb; letter-spacing: 5px; text-transform: uppercase; user-select: all; -webkit-user-select: all; -moz-user-select: all; -ms-user-select: all;">${code}</span>
+        </div>
+      </div>
       <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 16px; padding: 16px 18px; text-align: left; margin-bottom: 25px; box-sizing: border-box;">
         <table style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
           <tr>
@@ -137,14 +123,6 @@ export function buildOtpEmailHtml(code: string, cleanAppUrl: string, lang?: stri
           </tr>
         </table>
       </div>
-      <div style="margin-bottom: 25px;">
-        <a href="${directConnectUrl}" style="display: inline-block; background-color: #00a870; color: #ffffff; padding: 14px 34px; font-family: sans-serif; font-weight: bold; border-radius: 9999px; text-decoration: none; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 6px 20px rgba(0, 168, 112, 0.25);">
-          ${lang === 'en' ? 'Validate and continue (Direct link)' : 'Valider et continuer (Lien direct)'}
-        </a>
-      </div>
-      <a href="${cleanAppUrl}" style="display: inline-block; font-family: sans-serif; font-size: 10px; color: #6b7280; text-decoration: underline;">
-        ${lang === 'en' ? 'Create a new estimate' : 'Créer un nouveau devis'}
-      </a>
     </div>
     ${footer(lang)}`;
 

@@ -637,7 +637,7 @@ async function sendSignatureOtpEmail(
     await transporter.sendMail({
       from: `"PixiaTech" <${process.env.SMTP_USER}>`,
       to: recipientEmail,
-      subject: lang === 'fr' ? "🔑 Authentification PixiaTech" : "🔑 PixiaTech Authentication",
+      subject: lang === 'fr' ? "🛡️ Authentification PixiaTech" : "🛡️ PixiaTech Authentication",
       html: emailHtml,
     });
   } catch (error) {

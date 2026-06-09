@@ -852,7 +852,7 @@ export function QuoteBuilder({
                 onNewQuote={handleNewQuote}
                 onBackToConfigurator={() => {
                     setIsSignatureFlowActive(false);
-                    setActiveMode('manual');
+                    setActiveMode('selection');
                     setCurrentStep(1);
                 }}
                 onStepChange={handleSignatureStepChange}

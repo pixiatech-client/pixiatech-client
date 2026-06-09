@@ -49,6 +49,7 @@ import { ConfiguredProduct, Product, Settings } from '@/lib/types';
 import { createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp } from '@/app/actions/quote-actions';
 import { jsPDF } from 'jspdf';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { FloatingFooterNav } from '@/components/ui/floating-footer-nav';
 import html2canvas from 'html2canvas';
 import confetti from 'canvas-confetti';
 
@@ -240,6 +241,7 @@ export default function SignatureFlow({
   const [emailDeliveryStatus, setEmailDeliveryStatus] = useState<'idle' | 'sending' | 'sent' | 'simulated' | 'failed'>('idle');
   const [isSmtpConfigOpen, setIsSmtpConfigOpen] = useState<boolean>(false);
   const [showSmtpPassword, setShowSmtpPassword] = useState<boolean>(false);
+  const [openAccordionIdx, setOpenAccordionIdx] = useState<number | null>(null);
 
   // Sync state to localStorage
   useEffect(() => {
@@ -320,59 +322,12 @@ export default function SignatureFlow({
     try {
       const params = new URLSearchParams(window.location.search);
       const codeParam = params.get('code') || params.get('otp');
-      const copyParam = params.get('copy');
       
       if (codeParam && codeParam.length === 6) {
-        // Switch to security step to show verification is happening
         setCurrentStep('securite');
         setSentOtpCode(codeParam);
-
-        if (copyParam === 'true') {
-          // Mode: Copy to clipboard and stay on security screen (does not auto-authenticate, lets user test manual validation!)
-          setInputOtpCode(codeParam);
-          setIsSimulatingLinkClick(false);
-          setIsOtpCompleted(false);
-
-          navigator.clipboard.writeText(codeParam)
-            .then(() => {
-              setIsCopied(true);
-              setTimeout(() => setIsCopied(false), 3500);
-            })
-            .catch(err => {
-              console.warn("Fallback direct copy executing:", err);
-              // Fallback text area write
-              const ta = document.createElement("textarea");
-              ta.value = codeParam;
-              document.body.appendChild(ta);
-              ta.select();
-              try {
-                document.execCommand('copy');
-                setIsCopied(true);
-                setTimeout(() => setIsCopied(false), 3500);
-              } catch (ex) {
-                console.error("Direct fallback copy failed:", ex);
-              }
-              document.body.removeChild(ta);
-            });
-
-          // Simple URL cleanup so they don't refresh and re-trigger
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return;
-        }
-
-        // Direct validation link mode: auto-verify and redirect
         setInputOtpCode(codeParam);
-        setIsSimulatingLinkClick(true);
-        const verificationTimer = setTimeout(() => {
-          setIsOtpCompleted(true);
-          setIsSimulatingLinkClick(false);
-          // Auto route to final step on direct link verification success
-          setCurrentStep('confirmation');
-          // Simple URL cleanup so they don't refresh and re-trigger
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }, 1800);
-
-        return () => clearTimeout(verificationTimer);
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
     } catch (e) {
       console.error("Url params parsing error:", e);
@@ -604,12 +559,7 @@ export default function SignatureFlow({
     }
   }, [currentStep]);
 
-  // Handle auto code completion on paste
-  useEffect(() => {
-    if (inputOtpCode.length === 6 && !isOtpCompleted && !isSimulatingLinkClick) {
-      handleManualCodeVerify(inputOtpCode);
-    }
-  }, [inputOtpCode]);
+
 
   // Cohesive stages in the upper header representation
   const steps: Step[] = [
@@ -1187,38 +1137,6 @@ export default function SignatureFlow({
                     <span>Remplir avec des données de démonstration</span>
                   </button>
 
-                  <button
-                    onClick={() => {
-                      if (!renterDetails.company.trim()) {
-                        document.getElementById('comp-name')?.focus();
-                        return;
-                      }
-                      if (!renterDetails.representative.trim()) {
-                        document.getElementById('comp-representative')?.focus();
-                        return;
-                      }
-                      if (!renterDetails.email.trim()) {
-                        document.getElementById('comp-email')?.focus();
-                        return;
-                      }
-                      if (!renterDetails.phone.trim()) {
-                        document.getElementById('comp-phone')?.focus();
-                        return;
-                      }
-                      if (!citySearchQuery.trim()) {
-                        return;
-                      }
-                      if (!renterDetails.address.trim()) {
-                        document.getElementById('comp-address')?.focus();
-                        return;
-                      }
-                      handleNextStep();
-                    }}
-                    className="px-8 py-4 bg-[#0f1115] hover:bg-[#1a1e24] text-white rounded-xl font-bold font-heading text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-zinc-900/10 active:scale-98 w-full sm:w-auto text-center"
-                  >
-                    <span>Valider et continuer vers le contrat</span>
-                    <ArrowRight size={14} />
-                  </button>
                 </div>
 
               </div>
@@ -1409,6 +1327,37 @@ export default function SignatureFlow({
               </div>
 
             </div>
+
+            <FloatingFooterNav
+              onBack={onBackToConfigurator}
+              onNext={() => {
+                if (!renterDetails.company.trim()) {
+                  document.getElementById('comp-name')?.focus();
+                  return;
+                }
+                if (!renterDetails.representative.trim()) {
+                  document.getElementById('comp-representative')?.focus();
+                  return;
+                }
+                if (!renterDetails.email.trim()) {
+                  document.getElementById('comp-email')?.focus();
+                  return;
+                }
+                if (!renterDetails.phone.trim()) {
+                  document.getElementById('comp-phone')?.focus();
+                  return;
+                }
+                if (!citySearchQuery.trim()) {
+                  return;
+                }
+                if (!renterDetails.address.trim()) {
+                  document.getElementById('comp-address')?.focus();
+                  return;
+                }
+                handleNextStep();
+              }}
+              nextLabel="Valider et continuer vers le contrat"
+            />
           </div>
         )}
 
@@ -1536,21 +1485,9 @@ export default function SignatureFlow({
 
                 {/* Step 2 Bottom Navigation - Premium corporate spacing */}
                 <div className="mt-8 pt-6 border-t border-zinc-150 flex flex-col sm:flex-row-reverse justify-between gap-4 select-none">
-                  <button
-                    id="btn-goto-security"
-                    type="button"
-                    onClick={() => {
-                      if (!acceptedCgl) {
-                        setShowErrorTips(true);
-                        alert(projectMode === 'vente' ? "Veuillez d'abord déclarer accepter les conditions de traitement." : "Veuillez d'abord déclarer accepter les conditions générales.");
-                        return;
-                      }
-                      if (projectMode === 'location' && !isSignatureValidated) {
-                        setShowErrorTips(true);
-                        alert("Veuillez d'abord signer et enregistrer votre signature numérique ci-dessus.");
-                        return;
-                      }
-                      // Proceed to security code stage manually and elegantly
+                  <FloatingFooterNav
+                    onBack={() => setCurrentStep('informations')}
+                    onNext={() => {
                       const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
                       setSentOtpCode(randomCode);
                       setOtpTimeLeft(597);
@@ -1559,24 +1496,9 @@ export default function SignatureFlow({
                       setCurrentStep('securite');
                       sendRealEmail(randomCode);
                     }}
-                    className={`px-8 py-4 rounded-xl font-bold font-heading text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-98 text-center w-full sm:w-auto ${
-                      acceptedCgl && (projectMode === 'vente' || isSignatureValidated)
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/10'
-                        : 'bg-zinc-100 border border-zinc-200 text-zinc-400 cursor-not-allowed'
-                    }`}
-                  >
-                    <span>Continuer vers la vérification</span>
-                    <ArrowRight size={14} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCurrentStep('informations')}
-                    className="px-6 py-4 bg-white hover:bg-zinc-50 text-zinc-650 font-bold border border-zinc-205 hover:border-zinc-300 rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98 text-center w-full sm:w-auto shadow-sm"
-                  >
-                    <ArrowLeft size={14} />
-                    <span>Corriger les données d'estimation</span>
-                  </button>
+                    nextDisabled={!acceptedCgl || (projectMode === 'location' && !isSignatureValidated)}
+                    nextLabel="Continuer vers la vérification"
+                  />
                 </div>
 
               </div>
@@ -1604,18 +1526,30 @@ export default function SignatureFlow({
                   </span>
                 </div>
 
-                {/* Pack Selection Detail Row */}
-                <div className="flex gap-4.5 bg-zinc-900/40 p-4 rounded-xl border border-zinc-800/60 select-none">
-                  <div className="w-12 h-12 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col items-center justify-center font-heading font-black text-xs text-blue-400 shrink-0">
-                    <span className="text-[9px] leading-tight text-zinc-500 font-mono font-normal">Taille</span>
-                    <span className="text-[11px] leading-tight mt-0.5">{totalSurface.toFixed(1)}m²</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs sm:text-sm font-bold text-white truncate">{activePack.name}</h4>
-                    <p className="text-[11px] text-zinc-400 mt-1 select-none leading-relaxed line-clamp-2">
-                      {activePack.description}
-                    </p>
-                  </div>
+                {/* Product Photos Strip */}
+                <div className="flex gap-2.5 bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/60 select-none overflow-x-auto">
+                  {productCalculations.map((pc, idx) => (
+                    <div key={idx} className="flex items-center gap-2.5 shrink-0">
+                      {idx > 0 && <div className="w-px h-10 bg-zinc-800/60" />}
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-950 border border-zinc-800/60 shrink-0 flex items-center justify-center">
+                          {pc.photo ? (
+                            <img src={pc.photo} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-wider">LED</span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[11px] font-bold text-white truncate block leading-tight">
+                            {pc.product?.name || activePack.name}
+                          </span>
+                          <span className="text-[9px] text-zinc-500 font-mono leading-tight block mt-0.5">
+                            {pc.width}m×{pc.height}m ×{pc.quantity}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Technical checkmarks included */}
@@ -1701,47 +1635,7 @@ export default function SignatureFlow({
                 </button>
               </div>
 
-              {/* Product Gallery - one card per product */}
-              <div className="space-y-3 px-1">
-                <div className="flex items-center gap-2 select-none">
-                  <div className="w-1 h-3.5 bg-blue-600 rounded-full"></div>
-                  <h4 className="text-[10px] font-heading font-black tracking-wider uppercase text-zinc-500">
-                    Produits sélectionnés ({productCount} produit{productCount > 1 ? 's' : ''})
-                  </h4>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3.5">
-                  {productCalculations.map((pc, idx) => {
-                    const prod = pc.product;
-                    return (
-                      <div key={idx} className="bg-white border border-[#e2e8f0] hover:border-zinc-300 rounded-[20px] p-3 shadow-sm space-y-2.5 transition-all relative overflow-hidden group select-none">
-                        {/* Product photo */}
-                        <div className="relative aspect-video rounded-xl overflow-hidden bg-zinc-950 border border-zinc-200/80 shadow-inner flex items-center justify-center">
-                          {pc.photo ? (
-                            <img src={pc.photo} alt={prod?.name || ''} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">LED Screen</span>
-                          )}
-                        </div>
-                        {/* Description Metadata specs */}
-                        <div className="flex justify-between items-center text-[11px] pt-0.5">
-                          <div className="min-w-0">
-                            <strong className="text-zinc-900 block font-black text-[11px] uppercase leading-none truncate">
-                              {prod?.name || activePack.name}
-                            </strong>
-                            <span className="text-zinc-500 font-bold font-mono text-[10px] block mt-1.5 leading-none">
-                              {pc.width}m x {pc.height}m ({(pc.surface * pc.quantity).toFixed(2)} m²) x{pc.quantity}
-                            </span>
-                          </div>
-                          <span className="text-[8px] bg-blue-50/80 text-blue-600 border border-blue-100 font-extrabold uppercase rounded-md px-2 py-0.5 tracking-wider font-mono shrink-0 ml-2">
-                            {projectMode === 'vente' ? 'Vente' : 'Location'}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
 
               {/* Navigation button banner hint */}
               {!isSignatureValidated && (
@@ -1936,20 +1830,29 @@ export default function SignatureFlow({
 
                 </div>
 
-                {inputOtpCode.length > 0 && !isOtpCompleted && (
+                <div className="flex items-center justify-center pt-1">
                   <button
                     type="button"
-                    onClick={() => {
-                      setInputOtpCode('');
-                      setOtpError(null);
-                      hiddenInputRef.current?.focus();
+                    onClick={async () => {
+                      try {
+                        const text = await navigator.clipboard.readText();
+                        const digits = text.replace(/\D/g, '').slice(0, 6);
+                        if (digits.length === 6) {
+                          setInputOtpCode(digits);
+                          setOtpError(null);
+                          setTimeout(() => handleManualCodeVerify(digits), 100);
+                        }
+                      } catch {
+                        setOtpError("Impossible d'accéder au presse-papier. Collez manuellement avec Ctrl+V.");
+                      }
                     }}
-                    className="text-xs font-black text-zinc-650 hover:text-red-600 hover:bg-red-50/50 hover:border-red-200 transition-all flex items-center justify-center gap-1.5 mx-auto bg-zinc-100/80 border border-zinc-200/80 rounded-xl px-4 py-2 cursor-pointer shadow-xs uppercase tracking-wider"
+                    disabled={isSimulatingLinkClick || isOtpCompleted}
+                    className="text-xs font-black text-white bg-zinc-950 hover:bg-zinc-800 transition-all flex items-center justify-center gap-1.5 rounded-xl px-6 py-2.5 cursor-pointer shadow-xs uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <RotateCcw size={12} className="stroke-[2.5]" />
-                    <span>Réinitialiser / Clear</span>
+                    <Copy size={12} className="stroke-[2.5]" />
+                    <span>Coller le code</span>
                   </button>
-                )}
+                </div>
 
                 {/* Countdown display */}
                 <div className="flex items-center justify-center gap-1 text-[11px] text-zinc-400 font-medium">
@@ -2094,115 +1997,99 @@ export default function SignatureFlow({
 
             </div>
 
-            {/* Right Column: details and product graphics layout (Écran 5 right) */}
-            <div className="lg:col-span-5 flex flex-col">
-              
-              <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-6 shadow-sm flex-1 flex flex-col justify-between space-y-5">
-                
-                <div className="space-y-4">
-                  {/* Title of details */}
-                  <div className="flex justify-between items-center border-b border-zinc-100 pb-2">
-                    <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest font-heading">
-                      Détails Techniques
-                    </span>
-                    <span className="bg-blue-50 text-blue-650 border border-blue-200 text-[8px] font-bold px-2 py-0.5 rounded uppercase">
-                      Série Extra Plat
-                    </span>
-                  </div>
+            {/* Right Column: per-product accordion details + photos */}
+            <div className="lg:col-span-5 flex flex-col gap-5">
 
-                  {/* Calculations card lists */}
-                  <div className="space-y-2 text-xs font-bold font-mono">
-                    
-                    <div className="flex justify-between text-zinc-500 py-0.5 font-sans">
-                      <span>Nombre de produits :</span>
-                      <span className="text-zinc-900 font-mono">{productCount}</span>
-                    </div>
+              {/* Totals header bar */}
+              <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-4 shadow-sm flex justify-between items-center">
+                <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest font-heading">
+                  Total Estimé
+                </span>
+                <span className="text-lg font-mono font-black text-blue-600">
+                  {totalAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                </span>
+              </div>
 
-                    <div className="flex justify-between text-zinc-500 py-0.5 font-sans">
-                      <span>Surface totale d'affichage :</span>
-                      <span className="text-zinc-900 font-mono">{totalSurface.toFixed(2)} m²</span>
-                    </div>
-
-                    <div className="flex justify-between text-zinc-500 py-0.5 font-sans">
-                      <span>Composants dalles LED :</span>
-                      <span className="text-zinc-900 font-mono">{totalDalles} modules</span>
-                    </div>
-
-                    <div className="flex justify-between text-zinc-500 py-0.5 font-sans border-t border-zinc-100 pt-2 font-semibold">
-                      <span>Loyer mensuel :</span>
-                      <span className="text-zinc-950 font-mono">{(projectMode === 'vente' ? 0 : activePack.price).toLocaleString('fr-FR')} € TTC</span>
-                    </div>
-
-                    <div className="flex justify-between text-zinc-500 py-0.5 font-sans pb-1 font-semibold">
-                      <span>Dépôt de garantie :</span>
-                      <span className="text-zinc-950 font-mono">{(projectMode === 'vente' ? totalAmount : activePack.deposit).toLocaleString('fr-FR')} € TTC</span>
-                    </div>
-
-                    {projectMode === 'location' && (
-                      <>
-                        <div className="flex justify-between text-zinc-500 py-0.5 border-t border-zinc-100 pt-2 font-sans font-semibold">
-                          <span>Période de location :</span>
-                          <span className="text-zinc-950 font-mono">{formatFrenchDate(rentalStartDate)} - {formatFrenchDate(rentalEndDate)}</span>
+              {/* Per-product accordion cards */}
+              <div className="space-y-3">
+                {productCalculations.map((pc, idx) => {
+                  const prod = pc.product;
+                  const isOpen = openAccordionIdx === idx;
+                  return (
+                    <div key={idx} className="bg-white border border-[#e2e8f0] rounded-[20px] shadow-sm overflow-hidden transition-all">
+                      <button
+                        type="button"
+                        onClick={() => setOpenAccordionIdx(isOpen ? null : idx)}
+                        className="w-full flex items-center gap-3 p-3.5 text-left cursor-pointer hover:bg-zinc-50/50 transition-colors"
+                      >
+                        {/* Thumbnail */}
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-zinc-950 border border-zinc-200 shrink-0 flex items-center justify-center">
+                          {pc.photo ? (
+                            <img src={pc.photo} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-wider">LED</span>
+                          )}
                         </div>
-                        <div className="flex justify-between text-zinc-500 py-0.5 font-sans font-semibold">
-                          <span>Horaires :</span>
-                          <span className="text-zinc-950 font-mono">{rentalStartTime} à {rentalEndTime}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-black text-zinc-900 block leading-tight truncate">
+                            {prod?.name || activePack.name}
+                          </span>
+                          <span className="text-[10px] text-zinc-500 font-mono block mt-0.5">
+                            {pc.width}m × {pc.height}m ×{pc.quantity}
+                          </span>
                         </div>
-                      </>
-                    )}
+                        <ChevronDown
+                          size={16}
+                          className={`text-zinc-400 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                        />
+                      </button>
 
-                  </div>
+                      {/* Collapsible content */}
+                      {isOpen && (
+                        <div className="px-3.5 pb-4 space-y-3 animate-fade-in">
+                          {/* Full product photo */}
+                          <div className="relative aspect-video rounded-xl overflow-hidden bg-zinc-950 border border-zinc-200/80">
+                            {pc.photo ? (
+                              <img src={pc.photo} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="flex items-center justify-center h-full">
+                                <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">LED Screen</span>
+                              </div>
+                            )}
+                          </div>
 
-                  {/* High contrast calculated blue total capsule */}
-                  <div className="bg-blue-50 border border-blue-105 rounded-xl p-4 flex justify-between items-center shadow-inner">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase font-sans">Total Estimé :</span>
-                    <span className="text-lg font-mono font-black text-blue-600">
-                      {totalAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
-                    </span>
-                  </div>
-                </div>
+                          {/* Specs */}
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] font-sans">
+                            <span className="text-zinc-500">Dimensions :</span>
+                            <span className="text-zinc-900 font-medium text-right">{pc.width}m × {pc.height}m</span>
+                            <span className="text-zinc-500">Surface :</span>
+                            <span className="text-zinc-900 font-medium text-right">{(pc.surface * pc.quantity).toFixed(2)} m²</span>
+                            <span className="text-zinc-500">Quantité :</span>
+                            <span className="text-zinc-900 font-medium text-right">×{pc.quantity}</span>
+                            <span className="text-zinc-500 border-t border-zinc-100 pt-1 font-semibold">Prix {projectMode === 'vente' ? 'vente' : 'location'} HT :</span>
+                            <span className="text-zinc-950 border-t border-zinc-100 pt-1 font-bold font-mono text-right">
+                              {pc.subtotal.toLocaleString('fr-FR')} € HT
+                            </span>
+                          </div>
 
-                {/* Vector graphics drawing representing high-poly LED screens in violet/indigo hue card (Perfect aesthetic matching) */}
-                <div className="relative w-full h-36 bg-gradient-to-br from-indigo-800 via-purple-900 to-[#3b0764] rounded-2xl border border-purple-500/20 shadow-inner overflow-hidden flex items-center justify-center">
-                  
-                  {/* Technical circular nodes overlay grid */}
-                  <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] bg-[size:14px_24px]"></div>
-                  
-                  <div className="relative z-10 flex gap-4 select-none pointer-events-none items-center">
-                    
-                    {/* Screen panel left */}
-                    <div className="w-24 h-24 bg-zinc-950 rounded-lg border border-purple-400/30 shadow-lg flex flex-col justify-between overflow-hidden relative">
-                      {/* Interactive glowing abstract wallpaper */}
-                      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 opacity-80 blur-0"></div>
-                      <div className="relative z-10 p-1.5 flex flex-col justify-between h-full">
-                        <span className="text-[6px] font-bold text-white font-mono leading-none tracking-widest uppercase">PIXIA SCREEN</span>
-                        <div className="w-full flex justify-between text-[5px] text-white/50">
-                          <span>78.0m²</span>
-                          <span>ACTIVE</span>
+                          {projectMode === 'location' && (
+                            <div className="flex flex-wrap gap-1.5 text-[9px] font-mono text-zinc-500 pt-1 border-t border-zinc-100">
+                              <span className="bg-zinc-50 px-2 py-0.5 rounded-md border border-zinc-100">
+                                Du {formatFrenchDate(rentalStartDate)}
+                              </span>
+                              <span className="bg-zinc-50 px-2 py-0.5 rounded-md border border-zinc-100">
+                                Au {formatFrenchDate(rentalEndDate)}
+                              </span>
+                              <span className="bg-zinc-50 px-2 py-0.5 rounded-md border border-zinc-100">
+                                {rentalStartTime} - {rentalEndTime}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      </div>
+                      )}
                     </div>
-
-                    {/* Hardware panel back side right */}
-                    <div className="w-24 h-24 bg-[#0a0614] rounded-lg border border-purple-500/40 shadow-lg p-2 flex flex-col justify-between relative overflow-hidden">
-                      {/* Back chassis grids simulation */}
-                      <div className="absolute inset-x-2 top-2 bottom-2 grid grid-cols-4 gap-1 opacity-20">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                          <div key={i} className="bg-purple-500 rounded-sm"></div>
-                        ))}
-                      </div>
-                      <span className="text-[5px] font-mono text-purple-400 font-bold z-10 uppercase tracking-widest">Rear Chassis</span>
-                      
-                      <div className="flex gap-1.5 items-center z-10">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span className="text-[5px] font-mono text-zinc-400">Power OK</span>
-                      </div>
-                    </div>
-
-                  </div>
-
-                </div>
-
+                  );
+                })}
               </div>
 
             </div>
