@@ -37,7 +37,7 @@ export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; 
         className="group w-12 border-zinc-200 hover:border-zinc-900 bg-white hover:bg-zinc-900 transition-all shrink-0"
       >
         <Link href={isLoggedIn ? "/admin" : "/admin/login"} title="Administration">
-          <LogIn className="h-[18px] w-[18px] text-zinc-700 group-hover:text-white transition-colors" />
+          <LogIn className="h-[18px] w-[18px] text-zinc-700 group-hover:text-blue-600 transition-colors" />
         </Link>
       </Button>
     );
@@ -78,7 +78,7 @@ export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; 
         {/* Right column: Language */}
         <div className="w-1/2 flex justify-end items-center gap-3 shrink-0">
           <Button variant="outline" size="icon" onClick={toggleLocale} className="group w-12 border-zinc-200 hover:border-zinc-350">
-            <span className="font-bold text-xs text-zinc-700 group-hover:text-blue-650">{t('langName').toUpperCase()}</span>
+            <span className="font-bold text-xs text-zinc-700 group-hover:text-blue-600">{t('langName').toUpperCase()}</span>
           </Button>
         </div>
       </div>

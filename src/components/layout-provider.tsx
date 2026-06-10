@@ -4,7 +4,6 @@
 import { usePathname } from 'next/navigation';
 import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
-import { ThemeProvider } from '@/components/theme-provider';
 import { I18nProvider } from '@/lib/i18n';
 import { Header } from '@/components/header';
 import { FirebaseClientProvider } from '@/firebase';

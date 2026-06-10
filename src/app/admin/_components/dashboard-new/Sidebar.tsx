@@ -60,7 +60,6 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   laborSub: '/admin/settings/main-doeuvre',
   pdfSub: '/admin/settings/pdf',
   emergencySub: '/admin/settings/emergency',
-  personalizationSub: '/admin/settings/personalization',
   produit: '/admin/produits',
   messages: '/admin/messages',
   notifications: '/admin/notification',
@@ -82,13 +81,12 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/settings/main-doeuvre': 'laborSub',
   '/admin/settings/pdf': 'pdfSub',
   '/admin/settings/emergency': 'emergencySub',
-  '/admin/settings/personalization': 'personalizationSub',
   '/admin/settings/software': 'software',
   '/admin/messages': 'messages',
   '/admin/notification': 'notifications',
 };
 
-export type SettingsSection = 'general' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'hint-bubble' | 'messaging' | 'software';
+export type SettingsSection = 'general' | 'images' | 'content' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'hint-bubble' | 'messaging' | 'software';
 
 interface SidebarProps {
   state: SidebarState;
@@ -689,7 +687,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           'labor-sub': 'main-doeuvre',
                           'pdf-sub': 'pdf',
                           'emergency-sub': 'emergency',
-                          'personalization-sub': 'personalization',
                         };
                         const isSubItemActive = selectedSettingsSection === subItemToSection[subItem.id];
 

@@ -140,7 +140,7 @@ pairs = {
     'semiOutdoor': ('Semi-extérieur', 'Semi-outdoor'),
     'purchase': ('Achat', 'Purchase'),
     'rental': ('Location', 'Rental'),
-    'surfaceMin': ('Définit la surface minimale pour le calcul du devis.', 'Sets the minimum surface for quote calculation.'),
+    'surfaceMin': ('Définit la surface minimale pour le calcul de l\'estimation.', 'Sets the minimum surface for estimate calculation.'),
 }
 
 added_fr = 0

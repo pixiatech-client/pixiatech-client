@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useTransition } from 'react';
 import { logout } from './actions';
+import { ThemeProvider } from '@/contexts/ThemeProvider';
 
 function AdminGatedLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
@@ -25,7 +26,7 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
 
   // While loading, show a skeleton to avoid flashes of content, except on auth pages.
   if (isUserLoading && !isAuthPage) {
-     return <AdminLayoutContent>{children}</AdminLayoutContent>;
+     return <ThemeProvider><AdminLayoutContent>{children}</AdminLayoutContent></ThemeProvider>;
   }
 
   // If on an auth page, render the minimal layout.
@@ -36,7 +37,7 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
 
   // If on a protected admin page and there is a non-anonymous user, show admin content.
   if (!isAuthPage && user && !user.isAnonymous) {
-     return <AdminLayoutContent>{children}</AdminLayoutContent>;
+     return <ThemeProvider><AdminLayoutContent>{children}</AdminLayoutContent></ThemeProvider>;
   }
   
   // If not authenticated for a protected page, the middleware should have redirected.

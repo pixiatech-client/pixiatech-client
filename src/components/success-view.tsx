@@ -69,7 +69,7 @@ function VerificationView({ email, onNewQuote }: { email: string; onNewQuote: ()
                 </div>
 
                 <Button 
-                    onClick={() => window.location.href = 'https://pixiatech.com/devis/'} 
+                    onClick={() => window.location.href = 'https://pixiatech.com/estimation/'} 
                     variant="outline" 
                     className="rounded-full h-11 px-8 font-bold text-[11px] tracking-widest uppercase border-slate-200 text-slate-700 hover:bg-black hover:text-white hover:border-black shadow-sm w-full group transition-all duration-300 flex items-center justify-center gap-2"
                 >

@@ -1447,7 +1447,7 @@
         "autoValidationTitle": "Automatic validation didn't work?",
         "autoValidationDesc": "Enter the code received by email in the verification slots.",
         "sessionTitle": "Session Timeout",
-        "sessionDesc": "The code sent is valid for the next 10 minutes.",
+        "sessionDesc": "The code sent is valid for the next {minutes} minutes.",
         "codeCopied": "Access code automatically copied to clipboard!",
         "validationInProgress": "Validating link...",
         "verificationTitle": "Verification",

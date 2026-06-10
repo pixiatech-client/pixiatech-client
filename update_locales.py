@@ -192,7 +192,7 @@ translate_map = {
     "Créer une nouvelle": "Create new",
     "Créez votre compte administrateur": "Create your administrator account",
     "Demander un accès": "Request access",
-    "Définit la surface minimale pour le calcul du devis.": "Sets the minimum surface for quote calculation.",
+    "Définit la surface minimale pour le calcul de l'estimation.": "Sets the minimum surface for estimate calculation.",
     "Email associé au compte": "Email associated with account",
     "Email envoyé !": "Email sent!",
     "Empêcher suppression": "Prevent deletion",

@@ -530,12 +530,12 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                         {isLoggingIn || isSigningOut ? (
                           <>
                             <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-                            Logging in...
+                            {t('Logging in...')}
                           </>
                         ) : (
                           <>
                             <LogIn className="h-5 w-5 text-blue-500" />
-                            Log in
+                            {t('Log in')}
                           </>
                         )}
                       </button>
@@ -552,7 +552,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                     >
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="signup-name">
-                          Full name
+                          {t('Full name')}
                         </label>
                         <div className="relative">
                           <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -562,7 +562,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                             required
                             value={signupName}
                             onChange={(event) => setSignupName(event.target.value)}
-                            placeholder="First and last name"
+                            placeholder={t('First and last name')}
                             className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                           />
                         </div>
@@ -570,7 +570,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
 
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="signup-email">
-                          Email
+                          {t('Email')}
                         </label>
                         <div className="relative">
                           <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -580,7 +580,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                             required
                             value={signupEmail}
                             onChange={(event) => setSignupEmail(event.target.value)}
-                            placeholder="admin@example.com"
+                            placeholder={t('admin@example.com')}
                             className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                           />
                         </div>
@@ -588,7 +588,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
 
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="signup-password">
-                          Password
+                          {t('Password')}
                         </label>
                         <div className="relative">
                           <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -599,14 +599,14 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                             minLength={6}
                             value={signupPassword}
                             onChange={(event) => setSignupPassword(event.target.value)}
-                            placeholder="Minimum 6 characters"
+                            placeholder={t('Minimum 6 characters')}
                             className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                           />
                           <button
                             type="button"
                             onClick={() => setShowSignupPassword((value) => !value)}
                             className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
-                            aria-label={showSignupPassword ? 'Hide password' : 'Show password'}
+                            aria-label={showSignupPassword ? t('Hide password') : t('Show password')}
                           >
                             {showSignupPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
@@ -615,7 +615,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
 
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="signup-phone">
-                          Phone
+                          {t('Phone')}
                         </label>
                         <div className="relative">
                           <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -625,7 +625,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                             required
                             value={signupPhone}
                             onChange={(event) => setSignupPhone(event.target.value)}
-                            placeholder="+33 6 00 00 00 00"
+                            placeholder={t('+33 6 00 00 00 00')}
                             className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                           />
                         </div>
@@ -646,12 +646,12 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                         {isSigningUp ? (
                           <>
                             <Loader2 className="h-5 w-5 animate-spin" />
-                            Signing up...
+                            {t('Signing up...')}
                           </>
                         ) : (
                           <>
                             <UserPlus className="h-5 w-5" />
-                            Create my account
+                            {t('Create my account')}
                           </>
                         )}
                       </button>
@@ -666,14 +666,14 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                     className="space-y-4"
                   >
                     <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                      <p className="font-bold">Complete your profile</p>
-                      <p className="mt-1 text-xs">Your account will be submitted for administrator approval.</p>
+                      <p className="font-bold">{t('Complete your profile')}</p>
+                      <p className="mt-1 text-xs">{t('Your account will be submitted for administrator approval.')}</p>
                     </div>
 
                     <form onSubmit={handleSaveGoogleProfile} className="space-y-4">
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">
-                          Full name
+                          {t('Full name')}
                         </label>
                         <div className="relative">
                           <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -682,7 +682,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                             required
                             value={googleDisplayName}
                             onChange={(e) => setGoogleDisplayName(e.target.value)}
-                            placeholder="Your name"
+                            placeholder={t('Your name')}
                             className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                           />
                         </div>
@@ -690,7 +690,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
 
                       <div className="space-y-1.5">
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">
-                          Phone <span className="normal-case tracking-normal text-slate-400">(optional)</span>
+                          {t('Phone')} <span className="normal-case tracking-normal text-slate-400">({t('optional')})</span>
                         </label>
                         <div className="relative">
                           <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -698,7 +698,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                             type="tel"
                             value={googlePhone}
                             onChange={(e) => setGooglePhone(e.target.value)}
-                            placeholder="+33 6 00 00 00 00"
+                            placeholder={t('+33 6 00 00 00 00')}
                             className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
                           />
                         </div>
@@ -712,10 +712,10 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                         {isSavingGoogleProfile ? (
                           <>
                             <Loader2 className="h-5 w-5 animate-spin" />
-                            Saving...
+                            {t('Saving...')}
                           </>
                         ) : (
-                          'Save and submit'
+                          t('Save and submit')
                         )}
                       </button>
                     </form>
@@ -733,9 +733,9 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                         <ShieldCheck className="h-8 w-8 text-amber-600" />
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-amber-900">Pending account</p>
+                        <p className="text-lg font-bold text-amber-900">{t('Pending account')}</p>
                         <p className="mt-2 text-sm text-amber-700">
-                          Your account has been created successfully. An administrator must approve your account and assign you a role before you can log in.
+                          {t('Your account has been created successfully. An administrator must approve your account and assign you a role before you can log in.')}
                         </p>
                       </div>
                       <button
@@ -745,7 +745,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                         }}
                         className="mt-2 text-sm font-semibold text-amber-600 hover:text-amber-800"
                       >
-                        Back to login
+                        {t('Back to login')}
                       </button>
                     </div>
                   </motion.div>
@@ -755,7 +755,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                   <>
                     <div className="relative mt-6 flex items-center">
                       <div className="flex-1 border-t border-slate-200" />
-                      <span className="px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">or</span>
+                      <span className="px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">{t('or')}</span>
                       <div className="flex-1 border-t border-slate-200" />
                     </div>
 
@@ -775,7 +775,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                           <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                         </svg>
                       )}
-                      Continue with Google
+                      {t('Continue with Google')}
                     </button>
 
                     <div className="mt-6 border-t border-slate-100 pt-5 text-center">
@@ -784,7 +784,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
                         className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-900 lg:hidden"
                       >
                         <ArrowLeft className="h-4 w-4" />
-                        Back to site
+                        {t('Back to site')}
                       </Link>
                     </div>
                   </>
@@ -793,7 +793,7 @@ throw new Error(sessionResult.error || t('Session creation failed.'));
 
               <div className="border-t border-slate-100 bg-slate-50 px-6 py-4 text-center sm:px-8">
                 <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">
-                  Access reserved for PixiaTech administration
+                  {t('Access reserved for PixiaTech administration')}
                 </p>
               </div>
             </div>

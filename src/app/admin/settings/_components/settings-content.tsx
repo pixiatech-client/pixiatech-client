@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'personalization' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification' | 'flow';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification' | 'flow';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -24,10 +24,10 @@ const LaborContent = lazy(() => import('../../labor/page'));
 const PdfContent = lazy(() => import('../../pdf-settings/page'));
 const EmergencyContent = lazy(() => import('../emergency/page'));
 const MessagingContent = lazy(() => import('../messaging/page'));
-const PersonalizationContent = lazy(() => import('../personalization/page'));
 const SoftwareContent = lazy(() => import('../software/page'));
 const EmailVerificationContent = lazy(() => import('../email-verification/page'));
 const FlowContent = lazy(() => import('../flow/page'));
+const ThemesContent = lazy(() => import('../themes/page'));
 
 function LoadingFallback() {
     return (
@@ -47,7 +47,7 @@ const tabsConfig: TabItem[] = [
     { id: 'general', label: 'General', icon: Settings },
     { id: 'images', label: 'Images', icon: ImageIcon },
     { id: 'content', label: 'Content', icon: FileText },
-    { id: 'personalization', label: 'Personalization', icon: Palette },
+    { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'wizard', label: 'Wizard', icon: Wand2 },
     { id: 'livraison', label: 'Delivery', icon: Truck },
     { id: 'main-doeuvre', label: 'Labor', icon: HardHat },
@@ -126,8 +126,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <MessagingContent />;
             case 'emergency':
                 return <EmergencyContent />;
-            case 'personalization':
-                return <PersonalizationContent />;
+            case 'appearance':
+                return <ThemesContent />;
             case 'email-verification':
                 return <EmailVerificationContent />;
             case 'software':
@@ -175,7 +175,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                         tab.id === 'wizard' ? "bg-indigo-100/80 text-indigo-600" :
                                         tab.id === 'livraison' ? "bg-cyan-100/80 text-cyan-600" :
                                         tab.id === 'messaging' ? "bg-blue-100/80 text-blue-600" :
-                                        tab.id === 'personalization' ? "bg-pink-100/80 text-pink-600" :
+                                        tab.id === 'appearance' ? "bg-fuchsia-100/80 text-fuchsia-600" :
                                         tab.id === 'email-verification' ? "bg-indigo-100/80 text-indigo-600" :
                                         "bg-orange-100/80 text-orange-600"
                                     )}>

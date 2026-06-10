@@ -571,6 +571,7 @@ export default function SignatureFlow({
   const [serverFlowSettings, setServerFlowSettings] = useState<NonNullable<Settings['estimationFlow']> | null>(null);
   const [pdfSettings, setPdfSettings] = useState<PdfSettings | null>(null);
   const [globalSettings, setGlobalSettings] = useState<Settings | null>(null);
+  const validityMinutes = globalSettings?.emailVerification?.validityMinutes ?? settings?.emailVerification?.validityMinutes ?? 10;
   useEffect(() => {
     getSettings().then(s => {
       if (s?.estimationFlow) setServerFlowSettings(s.estimationFlow);
@@ -1896,77 +1897,99 @@ export default function SignatureFlow({
             <div className="flex justify-center w-full">
               <FloatingFooterNav
                 onBack={() => setCurrentStep('informations')}
-                onNext={async () => {
-                  if (isSubmitting) return;
-                  setIsSubmitting(true);
-                  try {
-                    // Upload site photo to Firebase Storage if present
-                    let sitePhotoUrl = '';
-                    const existingPhoto = configuredProducts[0]?.installationPhoto;
-                    if (existingPhoto && (existingPhoto.startsWith('blob:') || existingPhoto.startsWith('data:'))) {
-                      try {
-                        const response = await fetch(existingPhoto);
-                        const blob = await response.blob();
-                        const photoRef = ref(storage, `quotes/site-photos/${Date.now()}.jpg`);
-                        await uploadBytes(photoRef, blob);
-                        sitePhotoUrl = await getDownloadURL(photoRef);
-                      } catch (e) {
-                        console.error('Failed to upload site photo:', e);
+                onNext={() => {
+                  setCurrentStep('securite');
+                  setEmailDeliveryStatus('sending');
+                  setOtpError(null);
+                  setInputOtpCode('');
+
+                  // Asynchronous background flow
+                  const runBackgroundFlow = async () => {
+                    try {
+                      // Upload site photo to Firebase Storage if present
+                      let sitePhotoUrl = '';
+                      const existingPhoto = configuredProducts[0]?.installationPhoto;
+                      if (existingPhoto && (existingPhoto.startsWith('blob:') || existingPhoto.startsWith('data:'))) {
+                        try {
+                          const response = await fetch(existingPhoto);
+                          const blob = await response.blob();
+                          const photoRef = ref(storage, `quotes/site-photos/${Date.now()}.jpg`);
+                          await uploadBytes(photoRef, blob);
+                          sitePhotoUrl = await getDownloadURL(photoRef);
+                        } catch (e) {
+                          console.error('Failed to upload site photo:', e);
+                        }
                       }
+                      const result = await createQuoteWithContract(
+                        userId,
+                        {
+                          company: renterDetails.company,
+                          representative: renterDetails.representative,
+                          address: renterDetails.address,
+                          postcode: renterDetails.postcode,
+                          city: renterDetails.city,
+                          email: renterDetails.email,
+                          phone: renterDetails.phone,
+                          notes: additionalNotes,
+                          sitePhoto: sitePhotoUrl,
+                        },
+                        {
+                          products: productItems as any[],
+                          transactionType: projectMode === 'vente' ? 'sale' : 'rental',
+                          includeInstallation: isInstallationIncluded,
+                          installationCost: installationFee,
+                          techniciansRequired: techniciansCount,
+                          includeDelivery: true,
+                          deliveryCost: totalDeliveryFee,
+                          totalQuote: totalSubtotalProducts,
+                          width: productCalculations[0]?.width || 0,
+                          height: productCalculations[0]?.height || 0,
+                          productName: productItems[0]?.productName || '',
+                          lang: locale as 'fr' | 'en',
+                          rentalPeriod: projectMode === 'location' && rentalStartDate && rentalEndDate
+                            ? { from: rentalStartDate, to: rentalEndDate }
+                            : undefined,
+                          rentalStartTime: projectMode === 'location' ? rentalStartTime : undefined,
+                          rentalEndTime: projectMode === 'location' ? rentalEndTime : undefined,
+                        },
+                        signatureDataUrl || ''
+                      );
+                      if (result.success && result.id) {
+                        setQuoteId(result.id);
+                        setSentOtpCode(result.otpCode || '');
+                        setOtpTimeLeft(validityMinutes * 60 - 3);
+                        setEmailDeliveryStatus(isBackendSmtpConfigured ? 'sent' : 'simulated');
+
+                        // Background PDF generation
+                        try {
+                          const pdf = new jsPDF('p', 'mm', 'a4');
+                          const fallback = document.getElementById('signature-pdf-container');
+                          if (fallback) {
+                            const pageCount = await renderPagesToPdf(fallback, pdf);
+                            if (pageCount > 0) {
+                              uploadPdfToStorage(pdf, result.id).then(url => {
+                                if (url) setPdfUrl(url);
+                              });
+                            }
+                          }
+                        } catch (pdfErr) {
+                          console.error("📄 Background PDF generation error:", pdfErr);
+                        }
+                      } else {
+                        setEmailDeliveryStatus('failed');
+                        setOtpError(result.error || 'Erreur lors de la création du devis');
+                      }
+                    } catch (e) {
+                      console.error("createQuoteWithContract exception:", e);
+                      setEmailDeliveryStatus('failed');
+                      setOtpError('Erreur lors de la création du devis');
                     }
-                    const result = await createQuoteWithContract(
-                      userId,
-                      {
-                        company: renterDetails.company,
-                        representative: renterDetails.representative,
-                        address: renterDetails.address,
-                        postcode: renterDetails.postcode,
-                        city: renterDetails.city,
-                        email: renterDetails.email,
-                        phone: renterDetails.phone,
-                        notes: additionalNotes,
-                        sitePhoto: sitePhotoUrl,
-                      },
-                      {
-                        products: productItems as any[],
-                        transactionType: projectMode === 'vente' ? 'sale' : 'rental',
-                        includeInstallation: isInstallationIncluded,
-                        installationCost: installationFee,
-                        techniciansRequired: techniciansCount,
-                        includeDelivery: true,
-                        deliveryCost: totalDeliveryFee,
-                        totalQuote: totalSubtotalProducts,
-                        width: productCalculations[0]?.width || 0,
-                        height: productCalculations[0]?.height || 0,
-                        productName: productItems[0]?.productName || '',
-                        lang: locale as 'fr' | 'en',
-                        rentalPeriod: projectMode === 'location' && rentalStartDate && rentalEndDate
-                          ? { from: rentalStartDate, to: rentalEndDate }
-                          : undefined,
-                        rentalStartTime: projectMode === 'location' ? rentalStartTime : undefined,
-                        rentalEndTime: projectMode === 'location' ? rentalEndTime : undefined,
-                      },
-                      signatureDataUrl || ''
-                    );
-                    if (result.success && result.id) {
-                      setQuoteId(result.id);
-                      setSentOtpCode(result.otpCode || '');
-                      setOtpTimeLeft(597);
-                      setOtpError(null);
-                      setInputOtpCode('');
-                      setCurrentStep('securite');
-                    } else {
-                      setOtpError(result.error || 'Erreur lors de la création du devis');
-                    }
-                  } catch (e) {
-                    console.error("createQuoteWithContract exception:", e);
-                    setOtpError('Erreur lors de la création du devis');
-                  } finally {
-                    setIsSubmitting(false);
-                  }
+                  };
+
+                  runBackgroundFlow();
                 }}
-                nextDisabled={!acceptedCgl || isSubmitting || (projectMode === 'location' && isDigitalSignatureEnabled && !isSignatureValidated)}
-                nextLabel={isSubmitting ? 'Création du devis...' : t('signature.continueToVerification')}
+                nextDisabled={!acceptedCgl || (projectMode === 'location' && isDigitalSignatureEnabled && !isSignatureValidated)}
+                nextLabel={t('signature.continueToVerification')}
               />
             </div>
 
@@ -2058,7 +2081,7 @@ export default function SignatureFlow({
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-zinc-900 font-heading">{t('signature.sessionTitle')}</h4>
-                    <span className="text-[11px] text-zinc-500 font-medium block mt-0.5">{t('signature.sessionDesc')}</span>
+                    <span className="text-[11px] text-zinc-500 font-medium block mt-0.5">{t('signature.sessionDesc', { minutes: validityMinutes })}</span>
                   </div>
                 </div>
 
@@ -2108,13 +2131,28 @@ export default function SignatureFlow({
                     ref={hiddenInputRef}
                     id="otp-code-hidden-ctrl"
                     type="text"
-                    maxLength={6}
+                    maxLength={100}
                     disabled={isSimulatingLinkClick || isOtpCompleted}
                     value={inputOtpCode}
                     onChange={(e) => {
                       const val = e.target.value.replace(/\D/g, '').slice(0, 6);
                       setInputOtpCode(val);
                       setOtpError(null);
+                      if (val.length === 6) {
+                        setTimeout(() => handleManualCodeVerify(val), 100);
+                      }
+                    }}
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pasted = e.clipboardData.getData('text');
+                      const digits = pasted.replace(/\D/g, '').slice(0, 6);
+                      if (digits.length > 0) {
+                        setInputOtpCode(digits);
+                        setOtpError(null);
+                        if (digits.length === 6) {
+                          setTimeout(() => handleManualCodeVerify(digits), 100);
+                        }
+                      }
                     }}
                     className="absolute inset-0 opacity-0 w-full h-full cursor-default border-none focus:outline-none"
                     autoFocus

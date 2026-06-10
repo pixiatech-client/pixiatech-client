@@ -5,7 +5,7 @@ import { buildSecureEmailHtml } from '@/lib/email-templates';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { to, code, smtpConfig, companyName, companySlogan, documentLabel, validityMinutes, messageStyle, lang } = body;
+    const { to, code, smtpConfig, companyName, companySlogan, documentLabel, validityMinutes, messageStyle, theme, lang } = body;
 
     if (!to) {
       return NextResponse.json({ error: "L'adresse e-mail du destinataire est requise." }, { status: 400 });
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       documentLabel: documentLabel || 'estimation du projet',
       validityMinutes: validityMinutes || 10,
       messageStyle: messageStyle || 'collaborative_trust',
+      theme: theme || 'light_premium',
       lang: lang || 'fr',
     });
 

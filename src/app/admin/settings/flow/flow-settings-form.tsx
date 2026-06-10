@@ -51,10 +51,10 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     '• Contact E-Mail : contact@pixiatech.com',
     '• Contact Téléphone : 07 56 81 66 26',
     '',
-    'La validation de toute commande (en ligne ou sur devis) implique l\'adhésion entière et sans réserve aux présentes conditions.',
+    'La validation de toute commande (en ligne ou sur estimation) implique l\'adhésion entière et sans réserve aux présentes conditions.',
     '',
     'ARTICLE 2 – VENTE : PRODUITS ET MODÈLE LOGISTIQUE',
-    'Les caractéristiques des produits (écrans LED, éclairage, solutions numériques) sont indiquées sur le site ou le devis.',
+    'Les caractéristiques des produits (écrans LED, éclairage, solutions numériques) sont indiquées sur le site ou l\'estimation.',
     'Expédition Directe (Modèle Logistique) : Afin de garantir la disponibilité des produits et des tarifs compétitifs, PIXIATECH fonctionne en flux tendu. Certains produits sont expédiés directement depuis les entrepôts de fabrication partenaires (UE ou hors UE). Le Client accepte que sa commande puisse être livrée en plusieurs colis selon la provenance logistique.',
     '',
     'ARTICLE 3 – PRIX',
@@ -64,7 +64,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     '',
     'ARTICLE 4 – PAIEMENT (VENTE ET PRESTATION)',
     '4.1 Commandes en ligne : Paiement 100 % exigible au jour de la commande. Traitement après encaissement complet.',
-    '4.2 Commandes sur devis (B2B) : Acompte : 60 % à la signature. Solde : 40 % avant expédition. En cas de non-paiement du solde, PIXIATECH reste propriétaire du matériel.',
+    '4.2 Commandes sur estimation (B2B) : Acompte : 60 % à la signature. Solde : 40 % avant expédition. En cas de non-paiement du solde, PIXIATECH reste propriétaire du matériel.',
     '',
     'ARTICLE 5 – LIVRAISON ET DOUANES',
     '5.1 Délais : Les délais sont indicatifs. Un retard ne justifie pas une annulation (sauf dispositions légales B2C).',
@@ -75,7 +75,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     '6.2 Professionnels : Pas de rétractation en B2B. Commande ferme.',
     '',
     'ARTICLE 7 – PRESTATION D\'INSTALLATION',
-    '7.1 Périmètre : Installation disponible dans un rayon de 150 km autour du siège. Au-delà : devis.',
+    '7.1 Périmètre : Installation disponible dans un rayon de 150 km autour du siège. Au-delà : estimation.',
     '7.2 Réception : Un Bon de Réception marque la fin de l\'installation. Le client devient responsable.',
     '7.3 Installation par le Client : PIXIATECH décline toute responsabilité en cas de mauvaise installation par le client.',
     '',
@@ -139,7 +139,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     'La validation de toute commande implique l\'adhésion entière et sans réserve aux présentes conditions.',
     '',
     'ARTICLE 2 – VENTE : PRODUITS ET MODÈLE LOGISTIQUE',
-    'Les caractéristiques des produits sont indiquées sur le site ou le devis. PIXIATECH fonctionne en flux tendu. Certains produits sont expédiés directement depuis les entrepôts de fabrication partenaires.',
+    'Les caractéristiques des produits sont indiquées sur le site ou l\'estimation. PIXIATECH fonctionne en flux tendu. Certains produits sont expédiés directement depuis les entrepôts de fabrication partenaires.',
     '',
     'ARTICLE 3 – PRIX',
     'Les prix sont indiqués en Euros.',
@@ -148,7 +148,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     '',
     'ARTICLE 4 – PAIEMENT (VENTE ET PRESTATION)',
     '4.1 Commandes en ligne : Paiement 100 % exigible au jour de la commande.',
-    '4.2 Commandes sur devis (B2B) : Acompte : 60 % à la signature. Solde : 40 % avant expédition.',
+    '4.2 Commandes sur estimation (B2B) : Acompte : 60 % à la signature. Solde : 40 % avant expédition.',
     '',
     'ARTICLE 5 – LIVRAISON ET DOUANES',
     '5.1 Délais : Les délais sont indicatifs.',
@@ -245,7 +245,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-black text-slate-900 tracking-tight">Parcours client</h3>
-          <p className="text-sm font-medium text-slate-500">Contrôle des options du parcours de devis, signature, TVA et contrats.</p>
+          <p className="text-sm font-medium text-slate-500">Contrôle des options du parcours d'estimation, signature, TVA et contrats.</p>
         </div>
         <Button onClick={saveAll} className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-lg cursor-pointer">
           Sauvegarder
@@ -419,7 +419,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                               <p className="font-semibold text-zinc-800">1. OBJET</p>
                               <p>Les présentes conditions générales de vente (CGV) régissent la vente de produits et services d&apos;affichage LED par PIXIATECH.</p>
                               <p className="font-semibold text-zinc-800 mt-3">2. PRIX ET PAIEMENT</p>
-                              <p>Les prix sont indiqués en euros. Le paiement est dû selon les modalités prévues au devis accepté.</p>
+                              <p>Les prix sont indiqués en euros. Le paiement est dû selon les modalités prévues à l'estimation acceptée.</p>
                               <p className="font-semibold text-zinc-800 mt-3">3. LIVRAISON</p>
                               <p>La livraison est effectuée à l&apos;adresse indiquée par le client, selon les délais convenus.</p>
                             </>

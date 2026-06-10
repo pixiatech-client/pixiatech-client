@@ -1,4 +1,4 @@
-# 📘 README — Système de Gestion d'Estimations (Devis) & Configuration Produits LED
+# 📘 README — Système de Gestion d'Estimations & Configuration Produits LED
 
 > **Document de référence métier pour IA**  
 > Ce document contient toutes les règles métier, workflows et logique fonctionnelle du système.  
@@ -10,7 +10,7 @@
 
 L'application permet à un client de :
 - Configurer un écran LED (achat ou location)
-- Obtenir une estimation automatique (devis PDF)
+- Obtenir une estimation automatique (PDF)
 - Envoyer une demande à l'entreprise
 - Être traité côté administration (admin, fournisseur, commercial)
 

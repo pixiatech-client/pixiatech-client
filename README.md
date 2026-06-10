@@ -1,6 +1,6 @@
 # Estimation V3
 
-Application web Next.js pour la génération de devis et la gestion des clients.
+Application web Next.js pour la génération d'estimations et la gestion des clients.
 
 ## Stack Technique
 
@@ -19,18 +19,18 @@ src/
 │   ├── admin/              # Dashboard administrateur
 │   │   ├── delivery/       # Gestion des frais de livraison
 │   │   ├── labor/          # Configuration main d'œuvre
-│   │   ├── quotes/         # Gestion des devis
+│   │   ├── quotes/         # Gestion des estimations
 │   │   ├── users/          # Gestion utilisateurs
 │   │   ├── settings/       # Paramètres généraux
 │   │   └── login/          # Authentification
-│   ├── quote/              # Pages publiques de devis
+│   ├── quote/              # Pages publiques d'estimation
 │   │   ├── success/        # Page de succès
 │   │   └── pending-verification/
 │   └── embed/              # Mode embeddable
 ├── components/
 │   ├── ui/                 # Composants UI réutilisables
 │   ├── configurator.tsx    # Configurator principal
-│   ├── quote-builder.tsx   # Constructeur de devis
+│   ├── quote-builder.tsx   # Constructeur d'estimation
 │   └── ...
 ├── firebase/               # Configuration Firebase client/serveur
 ├── hooks/                  # Hooks personnalisés
@@ -40,7 +40,7 @@ src/
 ## Fonctionnalités
 
 ### Client
-- Wizard de configuration de devis
+- Wizard de configuration d'estimation
 - Sélection de produits avec options
 - Calcul automatique des prix
 - Upload d'images
@@ -52,7 +52,7 @@ src/
 - Gestion des produits et services
 - Configuration des frais de livraison par zone
 - Gestion des utilisateurs et rôles
-- Historique des devis
+- Historique des estimations
 - Gestion des paramètres (PDF, thèmes, contenu)
 
 ## Commandes

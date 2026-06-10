@@ -126,6 +126,7 @@ export default function EmailVerificationSettingsPage() {
           documentLabel,
           messageStyle,
           validityMinutes,
+          previewTheme,
         },
       });
     } catch (err) {

@@ -421,7 +421,7 @@ const adminTranslations: Record<string, string> = {
   'Estimation Process': 'Processus d\'estimation',
   'Maximum Limits': 'Limites maximales',
   'Default Values': 'Valeurs par défaut',
-  'Maximum number of products per quote': 'Nombre maximum de produits par devis',
+  'Maximum number of products per quote': 'Nombre maximum de produits par estimation',
   'Height (m)': 'Hauteur (m)',
   'Width (m)': 'Largeur (m)',
   'Max Height (m)': 'Hauteur max (m)',
@@ -493,9 +493,25 @@ const adminTranslations: Record<string, string> = {
   'Unknown': 'Inconnu',
 
   // Login
+  'Logging in...': 'Connexion en cours...',
   'Log in': 'Connexion',
   'Password': 'Mot de passe',
   'Back to login': 'Retour à la connexion',
+  'Full name': 'Nom complet',
+  'First and last name': 'Prénom et nom',
+  '+33 6 00 00 00 00': '+33 6 00 00 00 00',
+  'Signing up...': 'Inscription en cours...',
+  'Create my account': 'Créer mon compte',
+  'Complete your profile': 'Complétez votre profil',
+  'Your account will be submitted for administrator approval.': 'Votre compte sera soumis à l\'approbation d\'un administrateur.',
+  'Your name': 'Votre nom',
+  'Saving...': 'Sauvegarde en cours...',
+  'Save and submit': 'Enregistrer et soumettre',
+  'Pending account': 'Compte en attente',
+  'Your account has been created successfully. An administrator must approve your account and assign you a role before you can log in.': 'Votre compte a été créé avec succès. Un administrateur doit approuver votre compte et vous attribuer un rôle avant que vous puissiez vous connecter.',
+  'Sign-in cancelled.': 'Connexion annulée.',
+  'Hide password': 'Masquer le mot de passe',
+  'Show password': 'Afficher le mot de passe',
 
   // Product Management
   'Add a product': 'Ajouter un produit',
@@ -520,12 +536,17 @@ const adminTranslations: Record<string, string> = {
   'You are currently impersonating:': 'Vous impersonnalisez actuellement :',
 
   // Supplier quote dialog
-  'Supplier Quote': 'Devis fournisseur',
+  'Supplier Quote': 'Estimation fournisseur',
   'Unable to approve user.': 'Impossible d\'approuver l\'utilisateur.',
   'User suspended.': 'Utilisateur suspendu.',
   'Unable to suspend user.': 'Impossible de suspendre l\'utilisateur.',
   'User approved successfully.': 'Utilisateur approuvé avec succès.',
   'Error during update.': 'Erreur lors de la mise à jour.',
+  'optional': 'optionnel',
+  'or': 'ou',
+  'Back to site': 'Retour au site',
+  'Continue with Google': 'Continuer avec Google',
+  'Access reserved for PixiaTech administration': 'Accès réservé à l\'administration PixiaTech',
 };
 
 export default adminTranslations;

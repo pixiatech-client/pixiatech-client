@@ -130,7 +130,7 @@ const PDF_LANG: Record<string, Record<string, string>> = {
     total: 'TOTAL',
     exclTax: 'HT',
     info: 'Information',
-    infoText: 'Ce devis est une estimation générée automatiquement sur la base des informations fournies. Il ne constitue pas un engagement ferme de la part de',
+    infoText: 'Cette estimation est générée automatiquement sur la base des informations fournies. Elle ne constitue pas un engagement ferme de la part de',
     paymentTerms: 'Conditions de paiement',
     termsFallback: '50% à la commande, 50% à la livraison.\nPaiement par virement bancaire uniquement.\nTVA applicable selon la législation en vigueur.',
     badge1: 'Équipement professionnel de haute qualité',

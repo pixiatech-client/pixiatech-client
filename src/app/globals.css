@@ -868,3 +868,57 @@ body.light-theme aside.glass-ui {
   font-weight: 900 !important;
   box-shadow: 0 0 15px rgba(195, 245, 60, 0.1);
 }
+
+/* Custom compatibility overrides for dynamic theme mode (specifically dark themes) */
+@layer utilities {
+  .dark #admin-root .text-slate-900,
+  .dark #admin-root .text-gray-900,
+  .dark #admin-root .text-zinc-900,
+  .dark #admin-root h1,
+  .dark #admin-root h2,
+  .dark #admin-root h3,
+  .dark #admin-root h4,
+  .dark #admin-root h5,
+  .dark #admin-root h6 {
+    color: var(--theme-text-primary) !important;
+  }
+
+  .dark #admin-root .text-slate-700,
+  .dark #admin-root .text-slate-800,
+  .dark #admin-root .text-gray-700,
+  .dark #admin-root .text-gray-800,
+  .dark #admin-root .text-zinc-700,
+  .dark #admin-root .text-zinc-800,
+  .dark #admin-root .text-slate-600,
+  .dark #admin-root .text-gray-600,
+  .dark #admin-root .text-zinc-600,
+  .dark #admin-root .text-slate-500,
+  .dark #admin-root .text-gray-500,
+  .dark #admin-root .text-zinc-500 {
+    color: var(--theme-text-secondary) !important;
+  }
+
+  .dark #admin-root .bg-gray-50,
+  .dark #admin-root .bg-slate-50,
+  .dark #admin-root .bg-zinc-50,
+  .dark #admin-root .bg-gray-100,
+  .dark #admin-root .bg-slate-100,
+  .dark #admin-root .bg-zinc-100,
+  .dark #admin-root .hover\:bg-gray-50:hover,
+  .dark #admin-root .hover\:bg-slate-50:hover,
+  .dark #admin-root .hover\:bg-zinc-50:hover,
+  .dark #admin-root .hover\:bg-gray-100:hover,
+  .dark #admin-root .hover\:bg-slate-100:hover,
+  .dark #admin-root .hover\:bg-zinc-100:hover {
+    background-color: var(--theme-hover-bg) !important;
+  }
+
+  .dark #admin-root .border-gray-100,
+  .dark #admin-root .border-slate-100,
+  .dark #admin-root .border-zinc-100,
+  .dark #admin-root .border-gray-200,
+  .dark #admin-root .border-slate-200,
+  .dark #admin-root .border-zinc-200 {
+    border-color: var(--theme-card-border) !important;
+  }
+}

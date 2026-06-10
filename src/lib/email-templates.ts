@@ -171,6 +171,7 @@ export function buildSecureEmailHtml(params: {
   documentLabel?: string;
   validityMinutes?: number;
   messageStyle?: MessageStyle;
+  theme?: string;
   lang?: string;
 }) {
   const {
@@ -180,8 +181,27 @@ export function buildSecureEmailHtml(params: {
     documentLabel = 'estimation du projet',
     validityMinutes = 10,
     messageStyle = 'collaborative_trust',
+    theme = 'light_premium',
     lang,
   } = params;
+
+  const isDark = theme === 'dark_luxury';
+  const isGlass = theme === 'glass_frosted';
+  const isAdaptive = theme === 'auto_adaptive';
+
+  const bgColor = isDark ? '#0b1120' : '#f4f6fa';
+  const cardBg = isDark ? '#131c31' : '#ffffff';
+  const cardBorder = isDark ? '#1e293b' : '#cbd5e1';
+  const textPrimary = isDark ? '#f1f5f9' : '#0f172a';
+  const textSecondary = isDark ? '#94a3b8' : '#475569';
+  const textMuted = isDark ? '#64748b' : '#94a3b8';
+  const accentColor = isDark ? '#818cf8' : '#4f46e5';
+  const codeBg = isDark ? '#0f1a2e' : '#f8fafc';
+  const codeBorder = isDark ? '#334155' : '#cbd5e1';
+  const sectionBg = isDark ? '#0f1a2e' : '#f8fafc';
+  const sectionBorder = isDark ? '#1e293b' : '#cbd5e1';
+  const logoBg = isDark ? '#0f1a2e' : '#0a0f1b';
+  const logoBorder = accentColor;
 
   const getSecurityMsg = () => {
     switch (messageStyle) {
@@ -211,13 +231,30 @@ export function buildSecureEmailHtml(params: {
 
   const sec = getSecurityMsg();
 
+  const darkModeStyles = isAdaptive ? `
+  @media (prefers-color-scheme: dark) {
+    .email-body { background-color:#0b1120 !important; }
+    .email-bg { background-color:#0b1120 !important; }
+    .email-card { background-color:#131c31 !important; border-color:#1e293b !important; }
+    .email-text-primary { color:#f1f5f9 !important; }
+    .email-text-secondary { color:#94a3b8 !important; }
+    .email-text-muted { color:#64748b !important; }
+    .email-code-box { background-color:#0f1a2e !important; border-color:#334155 !important; }
+    .email-code-cell { border-color:#334155 !important; background-color:#0f1a2e !important; color:#f1f5f9 !important; }
+    .email-section { background-color:#0f1a2e !important; border-color:#1e293b !important; }
+    .email-divider { border-top-color:#1e293b !important; }
+    .email-footer { border-top-color:#1e293b !important; }
+    .email-icon-bg { background-color:#1e1b4b !important; }
+    .email-sec { color:#818cf8 !important; }
+  }` : '';
+
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style type="text/css">
-    body { margin: 0; padding: 0; min-width: 100%; background-color: #f4f6fa; font-family: Arial, Helvetica, sans-serif; }
+    body { margin: 0; padding: 0; min-width: 100%; background-color: ${bgColor}; font-family: Arial, Helvetica, sans-serif; }
     table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
     td { border-collapse: collapse; }
     img { border: 0; height: auto; outline: none; text-decoration: none; }
@@ -226,36 +263,39 @@ export function buildSecureEmailHtml(params: {
       .code-cell { font-size: 26px !important; letter-spacing: 3px !important; padding: 8px 16px !important; }
       .code-label { font-size: 9px !important; }
     }
+    ${isGlass ? `.email-card { background: rgba(255,255,255,0.7) !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important; }
+    ${isDark ? `.email-card { background: rgba(19,28,49,0.85) !important; }` : ''}` : ''}
+    ${darkModeStyles}
   </style>
   <!--[if mso]>
   <style type="text/css">
     .outer-table { width: 480px !important; }
-    .code-cell { border: 1px dashed #cbd5e1 !important; }
+    .code-cell { border: 1px dashed ${codeBorder} !important; }
   </style>
   <![endif]-->
 </head>
-<body style="margin:0;padding:0;width:100%;background-color:#f4f6fa;font-family:Arial,Helvetica,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f6fa" style="background-color:#f4f6fa;">
+<body class="email-body" style="margin:0;padding:0;width:100%;background-color:${bgColor};font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" class="email-bg" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${bgColor}" style="background-color:${bgColor};">
     <tr>
       <td align="center" style="padding:40px 10px;">
         <!--[if mso]><table role="presentation" width="480" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td><![endif]-->
         <table class="outer-table container-table" width="480" cellpadding="0" cellspacing="0" border="0" style="width:480px;max-width:480px;">
           <tr>
-            <td style="background-color:#ffffff;border:1px solid #e2e8f0;border-radius:24px;padding:0;">
+            <td class="email-card" style="background-color:${cardBg};border:1px solid ${cardBorder};border-radius:24px;padding:0;${isGlass ? `background:${isDark ? 'rgba(19,28,49,0.85)' : 'rgba(255,255,255,0.7)'};backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);` : ''}">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 
           <tr>
             <td align="center" style="padding:30px 25px 20px;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="#0a0f1b" style="background-color:#0a0f1b;border-radius:14px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="${logoBg}" style="background-color:${logoBg};border-radius:14px;">
                 <tr>
                   <td style="padding:12px 20px;">
                     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                       <tr>
                         <td width="36" valign="middle" style="width:36px;padding-right:12px;">
-                          <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="#0d1222" style="background-color:#0d1222;border:1px solid #4f46e5;border-radius:50%;width:28px;height:28px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="${isDark ? '#0f1a2e' : '#0d1222'}" style="background-color:${isDark ? '#0f1a2e' : '#0d1222'};border:1px solid ${accentColor};border-radius:50%;width:28px;height:28px;">
                             <tr>
                               <td align="center" valign="middle" style="color:#ffffff;font-size:7px;font-weight:bold;font-family:Arial,sans-serif;line-height:1.1;">
-                                PIXIA<br/><span style="color:#6366f1;font-size:5px;font-weight:bold;">TECH</span>
+                                PIXIA<br/><span style="color:${accentColor};font-size:5px;font-weight:bold;">TECH</span>
                               </td>
                             </tr>
                           </table>
@@ -266,7 +306,7 @@ export function buildSecureEmailHtml(params: {
                               <td style="font-size:13px;font-weight:900;color:#ffffff;letter-spacing:2px;font-family:Arial,sans-serif;line-height:1.2;">${companyName}</td>
                             </tr>
                             <tr>
-                              <td style="font-size:7px;font-weight:bold;color:#6366f1;font-family:monospace;letter-spacing:2px;text-transform:uppercase;line-height:1.2;padding-top:1px;">${companySlogan}</td>
+                              <td style="font-size:7px;font-weight:bold;color:${accentColor};font-family:monospace;letter-spacing:2px;text-transform:uppercase;line-height:1.2;padding-top:1px;">${companySlogan}</td>
                             </tr>
                           </table>
                         </td>
@@ -282,14 +322,14 @@ export function buildSecureEmailHtml(params: {
             <td align="center" style="padding:0 25px 18px;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td align="center" style="font-size:18px;font-weight:800;color:#0f172a;letter-spacing:3px;text-transform:uppercase;font-family:Arial,sans-serif;padding-bottom:10px;">
+                  <td class="email-text-primary" align="center" style="font-size:18px;font-weight:800;color:${textPrimary};letter-spacing:3px;text-transform:uppercase;font-family:Arial,sans-serif;padding-bottom:10px;">
                     ${lang === 'en' ? 'VALIDATION CODE' : 'CODE DE VALIDATION'}
                   </td>
                 </tr>
                 <tr>
-                  <td align="center" style="font-size:11.5px;color:#475569;line-height:1.6;font-family:Arial,sans-serif;">
+                  <td class="email-text-secondary" align="center" style="font-size:11.5px;color:${textSecondary};line-height:1.6;font-family:Arial,sans-serif;">
                     ${lang === 'en' ? 'To securely finalize and sign your' : 'Pour finaliser et signer de fa\u00e7on s\u00e9curis\u00e9e votre'}
-                    <strong style="color:#4f46e5;">${documentLabel}</strong>,
+                    <strong style="color:${accentColor};">${documentLabel}</strong>,
                     ${lang === 'en' ? 'please copy or note the temporary digital code below and enter it in the application validation field.' : 'veuillez copier ou noter le code num\u00e9rique temporaire ci-dessous et le saisir dans la zone de validation de l\'application.'}
                   </td>
                 </tr>
@@ -301,10 +341,10 @@ export function buildSecureEmailHtml(params: {
             <td align="center" style="padding:0 25px 25px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:0;">
+                  <td class="email-code-box" style="background-color:${codeBg};border:1px solid ${codeBorder};border-radius:20px;padding:0;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
-                        <td align="center" class="code-label" style="font-family:Arial,sans-serif;font-size:10px;font-weight:bold;color:#64748b;letter-spacing:2px;text-transform:uppercase;padding:24px 24px 8px;">
+                        <td align="center" class="code-label" style="font-family:Arial,sans-serif;font-size:10px;font-weight:bold;color:${textMuted};letter-spacing:2px;text-transform:uppercase;padding:24px 24px 8px;">
                           ${lang === 'en' ? 'YOUR UNIQUE SECURITY CODE' : 'VOTRE CODE UNIQUE DE S\u00c9CURIT\u00c9'}
                         </td>
                       </tr>
@@ -312,7 +352,7 @@ export function buildSecureEmailHtml(params: {
                         <td align="center" style="padding:8px 24px;">
                           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                             <tr>
-                              <td class="code-cell" align="center" style="border:1px dashed #cbd5e1;border-radius:12px;background-color:#ffffff;padding:10px 24px;font-family:Courier,monospace;font-size:32px;font-weight:bold;color:#0f172a;letter-spacing:4px;mso-line-height-rule:exactly;line-height:1.3;">
+                              <td class="code-cell email-code-cell" align="center" style="border:1px dashed ${codeBorder};border-radius:12px;background-color:${isDark ? '#0f1a2e' : '#ffffff'};padding:10px 24px;font-family:Courier,monospace;font-size:32px;font-weight:bold;color:${textPrimary};letter-spacing:4px;mso-line-height-rule:exactly;line-height:1.3;">
                                 ${code}
                               </td>
                             </tr>
@@ -322,7 +362,7 @@ export function buildSecureEmailHtml(params: {
                       <tr>
                         <td align="center" style="font-family:Arial,sans-serif;font-size:11px;color:#ef4444;line-height:1.5;font-weight:bold;padding:8px 24px 24px;">
                           ⚠️ ${lang === 'en' ? 'This code is strictly valid for ' + validityMinutes + ' minutes.' : 'Ce code est valide pour une dur\u00e9e stricte de ' + validityMinutes + ' minutes.'}<br/>
-                          <span style="font-weight:normal;color:#64748b;">
+                          <span class="email-text-muted" style="font-weight:normal;color:${textMuted};">
                             ${lang === 'en' ? 'After this time, the transaction will be cancelled and you will need to generate a new code.' : 'Apr\u00e8s ce d\u00e9lai, la transaction sera annul\u00e9e et vous devrez g\u00e9n\u00e9rer un nouveau code.'}
                           </span>
                         </td>
@@ -338,15 +378,15 @@ export function buildSecureEmailHtml(params: {
             <td align="center" style="padding:0 25px 25px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="background-color:#f8fafc;border:1px solid #f1f5f9;border-radius:14px;padding:16px;">
+                  <td class="email-section" style="background-color:${sectionBg};border:1px solid ${sectionBorder};border-radius:14px;padding:16px;">
                     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                       <tr>
-                        <td style="font-size:10px;font-weight:bold;color:#4f46e5;text-transform:uppercase;font-family:Arial,sans-serif;letter-spacing:0.5px;padding-bottom:8px;">
+                        <td class="email-sec" style="font-size:10px;font-weight:bold;color:${accentColor};text-transform:uppercase;font-family:Arial,sans-serif;letter-spacing:0.5px;padding-bottom:8px;">
                           🛡️ ${sec.label}
                         </td>
                       </tr>
                       <tr>
-                        <td style="font-size:11px;color:#334155;line-height:1.6;font-family:Arial,sans-serif;">
+                        <td class="email-text-secondary" style="font-size:11px;color:${isDark ? '#cbd5e1' : '#334155'};line-height:1.6;font-family:Arial,sans-serif;">
                           ${sec.text}
                         </td>
                       </tr>
@@ -358,28 +398,28 @@ export function buildSecureEmailHtml(params: {
           </tr>
 
           <tr>
-            <td style="padding:0 25px 20px;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-top:1px solid #f1f5f9;">
+            <td align="center" style="padding:0 25px 25px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="padding-top:18px;">
+                  <td class="email-section" style="background-color:${sectionBg};border:1px solid ${sectionBorder};border-radius:14px;padding:16px;">
                     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                       <tr>
                         <td width="36" valign="middle" style="width:36px;padding-right:12px;">
-                          <table role="presentation" cellpadding="0" cellspacing="0" border="0" bgcolor="#e0e7ff" style="background-color:#e0e7ff;border-radius:50%;width:28px;height:28px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="email-icon-bg" bgcolor="${isDark ? '#1e1b4b' : '#e0e7ff'}" style="background-color:${isDark ? '#1e1b4b' : '#e0e7ff'};border-radius:50%;width:28px;height:28px;">
                             <tr>
-                              <td align="center" valign="middle" style="color:#4f46e5;font-size:13px;font-weight:bold;font-family:Arial,sans-serif;padding:0;line-height:28px;">✓</td>
+                              <td align="center" valign="middle" style="color:${accentColor};font-size:13px;font-weight:bold;font-family:Arial,sans-serif;padding:0;line-height:28px;">✓</td>
                             </tr>
                           </table>
                         </td>
                         <td valign="middle" style="font-family:Arial,sans-serif;">
                           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                             <tr>
-                              <td style="font-size:9px;color:#64748b;line-height:1.2;font-family:Arial,sans-serif;">
+                              <td class="email-text-muted" style="font-size:9px;color:${textMuted};line-height:1.2;font-family:Arial,sans-serif;">
                                 ${lang === 'en' ? 'This code was generated for your absolute security.' : 'Ce code a \u00e9t\u00e9 g\u00e9n\u00e9r\u00e9 pour votre s\u00e9curit\u00e9 absolue.'}
                               </td>
                             </tr>
                             <tr>
-                              <td style="font-size:11px;font-weight:bold;color:#1e293b;padding-top:2px;font-family:Arial,sans-serif;">
+                              <td class="email-text-primary" style="font-size:11px;font-weight:bold;color:${textPrimary};padding-top:2px;font-family:Arial,sans-serif;">
                                 ${lang === 'en' ? 'The Infrastructure Team \u2014 Global Security' : 'L\'\u00e9quipe Infrastructure \u2014 S\u00e9curit\u00e9 Globale'}
                               </td>
                             </tr>
@@ -394,9 +434,9 @@ export function buildSecureEmailHtml(params: {
           </tr>
 
           <tr>
-            <td align="center" style="font-family:Arial,sans-serif;font-size:9.5px;color:#94a3b8;line-height:1.6;border-top:1px solid #f1f5f9;padding:18px 25px 30px;">
+            <td class="email-footer" align="center" style="font-family:Arial,sans-serif;font-size:9.5px;color:${textMuted};line-height:1.6;border-top:1px solid ${sectionBorder};padding:18px 25px 30px;">
               ${lang === 'en' ? 'This automatic message is encrypted. PandaDoc Secure Shield 2026.' : 'Ce mail automatique est crypt\u00e9. PandaDoc Secure Shield 2026.'}<br/>
-              &copy; 2026 ${companyName} Europe. <a href="mailto:support@pixiatech.com" target="_blank" style="color:#4f46e5;text-decoration:underline;font-weight:bold;">${lang === 'en' ? 'Contact support' : 'Contacter le support'}</a>
+              &copy; 2026 ${companyName} Europe. <a href="mailto:support@pixiatech.com" target="_blank" style="color:${accentColor};text-decoration:underline;font-weight:bold;">${lang === 'en' ? 'Contact support' : 'Contacter le support'}</a>
             </td>
           </tr>
 

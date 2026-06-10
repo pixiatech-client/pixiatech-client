@@ -113,7 +113,7 @@ const INITIAL_ESTIMATION: Estimation = {
   taxRate: 20,
   globalDiscount: 0,
   history: [
-    { id: 'h1', timestamp: '18/04/2026 10:00', action: 'Création du devis', user: 'Mich (Commercial)', userId: 'm1', type: 'local' },
+    { id: 'h1', timestamp: '18/04/2026 10:00', action: "Création de l'estimation", user: 'Mich (Commercial)', userId: 'm1', type: 'local' },
     { id: 'h2', timestamp: '18/04/2026 10:30', action: 'Approbation technique', user: 'Supplier', userId: 's1', type: 'local' },
   ]
 };

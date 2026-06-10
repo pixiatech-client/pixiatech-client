@@ -12,10 +12,11 @@ interface EmailHtmlPreviewProps {
   documentLabel: string;
   messageStyle: MessageStyle;
   validityMinutes: number;
+  theme?: string;
 }
 
 export function EmailHtmlPreview({
-  code, companyName, companySlogan, documentLabel, messageStyle, validityMinutes,
+  code, companyName, companySlogan, documentLabel, messageStyle, validityMinutes, theme,
 }: EmailHtmlPreviewProps) {
   const [copied, setCopied] = useState(false);
   const [showRaw, setShowRaw] = useState(true);
@@ -29,9 +30,10 @@ export function EmailHtmlPreview({
       documentLabel: documentLabel || 'estimation du projet',
       validityMinutes,
       messageStyle,
+      theme,
       lang: 'fr',
     });
-  }, [code, companyName, companySlogan, documentLabel, messageStyle, validityMinutes]);
+  }, [code, companyName, companySlogan, documentLabel, messageStyle, validityMinutes, theme]);
 
   const handleCopy = async () => {
     if (!generatedHtml) return;

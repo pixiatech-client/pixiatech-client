@@ -34,7 +34,7 @@ Les présentes conditions générales régissent l'ensemble des relations commer
 La validation de toute commande implique l'adhésion entière et sans réserve aux présentes conditions.
 
 ARTICLE 2 – VENTE : PRODUITS ET MODÈLE LOGISTIQUE
-Les caractéristiques des produits sont indiquées sur le site ou le devis. PIXIATECH fonctionne en flux tendu. Certains produits sont expédiés directement depuis les entrepôts de fabrication partenaires.
+Les caractéristiques des produits sont indiquées sur le site ou l'estimation. PIXIATECH fonctionne en flux tendu. Certains produits sont expédiés directement depuis les entrepôts de fabrication partenaires.
 
 ARTICLE 3 – PRIX
 Les prix sont indiqués en Euros.
@@ -43,7 +43,7 @@ Les prix sont indiqués en Euros.
 
 ARTICLE 4 – PAIEMENT (VENTE ET PRESTATION)
 4.1 Commandes en ligne : Paiement 100 % exigible au jour de la commande.
-4.2 Commandes sur devis (B2B) : Acompte : 60 % à la signature. Solde : 40 % avant expédition.
+4.2 Commandes sur estimation (B2B) : Acompte : 60 % à la signature. Solde : 40 % avant expédition.
 
 ARTICLE 5 – LIVRAISON ET DOUANES
 5.1 Délais : Les délais sont indicatifs.
@@ -291,7 +291,7 @@ Les présentes conditions générales régissent l'ensemble des relations commer
 La validation de toute commande implique l'adhésion entière et sans réserve aux présentes conditions.
 
 ARTICLE 2 – VENTE : PRODUITS ET MODÈLE LOGISTIQUE
-Les caractéristiques des produits sont indiquées sur le site ou le devis. PIXIATECH fonctionne en flux tendu. Certains produits sont expédiés directement depuis les entrepôts de fabrication partenaires.
+Les caractéristiques des produits sont indiquées sur le site ou l'estimation. PIXIATECH fonctionne en flux tendu. Certains produits sont expédiés directement depuis les entrepôts de fabrication partenaires.
 
 ARTICLE 3 – PRIX
 Les prix sont indiqués en Euros.
@@ -300,7 +300,7 @@ Les prix sont indiqués en Euros.
 
 ARTICLE 4 – PAIEMENT (VENTE ET PRESTATION)
 4.1 Commandes en ligne : Paiement 100 % exigible au jour de la commande.
-4.2 Commandes sur devis (B2B) : Acompte : 60 % à la signature. Solde : 40 % avant expédition.
+4.2 Commandes sur estimation (B2B) : Acompte : 60 % à la signature. Solde : 40 % avant expédition.
 
 ARTICLE 5 – LIVRAISON ET DOUANES
 5.1 Délais : Les délais sont indicatifs.

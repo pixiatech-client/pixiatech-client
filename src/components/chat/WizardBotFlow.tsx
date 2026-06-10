@@ -1501,7 +1501,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                   {step === STEP.GENERATING && (
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center bg-white p-6 rounded-3xl shadow-lg border border-slate-100 gap-4">
                       <Loader2 size={32} className="animate-spin text-[#0f766e]" />
-                      <p className="font-bold text-slate-800 animate-pulse">{locale === 'en' ? "Generating your PDF quote..." : "Génération de votre devis PDF en cours..."}</p>
+                      <p className="font-bold text-slate-800 animate-pulse">{locale === 'en' ? "Generating your PDF estimate..." : "Génération de votre estimation PDF en cours..."}</p>
                     </motion.div>
                   )}
 

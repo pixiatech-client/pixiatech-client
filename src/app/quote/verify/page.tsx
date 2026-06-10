@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { verifyQuoteToken } from '@/app/admin/actions';
-import { verifyQuoteOtp } from '@/app/actions/quote-actions';
+import { verifyQuoteOtp, verifyPendingOtp, createEstimationFromPending } from '@/app/actions/quote-actions';
 import { Loader2, CheckCircle2, XCircle, ShieldCheck, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
@@ -27,8 +27,14 @@ function VerifyContent() {
 
             try {
                 let result;
+
                 if (otp && id) {
-                    result = await verifyQuoteOtp(id, otp);
+                    // Try pending verification first (new flow: pendingVerifications collection)
+                    result = await verifyPendingOtp(id, otp);
+                    // Fallback to quote OTP (old flow: quotes collection)
+                    if (!result?.success) {
+                        result = await verifyQuoteOtp(id, otp);
+                    }
                 } else if (token) {
                     result = await verifyQuoteToken(token);
                 }
@@ -39,7 +45,11 @@ function VerifyContent() {
                     // Notify opener/parent window if possible
                     if (window.opener) {
                         try {
-                            window.opener.postMessage({ type: 'OTP_VERIFIED', quoteId: id || token, otp: otp }, '*');
+                            window.opener.postMessage({
+                                type: 'OTP_VERIFIED',
+                                pendingId: otp && id ? id : null,
+                                otp: otp
+                            }, '*');
                         } catch (e) {
                             console.error(e);
                         }
@@ -48,7 +58,11 @@ function VerifyContent() {
                     // Notify BroadcastChannel
                     try {
                         const bc = new BroadcastChannel('otp_verification');
-                        bc.postMessage({ type: 'OTP_VERIFIED', quoteId: id || token, otp: otp });
+                        bc.postMessage({
+                            type: 'OTP_VERIFIED',
+                            pendingId: otp && id ? id : null,
+                            otp: otp
+                        });
                         bc.close();
                     } catch (e) {
                         console.error(e);
@@ -71,12 +85,16 @@ function VerifyContent() {
                         }
                     }, 2500);
                 } else {
+                    const errorMsg = result?.error || t('verify.errorDefault');
                     setStatus('error');
-                    setError(result?.error || t('verify.errorDefault'));
+                    setError(errorMsg);
+                    console.error('[verify] Verification failed:', { id, otp, error: errorMsg });
                 }
-            } catch (err) {
+            } catch (err: any) {
+                const errorMsg = `${t('verify.internalError')} (${err?.message || 'unknown'})`;
                 setStatus('error');
-                setError(t('verify.internalError'));
+                setError(errorMsg);
+                console.error('[verify] Exception:', err);
             }
         }
 

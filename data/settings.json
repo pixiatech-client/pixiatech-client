@@ -13,13 +13,13 @@
   "congratulationsImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Felicitations.png",
   "emergencyStopEnabled": false,
   "emergencyReturnUrl": "https://mahboubidz.com/",
-  "emergencyStopMessage": "Pour des raisons de maintenance, notre outil de devis en ligne est actuellement suspendu. Veuillez nous excuser pour la gêne occasionnée.",
+  "emergencyStopMessage": "Pour des raisons de maintenance, notre outil d'estimation en ligne est actuellement suspendu. Veuillez nous excuser pour la gêne occasionnée.",
   "congratulationsTitle": {
     "fr": "🌟🌟 Félicitations ! 🌟🌟",
     "en": "🌟🌟 Congratulations! 🌟🌟"
   },
   "congratulationsMessage": {
-    "fr": "Votre demande de devis a bien été envoyée. Un commercial vous contactera dans les plus brefs délais pour discuter de votre projet.",
+    "fr": "Votre demande d'estimation a bien été envoyée. Un commercial vous contactera dans les plus brefs délais pour discuter de votre projet.",
     "en": "Your quote request has been sent successfully. A sales representative will contact you shortly to discuss your project."
   },
   "deliveryTitle": {
@@ -52,7 +52,7 @@
   "cardLogoUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Fichier-7-copie-1.png",
   "hintBubble": {
     "enabled": true,
-    "text": "Pour démarrer un devis,<br /> cliquez sur + <b>Ajouter un produit</b>.",
+    "text": "Pour démarrer une estimation,<br /> cliquez sur + <b>Ajouter un produit</b>.",
     "desktopBottom": 1,
     "desktopRight": 1,
     "mobileBottom": 1,

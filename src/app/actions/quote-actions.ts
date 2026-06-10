@@ -1,16 +1,16 @@
 'use server';
 
-import type { QuoteDetails } from '@/lib/types';
+import type { QuoteDetails, PdfSettings } from '@/lib/types';
 import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import nodemailer from 'nodemailer';
-import type { PdfSettings } from '@/lib/types';
 import fr from '@/lib/locales/fr.json';
 import en from '@/lib/locales/en.json';
 import { getSettings } from '@/app/admin/actions';
 import { updateStatsOnCreate } from '@/lib/statsService';
 import { createHash } from 'crypto';
 import { Timestamp } from 'firebase-admin/firestore';
+import type { MessageStyle, PreviewTheme } from '@/components/verification/types';
 
 type Locale = 'fr' | 'en';
 const translations = { fr, en };
@@ -321,7 +321,7 @@ async function createQuoteDocument(
             userId: userData.uid,
             type: 'estimation',
             title: 'Nouvelle demande client',
-            description: `Nouveau devis de ${formData.companyName || 'Client'}`,
+            description: `Nouvelle estimation de ${formData.companyName || 'Client'}`,
             href: `/admin/quotes/${docRef.id}`,
             read: false,
             createdAt: FieldValue.serverTimestamp()
@@ -546,9 +546,13 @@ export async function createQuoteWithContract(
   }
 
   try {
+    const globalSettings = await getSettings();
+    const evSettings = globalSettings?.emailVerification;
+    const validityMinutes = evSettings?.validityMinutes || 10;
+
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expirationDate = new Date();
-    expirationDate.setMinutes(expirationDate.getMinutes() + 10);
+    expirationDate.setMinutes(expirationDate.getMinutes() + validityMinutes);
 
     const pdfSettings = await getPdfSettings(true);
 
@@ -605,7 +609,8 @@ export async function createQuoteWithContract(
         clientDetails.representative,
         quoteDetails.totalQuote,
         `${quoteDetails.width}m x ${quoteDetails.height}m - ${quoteDetails.productName}`,
-        verificationUrl
+        verificationUrl,
+        evSettings
       );
     } catch (emailErr: any) {
       console.error("sendSignatureOtpEmail failed:", emailErr.message);
@@ -627,7 +632,15 @@ async function sendSignatureOtpEmail(
   representative: string,
   totalAmount: number,
   details: string,
-  verificationUrl: string
+  verificationUrl: string,
+  emailSettings?: {
+    companyName?: string;
+    companySlogan?: string;
+    documentLabel?: string;
+    validityMinutes?: number;
+    messageStyle?: string;
+    previewTheme?: string;
+  }
 ) {
   const smtpHost = process.env.SMTP_HOST;
   const smtpUser = process.env.SMTP_USER;
@@ -645,19 +658,22 @@ async function sendSignatureOtpEmail(
 
   const emailHtml = buildSecureEmailHtml({
     code: otpCode,
-    companyName: 'PIXIATECH',
-    companySlogan: 'TECHNOLOGY PRO',
-    documentLabel: 'estimation du projet',
-    validityMinutes: 10,
-    messageStyle: 'collaborative_trust',
+    companyName: emailSettings?.companyName || 'PIXIATECH',
+    companySlogan: emailSettings?.companySlogan || 'TECHNOLOGY PRO',
+    documentLabel: emailSettings?.documentLabel || 'estimation du projet',
+    validityMinutes: emailSettings?.validityMinutes || 10,
+    messageStyle: (emailSettings?.messageStyle as MessageStyle) || 'collaborative_trust',
+    theme: (emailSettings?.previewTheme as PreviewTheme) || 'light_premium',
     lang,
   });
 
+  const displayName = emailSettings?.companyName || 'PixiaTech';
+
   try {
     await transporter.sendMail({
-      from: `"PixiaTech" <${process.env.SMTP_USER}>`,
+      from: `"${displayName}" <${process.env.SMTP_USER}>`,
       to: recipientEmail,
-      subject: lang === 'fr' ? "🛡️ Authentification PixiaTech" : "🛡️ PixiaTech Authentication",
+      subject: lang === 'fr' ? `🛡️ Authentification ${displayName}` : `🛡️ ${displayName} Authentication`,
       html: emailHtml,
     });
   } catch (error) {
@@ -702,11 +718,280 @@ export async function verifyQuoteOtp(quoteId: string, otpCode: string): Promise<
   }
 }
 
+export async function sendVerificationOtp(params: {
+  email: string;
+  company: string;
+  representative: string;
+  lang: 'fr' | 'en';
+  totalQuote: number;
+  productDetails: string;
+}): Promise<{ success: boolean; pendingId?: string; otpCode?: string; error?: string }> {
+  const { adminDb, FieldValue, Timestamp } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Database service unavailable' };
+
+  try {
+    // Read email verification settings from Firestore
+    const settings = await getSettings();
+    const evSettings = settings?.emailVerification;
+    const validityMinutes = evSettings?.validityMinutes || 10;
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expirationDate = new Date();
+    expirationDate.setMinutes(expirationDate.getMinutes() + validityMinutes);
+
+    const docRef = await adminDb.collection('pendingVerifications').add({
+      email: params.email,
+      company: params.company,
+      representative: params.representative,
+      lang: params.lang,
+      totalQuote: params.totalQuote,
+      productDetails: params.productDetails,
+      otpCode,
+      otpExpires: Timestamp.fromDate(expirationDate),
+      verified: false,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+      || (process.env.NODE_ENV === 'production'
+        ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
+        : 'http://localhost:3000');
+
+    const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
+      ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
+      : baseUrl;
+
+    const verificationUrl = `${safeBaseUrl}/verification-securite?otp=${otpCode}&id=${docRef.id}`;
+
+    try {
+      await sendSignatureOtpEmail(
+        params.email,
+        otpCode,
+        params.lang,
+        params.company,
+        params.representative,
+        params.totalQuote,
+        params.productDetails,
+        verificationUrl,
+        evSettings
+      );
+    } catch (emailErr: any) {
+      console.error("sendSignatureOtpEmail failed:", emailErr.message);
+      throw emailErr;
+    }
+
+    return { success: true, pendingId: docRef.id, otpCode };
+  } catch (error: any) {
+    console.error("Error in sendVerificationOtp:", error.message);
+    return { success: false, error: error.message || 'Failed to send verification code' };
+  }
+}
+
+export async function verifyPendingOtp(
+  pendingId: string,
+  otpCode: string
+): Promise<{ success: boolean; error?: string }> {
+  const { adminDb, FieldValue } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Database service unavailable' };
+
+  try {
+    const docRef = adminDb.collection('pendingVerifications').doc(pendingId);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return { success: false, error: 'Session de vérification introuvable.' };
+    }
+
+    const data = docSnap.data();
+    if (!data) {
+      return { success: false, error: 'Session invalide.' };
+    }
+
+    if (data.verified) {
+      return { success: true };
+    }
+
+    if (data.otpCode !== otpCode) {
+      return { success: false, error: 'Code incorrect. Vérifiez votre email.' };
+    }
+
+    const expiresTimestamp = data.otpExpires;
+    if (expiresTimestamp && new Date() > expiresTimestamp.toDate()) {
+      return { success: false, error: 'Le code de vérification a expiré.' };
+    }
+
+    await docRef.update({
+      verified: true,
+      verifiedAt: FieldValue.serverTimestamp(),
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error in verifyPendingOtp:", error);
+    return { success: false, error: 'Erreur lors de la vérification.' };
+  }
+}
+
+export async function createEstimationFromPending(
+  pendingId: string,
+  userId: string,
+  clientDetails: {
+    company: string;
+    representative: string;
+    address: string;
+    postcode: string;
+    city: string;
+    email: string;
+    phone: string;
+    notes?: string;
+    sitePhoto?: string;
+  },
+  quoteDetails: {
+    products: any[];
+    transactionType: 'sale' | 'rental';
+    includeInstallation: boolean;
+    installationCost: number;
+    techniciansRequired: number;
+    includeDelivery: boolean;
+    deliveryCost: number;
+    totalQuote: number;
+    width: number;
+    height: number;
+    productName: string;
+    lang: 'fr' | 'en';
+    rentalPeriod?: { from: string; to: string };
+    rentalStartTime?: string;
+    rentalEndTime?: string;
+  },
+  signatureDataUrl: string
+): Promise<{ success: boolean; id?: string; error?: string }> {
+  const { adminDb, FieldValue } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Database service unavailable' };
+
+  try {
+    const pendingRef = adminDb.collection('pendingVerifications').doc(pendingId);
+    const pendingSnap = await pendingRef.get();
+
+    if (!pendingSnap.exists) {
+      return { success: false, error: 'Session de vérification introuvable.' };
+    }
+
+    const pendingData = pendingSnap.data();
+    if (!pendingData?.verified) {
+      return { success: false, error: 'Email non vérifié.' };
+    }
+
+    const pdfSettings = await getPdfSettings(true);
+
+    const docData: any = {
+      ...quoteDetails,
+      client: {
+        companyName: clientDetails.company,
+        representative: clientDetails.representative,
+        address: `${clientDetails.address}, ${clientDetails.postcode} ${clientDetails.city}`,
+        email: clientDetails.email,
+        phone: clientDetails.phone,
+        notes: clientDetails.notes || '',
+        sitePhoto: clientDetails.sitePhoto || '',
+      },
+      userId,
+      createdAt: FieldValue.serverTimestamp(),
+      isRead: false,
+      status: 'pending',
+      emailVerified: true,
+      signatureDataUrl,
+      signedAt: FieldValue.serverTimestamp(),
+      pdfSettings,
+    };
+
+    const docRef = await adminDb.collection('quotes').add(docData);
+
+    try {
+      await updateStatsOnCreate('pending', quoteDetails.totalQuote);
+    } catch (statsError) {
+      console.error("Error updating stats on create:", statsError);
+    }
+
+    await pendingRef.delete();
+
+    return { success: true, id: docRef.id };
+  } catch (error: any) {
+    console.error("Error in createEstimationFromPending:", error.message);
+    return { success: false, error: error.message || 'Failed to create estimation' };
+  }
+}
+
+export async function resendVerificationOtp(pendingId: string): Promise<{ success: boolean; otpCode?: string; error?: string }> {
+  const { adminDb, Timestamp } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Database service unavailable' };
+
+  try {
+    // Read email verification settings from Firestore
+    const settings = await getSettings();
+    const evSettings = settings?.emailVerification;
+    const validityMinutes = evSettings?.validityMinutes || 10;
+
+    const docRef = adminDb.collection('pendingVerifications').doc(pendingId);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return { success: false, error: 'Session introuvable.' };
+    }
+
+    const data = docSnap.data();
+    if (!data) {
+      return { success: false, error: 'Session invalide.' };
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expirationDate = new Date();
+    expirationDate.setMinutes(expirationDate.getMinutes() + validityMinutes);
+
+    await docRef.update({
+      otpCode,
+      otpExpires: Timestamp.fromDate(expirationDate),
+      verified: false,
+    });
+
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+      || (process.env.NODE_ENV === 'production'
+        ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
+        : 'http://localhost:3000');
+
+    const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
+      ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
+      : baseUrl;
+
+    const verificationUrl = `${safeBaseUrl}/verification-securite?otp=${otpCode}&id=${pendingId}`;
+
+    await sendSignatureOtpEmail(
+      data.email,
+      otpCode,
+      data.lang || 'fr',
+      data.company || '',
+      data.representative || '',
+      data.totalQuote || 0,
+      data.productDetails || '',
+      verificationUrl,
+      evSettings
+    );
+
+    return { success: true, otpCode };
+  } catch (error: any) {
+    console.error("Error in resendVerificationOtp:", error);
+    return { success: false, error: error.message || 'Échec du renvoi du code' };
+  }
+}
+
 export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolean; error?: string }> {
   const { adminDb, Timestamp } = getFirebaseAdmin();
   if (!adminDb) return { success: false, error: 'Database service unavailable' };
 
   try {
+    const settings = await getSettings();
+    const evSettings = settings?.emailVerification;
+    const validityMinutes = evSettings?.validityMinutes || 10;
+
     const docRef = adminDb.collection('quotes').doc(quoteId);
     const docSnap = await docRef.get();
 
@@ -721,7 +1006,7 @@ export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolea
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expirationDate = new Date();
-    expirationDate.setMinutes(expirationDate.getMinutes() + 10); // 10 minutes expiration
+    expirationDate.setMinutes(expirationDate.getMinutes() + validityMinutes);
 
     await docRef.update({
       otpCode,
@@ -757,7 +1042,8 @@ export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolea
       clientRepresentative,
       totalAmount,
       `${width}m x ${height}m - ${productName}`,
-      verificationUrl
+      verificationUrl,
+      evSettings
     );
 
     return { success: true };

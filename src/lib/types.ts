@@ -202,6 +202,7 @@ export type Settings = {
     documentLabel: string;
     messageStyle: string;
     validityMinutes: number;
+    previewTheme?: string;
   };
   estimationFlow?: {
     enableRentalPeriod: boolean;
@@ -422,6 +423,12 @@ export type Theme = {
     border: string;
     input: string;
     ring: string;
+    shadowSm: string;
+    shadowMd: string;
+    shadowLg: string;
+    radiusSm: string;
+    radiusMd: string;
+    radiusLg: string;
   };
   isDefault?: boolean;
   createdAt?: any;

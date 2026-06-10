@@ -2506,6 +2506,7 @@ const settingsSchema = z.object({
     documentLabel: z.string(),
     messageStyle: z.string(),
     validityMinutes: z.number(),
+    previewTheme: z.string().optional(),
   }).optional(),
   estimationFlow: z.object({
     enableRentalPeriod: z.boolean(),
@@ -2919,6 +2920,32 @@ export async function reinitializePalettes() {
     return { success: true };
   } catch (error) {
     console.error("Error reinitializing palettes:", error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+const ACTIVE_THEME_DOC_ID = 'global';
+
+export async function getActiveGlobalTheme(): Promise<{ themeId: string }> {
+  const { adminDb } = getFirebaseAdmin();
+  try {
+    const doc = await adminDb.collection('settings').doc(ACTIVE_THEME_DOC_ID).get();
+    const data = doc.data();
+    return { themeId: data?.activeThemeId || 'Nuage' };
+  } catch (error) {
+    console.error("Error fetching active theme:", error);
+    return { themeId: 'Nuage' };
+  }
+}
+
+export async function setActiveGlobalTheme(themeId: string) {
+  const { adminDb } = getFirebaseAdmin();
+  try {
+    await adminDb.collection('settings').doc(ACTIVE_THEME_DOC_ID).set({ activeThemeId: themeId }, { merge: true });
+    revalidatePath('/', 'layout');
+    return { success: true };
+  } catch (error) {
+    console.error("Error setting active theme:", error);
     return { success: false, error: (error as Error).message };
   }
 }
