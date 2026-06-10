@@ -367,6 +367,7 @@ export type QuoteRequest = Omit<QuoteDetails, 'products' | 'rentalPeriod'> & {
   lang: 'fr' | 'en';
   pdfSettings?: PdfSettings;
   pdfUrl?: string;
+  contractUrl?: string;
   // New fields for message tracking
   treatedBy?: string;
   treatedByName?: string;

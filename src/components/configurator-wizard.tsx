@@ -41,8 +41,9 @@ import {
   Ban,
   CheckCircle2,
   AlertTriangle,
-  Loader2,
+  Loader2
 } from 'lucide-react';
+import { BlurredPrice } from './ui/blurred-price';
 import { cn } from '@/lib/utils';
 import { ConfigState, INITIAL_STATE, ProjectType, Environment, ViewingDistance, PixelPitch } from '@/lib/configurator-wizard-types';
 import { Button } from './ui/button';
@@ -1565,26 +1566,18 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
 
                   <div className="pt-2">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('wizard.products.priceLabel')}</p>
-                    {showOnEstimate ? (
-                      <div className="flex flex-col">
-                        <span className="text-lg font-black text-black/30 animate-pulse blur-[2px] select-none">{t('configurator.estimating')}</span>
-                      </div>
-                    ) : (
-                      <>
-                        {product.oldPrice && state.projectType === 'vente' && (
-                          <p className="text-sm font-semibold text-orange-500 line-through">
-                            {(product.oldPrice * area * quantity).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} &#8364;
-                          </p>
-                        )}
-                        <p className="text-lg font-black text-slate-900">
-                          {totalPrice > 0 ? `${totalPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} \u20ac` : t('wizard.products.onEstimate') || 'Sur estimation'}
-                        </p>
-                        {quantity > 1 && (
-                          <p className="text-[10px] font-bold text-slate-400 italic">
-                            {t('wizard.products.perUnit', { price: displayedUnitPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US') })}
-                          </p>
-                        )}
-                      </>
+                    <p className="text-lg font-black text-slate-900">
+                      <BlurredPrice 
+                        price={totalPrice > 0 ? `${totalPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} \u20ac` : t('wizard.products.onEstimate') || 'Sur estimation'} 
+                        isPriceHidden={!!settings.isPriceHidden} 
+                      />
+                    </p>
+                    {quantity > 1 && (
+                      <p className="text-[10px] font-bold text-slate-400 italic">
+                        {t('wizard.products.perUnit', { 
+                          price: (isRental ? unitPrice * duration : unitPrice).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US') 
+                        })}
+                      </p>
                     )}
                   </div>
 

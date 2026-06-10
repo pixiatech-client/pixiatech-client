@@ -43,6 +43,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { getProductBlockedPeriodsAction, getProductRentalAvailabilityAction } from '@/app/actions/quote-actions';
 
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { BlurredPrice } from './ui/blurred-price';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from './ui/calendar';
 import { format, differenceInDays } from 'date-fns';
@@ -852,25 +853,19 @@ export function Configurator({
                         )}
                     </div>
                     <div className="text-center self-center py-2">
-                        {settings.isPriceHidden && quote > 0 ? (
-                             <p className="text-xl md:text-2xl font-extrabold bg-clip-text text-transparent bg-[linear-gradient(to_right,theme(colors.indigo.400),theme(colors.indigo.100),theme(colors.sky.400),theme(colors.fuchsia.400),theme(colors.sky.400),theme(colors.indigo.100),theme(colors.indigo.400))] bg-[length:200%_auto] animate-gradient">{t('configurator.estimating')}</p>
-                        ) : (
-                            <>
-                                <p className="uppercase text-lg tracking-widest text-white/80">{t('configurator.priceExclTax')}</p>
-                                <AnimatePresence mode="wait">
-                                    <motion.p
-                                    key={quote}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="text-2xl font-bold"
-                                    >
-                                        {formatCurrency(quote)}
-                                    </motion.p>
-                                </AnimatePresence>
-                            </>
-                        )}
+                        <p className="uppercase text-lg tracking-widest text-white/80">{t('configurator.priceExclTax')}</p>
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                            key={quote}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="text-2xl font-bold"
+                            >
+                                <BlurredPrice price={formatCurrency(quote)} isPriceHidden={!!settings.isPriceHidden} />
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
                      <div className="self-end text-right">
                         {settings.cardLogoUrl && (

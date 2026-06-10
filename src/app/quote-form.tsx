@@ -37,6 +37,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { BlurredPrice } from '@/components/ui/blurred-price';
 
 
 const formSchema = z.object({
@@ -155,7 +156,10 @@ export function QuoteForm({ quoteDetails, onBack, onSubmitted, settings, allProd
                             </>
                             )}
                             {durationText && <div className='text-xs col-span-2'>{durationText}</div>}
-                            <div className="text-sm">{t('quoteForm.lineTotal')}</div><div className={cn("font-medium text-right text-sm", shouldAnimatePrice && "blur-sm")}>{formatCurrency(p.lineTotal)}</div>
+                            <div className="text-sm">{t('quoteForm.lineTotal')}</div>
+                            <div className="font-medium text-right text-sm">
+                              <BlurredPrice price={formatCurrency(p.lineTotal)} isPriceHidden={!!settings.isPriceHidden} />
+                            </div>
                         </div>
                         )
                     })}
@@ -164,7 +168,9 @@ export function QuoteForm({ quoteDetails, onBack, onSubmitted, settings, allProd
                     <div className="mt-4 pt-2 border-t">
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                             <div>{t('quoteForm.subtotal')}</div>
-                            <div className={cn("font-medium text-right", shouldAnimatePrice && "blur-sm")}>{formatCurrency(productsSubtotal)}</div>
+                            <div className="font-medium text-right">
+                              <BlurredPrice price={formatCurrency(productsSubtotal)} isPriceHidden={!!settings.isPriceHidden} />
+                            </div>
 
                             {!settings.isDeliveryStepEnabled ? (
                                 <>
@@ -175,7 +181,9 @@ export function QuoteForm({ quoteDetails, onBack, onSubmitted, settings, allProd
                                 <>
                                     <div>{t('quoteForm.delivery')}</div>
                                     {isDeliveryFinal ? (
-                                        <div className={cn("font-medium text-right", shouldAnimatePrice && "blur-sm")}>{deliveryCost > 0 ? formatCurrency(deliveryCost) : t('quoteForm.free')}</div>
+                                        <div className="font-medium text-right">
+                                          <BlurredPrice price={deliveryCost > 0 ? formatCurrency(deliveryCost) : t('quoteForm.free')} isPriceHidden={!!settings.isPriceHidden} />
+                                        </div>
                                     ) : (
                                         <div className="font-medium text-right text-blue-600">{t('quoteForm.tobeconfirmed')}</div>
                                     )}
@@ -190,7 +198,9 @@ export function QuoteForm({ quoteDetails, onBack, onSubmitted, settings, allProd
                             ) : quoteDetails.includeInstallation ? (
                             <>
                                 <div>{t('quoteForm.installation')}</div>
-                                <div className={cn("font-medium text-right", shouldAnimatePrice && "blur-sm")}>{installationCost > 0 ? formatCurrency(installationCost) : t('quoteForm.included')}</div>
+                                <div className="font-medium text-right">
+                                  <BlurredPrice price={installationCost > 0 ? formatCurrency(installationCost) : t('quoteForm.included')} isPriceHidden={!!settings.isPriceHidden} />
+                                </div>
                                 <div className="text-xs text-muted-foreground col-span-2">{t('installation.requiredTechnicians', { totalArea: totalArea.toFixed(2), techniciansRequired: quoteDetails.techniciansRequired })}</div>
                             </>
                             ) : (
@@ -203,11 +213,9 @@ export function QuoteForm({ quoteDetails, onBack, onSubmitted, settings, allProd
 
                             <div className="col-span-2 my-2 border-t"></div>
                             <div className="text-base font-bold">{t('quoteForm.totalExclTax')}</div>
-                            {shouldAnimatePrice ? (
-                                <div className="text-base font-bold text-right bg-clip-text text-transparent bg-[linear-gradient(to_right,theme(colors.indigo.400),theme(colors.indigo.100),theme(colors.sky.400),theme(colors.fuchsia.400),theme(colors.sky.400),theme(colors.indigo.100),theme(colors.indigo.400))] bg-[length:200%_auto] animate-gradient">{t('configurator.estimating')}</div>
-                            ) : (
-                                <div className="text-base font-bold text-right">{formatCurrency(quoteDetails.totalQuote)}</div>
-                            )}
+                            <div className="text-base font-bold text-right">
+                              <BlurredPrice price={formatCurrency(quoteDetails.totalQuote)} isPriceHidden={!!settings.isPriceHidden} />
+                            </div>
                         </div>
                     </div>
                 </div>

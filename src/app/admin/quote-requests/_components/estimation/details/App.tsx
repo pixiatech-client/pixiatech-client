@@ -179,6 +179,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
   const [isDrawerOpen, setIsDrawerOpen] = useState(startOpen);
   const [isTransmitModalOpen, setIsTransmitModalOpen] = useState(false);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [isContractLoading, setIsContractLoading] = useState(false);
   const [pdfSettings, setPdfSettings] = useState<any>(null);
 
   // Interface Control States
@@ -264,6 +265,18 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       console.error("PDF Generation error:", err);
     } finally {
       setIsPdfLoading(false);
+    }
+  };
+
+  const handleDownloadContract = () => {
+    if (estimation.contractUrl) {
+      window.open(estimation.contractUrl, '_blank');
+    } else {
+      const toast = document.createElement('div');
+      toast.textContent = 'Le contrat signé n\'est pas encore disponible.';
+      toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#f59e0b;color:white;padding:14px 28px;border-radius:16px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 8px 32px rgba(245,158,11,0.4)';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
     }
   };
 
@@ -360,6 +373,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         },
         status: initialEstimation.status,
         pdfUrl: initialEstimation.pdfUrl,
+        contractUrl: (initialEstimation as any).contractUrl,
         rentalPeriod: (initialEstimation as any).rentalPeriod || undefined,
         rentalStartTime: (initialEstimation as any).rentalStartTime || undefined,
         rentalEndTime: (initialEstimation as any).rentalEndTime || undefined,
@@ -801,6 +815,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           className="w-9 h-9 md:w-11 md:h-11 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all text-slate-900 flex items-center justify-center disabled:opacity-50"
                         >
                           {isPdfLoading ? <Loader2 size={14} className="animate-spin text-aura-accent" /> : <Download size={14} className="text-aura-accent md:w-4 md:h-4" />}
+                        </button>
+
+                        <button
+                          onClick={handleDownloadContract}
+                          className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all text-slate-900 flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] font-bold uppercase tracking-widest"
+                        >
+                          <Download size={14} className="md:w-4 md:h-4" />
+                          <span className="hidden sm:inline">Contrat</span>
                         </button>
                       </div>
                     )}

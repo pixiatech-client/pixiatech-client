@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings, TranslatedString, Theme } from '@/lib/types';
 import { updateSettings } from '../actions';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, Truck, Wrench, MailCheck, EyeOff, Sun, Moon, Bot, Zap, SlidersHorizontal, Eye, Server, Play, AlertTriangle } from 'lucide-react';
+import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, SlidersHorizontal, Eye, Server, Play, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -292,46 +292,6 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                     render={({ field }) => (
                         <Switch
                             id="isEmailVerificationEnabled"
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                        />
-                    )}
-                />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className='flex items-center gap-2'>
-                  <Truck className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <Label htmlFor="isDeliveryStepEnabled" className="font-semibold">Delivery Step</Label>
-                    <p className="text-sm text-muted-foreground">Show or hide the delivery step.</p>
-                  </div>
-                </div>
-                <Controller
-                    control={form.control}
-                    name="isDeliveryStepEnabled"
-                    render={({ field }) => (
-                        <Switch
-                            id="isDeliveryStepEnabled"
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                        />
-                    )}
-                />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div className='flex items-center gap-2'>
-                  <Wrench className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                      <Label htmlFor="isInstallationStepEnabled" className="font-semibold">Installation Step</Label>
-                      <p className="text-sm text-muted-foreground">Show or hide the installation step.</p>
-                  </div>
-                </div>
-                <Controller
-                    control={form.control}
-                    name="isInstallationStepEnabled"
-                    render={({ field }) => (
-                        <Switch
-                            id="isInstallationStepEnabled"
                             checked={field.value}
                             onCheckedChange={field.onChange}
                         />

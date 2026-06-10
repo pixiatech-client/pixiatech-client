@@ -1016,6 +1016,8 @@ async function processQuoteSnapshot(docSnap: admin.DocumentSnapshot): Promise<Qu
     supplierTechDetails: data.supplierTechDetails,
     returnReason: data.returnReason,
     pdfSettings: data.pdfSettings,
+    pdfUrl: data.pdfUrl,
+    contractUrl: data.contractUrl,
   };
 
   return structuredQuote;
@@ -1707,6 +1709,20 @@ export async function updateQuotePdfUrl(quoteId: string, pdfUrl: string) {
     return { success: true };
   } catch (error: any) {
     console.error('Error updating quote PDF URL:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateQuoteContractUrl(quoteId: string, contractUrl: string) {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Firestore not initialized' };
+
+  try {
+    const docRef = adminDb.collection('quotes').doc(quoteId);
+    await docRef.update({ contractUrl });
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating quote contract URL:', error);
     return { success: false, error: error.message };
   }
 }

@@ -58,7 +58,7 @@ import SignaturePad from './SignaturePad';
 import ContractDocument from './ContractDocument';
 import { ConfiguredProduct, Product, Settings, PdfSettings, City, ProductSpec, QuoteRequest } from '@/lib/types';
 import { getPdfSettings, createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp } from '@/app/actions/quote-actions';
-import { getSettings, updateQuotePdfUrl } from '@/app/admin/actions';
+import { getSettings, updateQuotePdfUrl, updateQuoteContractUrl } from '@/app/admin/actions';
 import { storage } from '@/firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useI18n } from '@/lib/i18n';
@@ -68,6 +68,7 @@ import { FloatingFooterNav } from '@/components/ui/floating-footer-nav';
 import html2canvas from 'html2canvas';
 import confetti from 'canvas-confetti';
 import { QuotePDF } from '@/app/admin/quote-pdf';
+import { BlurredPrice } from '@/components/ui/blurred-price';
 
 // Available professional LED packs for template selection
 const SEED_PACKS: Pack[] = [
@@ -188,6 +189,7 @@ export default function SignatureFlow({
   const { t, locale, setLocale } = useI18n();
   const [currentStep, setCurrentStep] = useState<StepId>('informations');
   const [quoteId, setQuoteId] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
@@ -226,6 +228,7 @@ export default function SignatureFlow({
   const [acceptedCgl, setAcceptedCgl] = useState<boolean>(false);
   const [showConsentAlert, setShowConsentAlert] = useState(false);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
+  const contractContainerRef = useRef<HTMLDivElement>(null);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [isSignatureValidated, setIsSignatureValidated] = useState<boolean>(false);
 
@@ -358,6 +361,11 @@ export default function SignatureFlow({
     try {
       const params = new URLSearchParams(window.location.search);
       const codeParam = params.get('code') || params.get('otp');
+      const idParam = params.get('id');
+      
+      if (idParam) {
+        setPendingId(idParam);
+      }
       
       if (codeParam && codeParam.length === 6) {
         setCurrentStep('securite');
@@ -367,6 +375,25 @@ export default function SignatureFlow({
       }
     } catch (e) {
       console.error("Url params parsing error:", e);
+    }
+  }, []);
+
+  // Listen for OTP_VERIFIED messages from the email link verification tab
+  useEffect(() => {
+    try {
+      const bc = new BroadcastChannel('otp_verification');
+      bc.onmessage = (event) => {
+        if (event.data?.type === 'OTP_VERIFIED') {
+          setIsOtpCompleted(true);
+          setOtpError(null);
+          generateAndSaveContractPdf();
+          setCurrentStep('confirmation');
+        }
+      };
+      return () => bc.close();
+    } catch (e) {
+      // BroadcastChannel not supported — fallback to localStorage polling
+      console.warn("BroadcastChannel not supported, skipping:", e);
     }
   }, []);
 
@@ -572,6 +599,7 @@ export default function SignatureFlow({
   const [pdfSettings, setPdfSettings] = useState<PdfSettings | null>(null);
   const [globalSettings, setGlobalSettings] = useState<Settings | null>(null);
   const validityMinutes = globalSettings?.emailVerification?.validityMinutes ?? settings?.emailVerification?.validityMinutes ?? 10;
+  const isPriceHidden = !!(globalSettings?.isPriceHidden ?? settings?.isPriceHidden) && !isOtpCompleted;
   useEffect(() => {
     getSettings().then(s => {
       if (s?.estimationFlow) setServerFlowSettings(s.estimationFlow);
@@ -720,6 +748,7 @@ export default function SignatureFlow({
       if (result.success) {
         setIsOtpCompleted(true);
         setOtpError(null);
+        generateAndSaveContractPdf();
         setTimeout(() => {
           setCurrentStep('confirmation');
         }, 800);
@@ -727,9 +756,9 @@ export default function SignatureFlow({
         setOtpError(result.error || t('signature.otpManualEntry'));
         setInputOtpCode('');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("verifyQuoteOtp error:", e);
-      setOtpError('Erreur de vérification');
+      setOtpError(`Erreur de vérification: ${e?.message || 'erreur inconnue'}`);
     }
   };
 
@@ -812,6 +841,51 @@ export default function SignatureFlow({
     } catch (e) {
       console.error("Failed to upload PDF to storage:", e);
       return null;
+    }
+  };
+
+  const uploadContractPdfToStorage = async (pdf: jsPDF, id: string) => {
+    try {
+      const blob = pdf.output('blob');
+      const storageRef = ref(storage, `quotes/contracts/${id}.pdf`);
+      await uploadBytes(storageRef, blob);
+      const contractUrl = await getDownloadURL(storageRef);
+      await updateQuoteContractUrl(id, contractUrl);
+      return contractUrl;
+    } catch (e) {
+      console.error("Failed to upload contract PDF to storage:", e);
+      return null;
+    }
+  };
+
+  const generateAndSaveContractPdf = async (customId?: string) => {
+    const targetId = customId || quoteId;
+    if (!targetId) return;
+    const contractContainer = contractContainerRef.current;
+    if (!contractContainer) return;
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pages = contractContainer.querySelectorAll('.page-break-after');
+      const targetPages = pages.length > 0 ? pages : [contractContainer];
+      for (let i = 0; i < targetPages.length; i++) {
+        const page = targetPages[i] as HTMLElement;
+        const canvas = await html2canvas(page, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          allowTaint: true,
+          backgroundColor: '#ffffff'
+        });
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+      }
+      await uploadContractPdfToStorage(pdf, targetId);
+    } catch (e) {
+      console.error("Failed to generate contract PDF:", e);
     }
   };
 
@@ -1364,7 +1438,7 @@ export default function SignatureFlow({
                               )}
                               <span className="text-[11px] font-black text-zinc-800 uppercase truncate">{prod?.name || `Produit ${idx + 1}`}</span>
                               <span className="ml-auto text-[11px] font-black font-mono text-zinc-600 shrink-0">
-                                {fmtPrice(totalProductPrice)} €
+                                <BlurredPrice price={`${fmtPrice(totalProductPrice)} €`} isPriceHidden={isPriceHidden} />
                               </span>
                             </div>
                           </AccordionTrigger>
@@ -1397,7 +1471,9 @@ export default function SignatureFlow({
                               <span>{t('signature.quantity')}</span>
                               <span className="text-zinc-800 font-black font-mono text-right">x{pc.quantity}</span>
                               <span>{t('signature.subtotal')}</span>
-                              <span className="text-zinc-800 font-black font-mono text-right">{fmtPrice(totalProductPrice)} €</span>
+                              <span className="text-zinc-800 font-black font-mono text-right">
+                                <BlurredPrice price={`${fmtPrice(totalProductPrice)} €`} isPriceHidden={isPriceHidden} />
+                              </span>
                             </div>
                           </AccordionContent>
                         </AccordionItem>
@@ -1431,19 +1507,19 @@ export default function SignatureFlow({
                     <div className="flex justify-between items-center text-zinc-400">
                       <span>{t('signature.productsSubtotal')}</span>
                       <span className="text-zinc-800 font-bold font-mono">
-                        {fmtPrice(totalSubtotalProducts)} €
+                        <BlurredPrice price={`${fmtPrice(totalSubtotalProducts)} €`} isPriceHidden={isPriceHidden} />
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-zinc-400">
                       <span>{t('signature.delivery')}</span>
                       <span className="text-zinc-800 font-bold font-mono">
-                        {fmtPrice(totalDeliveryFee)} €
+                        <BlurredPrice price={`${fmtPrice(totalDeliveryFee)} €`} isPriceHidden={isPriceHidden} />
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-zinc-400">
                       <span>{t('signature.installation')}</span>
                       <span className="text-zinc-800 font-bold font-mono">
-                        {isInstallationIncluded ? `${fmtPrice(installationFee)} €` : '0 €'}
+                        <BlurredPrice price={isInstallationIncluded ? `${fmtPrice(installationFee)} €` : '0 €'} isPriceHidden={isPriceHidden} />
                       </span>
                     </div>
                   </div>
@@ -1477,7 +1553,11 @@ export default function SignatureFlow({
                           />
                         )}
                         <span className="text-2xl font-mono font-black text-white drop-shadow-sm">
-                          {fmtPrice(totalAmount)} €
+                          <BlurredPrice 
+                            price={`${fmtPrice(totalAmount)} €`} 
+                            isPriceHidden={isPriceHidden} 
+                            overlayClassName="text-white text-sm"
+                          />
                         </span>
                       </div>
                     </div>
@@ -1529,7 +1609,14 @@ export default function SignatureFlow({
                       {isInstallationIncluded && (
                         <div className="mt-4 pt-4 border-t border-zinc-100 space-y-1 text-zinc-800 font-medium animate-fade-in text-xs leading-relaxed">
                           <p>{t('signature.surfaceTech', { area: totalSurface.toFixed(2), count: techniciansCount })}</p>
-                          <p className="text-sm font-black text-zinc-955 mt-2">{t('signature.costTech', { cost: fmtPrice(installationFee) })}</p>
+                          {isPriceHidden ? (
+                            <p className="text-sm font-black text-zinc-955 mt-2 flex items-center gap-1">
+                              <span>{t('signature.costTech', { cost: '' }).replace(': ', '').replace(':', '')}: </span>
+                              <BlurredPrice price={`${fmtPrice(installationFee)} €`} isPriceHidden={true} />
+                            </p>
+                          ) : (
+                            <p className="text-sm font-black text-zinc-955 mt-2">{t('signature.costTech', { cost: `${fmtPrice(installationFee)} €` })}</p>
+                          )}
                         </div>
                       )}
                     </button>
@@ -1825,19 +1912,31 @@ export default function SignatureFlow({
                       <div className="flex justify-between items-center bg-zinc-900/30 px-3 py-2 rounded-lg leading-normal">
                         <span className="text-zinc-400">{t('signature.saleTotal')}</span>
                         <strong className="text-blue-400 font-mono text-[14px] sm:text-base font-black whitespace-nowrap">
-                          {fmtPrice(totalAmount)}€ {taxLabel}
+                          <BlurredPrice 
+                            price={`${fmtPrice(totalAmount)}€ ${taxLabel}`} 
+                            isPriceHidden={isPriceHidden} 
+                            overlayClassName="text-blue-400 text-xs"
+                          />
                         </strong>
                       </div>
                       <div className="flex justify-between items-center leading-normal">
                         <span className="text-zinc-400">{t('signature.deposit60')}</span>
                         <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
-                          {fmtPrice(Math.round(totalAmount * 0.6))}€ {taxLabel}
+                          <BlurredPrice 
+                            price={`${fmtPrice(Math.round(totalAmount * 0.6))}€ ${taxLabel}`} 
+                            isPriceHidden={isPriceHidden} 
+                            overlayClassName="text-white text-xs"
+                          />
                         </strong>
                       </div>
                       <div className="flex justify-between items-center leading-normal">
                         <span className="text-zinc-400">{t('signature.balance40')}</span>
                         <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
-                          {fmtPrice(Math.round(totalAmount * 0.4))}€ {taxLabel}
+                          <BlurredPrice 
+                            price={`${fmtPrice(Math.round(totalAmount * 0.4))}€ ${taxLabel}`} 
+                            isPriceHidden={isPriceHidden} 
+                            overlayClassName="text-white text-xs"
+                          />
                         </strong>
                       </div>
                     </>
@@ -1846,19 +1945,31 @@ export default function SignatureFlow({
                       <div className="flex justify-between items-center bg-zinc-900/30 px-3 py-2 rounded-lg leading-normal">
                         <span className="text-zinc-400">{t('signature.rentalFirstPayment')}</span>
                         <strong className="text-blue-400 font-mono text-[14px] sm:text-base font-black whitespace-nowrap">
-                          {fmtPrice(activePack.price + activePack.deposit)}€ {taxLabel}
+                          <BlurredPrice 
+                            price={`${fmtPrice(activePack.price + activePack.deposit)}€ ${taxLabel}`} 
+                            isPriceHidden={isPriceHidden} 
+                            overlayClassName="text-blue-400 text-xs"
+                          />
                         </strong>
                       </div>
                       <div className="flex justify-between items-center leading-normal">
                         <span className="text-zinc-400">{t('signature.rentalCost')}</span>
                         <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
-                          {fmtPrice(activePack.price)}€ {taxLabel}
+                          <BlurredPrice 
+                            price={`${fmtPrice(activePack.price)}€ ${taxLabel}`} 
+                            isPriceHidden={isPriceHidden} 
+                            overlayClassName="text-white text-xs"
+                          />
                         </strong>
                       </div>
                       <div className="flex justify-between items-center leading-normal">
                         <span className="text-zinc-400">{t('signature.rentalDeposit')}</span>
                         <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
-                          {fmtPrice(activePack.deposit)}€ {taxLabel}
+                          <BlurredPrice 
+                            price={`${fmtPrice(activePack.deposit)}€ ${taxLabel}`} 
+                            isPriceHidden={isPriceHidden} 
+                            overlayClassName="text-white text-xs"
+                          />
                         </strong>
                       </div>
                     </>
@@ -1975,6 +2086,11 @@ export default function SignatureFlow({
                         } catch (pdfErr) {
                           console.error("📄 Background PDF generation error:", pdfErr);
                         }
+
+                        // Generate and save signed contract PDF immediately if rental mode
+                        if (projectMode === 'location') {
+                          generateAndSaveContractPdf(result.id);
+                        }
                       } else {
                         setEmailDeliveryStatus('failed');
                         setOtpError(result.error || 'Erreur lors de la création du devis');
@@ -2032,7 +2148,7 @@ export default function SignatureFlow({
                   </div>
                 )}
                 
-                {emailDeliveryStatus === 'sent' && (
+                {(emailDeliveryStatus === 'sent' || emailDeliveryStatus === 'simulated') && (
                   <div className="p-4 bg-emerald-50/80 border border-emerald-250/60 rounded-2xl flex items-start gap-3 text-emerald-900 shadow-sm animate-fade-in">
                     <CheckCircle size={18} className="text-emerald-600 shrink-0 mt-0.5" />
                     <div className="text-xs font-semibold leading-normal font-sans">
@@ -2042,15 +2158,8 @@ export default function SignatureFlow({
                   </div>
                 )}
 
-                {emailDeliveryStatus === 'simulated' && (
-                  <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-2xl flex items-start gap-3 text-blue-900 shadow-sm animate-fade-in">
-                    <Info size={18} className="text-blue-600 shrink-0 mt-0.5" />
-                    <div className="text-xs font-semibold leading-normal font-sans">
-                      <span className="font-black uppercase tracking-wide text-blue-800 text-[10px] block mb-0.5">{t('signature.emailSimulatedTitle')}</span>
-                      {t('signature.emailSimulatedDesc')}
-                    </div>
-                  </div>
-                )}
+
+
                 
                 {emailDeliveryStatus === 'failed' && (
                   <div className="p-4 bg-red-450/10 border border-red-200 rounded-2xl flex items-start gap-3 text-red-950 shadow-sm animate-fade-in">
@@ -2390,19 +2499,19 @@ export default function SignatureFlow({
                   <div className="flex justify-between items-center text-zinc-400">
                     <span>{t('signature.productsSubtotal')}</span>
                     <span className="text-zinc-800 font-bold font-mono">
-                      {fmtPrice(totalSubtotalProducts)} €
+                      <BlurredPrice price={`${fmtPrice(totalSubtotalProducts)} €`} isPriceHidden={isPriceHidden} />
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-zinc-400">
                     <span>{t('signature.delivery')}</span>
                     <span className="text-zinc-800 font-bold font-mono">
-                      {fmtPrice(totalDeliveryFee)} €
+                      <BlurredPrice price={`${fmtPrice(totalDeliveryFee)} €`} isPriceHidden={isPriceHidden} />
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-zinc-400">
                     <span>{t('signature.installation')}</span>
                     <span className="text-zinc-800 font-bold font-mono">
-                      {isInstallationIncluded ? `${fmtPrice(installationFee)} €` : '0 €'}
+                      <BlurredPrice price={isInstallationIncluded ? `${fmtPrice(installationFee)} €` : '0 €'} isPriceHidden={isPriceHidden} />
                     </span>
                   </div>
                 </div>
@@ -2436,7 +2545,11 @@ export default function SignatureFlow({
                         />
                       )}
                       <span className="text-2xl font-mono font-black text-white drop-shadow-sm">
-                        {fmtPrice(totalAmount)} €
+                        <BlurredPrice 
+                          price={`${fmtPrice(totalAmount)} €`} 
+                          isPriceHidden={isPriceHidden} 
+                          overlayClassName="text-white text-sm"
+                        />
                       </span>
                     </div>
                   </div>
@@ -2521,8 +2634,8 @@ export default function SignatureFlow({
                             <span className="text-zinc-500">{t('signature.quantity')} :</span>
                             <span className="text-zinc-900 font-medium text-right">×{pc.quantity}</span>
                             <span className="text-zinc-500 border-t border-zinc-100 pt-1 font-semibold">{t('signature.priceLabel')} {projectMode === 'vente' ? t('signature.sale').toLowerCase() : t('signature.rental').toLowerCase()} {taxLabel} :</span>
-                            <span className="text-zinc-950 border-t border-zinc-100 pt-1 font-bold font-mono text-right">
-                              {fmtPrice(pc.subtotal)} € {taxLabel}
+                            <span className="text-zinc-955 border-t border-zinc-100 pt-1 font-bold font-mono text-right">
+                              <BlurredPrice price={`${fmtPrice(pc.subtotal)} € ${taxLabel}`} isPriceHidden={isPriceHidden} />
                             </span>
                           </div>
 
@@ -2596,6 +2709,32 @@ export default function SignatureFlow({
             selectedCity={selectedCityForPdf}
             globalSettings={globalSettings || settings || ({} as any)}
             allProducts={allProducts}
+          />
+        </div>
+
+        {/* Hidden signed contract render — always in DOM, off-screen for html2canvas */}
+        <div
+          ref={contractContainerRef}
+          id="signature-contract-container"
+          style={{
+            position: "absolute",
+            left: "-99999px",
+            top: 0,
+            width: "820px",
+          }}
+        >
+          <ContractDocument
+            pack={activePack}
+            renter={renterDetails}
+            signatureDataUrl={signatureDataUrl}
+            isValidated={true}
+            projectMode={projectMode}
+            rentalPeriod={rentalStartDate && rentalEndDate ? { from: rentalStartDate, to: rentalEndDate } : undefined}
+            rentalStartTime={rentalStartTime}
+            rentalEndTime={rentalEndTime}
+            productImage={productPhoto}
+            saleContractTemplate={flowSettings.saleContractTemplate}
+            rentalContractTemplate={flowSettings.rentalContractTemplate}
           />
         </div>
 

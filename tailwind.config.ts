@@ -35,6 +35,8 @@ const config = {
         display: ["Space Grotesk", "sans-serif"],
       },
       colors: {
+        bluish: "#7182ff",
+        greenish: "#3cff52",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
