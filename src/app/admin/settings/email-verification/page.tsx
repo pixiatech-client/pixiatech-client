@@ -38,6 +38,7 @@ export default function EmailVerificationSettingsPage() {
           setDocumentLabel(s.emailVerification.documentLabel || 'estimation du projet Pixiatech');
           setMessageStyle((s.emailVerification.messageStyle as MessageStyle) || 'collaborative_trust');
           setValidityMinutes(s.emailVerification.validityMinutes || 10);
+          setPreviewTheme((s.emailVerification.previewTheme as PreviewTheme) || 'auto_adaptive');
         }
       } catch (err) {
         console.error('Failed to load settings', err);

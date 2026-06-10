@@ -1434,6 +1434,7 @@
         "changePack": "Change dimensions or LED pack",
         "acceptTermsHint": "Please accept the general rental/sale conditions then draw your digital signature to continue.",
         "continueToVerification": "Continue to verification",
+        "confirmAndFinish": "Confirm and finish",
         "securityTitle": "PixiaTech Security Verification",
         "securityDesc": "We have sent a security code to your email address. Check your inbox and click on the link received. Also remember to check your spam folder.",
         "emailSending": "Secure transmission in progress...",

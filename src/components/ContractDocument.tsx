@@ -20,6 +20,7 @@ interface ContractDocumentProps {
   allPacks?: Pack[];
   saleContractTemplate?: string;
   rentalContractTemplate?: string;
+  isPdfMode?: boolean;
 }
 
 export default function ContractDocument({
@@ -34,7 +35,8 @@ export default function ContractDocument({
   productImage,
   allPacks,
   saleContractTemplate,
-  rentalContractTemplate
+  rentalContractTemplate,
+  isPdfMode = false
 }: ContractDocumentProps) {
   const { t, locale } = useI18n();
   const contractDate = "29 mai 2026";
@@ -79,10 +81,16 @@ export default function ContractDocument({
   return (
     <div className="w-full flex flex-col">
       <div 
-        className="w-full max-h-[500px] overflow-y-auto border border-zinc-200 rounded-xl bg-zinc-50/40 p-4 sm:p-6 text-xs sm:text-sm text-zinc-700 leading-relaxed custom-scrollbar shadow-inner"
-        id="document-scroll-viewport"
+        className={isPdfMode 
+          ? "w-full text-xs sm:text-sm text-zinc-700 leading-relaxed bg-white p-6" 
+          : "w-full max-h-[500px] overflow-y-auto border border-zinc-200 rounded-xl bg-zinc-50/40 p-4 sm:p-6 text-xs sm:text-sm text-zinc-700 leading-relaxed custom-scrollbar shadow-inner"
+        }
+        id={isPdfMode ? undefined : "document-scroll-viewport"}
       >
-        <div className="max-w-2xl mx-auto bg-white border border-zinc-200/80 p-6 sm:p-10 rounded-lg font-sans shadow-md text-zinc-800">
+        <div className={isPdfMode 
+          ? "max-w-2xl mx-auto bg-white font-sans text-zinc-800"
+          : "max-w-2xl mx-auto bg-white border border-zinc-200/80 p-6 sm:p-10 rounded-lg font-sans shadow-md text-zinc-800"
+        }>
           
           <div className="text-center mb-8 border-b border-zinc-100 pb-5">
             <h1 className="text-sm sm:text-base font-bold text-zinc-900 tracking-tight font-heading uppercase leading-snug">

@@ -548,6 +548,7 @@ export async function createQuoteWithContract(
   try {
     const globalSettings = await getSettings();
     const evSettings = globalSettings?.emailVerification;
+    const isEmailVerificationEnabled = globalSettings?.isEmailVerificationEnabled ?? true;
     const validityMinutes = evSettings?.validityMinutes || 10;
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -571,13 +572,16 @@ export async function createQuoteWithContract(
       createdAt: FieldValue.serverTimestamp(),
       isRead: false,
       status: 'pending',
-      emailVerified: false,
+      emailVerified: !isEmailVerificationEnabled,
       signatureDataUrl,
       signedAt: FieldValue.serverTimestamp(),
-      otpCode,
-      otpExpires: Timestamp.fromDate(expirationDate),
       pdfSettings,
     };
+
+    if (isEmailVerificationEnabled) {
+      docData.otpCode = otpCode;
+      docData.otpExpires = Timestamp.fromDate(expirationDate);
+    }
 
     const docRef = await adminDb.collection('quotes').add(docData);
 
@@ -588,36 +592,38 @@ export async function createQuoteWithContract(
       console.error("Error updating stats on create:", statsError);
     }
 
-    // Prepare SMTP and send OTP email
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
-      || (process.env.NODE_ENV === 'production'
-        ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
-        : 'http://localhost:3000');
+    if (isEmailVerificationEnabled) {
+      // Prepare SMTP and send OTP email
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+        || (process.env.NODE_ENV === 'production'
+          ? 'https://studio--studio-9205859220-a6440.us-west1.hosted.app'
+          : 'http://localhost:3000');
 
-    const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
-      ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
-      : baseUrl;
+      const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
+        ? 'https://studio--studio-9205859220-a6440.us-west1.hosted.app'
+        : baseUrl;
 
-    const verificationUrl = `${safeBaseUrl}/verification-securite?otp=${otpCode}&id=${docRef.id}`;
+      const verificationUrl = `${safeBaseUrl}/verification-securite?otp=${otpCode}&id=${docRef.id}`;
 
-    try {
-      await sendSignatureOtpEmail(
-        clientDetails.email,
-        otpCode,
-        quoteDetails.lang || 'en',
-        clientDetails.company,
-        clientDetails.representative,
-        quoteDetails.totalQuote,
-        `${quoteDetails.width}m x ${quoteDetails.height}m - ${quoteDetails.productName}`,
-        verificationUrl,
-        evSettings
-      );
-    } catch (emailErr: any) {
-      console.error("sendSignatureOtpEmail failed:", emailErr.message);
-      throw emailErr;
+      try {
+        await sendSignatureOtpEmail(
+          clientDetails.email,
+          otpCode,
+          quoteDetails.lang || 'en',
+          clientDetails.company,
+          clientDetails.representative,
+          quoteDetails.totalQuote,
+          `${quoteDetails.width}m x ${quoteDetails.height}m - ${quoteDetails.productName}`,
+          verificationUrl,
+          evSettings
+        );
+      } catch (emailErr: any) {
+        console.error("sendSignatureOtpEmail failed:", emailErr.message);
+        throw emailErr;
+      }
     }
 
-    return { success: true, id: docRef.id, otpCode };
+    return { success: true, id: docRef.id, otpCode: isEmailVerificationEnabled ? otpCode : '' };
   } catch (error: any) {
     console.error("Error in createQuoteWithContract:", error.message);
     return { success: false, error: error.message || 'Failed to create contract quote' };

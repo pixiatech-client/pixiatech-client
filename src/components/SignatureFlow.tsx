@@ -598,8 +598,9 @@ export default function SignatureFlow({
   const [serverFlowSettings, setServerFlowSettings] = useState<NonNullable<Settings['estimationFlow']> | null>(null);
   const [pdfSettings, setPdfSettings] = useState<PdfSettings | null>(null);
   const [globalSettings, setGlobalSettings] = useState<Settings | null>(null);
+  const isEmailVerificationEnabled = settings?.isEmailVerificationEnabled ?? true;
   const validityMinutes = globalSettings?.emailVerification?.validityMinutes ?? settings?.emailVerification?.validityMinutes ?? 10;
-  const isPriceHidden = !!(globalSettings?.isPriceHidden ?? settings?.isPriceHidden) && !isOtpCompleted;
+  const isPriceHidden = !!(globalSettings?.isPriceHidden ?? settings?.isPriceHidden) && !isOtpCompleted && isEmailVerificationEnabled;
   useEffect(() => {
     getSettings().then(s => {
       if (s?.estimationFlow) setServerFlowSettings(s.estimationFlow);
@@ -679,8 +680,8 @@ export default function SignatureFlow({
   // Cohesive stages in the upper header representation
   const steps: Step[] = [
     { id: 'informations', label: t('signature.step1'), isCompleted: currentStep !== 'informations', isActive: currentStep === 'informations' },
-    { id: 'contrat', label: t('signature.step2'), isCompleted: currentStep === 'securite' || currentStep === 'confirmation', isActive: currentStep === 'contrat' },
-    { id: 'securite', label: t('signature.step3'), isCompleted: currentStep === 'confirmation', isActive: currentStep === 'securite' },
+    { id: 'contrat', label: t('signature.step2'), isCompleted: isEmailVerificationEnabled ? (currentStep === 'securite' || currentStep === 'confirmation') : currentStep === 'confirmation', isActive: currentStep === 'contrat' },
+    ...(isEmailVerificationEnabled ? [{ id: 'securite' as const, label: t('signature.step3'), isCompleted: currentStep === 'confirmation', isActive: currentStep === 'securite' }] : []),
     { id: 'confirmation', label: t('signature.step4'), isCompleted: false, isActive: currentStep === 'confirmation' }
   ];
 
@@ -864,25 +865,42 @@ export default function SignatureFlow({
     const contractContainer = contractContainerRef.current;
     if (!contractContainer) return;
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Give extra time for full rendering of off-screen element
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pages = contractContainer.querySelectorAll('.page-break-after');
-      const targetPages = pages.length > 0 ? pages : [contractContainer];
-      for (let i = 0; i < targetPages.length; i++) {
-        const page = targetPages[i] as HTMLElement;
-        const canvas = await html2canvas(page, {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          allowTaint: true,
-          backgroundColor: '#ffffff'
-        });
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      // Capture the FULL container — scrollWidth/scrollHeight ensures off-screen content isn't clipped
+      const canvas = await html2canvas(contractContainer, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: contractContainer.scrollWidth,
+        height: contractContainer.scrollHeight,
+        windowWidth: contractContainer.scrollWidth,
+        scrollX: 0,
+        scrollY: 0,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      // Total image height in PDF mm units
+      const totalImgHeightMm = (canvas.height * pdfWidth) / canvas.width;
+
+      let heightRendered = 0; // how many mm we've already placed on pages
+      let isFirstPage = true;
+
+      while (heightRendered < totalImgHeightMm) {
+        if (!isFirstPage) pdf.addPage();
+        // Shift image up by how many mm we've already rendered
+        pdf.addImage(imgData, 'JPEG', 0, -heightRendered, pdfWidth, totalImgHeightMm, undefined, 'FAST');
+        heightRendered += pageHeight;
+        isFirstPage = false;
       }
+
       await uploadContractPdfToStorage(pdf, targetId);
     } catch (e) {
       console.error("Failed to generate contract PDF:", e);
@@ -2009,10 +2027,14 @@ export default function SignatureFlow({
               <FloatingFooterNav
                 onBack={() => setCurrentStep('informations')}
                 onNext={() => {
-                  setCurrentStep('securite');
-                  setEmailDeliveryStatus('sending');
-                  setOtpError(null);
-                  setInputOtpCode('');
+                  const skipOtp = !isEmailVerificationEnabled;
+
+                  setCurrentStep(skipOtp ? 'confirmation' : 'securite');
+                  if (!skipOtp) {
+                    setEmailDeliveryStatus('sending');
+                    setOtpError(null);
+                    setInputOtpCode('');
+                  }
 
                   // Asynchronous background flow
                   const runBackgroundFlow = async () => {
@@ -2105,7 +2127,7 @@ export default function SignatureFlow({
                   runBackgroundFlow();
                 }}
                 nextDisabled={!acceptedCgl || (projectMode === 'location' && isDigitalSignatureEnabled && !isSignatureValidated)}
-                nextLabel={t('signature.continueToVerification')}
+                nextLabel={isEmailVerificationEnabled ? t('signature.continueToVerification') : t('signature.confirmAndFinish')}
               />
             </div>
 
@@ -2322,7 +2344,7 @@ export default function SignatureFlow({
                 <div className="flex items-center justify-center gap-1 text-[11px] text-zinc-400 font-medium">
                   <Clock size={12} />
                   <span>{t('signature.codeExpiresIn')} </span>
-                  <span className="font-mono font-bold text-zinc-800 bg-zinc-100 px-1.5 py-0.5 rounded leading-none">
+                  <span className={`font-mono font-bold px-1.5 py-0.5 rounded leading-none ${otpTimeLeft <= 59 ? 'text-red-600 bg-red-100 animate-pulse' : 'text-zinc-800 bg-zinc-100'}`}>
                     {formatTime(otpTimeLeft)}
                   </span>
                 </div>
@@ -2735,6 +2757,7 @@ export default function SignatureFlow({
             productImage={productPhoto}
             saleContractTemplate={flowSettings.saleContractTemplate}
             rentalContractTemplate={flowSettings.rentalContractTemplate}
+            isPdfMode={true}
           />
         </div>
 
