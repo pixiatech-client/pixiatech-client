@@ -166,7 +166,7 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
     allProducts: Product[];
     deliverySettings: DeliverySettings;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [quote, setQuote] = useState<QuoteRequest | undefined>(initialQuote);
   
   const [deliveryCost, setDeliveryCost] = useState(0);
@@ -288,7 +288,7 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
             } : undefined,
             rentalDate: p.rentalDate ? p.rentalDate : undefined,
         })),
-    };
+        lang: locale as 'fr' | 'en',    };
     return serializableQuote;
 
   }, [quote, finalTotal, deliveryCost, laborCost, deliveryDiscount, laborDiscount]);

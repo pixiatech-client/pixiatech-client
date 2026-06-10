@@ -39,7 +39,9 @@ import {
   EyeOff,
   Sparkles,
   Zap,
-  Sun
+  Sun,
+  FileCheck2,
+  Plus
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -54,15 +56,18 @@ import { validatePhone } from '@/lib/phone-validation';
 import { Pack, RenterDetails, Step, StepId } from '@/lib/signature-types';
 import SignaturePad from './SignaturePad';
 import ContractDocument from './ContractDocument';
-import { ConfiguredProduct, Product, Settings } from '@/lib/types';
-import { createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp } from '@/app/actions/quote-actions';
-import { getSettings } from '@/app/admin/actions';
+import { ConfiguredProduct, Product, Settings, PdfSettings, City, ProductSpec, QuoteRequest } from '@/lib/types';
+import { getPdfSettings, createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp } from '@/app/actions/quote-actions';
+import { getSettings, updateQuotePdfUrl } from '@/app/admin/actions';
+import { storage } from '@/firebase/config';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useI18n } from '@/lib/i18n';
 import { jsPDF } from 'jspdf';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { FloatingFooterNav } from '@/components/ui/floating-footer-nav';
 import html2canvas from 'html2canvas';
 import confetti from 'canvas-confetti';
+import { QuotePDF } from '@/app/admin/quote-pdf';
 
 // Available professional LED packs for template selection
 const SEED_PACKS: Pack[] = [
@@ -147,6 +152,20 @@ const CITIES = [
   { id: '20', name: 'Aix-en-Provence', postalCode: '13100' }
 ];
 
+const DEFAULT_PDF_SETTINGS: PdfSettings = {
+  companyName: 'PIXIATECH',
+  email: '',
+  phone: '',
+  address: '',
+  logoUrl: '',
+  backgroundUrl: '',
+  bgColor: '#ffffff',
+  quoteTitle: 'ESTIMATION',
+  quoteNumberPrefix: 'EST-',
+  themeId: 'indigo',
+  termsAndConditions: '',
+};
+
 interface SignatureFlowProps {
   configuredProducts: ConfiguredProduct[];
   allProducts: Product[];
@@ -161,12 +180,15 @@ export default function SignatureFlow({
   configuredProducts,
   allProducts,
   settings,
+  userId,
+  onNewQuote,
   onBackToConfigurator,
   onStepChange
 }: SignatureFlowProps) {
   const { t, locale, setLocale } = useI18n();
   const [currentStep, setCurrentStep] = useState<StepId>('informations');
   const [quoteId, setQuoteId] = useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
   const mainConfig = configuredProducts[0] || {} as ConfiguredProduct;
@@ -203,6 +225,7 @@ export default function SignatureFlow({
 
   const [acceptedCgl, setAcceptedCgl] = useState<boolean>(false);
   const [showConsentAlert, setShowConsentAlert] = useState(false);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [isSignatureValidated, setIsSignatureValidated] = useState<boolean>(false);
 
@@ -508,7 +531,14 @@ export default function SignatureFlow({
       subtotal: sp,
       productId: p.productId,
       product: prod,
-      photo: prod?.imageUrl || prod?.image || null
+      photo: prod?.imageUrl || prod?.image || null,
+      screenLayout: p.screenLayout,
+      isCurved: p.isCurved,
+      is360: p.is360,
+      diameter: p.diameter,
+      cabinetAngle: p.cabinetAngle,
+      curveLeft: p.curveLeft,
+      curveRight: p.curveRight,
     };
   });
 
@@ -539,10 +569,14 @@ export default function SignatureFlow({
 
   // Flow settings & tax configuration — refresh on mount to bypass router cache
   const [serverFlowSettings, setServerFlowSettings] = useState<NonNullable<Settings['estimationFlow']> | null>(null);
+  const [pdfSettings, setPdfSettings] = useState<PdfSettings | null>(null);
+  const [globalSettings, setGlobalSettings] = useState<Settings | null>(null);
   useEffect(() => {
     getSettings().then(s => {
       if (s?.estimationFlow) setServerFlowSettings(s.estimationFlow);
+      if (s) setGlobalSettings(s);
     }).catch(() => {});
+    getPdfSettings().then(setPdfSettings).catch(() => {});
   }, []);
   const flowSettings: NonNullable<Settings['estimationFlow']> = serverFlowSettings || settings?.estimationFlow || {
     enableRentalPeriod: true,
@@ -675,15 +709,26 @@ export default function SignatureFlow({
   };
 
   // Verify code typed manually
-  const handleManualCodeVerify = (codeToVerify: string) => {
-    if (codeToVerify === sentOtpCode) {
-      setIsOtpCompleted(true);
-      setOtpError(null);
-      setTimeout(() => {
-        setCurrentStep('confirmation');
-      }, 800);
-    } else {
-      setOtpError(t('signature.otpManualEntry'));
+  const handleManualCodeVerify = async (codeToVerify: string) => {
+    if (!quoteId) {
+      setOtpError('Aucun devis en cours de validation');
+      return;
+    }
+    try {
+      const result = await verifyQuoteOtp(quoteId, codeToVerify);
+      if (result.success) {
+        setIsOtpCompleted(true);
+        setOtpError(null);
+        setTimeout(() => {
+          setCurrentStep('confirmation');
+        }, 800);
+      } else {
+        setOtpError(result.error || t('signature.otpManualEntry'));
+        setInputOtpCode('');
+      }
+    } catch (e) {
+      console.error("verifyQuoteOtp error:", e);
+      setOtpError('Erreur de vérification');
     }
   };
 
@@ -713,69 +758,128 @@ export default function SignatureFlow({
     }, 150);
   };
 
-  const handleResendCode = () => {
-    const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setSentOtpCode(randomCode);
-    setOtpTimeLeft(600);
-    setOtpError(null);
-    setInputOtpCode('');
-    setOtpResent(true);
-    setTimeout(() => {
-      setOtpResent(false);
-    }, 4000);
-    sendRealEmail(randomCode);
+  const handleResendCode = async () => {
+    if (!quoteId) return;
+    try {
+      await resendQuoteOtp(quoteId);
+      setOtpTimeLeft(600);
+      setOtpError(null);
+      setInputOtpCode('');
+      setOtpResent(true);
+      setTimeout(() => {
+        setOtpResent(false);
+      }, 4000);
+    } catch (e) {
+      console.error("resendQuoteOtp error:", e);
+      setOtpError('Erreur lors du renvoi du code');
+    }
   };
 
-  // PDF download using real PDF generation
+  // PDF download using admin PDF template
+  const renderPagesToPdf = async (container: HTMLElement, pdf: jsPDF) => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const pages = container.querySelectorAll('.page-break-after');
+    if (pages.length === 0) {
+      console.error("📄 No .page-break-after elements found, container HTML:", container.innerHTML.substring(0, 500));
+    }
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i] as HTMLElement;
+      const canvas = await html2canvas(page, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      if (i > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+    }
+    return pages.length;
+  };
+
+  const uploadPdfToStorage = async (pdf: jsPDF, id: string) => {
+    try {
+      const blob = pdf.output('blob');
+      const storageRef = ref(storage, `quotes/pdfs/${id}.pdf`);
+      await uploadBytes(storageRef, blob);
+      const pdfUrl = await getDownloadURL(storageRef);
+      await updateQuotePdfUrl(id, pdfUrl);
+      return pdfUrl;
+    } catch (e) {
+      console.error("Failed to upload PDF to storage:", e);
+      return null;
+    }
+  };
+
   const handleContractDownload = async () => {
     try {
       const pdf = new jsPDF('p', 'mm', 'a4');
-
-      if (currentStep === 'confirmation') {
-        const summaryEl = document.getElementById('confirmation-summary');
-        const target = summaryEl || document.getElementById('estimation-recap-main-card');
-        if (target) {
-          const canvas = await html2canvas(target, {
-            scale: 3,
-            useCORS: true,
-            logging: false,
-            allowTaint: true,
-            backgroundColor: '#ffffff'
-          });
-          const imgData = canvas.toDataURL('image/jpeg', 1.0);
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+      const pdfContainer = pdfContainerRef.current;
+      if (!pdfContainer) {
+        const fallback = document.getElementById('signature-pdf-container');
+        if (!fallback) {
+          console.error("📄 pdfContainer not found in DOM");
+          return;
         }
-      } else {
-        const contractElement = document.getElementById('document-scroll-viewport');
-        if (!contractElement) return;
-        const pages = contractElement.querySelectorAll('.page-break-after') || [contractElement];
-
-        for (let i = 0; i < pages.length; i++) {
-          const page = pages[i] as HTMLElement;
-          const canvas = await html2canvas(page, {
-            scale: 3,
-            useCORS: true,
-            logging: false,
-            allowTaint: true,
-            backgroundColor: '#ffffff'
-          });
-
-          const imgData = canvas.toDataURL('image/jpeg', 1.0);
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-          if (i > 0) pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-        }
+        const pageCount = await renderPagesToPdf(fallback, pdf);
+        if (pageCount === 0) return;
+        pdf.save(`Pixiatech_Devis_${renterDetails.company.replace(/\s+/g, '_')}.pdf`);
+        if (quoteId) uploadPdfToStorage(pdf, quoteId);
+        return;
       }
-
-      pdf.save(`Pixiatech_Contrat_${renterDetails.company.replace(/\s+/g, '_')}.pdf`);
+      const pageCount = await renderPagesToPdf(pdfContainer, pdf);
+      if (pageCount === 0) return;
+      pdf.save(`Pixiatech_Devis_${renterDetails.company.replace(/\s+/g, '_')}.pdf`);
+      if (quoteId) {
+        uploadPdfToStorage(pdf, quoteId).then(url => {
+          if (url) setPdfUrl(url);
+        });
+      }
     } catch (error) {
-      console.error("PDF generation error:", error);
+      console.error("📄 PDF generation error:", error);
     }
   };
+
+  const handleViewPdf = async () => {
+    const pdfWindow = window.open('', '_blank');
+    if (!pdfWindow) return;
+    pdfWindow.document.write('<div style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;color:#666;">Génération du PDF...</div>');
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfContainer = pdfContainerRef.current;
+      if (!pdfContainer) { pdfWindow.close(); return; }
+      const pageCount = await renderPagesToPdf(pdfContainer, pdf);
+      if (pageCount === 0) { pdfWindow.close(); return; }
+      const url = await uploadPdfToStorage(pdf, quoteId || 'temp');
+      if (url) {
+        setPdfUrl(url);
+        pdfWindow.location.href = url;
+      } else {
+        pdfWindow.close();
+      }
+    } catch (error) {
+      console.error("PDF view error:", error);
+      pdfWindow.close();
+    }
+  };
+
+  // Mapped data for the admin PDF template
+  const productItems = configuredProducts.map((p, idx) => {
+    const calc = productCalculations[idx];
+    const prod = allProducts.find(ap => ap.id === p.productId);
+    return {
+      ...p,
+      productName: prod?.name || `Product ${idx + 1}`,
+      lineTotal: (calc?.subtotal || 0) * (calc?.quantity || 1),
+    };
+  });
+  const foundCity = CITIES.find(c => c.id === selectedCityId);
+  const selectedCityForPdf: City | null = foundCity
+    ? { id: foundCity.id, name: foundCity.name, postalCode: foundCity.postalCode }
+    : null;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc] text-zinc-800 font-sans antialiased">
@@ -1259,8 +1363,28 @@ export default function SignatureFlow({
                           </AccordionTrigger>
                           <AccordionContent className="px-3 pb-3">
                             <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] font-semibold text-zinc-500 pt-1 border-t border-zinc-100">
-                              <span>{t('signature.dimensions')}</span>
-                              <span className="text-zinc-800 font-black font-mono text-right">{pc.width}m x {pc.height}m</span>
+                              {pc.is360 ? (
+                                <>
+                                  <span>Diamètre</span>
+                                  <span className="text-zinc-800 font-black font-mono text-right">{pc.diameter}m</span>
+                                  <span>Hauteur</span>
+                                  <span className="text-zinc-800 font-black font-mono text-right">{pc.height}m</span>
+                                  <span>Vue circulaire 360</span>
+                                  <span className="text-zinc-800 font-black font-mono text-right">{pc.cabinetAngle && pc.cabinetAngle > 0 ? 'Intérieur' : 'Extérieur'}</span>
+                                </>
+                              ) : pc.isCurved ? (
+                                <>
+                                  <span>{t('signature.dimensions')}</span>
+                                  <span className="text-zinc-800 font-black font-mono text-right">{pc.width}m x {pc.height}m</span>
+                                  <span>Inclinaison G/D</span>
+                                  <span className="text-zinc-800 font-black font-mono text-right">{pc.curveLeft || 0}° / {pc.curveRight || 0}°</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>{t('signature.dimensions')}</span>
+                                  <span className="text-zinc-800 font-black font-mono text-right">{pc.width}m x {pc.height}m</span>
+                                </>
+                              )}
                               <span>{t('signature.surface')}</span>
                               <span className="text-zinc-800 font-black font-mono text-right">{(pc.surface * pc.quantity).toFixed(2)} m²</span>
                               <span>{t('signature.quantity')}</span>
@@ -1283,13 +1407,10 @@ export default function SignatureFlow({
                       </div>
                       <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-amber-900">
                         <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                          {t('signature.from')} {formatFrenchDate(rentalStartDate)}
+                          {t('signature.from')} {formatFrenchDate(rentalStartDate)} {rentalStartTime}
                         </span>
                         <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                          {t('signature.to')} {formatFrenchDate(rentalEndDate)}
-                        </span>
-                        <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                          {rentalStartTime} → {rentalEndTime}
+                          {t('signature.to')} {formatFrenchDate(rentalEndDate)} {rentalEndTime}
                         </span>
                       </div>
                     </div>
@@ -1452,6 +1573,14 @@ export default function SignatureFlow({
 
             </div>
 
+            {/* DEV: bouton temporaire pour zapper contrat + signature et aller direct en confirmation */}
+            <button
+              type="button"
+              onClick={() => setCurrentStep('confirmation')}
+              className="w-full mb-3 py-2.5 bg-yellow-200 hover:bg-yellow-300 text-yellow-900 text-xs font-black uppercase tracking-wider rounded-xl border-2 border-yellow-400 cursor-pointer transition-all"
+            >
+              ⚡ SKIP → Félicitations (DEV)
+            </button>
             <FloatingFooterNav
               onBack={onBackToConfigurator}
               onNext={() => {
@@ -1761,17 +1890,57 @@ export default function SignatureFlow({
             <div className="flex justify-center w-full">
               <FloatingFooterNav
                 onBack={() => setCurrentStep('informations')}
-                onNext={() => {
-                  const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
-                  setSentOtpCode(randomCode);
-                  setOtpTimeLeft(597);
-                  setOtpError(null);
-                  setInputOtpCode('');
-                  setCurrentStep('securite');
-                  sendRealEmail(randomCode);
+                onNext={async () => {
+                  if (isSubmitting) return;
+                  setIsSubmitting(true);
+                  try {
+                    const result = await createQuoteWithContract(
+                      userId,
+                      {
+                        company: renterDetails.company,
+                        representative: renterDetails.representative,
+                        address: renterDetails.address,
+                        postcode: renterDetails.postcode,
+                        city: renterDetails.city,
+                        email: renterDetails.email,
+                        phone: renterDetails.phone,
+                        notes: additionalNotes,
+                      },
+                      {
+                        products: productItems as any[],
+                        transactionType: projectMode === 'vente' ? 'sale' : 'rental',
+                        includeInstallation: isInstallationIncluded,
+                        installationCost: installationFee,
+                        techniciansRequired: techniciansCount,
+                        includeDelivery: true,
+                        deliveryCost: totalDeliveryFee,
+                        totalQuote: totalSubtotalProducts,
+                        width: productCalculations[0]?.width || 0,
+                        height: productCalculations[0]?.height || 0,
+                        productName: productItems[0]?.productName || '',
+                        lang: locale as 'fr' | 'en',
+                      },
+                      signatureDataUrl || ''
+                    );
+                    if (result.success && result.id) {
+                      setQuoteId(result.id);
+                      setSentOtpCode(result.otpCode || '');
+                      setOtpTimeLeft(597);
+                      setOtpError(null);
+                      setInputOtpCode('');
+                      setCurrentStep('securite');
+                    } else {
+                      setOtpError(result.error || 'Erreur lors de la création du devis');
+                    }
+                  } catch (e) {
+                    console.error("createQuoteWithContract error:", e);
+                    setOtpError('Erreur lors de la création du devis');
+                  } finally {
+                    setIsSubmitting(false);
+                  }
                 }}
-                nextDisabled={!acceptedCgl || (projectMode === 'location' && isDigitalSignatureEnabled && !isSignatureValidated)}
-                nextLabel={t('signature.continueToVerification')}
+                nextDisabled={!acceptedCgl || isSubmitting || (projectMode === 'location' && isDigitalSignatureEnabled && !isSignatureValidated)}
+                nextLabel={isSubmitting ? 'Création du devis...' : t('signature.continueToVerification')}
               />
             </div>
 
@@ -2045,28 +2214,6 @@ export default function SignatureFlow({
 
             </div>
 
-            {/* Hidden summary for PDF capture */}
-            <div id="confirmation-summary" className="hidden">
-              <div className="bg-white p-8">
-                <h1 className="text-2xl font-bold text-center mb-6">{t('signature.pdfCaptureTitle')}</h1>
-                <p className="text-sm mb-4">{t('signature.pdfCaptureClient')} {renterDetails.company} — {renterDetails.email}</p>
-                <hr className="mb-4" />
-                {productCalculations.map((pc, i) => (
-                  <div key={i} className="mb-4 text-sm">
-                    <p className="font-bold">{pc.product?.name || `${t('signature.productLabel')} ${i+1}`}</p>
-                    <p>{t('signature.dimensions')} : {pc.width}m × {pc.height}m × {pc.quantity}</p>
-                    <p>{t('signature.surface')} : {(pc.surface * pc.quantity).toFixed(2)} m²</p>
-                    <p>{t('signature.subtotal')} : {fmtPrice(pc.subtotal)} €</p>
-                  </div>
-                ))}
-                <hr className="mb-4" />
-                <p>{t('signature.productsSubtotal')} : {fmtPrice(totalSubtotalProducts)} €</p>
-                <p>{t('signature.delivery')} : {fmtPrice(totalDeliveryFee)} €</p>
-                <p>{t('signature.installation')} : {isInstallationIncluded ? `${fmtPrice(installationFee)} €` : '0 €'}</p>
-                <p className="text-lg font-bold mt-2">{t('signature.totalEstimate')} : {fmtPrice(totalAmount)} €</p>
-              </div>
-            </div>
-
           </div>
 
             {/* Navigation flottante — retour en large, suivant petit désactivé */}
@@ -2111,14 +2258,14 @@ export default function SignatureFlow({
                   </span>
                   
                   <div className="max-w-lg mt-6">
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-[20px] p-5 shadow-sm space-y-2">
+                    <div className="bg-blue-50 border border-blue-200 rounded-[20px] p-5 shadow-sm space-y-2">
                       <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
-                          <CheckCircle size={18} className="text-emerald-600 stroke-[2.5]" />
+                        <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                          <CheckCircle size={18} className="text-blue-600 stroke-[2.5]" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-emerald-900">{t('signature.estimationConfirmed')}</p>
-                          <p className="text-xs text-emerald-700 mt-1 leading-relaxed">
+                          <p className="text-sm font-bold text-blue-900">{t('signature.estimationConfirmed')}</p>
+                          <p className="text-xs text-blue-700 mt-1 leading-relaxed">
                             {t('signature.estimationConfirmedDesc')}
                           </p>
                         </div>
@@ -2133,25 +2280,36 @@ export default function SignatureFlow({
               </div>
 
                {/* Confirm actions buttons layout */}
-               <div className="grid grid-cols-2 gap-3.5 pt-2">
+               <div className="flex flex-col gap-3 pt-2 max-w-lg">
 
-                 <button
-                   type="button"
-                   onClick={onBackToConfigurator}
-                   className="px-6 py-3 bg-zinc-950 hover:bg-zinc-800 text-white font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                 >
-                    <RefreshCw size={14} className="animate-spin-slow" />
-                    <span>{t('signature.newQuote')}</span>
-                 </button>
+                  <button
+                    type="button"
+                    onClick={onNewQuote}
+                    className="w-full px-5 py-3 bg-zinc-950 hover:bg-zinc-800 text-white font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-zinc-900/15"
+                  >
+                     <Plus size={14} />
+                     <span>{t('signature.newQuote')}</span>
+                  </button>
 
-                 <button
-                   type="button"
-                   onClick={handleContractDownload}
-                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold border border-blue-600 text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                 >
-                    <Download size={14} />
-                    <span>{t('signature.downloadPdf')}</span>
-                 </button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={handleViewPdf}
+                      className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all duration-200 shadow-lg shadow-blue-600/20 cursor-pointer flex items-center justify-center gap-2"
+                    >
+                       <FileCheck2 size={15} />
+                       <span>{t('signature.consulterPdf')}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { handleContractDownload(); }}
+                      className="px-5 py-3 bg-blue-50 border border-blue-300 hover:bg-blue-100 text-blue-700 hover:text-blue-800 font-extrabold text-xs uppercase tracking-widest rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+                    >
+                       <Download size={14} />
+                       <span>{t('signature.downloadPdf')}</span>
+                    </button>
+                  </div>
 
                </div>
 
@@ -2162,27 +2320,6 @@ export default function SignatureFlow({
 
               {/* Pricing summary card */}
               <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-6 shadow-sm space-y-5">
-
-                {/* Période de location (Location only) */}
-                {projectMode === 'location' && rentalStartDate && rentalEndDate && (
-                  <div className="bg-amber-50/40 border border-amber-200/50 rounded-2xl p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-amber-700">
-                    <Clock size={14} className="stroke-[2.5]" />
-                    <span className="text-[11px] font-black uppercase tracking-wider">{t('signature.rentalPeriodLabel')}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-amber-900">
-                    <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                      {t('signature.from')} {formatFrenchDate(rentalStartDate)}
-                    </span>
-                    <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                      {t('signature.to')} {formatFrenchDate(rentalEndDate)}
-                    </span>
-                      <span className="bg-white/70 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                        {rentalStartTime} → {rentalEndTime}
-                      </span>
-                    </div>
-                  </div>
-                )}
 
                 {/* Subtotals breakdowns */}
                 <div className="space-y-3 text-xs font-semibold">
@@ -2293,8 +2430,28 @@ export default function SignatureFlow({
 
                           {/* Specs */}
                           <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] font-sans">
-                            <span className="text-zinc-500">{t('signature.dimensions')} :</span>
-                            <span className="text-zinc-900 font-medium text-right">{pc.width}m × {pc.height}m</span>
+                            {pc.is360 ? (
+                              <>
+                                <span className="text-zinc-500">Diamètre :</span>
+                                <span className="text-zinc-900 font-medium text-right">{pc.diameter}m</span>
+                                <span className="text-zinc-500">Hauteur :</span>
+                                <span className="text-zinc-900 font-medium text-right">{pc.height}m</span>
+                                <span className="text-zinc-500">Vue circulaire 360 :</span>
+                                <span className="text-zinc-900 font-medium text-right">{pc.cabinetAngle && pc.cabinetAngle > 0 ? 'Intérieur' : 'Extérieur'}</span>
+                              </>
+                            ) : pc.isCurved ? (
+                              <>
+                                <span className="text-zinc-500">{t('signature.dimensions')} :</span>
+                                <span className="text-zinc-900 font-medium text-right">{pc.width}m × {pc.height}m</span>
+                                <span className="text-zinc-500">Inclinaison G/D :</span>
+                                <span className="text-zinc-900 font-medium text-right">{pc.curveLeft || 0}° / {pc.curveRight || 0}°</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-zinc-500">{t('signature.dimensions')} :</span>
+                                <span className="text-zinc-900 font-medium text-right">{pc.width}m × {pc.height}m</span>
+                              </>
+                            )}
                             <span className="text-zinc-500">{t('signature.surface')} :</span>
                             <span className="text-zinc-900 font-medium text-right">{(pc.surface * pc.quantity).toFixed(2)} m²</span>
                             <span className="text-zinc-500">{t('signature.quantity')} :</span>
@@ -2308,13 +2465,10 @@ export default function SignatureFlow({
                           {projectMode === 'location' && (
                             <div className="flex flex-wrap gap-1.5 text-[9px] font-mono text-zinc-500 pt-1 border-t border-zinc-100">
                               <span className="bg-zinc-50 px-2 py-0.5 rounded-md border border-zinc-100">
-                                {t('signature.from')} {formatFrenchDate(rentalStartDate)}
+                                {t('signature.from')} {formatFrenchDate(rentalStartDate)} {rentalStartTime}
                               </span>
                               <span className="bg-zinc-50 px-2 py-0.5 rounded-md border border-zinc-100">
-                                {t('signature.to')} {formatFrenchDate(rentalEndDate)}
-                              </span>
-                              <span className="bg-zinc-50 px-2 py-0.5 rounded-md border border-zinc-100">
-                                {rentalStartTime} - {rentalEndTime}
+                                {t('signature.to')} {formatFrenchDate(rentalEndDate)} {rentalEndTime}
                               </span>
                             </div>
                           )}
@@ -2329,6 +2483,57 @@ export default function SignatureFlow({
 
           </div>
         )}
+
+        {/* Hidden PDF template rendered from admin settings — always in DOM, off-screen for html2canvas */}
+        <div
+          ref={pdfContainerRef}
+          id="signature-pdf-container"
+          style={{
+            position: "absolute",
+            left: "-99999px",
+            top: 0,
+            width: "820px",
+          }}
+        >
+          <QuotePDF
+            key={`pdf-${locale}`}
+            id="signature-pdf-view"
+            request={{
+              id: quoteId || 'signature-flow',
+              createdAt: new Date(),
+              status: 'pending',
+              isRead: false,
+              emailVerified: true,
+              client: {
+                companyName: renterDetails.company,
+                email: renterDetails.email,
+                phone: renterDetails.phone,
+                address: renterDetails.address,
+                notes: additionalNotes,
+              },
+              products: productItems as any,
+              installationCost: installationFee,
+              deliveryCost: totalDeliveryFee,
+              totalQuote: totalSubtotalProducts,
+              transactionType: projectMode === 'vente' ? 'sale' : 'rental',
+              lang: locale as 'fr' | 'en',
+              width: productCalculations[0]?.width || 0,
+              height: productCalculations[0]?.height || 0,
+              productName: productItems[0]?.productName || '',
+              screenType: (productCalculations[0]?.product?.type?.[0] || 'indoor') as 'indoor' | 'outdoor' | 'showcase',
+              includeInstallation: isInstallationIncluded,
+              techniciansRequired: techniciansCount,
+              includeDelivery: true,
+              rentalPeriod: projectMode === 'location' && rentalStartDate && rentalEndDate ? { from: new Date(rentalStartDate), to: new Date(rentalEndDate) } : undefined,
+              rentalStartTime: projectMode === 'location' ? rentalStartTime : undefined,
+              rentalEndTime: projectMode === 'location' ? rentalEndTime : undefined,
+            } as QuoteRequest}
+            settings={pdfSettings || DEFAULT_PDF_SETTINGS}
+            selectedCity={selectedCityForPdf}
+            globalSettings={globalSettings || settings || ({} as any)}
+            allProducts={allProducts}
+          />
+        </div>
 
       </main>
 

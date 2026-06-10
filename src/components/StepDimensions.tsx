@@ -223,7 +223,7 @@ export default function StepDimensions({
                       {/* Cabinet Orientation Selector */}
                       <div className="space-y-2">
                         <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">
-                          Angle du Cabinet
+                          Vue circulaire 360
                         </label>
                         <div className="grid grid-cols-2 gap-1 bg-slate-900/5 p-1 rounded-lg border border-slate-900/10">
                           <button
