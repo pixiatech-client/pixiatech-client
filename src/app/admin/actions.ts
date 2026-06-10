@@ -17,6 +17,7 @@ import nodemailer from 'nodemailer';
 import { buildSupplierEmailHtml } from '@/lib/email-templates';
 
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings } from '@/lib/types';
+import { DEFAULT_PALETTES } from '@/lib/color-palettes';
 import { DocumentData, Timestamp } from 'firebase-admin/firestore';
 import fr from '@/lib/locales/fr.json';
 import en from '@/lib/locales/en.json';
@@ -2804,13 +2805,7 @@ export async function updateWizardSettings(data: unknown) {
 
 // --- Theme Actions ---
 
-const defaultThemes: Omit<Theme, 'id' | 'createdAt'>[] = [
-  { name: 'Default', colors: { adminBackground: '240 10% 97%' } },
-  { name: 'Dark', colors: { adminBackground: '222.2 84% 4.9%' } },
-  { name: 'Purple', colors: { adminBackground: '262 84% 58%' } },
-  { name: 'Green', colors: { adminBackground: '142 76% 36%' } },
-  { name: 'Orange', colors: { adminBackground: '25 95% 53%' } },
-];
+const defaultThemes: Omit<Theme, 'id' | 'createdAt'>[] = DEFAULT_PALETTES;
 
 export async function getThemes(): Promise<Theme[]> {
   // Serve from in-memory cache if still fresh
@@ -2856,7 +2851,7 @@ export async function getThemes(): Promise<Theme[]> {
   }
 }
 
-export async function saveTheme(theme: Partial<Omit<Theme, 'createdAt'>> & { name: string; colors: { adminBackground: string; } }) {
+export async function saveTheme(theme: Partial<Omit<Theme, 'createdAt'>> & { name: string; colors: Theme['colors']; }) {
   const { adminDb, FieldValue } = getFirebaseAdmin();
   try {
     let docRef;
@@ -2905,6 +2900,28 @@ export async function deleteTheme(themeId: string) {
   }
 }
 
+export async function reinitializePalettes() {
+  const { adminDb, FieldValue } = getFirebaseAdmin();
+  try {
+    const existing = await adminDb.collection('themes').get();
+    const batch = adminDb.batch();
+    existing.docs.forEach(doc => batch.delete(doc.ref));
+    DEFAULT_PALETTES.forEach(palette => {
+      const docRef = adminDb.collection('themes').doc();
+      batch.set(docRef, {
+        ...palette,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    });
+    await batch.commit();
+    _themesCache = null;
+    revalidatePath('/admin/settings/themes', 'layout');
+    return { success: true };
+  } catch (error) {
+    console.error("Error reinitializing palettes:", error);
+    return { success: false, error: (error as Error).message };
+  }
+}
 
 // --- Delivery Actions ---
 

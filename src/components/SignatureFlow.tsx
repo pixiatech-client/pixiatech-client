@@ -874,6 +874,12 @@ export default function SignatureFlow({
       ...p,
       productName: prod?.name || `Product ${idx + 1}`,
       lineTotal: (calc?.subtotal || 0) * (calc?.quantity || 1),
+      unitPrice: calc?.subtotal || 0,
+      tileWidth: p.tileWidth || prod?.tileWidth || 0,
+      tileHeight: p.tileHeight || prod?.tileHeight || 0,
+      pricePerTile: p.pricePerTile || prod?.pricePerTile || 0,
+      nombreEcrans: calc?.dalles || p.quantity || 1,
+      dimensionsEnabled: !!(p.width && p.height),
     };
   });
   const foundCity = CITIES.find(c => c.id === selectedCityId);
@@ -1894,6 +1900,20 @@ export default function SignatureFlow({
                   if (isSubmitting) return;
                   setIsSubmitting(true);
                   try {
+                    // Upload site photo to Firebase Storage if present
+                    let sitePhotoUrl = '';
+                    const existingPhoto = configuredProducts[0]?.installationPhoto;
+                    if (existingPhoto && (existingPhoto.startsWith('blob:') || existingPhoto.startsWith('data:'))) {
+                      try {
+                        const response = await fetch(existingPhoto);
+                        const blob = await response.blob();
+                        const photoRef = ref(storage, `quotes/site-photos/${Date.now()}.jpg`);
+                        await uploadBytes(photoRef, blob);
+                        sitePhotoUrl = await getDownloadURL(photoRef);
+                      } catch (e) {
+                        console.error('Failed to upload site photo:', e);
+                      }
+                    }
                     const result = await createQuoteWithContract(
                       userId,
                       {
@@ -1905,6 +1925,7 @@ export default function SignatureFlow({
                         email: renterDetails.email,
                         phone: renterDetails.phone,
                         notes: additionalNotes,
+                        sitePhoto: sitePhotoUrl,
                       },
                       {
                         products: productItems as any[],
@@ -1919,6 +1940,11 @@ export default function SignatureFlow({
                         height: productCalculations[0]?.height || 0,
                         productName: productItems[0]?.productName || '',
                         lang: locale as 'fr' | 'en',
+                        rentalPeriod: projectMode === 'location' && rentalStartDate && rentalEndDate
+                          ? { from: rentalStartDate, to: rentalEndDate }
+                          : undefined,
+                        rentalStartTime: projectMode === 'location' ? rentalStartTime : undefined,
+                        rentalEndTime: projectMode === 'location' ? rentalEndTime : undefined,
                       },
                       signatureDataUrl || ''
                     );
@@ -1933,7 +1959,7 @@ export default function SignatureFlow({
                       setOtpError(result.error || 'Erreur lors de la création du devis');
                     }
                   } catch (e) {
-                    console.error("createQuoteWithContract error:", e);
+                    console.error("createQuoteWithContract exception:", e);
                     setOtpError('Erreur lors de la création du devis');
                   } finally {
                     setIsSubmitting(false);

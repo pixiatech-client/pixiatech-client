@@ -519,6 +519,7 @@ export async function createQuoteWithContract(
     email: string;
     phone: string;
     notes?: string;
+    sitePhoto?: string;
   },
   quoteDetails: {
     products: any[];
@@ -533,16 +534,21 @@ export async function createQuoteWithContract(
     height: number;
     productName: string;
     lang: 'fr' | 'en';
+    rentalPeriod?: { from: string; to: string };
+    rentalStartTime?: string;
+    rentalEndTime?: string;
   },
   signatureDataUrl: string
 ): Promise<{ success: boolean; id?: string; otpCode?: string; error?: string }> {
   const { adminDb, FieldValue, Timestamp } = getFirebaseAdmin();
-  if (!adminDb) return { success: false, error: 'Database service unavailable' };
+  if (!adminDb) {
+    return { success: false, error: 'Database service unavailable' };
+  }
 
   try {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expirationDate = new Date();
-    expirationDate.setMinutes(expirationDate.getMinutes() + 10); // 10 minutes expiration
+    expirationDate.setMinutes(expirationDate.getMinutes() + 10);
 
     const pdfSettings = await getPdfSettings(true);
 
@@ -555,6 +561,7 @@ export async function createQuoteWithContract(
         email: clientDetails.email,
         phone: clientDetails.phone,
         notes: clientDetails.notes || '',
+        sitePhoto: clientDetails.sitePhoto || '',
       },
       userId,
       createdAt: FieldValue.serverTimestamp(),
@@ -589,20 +596,25 @@ export async function createQuoteWithContract(
 
     const verificationUrl = `${safeBaseUrl}/verification-securite?otp=${otpCode}&id=${docRef.id}`;
 
-    await sendSignatureOtpEmail(
-      clientDetails.email,
-      otpCode,
-      quoteDetails.lang || 'en',
-      clientDetails.company,
-      clientDetails.representative,
-      quoteDetails.totalQuote,
-      `${quoteDetails.width}m x ${quoteDetails.height}m - ${quoteDetails.productName}`,
-      verificationUrl
-    );
+    try {
+      await sendSignatureOtpEmail(
+        clientDetails.email,
+        otpCode,
+        quoteDetails.lang || 'en',
+        clientDetails.company,
+        clientDetails.representative,
+        quoteDetails.totalQuote,
+        `${quoteDetails.width}m x ${quoteDetails.height}m - ${quoteDetails.productName}`,
+        verificationUrl
+      );
+    } catch (emailErr: any) {
+      console.error("sendSignatureOtpEmail failed:", emailErr.message);
+      throw emailErr;
+    }
 
     return { success: true, id: docRef.id, otpCode };
   } catch (error: any) {
-    console.error("Error in createQuoteWithContract:", error);
+    console.error("Error in createQuoteWithContract:", error.message);
     return { success: false, error: error.message || 'Failed to create contract quote' };
   }
 }

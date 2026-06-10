@@ -4,6 +4,7 @@
 import { useState, useEffect, useTransition, useCallback, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import type { Theme, Settings as AppSettings } from '@/lib/types';
+import { DEFAULT_PALETTES } from '@/lib/color-palettes';
 import { saveTheme, deleteTheme, updateSettings } from '@/app/admin/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -169,9 +170,10 @@ export function ThemeEditor({ themes: initialThemes, settings: initialSettings, 
 
     const handleNewTheme = async () => {
         const newName = `Theme ${initialThemes.length + 1}`;
+        const defaultColors = DEFAULT_PALETTES[0].colors;
         const newThemeData: Omit<Theme, 'id' | 'createdAt'> = {
             name: newName,
-            colors: { adminBackground: mode === 'dark' ? '222.2 84% 4.9%' : '240 10% 97%' }
+            colors: { ...defaultColors, adminBackground: mode === 'dark' ? '222.2 84% 4.9%' : '240 10% 97%' }
         };
         startSaving(async () => {
              const result = await saveTheme(newThemeData);

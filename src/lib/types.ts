@@ -381,9 +381,49 @@ export type QuoteRequest = Omit<QuoteDetails, 'products' | 'rentalPeriod'> & {
 export type Theme = {
   id: string;
   name: string;
+  description?: string;
+  category?: 'pastel' | 'audacieux';
+  mode?: 'light' | 'dark';
   colors: {
-      adminBackground: string;
+    adminBackground: string;
+    background: string;
+    foreground: string;
+    primary: string;
+    primaryForeground: string;
+    secondary: string;
+    secondaryForeground: string;
+    accent: string;
+    accentForeground: string;
+    muted: string;
+    mutedForeground: string;
+    card: string;
+    cardForeground: string;
+    cardBorder: string;
+    popover: string;
+    popoverForeground: string;
+    sidebarBg: string;
+    sidebarText: string;
+    sidebarBorder: string;
+    sidebarActiveBg: string;
+    sidebarActiveText: string;
+    sidebarAccent: string;
+    navBg: string;
+    navText: string;
+    btnPrimaryBg: string;
+    btnPrimaryText: string;
+    btnPrimaryHover: string;
+    btnSecondaryBg: string;
+    btnSecondaryText: string;
+    btnSecondaryHover: string;
+    success: string;
+    warning: string;
+    error: string;
+    info: string;
+    border: string;
+    input: string;
+    ring: string;
   };
+  isDefault?: boolean;
   createdAt?: any;
 }
 
