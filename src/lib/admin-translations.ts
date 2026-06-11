@@ -617,10 +617,18 @@ const adminTranslations: Record<string, string> = {
   'Custom': 'Personnalisé',
   'Modified': 'Modifié',
   'Custom theme.': 'Thème personnalisé.',
-  'themes available': 'thèmes disponibles',
+  'themes': 'thèmes',
+  'available': 'disponibles',
+  'custom theme': 'thème personnalisé',
+  'custom themes': 'thèmes personnalisés',
   'New theme': 'Nouveau thème',
   'Default themes': 'Thèmes par défaut',
   'My themes': 'Mes thèmes',
+  'Bold': 'Audacieux',
+  'Light': 'Clair',
+  'Dark': 'Sombre',
+  'Category': 'Catégorie',
+  'Mode': 'Mode',
 };
 
 export default adminTranslations;

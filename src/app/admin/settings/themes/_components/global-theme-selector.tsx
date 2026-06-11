@@ -20,7 +20,7 @@ interface CustomTheme extends Omit<Palette, 'isDefault'> {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const CATEGORY_LABELS: Record<string, string> = { pastel: 'Pastel', audacieux: 'Audacieux' };
+const CATEGORY_LABELS: Record<string, string> = { pastel: 'Pastel', audacieux: 'Bold' };
 const CATEGORY_STYLES: Record<string, string> = {
   pastel: 'bg-pink-100 text-pink-700 border-pink-200',
   audacieux: 'bg-violet-100 text-violet-700 border-violet-200',
@@ -387,7 +387,7 @@ function ThemeCard({ palette, isActive, isCustomized, getColor, onSelect, onColo
           {palette.category && (
             <span className={cn('text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border',
               CATEGORY_STYLES[palette.category] || 'bg-slate-100 text-slate-600 border-slate-200')}>
-              {CATEGORY_LABELS[palette.category] || palette.category}
+              {t(CATEGORY_LABELS[palette.category] || palette.category)}
             </span>
           )}
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -582,21 +582,21 @@ export function GlobalThemeSelector() {
       <div className="flex items-center justify-between mb-6">
         <p className="text-sm text-slate-500">
           {customThemes.length > 0
-            ? `${DEFAULT_PALETTES.length} thèmes par défaut · ${customThemes.length} thème${customThemes.length > 1 ? 's' : ''} personnalisé${customThemes.length > 1 ? 's' : ''}`
-            : `${DEFAULT_PALETTES.length} thèmes disponibles`}
+            ? `${DEFAULT_PALETTES.length} ${t('themes')} · ${customThemes.length} ${customThemes.length > 1 ? t('custom themes') : t('custom theme')}`
+            : `${DEFAULT_PALETTES.length} ${t('themes')} ${t('available')}`}
         </p>
         <button
           type="button"
           onClick={e => { e.stopPropagation(); setSaveModal({ open: true, palette: null }); }}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black text-white text-sm font-semibold hover:bg-slate-800 transition-colors shadow-sm"
         >
-          <Plus className="w-4 h-4" /> Nouveau thème
+          <Plus className="w-4 h-4" /> {t('New theme')}
         </button>
       </div>
 
       {/* Custom themes section header */}
       {customThemes.length > 0 && (
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Thèmes par défaut</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">{t('Default themes')}</p>
       )}
 
       {/* Grid */}
@@ -611,7 +611,7 @@ export function GlobalThemeSelector() {
           if (isCustom && allPalettes.indexOf(palette) === DEFAULT_PALETTES.length) {
             return (
               <div key="__divider__" className="col-span-full">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-2 mb-3">Mes thèmes</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-2 mb-3">{t('My themes')}</p>
                 <ThemeCard
                   palette={palette}
                   isActive={isActive}
