@@ -84,7 +84,7 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/notification': 'notifications',
 };
 
-export type SettingsSection = 'general' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
+export type SettingsSection = 'general' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
 
 interface SidebarProps {
   state: SidebarState;

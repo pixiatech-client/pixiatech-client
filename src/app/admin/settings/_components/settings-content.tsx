@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { useAdminT } from '@/hooks/useAdminT';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -53,7 +53,6 @@ const tabsConfigDefs = [
     { id: 'pdf' as SettingsSection, labelKey: 'PDF', icon: FileType },
     { id: 'messaging' as SettingsSection, labelKey: 'Messaging', icon: MessageSquare },
     { id: 'emergency' as SettingsSection, labelKey: 'Emergency', icon: AlertTriangle },
-    { id: 'hint-bubble' as SettingsSection, labelKey: 'Hint Bubbles', icon: MessageSquare },
     { id: 'software' as SettingsSection, labelKey: 'Software', icon: Settings },
     { id: 'email-verification' as SettingsSection, labelKey: 'Email Verification', icon: ShieldCheck },
     { id: 'flow' as SettingsSection, labelKey: 'Parcours client', icon: Zap },

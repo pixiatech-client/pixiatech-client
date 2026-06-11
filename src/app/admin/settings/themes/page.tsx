@@ -2,14 +2,16 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GlobalThemeSelector } from './_components/global-theme-selector';
+import { useAdminT } from '@/hooks/useAdminT';
 
 const ThemesPage = () => {
+  const { t } = useAdminT();
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Thème</CardTitle>
+        <CardTitle>{t('Theme')}</CardTitle>
         <CardDescription>
-          Choisissez un thème global pour l'application. Chaque thème définit une identité visuelle complète.
+          {t('Choose a global theme for the application. Each theme defines a complete visual identity.')}
         </CardDescription>
       </CardHeader>
       <CardContent>

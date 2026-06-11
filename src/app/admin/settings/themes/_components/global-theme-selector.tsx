@@ -4,6 +4,7 @@ import { Check, Sparkles, RotateCcw, Paintbrush, Save, Trash2, Plus, X, Sun, Moo
 import { cn } from '@/lib/utils';
 import { DEFAULT_PALETTES } from '@/lib/color-palettes';
 import { useTheme } from '@/contexts/ThemeProvider';
+import { useAdminT } from '@/hooks/useAdminT';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -176,6 +177,7 @@ interface SaveModalProps {
 }
 
 function SaveModal({ baseColors, baseMode, onSave, onClose }: SaveModalProps) {
+  const { t } = useAdminT();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('audacieux');
@@ -190,7 +192,7 @@ function SaveModal({ baseColors, baseMode, onSave, onClose }: SaveModalProps) {
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-bold text-slate-900">Sauvegarder le thème</h3>
+          <h3 className="text-lg font-bold text-slate-900">{t('Save theme')}</h3>
           <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors">
             <X className="w-4 h-4 text-slate-500" />
           </button>
@@ -202,43 +204,43 @@ function SaveModal({ baseColors, baseMode, onSave, onClose }: SaveModalProps) {
             <SwatchPicker key={key} colorKey={key} label={label} currentHsl={colors[key] as string}
               onChange={handleColorChange} />
           ))}
-          <span className="ml-2 text-[11px] text-slate-400 self-center">Cliquez pour modifier</span>
+          <span className="ml-2 text-[11px] text-slate-400 self-center">{t('Click to edit')}</span>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Nom du thème *</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Ex : Mon Thème Bleu"
+            <label className="block text-xs font-semibold text-slate-600 mb-1">{t('Theme name *')}</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder={t('e.g. My Blue Theme')}
               className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
               maxLength={40} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1">Description</label>
-            <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Description courte..."
+            <label className="block text-xs font-semibold text-slate-600 mb-1">{t('Description')}</label>
+            <input value={description} onChange={e => setDescription(e.target.value)} placeholder={t('Short description...')}
               className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10"
               maxLength={120} />
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Catégorie</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">{t('Category')}</label>
               <select value={category} onChange={e => setCategory(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10 bg-white">
-                <option value="audacieux">Audacieux</option>
+                <option value="audacieux">{t('Bold')}</option>
                 <option value="pastel">Pastel</option>
               </select>
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-semibold text-slate-600 mb-1">Mode</label>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">{t('Mode')}</label>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setMode('light')}
                   className={cn('flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-xs font-semibold transition-all',
                     mode === 'light' ? 'bg-black text-white border-black' : 'border-slate-200 text-slate-500 hover:border-slate-300')}>
-                  <Sun className="w-3 h-3" /> Clair
+                  <Sun className="w-3 h-3" /> {t('Light')}
                 </button>
                 <button type="button" onClick={() => setMode('dark')}
                   className={cn('flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-xs font-semibold transition-all',
                     mode === 'dark' ? 'bg-black text-white border-black' : 'border-slate-200 text-slate-500 hover:border-slate-300')}>
-                  <Moon className="w-3 h-3" /> Sombre
+                  <Moon className="w-3 h-3" /> {t('Dark')}
                 </button>
               </div>
             </div>
@@ -248,13 +250,13 @@ function SaveModal({ baseColors, baseMode, onSave, onClose }: SaveModalProps) {
         <div className="flex gap-3 mt-6">
           <button onClick={onClose}
             className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-            Annuler
+            {t('Cancel')}
           </button>
           <button
             onClick={() => { if (name.trim()) onSave(name.trim(), description, category, mode, colors); }}
             disabled={!name.trim()}
             className="flex-1 py-2.5 rounded-xl bg-black text-white text-sm font-semibold hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-            <Save className="w-4 h-4" /> Sauvegarder
+            <Save className="w-4 h-4" /> {t('Save')}
           </button>
         </div>
       </div>
@@ -271,22 +273,23 @@ interface DeleteConfirmProps {
 }
 
 function DeleteConfirm({ themeName, onConfirm, onClose }: DeleteConfirmProps) {
+  const { t } = useAdminT();
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center" onClick={e => e.stopPropagation()}>
         <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Trash2 className="w-5 h-5 text-red-500" />
         </div>
-        <h3 className="text-base font-bold text-slate-900 mb-2">Supprimer «&nbsp;{themeName}&nbsp;»&nbsp;?</h3>
-        <p className="text-sm text-slate-500 mb-6">Ce thème personnalisé sera supprimé définitivement.</p>
+        <h3 className="text-base font-bold text-slate-900 mb-2">{t('Delete theme "{name}"?').replace('{name}', themeName)}</h3>
+        <p className="text-sm text-slate-500 mb-6">{t('This custom theme will be permanently deleted.')}</p>
         <div className="flex gap-3">
           <button onClick={onClose}
             className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-            Annuler
+            {t('Cancel')}
           </button>
           <button onClick={onConfirm}
             className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors">
-            Supprimer
+            {t('Delete')}
           </button>
         </div>
       </div>
@@ -309,6 +312,7 @@ interface ThemeCardProps {
 }
 
 function ThemeCard({ palette, isActive, isCustomized, getColor, onSelect, onColorChange, onReset, onSaveAs, onDelete }: ThemeCardProps) {
+  const { t } = useAdminT();
   const isCustom = (palette as CustomTheme).isCustom === true;
 
   return (
@@ -333,22 +337,22 @@ function ThemeCard({ palette, isActive, isCustomized, getColor, onSelect, onColo
         {isCustom && onDelete && (
           <button type="button" onClick={onDelete}
             className="w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 text-red-500 flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
-            title="Supprimer ce thème">
+            title={t('Delete theme')}>
             <Trash2 className="w-3 h-3" />
           </button>
         )}
         {/* Save as new */}
         <button type="button" onClick={onSaveAs}
           className="h-6 rounded-full bg-emerald-100 hover:bg-emerald-200 text-emerald-700 flex items-center justify-center gap-1 px-2 transition-colors opacity-0 group-hover:opacity-100 text-[10px] font-semibold whitespace-nowrap"
-          title="Sauvegarder comme nouveau thème">
-          <Save className="w-2.5 h-2.5" /> Sauvegarder
+          title={t('Save as new theme')}>
+          <Save className="w-2.5 h-2.5" /> {t('Save')}
         </button>
         {/* Reset overrides */}
         {isCustomized && (
           <button type="button" onClick={onReset}
             className="h-6 rounded-full bg-orange-100 hover:bg-orange-200 text-orange-600 flex items-center justify-center gap-1 px-2 transition-colors text-[10px] font-semibold whitespace-nowrap"
-            title="Réinitialiser">
-            <RotateCcw className="w-2.5 h-2.5" /> Reset
+            title={t('Reset')}>
+            <RotateCcw className="w-2.5 h-2.5" /> {t('Reset')}
           </button>
         )}
       </div>
@@ -359,17 +363,17 @@ function ThemeCard({ palette, isActive, isCustomized, getColor, onSelect, onColo
           {palette.isDefault && <Sparkles className="w-3.5 h-3.5 text-amber-500" />}
           {isCustom && (
             <span className="text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full">
-              Personnalisé
+              {t('Custom')}
             </span>
           )}
           {isCustomized && !isCustom && (
             <span className="text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded-full">
-              Modifié
+              {t('Modified')}
             </span>
           )}
         </div>
 
-        <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">{palette.description || 'Thème personnalisé.'}</p>
+        <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">{palette.description || t('Custom theme.')}</p>
 
         {/* Clickable swatches */}
         <div className="flex gap-1.5 items-center">
@@ -387,7 +391,7 @@ function ThemeCard({ palette, isActive, isCustomized, getColor, onSelect, onColo
             </span>
           )}
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            {palette.mode === 'dark' ? 'Sombre' : 'Clair'}
+            {palette.mode === 'dark' ? t('Dark') : t('Light')}
           </span>
         </div>
       </div>
@@ -481,6 +485,7 @@ function applyAllOverridesToDOM(palette: Palette, ov: Record<string, string>) {
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export function GlobalThemeSelector() {
+  const { t } = useAdminT();
   const { activeTheme, setTheme } = useTheme();
   const [overrides, setOverrides] = useState<Record<string, Record<string, string>>>({});
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);

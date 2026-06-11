@@ -1300,52 +1300,52 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
           </div>
         </div>
 
-        <div className="hidden md:flex bg-black/90 backdrop-blur-md rounded-3xl p-3 items-center gap-1 shadow-2xl border border-white/10 overflow-x-auto no-scrollbar">
-          <div className="flex items-center gap-1.5 pr-3 border-r border-white/10 shrink-0">
+        <div className="hidden md:flex flex-col bg-black/90 backdrop-blur-md rounded-3xl p-4 gap-3 shadow-2xl border border-white/10">
+          <div className="flex items-center gap-1.5">
             {[
               { key: 'all', label: 'Tous' },
-              { key: 'sale', label: 'Vente' },
-              { key: 'rental', label: 'Location' },
-            ].map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => setStatsTypeFilter(key as 'all' | 'sale' | 'rental')}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
-                  statsTypeFilter === key
-                    ? key === 'all'
-                      ? 'bg-white/15 text-white shadow-sm'
-                      : key === 'sale'
-                        ? 'bg-emerald-500/20 text-emerald-400 shadow-sm shadow-emerald-500/10'
-                        : 'bg-violet-500/20 text-violet-400 shadow-sm shadow-violet-500/10'
-                    : 'text-white/40 hover:text-white/80'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-1 ml-1">
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+                { key: 'sale', label: 'Vente' },
+                { key: 'rental', label: 'Location' },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setStatsTypeFilter(key as 'all' | 'sale' | 'rental')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                    statsTypeFilter === key
+                      ? key === 'all'
+                        ? 'bg-white/15 text-white shadow-sm'
+                        : key === 'sale'
+                          ? 'bg-emerald-500/20 text-emerald-400 shadow-sm shadow-emerald-500/10'
+                          : 'bg-violet-500/20 text-violet-400 shadow-sm shadow-violet-500/10'
+                      : 'text-white/40 hover:text-white/80'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar -mx-1 px-1">
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
               <Clock className="w-5 h-5 text-yellow-500 group-hover:drop-shadow-[0_0_8px_rgba(234,179,8,0.8)] transition-all" />
               <span className="text-lg font-bold text-white">{stats.pending}</span>
             </div>
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
               <CheckCircle2 className="w-5 h-5 text-emerald-500 group-hover:drop-shadow-[0_0_8_rgba(34,197,94,0.8)] transition-all" />
               <span className="text-lg font-bold text-white">{stats.processed}</span>
             </div>
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
               <Trash2 className="w-5 h-5 text-rose-500 group-hover:drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] transition-all" />
               <span className="text-lg font-bold text-white">{stats.trashed}</span>
             </div>
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
               <Users className="w-5 h-5 text-blue-400 group-hover:drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] transition-all" />
               <span className="text-lg font-bold text-white">{allUsers?.length || 0}</span>
             </div>
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
               <Package className="w-5 h-5 text-purple-400 group-hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] transition-all" />
               <span className="text-lg font-bold text-white">{allProducts?.length || 0}</span>
             </div>
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
               <Archive className="w-5 h-5 text-indigo-400 group-hover:drop-shadow-[0_0_8px_rgba(129,140,248,0.8)] transition-all" />
               <span className="text-lg font-bold text-white">{stats.archive}</span>
             </div>

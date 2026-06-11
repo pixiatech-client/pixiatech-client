@@ -601,6 +601,26 @@ const adminTranslations: Record<string, string> = {
   'Back to site': 'Retour au site',
   'Continue with Google': 'Continuer avec Google',
   'Access reserved for PixiaTech administration': 'Accès réservé à l\'administration PixiaTech',
+
+  // Theme settings
+  'Theme': 'Thème',
+  'Choose a global theme for the application. Each theme defines a complete visual identity.': 'Choisissez un thème global pour l\'application. Chaque thème définit une identité visuelle complète.',
+  'Save theme': 'Sauvegarder le thème',
+  'Click to edit': 'Cliquez pour modifier',
+  'Theme name *': 'Nom du thème *',
+  'e.g. My Blue Theme': 'Ex : Mon Thème Bleu',
+  'Short description...': 'Description courte...',
+  'Delete theme "{name}"?': 'Supprimer « {name} » ?',
+  'This custom theme will be permanently deleted.': 'Ce thème personnalisé sera supprimé définitivement.',
+  'Delete theme': 'Supprimer ce thème',
+  'Save as new theme': 'Sauvegarder comme nouveau thème',
+  'Custom': 'Personnalisé',
+  'Modified': 'Modifié',
+  'Custom theme.': 'Thème personnalisé.',
+  'themes available': 'thèmes disponibles',
+  'New theme': 'Nouveau thème',
+  'Default themes': 'Thèmes par défaut',
+  'My themes': 'Mes thèmes',
 };
 
 export default adminTranslations;

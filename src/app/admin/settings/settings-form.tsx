@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings, TranslatedString, Theme } from '@/lib/types';
 import { updateSettings } from '../actions';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, SlidersHorizontal, Eye, Server, Play, AlertTriangle } from 'lucide-react';
+import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -64,7 +64,6 @@ const settingsSchema = z.object({
   isPriceHidden: z.boolean().optional(),
   isWizardBotEnabled: z.boolean().optional(),
   isGuidedConfigEnabled: z.boolean().optional(),
-  isManualConfigEnabled: z.boolean().optional(),
   hintBubble: hintBubbleSchema.optional(),
   lightThemeId: z.string().optional(),
   darkThemeId: z.string().optional(),
@@ -86,7 +85,7 @@ const settingsSchema = z.object({
 });
 
 
-type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification' | 'flow';
+type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'messaging' | 'software' | 'email-verification' | 'flow';
 type Language = 'fr' | 'en';
 type FormValues = z.infer<typeof settingsSchema>;
 
@@ -107,8 +106,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       isEmailVerificationEnabled: initialSettings.isEmailVerificationEnabled ?? true, 
       isPriceHidden: initialSettings.isPriceHidden ?? false,
       isWizardBotEnabled: initialSettings.isWizardBotEnabled ?? true,
-      isGuidedConfigEnabled: initialSettings.isGuidedConfigEnabled ?? true,
-      isManualConfigEnabled: initialSettings.isManualConfigEnabled ?? true
+      isGuidedConfigEnabled: initialSettings.isGuidedConfigEnabled ?? true
     },
   });
 
@@ -134,7 +132,6 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       emergency: t('Emergency'),
       images: t('Images'),
       content: t('Content'),
-      'hint-bubble': t('Hint Bubble'),
       messaging: t('Messaging'),
       software: t('Software'),
       'email-verification': t('Email Verification'),
@@ -332,8 +329,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                           onCheckedChange={(checked) => {
                             if (!checked) {
                               const guided = form.getValues('isGuidedConfigEnabled');
-                              const manual = form.getValues('isManualConfigEnabled');
-                              if (!guided && !manual) {
+                              if (!guided) {
                                 toast({
                                   title: t("Action unavailable"),
                                   description: t("You must leave at least one access option enabled."),
@@ -370,8 +366,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                           onCheckedChange={(checked) => {
                             if (!checked) {
                               const bot = form.getValues('isWizardBotEnabled');
-                              const manual = form.getValues('isManualConfigEnabled');
-                              if (!bot && !manual) {
+                              if (!bot) {
                                 toast({
                                   title: t("Action unavailable"),
                                   description: t("You must leave at least one access option enabled."),
@@ -387,43 +382,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                     />
                   </div>
 
-                  {/* Option 3: Configuration Manuelle */}
-                  <div className="flex items-center justify-between rounded-lg border border-amber-100 bg-white p-4 shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-amber-100/50 rounded-lg">
-                        <SlidersHorizontal className="h-5 w-5 text-amber-700" />
-                      </div>
-                      <div>
-                        <Label htmlFor="isManualConfigEnabled" className="font-semibold text-slate-800">{t('Manual Configuration')}</Label>
-                        <p className="text-sm text-slate-500">{t('Advanced — For those who already know what they want.')}</p>
-                      </div>
-                    </div>
-                    <Controller
-                      control={form.control}
-                      name="isManualConfigEnabled"
-                      render={({ field }) => (
-                        <Switch
-                          id="isManualConfigEnabled"
-                          checked={field.value}
-                          onCheckedChange={(checked) => {
-                            if (!checked) {
-                              const bot = form.getValues('isWizardBotEnabled');
-                              const guided = form.getValues('isGuidedConfigEnabled');
-                              if (!bot && !guided) {
-                                toast({
-                                  title: t("Action unavailable"),
-                                  description: t("You must leave at least one access option enabled."),
-                                  variant: "destructive",
-                                });
-                                return;
-                              }
-                            }
-                            field.onChange(checked);
-                          }}
-                        />
-                      )}
-                    />
-                  </div>
+
                 </div>
               </div>
             </div>
