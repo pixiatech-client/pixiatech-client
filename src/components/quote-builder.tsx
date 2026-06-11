@@ -194,10 +194,6 @@ export function QuoteBuilder({
         if (initialSettings) {
             const imagesToPreload = [
                 initialSettings.previewScreenImageUrl,
-                initialSettings.previewHumanScaleImageUrl,
-                initialSettings.deliveryImageUrl,
-                initialSettings.technicianImageUrl,
-                initialSettings.congratulationsImageUrl,
             ].filter(Boolean) as string[];
 
             if (imagesToPreload.length > 0) {
@@ -789,7 +785,6 @@ export function QuoteBuilder({
                 width={activeConfiguredProduct?.width ?? initialSettings.defaultWidth}
                 height={activeConfiguredProduct?.height ?? initialSettings.defaultHeight}
                 screenImageUrl={initialSettings.previewScreenImageUrl}
-                humanScaleImageUrl={initialSettings.previewHumanScaleImageUrl}
             />
         );
 

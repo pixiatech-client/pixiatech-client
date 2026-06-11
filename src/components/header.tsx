@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LogIn } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
-import settings from '@/data/settings.json';
 
 export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; pageIcon?: React.ElementType } = {}) {
   const { user, isUserLoading } = useUser();
@@ -43,8 +42,8 @@ export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; 
     );
   }
 
-  // Get logo URL from settings
-  const logoUrl = settings.cardLogoUrl || "";
+  // Logo URL
+  const logoUrl = "";
 
   return (
     <header className="bg-white/95 border-b border-zinc-200 backdrop-blur-sm px-4 py-2 h-[56px] flex items-center select-none">

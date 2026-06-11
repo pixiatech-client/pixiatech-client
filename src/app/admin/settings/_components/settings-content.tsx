@@ -7,8 +7,9 @@ import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck,
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
+import { useAdminT } from '@/hooks/useAdminT';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'content' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification' | 'flow';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -17,7 +18,6 @@ interface SettingsContentProps {
 
 const GeneralContent = lazy(() => import('../general/page'));
 const ImagesContent = lazy(() => import('../images/page'));
-const ContentContent = lazy(() => import('../content/page'));
 const WizardContent = lazy(() => import('../../wizard/page'));
 const LivraisonContent = lazy(() => import('../../_components/delivery-redirect'));
 const LaborContent = lazy(() => import('../../labor/page'));
@@ -43,24 +43,25 @@ interface TabItem {
     icon: React.ComponentType<{ className?: string }>;
 }
 
-const tabsConfig: TabItem[] = [
-    { id: 'general', label: 'General', icon: Settings },
-    { id: 'images', label: 'Images', icon: ImageIcon },
-    { id: 'content', label: 'Content', icon: FileText },
-    { id: 'appearance', label: 'Appearance', icon: Palette },
-    { id: 'wizard', label: 'Wizard', icon: Wand2 },
-    { id: 'livraison', label: 'Delivery', icon: Truck },
-    { id: 'main-doeuvre', label: 'Labor', icon: HardHat },
-    { id: 'pdf', label: 'PDF', icon: FileType },
-    { id: 'messaging', label: 'Messaging', icon: MessageSquare },
-    { id: 'emergency', label: 'Emergency', icon: AlertTriangle },
-    { id: 'hint-bubble', label: 'Hint Bubbles', icon: MessageSquare },
-    { id: 'software', label: 'Software', icon: Settings },
-    { id: 'email-verification', label: 'Email Verification', icon: ShieldCheck },
-    { id: 'flow', label: 'Parcours client', icon: Zap },
+const tabsConfigDefs = [
+    { id: 'general' as SettingsSection, labelKey: 'General', icon: Settings },
+    { id: 'images' as SettingsSection, labelKey: 'Images', icon: ImageIcon },
+    { id: 'appearance' as SettingsSection, labelKey: 'Appearance', icon: Palette },
+    { id: 'wizard' as SettingsSection, labelKey: 'Wizard', icon: Wand2 },
+    { id: 'livraison' as SettingsSection, labelKey: 'Delivery', icon: Truck },
+    { id: 'main-doeuvre' as SettingsSection, labelKey: 'Labor', icon: HardHat },
+    { id: 'pdf' as SettingsSection, labelKey: 'PDF', icon: FileType },
+    { id: 'messaging' as SettingsSection, labelKey: 'Messaging', icon: MessageSquare },
+    { id: 'emergency' as SettingsSection, labelKey: 'Emergency', icon: AlertTriangle },
+    { id: 'hint-bubble' as SettingsSection, labelKey: 'Hint Bubbles', icon: MessageSquare },
+    { id: 'software' as SettingsSection, labelKey: 'Software', icon: Settings },
+    { id: 'email-verification' as SettingsSection, labelKey: 'Email Verification', icon: ShieldCheck },
+    { id: 'flow' as SettingsSection, labelKey: 'Parcours client', icon: Zap },
 ];
 
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
+    const { t } = useAdminT();
+    const tabsConfig = tabsConfigDefs.map(tab => ({ ...tab, label: t(tab.labelKey) }));
     const [settings, setSettings] = useState<AppSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [showMobileMenu, setShowMobileMenu] = useState(true);
@@ -112,8 +113,6 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <GeneralContent />;
             case 'images':
                 return <ImagesContent />;
-            case 'content':
-                return <ContentContent />;
             case 'wizard':
                 return <WizardContent />;
             case 'livraison':
@@ -170,7 +169,6 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                         isSelected ? "bg-white/20" :
                                         tab.id === 'general' ? "bg-blue-100/80 text-blue-600" :
                                         tab.id === 'images' ? "bg-purple-100/80 text-purple-600" :
-                                        tab.id === 'content' ? "bg-emerald-100/80 text-emerald-600" :
                                         tab.id === 'emergency' ? "bg-red-100/80 text-red-600" :
                                         tab.id === 'wizard' ? "bg-indigo-100/80 text-indigo-600" :
                                         tab.id === 'livraison' ? "bg-cyan-100/80 text-cyan-600" :
@@ -195,8 +193,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
             <div className="flex-1 min-w-0 flex flex-col pt-2 lg:pt-0">
                 {!isMobile && (
                     <div className="mb-6 md:mb-8 px-4 lg:px-0">
-                        <h2 className="text-2xl md:text-3xl font-black text-[#1a1d21]">System Configuration</h2>
-                        <p className="text-gray-400 font-medium text-xs md:text-sm mt-2">Manage global options, resources, and security settings for your platform.</p>
+                        <h2 className="text-2xl md:text-3xl font-black text-[#1a1d21]">{t('System Configuration')}</h2>
+                        <p className="text-gray-400 font-medium text-xs md:text-sm mt-2">{t('Manage global options, resources, and security settings for your platform.')}</p>
                     </div>
                 )}
                 

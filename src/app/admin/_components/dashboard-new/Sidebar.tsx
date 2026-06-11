@@ -53,7 +53,6 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   settings: '/admin/settings',
   settingsMain: '/admin/settings/general',
   imagesSub: '/admin/settings/images',
-  contentSub: '/admin/settings/content',
   appearanceSub: '/admin/settings/themes',
   wizardSub: '/admin/settings/wizard',
   deliverySub: '/admin/settings/livraison',
@@ -74,7 +73,6 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/settings': 'settings',
   '/admin/settings/general': 'settingsMain',
   '/admin/settings/images': 'imagesSub',
-  '/admin/settings/content': 'contentSub',
   '/admin/settings/themes': 'appearanceSub',
   '/admin/settings/wizard': 'wizardSub',
   '/admin/settings/livraison': 'deliverySub',
@@ -86,7 +84,7 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/notification': 'notifications',
 };
 
-export type SettingsSection = 'general' | 'images' | 'content' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'hint-bubble' | 'messaging' | 'software';
+export type SettingsSection = 'general' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'hint-bubble' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
 
 interface SidebarProps {
   state: SidebarState;
@@ -680,7 +678,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         const subItemToSection: Record<string, SettingsSection> = {
                           'settings-main': 'general',
                           'images-sub': 'images',
-                          'content-sub': 'content',
                           'appearance-sub': 'appearance',
                           'wizard-sub': 'wizard',
                           'delivery-sub': 'livraison',

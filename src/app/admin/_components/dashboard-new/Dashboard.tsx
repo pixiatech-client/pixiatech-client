@@ -31,7 +31,8 @@ import {
   LogOut,
   Maximize2,
   Calendar,
-  LayoutGrid
+  LayoutGrid,
+  ShoppingBag
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -92,8 +93,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
+  const [typeFilter, setTypeFilter] = useState<'all' | 'sale' | 'rental'>('all');
+  const [statsTypeFilter, setStatsTypeFilter] = useState<'all' | 'sale' | 'rental'>('all');
   const [statusFilter, setStatusFilter] = useState<QuoteStatus | 'ALL'>('ALL');
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, typeFilter, selectedDate, dateRange]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -185,16 +193,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   // Stats calculation
   const stats = useMemo(() => {
     if (!allQuotesRaw) return { pending: 0, processed: 0, trashed: 0, archive: 0 };
+    const filtered = statsTypeFilter === 'all'
+      ? allQuotesRaw
+      : allQuotesRaw.filter(q => {
+          const type = q.transactionType === 'rental' ? 'rental' : 'sale';
+          return type === statsTypeFilter;
+        });
     return {
-      pending: allQuotesRaw.filter(q => q.status === 'pending').length,
-      processed: allQuotesRaw.filter(q => q.status === 'processed').length,
-      trashed: allQuotesRaw.filter(q => q.status === 'trashed').length,
-      archive: allQuotesRaw.filter(q => q.status === 'archive').length,
+      pending: filtered.filter(q => q.status === 'pending').length,
+      processed: filtered.filter(q => q.status === 'processed').length,
+      trashed: filtered.filter(q => q.status === 'trashed').length,
+      archive: filtered.filter(q => q.status === 'archive').length,
     };
-  }, [allQuotesRaw]);
+  }, [allQuotesRaw, statsTypeFilter]);
 
   const configuratorStats = useMemo(() => {
-    if (!allQuotesRaw) return { guided: 0, manual: 0, lumi: 0 };
+    if (!allQuotesRaw) return { guided: 0, lumi: 0 };
     
     const resetDateStr = performanceSettings?.configuratorStatsResetAt;
     const resetDate = resetDateStr ? new Date(resetDateStr) : new Date(0);
@@ -206,7 +220,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
 
     return {
       guided: filteredQuotes.filter(q => q.configuratorType === 'guided').length,
-      manual: filteredQuotes.filter(q => q.configuratorType === 'manual').length,
       lumi: filteredQuotes.filter(q => q.configuratorType === 'lumi').length,
     };
   }, [allQuotesRaw, performanceSettings]);
@@ -304,8 +317,77 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
       });
     }
 
+    if (typeFilter !== 'all') {
+      quotes = quotes.filter(q => {
+        const type = q.transactionType === 'rental' ? 'rental' : 'sale';
+        return type === typeFilter;
+      });
+    }
+
     return quotes;
+  }, [allQuotesRaw, statusFilter, selectedDate, dateRange, typeFilter]);
+
+  const itemsPerPage = 5;
+  const totalPages = Math.ceil(filteredQuotes.length / itemsPerPage);
+  const paginatedQuotes = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredQuotes.slice(start, start + itemsPerPage);
+  }, [filteredQuotes, currentPage, itemsPerPage]);
+
+  const counts = useMemo(() => {
+    if (!allQuotesRaw) return { all: 0, sale: 0, rental: 0 };
+    let baseQuotes = [...allQuotesRaw];
+    if (statusFilter !== 'ALL') {
+      baseQuotes = baseQuotes.filter(q => q.status === statusFilter);
+    }
+    if (dateRange.start) {
+      const startStr = dateRange.start.toISOString().split('T')[0];
+      if (dateRange.end) {
+        const endStr = dateRange.end.toISOString().split('T')[0];
+        baseQuotes = baseQuotes.filter(q => {
+          const qDate = q.createdAt?.toDate ? q.createdAt.toDate().toISOString().split('T')[0] : '';
+          return qDate >= startStr && qDate <= endStr;
+        });
+      } else {
+        baseQuotes = baseQuotes.filter(q => {
+          const qDate = q.createdAt?.toDate ? q.createdAt.toDate().toISOString().split('T')[0] : '';
+          return qDate === startStr;
+        });
+      }
+    } else if (selectedDate) {
+      const selectedStr = selectedDate.toISOString().split('T')[0];
+      baseQuotes = baseQuotes.filter(q => {
+        const qDate = q.createdAt?.toDate ? q.createdAt.toDate().toISOString().split('T')[0] : '';
+        return qDate === selectedStr;
+      });
+    }
+
+    const sale = baseQuotes.filter(q => q.transactionType !== 'rental').length;
+    const rental = baseQuotes.filter(q => q.transactionType === 'rental').length;
+    return {
+      all: baseQuotes.length,
+      sale,
+      rental
+    };
   }, [allQuotesRaw, statusFilter, selectedDate, dateRange]);
+
+  const mobileStats = useMemo(() => {
+    if (!allQuotesRaw) return { total: 0, saleCount: 0, saleAmount: 0, rentalCount: 0, rentalAmount: 0 };
+    const active = allQuotesRaw.filter(q => q.status !== 'trashed');
+    const sales = active.filter(q => q.transactionType !== 'rental');
+    const rentals = active.filter(q => q.transactionType === 'rental');
+    
+    const saleAmount = sales.reduce((sum, q) => sum + (q.totalClient || q.totalQuote || 0), 0);
+    const rentalAmount = rentals.reduce((sum, q) => sum + (q.totalClient || q.totalQuote || 0), 0);
+    
+    return {
+      total: active.length,
+      saleCount: sales.length,
+      saleAmount,
+      rentalCount: rentals.length,
+      rentalAmount
+    };
+  }, [allQuotesRaw]);
 
   const performanceStats = useMemo(() => {
     if (!allQuotesRaw) return { percentage: 0, message: t('common.loading'), treated: 0, total: 0 };
@@ -551,27 +633,60 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
           </div>
         </div>
 
-        {/* Mobile Stats Bar - Moved to top */}
-        <div className="md:hidden bg-black/90 backdrop-blur-md rounded-3xl p-4 flex items-center gap-1 shadow-xl border border-white/10 overflow-x-auto no-scrollbar justify-between">
-          <div className="flex flex-col items-center gap-1 min-w-[40px]">
-            <Clock className="w-5 h-5 text-yellow-500" />
-            <span className="text-lg font-bold text-white">{stats.pending}</span>
+        {/* Mobile Stats Card - Adapted to Vente & Location */}
+        <div className="md:hidden grid grid-cols-2 gap-4">
+          {/* Vente Card */}
+          <div className="bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent backdrop-blur-md rounded-[2rem] p-5 border border-emerald-500/20 shadow-lg flex flex-col justify-between h-32 relative overflow-hidden">
+            <div className="absolute right-0 top-0 translate-x-2 -translate-y-2 opacity-5">
+              <ShoppingBag className="w-24 h-24 text-emerald-500" />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+              </div>
+              <span className="text-[10px] font-black text-emerald-500/80 dark:text-emerald-400 uppercase tracking-widest">
+                {t('admin.sale', { defaultValue: 'Vente' })}
+              </span>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">
+                {mobileStats.saleCount} {mobileStats.saleCount > 1 ? 'estimations' : 'estimation'}
+              </p>
+              <p className="text-lg font-black text-gray-900 dark:text-white leading-none">
+                {mobileStats.saleAmount.toLocaleString(locale === 'en' ? 'en-US' : 'fr-FR', {
+                  style: 'currency',
+                  currency: 'EUR',
+                  maximumFractionDigits: 0
+                })}
+              </p>
+            </div>
           </div>
-          <div className="flex flex-col items-center gap-1 min-w-[40px]">
-            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-            <span className="text-lg font-bold text-white">{stats.processed}</span>
-          </div>
-          <div className="flex flex-col items-center gap-1 min-w-[40px]">
-            <Trash2 className="w-5 h-5 text-rose-500" />
-            <span className="text-lg font-bold text-white">{stats.trashed}</span>
-          </div>
-          <div className="flex flex-col items-center gap-1 min-w-[40px]">
-            <Users className="w-5 h-5 text-blue-400" />
-            <span className="text-lg font-bold text-white">{allUsers?.length || 0}</span>
-          </div>
-          <div className="flex flex-col items-center gap-1 min-w-[40px]">
-            <Package className="w-5 h-5 text-purple-400" />
-            <span className="text-lg font-bold text-white">{allProducts?.length || 0}</span>
+
+          {/* Location Card */}
+          <div className="bg-gradient-to-br from-violet-500/10 via-violet-500/5 to-transparent backdrop-blur-md rounded-[2rem] p-5 border border-violet-500/20 shadow-lg flex flex-col justify-between h-32 relative overflow-hidden">
+            <div className="absolute right-0 top-0 translate-x-2 -translate-y-2 opacity-5">
+              <Calendar className="w-24 h-24 text-violet-500" />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-violet-500 dark:text-violet-400" />
+              </div>
+              <span className="text-[10px] font-black text-violet-500/80 dark:text-violet-400 uppercase tracking-widest">
+                {t('admin.rental', { defaultValue: 'Location' })}
+              </span>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">
+                {mobileStats.rentalCount} {mobileStats.rentalCount > 1 ? 'estimations' : 'estimation'}
+              </p>
+              <p className="text-lg font-black text-gray-900 dark:text-white leading-none">
+                {mobileStats.rentalAmount.toLocaleString(locale === 'en' ? 'en-US' : 'fr-FR', {
+                  style: 'currency',
+                  currency: 'EUR',
+                  maximumFractionDigits: 0
+                })}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -582,106 +697,195 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
         </div>
 
         <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold">{t('admin.recentEstimations')}</h3>
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-8">
+            <div className="flex items-center justify-between xl:justify-start gap-4">
+              <h3 className="text-xl font-extrabold tracking-tight">{t('admin.recentEstimations')}</h3>
               <button 
                 onClick={() => router.push('/admin/quote-requests')}
-                className="sm:hidden text-[10px] font-black uppercase tracking-widest text-blue-500"
+                className="xl:hidden text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-600 transition-colors"
               >
                 {t('admin.viewAll')}
               </button>
             </div>
-            <div className="flex items-center gap-3">
-              <CustomSelect
-                options={[
-                  { value: 'ALL', label: t('admin.allStatuses') },
-                  { value: 'Traité', label: t('admin.processed'), color: 'text-emerald-500' },
-                  { value: 'En attente', label: t('admin.pending'), color: 'text-yellow-500' },
-                  { value: 'Corbeille', label: t('admin.trashed'), color: 'text-rose-500' },
-                  { value: 'Archive', label: t('admin.archived'), color: 'text-gray-500' },
-                ]}
-                value={statusFilter}
-                onChange={(val) => setStatusFilter(val as QuoteStatus | 'ALL')}
-                isDark={isDark}
-                placeholder={t('admin.status')}
-                className="w-full sm:min-w-[160px]"
-              />
-              <button 
-                onClick={() => router.push('/admin/quote-requests')}
-                className="hidden sm:flex items-center gap-2 text-xs font-medium text-blue-500 cursor-pointer hover:underline"
+            
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              {/* Type Switcher Tabs */}
+              <div className="flex items-center bg-gray-100 dark:bg-white/5 p-1 rounded-2xl border border-gray-200/50 dark:border-white/5 self-start sm:self-auto">
+                <button
+                  onClick={() => setTypeFilter('all')}
+                  className={`relative px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 ${
+                    typeFilter === 'all'
+                      ? 'bg-white dark:bg-[#202020] text-blue-500 shadow-sm'
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
                 >
-                  {t('admin.viewAll')} <ChevronRight className="w-3 h-3" />
+                  <span>{t('admin.all', { defaultValue: 'Tous' })}</span>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-colors ${
+                    typeFilter === 'all' ? 'bg-blue-500/10 text-blue-500' : 'bg-gray-200 dark:bg-white/10 text-gray-500'
+                  }`}>
+                    {counts.all}
+                  </span>
                 </button>
+                
+                <button
+                  onClick={() => setTypeFilter('sale')}
+                  className={`relative px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 ${
+                    typeFilter === 'sale'
+                      ? 'bg-white dark:bg-[#202020] text-emerald-500 shadow-sm'
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>{t('admin.sale', { defaultValue: 'Vente' })}</span>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-colors ${
+                    typeFilter === 'sale' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-gray-200 dark:bg-white/10 text-gray-500'
+                  }`}>
+                    {counts.sale}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setTypeFilter('rental')}
+                  className={`relative px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 ${
+                    typeFilter === 'rental'
+                      ? 'bg-white dark:bg-[#202020] text-violet-500 shadow-sm'
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>{t('admin.rental', { defaultValue: 'Location' })}</span>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-colors ${
+                    typeFilter === 'rental' ? 'bg-violet-500/10 text-violet-500' : 'bg-gray-200 dark:bg-white/10 text-gray-500'
+                  }`}>
+                    {counts.rental}
+                  </span>
+                </button>
+              </div>
+
+              {/* Status and Action Buttons */}
+              <div className="flex items-center gap-3">
+                <CustomSelect
+                  options={[
+                    { value: 'ALL', label: t('admin.allStatuses') },
+                    { value: 'Traité', label: t('admin.processed'), color: 'text-emerald-500' },
+                    { value: 'En attente', label: t('admin.pending'), color: 'text-yellow-500' },
+                    { value: 'Corbeille', label: t('admin.trashed'), color: 'text-rose-500' },
+                    { value: 'Archive', label: t('admin.archived'), color: 'text-gray-500' },
+                  ]}
+                  value={statusFilter}
+                  onChange={(val) => setStatusFilter(val as QuoteStatus | 'ALL')}
+                  isDark={isDark}
+                  placeholder={t('admin.status')}
+                  className="w-full sm:min-w-[160px]"
+                />
+                <button 
+                  onClick={() => router.push('/admin/quote-requests')}
+                  className="hidden xl:flex items-center gap-2 text-xs font-semibold text-blue-500 hover:text-blue-600 cursor-pointer hover:underline whitespace-nowrap"
+                >
+                  {t('admin.viewAll')} <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
           {/* Desktop View */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className={`text-left text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                  <th className="pb-4 font-semibold">{t('admin.clientIdHeader')}</th>
-                  <th className="pb-4 font-semibold">{t('admin.submissionDateHeader')}</th>
-                  <th className="pb-4 font-semibold">{t('admin.status')}</th>
-                  <th className="pb-4 font-semibold text-right">{t('admin.status')}</th>
+                <tr className={`text-left text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'} border-b border-gray-100 dark:border-white/5`}>
+                  <th className="pb-4 font-semibold">{t('admin.clientIdHeader', { defaultValue: 'Client' })}</th>
+                  <th className="pb-4 font-semibold">{t('admin.submissionDateHeader', { defaultValue: 'Date de soumission' })}</th>
+                  <th className="pb-4 font-semibold">{t('admin.type', { defaultValue: 'Type' })}</th>
+                  <th className="pb-4 font-semibold">{t('admin.amountHeader', { defaultValue: 'Montant' })}</th>
+                  <th className="pb-4 font-semibold">{t('admin.status', { defaultValue: 'Statut' })}</th>
+                  <th className="pb-4 font-semibold text-right">{t('admin.actions', { defaultValue: 'Actions' })}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                {filteredQuotes.length > 0 ? filteredQuotes.slice(0, 4).map((quote) => (
-                  <tr key={quote.id} className="group hover:bg-theme-sidebar-active-bg/10 transition-colors">
-                    <td className="py-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] ${isDark ? 'bg-white/5 text-white' : 'bg-gray-100 text-gray-900 group-hover:bg-zinc-800 group-hover:text-white'} transition-colors`}>
-                          {quote.id.substring(0,3).toUpperCase()}
+                {paginatedQuotes.length > 0 ? paginatedQuotes.map((quote) => {
+                  const isRental = quote.transactionType === 'rental';
+                  const amountVal = quote.totalClient || quote.totalQuote || 0;
+                  return (
+                    <tr key={quote.id} className="group hover:bg-theme-sidebar-active-bg/5 transition-colors">
+                      <td className="py-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] ${
+                            isDark ? 'bg-white/5 text-white border border-white/5' : 'bg-gray-100 text-gray-900 shadow-sm'
+                          } transition-colors group-hover:bg-blue-500 group-hover:text-white`}>
+                            {quote.id.substring(0,3).toUpperCase()}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold group-hover:text-blue-500 transition-colors">
+                              {quote.client?.companyName || t('admin.noNameClient')}
+                            </span>
+                            <span className="text-[10px] text-gray-400 uppercase tracking-tighter">
+                              ID: {quote.id.substring(0, 8)}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold group-hover:text-blue-500 transition-colors">{quote.client?.companyName || t('admin.noNameClient')}</span>
-                          <span className="text-[10px] text-gray-400 uppercase tracking-tighter">ID: {quote.id.substring(0, 8)}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4">
-                      <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500 group-hover:text-zinc-600'} transition-colors`}>
-                        {quote.createdAt?.toDate ? IntlHelpers.formatDate(quote.createdAt.toDate(), locale, { day: 'numeric', month: 'long', year: 'numeric' }) : t('admin.unknownDate')}
-                      </span>
-                    </td>
-                    <td className="py-4">
-                      <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-                        quote.status === 'processed' || quote.status === 'delivered' ? 'bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20' :
-                        quote.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 group-hover:bg-yellow-500/20' :
-                        quote.status === 'trashed' ? 'bg-red-500/10 text-red-500' :
-                        'bg-gray-500/10 text-gray-500 group-hover:bg-zinc-800'
-                      } transition-colors`}>
-                        {translateStatus(quote.status, locale)}
-                      </span>
-                    </td>
-                    <td className="py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link 
-                          href={`/admin/quotes/${quote.id}`}
-                          className="p-2 rounded-lg text-gray-400 hover:bg-zinc-800 hover:text-white transition-colors"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                        {(rawRole === 'admin' || userRole === 'Administrateur') ? (
-                          <button 
-                            onClick={() => handleDelete(quote.id)}
-                            disabled={isDeleting === quote.id}
-                            className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50"
-                          >
-                            {isDeleting === quote.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                          </button>
+                      </td>
+                      <td className="py-4">
+                        <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500 group-hover:text-zinc-600'} transition-colors`}>
+                          {quote.createdAt?.toDate 
+                            ? IntlHelpers.formatDate(quote.createdAt.toDate(), locale, { day: 'numeric', month: 'long', year: 'numeric' }) 
+                            : t('admin.unknownDate')}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        {isRental ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-violet-500/10 text-violet-600 dark:text-violet-400 dark:bg-violet-500/20">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {t('admin.rental', { defaultValue: 'Location' })}
+                          </span>
                         ) : (
-                          <button className="p-2 rounded-lg text-gray-400 hover:bg-zinc-800 hover:text-white transition-colors">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/20">
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                            {t('admin.sale', { defaultValue: 'Vente' })}
+                          </span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                )) : (
+                      </td>
+                      <td className="py-4">
+                        <span className="text-sm font-extrabold text-blue-500 dark:text-blue-400">
+                          {amountVal > 0 ? amountVal.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '—'}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+                          quote.status === 'processed' || quote.status === 'delivered' ? 'bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20' :
+                          quote.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 group-hover:bg-yellow-500/20' :
+                          quote.status === 'trashed' ? 'bg-red-500/10 text-red-500' :
+                          'bg-gray-500/10 text-gray-500 group-hover:bg-zinc-800'
+                        } transition-colors`}>
+                          {translateStatus(quote.status, locale)}
+                        </span>
+                      </td>
+                      <td className="py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link 
+                            href={`/admin/quotes/${quote.id}`}
+                            className="p-2 rounded-lg text-gray-400 hover:bg-zinc-800 hover:text-white transition-colors"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+                          {(rawRole === 'admin' || userRole === 'Administrateur') ? (
+                            <button 
+                              onClick={() => handleDelete(quote.id)}
+                              disabled={isDeleting === quote.id}
+                              className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                            >
+                              {isDeleting === quote.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            </button>
+                          ) : (
+                            <button className="p-2 rounded-lg text-gray-400 hover:bg-zinc-800 hover:text-white transition-colors">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }) : (
                   <tr>
-                    <td colSpan={4} className={`py-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                    <td colSpan={6} className={`py-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                       {t('admin.noEstimationFound')}
                     </td>
                   </tr>
@@ -692,46 +896,71 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
 
           {/* Mobile View - Card based accordion layout */}
           <div className="md:hidden space-y-3">
-            {filteredQuotes.length > 0 ? filteredQuotes.slice(0, 4).map((quote) => {
+            {paginatedQuotes.length > 0 ? paginatedQuotes.map((quote) => {
               const isExpanded = expandedId === quote.id;
-               const dateStr = quote.createdAt?.toDate ? IntlHelpers.formatDate(quote.createdAt.toDate(), locale, { day: 'numeric', month: 'long' }) : t('admin.unknownDate');
+              const isRental = quote.transactionType === 'rental';
+              const amountVal = quote.totalClient || quote.totalQuote || 0;
+              const dateStr = quote.createdAt?.toDate ? IntlHelpers.formatDate(quote.createdAt.toDate(), locale, { day: 'numeric', month: 'long' }) : t('admin.unknownDate');
               
               return (
                 <div 
                   key={quote.id} 
                   className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
-                    isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100'
+                    isDark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-100 shadow-sm'
                   } ${isExpanded ? (isDark ? 'ring-1 ring-blue-500/50' : 'ring-1 ring-blue-500/30 shadow-md') : ''}`}
                 >
                   <div 
-                    className="p-4 flex items-center justify-between cursor-pointer"
+                    className="p-4 flex flex-col gap-3 cursor-pointer"
                     onClick={() => setExpandedId(isExpanded ? null : quote.id)}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${
-                        isDark ? 'bg-white/10 text-white' : 'bg-white text-gray-900 shadow-sm'
-                      }`}>
-                        {quote.id.substring(0,3).toUpperCase()}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${
+                          isDark ? 'bg-white/10 text-white' : 'bg-white text-gray-900 shadow-sm'
+                        }`}>
+                          {quote.id.substring(0,3).toUpperCase()}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold truncate max-w-[150px]">{quote.client?.companyName || t('admin.noNameClient')}</span>
+                          <span className="text-[10px] text-gray-400 uppercase font-medium">{dateStr}</span>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold truncate max-w-[150px]">{quote.client?.companyName || t('admin.noNameClient')}</span>
-                        <span className="text-[10px] text-gray-400 uppercase font-medium">{dateStr}</span>
+                      
+                      <div className="flex flex-col items-end gap-1.5">
+                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${
+                          quote.status === 'processed' || quote.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-500' :
+                          quote.status === 'pending' ? 'bg-yellow-500/20 text-yellow-500' :
+                          quote.status === 'trashed' ? 'bg-red-500/20 text-red-500' :
+                          'bg-gray-500/20 text-gray-500'
+                        }`}>
+                          {translateStatus(quote.status, locale)}
+                        </span>
+                        
+                        <div className="flex items-center gap-2">
+                          {isRental ? (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-violet-500/10 text-violet-500 dark:bg-violet-500/20">
+                              <Calendar className="w-2.5 h-2.5" />
+                              {t('admin.rental', { defaultValue: 'Location' })}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/20">
+                              <ShoppingBag className="w-2.5 h-2.5" />
+                              {t('admin.sale', { defaultValue: 'Vente' })}
+                            </span>
+                          )}
+                          <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-3">
-                      <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
-                        quote.status === 'processed' || quote.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-500' :
-                        quote.status === 'pending' ? 'bg-yellow-500/20 text-yellow-500' :
-                        quote.status === 'trashed' ? 'bg-red-500/20 text-red-500' :
-                        'bg-gray-500/20 text-gray-500'
-                      }`}>
-                        {translateStatus(quote.status, locale)}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-200/50 dark:border-white/5">
+                      <span className="text-[10px] text-gray-400 uppercase tracking-wider">{t('admin.estimatedAmount', { defaultValue: 'Montant' })}</span>
+                      <span className="text-xs font-black text-blue-500 dark:text-blue-400">
+                        {amountVal > 0 ? amountVal.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '—'}
                       </span>
-                      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                     </div>
                   </div>
-
+                  
                   <AnimatePresence>
                     {isExpanded && (
                       <motion.div
@@ -747,28 +976,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">{t('admin.identifier')}</p>
                                 <p className="text-[11px] font-medium text-gray-500 truncate" title={quote.id}>{quote.id}</p>
                               </div>
-                              <div className="text-right shrink-0">
-                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">{t('admin.estimatedAmount')}</p>
-                                <p className="text-xs font-black text-gray-900">
-                                  {quote.totalQuote ? quote.totalQuote.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '—'}
-                                </p>
-                              </div>
                             </div>
                           </div>
                           
                           <div className="flex items-center gap-2 pt-2">
                             <Link 
                               href={`/admin/quotes/${quote.id}`}
-                              className="flex-1 py-3 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                              className="flex-1 py-3 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all dark:bg-white dark:text-black"
                             >
                               <Eye className="w-4 h-4" />
-                               <span>{t('admin.detailsButton')}</span>
+                              <span>{t('admin.detailsButton')}</span>
                             </Link>
                             {(rawRole === 'admin' || userRole === 'Administrateur') ? (
                               <button 
                                 onClick={() => handleDelete(quote.id)}
                                 disabled={isDeleting === quote.id}
-                                className={`p-3 rounded-xl border flex items-center justify-center bg-red-50 border-red-100 active:scale-95 transition-all disabled:opacity-50`}
+                                className={`p-3 rounded-xl border flex items-center justify-center bg-red-50 border-red-100 active:scale-95 transition-all disabled:opacity-50 dark:bg-red-950/20 dark:border-red-900/30`}
                               >
                                 {isDeleting === quote.id ? <RefreshCw className="w-4 h-4 animate-spin text-red-500" /> : <Trash2 className="w-4 h-4 text-red-500" />}
                               </button>
@@ -783,15 +1006,95 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                     )}
                   </AnimatePresence>
                 </div>
-              )
+              );
             }) : (
-                <div className={`py-12 text-center rounded-2xl border border-dashed ${isDark ? 'border-white/10 text-gray-500' : 'border-gray-200 text-gray-400'}`}>
-                  {t('admin.noRecentEstimation')}
-                </div>
+              <div className={`py-12 text-center rounded-2xl border border-dashed ${isDark ? 'border-white/10 text-gray-500' : 'border-gray-200 text-gray-400'}`}>
+                {t('admin.noRecentEstimation')}
+              </div>
             )}
           </div>
 
-        </div>
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-6 pt-6 border-t border-gray-100 dark:border-white/5 gap-4">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {locale === 'en' ? (
+                  <>
+                    Showing <span className="font-bold text-gray-900 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {Math.min(currentPage * itemsPerPage, filteredQuotes.length)}
+                    </span>{" "}
+                    of <span className="font-bold text-gray-900 dark:text-white">{filteredQuotes.length}</span> estimates
+                  </>
+                ) : (
+                  <>
+                    Affichage de <span className="font-bold text-gray-900 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}</span> à{" "}
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {Math.min(currentPage * itemsPerPage, filteredQuotes.length)}
+                    </span>{" "}
+                    sur <span className="font-bold text-gray-900 dark:text-white">{filteredQuotes.length}</span> estimations
+                  </>
+                )}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`p-2 rounded-xl border transition-all duration-300 ${
+                    currentPage === 1
+                      ? 'text-gray-300 border-gray-100 dark:text-zinc-600 dark:border-white/5 cursor-not-allowed'
+                      : 'text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:border-white/10 dark:hover:bg-white/5 dark:hover:text-white'
+                  }`}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => {
+                  if (
+                    totalPages > 6 &&
+                    pageNum !== 1 &&
+                    pageNum !== totalPages &&
+                    Math.abs(pageNum - currentPage) > 1
+                  ) {
+                    if (pageNum === 2 && currentPage > 3) {
+                      return <span key="ellipsis-start" className="px-2 text-gray-400">...</span>;
+                    }
+                    if (pageNum === totalPages - 1 && currentPage < totalPages - 2) {
+                      return <span key="ellipsis-end" className="px-2 text-gray-400">...</span>;
+                    }
+                    return null;
+                  }
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 text-xs font-bold rounded-xl transition-all duration-300 ${
+                        currentPage === pageNum
+                          ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
+                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className={`p-2 rounded-xl border transition-all duration-300 ${
+                    currentPage === totalPages
+                      ? 'text-gray-300 border-gray-100 dark:text-zinc-600 dark:border-white/5 cursor-not-allowed'
+                      : 'text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:border-white/10 dark:hover:bg-white/5 dark:hover:text-white'
+                  }`}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+          </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
@@ -985,16 +1288,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
               <span className="text-lg font-black text-yellow-600 dark:text-yellow-500">{configuratorStats.guided}</span>
             </div>
 
-            <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-blue-500/10 to-transparent border border-blue-500/20 hover:scale-[1.02] transition-transform">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                  <span className="text-blue-500 text-lg">⚙️</span>
-                </div>
-                <span className="text-sm font-bold">{t('admin.configuratorManual')}</span>
-              </div>
-              <span className="text-lg font-black text-blue-600 dark:text-blue-500">{configuratorStats.manual}</span>
-            </div>
-
             <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-purple-500/10 to-transparent border border-purple-500/20 hover:scale-[1.02] transition-transform">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
@@ -1007,30 +1300,55 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
           </div>
         </div>
 
-        <div className="hidden md:flex bg-black/90 backdrop-blur-md rounded-3xl p-4 items-center gap-1 shadow-2xl border border-white/10 overflow-x-auto no-scrollbar justify-between">
-          <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
-            <Clock className="w-5 h-5 text-yellow-500 group-hover:drop-shadow-[0_0_8px_rgba(234,179,8,0.8)] transition-all" />
-            <span className="text-lg font-bold text-white">{stats.pending}</span>
+        <div className="hidden md:flex bg-black/90 backdrop-blur-md rounded-3xl p-3 items-center gap-1 shadow-2xl border border-white/10 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 pr-3 border-r border-white/10 shrink-0">
+            {[
+              { key: 'all', label: 'Tous' },
+              { key: 'sale', label: 'Vente' },
+              { key: 'rental', label: 'Location' },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setStatsTypeFilter(key as 'all' | 'sale' | 'rental')}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                  statsTypeFilter === key
+                    ? key === 'all'
+                      ? 'bg-white/15 text-white shadow-sm'
+                      : key === 'sale'
+                        ? 'bg-emerald-500/20 text-emerald-400 shadow-sm shadow-emerald-500/10'
+                        : 'bg-violet-500/20 text-violet-400 shadow-sm shadow-violet-500/10'
+                    : 'text-white/40 hover:text-white/80'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
-            <CheckCircle2 className="w-5 h-5 text-emerald-500 group-hover:drop-shadow-[0_0_8_rgba(34,197,94,0.8)] transition-all" />
-            <span className="text-lg font-bold text-white">{stats.processed}</span>
-          </div>
-          <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
-            <Trash2 className="w-5 h-5 text-rose-500 group-hover:drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] transition-all" />
-            <span className="text-lg font-bold text-white">{stats.trashed}</span>
-          </div>
-          <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
-            <Users className="w-5 h-5 text-blue-400 group-hover:drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] transition-all" />
-            <span className="text-lg font-bold text-white">{allUsers?.length || 0}</span>
-          </div>
-          <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
-            <Package className="w-5 h-5 text-purple-400 group-hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] transition-all" />
-            <span className="text-lg font-bold text-white">{allProducts?.length || 0}</span>
-          </div>
-          <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
-            <Archive className="w-5 h-5 text-indigo-400 group-hover:drop-shadow-[0_0_8px_rgba(129,140,248,0.8)] transition-all" />
-            <span className="text-lg font-bold text-white">{stats.archive}</span>
+          <div className="flex items-center gap-1 ml-1">
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+              <Clock className="w-5 h-5 text-yellow-500 group-hover:drop-shadow-[0_0_8px_rgba(234,179,8,0.8)] transition-all" />
+              <span className="text-lg font-bold text-white">{stats.pending}</span>
+            </div>
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 group-hover:drop-shadow-[0_0_8_rgba(34,197,94,0.8)] transition-all" />
+              <span className="text-lg font-bold text-white">{stats.processed}</span>
+            </div>
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+              <Trash2 className="w-5 h-5 text-rose-500 group-hover:drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] transition-all" />
+              <span className="text-lg font-bold text-white">{stats.trashed}</span>
+            </div>
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+              <Users className="w-5 h-5 text-blue-400 group-hover:drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] transition-all" />
+              <span className="text-lg font-bold text-white">{allUsers?.length || 0}</span>
+            </div>
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+              <Package className="w-5 h-5 text-purple-400 group-hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] transition-all" />
+              <span className="text-lg font-bold text-white">{allProducts?.length || 0}</span>
+            </div>
+            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[40px]">
+              <Archive className="w-5 h-5 text-indigo-400 group-hover:drop-shadow-[0_0_8px_rgba(129,140,248,0.8)] transition-all" />
+              <span className="text-lg font-bold text-white">{stats.archive}</span>
+            </div>
           </div>
         </div>
 

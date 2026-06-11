@@ -7,10 +7,6 @@
   "maxRentalHeight": 5,
   "maxProductsPerQuote": 3,
   "previewScreenImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Final-Comp.mp4",
-  "previewHumanScaleImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/149724.svg",
-  "technicianImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Technicien-1.png",
-  "deliveryImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Livraison.png",
-  "congratulationsImageUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Felicitations.png",
   "emergencyStopEnabled": false,
   "emergencyReturnUrl": "https://mahboubidz.com/",
   "emergencyStopMessage": "Pour des raisons de maintenance, notre outil d'estimation en ligne est actuellement suspendu. Veuillez nous excuser pour la gêne occasionnée.",
@@ -47,7 +43,5 @@
     "en": "Please specify the installation environment, so we can offer you the most suitable solution."
   },
   "isDeliveryStepEnabled": true,
-  "isInstallationStepEnabled": true,
-  "paymentIconUrl": "https://pixiatech.com/wp-content/uploads/2025/11/credit-cards-payment-1.png",
-  "cardLogoUrl": "https://pixiatech.com/wp-content/uploads/2025/11/Fichier-7-copie-1.png"
+  "isInstallationStepEnabled": true
 }

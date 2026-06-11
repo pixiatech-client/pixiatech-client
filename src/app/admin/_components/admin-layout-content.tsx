@@ -30,6 +30,8 @@ import {
   FileType,
   Calculator,
   LogIn,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import { logout, getThemes, updateSettings, getSettings, updateUser, type UserRole, getUsers, saveSidebarConfig } from '@/app/admin/actions';
@@ -617,8 +619,11 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   { id: 'labor', label: t('admin.settingsMenu.labor'), icon: HardHat, color: 'text-orange-600', bg: 'bg-orange-100/80', href: '/admin/settings/main-doeuvre' },
                   { id: 'pdf', label: t('admin.settingsMenu.pdf'), icon: FileType, color: 'text-rose-600', bg: 'bg-rose-100/80', href: '/admin/settings/pdf' },
                   { id: 'messaging', label: t('admin.settingsMenu.messaging'), icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-100/80', href: '/admin/settings/messaging' },
-{ id: 'emergency', label: 'Emergency', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100/80', href: '/admin/settings/emergency' },
-{ id: 'software', label: 'Software', icon: Settings, color: 'text-slate-600', bg: 'bg-slate-100/80', href: '/admin/settings/software' },
+                  { id: 'emergency', label: t('admin.settingsMenu.emergency', { defaultValue: 'Urgence' }), icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100/80', href: '/admin/settings/emergency' },
+                  { id: 'hint-bubble', label: t('admin.hintBubbles', { defaultValue: "Bulles d'aide" }), icon: MessageSquare, color: 'text-amber-600', bg: 'bg-amber-100/80', href: '/admin/settings/hint-bubble' },
+                  { id: 'software', label: t('admin.settingsMenu.software', { defaultValue: 'Logiciel' }), icon: Settings, color: 'text-slate-600', bg: 'bg-slate-100/80', href: '/admin/settings/software' },
+                  { id: 'email-verification', label: t('admin.emailVerification', { defaultValue: 'Vérification Email' }), icon: ShieldCheck, color: 'text-indigo-600', bg: 'bg-indigo-100/80', href: '/admin/settings/email-verification' },
+                  { id: 'flow', label: t('admin.settingsMenu.flow', { defaultValue: 'Parcours client' }), icon: Zap, color: 'text-orange-600', bg: 'bg-orange-100/80', href: '/admin/settings/flow' },
                  ].map((item) => (
                   <Link
                     key={item.id}

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+
 import { Pack, RenterDetails } from '@/lib/signature-types';
 import { useI18n } from '@/lib/i18n';
 import { getContractTemplate } from '@/lib/contract-templates';
@@ -80,18 +81,18 @@ export default function ContractDocument({
 
   return (
     <div className="w-full flex flex-col">
-      <div 
-        className={isPdfMode 
-          ? "w-full text-xs sm:text-sm text-zinc-700 leading-relaxed bg-white p-6" 
+      <div
+        className={isPdfMode
+          ? "w-full text-xs sm:text-sm text-zinc-700 leading-relaxed bg-white p-6"
           : "w-full max-h-[500px] overflow-y-auto border border-zinc-200 rounded-xl bg-zinc-50/40 p-4 sm:p-6 text-xs sm:text-sm text-zinc-700 leading-relaxed custom-scrollbar shadow-inner"
         }
         id={isPdfMode ? undefined : "document-scroll-viewport"}
       >
-        <div className={isPdfMode 
+        <div className={isPdfMode
           ? "max-w-2xl mx-auto bg-white font-sans text-zinc-800"
           : "max-w-2xl mx-auto bg-white border border-zinc-200/80 p-6 sm:p-10 rounded-lg font-sans shadow-md text-zinc-800"
         }>
-          
+
           <div className="text-center mb-8 border-b border-zinc-100 pb-5">
             <h1 className="text-sm sm:text-base font-bold text-zinc-900 tracking-tight font-heading uppercase leading-snug">
               {t('signature.contractDocTitle')}
@@ -112,19 +113,19 @@ export default function ContractDocument({
               </p>
 
               <div className="grid grid-cols-2 gap-6 relative font-sans">
-                
+
                 <div className="flex flex-col items-center text-center">
                   <span className="text-zinc-400 font-mono text-[9px] uppercase">
                     {t('signature.forPixiatech')}
                   </span>
                   <strong className="text-zinc-900 mt-1 block font-heading">PIXIATECH (SASU)</strong>
-                  
+
                   <div className="relative w-32 h-24 my-2 flex items-center justify-center bg-zinc-50 rounded-lg border border-zinc-200 overflow-hidden">
-                    
+
                     <svg className="absolute w-24 h-12 text-blue-600 opacity-95 stroke-current fill-none stroke-[1.5]" viewBox="0 0 100 50">
                       <path d="M10,25 C20,10 25,45 35,28 C45,10 50,42 62,30 C75,15 80,40 90,25" />
                     </svg>
-                    
+
                     <div className="absolute w-18 h-18 border-2 border-double border-blue-600/50 rounded-full flex flex-col items-center justify-center text-blue-600/75 rotate-12 scale-90 pointer-events-none">
                       <span className="text-[5px] font-bold font-mono tracking-widest uppercase">PIXIATECH</span>
                       <span className="text-[6px] font-extrabold font-sans">ST-OUEN</span>
@@ -146,22 +147,22 @@ export default function ContractDocument({
                     {t('signature.theClient')}
                   </span>
                   <strong className="text-zinc-900 mt-1 block">{renter.company || 'bilama'}</strong>
-                  
+
                   <div className="relative w-32 h-24 my-2 flex items-center justify-center bg-zinc-50 border border-zinc-200 rounded-lg overflow-hidden">
-                    
+
                     {isValidated && signatureDataUrl ? (
-                      <img 
-                        src={signatureDataUrl} 
-                        alt={t('signature.clientSignatureAlt')} 
+                      <img
+                        src={signatureDataUrl}
+                        alt={t('signature.clientSignatureAlt')}
                         className="max-w-full max-h-full object-contain mix-blend-multiply transition-all duration-300"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                        <div className="flex flex-col items-center justify-center p-2 text-zinc-400 text-center pointer-events-none select-none">
-                          <div className="w-10 h-0.5 border-t border-dashed border-zinc-300 mb-1"></div>
-                          <span className="text-[8px] font-mono tracking-wide uppercase">{t('signature.pending')}</span>
-                          <span className="text-[7px] text-zinc-400 mt-1 leading-none">{t('signature.completeBelow')}</span>
-                        </div>
+                      <div className="flex flex-col items-center justify-center p-2 text-zinc-400 text-center pointer-events-none select-none">
+                        <div className="w-10 h-0.5 border-t border-dashed border-zinc-300 mb-1"></div>
+                        <span className="text-[8px] font-mono tracking-wide uppercase">{t('signature.pending')}</span>
+                        <span className="text-[7px] text-zinc-400 mt-1 leading-none">{t('signature.completeBelow')}</span>
+                      </div>
                     )}
 
                   </div>
@@ -179,10 +180,10 @@ export default function ContractDocument({
               </div>
 
               <div className="mt-8 border-t border-zinc-150 pt-3 text-center">
-                  <span className="text-[8px] text-zinc-400 tracking-wider inline-flex items-center gap-1 bg-zinc-50 border border-zinc-200 px-3 py-1 rounded-full uppercase">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block animate-pulse"></span>
-                    {t('signature.certifiedSecure')}
-                  </span>
+                <span className="text-[8px] text-zinc-400 tracking-wider inline-flex items-center gap-1 bg-zinc-50 border border-zinc-200 px-3 py-1 rounded-full uppercase">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block animate-pulse"></span>
+                  {t('signature.certifiedSecure')}
+                </span>
               </div>
 
             </div>

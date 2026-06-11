@@ -18,7 +18,7 @@ import { buildSupplierEmailHtml } from '@/lib/email-templates';
 
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings } from '@/lib/types';
 import { DEFAULT_PALETTES } from '@/lib/color-palettes';
-import { DocumentData, Timestamp } from 'firebase-admin/firestore';
+import { DocumentData, Timestamp, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import fr from '@/lib/locales/fr.json';
 import en from '@/lib/locales/en.json';
 import { getQuoteStats, updateStatsOnStatusChange, updateStatsOnDelete, resyncStats } from '@/lib/statsService';
@@ -1023,6 +1023,14 @@ async function processQuoteSnapshot(docSnap: admin.DocumentSnapshot): Promise<Qu
   return structuredQuote;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Phase 4 — In-memory cache for legacy quote counts
+// Legacy quotes (documents without transactionType field) are
+// relatively static — caching avoids redundant full collection scans
+// ─────────────────────────────────────────────────────────────
+let _legacyCountsCache: { data: { counts: Record<string, number>; sums: Record<string, number> } | null; timestamp: number; supplierId: string | null } | null = null;
+const LEGACY_CACHE_TTL_MS = 30_000; // 30 seconds
+
 export async function getQuoteCounts(clientSupplierId?: string, transactionType?: 'sale' | 'rental'): Promise<{ counts: Record<string, number>, sums: Record<string, number> }> {
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return { counts: {}, sums: {} };
@@ -1034,47 +1042,84 @@ export async function getQuoteCounts(clientSupplierId?: string, transactionType?
   const statuses = ['pending', 'processed', 'returned', 'in_progress', 'sent', 'archived', 'trashed', 'rented'];
   const counts: Record<string, number> = {};
   const sums: Record<string, number> = {};
-  
+
   statuses.forEach(s => { counts[s] = 0; sums[s] = 0; });
 
-  // If filtering by supplier or transactionType, manual count is required since stats are global
+  // If filtering by supplier or transactionType, use count() aggregation + lightweight sum query
   if (effectiveSupplierId || transactionType) {
     try {
-      let q: admin.Query = adminDb.collection('quotes');
-      if (effectiveSupplierId) {
-        q = q.where('supplierId', '==', effectiveSupplierId);
-      }
-      if (transactionType) {
-        q = q.where('transactionType', '==', transactionType);
-      }
-      const snap = await q.get();
-      snap.forEach(doc => {
-        const data = doc.data();
-        if (statuses.includes(data.status)) {
-          counts[data.status]++;
-          sums[data.status] += (data.totalClient || data.totalQuote || 0);
+      // Phase 1: per-status counts via Firestore count() aggregation (index-only, no doc reads)
+      const countPromises = statuses.map(async (status) => {
+        let q: admin.Query = adminDb.collection('quotes').where('status', '==', status);
+        if (effectiveSupplierId) q = q.where('supplierId', '==', effectiveSupplierId);
+        if (transactionType) q = q.where('transactionType', '==', transactionType);
+        const snap = await q.count().get();
+        counts[status] = snap.data().count || 0;
+      });
+      await Promise.all(countPromises);
+
+      // Phase 2: lightweight sum query — only transfer 2 numeric fields per doc
+      let sumQ: admin.Query = adminDb.collection('quotes');
+      if (effectiveSupplierId) sumQ = sumQ.where('supplierId', '==', effectiveSupplierId);
+      if (transactionType) sumQ = sumQ.where('transactionType', '==', transactionType);
+      const sumSnap = await sumQ.select('status', 'totalClient', 'totalQuote').get();
+      sumSnap.forEach(doc => {
+        const d = doc.data();
+        if (statuses.includes(d.status)) {
+          sums[d.status] += (d.totalClient || d.totalQuote || 0);
         }
       });
 
-      // For 'sale' mode: also count legacy quotes that have NO transactionType field set
-      // (documents created before the Sale/Rental separation feature was added)
+      // Phase 3: legacy quotes (no transactionType field) — cached to avoid repeated scans
       if (transactionType === 'sale') {
-        let legacyQ: admin.Query = adminDb.collection('quotes');
-        if (effectiveSupplierId) {
-          legacyQ = legacyQ.where('supplierId', '==', effectiveSupplierId);
-        }
-        // Firestore: documents where the field doesn't exist satisfy '==' with null
-        // We use a workaround: fetch docs where transactionType is not set by using != 'rental'
-        // and then excluding those that already have 'sale' (already counted above)
-        legacyQ = legacyQ.where('transactionType', 'not-in', ['sale', 'rental']);
-        const legacySnap = await legacyQ.get();
-        legacySnap.forEach(doc => {
-          const data = doc.data();
-          if (statuses.includes(data.status)) {
-            counts[data.status]++;
-            sums[data.status] += (data.totalClient || data.totalQuote || 0);
+        const now = Date.now();
+        const cacheValid = _legacyCountsCache && _legacyCountsCache.supplierId === effectiveSupplierId && (now - _legacyCountsCache.timestamp) < LEGACY_CACHE_TTL_MS;
+
+        if (cacheValid && _legacyCountsCache!.data) {
+          const cached = _legacyCountsCache!.data;
+          for (const s of statuses) {
+            counts[s] += cached.counts[s] || 0;
+            sums[s] += cached.sums[s] || 0;
           }
-        });
+        } else {
+          // Use count() aggregation for legacy counts
+          const legacyCountPromises = statuses.map(async (status) => {
+            let q: admin.Query = adminDb.collection('quotes')
+              .where('status', '==', status)
+              .where('transactionType', 'not-in', ['sale', 'rental']);
+            if (effectiveSupplierId) q = q.where('supplierId', '==', effectiveSupplierId);
+            const snap = await q.count().get();
+            return { status, count: snap.data().count || 0 };
+          });
+          const legacyCountResults = await Promise.all(legacyCountPromises);
+          legacyCountResults.forEach(r => { counts[r.status] += r.count; });
+
+          // Lightweight sum query for legacy docs
+          let legacySumQ: admin.Query = adminDb.collection('quotes')
+            .where('transactionType', 'not-in', ['sale', 'rental']);
+          if (effectiveSupplierId) legacySumQ = legacySumQ.where('supplierId', '==', effectiveSupplierId);
+          const legacySumSnap = await legacySumQ.select('status', 'totalClient', 'totalQuote').get();
+          const legacyCounts: Record<string, number> = {};
+          const legacySums: Record<string, number> = {};
+          statuses.forEach(s => { legacyCounts[s] = 0; legacySums[s] = 0; });
+          legacySumSnap.forEach(doc => {
+            const d = doc.data();
+            if (statuses.includes(d.status)) {
+              legacySums[d.status] += (d.totalClient || d.totalQuote || 0);
+            }
+          });
+          for (const s of statuses) {
+            sums[s] += legacySums[s] || 0;
+            legacyCounts[s] = legacyCountResults.find(r => r.status === s)?.count || 0;
+          }
+
+          // Update cache
+          _legacyCountsCache = {
+            data: { counts: legacyCounts, sums: legacySums },
+            timestamp: now,
+            supplierId: effectiveSupplierId,
+          };
+        }
       }
     } catch (e) {
       console.error(e);
@@ -1082,7 +1127,7 @@ export async function getQuoteCounts(clientSupplierId?: string, transactionType?
     return { counts, sums };
   }
 
-  // Phase 3: No global recalculation
+  // Phase 3: No global recalculation — use pre-computed stats document
   try {
     const stats = await getQuoteStats();
     for (const [key, value] of Object.entries(stats)) {
@@ -1120,6 +1165,19 @@ export async function calibrateQuoteStats() {
 }
 
 
+
+// ─────────────────────────────────────────────────────────────
+// In-memory cache for getPaginatedQuotes legacy fallback results
+// Legacy docs are static — a 30s TTL avoids redundant queries
+// across tab switches without risking staleness
+// ─────────────────────────────────────────────────────────────
+let _legacyQuotesCache: {
+  data: QueryDocumentSnapshot[];
+  timestamp: number;
+  supplierId: string | null;
+  status: string;
+} | null = null;
+const LEGACY_QUOTES_CACHE_TTL_MS = 30_000;
 
 export async function getPaginatedQuotes({
   status,
@@ -1248,24 +1306,45 @@ export async function getPaginatedQuotes({
     // Firestore `not-in` catches docs where the field is absent or has a non-matching value.
     if (transactionType === 'sale' && !startAfterId) {
       // Only on first page to keep pagination simple; legacy docs backfill happens over time
-      try {
-        let legacyQ: admin.Query = adminDb.collection('quotes');
-        if (effectiveSupplierId) {
-          legacyQ = legacyQ.where('supplierId', '==', effectiveSupplierId);
-        }
+      const now = Date.now();
+      const cacheValid = _legacyQuotesCache
+        && _legacyQuotesCache.supplierId === effectiveSupplierId
+        && _legacyQuotesCache.status === status
+        && (now - _legacyQuotesCache.timestamp) < LEGACY_QUOTES_CACHE_TTL_MS;
+      if (cacheValid) {
+        const existingIds = new Set(allDocs.map(d => d.id));
+        _legacyQuotesCache!.data.forEach(d => {
+          if (!existingIds.has(d.id)) allDocs.push(d);
+        });
+        allDocs.sort((a, b) => {
+          const tA = a.data()?.createdAt?.toMillis?.() ?? 0;
+          const tB = b.data()?.createdAt?.toMillis?.() ?? 0;
+          return tB - tA;
+        });
+        allDocs = allDocs.slice(0, limit);
+      } else {
+        try {
+          let legacyQ: admin.Query = adminDb.collection('quotes');
+          if (effectiveSupplierId) {
+            legacyQ = legacyQ.where('supplierId', '==', effectiveSupplierId);
+          }
         legacyQ = applyProjection(
           legacyQ
             .where('transactionType', 'not-in', ['sale', 'rental'])
             .where('status', '==', status)
-            .orderBy('transactionType') // required by Firestore when using not-in
+            .orderBy('transactionType')
             .orderBy('createdAt', 'desc')
             .limit(limit)
         );
         const legacySnap = await legacyQ.get();
-        // Merge and de-duplicate by doc id
+        _legacyQuotesCache = {
+          data: legacySnap.docs,
+          timestamp: now,
+          supplierId: effectiveSupplierId,
+          status,
+        };
         const existingIds = new Set(allDocs.map(d => d.id));
         legacySnap.docs.forEach(d => { if (!existingIds.has(d.id)) allDocs.push(d); });
-        // Re-sort merged list by createdAt desc and enforce page limit
         allDocs.sort((a, b) => {
           const tA = a.data()?.createdAt?.toMillis?.() ?? 0;
           const tB = b.data()?.createdAt?.toMillis?.() ?? 0;
@@ -1273,8 +1352,8 @@ export async function getPaginatedQuotes({
         });
         allDocs = allDocs.slice(0, limit);
       } catch (legacyErr) {
-        // Legacy query failed (e.g. index missing) — proceed with primary results only
         console.warn('[getPaginatedQuotes] Legacy query skipped:', legacyErr);
+      }
       }
     }
 
@@ -2481,12 +2560,6 @@ const settingsSchema = z.object({
   maxProductsPerQuote: z.coerce.number().min(1, 'Must be at least 1').optional(),
   previewScreenImageUrl: z.string().optional(),
   previewScreenVideoUrl: z.string().optional(),
-  previewHumanScaleImageUrl: z.string().optional(),
-  technicianImageUrl: z.string().optional(),
-  deliveryImageUrl: z.string().optional(),
-  congratulationsImageUrl: z.string().optional(),
-  paymentIconUrl: z.string().optional(),
-  cardLogoUrl: z.string().optional(),
   emergencyStopEnabled: z.boolean().optional(),
   emergencyReturnUrl: z.string().optional(),
   emergencyStopMessage: z.string().optional(),
@@ -2588,12 +2661,6 @@ export async function getSettings(): Promise<Settings> {
     maxRentalHeight: 5,
     maxProductsPerQuote: 3,
     previewScreenImageUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Fpreview-screen.mp4?alt=media&token=c198b18a-40d6-4a25-950c-e2b26a6358d7',
-    previewHumanScaleImageUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Fhuman-scale.svg?alt=media&token=3b37c229-373e-43d9-9529-577543f05354',
-    technicianImageUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Ftechnician.png?alt=media&token=0b61e247-f495-46c6-9c44-3253b8113498',
-    deliveryImageUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Fdelivery.png?alt=media&token=487d25e0-b6d1-4475-9764-f651664d084d',
-    congratulationsImageUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Fcongratulations.png?alt=media&token=3b018599-52e1-45fe-86a3-2f0802c61141',
-    paymentIconUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Fpayment-icons.png?alt=media&token=86b16e3c-f4b0-4f51-a901-205d8f287413',
-    cardLogoUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Fcard-logo.png?alt=media&token=25e6e3c2-4876-4d14-b610-109007328174',
     emergencyStopEnabled: false,
     emergencyReturnUrl: 'https://mahboubidz.com/',
     emergencyStopMessage: "Pour des raisons de maintenance, notre outil d'estimation en ligne est actuellement suspendu. Veuillez nous excuser pour la gêne occasionnée.",

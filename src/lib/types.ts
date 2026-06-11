@@ -159,12 +159,6 @@ export type Settings = {
   maxProductsPerQuote?: number;
   previewScreenImageUrl?: string;
   previewScreenVideoUrl?: string;
-  previewHumanScaleImageUrl?: string;
-  technicianImageUrl?: string;
-  deliveryImageUrl?: string;
-  congratulationsImageUrl?: string;
-  paymentIconUrl?: string;
-  cardLogoUrl?: string;
   emergencyStopEnabled?: boolean;
   emergencyReturnUrl?: string;
   emergencyStopMessage?: string;

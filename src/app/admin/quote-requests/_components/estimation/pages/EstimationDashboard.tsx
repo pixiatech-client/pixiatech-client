@@ -196,16 +196,17 @@ const isFournisseur = userRole === 'fournisseur';
   const itemsPerPage = 6;
 
   const clearCache = useCallback((tab?: EstimationStatus) => {
+    const modeSuffix = estimationMode || 'vente';
     if (tab) {
       setPageCache(prev => {
         const next = { ...prev };
-        delete next[tab];
+        delete next[`${tab}_${modeSuffix}`];
         return next;
       });
     } else {
       setPageCache({});
     }
-  }, []);
+  }, [estimationMode]);
 
   const updateCountsLocally = useCallback((from: EstimationStatus | null, to: EstimationStatus | null, count: number = 1, value: number = 0) => {
     const statusToKey = (s: EstimationStatus) => estimationToStatus[s];
@@ -1468,7 +1469,8 @@ const filteredEstimations = useMemo(() => {
             onSave={async (updatedQuote) => {
               setFullQuotes(prev => ({ ...prev, [updatedQuote.id]: updatedQuote }));
               setSelectedEstimation(updatedQuote);
-              setPageCache({});
+              // Only clear affected tab cache instead of everything
+              clearCache(activeTab);
               const startId = lastDocIds[currentPage];
               await fetchPage(currentPage, activeTab, startId, estimationMode);
             }}
@@ -1476,7 +1478,8 @@ const filteredEstimations = useMemo(() => {
               setAutoEditMode(false);
               setIsDetailsOpen(false);
               setSelectedEstimation(null);
-              setPageCache({});
+              clearCache(activeTab);
+              if (newStatus) clearCache(newStatus as EstimationStatus);
               const startId = lastDocIds[currentPage];
               await fetchPage(currentPage, activeTab, startId, estimationMode);
                // If we were on "En attente" and moved to "Traité", switch the tab

@@ -746,7 +746,6 @@ export function Configurator({
                 width={activeConfig?.width ?? 4}
                 height={activeConfig?.height ?? 3}
                 screenImageUrl={settings.previewScreenImageUrl}
-                humanScaleImageUrl={settings.previewHumanScaleImageUrl}
             />
         </div>
         
@@ -844,13 +843,6 @@ export function Configurator({
                 <div className="relative z-10 grid grid-rows-[auto_1fr_auto] h-full min-h-[140px]">
                     <div className="flex justify-between items-start">
                         <span className="uppercase tracking-widest text-sm font-medium">{t('configurator.totalEstimate')}</span>
-                        {settings.paymentIconUrl && (
-                            <img
-                                src={settings.paymentIconUrl}
-                                className="h-10 opacity-80"
-                                alt="payment icon"
-                            />
-                        )}
                     </div>
                     <div className="text-center self-center py-2">
                         <p className="uppercase text-lg tracking-widest text-white/80">{t('configurator.priceExclTax')}</p>
@@ -866,15 +858,6 @@ export function Configurator({
                                 <BlurredPrice price={formatCurrency(quote)} isPriceHidden={!!settings.isPriceHidden} />
                             </motion.div>
                         </AnimatePresence>
-                    </div>
-                     <div className="self-end text-right">
-                        {settings.cardLogoUrl && (
-                             <img
-                                src={settings.cardLogoUrl}
-                                className="h-5 opacity-80 ml-auto"
-                                alt="Card Logo"
-                            />
-                        )}
                     </div>
                 </div>
             </motion.div>

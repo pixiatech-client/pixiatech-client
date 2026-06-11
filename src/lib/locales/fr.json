@@ -414,6 +414,10 @@
     },
     "admin": {
         "dashboard": "Tableau de bord",
+        "all": "Toutes les estimations",
+        "sale": "Vente",
+        "rental": "Location",
+        "type": "Type",
         "users": "Utilisateurs",
         "manageUsers": "Gérer les utilisateurs",
         "manageUsersDesc": "Voir, modifier et gérer tous les utilisateurs de la plateforme.",

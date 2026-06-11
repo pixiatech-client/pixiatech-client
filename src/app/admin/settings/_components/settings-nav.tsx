@@ -7,31 +7,32 @@ import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import { Settings, Image as ImageIcon, AlertTriangle, FileText, MessageSquareQuote, Shield, Palette, Truck, HardHat, Wand2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface Tab {
     href: string;
-    label: string;
+    labelKey: string;
     icon: LucideIcon;
 }
 
-const tabs: Tab[] = [
-  { href: '/admin/settings/general', label: 'General', icon: Settings },
-  { href: '/admin/settings/images', label: 'Images', icon: ImageIcon },
-  { href: '/admin/settings/content', label: 'Content', icon: FileText },
-  { href: '/admin/settings/wizard', label: 'Wizard', icon: Wand2 },
-  { href: '/admin/settings/livraison', label: 'Delivery', icon: Truck },
-  { href: '/admin/settings/main-doeuvre', label: 'Labor', icon: HardHat },
-  { href: '/admin/settings/pdf', label: 'PDF', icon: FileText },
-  { href: '/admin/settings/themes', label: 'Themes', icon: Palette },
-  { href: '/admin/settings/emergency', label: 'Emergency', icon: AlertTriangle },
+const tabDefs: Tab[] = [
+  { href: '/admin/settings/general', labelKey: 'General', icon: Settings },
+  { href: '/admin/settings/images', labelKey: 'Images', icon: ImageIcon },
+  { href: '/admin/settings/wizard', labelKey: 'Wizard', icon: Wand2 },
+  { href: '/admin/settings/livraison', labelKey: 'Delivery', icon: Truck },
+  { href: '/admin/settings/main-doeuvre', labelKey: 'Labor', icon: HardHat },
+  { href: '/admin/settings/pdf', labelKey: 'PDF', icon: FileText },
+  { href: '/admin/settings/themes', labelKey: 'Themes', icon: Palette },
+  { href: '/admin/settings/emergency', labelKey: 'Emergency', icon: AlertTriangle },
 ];
 
 export function SettingsNav() {
     const pathname = usePathname();
+    const { t } = useAdminT();
 
     return (
         <div className="relative flex w-full max-w-4xl mx-auto rounded-xl bg-white border border-slate-200 h-12 p-1 shadow-sm">
-          {tabs.map((tab) => {
+          {tabDefs.map((tab) => {
             const isActive = pathname.startsWith(tab.href);
             return (
               <Link
@@ -51,7 +52,7 @@ export function SettingsNav() {
                 )}
                 <tab.icon className={cn("w-4 h-4 z-20 transition-colors", isActive ? 'text-blue-500' : 'text-slate-400')} />
                 <span className="hidden md:inline-block z-20">
-                    {tab.label}
+                    {t(tab.labelKey)}
                 </span>
               </Link>
             );

@@ -573,6 +573,7 @@ export async function createQuoteWithContract(
       isRead: false,
       status: 'pending',
       emailVerified: !isEmailVerificationEnabled,
+      resendCount: 0,
       signatureDataUrl,
       signedAt: FieldValue.serverTimestamp(),
       pdfSettings,
@@ -1010,6 +1011,11 @@ export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolea
       return { success: false, error: 'Invalid estimate.' };
     }
 
+    const currentResendCount = quoteData.resendCount || 0;
+    if (currentResendCount >= 3) {
+      return { success: false, error: 'Maximum resend attempts reached.' };
+    }
+
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expirationDate = new Date();
     expirationDate.setMinutes(expirationDate.getMinutes() + validityMinutes);
@@ -1017,7 +1023,8 @@ export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolea
     await docRef.update({
       otpCode,
       otpExpires: Timestamp.fromDate(expirationDate),
-      emailVerified: false
+      emailVerified: false,
+      resendCount: currentResendCount + 1,
     });
 
     const clientEmail = quoteData.client?.email || quoteData.email;

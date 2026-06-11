@@ -414,6 +414,10 @@
     },
     "admin": {
         "dashboard": "Dashboard",
+        "all": "All Estimates",
+        "sale": "Sale",
+        "rental": "Rental",
+        "type": "Type",
         "users": "Users",
         "manageUsers": "Manage Users",
         "manageUsersDesc": "View, edit, and manage all platform users.",

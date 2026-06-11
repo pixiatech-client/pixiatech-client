@@ -241,6 +241,8 @@ export default function SignatureFlow({
   const [showEmailPulse, setShowEmailPulse] = useState<boolean>(false);
   const [showErrorTips, setShowErrorTips] = useState<boolean>(false);
   const [otpResent, setOtpResent] = useState<boolean>(false);
+  const MAX_RESEND_ATTEMPTS = 3;
+  const [resendAttemptsLeft, setResendAttemptsLeft] = useState<number>(MAX_RESEND_ATTEMPTS);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
@@ -791,6 +793,11 @@ export default function SignatureFlow({
 
   const handleResendCode = async () => {
     if (!quoteId) return;
+    if (resendAttemptsLeft <= 1) {
+      setTimeout(() => location.reload(), 2000);
+      return;
+    }
+    setResendAttemptsLeft(prev => prev - 1);
     try {
       await resendQuoteOtp(quoteId);
       setOtpTimeLeft(600);
@@ -1563,13 +1570,6 @@ export default function SignatureFlow({
                         {t('signature.totalEstimate')} ({taxLabel})
                       </span>
                       <div className="flex items-center gap-2">
-                        {settings?.paymentIconUrl && (
-                          <img
-                            src={settings.paymentIconUrl}
-                            className="h-5 md:h-6 opacity-70"
-                            alt="payment icon"
-                          />
-                        )}
                         <span className="text-2xl font-mono font-black text-white drop-shadow-sm">
                           <BlurredPrice 
                             price={`${fmtPrice(totalAmount)} €`} 
@@ -2382,7 +2382,13 @@ export default function SignatureFlow({
                   </button>
                 </div>
 
-                <div className="flex flex-col gap-2 items-center justify-center pt-1">
+                  <div className="flex flex-col gap-2 items-center justify-center pt-1">
+                  {resendAttemptsLeft <= 0 ? (
+                    <div className="text-[10px] text-red-700 font-bold bg-red-50 border border-red-200 px-3 py-1.5 rounded-xl animate-pulse">
+                      Trop de tentatives. Actualisation...
+                    </div>
+                  ) : (
+                    <>
                   {otpResent && (
                     <div className="text-[10px] text-emerald-700 font-extrabold bg-emerald-50 border border-emerald-150 px-3 py-1.5 rounded-xl animate-bounce flex items-center gap-1">
                       <CheckCircle size={10} className="text-emerald-600" />
@@ -2398,7 +2404,14 @@ export default function SignatureFlow({
                     >
                       {t('signature.resendCode')}
                     </button>
+                    {resendAttemptsLeft < MAX_RESEND_ATTEMPTS && (
+                      <span className={`font-bold ${resendAttemptsLeft === 1 ? 'text-red-600' : 'text-amber-600'}`}>
+                        {resendAttemptsLeft === 1 ? 'Dernière tentative' : `Il vous reste ${resendAttemptsLeft} tentatives`}
+                      </span>
+                    )}
                   </div>
+                  </>
+                  )}
                 </div>
 
                 <div className="pt-3 border-t border-zinc-100 text-[8px] tracking-widest text-zinc-400 font-mono">
@@ -2559,13 +2572,6 @@ export default function SignatureFlow({
                       {t('signature.totalEstimate')} ({taxLabel})
                     </span>
                     <div className="flex items-center gap-2">
-                      {settings?.paymentIconUrl && (
-                        <img
-                          src={settings.paymentIconUrl}
-                          className="h-5 md:h-6 opacity-70"
-                          alt="payment icon"
-                        />
-                      )}
                       <span className="text-2xl font-mono font-black text-white drop-shadow-sm">
                         <BlurredPrice 
                           price={`${fmtPrice(totalAmount)} €`} 
