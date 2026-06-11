@@ -155,17 +155,17 @@ export function Configurator({
   
   const currentMaxWidth = useMemo(() => {
     if (activeConfig?.transactionType === 'rental') {
-      return settings.maxRentalWidth ?? settings.maxWidth;
+      return settings.estimationFlow?.rental?.flatScreen?.maxWidth ?? settings.maxRentalWidth ?? settings.maxWidth;
     }
-    return settings.maxWidth;
-  }, [activeConfig?.transactionType, settings.maxWidth, settings.maxRentalWidth]);
+    return settings.estimationFlow?.sale?.flatScreen?.maxWidth ?? settings.maxWidth;
+  }, [activeConfig?.transactionType, settings]);
 
   const currentMaxHeight = useMemo(() => {
     if (activeConfig?.transactionType === 'rental') {
-      return settings.maxRentalHeight ?? settings.maxHeight;
+      return settings.estimationFlow?.rental?.flatScreen?.maxHeight ?? settings.maxRentalHeight ?? settings.maxHeight;
     }
-    return settings.maxHeight;
-  }, [activeConfig?.transactionType, settings.maxHeight, settings.maxRentalHeight]);
+    return settings.estimationFlow?.sale?.flatScreen?.maxHeight ?? settings.maxHeight;
+  }, [activeConfig?.transactionType, settings]);
 
   const areAllProductsValid = useMemo(() => {
     if (configuredProducts.length === 0) return false;
@@ -362,7 +362,7 @@ export function Configurator({
       );
   }, [allProducts]);
 
-  const canAddMoreProducts = configuredProducts.length < (settings.maxProductsPerQuote ?? 5);
+  const canAddMoreProducts = configuredProducts.length < (settings.estimationFlow?.sale?.maxProductsPerQuote ?? settings.maxProductsPerQuote ?? 5);
 
   const areDimensionsDisabled = !activeConfig;
   const shouldHideDimensions = activeConfig && selectedProductDetails?.hasDimensions === false;

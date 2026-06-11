@@ -153,7 +153,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
           <div
             onContextMenu={handleContextMenu}
             className={cn(
-              "max-w-[95%] rounded-[32px] p-3.5 text-sm shadow-2xl relative group cursor-pointer transition-all active:scale-[0.98]",
+              "w-full max-w-full rounded-[32px] p-4 text-sm shadow-2xl relative group cursor-pointer transition-all active:scale-[0.98]",
               isMine 
                 ? "bg-[#6366f1] text-white rounded-br-none shadow-indigo-900/10" 
                 : "bg-white text-slate-900 rounded-bl-none shadow-sm border border-slate-100"
@@ -251,7 +251,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
                 {!isMine && !msg.fileUrl ? (
                   <TypewriterText content={getTranslatedContent()} isMine={isMine} />
                 ) : (
-                  <p dangerouslySetInnerHTML={{ __html: getTranslatedContent() }} />
+                  <div dangerouslySetInnerHTML={{ __html: getTranslatedContent() }} />
                 )}
               </div>
             )}

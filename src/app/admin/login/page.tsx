@@ -80,31 +80,21 @@ export default function LoginPage() {
   const [isSavingGoogleProfile, setIsSavingGoogleProfile] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
+    let cancelled = false;
 
     const clearSession = async () => {
       if (!auth) {
-        if (isMounted) {
-          setIsSigningOut(false);
-        }
+        if (!cancelled) setIsSigningOut(false);
         return;
       }
 
       try {
-        // Add a timeout to prevent hanging if Firebase is blocked by an AdBlocker
-        const signOutPromise = signOut(auth);
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout during sign-out')), 2000)
-        );
-
-        await Promise.race([signOutPromise, timeoutPromise]);
-        console.log('[Login] Pre-login sign-out successful');
+        await signOut(auth);
+        if (!cancelled) console.log('[Login] Session cleared');
       } catch (error) {
-        console.warn('[Login] Pre-login sign-out timed out or failed:', error);
+        if (!cancelled) console.warn('[Login] Sign-out warning:', error);
       } finally {
-        if (isMounted) {
-          setIsSigningOut(false);
-        }
+        if (!cancelled) setIsSigningOut(false);
       }
     };
 
@@ -119,7 +109,7 @@ export default function LoginPage() {
     }
 
     return () => {
-      isMounted = false;
+      cancelled = true;
     };
   }, [auth]);
 

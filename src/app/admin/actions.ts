@@ -2606,6 +2606,17 @@ const settingsSchema = z.object({
     taxEnabled: z.boolean(),
     taxRate: z.number().min(0).max(100),
     taxMode: z.enum(['ht', 'ttc']),
+    sale: z.object({
+      maxProductsPerQuote: z.coerce.number().min(1).default(3),
+      flatScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+      curvedScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1), curveMin: z.coerce.number().max(0), curveMax: z.coerce.number().min(0) }),
+      screen360: z.object({ maxDiameter: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+    }).optional(),
+    rental: z.object({
+      flatScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+      curvedScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1), curveMin: z.coerce.number().max(0), curveMax: z.coerce.number().min(0) }),
+      screen360: z.object({ maxDiameter: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+    }).optional(),
   }).optional(),
 });
 
@@ -2695,6 +2706,17 @@ export async function getSettings(): Promise<Settings> {
       taxEnabled: false,
       taxRate: 19,
       taxMode: 'ht',
+      sale: {
+        maxProductsPerQuote: 3,
+        flatScreen: { maxWidth: 20, maxHeight: 10 },
+        curvedScreen: { maxWidth: 20, maxHeight: 10, curveMin: -30, curveMax: 30 },
+        screen360: { maxDiameter: 10, maxHeight: 8 },
+      },
+      rental: {
+        flatScreen: { maxWidth: 6, maxHeight: 5 },
+        curvedScreen: { maxWidth: 6, maxHeight: 5, curveMin: -30, curveMax: 30 },
+        screen360: { maxDiameter: 6, maxHeight: 5 },
+      },
     },
   };
 
@@ -3160,6 +3182,19 @@ export async function getLocations(): Promise<Locations> {
   return Promise.resolve({ villes: cities as any });
 }
 
+
+export async function getSessionUid() {
+  const sessionCookie = cookies().get('session')?.value;
+  if (!sessionCookie) return { uid: null };
+
+  try {
+    const { adminAuth } = getFirebaseAdmin();
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+    return { uid: decoded.uid };
+  } catch {
+    return { uid: null };
+  }
+}
 
 export const getCurrentAdminUser = cache(async (): Promise<UserProfile | { error: string } | null> => {
   const sessionCookie = cookies().get('session')?.value;

@@ -61,8 +61,19 @@ export default function StepDimensions({
   const isDarkMode = externalIsDarkMode !== undefined ? externalIsDarkMode : localIsDarkMode;
   const setIsDarkMode = externalSetIsDarkMode !== undefined ? externalSetIsDarkMode : setLocalIsDarkMode;
 
-  const maxWidth = settings?.maxWidth || 20;
-  const maxHeight = settings?.maxHeight || 10;
+  const maxWidth = state.is360
+    ? (settings?.estimationFlow?.sale?.screen360?.maxDiameter ?? settings?.maxWidth ?? 20)
+    : state.isCurved
+      ? (settings?.estimationFlow?.sale?.curvedScreen?.maxWidth ?? settings?.maxWidth ?? 20)
+      : (settings?.estimationFlow?.sale?.flatScreen?.maxWidth ?? settings?.maxWidth ?? 20);
+  const maxHeight = state.is360
+    ? (settings?.estimationFlow?.sale?.screen360?.maxHeight ?? settings?.maxHeight ?? 10)
+    : state.isCurved
+      ? (settings?.estimationFlow?.sale?.curvedScreen?.maxHeight ?? settings?.maxHeight ?? 10)
+      : (settings?.estimationFlow?.sale?.flatScreen?.maxHeight ?? settings?.maxHeight ?? 10);
+  const maxDiameter = settings?.estimationFlow?.sale?.screen360?.maxDiameter ?? 10;
+  const curveMin = settings?.estimationFlow?.sale?.curvedScreen?.curveMin ?? -30;
+  const curveMax = settings?.estimationFlow?.sale?.curvedScreen?.curveMax ?? 30;
 
   // Detect desktop breakpoint (xl = 1280px) to apply fixed height on mobile/tablet
   const [isDesktop, setIsDesktop] = React.useState(false);
@@ -279,17 +290,17 @@ export default function StepDimensions({
                               type="number"
                               step="0.5"
                               min="1.0"
-                              max="30"
+                              max={maxDiameter}
                               value={state.diameter || 1.0}
                               onChange={(e) => {
                                 const val = parseFloat(e.target.value);
-                                if (!isNaN(val)) handleUpdateState({ diameter: Math.min(30, Math.max(1.0, val)) });
+                                if (!isNaN(val)) handleUpdateState({ diameter: Math.min(maxDiameter, Math.max(1.0, val)) });
                               }}
                               className="w-10 sm:w-16 text-center text-sm sm:text-base font-black text-slate-800 bg-transparent border-none appearance-none focus:outline-none focus:ring-0"
                             />
                             <button
                               type="button"
-                              onClick={() => handleUpdateState({ diameter: Math.min(30, (state.diameter || 1.0) + 0.5) })}
+                              onClick={() => handleUpdateState({ diameter: Math.min(maxDiameter, (state.diameter || 1.0) + 0.5) })}
                               className="p-0.5 text-slate-400 hover:text-slate-900 transition-colors"
                             >
                               <ChevronRight className="w-3.5 h-3.5" />
@@ -298,7 +309,7 @@ export default function StepDimensions({
                         </div>
                         <div className="relative group px-2 transition-all duration-300 opacity-100">
                           <input
-                            type="range" min="1.0" max="30" step="0.5"
+                            type="range" min="1.0" max={maxDiameter} step="0.5"
                             value={state.diameter || 1.0}
                             onChange={(e) => handleUpdateState({ diameter: parseFloat(e.target.value) })}
                             className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-[#c6ff00]"
@@ -447,7 +458,7 @@ export default function StepDimensions({
                       </span>
                     </div>
                     <input
-                      type="range" min="-30" max="30" step="1"
+                      type="range" min={curveMin} max={curveMax} step="1"
                       value={state.curveLeft}
                       onChange={(e) => handleUpdateState({ curveLeft: parseInt(e.target.value) })}
                       className="w-full h-1.5 bg-slate-300/50 rounded-full appearance-none cursor-pointer accent-[#c6ff00]"
@@ -462,7 +473,7 @@ export default function StepDimensions({
                       </span>
                     </div>
                     <input
-                      type="range" min="-30" max="30" step="1"
+                      type="range" min={curveMin} max={curveMax} step="1"
                       value={state.curveRight}
                       onChange={(e) => handleUpdateState({ curveRight: parseInt(e.target.value) })}
                       className="w-full h-1.5 bg-slate-300/50 rounded-full appearance-none cursor-pointer accent-[#c6ff00]"

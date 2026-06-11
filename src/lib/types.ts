@@ -207,6 +207,17 @@ export type Settings = {
     taxEnabled: boolean;
     taxRate: number;
     taxMode: 'ht' | 'ttc';
+    sale: {
+      maxProductsPerQuote: number;
+      flatScreen: { maxWidth: number; maxHeight: number };
+      curvedScreen: { maxWidth: number; maxHeight: number; curveMin: number; curveMax: number };
+      screen360: { maxDiameter: number; maxHeight: number };
+    };
+    rental: {
+      flatScreen: { maxWidth: number; maxHeight: number };
+      curvedScreen: { maxWidth: number; maxHeight: number; curveMin: number; curveMax: number };
+      screen360: { maxDiameter: number; maxHeight: number };
+    };
   };
 };
 

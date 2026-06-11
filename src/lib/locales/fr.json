@@ -410,7 +410,10 @@
         "userDelivery": "Livraison à : {city}",
         "userQuantity": "{count} écran(s)",
         "dontKnow": "Je ne sais pas",
-        "productFits": "Ce produit me convient"
+        "productFits": "Ce produit me convient",
+        "confirmDimensions": "Confirmer les dimensions",
+        "searchProducts": "Rechercher les produits recommandés",
+        "moreChoices": "Plus de choix"
     },
     "admin": {
         "dashboard": "Tableau de bord",

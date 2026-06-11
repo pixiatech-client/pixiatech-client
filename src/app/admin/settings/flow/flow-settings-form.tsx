@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
+import { Monitor, Smartphone, Orbit, Layers } from 'lucide-react';
 
 const flowSchema = z.object({
   estimationFlow: z.object({
@@ -24,6 +25,17 @@ const flowSchema = z.object({
     taxEnabled: z.boolean(),
     taxRate: z.coerce.number().min(0).max(100),
     taxMode: z.enum(['ht', 'ttc']),
+    sale: z.object({
+      maxProductsPerQuote: z.coerce.number().min(1).default(3),
+      flatScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+      curvedScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1), curveMin: z.coerce.number().max(0), curveMax: z.coerce.number().min(0) }),
+      screen360: z.object({ maxDiameter: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+    }),
+    rental: z.object({
+      flatScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+      curvedScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1), curveMin: z.coerce.number().max(0), curveMax: z.coerce.number().min(0) }),
+      screen360: z.object({ maxDiameter: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+    }),
   }),
 });
 
@@ -36,6 +48,7 @@ interface FlowSettingsFormProps {
 export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
   const { toast } = useToast();
   const [contractMode, setContractMode] = useState<'vente' | 'location'>('location');
+  const [screenMode, setScreenMode] = useState<'vente' | 'location'>('vente');
 
   const defaultSaleContract = [
     'CONDITIONS GÉNÉRALES DE VENTE, DE SERVICES ET DE LOCATION (CGV/CGL)',
@@ -195,14 +208,23 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
   ].join('\n');
 
   const flow = {
-    ...(initialSettings.estimationFlow || {
-      enableRentalPeriod: true,
-      enableDigitalSignature: true,
-      enableContractEditing: false,
-      taxEnabled: false,
-      taxRate: 19,
-      taxMode: 'ht' as const,
-    }),
+    enableRentalPeriod: initialSettings.estimationFlow?.enableRentalPeriod ?? true,
+    enableDigitalSignature: initialSettings.estimationFlow?.enableDigitalSignature ?? true,
+    enableContractEditing: initialSettings.estimationFlow?.enableContractEditing ?? false,
+    taxEnabled: initialSettings.estimationFlow?.taxEnabled ?? false,
+    taxRate: initialSettings.estimationFlow?.taxRate ?? 19,
+    taxMode: (initialSettings.estimationFlow?.taxMode ?? 'ht') as 'ht' | 'ttc',
+    sale: (initialSettings.estimationFlow as any)?.sale || {
+      maxProductsPerQuote: 3,
+      flatScreen: { maxWidth: 20, maxHeight: 10 },
+      curvedScreen: { maxWidth: 20, maxHeight: 10, curveMin: -30, curveMax: 30 },
+      screen360: { maxDiameter: 10, maxHeight: 8 },
+    },
+    rental: (initialSettings.estimationFlow as any)?.rental || {
+      flatScreen: { maxWidth: 6, maxHeight: 5 },
+      curvedScreen: { maxWidth: 6, maxHeight: 5, curveMin: -30, curveMax: 30 },
+      screen360: { maxDiameter: 6, maxHeight: 5 },
+    },
     saleContractTemplate: initialSettings.estimationFlow?.saleContractTemplate || defaultSaleContract,
     rentalContractTemplate: initialSettings.estimationFlow?.rentalContractTemplate || defaultRentalContract,
   };
@@ -353,6 +375,140 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
               {!taxEnabled && (
                 <p className="text-xs text-slate-400 italic">100% HT — Aucune TVA appliquée</p>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Configuration écrans */}
+          <Card className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <CardContent className="space-y-5 pt-6">
+              <div className="space-y-1 pb-4 border-b border-slate-100">
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">Configuration écrans</h4>
+                <p className="text-xs text-slate-500">Dimensions et limites par type d'écran</p>
+              </div>
+
+              <div className="flex items-center gap-2 bg-slate-100 rounded-xl p-1 w-fit">
+                <button type="button" onClick={() => setScreenMode('vente')}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    screenMode === 'vente' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >Vente</button>
+                <button type="button" onClick={() => setScreenMode('location')}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    screenMode === 'location' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >Location</button>
+              </div>
+
+              <div className="space-y-3">
+                {/* Écran Plat */}
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Monitor className="w-5 h-5 text-slate-600" />
+                    <span className="text-sm font-bold text-slate-900">Écran Plat</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-600">Largeur max (m)</Label>
+                      <Input type="number" min="1" step="0.1"
+                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxWidth' : 'estimationFlow.rental.flatScreen.maxWidth')}
+                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxWidth' : 'estimationFlow.rental.flatScreen.maxWidth', parseFloat(e.target.value) || 1)}
+                        className="h-9 rounded-xl bg-white border-slate-200" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-600">Hauteur max (m)</Label>
+                      <Input type="number" min="1" step="0.1"
+                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxHeight' : 'estimationFlow.rental.flatScreen.maxHeight')}
+                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxHeight' : 'estimationFlow.rental.flatScreen.maxHeight', parseFloat(e.target.value) || 1)}
+                        className="h-9 rounded-xl bg-white border-slate-200" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Écran Incurvé */}
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Smartphone className="w-5 h-5 text-slate-600" />
+                    <span className="text-sm font-bold text-slate-900">Écran Incurvé</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-600">Largeur max (m)</Label>
+                      <Input type="number" min="1" step="0.1"
+                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxWidth' : 'estimationFlow.rental.curvedScreen.maxWidth')}
+                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxWidth' : 'estimationFlow.rental.curvedScreen.maxWidth', parseFloat(e.target.value) || 1)}
+                        className="h-9 rounded-xl bg-white border-slate-200" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-600">Hauteur max (m)</Label>
+                      <Input type="number" min="1" step="0.1"
+                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxHeight' : 'estimationFlow.rental.curvedScreen.maxHeight')}
+                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxHeight' : 'estimationFlow.rental.curvedScreen.maxHeight', parseFloat(e.target.value) || 1)}
+                        className="h-9 rounded-xl bg-white border-slate-200" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-200">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-600">Courbe min</Label>
+                      <Input type="number" step="1"
+                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMin' : 'estimationFlow.rental.curvedScreen.curveMin')}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMin' : 'estimationFlow.rental.curvedScreen.curveMin', isNaN(val) ? 0 : -Math.abs(val));
+                        }}
+                        className="h-9 rounded-xl bg-white border-slate-200" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-600">Courbe max</Label>
+                      <Input type="number" step="1"
+                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMax' : 'estimationFlow.rental.curvedScreen.curveMax')}
+                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMax' : 'estimationFlow.rental.curvedScreen.curveMax', parseFloat(e.target.value) || 0)}
+                        className="h-9 rounded-xl bg-white border-slate-200" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Écran 360° */}
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Orbit className="w-5 h-5 text-slate-600" />
+                    <span className="text-sm font-bold text-slate-900">Écran 360°</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-600">Diamètre max (m)</Label>
+                      <Input type="number" min="1" step="0.1"
+                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxDiameter' : 'estimationFlow.rental.screen360.maxDiameter')}
+                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxDiameter' : 'estimationFlow.rental.screen360.maxDiameter', parseFloat(e.target.value) || 1)}
+                        className="h-9 rounded-xl bg-white border-slate-200" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-600">Hauteur max (m)</Label>
+                      <Input type="number" min="1" step="0.1"
+                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxHeight' : 'estimationFlow.rental.screen360.maxHeight')}
+                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxHeight' : 'estimationFlow.rental.screen360.maxHeight', parseFloat(e.target.value) || 1)}
+                        className="h-9 rounded-xl bg-white border-slate-200" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Multisélection - Vente uniquement */}
+                {screenMode === 'vente' && (
+                  <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Layers className="w-5 h-5 text-amber-600" />
+                      <span className="text-sm font-bold text-slate-900">Multisélection</span>
+                    </div>
+                    <p className="text-xs text-slate-500">Nombre maximum de produits qu'un client peut sélectionner</p>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-semibold text-slate-600">Maximum produits par estimation</Label>
+                      <Input type="number" min="1" step="1"
+                        value={form.watch('estimationFlow.sale.maxProductsPerQuote')}
+                        onChange={(e) => form.setValue('estimationFlow.sale.maxProductsPerQuote', parseInt(e.target.value) || 3)}
+                        className="h-9 rounded-xl bg-white border-slate-200 w-32" />
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 

@@ -92,6 +92,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const [errorCount, setErrorCount] = useState(0);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [showComparator, setShowComparator] = useState(false);
+  const [expandedOptions, setExpandedOptions] = useState<{ msgId: string; options: MessageOption[] } | null>(null);
 
   const [deliveryCityId, setDeliveryCityId] = useState('');
   const [includeInstallation, setIncludeInstallation] = useState<boolean | null>(null);
@@ -869,7 +870,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
             exit={{ x: '100%', y: '-50%', opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 150 }}
             onClick={(e) => e.stopPropagation()}
-            className="fixed right-0 md:right-4 top-1/2 md:top-[calc(50%-4vh)] w-full md:w-[600px] h-[100dvh] md:h-[90vh] bg-[#f8f9fb] shadow-2xl z-[210] border border-slate-200 md:rounded-[48px] overflow-hidden flex flex-col pointer-events-auto"
+            className="fixed right-0 md:right-4 top-1/2 md:top-[calc(50%-4vh)] w-full md:w-[600px] h-[100dvh] md:h-[90vh] bg-[#f8f9fb] shadow-2xl z-[210] border border-slate-200 md:rounded-[24px] overflow-hidden flex flex-col pointer-events-auto"
           >
             {/* Header */}
             <div className="h-20 bg-[#0f766e] flex items-center justify-between px-4 md:px-6 z-10 shrink-0 shadow-md">
@@ -935,7 +936,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
             <div
               ref={scrollContainerRef}
               onScroll={handleScroll}
-              className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4 custom-scrollbar relative min-h-0 bg-[#efeae2]"
+              className={cn("flex-1 overflow-y-auto p-4 md:p-5 space-y-4 custom-scrollbar relative min-h-0 bg-[#efeae2]", (isCalendarOpen || activeTimePicker) && "overflow-hidden")}
             >
               {step === STEP.SUCCESS ? (
                 <SuccessView quoteId={quoteId} onNewQuote={() => window.location.reload()} initialEmail={formEmail} />
@@ -961,8 +962,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                           animate={{ opacity: 1, y: 0 }}
                           className="flex flex-wrap gap-2 justify-end pt-2 pr-2"
                         >
-                          {msg.options.map((option, i) => {
-                            const label = typeof option === 'string' ? option : option.label;
+                          {(expandedOptions?.msgId === msg.id ? msg.options : msg.options.length > 5 ? msg.options.slice(0, 3) : msg.options).map((option, i) => {
+                            const label = typeof option === 'string' ? option : (option.translationKey ? t(option.translationKey, option.translationParams) : option.label);
                             const value = typeof option === 'string' ? option : option.value;
                             const imageUrl = typeof option === 'string' ? undefined : option.imageUrl;
                             const isInstallOpt = step === STEP.INSTALLATION;
@@ -978,7 +979,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                       document.getElementById('site-photo-upload-gallery')?.click();
                                     }
                                   }
-                                  else handleOptionSelect(value, label, imageUrl);
+                                  else handleOptionSelect(value, label, imageUrl, typeof option !== 'string' ? option.translationKey : undefined, typeof option !== 'string' ? option.translationParams : undefined);
                                 }}
                                 className="px-5 py-2.5 rounded-2xl font-bold text-xs bg-black text-white border border-black shadow-lg hover:bg-[#B3E140] hover:text-black hover:border-[#B3E140] active:scale-95 transition-all uppercase tracking-wider"
                               >
@@ -986,6 +987,14 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                               </button>
                             );
                           })}
+                          {msg.options.length > 5 && expandedOptions?.msgId !== msg.id && (
+                            <button
+                              onClick={() => setExpandedOptions({ msgId: msg.id, options: msg.options })}
+                              className="px-5 py-2.5 rounded-2xl font-bold text-xs bg-slate-200 text-slate-700 border border-slate-300 hover:bg-slate-300 active:scale-95 transition-all uppercase tracking-wider cursor-pointer"
+                            >
+                              {t('bot.moreChoices')}
+                            </button>
+                          )}
                         </motion.div>
                       )}
                     </div>
@@ -997,7 +1006,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                       <StepDimensions state={configState} updateState={(u) => setConfigState(prev => ({ ...prev, ...u }))} settings={settings} t={t} isInChat={true} />
                       <div className="px-6 pb-6">
                         <Button onClick={handleDimensionsSubmit} disabled={!configState.width || !configState.height} className="w-full h-14 font-black rounded-xl bg-black hover:bg-[#B3E140] text-white hover:text-black uppercase tracking-wider text-xs shadow-xl active:scale-95 transition-all">
-                          Confirmer les dimensions <ArrowRight size={16} className="ml-2" />
+                          {t('bot.confirmDimensions')} <ArrowRight size={16} className="ml-2" />
                         </Button>
                       </div>
                     </motion.div>
@@ -1008,7 +1017,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                       <StepSummary state={configState} t={t} locale={locale} />
                       <div className="p-4 bg-slate-50 border-t">
                         <Button onClick={handleProceedToProducts} className="w-full h-14 font-black rounded-xl bg-black hover:bg-[#B3E140] text-white hover:text-black uppercase tracking-wider text-xs shadow-xl active:scale-95 transition-all">
-                          Rechercher les produits recommandés 🔍
+                          {t('bot.searchProducts')} 🔍
                         </Button>
                       </div>
                     </motion.div>
@@ -1309,12 +1318,12 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                       }}
                                       className="h-14 rounded-xl font-bold border-slate-200 text-slate-600 bg-white hover:bg-slate-100 hover:text-black uppercase tracking-wider text-[11px] transition-all"
                                     >
-                                      {locale === 'fr' ? 'Produit suivant' : 'Next product'}
+                                      {t('bot.nextProduct')}
                                     </Button>
                                     <Button
                                       disabled={isCheckingAvailability || isUnavailable}
                                       onClick={() => {
-                                        pushUserMessage(locale === 'fr' ? "Ce produit me convient" : "This product suits me");
+                                        pushUserMessage(t('bot.productFits'), undefined, 'bot.productFits');
                                         handleProductSelected(currentProduct.id);
                                       }}
                                       className={cn(
@@ -1327,9 +1336,9 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                       {isCheckingAvailability ? (
                                         <Loader2 size={16} className="animate-spin" />
                                       ) : isUnavailable ? (
-                                        <><Ban size={14} className="mr-1.5" />{locale === 'fr' ? 'Indisponible' : 'Unavailable'}</>
+                                        <><Ban size={14} className="mr-1.5" />{t('bot.unavailable')}</>
                                       ) : (
-                                        <>{locale === 'fr' ? 'Confirmer' : 'Confirm'}<ArrowRight size={16} className="ml-2" /></>
+                                        <>{t('bot.confirm')}<ArrowRight size={16} className="ml-2" /></>
                                       )}
                                     </Button>
                                   </div>
@@ -1360,7 +1369,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                   )}
 
                   {step === STEP.RENTAL_PERIOD && !isTyping && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 flex flex-col gap-6 w-full max-w-md mx-auto">
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={cn("bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 flex flex-col gap-6 w-full max-w-md mx-auto", isCalendarOpen || activeTimePicker ? "invisible pointer-events-none" : "")}>
                       <div className="space-y-4">
                         <div className="flex flex-col gap-2">
                           <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{locale === 'en' ? "Event Dates" : "Dates de l'événement"}</label>
@@ -1530,14 +1539,14 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-[400] flex items-end bg-black/40 backdrop-blur-[2px] pointer-events-auto"
+                  className="absolute inset-0 z-[400] flex items-end bg-black/40 pointer-events-auto"
                   onClick={() => setIsCalendarOpen(false)}
                 >
                   <motion.div
                     initial={{ y: '100%' }}
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                    transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.4 }}
                     className="bg-white w-full rounded-t-[32px] p-6 pb-10 shadow-2xl flex flex-col gap-6"
                     onClick={e => e.stopPropagation()}
                   >
@@ -1589,14 +1598,14 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-[400] flex items-end bg-black/40 backdrop-blur-[2px] pointer-events-auto"
+                  className="absolute inset-0 z-[400] flex items-end bg-black/40 pointer-events-auto"
                   onClick={() => setActiveTimePicker(null)}
                 >
                   <motion.div
                     initial={{ y: '100%' }}
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                    transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.4 }}
                     className="bg-white w-full rounded-t-[32px] p-8 pb-10 shadow-2xl flex flex-col gap-8"
                     onClick={e => e.stopPropagation()}
                   >
@@ -1666,6 +1675,51 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                 </motion.div>
               )}
             </AnimatePresence>
+
+            <AnimatePresence>
+              {expandedOptions && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-[400] flex items-end bg-black/40 pointer-events-auto"
+                  onClick={() => setExpandedOptions(null)}
+                >
+                  <motion.div
+                    initial={{ y: '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: '100%' }}
+                    transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.4 }}
+                    className="bg-white w-full rounded-t-[32px] p-6 pb-10 shadow-2xl flex flex-col gap-3 max-h-[70%] pointer-events-auto"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div className="w-12 h-1.5 bg-slate-100 rounded-full mb-2 mx-auto" />
+                    <h3 className="text-lg font-black text-slate-800 uppercase tracking-widest text-center">
+                      {locale === 'en' ? 'Select an option' : 'Sélectionnez une option'}
+                    </h3>
+                    <div className="flex flex-col gap-2 overflow-y-auto pt-2">
+                      {expandedOptions.options.map((option, i) => {
+                        const label = typeof option === 'string' ? option : (option.translationKey ? t(option.translationKey, option.translationParams) : option.label);
+                        const value = typeof option === 'string' ? option : option.value;
+                        const imageUrl = typeof option === 'string' ? undefined : option.imageUrl;
+                        return (
+                          <button
+                            key={value || i}
+                            onClick={() => {
+                              handleOptionSelect(value, label, imageUrl, typeof option !== 'string' ? option.translationKey : undefined, typeof option !== 'string' ? option.translationParams : undefined);
+                              setExpandedOptions(null);
+                            }}
+                            className="w-full py-4 px-5 rounded-2xl font-bold text-sm bg-slate-50 hover:bg-[#B3E140] hover:text-black active:scale-[0.98] transition-all text-left border border-slate-100"
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
           <input type="file" id="site-photo-upload-camera" className="hidden" accept="image/*" capture="environment" onChange={handlePhotoUpload} />
           <input type="file" id="site-photo-upload-gallery" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
@@ -1711,7 +1765,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
               onSelect={(id) => {
                 setConfigState(prev => ({ ...prev, selectedProduct: id }));
                 setShowComparator(false);
-                pushUserMessage('Ce produit me convient');
+                pushUserMessage(t('bot.productFits'), undefined, 'bot.productFits');
                 handleProductSelected(id);
               }}
               onClose={() => setShowComparator(false)}

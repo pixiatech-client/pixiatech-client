@@ -629,6 +629,21 @@ const adminTranslations: Record<string, string> = {
   'Dark': 'Sombre',
   'Category': 'Catégorie',
   'Mode': 'Mode',
+
+  // Flow settings — screen configuration
+  'Screen configuration': 'Configuration écrans',
+  'Screen dimensions and limits by type': 'Dimensions et limites par type d\'écran',
+  'Flat Screen': 'Écran Plat',
+  'Curved Screen': 'Écran Incurvé',
+  '360° Screen': 'Écran 360°',
+  'Max width (m)': 'Largeur max (m)',
+  'Max height (m)': 'Hauteur max (m)',
+  'Max diameter (m)': 'Diamètre max (m)',
+  'Curve min': 'Courbe min',
+  'Curve max': 'Courbe max',
+  'Multiselection': 'Multisélection',
+  'Maximum number of products a customer can select': 'Nombre maximum de produits qu\'un client peut sélectionner',
+  'Max products per quote': 'Maximum produits par estimation',
 };
 
 export default adminTranslations;

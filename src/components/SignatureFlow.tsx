@@ -619,6 +619,17 @@ export default function SignatureFlow({
     taxEnabled: false,
     taxRate: 19,
     taxMode: 'ht' as const,
+    sale: {
+      maxProductsPerQuote: 3,
+      flatScreen: { maxWidth: 20, maxHeight: 10 },
+      curvedScreen: { maxWidth: 20, maxHeight: 10, curveMin: -30, curveMax: 30 },
+      screen360: { maxDiameter: 10, maxHeight: 8 },
+    },
+    rental: {
+      flatScreen: { maxWidth: 6, maxHeight: 5 },
+      curvedScreen: { maxWidth: 6, maxHeight: 5, curveMin: -30, curveMax: 30 },
+      screen360: { maxDiameter: 6, maxHeight: 5 },
+    },
   };
   const isRentalPeriodEnabled = flowSettings.enableRentalPeriod;
   const isDigitalSignatureEnabled = flowSettings.enableDigitalSignature;

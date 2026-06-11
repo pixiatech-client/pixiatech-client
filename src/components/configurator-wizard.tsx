@@ -1302,6 +1302,7 @@ function DetailItem({ icon, iconBg = "bg-slate-100", label, value }: { icon: Rea
 export function StepFinal({ state, updateState, products, settings, t, locale, hideBackButton }: { state: ConfigState, updateState: any, products?: Product[], settings: Settings, t: any, locale: string, hideBackButton?: boolean }) {
   const area = state.width * state.height;
   const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
+  const maxPerQuote = settings.estimationFlow?.sale?.maxProductsPerQuote ?? settings.maxProductsPerQuote ?? 5;
 
   const filteredProducts = (products || []).filter(p => {
     if (p.isHidden) return false;
@@ -1369,8 +1370,8 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
         {state.projectType !== 'location' && isMulti && (
           <p className="text-[9px] font-bold text-slate-400 tracking-widest uppercase mt-2">
             {locale === 'fr'
-              ? `${selectedProducts.length} / 3 produits s\u00e9lectionn\u00e9s`
-              : `${selectedProducts.length} / 3 products selected`
+              ? `${selectedProducts.length} / ${maxPerQuote} produits s\u00e9lectionn\u00e9s`
+              : `${selectedProducts.length} / ${maxPerQuote} products selected`
             }
           </p>
         )}
@@ -1392,7 +1393,7 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
             const isSelected = isMulti
               ? selectedProducts.includes(product.id)
               : state.selectedProduct === product.id;
-            const atMaxMulti = isMulti && selectedProducts.length >= 3 && !isSelected;
+            const atMaxMulti = isMulti && selectedProducts.length >= maxPerQuote && !isSelected;
             const quantity = isMulti
               ? (state.quantities?.[product.id] || 1)
               : (state.quantity || 1);

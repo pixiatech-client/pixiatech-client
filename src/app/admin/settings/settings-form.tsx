@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings, TranslatedString, Theme } from '@/lib/types';
 import { updateSettings } from '../actions';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle } from 'lucide-react';
+import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, Monitor, Smartphone, Orbit, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -81,6 +81,17 @@ const settingsSchema = z.object({
     taxEnabled: z.boolean(),
     taxRate: z.coerce.number().min(0).max(100),
     taxMode: z.enum(['ht', 'ttc']),
+    sale: z.object({
+      maxProductsPerQuote: z.coerce.number().min(1).default(3),
+      flatScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+      curvedScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1), curveMin: z.coerce.number().max(0), curveMax: z.coerce.number().min(0) }),
+      screen360: z.object({ maxDiameter: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+    }).optional(),
+    rental: z.object({
+      flatScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+      curvedScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1), curveMin: z.coerce.number().max(0), curveMax: z.coerce.number().min(0) }),
+      screen360: z.object({ maxDiameter: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
+    }).optional(),
   }).optional(),
 });
 
@@ -106,11 +117,34 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       isEmailVerificationEnabled: initialSettings.isEmailVerificationEnabled ?? true, 
       isPriceHidden: initialSettings.isPriceHidden ?? false,
       isWizardBotEnabled: initialSettings.isWizardBotEnabled ?? true,
-      isGuidedConfigEnabled: initialSettings.isGuidedConfigEnabled ?? true
+      isGuidedConfigEnabled: initialSettings.isGuidedConfigEnabled ?? true,
+      estimationFlow: {
+        ...initialSettings.estimationFlow,
+        sale: initialSettings.estimationFlow?.sale || {
+          maxProductsPerQuote: 3,
+          flatScreen: { maxWidth: 20, maxHeight: 10 },
+          curvedScreen: { maxWidth: 20, maxHeight: 10, curveMin: -30, curveMax: 30 },
+          screen360: { maxDiameter: 10, maxHeight: 8 },
+        },
+        rental: {
+          flatScreen: { maxWidth: 6, maxHeight: 5 },
+          curvedScreen: { maxWidth: 6, maxHeight: 5, curveMin: -30, curveMax: 30 },
+          screen360: { maxDiameter: 6, maxHeight: 5 },
+        },
+      },
     },
   });
 
   const handleSave = async (sectionName: string) => {
+    const isValid = await form.trigger();
+    if (!isValid) {
+      toast({
+        variant: 'destructive',
+        title: t('Validation error'),
+        description: t('Please check the form for invalid values.'),
+      });
+      return;
+    }
     const result = await updateSettings(form.getValues());
     if (result.success) {
       toast({
@@ -170,91 +204,115 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                 </div>
             </div>
 
-            {configMode === 'sale' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                    <div className="space-y-6 p-4 md:p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
-                        <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">{t('Default Values')}</h4>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="defaultWidth" className="text-xs font-bold text-slate-700">{t('Width (m)')}</Label>
-                                <Input 
-                                    id="defaultWidth" 
-                                    type="number" 
-                                    className="h-11 rounded-xl bg-white border-slate-200 focus:ring-slate-900"
-                                    {...form.register('defaultWidth')}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="defaultHeight" className="text-xs font-bold text-slate-700">{t('Height (m)')}</Label>
-                                <Input 
-                                    id="defaultHeight" 
-                                    type="number" 
-                                    className="h-11 rounded-xl bg-white border-slate-200 focus:ring-slate-900"
-                                    {...form.register('defaultHeight')}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="space-y-6 p-4 md:p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
-                        <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">{t('Maximum Limits')}</h4>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="maxWidth" className="text-xs font-bold text-slate-700">{t('Max Width (m)')}</Label>
-                                <Input 
-                                    id="maxWidth" 
-                                    type="number" 
-                                    className="h-11 rounded-xl bg-white border-slate-200 focus:ring-slate-900"
-                                    {...form.register('maxWidth')}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="maxHeight" className="text-xs font-bold text-slate-700">{t('Max Height (m)')}</Label>
-                                <Input 
-                                    id="maxHeight" 
-                                    type="number" 
-                                    className="h-11 rounded-xl bg-white border-slate-200 focus:ring-slate-900"
-                                    {...form.register('maxHeight')}
-                                />
-                            </div>
-                        </div>
-                    </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Écran Plat */}
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Monitor className="w-4 h-4 text-slate-600" />
+                  <span className="text-sm font-bold text-slate-900">{t('Flat Screen')}</span>
                 </div>
-            ) : (
-                 <div className="space-y-6 p-4 md:p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
-                    <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100 pb-3">{t('Rental Limits')}</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="maxRentalWidth" className="text-xs font-bold text-slate-700">{t('Max Width (m)')}</Label>
-                            <Input 
-                                id="maxRentalWidth" 
-                                type="number" 
-                                className="h-11 rounded-xl bg-white border-slate-200 focus:ring-slate-900"
-                                {...form.register('maxRentalWidth')}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="maxRentalHeight" className="text-xs font-bold text-slate-700">{t('Max Height (m)')}</Label>
-                            <Input 
-                                id="maxRentalHeight" 
-                                type="number" 
-                                className="h-11 rounded-xl bg-white border-slate-200 focus:ring-slate-900"
-                                {...form.register('maxRentalHeight')}
-                            />
-                        </div>
-                    </div>
-                 </div>
-            )}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-600">{t('Max Width (m)')}</Label>
+                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
+                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.flatScreen.maxWidth' : 'estimationFlow.rental.flatScreen.maxWidth')}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-600">{t('Max Height (m)')}</Label>
+                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
+                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.flatScreen.maxHeight' : 'estimationFlow.rental.flatScreen.maxHeight')}
+                    />
+                  </div>
+                </div>
+              </div>
 
-            <div className="space-y-2 pt-4 border-t">
-                <Label htmlFor="maxProductsPerQuote">{t('Maximum number of products per quote')}</Label>
-                <Input 
-                    id="maxProductsPerQuote" 
-                    type="number" 
-                    min="1"
-                    placeholder="5" 
-                    {...form.register('maxProductsPerQuote')}
-                />
+              {/* Écran Incurvé */}
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 text-slate-600" />
+                  <span className="text-sm font-bold text-slate-900">{t('Curved Screen')}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-600">{t('Max Width (m)')}</Label>
+                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
+                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.curvedScreen.maxWidth' : 'estimationFlow.rental.curvedScreen.maxWidth')}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-600">{t('Max Height (m)')}</Label>
+                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
+                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.curvedScreen.maxHeight' : 'estimationFlow.rental.curvedScreen.maxHeight')}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-600">{t('Curve min')}</Label>
+                    <Controller
+                      control={form.control}
+                      name={configMode === 'sale' ? 'estimationFlow.sale.curvedScreen.curveMin' : 'estimationFlow.rental.curvedScreen.curveMin'}
+                      render={({ field }) => (
+                        <Input type="number" step="1" className="h-9 rounded-xl bg-white border-slate-200"
+                          value={field.value}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            field.onChange(isNaN(val) ? 0 : -Math.abs(val));
+                          }}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                        />
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-600">{t('Curve max')}</Label>
+                    <Input type="number" step="1" className="h-9 rounded-xl bg-white border-slate-200"
+                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.curvedScreen.curveMax' : 'estimationFlow.rental.curvedScreen.curveMax')}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Écran 360° */}
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Orbit className="w-4 h-4 text-slate-600" />
+                  <span className="text-sm font-bold text-slate-900">{t('360° Screen')}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-600">{t('Max diameter (m)')}</Label>
+                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
+                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.screen360.maxDiameter' : 'estimationFlow.rental.screen360.maxDiameter')}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-600">{t('Max Height (m)')}</Label>
+                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
+                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.screen360.maxHeight' : 'estimationFlow.rental.screen360.maxHeight')}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {configMode === 'sale' && (
+              <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-amber-600" />
+                  <span className="text-sm font-bold text-slate-900">{t('Multiselection')}</span>
+                </div>
+                <p className="text-xs text-slate-500">{t('Maximum number of products a customer can select')}</p>
+                <div className="space-y-1 w-32">
+                  <Label className="text-xs font-semibold text-slate-600">{t('Max products per quote')}</Label>
+                  <Input type="number" min="1" step="1" className="h-9 rounded-xl bg-white border-slate-200"
+                    {...form.register('estimationFlow.sale.maxProductsPerQuote')}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-4 pt-4 border-t">
               <h4 className="font-medium">{t('Estimation Process')}</h4>
