@@ -26,6 +26,7 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
   const [isOpen, setIsOpen] = useState(false);
   const constraintsRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   return (
     <>
@@ -41,7 +42,7 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
         whileDrag={{ cursor: "grabbing", scale: 1.1 }}
         className={cn(
           "fixed z-[101] pointer-events-auto touch-none",
-          isMobile ? "bottom-24 left-2" : "bottom-[38%] right-8"
+          isMobile ? "bottom-24 left-2" : "bottom-[38%] right-12"
         )}
         style={{ touchAction: "none" }}
       >
@@ -53,7 +54,7 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
             "transition-all duration-300 relative cursor-grab active:cursor-grabbing",
             isOpen
               ? "h-14 w-14 rounded-full flex items-center justify-center bg-[#1a1d21] text-white rotate-90 shadow-2xl"
-              : "h-32 w-32 flex items-center justify-center bg-transparent"
+              : "h-28 sm:h-44 w-28 sm:w-44 flex items-center justify-center bg-transparent"
           )}
         >
           <AnimatePresence mode="wait">
@@ -74,14 +75,27 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
                 exit={{ opacity: 0, scale: 0.5 }}
                 className="w-full h-full relative"
               >
-                <motion.img
-                  src="/robot-avatar.png"
-                  alt="Assistant"
-                  draggable="false"
-                  className="w-full h-full object-contain drop-shadow-2xl select-none"
-                  animate={{ y: [0, -8, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                />
+                <div className="w-full h-full">
+                  <video
+                    ref={videoRef}
+                    src="/bot-avatars/pixia_robot.webm"
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-full object-contain select-none"
+                    style={{ background: 'transparent', display: 'block' }}
+                    onTimeUpdate={() => {
+                      const v = videoRef.current;
+                      if (v && v.duration > 0 && v.currentTime >= v.duration - 0.04) {
+                        v.currentTime = 0.04;
+                      }
+                    }}
+                    onEnded={(e) => {
+                      (e.target as HTMLVideoElement).currentTime = 0.04;
+                      (e.target as HTMLVideoElement).play();
+                    }}
+                  />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

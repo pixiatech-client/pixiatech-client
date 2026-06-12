@@ -420,7 +420,8 @@
         "moreChoices": "More choices",
         "nextProduct": "Next product",
         "unavailable": "Unavailable",
-        "confirm": "Confirm"
+        "confirm": "Confirm",
+        "errorAddressValidation": "We are unable to validate your address. The session will close."
     },
     "admin": {
         "dashboard": "Dashboard",
