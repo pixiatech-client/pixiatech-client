@@ -898,10 +898,6 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     }, 'bot.contractSigned');
   };
 
-  const handleOtpSubmit
-      submitFinalQuoteWithContract();
-    }, 'bot.contractSigned');
-  };
 
   const handleOtpSubmit = async () => {
     if (!quoteId || otpCode.length < 6) return;
@@ -1717,10 +1713,15 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                       {/* Paste button */}
                       {otpCode.length < 6 && (
                         <button
+                          type="button"
                           onClick={handlePasteCode}
-                          className="text-xs text-[#0f766e] font-bold underline underline-offset-2 hover:text-[#0f766e]/80 self-start"
+                          className="text-xs font-black text-white bg-zinc-950 hover:bg-zinc-800 transition-all flex items-center justify-center gap-1.5 rounded-xl px-6 py-2.5 cursor-pointer shadow-xs uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          {locale === 'fr' ? '📋 Coller le code' : '📋 Paste code'}
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-copy stroke-[2.5]">
+                            <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                          </svg>
+                          <span>{locale === 'fr' ? 'Coller le code' : 'Paste code'}</span>
                         </button>
                       )}
 
@@ -1748,18 +1749,33 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                         <p className="text-red-500 text-xs font-bold">{otpError}</p>
                       )}
 
-                      {otpCooldown <= 0 && (
+                      {otpCooldown <= 0 && otpAttempts < 3 && (
                         <button
                           onClick={handleResendOtp}
-                          disabled={isResending || otpAttempts >= 3}
+                          disabled={isResending}
                           className="text-xs text-[#0f766e] font-bold underline underline-offset-2 hover:text-[#0f766e]/80 disabled:opacity-40 self-start"
                         >
                           {isResending
                             ? (locale === 'fr' ? 'Renvol en cours...' : 'Resending...')
-                            : (otpAttempts >= 3
-                              ? (locale === 'fr' ? 'Tentatives épuisées' : 'No attempts left')
-                              : (locale === 'fr' ? 'Renvoyer le code' : 'Resend code'))}
+                            : (locale === 'fr' ? 'Renvoyer le code' : 'Resend code')}
                         </button>
+                      )}
+
+                      {otpAttempts >= 3 && (
+                        <div className="flex flex-col gap-3 pt-2 border-t border-slate-200">
+                          <p className="text-xs text-red-600 font-bold text-center">
+                            {locale === 'fr'
+                              ? 'Tentatives épuisées. Veuillez recommencer le parcours.'
+                              : 'No attempts left. Please restart the process.'}
+                          </p>
+                          <Button
+                            onClick={() => startConversation()}
+                            className="w-full h-12 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-xs shadow-md"
+                          >
+                            <RotateCcw size={14} className="mr-2" />
+                            {locale === 'fr' ? 'Recommencer' : 'Restart'}
+                          </Button>
+                        </div>
                       )}
                     </motion.div>
                   )}
