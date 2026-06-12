@@ -21,21 +21,23 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerUser } from '@/app/admin/actions';
 import { Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-
-const formSchema = z.object({
-  displayName: z.string().min(2, 'Username is required.'),
-  email: z.string().email('Email is invalid.'),
-  phone: z.string().optional(),
-  password: z.string().min(6, 'Password must be at least 6 characters.'),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { useAdminT } from '@/hooks/useAdminT';
 
 function RegisterForm() {
+  const { t } = useAdminT();
   const router = useRouter();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  const formSchema = z.object({
+    displayName: z.string().min(2, t('Username is required.')),
+    email: z.string().email(t('Email is invalid.')),
+    phone: z.string().optional(),
+    password: z.string().min(6, t('Password must be at least 6 characters.')),
+  });
+
+  type FormValues = z.infer<typeof formSchema>;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -53,34 +55,34 @@ function RegisterForm() {
 
     if (result.success) {
       toast({
-        title: 'Registration successful',
-        description: 'Your account is now pending approval by an administrator.',
+        title: t('Registration successful'),
+        description: t('Your account is now pending approval by an administrator.'),
         variant: 'success',
       });
       router.push('/admin/login');
     } else {
-      setError(result.error || 'An unknown error occurred.');
+      setError(result.error || t('An unknown error occurred.'));
     }
   };
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="displayName">Full name</Label>
+        <Label htmlFor="displayName">{t('Full name')}</Label>
         <Input id="displayName" placeholder="John Doe" {...form.register('displayName')} />
         {form.formState.errors.displayName && <p className="text-sm text-destructive">{form.formState.errors.displayName.message}</p>}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t('Email')}</Label>
         <Input id="email" type="email" placeholder="jean.dupont@example.com" {...form.register('email')} />
          {form.formState.errors.email && <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>}
       </div>
        <div className="space-y-2">
-        <Label htmlFor="phone">Phone number</Label>
+        <Label htmlFor="phone">{t('Phone number')}</Label>
         <Input id="phone" type="tel" placeholder="+33612345678" {...form.register('phone')} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">{t('Password')}</Label>
         <div className="relative">
             <Input 
                 id="password" 
@@ -105,7 +107,7 @@ function RegisterForm() {
       
       <div className="flex flex-col gap-4 pt-2">
         <Button type="submit" className="w-full" size="lg" disabled={form.formState.isSubmitting}>
-           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Sign up'}
+           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : t('Sign up')}
         </Button>
       </div>
     </form>
@@ -114,6 +116,7 @@ function RegisterForm() {
 
 
 export default function RegisterPage() {
+  const { t } = useAdminT();
   return (
     <div className="min-h-screen bg-muted/40 py-6 flex flex-col justify-center sm:py-12">
       <div className="relative py-3 sm:max-w-xl sm:mx-auto">
@@ -122,18 +125,18 @@ export default function RegisterPage() {
         </div>
         <Card className="relative shadow-lg sm:rounded-3xl sm:p-8 max-w-md w-full">
           <CardHeader className="text-center">
-            <CardTitle>Create an account</CardTitle>
+            <CardTitle>{t('Create an account')}</CardTitle>
             <CardDescription>
-              Join the platform to create estimates.
+              {t('Join the platform to create estimates.')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <RegisterForm />
           </CardContent>
            <CardFooter className="flex-col gap-4 items-center text-sm pt-6">
-            <p>Already have an account? <Link href="/admin/login" className="font-semibold underline">Log in</Link></p>
+            <p>{t('Already have an account?')} <Link href="/admin/login" className="font-semibold underline">{t('Log in')}</Link></p>
             <Button variant="link" asChild className="text-muted-foreground mt-4">
-              <Link href="/"><ArrowLeft className="mr-2 h-4 w-4"/> Back to site</Link>
+              <Link href="/"><ArrowLeft className="mr-2 h-4 w-4"/> {t('Back to site')}</Link>
           </Button>
           </CardFooter>
         </Card>

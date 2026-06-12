@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { RefreshCw, Timer, ShieldCheck, Sparkles, Users, Sliders, Layers } from 'lucide-react';
 import type { MessageStyle, PreviewTheme, LogAction } from './types';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface EmailConfiguratorProps {
   code: string;
@@ -38,8 +39,9 @@ export function EmailConfigurator({
   autoSimulatedDark, onAutoSimulatedDarkChange,
   timeLeft, onRandomizeCode, onResetTimer, onTogglePause, isPlaying,
 }: EmailConfiguratorProps) {
+  const { t } = useAdminT();
   const [logs, setLogs] = useState<LogAction[]>([
-    { id: "1", time: new Date().toLocaleTimeString("fr-FR"), text: "Configurateur initialisé.", type: "info" },
+    { id: "1", time: new Date().toLocaleTimeString("fr-FR"), text: t("Configurateur initialisé."), type: "info" },
   ]);
   const [soundEnabled] = useState(true);
 
@@ -65,10 +67,10 @@ export function EmailConfigurator({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-indigo-400 font-mono text-xs font-semibold uppercase tracking-wider">
           <Sliders className="w-4 h-4" />
-          <span>Pupitre de Contrôle</span>
+          <span>{t("Pupitre de Contrôle")}</span>
         </div>
         <span className="text-xs bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-full border border-indigo-500/15 font-medium">
-          Administration
+          {t("Administration")}
         </span>
       </div>
 
@@ -79,7 +81,7 @@ export function EmailConfigurator({
           <div className="flex justify-between items-center">
             <label className="text-xs font-bold tracking-wide uppercase text-slate-500 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-              Code de Validation (6 chiffres)
+              {t("Code de Validation (6 chiffres)")}
             </label>
             <button
               type="button"
@@ -87,12 +89,12 @@ export function EmailConfigurator({
                 const digits = Math.floor(100000 + Math.random() * 900000).toString();
                 onCodeChange(digits);
                 onResetTimer();
-                addLog(`Nouveau code généré : ${digits}`, "success");
+                addLog(t("Nouveau code généré : {digits}").replace("{digits}", digits), "success");
               }}
               className="text-xs flex items-center gap-1 text-indigo-500 hover:text-indigo-700 transition-colors font-medium cursor-pointer"
             >
               <RefreshCw className="w-3 h-3" />
-              Changer le code
+              {t("Changer le code")}
             </button>
           </div>
           <div className="relative">
@@ -104,7 +106,7 @@ export function EmailConfigurator({
                 const val = e.target.value.replace(/\D/g, "");
                 onCodeChange(val);
               }}
-              placeholder="Ex: 523807"
+              placeholder={t("Ex: 523807")}
               className="w-full tracking-widest font-mono text-xl bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-center text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-semibold"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono">
@@ -117,7 +119,7 @@ export function EmailConfigurator({
         <div className="space-y-3">
           <label className="text-xs font-bold tracking-wide uppercase text-slate-500 flex items-center gap-1.5">
             <Timer className="w-3.5 h-3.5 text-indigo-500" />
-            Durée de validité du code
+            {t("Durée de validité du code")}
           </label>
           <div className="grid grid-cols-4 gap-2">
             {[1, 5, 10, 15].map((mins) => (
@@ -126,7 +128,7 @@ export function EmailConfigurator({
                 type="button"
                 onClick={() => {
                   onValidityChange(mins);
-                  addLog(`Durée configurée sur ${mins} minutes.`, "info");
+                  addLog(t("Durée configurée sur {mins} minutes.").replace("{mins}", String(mins)), "info");
                 }}
                 className={`py-2 text-xs rounded-xl font-mono font-bold border transition-all cursor-pointer ${
                   validityMinutes === mins
@@ -134,14 +136,14 @@ export function EmailConfigurator({
                     : "bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600"
                 }`}
               >
-                {mins} Min
+                {t("{mins} Min").replace("{mins}", String(mins))}
               </button>
             ))}
           </div>
           <div className="flex gap-2 items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-200">
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${timeLeft === 0 ? 'bg-slate-400' : 'bg-rose-500'} animate-pulse`} />
-              <span className="text-xs font-mono text-slate-500">Rebours :</span>
+              <span className="text-xs font-mono text-slate-500">{t("Rebours :")}</span>
               <span className="text-xs font-mono font-bold text-slate-900">{formatTime(timeLeft)}</span>
             </div>
             <div className="flex gap-2">
@@ -150,14 +152,14 @@ export function EmailConfigurator({
                 onClick={onTogglePause}
                 className="px-2.5 py-1 text-[11px] font-bold bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-600 transition-all cursor-pointer"
               >
-                {isPlaying ? "Pause" : "Démarrer"}
+                {isPlaying ? t("Pause") : t("Démarrer")}
               </button>
               <button
                 type="button"
                 onClick={onResetTimer}
                 className="px-2.5 py-1 text-[11px] font-bold bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-500 transition-all cursor-pointer"
               >
-                Reset
+                {t("Reset")}
               </button>
             </div>
           </div>
@@ -168,28 +170,28 @@ export function EmailConfigurator({
           <div className="flex justify-between items-center">
             <label className="text-xs font-bold tracking-wide uppercase text-slate-500 flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
-              Formulation de sécurité
+              {t("Formulation de sécurité")}
             </label>
             <span className="text-[9px] bg-indigo-50 text-indigo-600 border border-indigo-200 px-2 py-0.5 rounded-full font-mono font-semibold">
-              Sans Triangle
+              {t("Sans Triangle")}
             </span>
           </div>
           <div className="space-y-2">
             {[
               {
                 id: "collaborative_trust" as MessageStyle,
-                label: "Option A : Co-Responsabilité",
-                desc: "Implication collaborative des équipes et du client."
+                label: t("Option A : Co-Responsabilité"),
+                desc: t("Implication collaborative des équipes et du client.")
               },
               {
                 id: "ultra_secure_2026" as MessageStyle,
-                label: "Option B : Confidentialité Absolue",
-                desc: "Politique stricte, signature électronique sécurisée."
+                label: t("Option B : Confidentialité Absolue"),
+                desc: t("Politique stricte, signature électronique sécurisée.")
               },
               {
                 id: "classic_refinement" as MessageStyle,
-                label: "Option C : Point de Contrôle",
-                desc: "Gouvernance interne et sécurité de base."
+                label: t("Option C : Point de Contrôle"),
+                desc: t("Gouvernance interne et sécurité de base.")
               }
             ].map((opt) => (
               <button
@@ -197,7 +199,7 @@ export function EmailConfigurator({
                 type="button"
                 onClick={() => {
                   onMessageStyleChange(opt.id);
-                  addLog(`Wording : ${opt.label}`, "info");
+                  addLog(t("Wording : {label}").replace("{label}", opt.label), "info");
                 }}
                 className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-start gap-3 cursor-pointer ${
                   messageStyle === opt.id
@@ -226,44 +228,44 @@ export function EmailConfigurator({
           <div className="flex justify-between items-center">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
               <Layers className="w-4 h-4 text-indigo-500" />
-              Thèmes du Courriel
+              {t("Thèmes du Courriel")}
             </label>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {[
-              { key: "auto_adaptive" as PreviewTheme, label: "Détecteur Auto ✨" },
-              { key: "glass_frosted" as PreviewTheme, label: "Glassmorphic" },
-              { key: "light_premium" as PreviewTheme, label: "Blanc Épuré" },
-              { key: "dark_luxury" as PreviewTheme, label: "Sombre Luxe" },
-            ].map((t) => (
+              { key: "auto_adaptive" as PreviewTheme, label: t("Détecteur Auto ✨") },
+              { key: "glass_frosted" as PreviewTheme, label: t("Glassmorphic") },
+              { key: "light_premium" as PreviewTheme, label: t("Blanc Épuré") },
+              { key: "dark_luxury" as PreviewTheme, label: t("Sombre Luxe") },
+            ].map((th) => (
               <button
-                key={t.key}
+                key={th.key}
                 type="button"
                 onClick={() => {
-                  onPreviewThemeChange(t.key);
-                  addLog(`Thème : ${t.label}`, "info");
+                  onPreviewThemeChange(th.key);
+                  addLog(t("Thème : {label}").replace("{label}", th.label), "info");
                 }}
                 className={`py-2 px-1 text-[10px] font-bold rounded-xl border transition-all cursor-pointer ${
-                  previewTheme === t.key
+                  previewTheme === th.key
                     ? "bg-indigo-600 text-white border-indigo-600 shadow-md"
                     : "bg-white border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600"
                 }`}
               >
-                {t.label}
+                {th.label}
               </button>
             ))}
           </div>
           {previewTheme === "auto_adaptive" && (
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2 mt-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-indigo-600 font-mono font-bold uppercase">Simulateur OS</span>
-                <span className="text-[9px] px-1.5 py-0.5 bg-indigo-100 text-indigo-700 uppercase rounded font-bold font-mono">Media Query</span>
+                <span className="text-[10px] text-indigo-600 font-mono font-bold uppercase">{t("Simulateur OS")}</span>
+                <span className="text-[9px] px-1.5 py-0.5 bg-indigo-100 text-indigo-700 uppercase rounded font-bold font-mono">{t("Media Query")}</span>
               </div>
               <p className="text-[11px] text-slate-500 leading-normal">
-                Simule <code className="text-pink-600 bg-pink-50 px-1 py-0.5 rounded">@media (prefers-color-scheme: dark)</code>
+                {t("Simule")} <code className="text-pink-600 bg-pink-50 px-1 py-0.5 rounded">@media (prefers-color-scheme: dark)</code>
               </p>
               <div className="flex items-center justify-between pt-1">
-                <span className="text-[11px] text-slate-600">Thème OS simulateur :</span>
+                <span className="text-[11px] text-slate-600">{t("Thème OS simulateur :")}</span>
                 <div className="flex bg-slate-200 rounded-lg p-0.5">
                   <button
                     type="button"
@@ -272,7 +274,7 @@ export function EmailConfigurator({
                       !autoSimulatedDark ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700"
                     }`}
                   >
-                    Clair
+                    {t("Clair")}
                   </button>
                   <button
                     type="button"
@@ -281,7 +283,7 @@ export function EmailConfigurator({
                       autoSimulatedDark ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
                     }`}
                   >
-                    Sombre
+                    {t("Sombre")}
                   </button>
                 </div>
               </div>
@@ -291,7 +293,7 @@ export function EmailConfigurator({
           {/* Company name fields */}
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase font-mono">Entreprise</span>
+              <span className="text-[10px] text-slate-500 uppercase font-mono">{t("Entreprise")}</span>
               <input
                 type="text"
                 className="w-full bg-white border border-slate-200 text-xs px-2.5 py-2 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-500"
@@ -300,7 +302,7 @@ export function EmailConfigurator({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase font-mono">Slogan Logo</span>
+              <span className="text-[10px] text-slate-500 uppercase font-mono">{t("Slogan Logo")}</span>
               <input
                 type="text"
                 className="w-full bg-white border border-slate-200 text-xs px-2.5 py-2 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-500"
@@ -310,7 +312,7 @@ export function EmailConfigurator({
             </div>
           </div>
           <div className="space-y-1">
-            <span className="text-[10px] text-slate-500 uppercase font-mono">Objet du Document</span>
+            <span className="text-[10px] text-slate-500 uppercase font-mono">{t("Objet du Document")}</span>
             <input
               type="text"
               className="w-full bg-white border border-slate-200 text-xs px-2.5 py-2 rounded-xl text-slate-900 focus:outline-none focus:border-indigo-500"
@@ -326,14 +328,14 @@ export function EmailConfigurator({
         <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider pb-2 border-b border-slate-100 mb-2">
           <span className="flex items-center gap-1.5">
             <span className={`w-1.5 h-1.5 rounded-full bg-indigo-500 ${logs.length > 0 ? 'animate-ping' : ''}`} />
-            <span className="text-slate-500 flex items-center gap-1"><Users className="w-3 h-3" /> Journal d'Actions</span>
+            <span className="text-slate-500 flex items-center gap-1"><Users className="w-3 h-3" /> {t("Journal d'Actions")}</span>
           </span>
           <button
             type="button"
-            onClick={() => setLogs([{ id: "1", time: "maintenant", text: "Journal vidé.", type: "info" }])}
+            onClick={() => setLogs([{ id: "1", time: t("maintenant"), text: t("Journal vidé."), type: "info" }])}
             className="hover:text-slate-700 transition-colors cursor-pointer"
           >
-            Effacer
+            {t("Effacer")}
           </button>
         </div>
         <div className="space-y-1.5 max-h-32 overflow-y-auto">

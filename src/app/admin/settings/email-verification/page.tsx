@@ -7,11 +7,13 @@ import { EmailConfigurator } from '@/components/verification/EmailConfigurator';
 import { EmailTemplatePreview } from '@/components/verification/EmailTemplatePreview';
 import type { MessageStyle, PreviewTheme } from '@/components/verification/types';
 import { Loader2, Save } from 'lucide-react';
+import { useAdminT } from '@/hooks/useAdminT';
 
 export default function EmailVerificationSettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { t } = useAdminT();
 
   // Local preview state
   const [code, setCode] = useState('523807');
@@ -149,8 +151,8 @@ export default function EmailVerificationSettingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-black text-slate-900 tracking-tight">Email Verification (PIXIA-VERIFY 2026)</h3>
-          <p className="text-sm font-medium text-slate-500">Configurez le module de vérification par e-mail sécurisé.</p>
+          <h3 className="text-lg font-black text-slate-900 tracking-tight">{t('Email Verification (PIXIA-VERIFY 2026)')}</h3>
+          <p className="text-sm font-medium text-slate-500">{t('Configure the secure email verification module.')}</p>
         </div>
         <button
           onClick={handleSave}
@@ -158,7 +160,7 @@ export default function EmailVerificationSettingsPage() {
           className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-lg cursor-pointer disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
-          {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+          {saving ? t('Saving...') : t('Save')}
         </button>
       </div>
 

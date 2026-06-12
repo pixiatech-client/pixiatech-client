@@ -283,8 +283,8 @@ export function SupplierDashboard() {
         <CardHeader className="border-b border-gray-100">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <CardTitle className="text-xl font-bold text-gray-900">Estimates to process</CardTitle>
-              <CardDescription className="text-sm font-medium text-gray-400">Here is the list of estimates assigned to you.</CardDescription>
+              <CardTitle className="text-xl font-bold text-gray-900">{t("Estimates to process")}</CardTitle>
+              <CardDescription className="text-sm font-medium text-gray-400">{t("Here is the list of estimates assigned to you.")}</CardDescription>
             </div>
             <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -345,16 +345,16 @@ export function SupplierDashboard() {
       <AlertDialog open={!!revertAction} onOpenChange={(open) => !open && setRevertAction(null)}>
         <AlertDialogContent className="rounded-[2rem] border border-gray-200 shadow-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-bold text-gray-900">Confirm cancellation</AlertDialogTitle>
+            <AlertDialogTitle className="text-xl font-bold text-gray-900">{t("Confirm cancellation")}</AlertDialogTitle>
             <AlertDialogDescription className="text-sm text-gray-400">
               {revertAction?.status === 'sent'
-                ? 'Are you sure you want to cancel sending this order? The status will return to "In preparation".'
-                : 'Are you sure you want to cancel the transmission of this order? It will return to the list of "Processed" estimates for the administrator.'}
+                ? t('Are you sure you want to cancel sending this order? The status will return to "In preparation".')
+                : t('Are you sure you want to cancel the transmission of this order? It will return to the list of "Processed" estimates for the administrator.')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl border-gray-200">No</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRevertStatus} className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white">Yes, cancel</AlertDialogAction>
+            <AlertDialogCancel className="rounded-xl border-gray-200">{t("No")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRevertStatus} className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white">{t("Yes, cancel")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
 import { Monitor, Smartphone, Orbit, Layers } from 'lucide-react';
+import { useAdminT } from '@/hooks/useAdminT';
 
 const flowSchema = z.object({
   estimationFlow: z.object({
@@ -47,6 +48,7 @@ interface FlowSettingsFormProps {
 
 export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
   const { toast } = useToast();
+  const { t } = useAdminT();
   const [contractMode, setContractMode] = useState<'vente' | 'location'>('location');
   const [screenMode, setScreenMode] = useState<'vente' | 'location'>('vente');
 
@@ -244,9 +246,9 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     const payload = { ...initialSettings, ...values };
     const result = await updateSettings(payload);
     if (result.success) {
-      toast({ title: 'Paramètres sauvegardés', description: 'Tous les paramètres du parcours client ont été mis à jour.', variant: 'success' });
+      toast({ title: t('Settings saved'), description: t('Tous les paramètres du parcours client ont été mis à jour.'), variant: 'success' });
     } else {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Une erreur est survenue lors de la sauvegarde.' });
+      toast({ variant: 'destructive', title: t('Error'), description: t('Une erreur est survenue lors de la sauvegarde.') });
     }
   };
 
@@ -266,11 +268,11 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-black text-slate-900 tracking-tight">Parcours client</h3>
-          <p className="text-sm font-medium text-slate-500">Contrôle des options du parcours d'estimation, signature, TVA et contrats.</p>
+          <h3 className="text-lg font-black text-slate-900 tracking-tight">{t('Parcours client')}</h3>
+          <p className="text-sm font-medium text-slate-500">{t("Contrôle des options du parcours d'estimation, signature, TVA et contrats.")}</p>
         </div>
         <Button onClick={saveAll} className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-lg cursor-pointer">
-          Sauvegarder
+          {t('Save')}
         </Button>
       </div>
 
@@ -283,14 +285,14 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
           <Card className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <CardContent className="space-y-6 pt-6">
               <div className="space-y-1 pb-4 border-b border-slate-100">
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">Options parcours</h4>
-                <p className="text-xs text-slate-500">Activer ou désactiver les fonctionnalités du parcours client.</p>
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">{t('Options parcours')}</h4>
+                <p className="text-xs text-slate-500">{t('Activer ou désactiver les fonctionnalités du parcours client.')}</p>
               </div>
 
               <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/30">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-bold text-slate-900">Période de location</Label>
-                  <p className="text-xs text-slate-500">Afficher les dates et horaires de location</p>
+                  <Label className="text-sm font-bold text-slate-900">{t('Période de location')}</Label>
+                  <p className="text-xs text-slate-500">{t('Afficher les dates et horaires de location')}</p>
                 </div>
                 <Switch
                   checked={form.watch('estimationFlow.enableRentalPeriod')}
@@ -300,8 +302,8 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
 
               <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/30">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-bold text-slate-900">Signature numérique</Label>
-                  <p className="text-xs text-slate-500">Activer la signature électronique des contrats</p>
+                  <Label className="text-sm font-bold text-slate-900">{t('Signature numérique')}</Label>
+                  <p className="text-xs text-slate-500">{t('Activer la signature électronique des contrats')}</p>
                 </div>
                 <Switch
                   checked={form.watch('estimationFlow.enableDigitalSignature')}
@@ -311,8 +313,8 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
 
               <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/30">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-bold text-slate-900">Édition des contrats</Label>
-                  <p className="text-xs text-slate-500">Permettre la modification des templates de contrats</p>
+                  <Label className="text-sm font-bold text-slate-900">{t('Édition des contrats')}</Label>
+                  <p className="text-xs text-slate-500">{t('Permettre la modification des templates de contrats')}</p>
                 </div>
                 <Switch
                   checked={form.watch('estimationFlow.enableContractEditing')}
@@ -326,12 +328,12 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
           <Card className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <CardContent className="space-y-6 pt-6">
               <div className="space-y-1 pb-4 border-b border-slate-100">
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">Configuration TVA</h4>
-                <p className="text-xs text-slate-500">Paramètres communs pour la vente et location</p>
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">{t('Configuration TVA')}</h4>
+                <p className="text-xs text-slate-500">{t('Paramètres communs pour la vente et location')}</p>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700">Mode d&apos;affichage</Label>
+                <Label className="text-xs font-semibold text-slate-700">{t("Mode d'affichage")}</Label>
                 <Select
                   value={form.watch('estimationFlow.taxMode')}
                   onValueChange={(v) => form.setValue('estimationFlow.taxMode', v as 'ht' | 'ttc')}
@@ -340,16 +342,16 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ht">HT (hors taxe)</SelectItem>
-                    <SelectItem value="ttc">TTC (toutes taxes comprises)</SelectItem>
+                    <SelectItem value="ht">{t('HT (hors taxe)')}</SelectItem>
+                    <SelectItem value="ttc">{t('TTC (toutes taxes comprises)')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/30">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-bold text-slate-900">Activer TVA</Label>
-                  <p className="text-xs text-slate-500">Appliquer un taux de TVA sur les montants</p>
+                  <Label className="text-sm font-bold text-slate-900">{t('Activer TVA')}</Label>
+                  <p className="text-xs text-slate-500">{t('Appliquer un taux de TVA sur les montants')}</p>
                 </div>
                 <Switch
                   checked={form.watch('estimationFlow.taxEnabled')}
@@ -359,7 +361,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
 
               {taxEnabled && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-700">Taux TVA (%)</Label>
+                  <Label className="text-xs font-semibold text-slate-700">{t('Taux TVA (%)')}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -373,7 +375,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
               )}
 
               {!taxEnabled && (
-                <p className="text-xs text-slate-400 italic">100% HT — Aucune TVA appliquée</p>
+                <p className="text-xs text-slate-400 italic">{t('100% HT — Aucune TVA appliquée')}</p>
               )}
             </CardContent>
           </Card>
@@ -382,8 +384,8 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
           <Card className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <CardContent className="space-y-5 pt-6">
               <div className="space-y-1 pb-4 border-b border-slate-100">
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">Configuration écrans</h4>
-                <p className="text-xs text-slate-500">Dimensions et limites par type d'écran</p>
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">{t('Configuration écrans')}</h4>
+                <p className="text-xs text-slate-500">{t("Dimensions et limites par type d'écran")}</p>
               </div>
 
               <div className="flex items-center gap-2 bg-slate-100 rounded-xl p-1 w-fit">
@@ -391,12 +393,12 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                   className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                     screenMode === 'vente' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                   }`}
-                >Vente</button>
+                >{t('Sale')}</button>
                 <button type="button" onClick={() => setScreenMode('location')}
                   className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                     screenMode === 'location' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                   }`}
-                >Location</button>
+                >{t('Rental')}</button>
               </div>
 
               <div className="space-y-3">
@@ -404,18 +406,18 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                 <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <Monitor className="w-5 h-5 text-slate-600" />
-                    <span className="text-sm font-bold text-slate-900">Écran Plat</span>
+                    <span className="text-sm font-bold text-slate-900">{t('Flat Screen')}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">Largeur max (m)</Label>
+                      <Label className="text-xs font-semibold text-slate-600">{t('Max width (m)')}</Label>
                       <Input type="number" min="1" step="0.1"
                         value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxWidth' : 'estimationFlow.rental.flatScreen.maxWidth')}
                         onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxWidth' : 'estimationFlow.rental.flatScreen.maxWidth', parseFloat(e.target.value) || 1)}
                         className="h-9 rounded-xl bg-white border-slate-200" />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">Hauteur max (m)</Label>
+                      <Label className="text-xs font-semibold text-slate-600">{t('Max height (m)')}</Label>
                       <Input type="number" min="1" step="0.1"
                         value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxHeight' : 'estimationFlow.rental.flatScreen.maxHeight')}
                         onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxHeight' : 'estimationFlow.rental.flatScreen.maxHeight', parseFloat(e.target.value) || 1)}
@@ -428,18 +430,18 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                 <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <Smartphone className="w-5 h-5 text-slate-600" />
-                    <span className="text-sm font-bold text-slate-900">Écran Incurvé</span>
+                    <span className="text-sm font-bold text-slate-900">{t('Curved Screen')}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">Largeur max (m)</Label>
+                      <Label className="text-xs font-semibold text-slate-600">{t('Max width (m)')}</Label>
                       <Input type="number" min="1" step="0.1"
                         value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxWidth' : 'estimationFlow.rental.curvedScreen.maxWidth')}
                         onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxWidth' : 'estimationFlow.rental.curvedScreen.maxWidth', parseFloat(e.target.value) || 1)}
                         className="h-9 rounded-xl bg-white border-slate-200" />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">Hauteur max (m)</Label>
+                      <Label className="text-xs font-semibold text-slate-600">{t('Max height (m)')}</Label>
                       <Input type="number" min="1" step="0.1"
                         value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxHeight' : 'estimationFlow.rental.curvedScreen.maxHeight')}
                         onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxHeight' : 'estimationFlow.rental.curvedScreen.maxHeight', parseFloat(e.target.value) || 1)}
@@ -448,7 +450,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                   </div>
                   <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-200">
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">Courbe min</Label>
+                      <Label className="text-xs font-semibold text-slate-600">{t('Min curve')}</Label>
                       <Input type="number" step="1"
                         value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMin' : 'estimationFlow.rental.curvedScreen.curveMin')}
                         onChange={(e) => {
@@ -458,7 +460,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                         className="h-9 rounded-xl bg-white border-slate-200" />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">Courbe max</Label>
+                      <Label className="text-xs font-semibold text-slate-600">{t('Max curve')}</Label>
                       <Input type="number" step="1"
                         value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMax' : 'estimationFlow.rental.curvedScreen.curveMax')}
                         onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMax' : 'estimationFlow.rental.curvedScreen.curveMax', parseFloat(e.target.value) || 0)}
@@ -471,18 +473,18 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                 <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
                   <div className="flex items-center gap-3">
                     <Orbit className="w-5 h-5 text-slate-600" />
-                    <span className="text-sm font-bold text-slate-900">Écran 360°</span>
+                    <span className="text-sm font-bold text-slate-900">{t('360° Screen')}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">Diamètre max (m)</Label>
+                      <Label className="text-xs font-semibold text-slate-600">{t('Max diameter (m)')}</Label>
                       <Input type="number" min="1" step="0.1"
                         value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxDiameter' : 'estimationFlow.rental.screen360.maxDiameter')}
                         onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxDiameter' : 'estimationFlow.rental.screen360.maxDiameter', parseFloat(e.target.value) || 1)}
                         className="h-9 rounded-xl bg-white border-slate-200" />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">Hauteur max (m)</Label>
+                      <Label className="text-xs font-semibold text-slate-600">{t('Max height (m)')}</Label>
                       <Input type="number" min="1" step="0.1"
                         value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxHeight' : 'estimationFlow.rental.screen360.maxHeight')}
                         onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxHeight' : 'estimationFlow.rental.screen360.maxHeight', parseFloat(e.target.value) || 1)}
@@ -496,11 +498,11 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                   <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4 space-y-3">
                     <div className="flex items-center gap-3">
                       <Layers className="w-5 h-5 text-amber-600" />
-                      <span className="text-sm font-bold text-slate-900">Multisélection</span>
+                      <span className="text-sm font-bold text-slate-900">{t('Multi-selection')}</span>
                     </div>
-                    <p className="text-xs text-slate-500">Nombre maximum de produits qu'un client peut sélectionner</p>
+                    <p className="text-xs text-slate-500">{t("Nombre maximum de produits qu'un client peut sélectionner")}</p>
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">Maximum produits par estimation</Label>
+                      <Label className="text-xs font-semibold text-slate-600">{t('Maximum products per estimate')}</Label>
                       <Input type="number" min="1" step="1"
                         value={form.watch('estimationFlow.sale.maxProductsPerQuote')}
                         onChange={(e) => form.setValue('estimationFlow.sale.maxProductsPerQuote', parseInt(e.target.value) || 3)}
@@ -517,7 +519,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
         {/* RIGHT COLUMN: Contract template (preview + editor merged) */}
         <div className="lg:col-span-3 space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">Template de contrat</h4>
+            <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">{t('Template de contrat')}</h4>
             <div className="flex items-center gap-2 bg-slate-100 rounded-xl p-1">
               <button
                 type="button"
@@ -526,7 +528,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                   contractMode === 'vente' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                Vente
+                {t('Sale')}
               </button>
               <button
                 type="button"
@@ -535,7 +537,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                   contractMode === 'location' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                Location
+                {t('Rental')}
               </button>
             </div>
           </div>
@@ -544,7 +546,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
             <CardContent className="p-5">
               <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                 <span className="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                Contrat {contractMode === 'vente' ? 'vente' : 'location'}
+                {t('Contrat')} {contractMode === 'vente' ? t('Sale') : t('Rental')}
               </div>
 
               <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 max-h-[800px] overflow-y-auto custom-scrollbar">
@@ -560,7 +562,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                       className="w-full h-[500px] rounded-lg border border-slate-200 p-3 text-xs font-mono focus:outline-none focus:border-blue-500 resize-y bg-white"
                       value={contractValue}
                       onChange={(e) => setContractValue(e.target.value)}
-                      placeholder="Laissez vide pour utiliser le contrat par défaut"
+                      placeholder={t('Laissez vide pour utiliser le contrat par défaut')}
                     />
                   ) : (
                     <div className="text-[11px] text-zinc-600 space-y-3">

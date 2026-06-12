@@ -11,6 +11,7 @@ import { firestore as db } from '@/firebase/config';
 import { SummaryCard } from './Layout';
 import { Calculator } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { useAdminT } from '@/hooks/useAdminT';
 
 const useStatusLabel = () => {
   const { t, locale } = useI18n();
@@ -294,6 +295,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
   estimationMode = 'vente',
 }) => {
    const { t } = useI18n();
+   const { t: adt } = useAdminT();
    const getStatusLabel = useStatusLabel();
    const config = getStatusConfig(est.status, est.isReturned);
    const StatusIcon = config.icon;
@@ -467,7 +469,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             {!isFournisseur && (
               <div className="hidden 2xl:flex w-28 px-4 items-center justify-center">
                 {(est.status === 'En attente' || est.status === 'Traité') && (
-                  <span title={est.emailVerified ? 'Email verified' : 'Email not confirmed'} className="flex items-center">
+                  <span title={est.emailVerified ? adt('Email verified') : adt('Email not confirmed')} className="flex items-center">
                     <Mail 
                       className={`w-5 h-5 transition-all ${
                         est.emailVerified ? 'text-emerald-500' : 'text-red-500'
@@ -633,7 +635,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                               ? (isSelected ? 'hover:bg-white/10 text-amber-400 hover:text-amber-300' : 'hover:bg-amber-50 text-amber-500 group-hover:hover:bg-amber-500/20 group-hover:hover:text-amber-400')
                               : (isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-zinc-300')
                           }`}
-                          title={est.isLocked ? 'Unarchive (unlock)' : 'Archive (lock)'}
+                          title={est.isLocked ? adt('Unarchive (unlock)') : adt('Archive (lock)')}
                         >
                           {est.isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                         </button>

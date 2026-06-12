@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
+import { useAdminT } from '@/hooks/useAdminT';
 
 const deliveryFeeRuleSchema = z.object({
   id: z.string(),
@@ -40,6 +41,7 @@ interface DepartmentFeesFormProps {
 
 export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps) {
   const { toast } = useToast();
+  const { t } = useAdminT();
   const firestore = useFirestore();
 
   const zonesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'zones'), orderBy('name')) : null, [firestore]);
@@ -73,9 +75,9 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
 
     const result = await updateDeliverySettings(formattedData);
     if (result.success) {
-      toast({ title: 'Success', description: 'Zone rates updated.', variant: 'success' });
+      toast({ title: t('Success'), description: t('Zone rates updated.'), variant: 'success' });
     } else {
-      toast({ variant: 'destructive', title: 'Error', description: 'An error occurred.' });
+      toast({ variant: 'destructive', title: t('Error'), description: t('An error occurred.') });
     }
   };
   
@@ -84,7 +86,7 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
   const handleClone = (index: number) => {
     const ruleToClone = form.getValues('deliveryFeeRules')[index];
     insert(index + 1, { ...ruleToClone, id: `rule_${Date.now()}` });
-    toast({ title: 'Rule cloned', description: 'The rule has been duplicated.', variant: 'info'});
+    toast({ title: t('Rule cloned'), description: t('The rule has been duplicated.'), variant: 'info'});
   };
   
   const handleDeleteConfirm = () => {
@@ -99,7 +101,7 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
     
     setSelectedRules([]);
     setDialogAction(null);
-    toast({ title: `${indicesToRemove.length} rule(s) deleted`, variant: 'info'});
+    toast({ title: t('{n} rule(s) deleted').replace('{n}', String(indicesToRemove.length)), variant: 'info'});
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -120,8 +122,8 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
                   <Info className="h-4 w-4" />
                   <AlertDescription>
                       {initialSettings.isTotalFreeDeliveryEnabled 
-                        ? "Total free shipping is enabled. Zone rates are ignored."
-                        : "Default fees are enabled. Zone rates are ignored."
+                        ? t("Total free shipping is enabled. Zone rates are ignored.")
+                        : t("Default fees are enabled. Zone rates are ignored.")
                       }
                   </AlertDescription>
               </Alert>
@@ -131,28 +133,28 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
           <Card className='group-disabled:opacity-50 border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white'>
               <CardHeader className="flex-row items-center justify-between px-0 md:px-6">
                   <div>
-                    <CardTitle>Zone Rates</CardTitle>
-                    <CardDescription>Set specific delivery costs for each zone or city.</CardDescription>
+                    <CardTitle>{t('Zone Rates')}</CardTitle>
+                    <CardDescription>{t('Set specific delivery costs for each zone or city.')}</CardDescription>
                   </div>
                   {selectedRules.length > 0 && (
                     <Button variant="destructive" size="sm" onClick={() => setDialogAction({ type: 'delete', ids: selectedRules })}>
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete selection ({selectedRules.length})
+                        {t('Delete selection ({n})').replace('{n}', String(selectedRules.length))}
                     </Button>
                   )}
               </CardHeader>
               <CardContent className="space-y-4 px-0 md:px-6">
                   {isLoadingCities || isLoadingZones ? (
                     <div className="flex items-center justify-center p-8">
-                      <Loader2 className="animate-spin mr-2"/> Loading...
+                      <Loader2 className="animate-spin mr-2"/> {t('Loading...')}
                     </div>
                   ) : (
                     <>
                     <div className="grid grid-cols-[auto_1fr_1fr_1fr_auto_auto] items-center gap-4 px-3 py-2 font-medium text-muted-foreground text-sm">
                         <Checkbox checked={!!isAllSelected} onCheckedChange={handleSelectAll} />
-                        <Label>Zone</Label>
-                        <Label>City (Optional)</Label>
-                        <Label>Rate (€)</Label>
+                        <Label>{t('Zone')}</Label>
+                        <Label>{t('City (Optional)')}</Label>
+                        <Label>{t('Rate (€)')}</Label>
                     </div>
                     <div className="space-y-3">
                     {fields.map((field, index) => {
@@ -179,8 +181,8 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
                                             field.onChange(val);
                                             form.setValue(`deliveryFeeRules.${index}.cityId`, ''); // Reset city on zone change
                                         }}
-                                        placeholder="Zone"
-                                        searchPlaceholder="Search for a zone..."
+                                        placeholder={t('Zone')}
+                                        searchPlaceholder={t('Search for a zone...')}
                                         />
                                     )}
                                 />
@@ -193,8 +195,8 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
                                 items={citiesInZone.map(c => ({ value: c.id, label: `${c.name} (${c.postalCode})` }))}
                                 value={field.value}
                                 onValueChange={field.onChange}
-                                placeholder="Entire zone"
-                                searchPlaceholder="Search for a city..."
+                                placeholder={t('Entire zone')}
+                                searchPlaceholder={t('Search for a city...')}
                                 disabled={!selectedZoneId || citiesInZone.length === 0}
                                 />
                             )}
@@ -203,7 +205,7 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
                             control={form.control}
                             name={`deliveryFeeRules.${index}.fee`}
                             render={({ field: inputField }) => (
-                                <Input type="number" placeholder="Rate €" className="w-full sm:w-28" {...inputField} value={inputField.value ?? ''} />
+                                <Input type="number" placeholder={t('Rate €')} className="w-full sm:w-28" {...inputField} value={inputField.value ?? ''} />
                             )}
                             />
                             <Button type="button" variant="ghost" size="icon" onClick={() => handleClone(index)}>
@@ -226,7 +228,7 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
                     disabled={isLoadingCities || isLoadingZones}
                   >
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Add a rate rule
+                    {t('Add a rate rule')}
                   </Button>
               </CardContent>
           </Card>
@@ -234,7 +236,7 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
 
         <div className="flex justify-end pt-4">
           <Button variant="styled" type="submit" disabled={form.formState.isSubmitting || isOverridden}>
-            {form.formState.isSubmitting ? 'Saving...' : 'Save rates'}
+            {form.formState.isSubmitting ? t('Saving...') : t('Save rates')}
           </Button>
         </div>
       </form>
@@ -242,18 +244,18 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
        <AlertDialog open={!!dialogAction} onOpenChange={(open) => !open && setDialogAction(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t('Are you sure?')}</AlertDialogTitle>
             <AlertDialogDescription>
-              You are about to delete {dialogAction?.ids.length} pricing rule(s). This action is irreversible.
+              {t('You are about to delete {n} pricing rule(s). This action is irreversible.').replace('{n}', String(dialogAction?.ids.length ?? 0))}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               onClick={handleDeleteConfirm}
             >
-              Delete
+              {t('Delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

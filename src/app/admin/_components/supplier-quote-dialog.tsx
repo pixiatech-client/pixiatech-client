@@ -18,6 +18,7 @@ import html2canvas from 'html2canvas';
 import { SupplierQuotePdf } from '@/app/admin/quotes/[id]/_components/supplier-quote-pdf';
 import type { QuoteRequest, Product, ProductSpec } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface SupplierQuoteDialogProps {
   quote: QuoteRequest;
@@ -30,6 +31,7 @@ export function SupplierQuoteDialog({ quote, allProducts, productSpecs, children
   const [isOpen, setIsOpen] = useState(false);
   const [isPdfRendering, startPdfRender] = useTransition();
   const { toast } = useToast();
+  const { t } = useAdminT();
 
   const handleUpdateRequest = (updatedData: Partial<QuoteRequest>, updatedSpecs?: Record<string, ProductSpec[]>) => {
     console.log('Update request:', updatedData, updatedSpecs);
@@ -38,7 +40,7 @@ export function SupplierQuoteDialog({ quote, allProducts, productSpecs, children
   const generatePdf = async () => {
     const quoteContainer = document.getElementById(`supplier-pdf-view-${quote.id}`);
     if (!quoteContainer) {
-      toast({ variant: 'destructive', title: 'Error', description: 'PDF content not found.' });
+      toast({ variant: 'destructive', title: t('Error'), description: t('PDF content not found.') });
       return null;
     }
 

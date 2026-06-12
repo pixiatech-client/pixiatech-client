@@ -11,6 +11,7 @@ import { Plus, Trash2, RefreshCw, Image, Sparkles } from 'lucide-react';
 import { getWizardSettings, updateWizardSettings } from '@/app/admin/actions';
 import type { WizardSettings, PixelPitchOption, ViewingDistanceOption } from '@/lib/types';
 import { InputWithUpload } from '../settings/_components/input-with-upload';
+import { useAdminT } from '@/hooks/useAdminT';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
@@ -18,6 +19,7 @@ function generateId(): string {
 
 export default function WizardPage() {
   const { toast } = useToast();
+  const { t } = useAdminT();
   const [settings, setSettings] = useState<WizardSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -35,12 +37,12 @@ export default function WizardPage() {
     try {
       const result = await updateWizardSettings(settings);
       if (result.success) {
-        toast({ title: 'Settings saved', variant: 'success' });
+        toast({ title: t('Settings saved'), variant: 'success' });
       } else {
-        toast({ title: 'Error', description: 'Save failed', variant: 'destructive' });
+        toast({ title: t('Error'), description: t('Save failed'), variant: 'destructive' });
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'Save failed', variant: 'destructive' });
+      toast({ title: t('Error'), description: t('Save failed'), variant: 'destructive' });
     }
     setIsSaving(false);
   };
@@ -105,20 +107,20 @@ export default function WizardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 hidden md:block">Wizard Settings</h1>
-          <p className="text-slate-500 mt-1 hidden md:block">Configure the options and content of the guided configurator.</p>
+          <h1 className="text-3xl font-black text-slate-900 hidden md:block">{t('Wizard Settings')}</h1>
+          <p className="text-slate-500 mt-1 hidden md:block">{t('Configure the options and content of the guided configurator.')}</p>
         </div>
         <Button onClick={handleSave} disabled={isSaving} className="bg-indigo-600 hover:bg-indigo-700">
           {isSaving ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
-          Save
+          {t('Save')}
         </Button>
       </div>
 
       {/* Project Types */}
       <Card className="rounded-xl border border-slate-200/60">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold">Project Types</CardTitle>
-          <CardDescription>Configure the available project types in the wizard.</CardDescription>
+          <CardTitle className="text-lg font-bold">{t('Project Types')}</CardTitle>
+          <CardDescription>{t('Configure the available project types in the wizard.')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -132,7 +134,7 @@ export default function WizardPage() {
                       projectTypes: { ...settings.projectTypes, [key]: { ...value, enabled: checked } }
                     })}
                   />
-                  <Label className="font-medium capitalize">{key === 'location' ? 'Rental' : 'Sale'}</Label>
+                  <Label className="font-medium capitalize">{key === 'location' ? t('Rental') : t('Sale')}</Label>
                 </div>
               </div>
             ))}
@@ -143,18 +145,18 @@ export default function WizardPage() {
       {/* Environments */}
       <Card className="rounded-xl border border-slate-200/60">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold">Environments</CardTitle>
-          <CardDescription>Configure images for each environment.</CardDescription>
+          <CardTitle className="text-lg font-bold">{t('Environments')}</CardTitle>
+          <CardDescription>{t('Configure images for each environment.')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {Object.entries(settings.environments).map(([key, value]) => (
               <div key={key} className="space-y-2">
                 <Label className="text-xs font-bold uppercase text-slate-400">
-                  {key === 'interieur' ? 'Indoor' : key === 'semi-exterieur' ? 'Semi-outdoor' : 'Outdoor'}
+                  {key === 'interieur' ? t('Indoor') : key === 'semi-exterieur' ? t('Semi-outdoor') : t('Outdoor')}
                 </Label>
                 <InputWithUpload
-                  placeholder="Image URL"
+                  placeholder={t('Image URL')}
                   value={value.imageUrl || ''}
                   onChange={(newUrl) => setSettings({
                     ...settings,
@@ -170,12 +172,12 @@ export default function WizardPage() {
       {/* Step Images */}
       <Card className="rounded-xl border border-slate-200/60">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold">Step Images</CardTitle>
-          <CardDescription>Configure images displayed in the Viewing Distance and Pixel Pitch steps.</CardDescription>
+          <CardTitle className="text-lg font-bold">{t('Step Images')}</CardTitle>
+          <CardDescription>{t('Configure images displayed in the Viewing Distance and Pixel Pitch steps.')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase text-slate-400">Viewing Distance</Label>
+            <Label className="text-xs font-bold uppercase text-slate-400">{t('Viewing Distance')}</Label>
             <InputWithUpload
               placeholder="URL de l'image"
               value={settings.viewingDistanceImageUrl || ''}
@@ -183,7 +185,7 @@ export default function WizardPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase text-slate-400">Recommended Pixel Pitch</Label>
+            <Label className="text-xs font-bold uppercase text-slate-400">{t('Recommended Pixel Pitch')}</Label>
             <InputWithUpload
               placeholder="URL de l'image"
               value={settings.pixelPitchImageUrl || ''}
@@ -197,11 +199,11 @@ export default function WizardPage() {
       <Card className="rounded-xl border border-slate-200/60">
         <CardHeader className="pb-4 flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-bold">Pixel Pitches</CardTitle>
-            <CardDescription>Configure the available pixel pitches.</CardDescription>
+            <CardTitle className="text-lg font-bold">{t('Pixel Pitches')}</CardTitle>
+            <CardDescription>{t('Configure the available pixel pitches.')}</CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={addPixelPitch} className="gap-2">
-            <Plus className="w-4 h-4" /> Add
+            <Plus className="w-4 h-4" /> {t('Add')}
           </Button>
         </CardHeader>
         <CardContent>
@@ -220,7 +222,7 @@ export default function WizardPage() {
                     checked={pp.recommended}
                     onCheckedChange={(checked) => updatePixelPitch(pp.id, 'recommended', checked)}
                   />
-                  <Label className="text-xs text-slate-500">Recommended</Label>
+                  <Label className="text-xs text-slate-500">{t('Recommended')}</Label>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => removePixelPitch(pp.id)} className="ml-auto text-red-500 hover:text-red-600">
                   <Trash2 className="w-4 h-4" />
@@ -235,11 +237,11 @@ export default function WizardPage() {
       <Card className="rounded-xl border border-slate-200/60">
         <CardHeader className="pb-4 flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-bold">Viewing Distances</CardTitle>
-            <CardDescription>Configure the available viewing distances.</CardDescription>
+            <CardTitle className="text-lg font-bold">{t('Viewing Distances')}</CardTitle>
+            <CardDescription>{t('Configure the available viewing distances.')}</CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={addViewingDistance} className="gap-2">
-            <Plus className="w-4 h-4" /> Add
+            <Plus className="w-4 h-4" /> {t('Add')}
           </Button>
         </CardHeader>
         <CardContent>

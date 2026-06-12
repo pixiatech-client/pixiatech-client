@@ -360,7 +360,7 @@ export function QuoteRequestsTable() {
                             </Button>
                             {isAdmin && (
                                 <Button variant="destructive" size="sm" className="rounded-lg font-bold shadow-sm" onClick={() => setDialogAction({ type: 'delete', ids: selectedRequests })}>
-                                    <Ban className="mr-2 h-4 w-4" /> Delete
+                                    <Ban className="mr-2 h-4 w-4" /> {t("Delete")}
                                 </Button>
                             )}
                         </div>
@@ -381,17 +381,17 @@ export function QuoteRequestsTable() {
                                 aria-label="Select all rows on this page"
                             />
                         </TableHead>
-                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Ref.</TableHead>
-                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Client</TableHead>
+                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">{t("Ref.")}</TableHead>
+                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">{t("Client")}</TableHead>
                         {activeTab === 'delivery' ? (
-                            <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Tracking</TableHead>
+                            <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">{t("Tracking")}</TableHead>
                         ) : (
-                            <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Contact</TableHead>
+                            <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">{t("Contact")}</TableHead>
                         )}
-                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Status</TableHead>
-                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Supplier</TableHead>
-                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">Time / Date</TableHead>
-                        <TableHead className="text-right text-[11px] font-black uppercase tracking-widest text-slate-400 pr-6">Total (excl. tax)</TableHead>
+                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">{t("Status")}</TableHead>
+                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">{t("Supplier")}</TableHead>
+                        <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">{t("Time / Date")}</TableHead>
+                        <TableHead className="text-right text-[11px] font-black uppercase tracking-widest text-slate-400 pr-6">{t("Total (excl. tax)")}</TableHead>
                         <TableHead className="w-[100px] text-right pr-6"></TableHead>
                     </TableRow>
                     </TableHeader>
@@ -443,7 +443,7 @@ export function QuoteRequestsTable() {
                                      </div>
                                    </TooltipTrigger>
                                    <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                      <p className="font-medium text-xs">Generated via guided configurator (Wizard)</p>
+                                       <p className="font-medium text-xs">{t("Generated via guided configurator (Wizard)")}</p>
                                    </TooltipContent>
                                  </Tooltip>
                                </TooltipProvider>
@@ -457,7 +457,7 @@ export function QuoteRequestsTable() {
                                      </div>
                                    </TooltipTrigger>
                                    <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                      <p className="font-medium text-xs">Generated via manual configuration</p>
+                                       <p className="font-medium text-xs">{t("Generated via manual configuration")}</p>
                                    </TooltipContent>
                                  </Tooltip>
                                </TooltipProvider>
@@ -471,7 +471,7 @@ export function QuoteRequestsTable() {
                                      </div>
                                    </TooltipTrigger>
                                    <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                      <p className="font-medium text-xs">Generated by Lumi AI</p>
+                                       <p className="font-medium text-xs">{t("Generated by Lumi AI")}</p>
                                    </TooltipContent>
                                  </Tooltip>
                                </TooltipProvider>
@@ -495,7 +495,7 @@ export function QuoteRequestsTable() {
                                             )}
                                         </TooltipTrigger>
                                         <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                            <p className="font-medium text-xs">{req.emailVerified ? "Verified email" : "Unverified email"}</p>
+                                            <p className="font-medium text-xs">{req.emailVerified ? t("Verified email") : t("Unverified email")}</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
@@ -513,7 +513,7 @@ export function QuoteRequestsTable() {
                                     className="flex items-center gap-1.5"
                                     onClick={(e) => e.stopPropagation()}
                                 >
-                                    <span className="font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">{req.trackingNumber || "N/A"}</span>
+                                    <span className="font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">{req.trackingNumber || t("N/A")}</span>
                                     <EditTrackingNumberDialog quote={req} onUpdate={(updated) => handleTrackingUpdate(req.id, updated)} />
                                 </div>
                             </TableCell>
@@ -543,7 +543,7 @@ export function QuoteRequestsTable() {
                                         else if (!['trashed', 'sent'].includes(status)) handleStatusToggle(req); 
                                     }}
                                 >
-                                    {statusConfig[status as keyof typeof statusConfig]?.label || status}
+                                    {t(statusConfig[status as keyof typeof statusConfig]?.label || status)}
                                 </Badge>
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
@@ -557,7 +557,7 @@ export function QuoteRequestsTable() {
                                         </SupplierQuoteDialog>
                                     </TooltipTrigger>
                                     <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                        <p className="font-medium text-xs">Supplier view</p>
+                                        <p className="font-medium text-xs">{t("Supplier view")}</p>
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
@@ -571,7 +571,7 @@ export function QuoteRequestsTable() {
                         <TableCell className="text-right pr-6">
                             <div className="flex flex-col items-end">
                                 <span className="text-lg font-black text-slate-900 tracking-tight whitespace-nowrap">{formatCurrency(req.totalQuote)}</span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Excl. tax</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">{t("Excl. tax")}</span>
                             </div>
                         </TableCell>
                         <TableCell className="text-right pr-6">
@@ -583,11 +583,11 @@ export function QuoteRequestsTable() {
                                                 <TooltipTrigger asChild>
                                                     <Button variant="outline" size="sm" className='rounded-lg font-bold border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-9 px-3'>
                                                         <SendHorizontal className="h-4 w-4 mr-2 text-blue-500" />
-                                                        Send
+                                                        {t("Send")}
                                                     </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent className="bg-slate-900 text-white rounded-lg border-0 shadow-xl">
-                                                    <p className="font-medium text-xs">Send to supplier</p>
+                                                    <p className="font-medium text-xs">{t("Send to supplier")}</p>
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
@@ -600,15 +600,15 @@ export function QuoteRequestsTable() {
                                             className="rounded-lg font-bold border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-9 px-4"
                                             onClick={(e) => { e.stopPropagation(); handleStatusToggle(req); }}
                                         >
-                                            <Undo2 className="h-3.5 w-3.5 mr-2" /> Restore
+                                            <Undo2 className="h-3.5 w-3.5 mr-2" /> {t("Restore")}
                                         </Button>
                                         <Button asChild variant="outline" size="sm" className="rounded-lg font-bold border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-9 px-4">
-                                            <Link href={`/admin/quotes/${req.id}`}>Details</Link>
+                                            <Link href={`/admin/quotes/${req.id}`}>{t("Details")}</Link>
                                         </Button>
                                     </div>
                                 ) : (
                                     <Button asChild variant="outline" size="sm" className="rounded-lg font-bold border-slate-200 bg-white shadow-sm hover:bg-slate-50 h-9 px-4">
-                                        <Link href={`/admin/quotes/${req.id}`}>Details</Link>
+                                        <Link href={`/admin/quotes/${req.id}`}>{t("Details")}</Link>
                                     </Button>
                                 )}
                                 {activeTab !== 'trashed' && (
@@ -631,8 +631,8 @@ export function QuoteRequestsTable() {
                                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 shadow-inner">
                                     <FileText className="h-8 w-8 text-slate-300" />
                                 </div>
-                                <p className="font-bold text-slate-900">{searchQuery ? "No results found." : "Empty list"}</p>
-                                <p className="text-xs text-slate-400 mt-1">{searchQuery ? "Try different search terms." : "No estimation requests in this category."}</p>
+                                <p className="font-bold text-slate-900">{searchQuery ? t("No results found.") : t("Empty list")}</p>
+                                <p className="text-xs text-slate-400 mt-1">{searchQuery ? t("Try different search terms.") : t("No estimation requests in this category.")}</p>
                             </div>
                         </TableCell>
                         </TableRow>
@@ -658,19 +658,19 @@ export function QuoteRequestsTable() {
       <AlertDialog open={!!dialogAction} onOpenChange={(open) => !open && setDialogAction(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t("Are you sure?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {dialogAction?.type === 'trash' && `You are about to move ${dialogAction.ids?.length} estimation(s) to the trash.`}
-              {dialogAction?.type === 'delete' && `This action is irreversible. The estimations will be permanently deleted.`}
-              {dialogAction?.type === 'deleteAll' && "This action is irreversible. ALL estimations in the trash will be permanently deleted."}
-              {dialogAction?.type === 'restore' && `You are about to restore ${dialogAction.ids?.length} estimation(s).`}
+              {dialogAction?.type === 'trash' && t("You are about to move {n} estimation(s) to the trash.").replace("{n}", (dialogAction.ids?.length ?? 0).toString())}
+              {dialogAction?.type === 'delete' && t("This action is irreversible. The estimations will be permanently deleted.")}
+              {dialogAction?.type === 'deleteAll' && t("This action is irreversible. ALL estimations in the trash will be permanently deleted.")}
+              {dialogAction?.type === 'restore' && t("You are about to restore {n} estimation(s).").replace("{n}", (dialogAction.ids?.length ?? 0).toString())}
               {dialogAction?.type === 'refuse' && (
                 <div className="space-y-3 mt-2">
-                    <p>You are about to refuse {dialogAction.ids?.length} estimation(s). Please state the reason:</p>
+                    <p>{t("You are about to refuse {n} estimation(s). Please state the reason:").replace("{n}", (dialogAction.ids?.length ?? 0).toString())}</p>
                     <Input 
                         value={refusalMessage}
                         onChange={(e) => setRefusalMessage(e.target.value)}
-                        placeholder="Reason for refusal (e.g., Unavailable, technical error...)"
+                        placeholder={t("Reason for refusal (e.g., Unavailable, technical error...)")}
                         className="mt-2 border-slate-200 focus:ring-orange-500"
                     />
                 </div>
@@ -678,7 +678,7 @@ export function QuoteRequestsTable() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className={cn(
                 (dialogAction?.type === 'delete' || dialogAction?.type === 'deleteAll' || dialogAction?.type === 'trash') && "bg-destructive hover:bg-destructive/90",
@@ -686,7 +686,7 @@ export function QuoteRequestsTable() {
               )}
               onClick={handleDialogConfirm}
             >
-              Confirm
+              {t("Confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

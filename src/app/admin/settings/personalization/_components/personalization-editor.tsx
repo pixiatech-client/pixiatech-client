@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useAdminT } from '@/hooks/useAdminT';
 
 const ColorInput = ({ 
     label, 
@@ -113,6 +114,7 @@ const sections = [
 ];
 
 export const PersonalizationEditor = () => {
+    const { t } = useAdminT();
     const { themeSettings, updateTheme, saveTheme, resetToDefault, isSaving } = useDynamicTheme();
     const [hasChanges, setHasChanges] = useState(false);
     const [openSection, setOpenSection] = useState<string | null>(sections[0].title);
@@ -126,7 +128,7 @@ export const PersonalizationEditor = () => {
         });
         updateTheme(updates);
         setHasChanges(true);
-        toast.success('Section reset!');
+        toast.success(t('Section reset!'));
     };
 
     const handleColorChange = (key: keyof typeof themeSettings, value: string) => {
@@ -138,16 +140,16 @@ export const PersonalizationEditor = () => {
         try {
             await saveTheme();
             setHasChanges(false);
-            toast.success('Personalization preferences saved!');
+            toast.success(t('Personalization preferences saved!'));
         } catch (error) {
-            toast.error('Error during saving.');
+            toast.error(t('Error during saving.'));
         }
     };
 
     const handleReset = () => {
         resetToDefault();
         setHasChanges(false);
-        toast.info('Reset to default settings.');
+        toast.info(t('Reset to default settings.'));
     };
 
 
@@ -157,9 +159,9 @@ export const PersonalizationEditor = () => {
                 <div>
                     <h2 className="text-3xl font-black tracking-tight flex items-center gap-3 italic">
                         <Palette className="w-8 h-8 text-pink-500" />
-                        PERSONALIZATION
+                        {t('PERSONALIZATION')}
                     </h2>
-                    <p className="text-gray-500 font-medium mt-1">Customize internal elements. The sidebar and menu remain fixed.</p>
+                    <p className="text-gray-500 font-medium mt-1">{t('Customize internal elements. The sidebar and menu remain fixed.')}</p>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -169,7 +171,7 @@ export const PersonalizationEditor = () => {
                         className="rounded-2xl border-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all font-bold uppercase tracking-wider text-xs"
                     >
                         <RotateCcw className="w-4 h-4 mr-2" />
-                        Reset
+                        {t('Reset')}
                     </Button>
                     
                     <Button 
@@ -188,7 +190,7 @@ export const PersonalizationEditor = () => {
                         ) : (
                             <Save className="w-4 h-4 mr-2" />
                         )}
-                        {isSaving ? 'Saving...' : 'Save'}
+                        {isSaving ? t('Saving...') : t('Save')}
                     </Button>
                 </div>
             </div>
@@ -232,7 +234,7 @@ export const PersonalizationEditor = () => {
                                             </div>
                                             <div>
                                                 <CardTitle className="text-xl font-black italic tracking-tight flex items-center gap-2">
-                                                    {section.title}
+                                                    {t(section.title)}
                                                     <motion.div
                                                         animate={{ rotate: openSection === section.title ? 180 : 0 }}
                                                         transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -240,7 +242,7 @@ export const PersonalizationEditor = () => {
                                                         <ChevronDown className={cn("w-4 h-4", openSection === section.title ? "text-white/50" : "text-gray-400")} />
                                                     </motion.div>
                                                 </CardTitle>
-                                                <CardDescription className={cn("text-xs font-medium mt-1 uppercase tracking-widest", openSection === section.title ? "text-white/60" : "text-gray-400")}>{section.description}</CardDescription>
+                                                <CardDescription className={cn("text-xs font-medium mt-1 uppercase tracking-widest", openSection === section.title ? "text-white/60" : "text-gray-400")}>{t(section.description)}</CardDescription>
                                             </div>
                                         </div>
                                             <Button
@@ -258,7 +260,7 @@ export const PersonalizationEditor = () => {
                                                 )}
                                             >
                                             <RotateCcw className="w-3.5 h-3.5" />
-                                            <span className="text-[10px] font-bold uppercase tracking-widest">Reset</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest">{t('Reset')}</span>
                                         </Button>
                                     </div>
                                 </CardHeader>
@@ -275,7 +277,7 @@ export const PersonalizationEditor = () => {
                                                     <ColorInput 
                                                         key={item.id}
                                                         id={item.id}
-                                                        label={item.label}
+                                                        label={t(item.label)}
                                                         value={themeSettings[item.key]}
                                                         onChange={(val) => handleColorChange(item.key, val)}
                                                     />
@@ -293,10 +295,10 @@ export const PersonalizationEditor = () => {
                 <div className="xl:col-span-5 relative h-full">
                     <div className="sticky top-24 self-start space-y-6">
                         <div className="flex items-center justify-between px-2">
-                            <h3 className="text-sm font-black uppercase tracking-widest text-gray-500 italic">Live Preview</h3>
+                            <h3 className="text-sm font-black uppercase tracking-widest text-gray-500 italic">{t('Live Preview')}</h3>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Real time</span>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('Real time')}</span>
                             </div>
                         </div>
 
@@ -304,7 +306,7 @@ export const PersonalizationEditor = () => {
                             <CardContent className="p-4 flex items-start gap-3">
                                 <Sparkles className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                                 <p className="text-xs font-medium text-emerald-800 leading-relaxed">
-                                    The preview shows how your internal elements integrate into the original design.
+                                    {t('The preview shows how your internal elements integrate into the original design.')}
                                 </p>
                             </CardContent>
                         </Card>
@@ -383,7 +385,7 @@ export const PersonalizationEditor = () => {
                         <div className="bg-black/90 backdrop-blur-xl text-white p-4 rounded-3xl shadow-2xl flex items-center justify-between border border-white/10">
                             <div className="flex items-center gap-3">
                                 <div className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
-                                <span className="text-sm font-bold tracking-tight uppercase">Unsaved changes</span>
+                                <span className="text-sm font-bold tracking-tight uppercase">{t('Unsaved changes')}</span>
                             </div>
                             <Button 
                                 onClick={handleSave}
@@ -391,7 +393,7 @@ export const PersonalizationEditor = () => {
                                 className="rounded-xl bg-pink-500 hover:bg-pink-600 text-white font-black text-xs uppercase tracking-widest h-10 px-6"
                             >
                                 <Check className="w-4 h-4 mr-2" />
-                                Save
+                                {t('Save')}
                             </Button>
                         </div>
                     </motion.div>

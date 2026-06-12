@@ -149,7 +149,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
     if (result.success) {
       toast({
         title: t('Settings saved'),
-        description: `Section "${sectionName}" has been updated.`,
+        description: t('Section "{sectionName}" has been updated.').replace('{sectionName}', sectionName),
         variant: 'success',
       });
     } else {

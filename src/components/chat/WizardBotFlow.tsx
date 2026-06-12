@@ -1,29 +1,37 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronDown, ArrowRight, ArrowLeft, MapPin, Loader2, Grid, Calendar as CalendarIcon, Clock, Bot, Video, Download, Info, Layers, RotateCcw, Ban, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { X, ChevronDown, ArrowRight, ArrowLeft, Loader2, Calendar as CalendarIcon, Clock, Video, Download, Info, Layers, RotateCcw, CheckCircle2, Shield, PenTool, FileText, MailCheck, KeyRound, Check } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { DateRange } from "react-day-picker";
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { Message, MessageOption, WizardSettings, Product, Settings, LaborSettings, DeliverySettings, Locations } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import MessageItem from './MessageItem';
 import { doc, getDoc } from 'firebase/firestore';
 import { firestore as db } from '@/firebase/config';
+import { ref, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/firebase/config';
 import { ConfigState, INITIAL_STATE } from '@/lib/configurator-wizard-types';
-import { StepDimensions, StepSummary, StepFinal } from '@/components/configurator-wizard';
+import { StepDimensions, StepSummary } from '@/components/configurator-wizard';
 import { ProductNotFound } from '@/components/ProductNotFound';
-import { SuccessView } from '@/components/success-view';
 import { ProductComparator } from '@/components/product-comparator';
+import { BlurredPrice } from '@/components/ui/blurred-price';
+import { SuccessView } from '@/components/success-view';
+import SignaturePad from '@/components/SignaturePad';
+import ContractDocument from '@/components/ContractDocument';
+import type { Pack } from '@/lib/signature-types';
+import { getContractTemplate } from '@/lib/contract-templates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { createQuoteRequest, getBlockedPeriods, getProductRentalAvailabilityAction } from '@/app/actions/quote-actions';
+import { createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp, getBlockedPeriods } from '@/app/actions/quote-actions';
 import { useUser } from '@/firebase';
 import { useI18n } from '@/lib/i18n';
+import confetti from 'canvas-confetti';
 
 import type { QuoteDetails } from '@/lib/types';
 
@@ -46,17 +54,18 @@ const STEP = {
   SUMMARY: 6,
   PRODUCTS: 7,
   QUANTITY: 8,
-  DELIVERY: 9,
-  INSTALLATION: 10,
-  FORM_COMPANY: 11,
-  FORM_EMAIL: 12,
-  FORM_PHONE: 13,
-  FORM_ADDRESS: 14,
-  FORM_TERMS: 15,
-  GENERATING: 16,
-  SUCCESS: 17,
   RENTAL_PERIOD: 18,
   SITE_PHOTO: 19,
+  FORM_COMPANY: 25,
+  FORM_REPRESENTATIVE: 26,
+  FORM_EMAIL: 12,
+  FORM_PHONE: 27,
+  FORM_ADDRESS: 28,
+  CONTRAT: 20,
+  SECURITE: 21,
+  FELICITATIONS: 22,
+  GENERATING: 16,
+  SUCCESS: 17,
 } as const;
 
 export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSettings, deliverySettings, locations }: WizardBotFlowProps) {
@@ -83,7 +92,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     setStep(newStep);
   }, []);
   const [configState, setConfigState] = useState<ConfigState>(INITIAL_STATE);
-  const { user } = useUser();
+  const { user, userProfile } = useUser();
 
   const [quoteId, setQuoteId] = useState<string>('');
 
@@ -94,14 +103,24 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const [showComparator, setShowComparator] = useState(false);
   const [expandedOptions, setExpandedOptions] = useState<{ msgId: string; options: MessageOption[] } | null>(null);
 
-  const [deliveryCityId, setDeliveryCityId] = useState('');
-  const [includeInstallation, setIncludeInstallation] = useState<boolean | null>(null);
-
-  // Form Fields
   const [formCompany, setFormCompany] = useState('');
-  const [formEmail, setFormEmail] = useState('');
+  const [formRepresentative, setFormRepresentative] = useState('');
   const [formPhone, setFormPhone] = useState('');
   const [formAddress, setFormAddress] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
+  const [signatureValidated, setSignatureValidated] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [contractAccepted, setContractAccepted] = useState(false);
+  const [contractReadApproved, setContractReadApproved] = useState(false);
+  const [isSubmittingContract, setIsSubmittingContract] = useState(false);
+  const [otpAttempts, setOtpAttempts] = useState(0);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
 
   const takeSnapshot = useCallback(() => {
     setStepHistory(prev => [
@@ -110,15 +129,14 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         step: stepRef.current,
         messages: [...messages],
         configState: { ...configState },
-        deliveryCityId,
-        includeInstallation,
         formCompany,
-        formEmail,
+        formRepresentative,
         formPhone,
-        formAddress
+        formAddress,
+        formEmail,
       }
     ]);
-  }, [messages, configState, deliveryCityId, includeInstallation, formCompany, formEmail, formPhone, formAddress]);
+  }, [messages, configState, formCompany, formRepresentative, formPhone, formAddress, formEmail]);
 
   const handleBack = useCallback(() => {
     if (stepHistory.length === 0) return;
@@ -129,12 +147,11 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     setStep(prev.step);
     setMessages(prev.messages);
     setConfigState(prev.configState);
-    setDeliveryCityId(prev.deliveryCityId);
-    setIncludeInstallation(prev.includeInstallation);
-    setFormCompany(prev.formCompany);
-    setFormEmail(prev.formEmail);
-    setFormPhone(prev.formPhone);
-    setFormAddress(prev.formAddress);
+    setFormCompany(prev.formCompany || '');
+    setFormRepresentative(prev.formRepresentative || '');
+    setFormPhone(prev.formPhone || '');
+    setFormAddress(prev.formAddress || '');
+    setFormEmail(prev.formEmail || '');
   }, [stepHistory]);
 
   // Cost calculation
@@ -158,31 +175,33 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     return total * (configState.quantity || 1);
   }, [selectedProduct, configState.width, configState.height, configState.projectType, area, configState.quantity]);
 
-  const totalArea = area * (configState.quantity || 1);
-  const applicableRule = laborSettings?.rules?.slice().sort((a, b) => b.minSqM - a.minSqM).find(rule => totalArea >= rule.minSqM);
-  const techniciansRequired = applicableRule?.technicians ?? 0;
-  const installationCost = includeInstallation ? (applicableRule?.price ?? 0) : 0;
+  const totalQuote = lineTotal;
 
-  const deliveryCost = React.useMemo(() => {
-    if (!deliveryCityId) return 0;
-    if (deliverySettings.isDefaultFeeEnabled) return deliverySettings.defaultFee;
+  const totalQuantity = configState.quantity || 1;
+  const activePack: Pack = React.useMemo(() => ({
+    id: selectedProduct?.id || 'custom-led-78',
+    name: selectedProduct?.name || (configState.projectType === 'vente' ? 'Caissons LED Série Extra Plat' : 'Location Écran LED Sur-Mesure'),
+    surface: `${area.toFixed(2)} m²`,
+    price: Math.round(totalQuote),
+    deposit: Math.round(totalQuote * 0.5),
+    description: `Configuration de 1 produit(s) LED (${totalQuantity} écran(s) au total)`,
+    specs: [
+      `Quantité totale d'écrans : ${totalQuantity}`,
+      `Surface totale d'affichage : ${area.toFixed(2)} m²`,
+    ]
+  }), [selectedProduct, configState.projectType, area, totalQuote, totalQuantity]);
 
-    const city = locations?.villes?.find(c => c.id === deliveryCityId);
-    if (city) {
-      const rule = deliverySettings.deliveryFeeRules?.find(r => r.cityId === city.id);
-      if (rule) return rule.fee;
-      const zoneRule = deliverySettings.deliveryFeeRules?.find(r => r.zoneId === city.zoneId && !r.cityId);
-      if (zoneRule) return zoneRule.fee;
-    }
-    return 0;
-  }, [deliveryCityId, deliverySettings, locations]);
-
-  const totalQuote = lineTotal + installationCost + deliveryCost;
+  const renterDetails = React.useMemo(() => ({
+    company: formCompany || userProfile?.displayName || 'bilama',
+    representative: formRepresentative || userProfile?.displayName || t('signature.representativeDefault'),
+    address: formAddress || t('signature.addressNotProvided'),
+    postcode: '75000',
+    city: 'Paris',
+    email: formEmail || userProfile?.email || 'contact@client.com',
+    phone: formPhone || t('signature.notSpecified')
+  }), [userProfile, formCompany, formRepresentative, formAddress, formEmail, formPhone]);
 
   const [blockedPeriods, setBlockedPeriods] = useState<{ from: string; to: string }[]>([]);
-  const [productAvailability, setProductAvailability] = useState<{ available: boolean; total: number; reserved: number; remaining: number; nextAvailableDate?: string | null } | null>(null);
-  const [bulkAvailability, setBulkAvailability] = useState<Record<string, { available: boolean; total: number; reserved: number; remaining: number; nextAvailableDate?: string | null }> | null>(null);
-  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
   useEffect(() => {
     const loadBlockedPeriods = async () => {
@@ -195,12 +214,6 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     };
     loadBlockedPeriods();
   }, []);
-
-  // Load availability check removed to speed up the application
-  useEffect(() => {
-    setProductAvailability({ available: true, total: 999, reserved: 0, remaining: 999 });
-    setIsCheckingAvailability(false);
-  }, [step, currentProductIndex, matchingProducts]);
 
   const isDateBlocked = useCallback((date: Date) => {
     // Zero out hours to compare strictly YYYY-MM-DD
@@ -236,27 +249,68 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
   useEffect(() => { scrollToBottom(); }, [messages, isTyping, step, scrollToBottom]);
 
+  // OTP countdown timer
+  useEffect(() => {
+    if (step !== STEP.SECURITE || otpCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setOtpCooldown(prev => {
+        if (prev <= 1) { clearInterval(timer); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step, otpCooldown]);
+
+  // Confetti on FELICITATIONS
+  useEffect(() => {
+    if (step === STEP.FELICITATIONS) {
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+    }
+  }, [step]);
+
+  // Fetch PDF URL when on FELICITATIONS
+  useEffect(() => {
+    if (step !== STEP.FELICITATIONS || !quoteId || pdfUrl) return;
+    const fetchPdf = async () => {
+      setIsPdfLoading(true);
+      try {
+        const snap = await getDoc(doc(db, 'quotes', quoteId));
+        const data = snap.data();
+        if (data?.pdfUrl) {
+          setPdfUrl(data.pdfUrl);
+        }
+      } catch (e) {
+        console.error('Failed to fetch PDF URL:', e);
+      } finally {
+        setIsPdfLoading(false);
+      }
+    };
+    const timer = setTimeout(fetchPdf, 2000);
+    return () => clearTimeout(timer);
+  }, [step, quoteId, pdfUrl]);
+
   const getBotImageForStep = (s: number) => {
     switch (s) {
       case STEP.PROJECT_TYPE: return '/bot-avatars/010.webp';
       case STEP.ENVIRONMENT: return '/bot-avatars/003.webp';
-      case STEP.DIMENSIONS: return '/bot-avatars/003.webp';
+      case STEP.DIMENSIONS: return '/bot-avatars/15.webp';
       case STEP.DISTANCE: return '/bot-avatars/004.webp';
       case STEP.PITCH: return '/bot-avatars/005.webp';
       case STEP.SUMMARY:
       case STEP.PRODUCTS: return '/bot-avatars/006.webp';
-      case STEP.QUANTITY: return '/bot-avatars/006.webp';
-      case STEP.DELIVERY: return '/bot-avatars/009.webp';
-      case STEP.INSTALLATION: return '/bot-avatars/012.webp';
+      case STEP.QUANTITY:
+      case STEP.SITE_PHOTO:
       case STEP.FORM_COMPANY:
+      case STEP.FORM_REPRESENTATIVE:
       case STEP.FORM_EMAIL:
       case STEP.FORM_PHONE:
-      case STEP.FORM_ADDRESS:
-      case STEP.FORM_TERMS: return '/bot-avatars/009.webp';
+      case STEP.FORM_ADDRESS: return '/bot-avatars/006.webp';
+      case STEP.CONTRAT: return '/bot-avatars/009.webp';
+      case STEP.SECURITE: return '/bot-avatars/009.webp';
+      case STEP.FELICITATIONS: return '/bot-avatars/002.webp';
       case STEP.GENERATING: return '/bot-avatars/003.webp';
       case STEP.SUCCESS: return '/bot-avatars/002.webp';
       case STEP.RENTAL_PERIOD: return '/bot-avatars/005.webp';
-      case STEP.SITE_PHOTO: return '/bot-avatars/012.webp';
       default: return '/bot-avatars/001.webp';
     }
   };
@@ -318,6 +372,21 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     setStepHistory([]);
     updateStep(STEP.PROJECT_TYPE);
     setConfigState(INITIAL_STATE);
+    setContractReadApproved(false);
+    setSignatureDataUrl(null);
+    setSignatureValidated(false);
+    setContractAccepted(false);
+    setIsSubmittingContract(false);
+    setOtpCode('');
+    setOtpError('');
+    setOtpVerified(false);
+    setOtpAttempts(0);
+    setOtpCooldown(0);
+    setPdfUrl(null);
+    setFormCompany('');
+    setFormRepresentative('');
+    setFormPhone('');
+    setFormAddress('');
 
     setBotStatus('smiling');
     pushBotMessage(t('bot.welcome'), undefined, 400, undefined, undefined, 'bot.welcome');
@@ -347,7 +416,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       if (value === 'location') {
         setBotStatus('smiling');
         pushBotMessage(t('bot.perfectRental'), undefined, 800, '/bot-avatars/005.webp', undefined, 'bot.perfectRental');
-        setTimeout(() => pushBotMessage(t('bot.promptRentalPeriod'), undefined, 1200, '/bot-avatars/005.webp', () => {
+        setTimeout(() => pushBotMessage(t('bot.promptRentalPeriod'), undefined, 1200, '/bot-avatars/006.webp', () => {
           updateStep(STEP.RENTAL_PERIOD);
         }, 'bot.promptRentalPeriod'), 1000);
       } else {
@@ -362,7 +431,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       setConfigState(prev => ({ ...prev, environment: value as any }));
       setBotStatus('smiling');
       pushBotMessage(t('bot.perfectSale', { type: configState.projectType === 'location' ? 'location' : 'vente' }), undefined, 800, undefined, () => {
-        pushBotMessage(t('bot.dimensions'), undefined, 1200, undefined, () => {
+        pushBotMessage(t('bot.dimensions'), undefined, 1200, '/bot-avatars/15.webp', () => {
           updateStep(STEP.DIMENSIONS);
         }, 'bot.dimensions');
       }, 'bot.perfectSale', { type: configState.projectType === 'location' ? 'location' : 'vente' });
@@ -376,37 +445,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       setBotStatus('solution');
       pushBotMessage(t('bot.excellentChoice'), undefined, 0, undefined, undefined, 'bot.excellentChoice');
     }
-    else if (step === STEP.FORM_EMAIL && value === 'back_phone') {
-      updateStep(STEP.FORM_PHONE);
-      pushBotMessage(t('bot.askPhone'), undefined, 0, undefined, undefined, 'bot.askPhone');
-    }
-    else if (step === STEP.FORM_PHONE && value === 'back_email') {
-      updateStep(STEP.FORM_EMAIL);
-      pushBotMessage(t('bot.askEmail'), undefined, 0, undefined, undefined, 'bot.askEmail');
-    }
-    else if (step === STEP.SITE_PHOTO) {
-      if (value === 'skip_photo') {
-        pushBotMessage(t('bot.lastStretch'), undefined, 800, '/bot-avatars/009.webp', () => {
-          pushBotMessage(t('bot.company'), undefined, 1200, '/bot-avatars/009.webp', () => {
-            updateStep(STEP.FORM_COMPANY);
-          }, 'bot.company');
-        }, 'bot.lastStretch');
-      } else if (value === 'add_photo_camera') {
-        document.getElementById('site-photo-upload-camera')?.click();
-      } else if (value === 'add_photo_gallery') {
-        document.getElementById('site-photo-upload-gallery')?.click();
-      }
-    }
-    else if (step === STEP.FORM_TERMS) {
-      if (value === 'read_terms') {
-        window.open('https://pixiatech.com/conditions-generales', '_blank');
-        setTimeout(() => pushBotMessage(t('bot.askTerms'), [
-          { label: t('bot.acceptTerms'), value: 'accept_terms', translationKey: 'bot.acceptTerms' }
-        ], 800, '/bot-avatars/009.webp', undefined, 'bot.askTerms'), 800);
-      } else if (value === 'accept_terms') {
-        submitFinalQuote();
-      }
-    }
+
   };
 
   const promptEnvironment = () => {
@@ -439,23 +478,6 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       updateStep(STEP.ENVIRONMENT);
       promptEnvironment();
     }, 'bot.periodNoted');
-  };
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      takeSnapshot();
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result as string;
-        setConfigState(prev => ({ ...prev, installationPhoto: dataUrl }));
-        pushUserMessage(t('bot.photoPreview'), dataUrl);
-        updateStep(STEP.FORM_COMPANY);
-        pushBotMessage(t('bot.photoSuccess'), undefined, 0, undefined, undefined, 'bot.photoSuccess');
-        setTimeout(() => pushBotMessage(t('bot.company'), undefined, 1500, '/bot-avatars/009.webp', undefined, 'bot.company'), 1500);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const handleDimensionsSubmit = () => {
@@ -609,151 +631,116 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       return;
     }
 
-    if (configState.projectType === 'location' && selectedProduct) {
-      const tileW = (selectedProduct.tileWidth || 50) / 100;
-      const tileH = (selectedProduct.tileHeight || 50) / 100;
-      const neededTiles = Math.ceil(configState.width / tileW) * Math.ceil(configState.height / tileH) * qty;
-
-      setIsTyping(true);
-      try {
-        const avail = await getProductRentalAvailabilityAction(
-          selectedProduct.id,
-          configState.rentalStartDate!,
-          configState.rentalEndDate!,
-          neededTiles
-        );
-
-        if (!avail.available) {
-          setIsTyping(false);
-          setBotStatus('angry');
-          pushBotMessage(
-            locale === 'fr' 
-              ? `Stock insuffisant pour ${qty} écran(s) (${neededTiles} dalles requises). Il ne reste que ${avail.remaining} dalles disponibles sur cette période. Veuillez réduire la quantité ou changer vos dates.`
-              : `Insufficient stock for ${qty} screen(s) (${neededTiles} tiles required). Only ${avail.remaining} tiles are available during this period. Please reduce the quantity or change dates.`,
-            undefined,
-            400,
-            '/bot-avatars/005.webp'
-          );
-          return;
-        }
-      } catch (error) {
-        console.error('Failed to validate stock in handleQuantitySubmit:', error);
-      } finally {
-        setIsTyping(false);
-      }
-    }
-
     setErrorCount(0);
     takeSnapshot();
     const finalQty = qty || 1;
     pushUserMessage(t('bot.userQuantity', { count: finalQty }), undefined, 'bot.userQuantity', { count: finalQty });
-    pushBotMessage(t('bot.delivery'), undefined, 800, '/bot-avatars/013.webp', () => {
-      updateStep(STEP.DELIVERY);
-    }, 'bot.delivery');
+    pushBotMessage(t('bot.photo'), undefined, 800, undefined, () => {
+      updateStep(STEP.SITE_PHOTO);
+    }, 'bot.photo');
   };
 
-  const handleDeliverySubmit = () => {
-    if (!deliveryCityId) return;
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      takeSnapshot();
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        setConfigState(prev => ({ ...prev, installationPhoto: dataUrl }));
+        pushUserMessage(t('bot.photoPreview'), dataUrl);
+        pushBotMessage(t('bot.photoSuccess'), undefined, 0, undefined, undefined, 'bot.photoSuccess');
+        setTimeout(() => pushBotMessage(t('bot.company'), undefined, 1500, '/bot-avatars/009.webp', () => {
+          updateStep(STEP.FORM_COMPANY);
+        }, 'bot.company'), 1500);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePhotoSkip = () => {
     takeSnapshot();
-    const city = locations?.villes?.find(c => c.id === deliveryCityId);
-    pushUserMessage(t('bot.userDelivery', { city: city?.name || 'Ville' }));
-    updateStep(STEP.INSTALLATION);
-    pushBotMessage(t('bot.installation', { city: city?.name || 'Ville' }), undefined, 600, '/bot-avatars/013.webp', undefined, 'bot.installation', { city: city?.name || 'Ville' });
-    setTimeout(() => pushBotMessage(t('bot.promptInstallation'), [
-      { label: t('bot.yesInstallation'), value: 'yes', translationKey: 'bot.yesInstallation' },
-      { label: t('bot.noInstallation'), value: 'no', translationKey: 'bot.noInstallation' },
-    ], 1500, '/bot-avatars/005.webp', undefined, 'bot.promptInstallation'), 1500);
+    pushUserMessage(t('bot.skip'));
+    pushBotMessage(t('bot.company'), undefined, 800, '/bot-avatars/009.webp', () => {
+      updateStep(STEP.FORM_COMPANY);
+    }, 'bot.company');
   };
 
-  const handleInstallationChoice = (value: string, label: string) => {
-    takeSnapshot();
-    pushUserMessage(label);
-    const include = value === 'yes';
-    setIncludeInstallation(include);
-    setConfigState(prev => ({ ...prev, includeInstallation: include }));
-
-    setMessages(prev => {
-      const updated = [...prev];
-      for (let i = updated.length - 1; i >= 0; i--) {
-        if (updated[i].senderId === 'bot' && updated[i].options) {
-          updated[i] = { ...updated[i], options: undefined };
-          break;
-        }
-      }
-      return updated;
-    });
-
-    updateStep(STEP.SITE_PHOTO);
-    setBotStatus('smiling');
-    pushBotMessage(include ? t('bot.installationIncluded') : t('bot.noProblem'), undefined, 0, undefined, undefined, include ? 'bot.installationIncluded' : 'bot.noProblem');
-    setTimeout(() => pushBotMessage(t('bot.photo'), [
-      { label: t('bot.takePhoto'), value: 'add_photo_camera', translationKey: 'bot.takePhoto' },
-      { label: t('bot.chooseGallery'), value: 'add_photo_gallery', translationKey: 'bot.chooseGallery' },
-      { label: t('bot.skip'), value: 'skip_photo', translationKey: 'bot.skip' }
-    ], 1500, '/bot-avatars/012.webp', undefined, 'bot.photo'), 1500);
-  };
-
-  const submitFinalQuote = async () => {
-    const uid = user?.uid || 'anonymous';
-    // Switch to SUCCESS immediately to avoid waiting screen
-    updateStep(STEP.SUCCESS);
-    setBotStatus('smiling');
-
-    const envMap: Record<string, 'indoor' | 'outdoor' | 'showcase'> = { interieur: 'indoor', exterieur: 'outdoor', 'semi-exterieur': 'showcase' };
-    const quoteDetails: QuoteDetails = {
-      products: selectedProduct ? [{
-        id: `config_${Date.now()}`,
-        productId: String(configState.selectedProduct),
-        productType: envMap[configState.environment] || 'indoor',
-        width: configState.width,
-        height: configState.height,
-        quantity: configState.quantity || 1,
-        transactionType: configState.projectType === 'vente' ? 'sale' : 'rental',
-        rentalDuration: 1,
-        rentalUnit: 'day',
-        productName: selectedProduct.name,
-        lineTotal,
-      }] : [],
-      screenType: envMap[configState.environment] || 'indoor',
-      transactionType: configState.projectType === 'vente' ? 'sale' : 'rental',
-      includeInstallation: !!includeInstallation,
-      installationCost,
-      techniciansRequired,
-      includeDelivery: !!deliveryCityId,
-      deliveryCost,
-      selectedCityId: deliveryCityId || null,
-      totalQuote,
-      width: configState.width,
-      height: configState.height,
-      productName: selectedProduct?.name ?? '',
-      lang: locale,
-      configuratorType: 'lumi',
-    };
-
-    const formData = {
-      companyName: formCompany,
-      email: formEmail,
-      phone: formPhone,
-      address: formAddress,
-      notes: '',
-      termsAccepted: true
-    };
-
+  const submitFinalQuoteWithContract = async () => {
     try {
-      const res = await createQuoteRequest(uid, formData, quoteDetails);
+      const uid = user?.uid || 'anonymous';
+      setBotStatus('smiling');
+
+      const envMap: Record<string, 'indoor' | 'outdoor' | 'showcase'> = { interieur: 'indoor', exterieur: 'outdoor', 'semi-exterieur': 'showcase' };
+      const rentalPeriod = configState.rentalStartDate && configState.rentalEndDate
+        ? { from: configState.rentalStartDate, to: configState.rentalEndDate }
+        : undefined;
+
+      const res = await createQuoteWithContract(
+        uid,
+        {
+          company: renterDetails.company,
+          representative: renterDetails.representative,
+          address: renterDetails.address,
+          postcode: renterDetails.postcode,
+          city: renterDetails.city,
+          email: formEmail,
+          phone: renterDetails.phone,
+          notes: '',
+          sitePhoto: configState.installationPhoto || undefined,
+        },
+        {
+          products: selectedProduct ? [{
+            id: `config_${Date.now()}`,
+            productId: String(configState.selectedProduct),
+            productType: envMap[configState.environment] || 'indoor',
+            width: configState.width,
+            height: configState.height,
+            quantity: configState.quantity || 1,
+            transactionType: configState.projectType === 'vente' ? 'sale' : 'rental',
+            rentalDuration: 1,
+            rentalUnit: 'day',
+            productName: selectedProduct.name,
+            lineTotal,
+          }] : [],
+          transactionType: configState.projectType === 'vente' ? 'sale' : 'rental',
+          includeInstallation: false,
+          installationCost: 0,
+          techniciansRequired: 0,
+          includeDelivery: false,
+          deliveryCost: 0,
+          totalQuote,
+          width: configState.width,
+          height: configState.height,
+          productName: selectedProduct?.name ?? '',
+          lang: locale,
+          rentalPeriod,
+          rentalStartTime: configState.rentalStartTime,
+          rentalEndTime: configState.rentalEndTime,
+        },
+        signatureDataUrl || ''
+      );
+
       if (res.success && res.id) {
         setQuoteId(res.id);
-        // Wait briefly then show success view to let the last message render
-        setTimeout(() => {
-          updateStep(STEP.SUCCESS);
-        }, 1500);
+        const isEvEnabled = settings.isEmailVerificationEnabled ?? true;
+        if (isEvEnabled) {
+          setOtpCooldown(600);
+          setOtpAttempts(0);
+          updateStep(STEP.SECURITE);
+          setBotStatus('default');
+          pushBotMessage(t('bot.otpSent'), undefined, 800, '/bot-avatars/009.webp', undefined, 'bot.otpSent');
+        } else {
+          updateStep(STEP.FELICITATIONS);
+        }
       } else {
-        pushBotMessage(t('bot.errorQuote'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorQuote');
-        updateStep(STEP.FORM_TERMS);
+        setIsSubmittingContract(false);
+        pushBotMessage(res.error || t('bot.errorQuote'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorQuote');
       }
     } catch (e) {
-      console.error("Background quote creation failed:", e);
-      pushBotMessage(t('bot.errorGeneric'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorGeneric');
+      console.error('submitFinalQuoteWithContract error:', e);
+      setIsSubmittingContract(false);
+      pushBotMessage(t('bot.errorQuote'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorQuote');
     }
   };
 
@@ -761,10 +748,23 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     if (!formCompany.trim()) return;
     takeSnapshot();
     pushUserMessage(formCompany);
-    pushBotMessage(t('bot.email'), undefined, 800, undefined, () => {
+    const repPrompt = locale === 'fr'
+      ? "Quel est le nom et le prénom du signataire (représentant légal) ?"
+      : "What is the full name of the signer (legal representative)?";
+    pushBotMessage(repPrompt, undefined, 800, '/bot-avatars/009.webp', () => {
+      updateStep(STEP.FORM_REPRESENTATIVE);
+    });
+  };
+
+  const handleFormRepresentative = () => {
+    if (!formRepresentative.trim()) return;
+    takeSnapshot();
+    pushUserMessage(formRepresentative);
+    pushBotMessage(t('bot.email'), undefined, 800, '/bot-avatars/009.webp', () => {
       updateStep(STEP.FORM_EMAIL);
     }, 'bot.email');
   };
+
   const handleFormEmail = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formEmail.trim())) {
@@ -785,58 +785,138 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     setErrorCount(0);
     takeSnapshot();
     pushUserMessage(formEmail);
-    pushBotMessage(t('bot.phone'), undefined, 800, undefined, () => {
+    pushBotMessage(t('bot.phone'), undefined, 800, '/bot-avatars/009.webp', () => {
       updateStep(STEP.FORM_PHONE);
     }, 'bot.phone');
   };
+
   const handleFormPhone = () => {
-    const digitsOnly = formPhone.replace(/\D/g, '');
-    const hasPlus = formPhone.startsWith('+');
-
-    if (digitsOnly.length < 10 || digitsOnly.length > 14) {
-      const newCount = errorCount + 1;
-      setErrorCount(newCount);
-
-      if (newCount >= 6) {
-        pushBotMessage(t('bot.errorPhoneValidation'), undefined, 800, '/bot-avatars/008.webp', () => {
-          setTimeout(() => onClose(), 2000);
-        }, 'bot.errorPhoneValidation');
-      } else if (newCount >= 3) {
-        pushBotMessage(t('bot.errorPhoneInvalid'), undefined, 800, '/bot-avatars/008.webp', undefined, 'bot.errorPhoneInvalid');
-      } else {
-        pushBotMessage(t('bot.errorPhoneInvalid'), undefined, 800, '/bot-avatars/008.webp', undefined, 'bot.errorPhoneInvalid');
-      }
+    if (!formPhone.trim()) return;
+    const cleanPhone = formPhone.replace(/\s+/g, '');
+    const phoneRegex = /^\+?[0-9]{10,14}$/;
+    if (!phoneRegex.test(cleanPhone)) {
+      pushBotMessage(t('bot.errorPhoneInvalid'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorPhoneInvalid');
       return;
     }
-    setErrorCount(0);
     takeSnapshot();
     pushUserMessage(formPhone);
-    pushBotMessage(t('bot.address'), undefined, 800, '/bot-avatars/013.webp', () => {
+    pushBotMessage(t('bot.address'), undefined, 800, '/bot-avatars/009.webp', () => {
       updateStep(STEP.FORM_ADDRESS);
     }, 'bot.address');
   };
+
   const handleFormAddress = () => {
-    if (formAddress.trim().length < 6) {
-      pushBotMessage(t('bot.errorAddressShort'), undefined, 800, getAngryImage(), undefined, 'bot.errorAddressShort');
+    if (!formAddress.trim() || formAddress.trim().length < 8) {
+      pushBotMessage(t('bot.errorAddressShort'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorAddressShort');
       return;
     }
+    setContractReadApproved(false);
+    setSignatureDataUrl(null);
+    setSignatureValidated(false);
+    setContractAccepted(false);
+    setIsSubmittingContract(false);
     takeSnapshot();
     pushUserMessage(formAddress);
-    updateStep(STEP.FORM_TERMS);
-    const isEmailVerificationEnabled = settings.isEmailVerificationEnabled ?? false;
+    pushBotMessage(t('bot.terms'), undefined, 800, '/bot-avatars/009.webp', () => {
+      updateStep(STEP.CONTRAT);
+    }, 'bot.terms');
+  };
 
-    if (isEmailVerificationEnabled) {
-      pushBotMessage(t('bot.terms'), [
-        { label: t('bot.acceptTerms'), value: 'accept_terms', translationKey: 'bot.acceptTerms' }
-      ], 800, '/bot-avatars/009.webp', undefined, 'bot.terms');
-    } else {
-      submitFinalQuote();
+  const handleSignatureSave = (dataUrl: string) => {
+    setSignatureDataUrl(dataUrl);
+    setSignatureValidated(true);
+  };
+
+  const handleSignatureClear = () => {
+    setSignatureDataUrl(null);
+    setSignatureValidated(false);
+    setContractAccepted(false);
+  };
+
+  const handleContractAccept = () => {
+    if (!signatureValidated) return;
+    setContractAccepted(true);
+    setIsSubmittingContract(true);
+    pushBotMessage(t('bot.contractSigned'), undefined, 400, '/bot-avatars/009.webp', () => {
+      submitFinalQuoteWithContract();
+    }, 'bot.contractSigned');
+  };
+
+  const handleOtpSubmit = async () => {
+    if (!quoteId || otpCode.length < 6) return;
+    if (otpAttempts >= 3) {
+      setOtpError(locale === 'fr' ? 'Trop de tentatives. Veuillez recommencer.' : 'Too many attempts. Please restart.');
+      return;
     }
+    setOtpError('');
+    try {
+      const res = await verifyQuoteOtp(quoteId, otpCode);
+      if (res.success) {
+        setOtpVerified(true);
+        updateStep(STEP.FELICITATIONS);
+      } else {
+        setOtpAttempts(prev => prev + 1);
+        const err = res.error || '';
+        if (err.includes('expired')) {
+          setOtpError(locale === 'fr' ? 'Le code de vérification a expiré.' : err);
+        } else {
+          setOtpError(err || t('bot.otpError'));
+        }
+      }
+    } catch (e) {
+      setOtpError(t('bot.otpError'));
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!quoteId || isResending) return;
+    setIsResending(true);
+    try {
+      const res = await resendQuoteOtp(quoteId);
+      if (!res.success) {
+        setOtpError(res.error || t('bot.otpError'));
+      } else {
+        setOtpCooldown(600);
+        setOtpAttempts(0);
+        setOtpCode('');
+      }
+    } catch (e) {
+      setOtpError(t('bot.otpError'));
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handlePasteCode = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const digits = text.replace(/\D/g, '').slice(0, 6);
+      if (digits.length === 6) {
+        setOtpCode(digits);
+        setTimeout(() => handleOtpSubmit(), 100);
+      }
+    } catch { /* clipboard access denied */ }
   };
 
   const getBotImage = () => {
     return '/bot-avatars/011.webp';
   };
+
+  const renderBotStep = (stepNum: number, children: React.ReactNode) => (
+    <div className="md:flex md:items-start md:gap-2 max-w-full md:max-w-[92%]">
+      <motion.div
+        animate={{ y: [-3, 3, -3] }}
+        transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+        className="hidden md:block w-16 h-16 flex-shrink-0 drop-shadow-md z-10"
+      >
+        <img src={getBotImageForStep(stepNum)} alt="Bot" className="w-full h-full object-contain scale-[1.3] origin-bottom" />
+      </motion.div>
+      <div className="flex flex-col gap-1 flex-1 min-w-0">
+        <span className="hidden md:block text-[10px] font-black uppercase tracking-widest text-slate-900">Lumi</span>
+        {children}
+      </div>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col pointer-events-none">
@@ -966,21 +1046,10 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             const label = typeof option === 'string' ? option : (option.translationKey ? t(option.translationKey, option.translationParams) : option.label);
                             const value = typeof option === 'string' ? option : option.value;
                             const imageUrl = typeof option === 'string' ? undefined : option.imageUrl;
-                            const isInstallOpt = step === STEP.INSTALLATION;
                             return (
                               <button
                                 key={value || i}
-                                onClick={() => {
-                                  if (isInstallOpt) handleInstallationChoice(value, label);
-                                  else if (step === STEP.SITE_PHOTO && value.startsWith('add_photo_')) {
-                                    if (value === 'add_photo_camera') {
-                                      document.getElementById('site-photo-upload-camera')?.click();
-                                    } else {
-                                      document.getElementById('site-photo-upload-gallery')?.click();
-                                    }
-                                  }
-                                  else handleOptionSelect(value, label, imageUrl, typeof option !== 'string' ? option.translationKey : undefined, typeof option !== 'string' ? option.translationParams : undefined);
-                                }}
+                                onClick={() => handleOptionSelect(value, label, imageUrl, typeof option !== 'string' ? option.translationKey : undefined, typeof option !== 'string' ? option.translationParams : undefined)}
                                 className="px-5 py-2.5 rounded-2xl font-bold text-xs bg-black text-white border border-black shadow-lg hover:bg-[#B3E140] hover:text-black hover:border-[#B3E140] active:scale-95 transition-all uppercase tracking-wider"
                               >
                                 {label}
@@ -1001,7 +1070,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                   ))}
 
                   {/* ── Steps ── */}
-                  {step === STEP.DIMENSIONS && !isTyping && (
+                  {step === STEP.DIMENSIONS && !isTyping && renderBotStep(STEP.DIMENSIONS,
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
                       <StepDimensions state={configState} updateState={(u) => setConfigState(prev => ({ ...prev, ...u }))} settings={settings} t={t} isInChat={true} />
                       <div className="px-6 pb-6">
@@ -1012,7 +1081,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                     </motion.div>
                   )}
 
-                  {step === STEP.SUMMARY && !isTyping && (
+                  {step === STEP.SUMMARY && !isTyping && renderBotStep(STEP.SUMMARY,
                     <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-100">
                       <StepSummary state={configState} t={t} locale={locale} />
                       <div className="p-4 bg-slate-50 border-t">
@@ -1023,7 +1092,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                     </motion.div>
                   )}
 
-                  {step === STEP.PRODUCTS && (
+                  {step === STEP.PRODUCTS && renderBotStep(STEP.PRODUCTS,
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
                       {matchingProducts.length === 0 || currentProductIndex >= matchingProducts.length ? (
                         <div className="bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-100">
@@ -1058,35 +1127,9 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             }
 
                             const isRental = configState.projectType === 'location';
-                            const hasDates = !!(configState.rentalStartDate && configState.rentalEndDate);
-                            // Merge bulk info to avoid flashes if productAvailability isn't loaded yet
-                            const currentBulkAvail = bulkAvailability?.[currentProduct.id];
-                            const effectiveAvail = productAvailability || currentBulkAvail;
-
-                            const isUnavailable = isRental && hasDates && effectiveAvail !== null && !effectiveAvail?.available;
-                            const isAvailable = isRental && hasDates && effectiveAvail !== null && !!effectiveAvail?.available;
-
-                            // Alternative size calculation
-                            let altWidth: number | null = null;
-                            let altHeight: number | null = null;
-                            if (isUnavailable && effectiveAvail?.remaining !== undefined && effectiveAvail.remaining > 0 && currentProduct.tileWidth && currentProduct.tileHeight) {
-                              const tileW = currentProduct.tileWidth / 100;
-                              const tileH = currentProduct.tileHeight / 100;
-                              let w = configState.width;
-                              let h = configState.height;
-                              while (w >= 0.5 && h >= 0.5) {
-                                if (w >= h) w -= 0.5;
-                                else h -= 0.5;
-                                if (w > 0 && h > 0 && Math.ceil(w / tileW) * Math.ceil(h / tileH) <= effectiveAvail.remaining) {
-                                  altWidth = w;
-                                  altHeight = h;
-                                  break;
-                                }
-                              }
-                            }
 
                             // Best choice badge check
-                            const isBestChoice = currentProductIndex === 0 && matchingProducts.length > 1 && (!isRental || isAvailable);
+                            const isBestChoice = currentProductIndex === 0 && matchingProducts.length > 1;
 
                             // Promotion check
                             const activePrice = isRental ? currentProduct.rentalPricePerDay : currentProduct.salePricePerSqM;
@@ -1111,49 +1154,18 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                               return currentProduct.environment || '';
                             })();
 
-                            // Price display
-                            const priceLabel = locale === 'fr' ? 'Prix sur estimation' : 'Price on quote';
-                            const priceBlurLabel = locale === 'fr' ? 'Sur estimation' : 'On quote';
-
                             return (
                               <>
                                 <motion.div
                                 key={currentProduct.id}
-                                initial={{ x: 40, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                exit={{ x: -40, opacity: 0 }}
+                                initial={{ y: 40, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: -40, opacity: 0 }}
                                 transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-                                className={cn(
-                                  "rounded-[40px] shadow-2xl border overflow-hidden flex flex-col relative transition-all duration-500",
-                                  isUnavailable
-                                    ? "bg-slate-100 border-red-200 opacity-60 grayscale-[0.5]"
-                                    : "bg-white border-slate-100"
-                                )}
+                                className="rounded-[40px] shadow-2xl border overflow-hidden flex flex-col relative transition-all duration-500 bg-white border-slate-100"
                               >
-                                {/* Badges layer */}
-                                <div className="absolute top-4 left-4 z-40 flex flex-col gap-2">
-                                  {isBestChoice && (
-                                    <div className="bg-[#B3E140] text-black font-black uppercase text-[10px] tracking-widest py-1.5 px-3 rounded-full shadow-md flex items-center gap-1.5">
-                                      ⭐ {locale === 'fr' ? 'Meilleur choix' : 'Best choice'}
-                                    </div>
-                                  )}
-                                  {promoPercent && (
-                                    <div className="bg-red-500 text-white font-black uppercase text-[10px] tracking-widest py-1.5 px-3 rounded-full shadow-md flex items-center gap-1">
-                                      Promotion -{promoPercent}%
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Unavailable overlay banner */}
-                                {isUnavailable && (
-                                  <div className="absolute top-0 left-0 right-0 z-20 bg-red-600 text-white text-[12px] font-black uppercase tracking-widest text-center py-3 flex items-center justify-center gap-2 shadow-sm">
-                                    <Ban size={14} />
-                                    {locale === 'fr' ? 'Rupture de stock' : 'Out of stock'}
-                                  </div>
-                                )}
-
                                 {/* New Premium Header Style */}
-                                <div className={cn("p-6 text-center border-b border-slate-50", isUnavailable && "pt-12")}>
+                                <div className="p-6 text-center border-b border-slate-50">
                                   <h2 className="font-black text-[#0f172a] tracking-tight text-[13px] leading-relaxed uppercase mb-2 px-4">
                                     {locale === 'fr'
                                       ? "Au vu de la configuration que vous avez choisie, ce produit représente la solution la plus adaptée à vos besoins."
@@ -1169,7 +1181,21 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                   </div>
                                 </div>
 
-                                <div className={cn("relative aspect-square md:aspect-video bg-[#f8fafc] overflow-hidden flex items-center justify-center group", isUnavailable && "grayscale")}>
+                                <div className="relative aspect-square md:aspect-video bg-[#f8fafc] overflow-hidden flex items-center justify-center group">
+                                  {/* Badge on image - top left, lower position */}
+                                  <div className="absolute top-16 left-4 z-30 flex flex-col gap-2">
+                                    {isBestChoice && (
+                                      <div className="bg-[#B3E140] text-black font-black uppercase text-[10px] tracking-widest py-1.5 px-3 rounded-full shadow-md flex items-center gap-1.5">
+                                        ⭐ {locale === 'fr' ? 'Meilleur choix' : 'Best choice'}
+                                      </div>
+                                    )}
+                                    {promoPercent && (
+                                      <div className="bg-red-500 text-white font-black uppercase text-[10px] tracking-widest py-1.5 px-3 rounded-full shadow-md flex items-center gap-1">
+                                        Promotion -{promoPercent}%
+                                      </div>
+                                    )}
+                                  </div>
+
                                   {/* Media Actions Overlay */}
                                   <div className="absolute top-8 right-8 flex flex-col gap-3 z-30">
                                     {currentProduct.videoUrl && (
@@ -1227,81 +1253,15 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                   </div>
 
                                   <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{priceLabel}</span>
-                                    <span className="font-black text-2xl text-slate-300 filter blur-[3px] select-none pointer-events-none transition-all duration-700 hover:blur-none hover:text-[#0f766e]">{priceBlurLabel}</span>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                      {settings.isPriceHidden ? (locale === 'fr' ? 'Estimation en cours' : 'Estimating') : (locale === 'fr' ? 'Prix sur estimation' : 'Price on quote')}
+                                    </span>
+                                    <BlurredPrice
+                                      price={locale === 'fr' ? 'Sur estimation' : 'On quote'}
+                                      isPriceHidden={settings.isPriceHidden ?? false}
+                                      priceClassName="font-black text-2xl text-slate-800"
+                                    />
                                   </div>
-
-                                  {/* Availability badge for rental */}
-                                  {isRental && hasDates && (
-                                    <div className={cn(
-                                      "flex items-center gap-2 text-[11px] font-bold px-4 py-3 rounded-xl border transition-all duration-300",
-                                      isCheckingAvailability
-                                        ? "bg-slate-50 text-slate-400 border-slate-100"
-                                        : isAvailable
-                                          ? "bg-green-50 text-green-700 border-green-200"
-                                          : isUnavailable
-                                            ? "bg-red-50 text-red-700 border-red-200"
-                                            : "bg-slate-50 text-slate-400 border-slate-100"
-                                    )}>
-                                      {isCheckingAvailability ? (
-                                        <><Loader2 size={14} className="animate-spin shrink-0" />{locale === 'fr' ? 'Vérification du stock...' : 'Checking stock...'}</>
-                                      ) : isAvailable ? (
-                                        <><CheckCircle2 size={14} className="shrink-0" />{locale === 'fr' ? `${productAvailability!.remaining} / ${productAvailability!.total} dalles disponibles` : `${productAvailability!.remaining} / ${productAvailability!.total} tiles available`}</>
-                                      ) : isUnavailable ? (
-                                        <><Ban size={14} className="shrink-0" />{locale === 'fr' ? `Rupture de stock — ${productAvailability!.remaining} / ${productAvailability!.total} dalles restantes` : `Out of stock — ${productAvailability!.remaining} / ${productAvailability!.total} tiles remaining`}</>
-                                      ) : (
-                                        <><AlertTriangle size={14} className="shrink-0" />{locale === 'fr' ? 'Disponibilité inconnue' : 'Availability unknown'}</>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {/* Availability Date and Alternative */}
-                                  {isUnavailable && (
-                                    <div className="space-y-3">
-                                      {effectiveAvail?.nextAvailableDate && (
-                                        <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-800 text-[12px] font-bold flex items-center gap-2">
-                                          <CalendarIcon size={14} />
-                                          {locale === 'fr' ? `Disponible à partir du ${new Date(effectiveAvail.nextAvailableDate).toLocaleDateString('fr-FR')}` : `Available from ${new Date(effectiveAvail.nextAvailableDate).toLocaleDateString('en-US')}`}
-                                        </div>
-                                      )}
-                                      
-                                      {altWidth && altHeight && (
-                                        <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
-                                          <h4 className="text-orange-800 text-[12px] font-bold mb-2 flex items-center gap-1">
-                                            ✨ {locale === 'fr' ? 'Alternative possible' : 'Possible alternative'}
-                                          </h4>
-                                          <p className="text-orange-700 text-[11px] mb-3 leading-relaxed">
-                                            {locale === 'fr' 
-                                              ? `Pour cette période, une configuration ${altWidth}m × ${altHeight}m est disponible.`
-                                              : `For this period, a ${altWidth}m × ${altHeight}m configuration is available.`}
-                                          </p>
-                                          <Button
-                                            onClick={() => {
-                                              setConfigState(prev => ({ ...prev, width: altWidth!, height: altHeight! }));
-                                              setProductAvailability(null);
-                                              setIsCheckingAvailability(true);
-                                              // Check availability for the new config
-                                              setTimeout(() => {
-                                                const tileW = (currentProduct.tileWidth || 50) / 100;
-                                                const tileH = (currentProduct.tileHeight || 50) / 100;
-                                                const newNeeded = Math.ceil(altWidth! / tileW) * Math.ceil(altHeight! / tileH);
-                                                import('@/app/actions/quote-actions').then(m => {
-                                                  m.getProductRentalAvailabilityAction(currentProduct.id, configState.rentalStartDate!, configState.rentalEndDate!, newNeeded)
-                                                  .then(res => {
-                                                    setProductAvailability(res as any);
-                                                    setIsCheckingAvailability(false);
-                                                  });
-                                                });
-                                              }, 100);
-                                            }}
-                                            className="w-full h-8 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider"
-                                          >
-                                            {locale === 'fr' ? 'Utiliser cette configuration' : 'Use this configuration'}
-                                          </Button>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
 
                                   <div className="p-4 bg-[#0f766e]/5 border border-[#0f766e]/10 rounded-xl">
                                     <h3 className="font-bold text-[#0f766e] text-[13px] flex items-center gap-2 mb-1">
@@ -1321,25 +1281,13 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                       {t('bot.nextProduct')}
                                     </Button>
                                     <Button
-                                      disabled={isCheckingAvailability || isUnavailable}
                                       onClick={() => {
                                         pushUserMessage(t('bot.productFits'), undefined, 'bot.productFits');
                                         handleProductSelected(currentProduct.id);
                                       }}
-                                      className={cn(
-                                        "h-14 rounded-xl font-black uppercase tracking-wider text-[11px] shadow-xl active:scale-95 transition-all",
-                                        isUnavailable
-                                          ? "bg-red-100 text-red-400 cursor-not-allowed border border-red-200"
-                                          : "bg-black hover:bg-[#B3E140] text-white hover:text-black disabled:opacity-50 disabled:cursor-not-allowed"
-                                      )}
+                                      className="h-14 rounded-xl font-black uppercase tracking-wider text-[11px] shadow-xl active:scale-95 transition-all bg-black hover:bg-[#B3E140] text-white hover:text-black"
                                     >
-                                      {isCheckingAvailability ? (
-                                        <Loader2 size={16} className="animate-spin" />
-                                      ) : isUnavailable ? (
-                                        <><Ban size={14} className="mr-1.5" />{t('bot.unavailable')}</>
-                                      ) : (
-                                        <>{t('bot.confirm')}<ArrowRight size={16} className="ml-2" /></>
-                                      )}
+                                      {t('bot.confirm')}<ArrowRight size={16} className="ml-2" />
                                     </Button>
                                   </div>
                                 </div>
@@ -1368,7 +1316,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                     </motion.div>
                   )}
 
-                  {step === STEP.RENTAL_PERIOD && !isTyping && (
+                  {step === STEP.RENTAL_PERIOD && !isTyping && renderBotStep(STEP.RENTAL_PERIOD,
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={cn("bg-white rounded-[32px] p-8 shadow-2xl border border-slate-100 flex flex-col gap-6 w-full max-w-md mx-auto", isCalendarOpen || activeTimePicker ? "invisible pointer-events-none" : "")}>
                       <div className="space-y-4">
                         <div className="flex flex-col gap-2">
@@ -1437,7 +1385,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                     </motion.div>
                   )}
 
-                  {step === STEP.QUANTITY && !isTyping && (
+                  {step === STEP.QUANTITY && !isTyping && renderBotStep(STEP.QUANTITY,
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
                       <Input
                         type="number"
@@ -1462,52 +1410,297 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                     </motion.div>
                   )}
 
-                  {step === STEP.DELIVERY && !isTyping && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl p-5 shadow-lg border border-slate-100 space-y-4">
-                      <div className="flex items-center gap-2 text-slate-700 font-semibold">
-                        <MapPin size={18} className="text-[#0f766e]" /> {locale === 'en' ? "Delivery city" : "Ville de livraison"}
+
+                  {step === STEP.SITE_PHOTO && !isTyping && renderBotStep(STEP.SITE_PHOTO,
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                        id="site-photo-upload"
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => document.getElementById('site-photo-upload')?.click()}
+                          className="flex-1 h-12 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-xs shadow-md active:scale-95 transition-all"
+                        >
+                          {locale === 'fr' ? '📷 Prendre une photo' : '📷 Take a photo'}
+                        </Button>
+                        <Button
+                          onClick={handlePhotoSkip}
+                          variant="outline"
+                          className="h-12 rounded-2xl border-slate-200 text-slate-500 hover:text-black font-bold text-xs"
+                        >
+                          {locale === 'fr' ? 'Passer' : 'Skip'}
+                        </Button>
                       </div>
-                      <select
-                        className="w-full h-12 rounded-xl border border-slate-200 px-4 focus:outline-none focus:ring-2 focus:ring-[#0f766e] bg-white text-slate-800"
-                        value={deliveryCityId}
-                        onChange={(e) => setDeliveryCityId(e.target.value)}
-                      >
-                        <option value="" disabled>{locale === 'en' ? "Select a city..." : "Sélectionnez une ville..."}</option>
-                        {locations?.villes?.map(city => (
-                          <option key={city.id} value={city.id}>{city.name} ({city.postalCode})</option>
-                        ))}
-                      </select>
-                      <Button onClick={handleDeliverySubmit} disabled={!deliveryCityId} className="w-full h-14 font-black rounded-xl bg-black hover:bg-[#B3E140] text-white hover:text-black uppercase tracking-wider text-xs shadow-xl active:scale-95 transition-all">
-                        {locale === 'en' ? "Confirm city" : "Confirmer la ville"} <ArrowRight size={16} className="ml-2" />
-                      </Button>
                     </motion.div>
                   )}
 
-                  {step === STEP.FORM_COMPANY && !isTyping && (
+                  {step === STEP.FORM_COMPANY && !isTyping && renderBotStep(STEP.FORM_COMPANY,
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
-                      <Input placeholder={t('quoteForm.companyPlaceholder')} value={formCompany} onChange={e => setFormCompany(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormCompany()} className="h-12 rounded-2xl font-bold" />
+                      <Input type="text" placeholder={locale === 'fr' ? "Nom de l'entreprise..." : "Company name..."} value={formCompany} onChange={e => setFormCompany(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormCompany()} className="h-12 rounded-2xl font-bold" />
                       <Button onClick={handleFormCompany} disabled={!formCompany.trim()} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"><ArrowRight size={20} /></Button>
                     </motion.div>
                   )}
-                  {step === STEP.FORM_EMAIL && !isTyping && (
+
+                  {step === STEP.FORM_REPRESENTATIVE && !isTyping && renderBotStep(STEP.FORM_REPRESENTATIVE,
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
+                      <Input type="text" placeholder={t('signature.contactPlaceholder')} value={formRepresentative} onChange={e => setFormRepresentative(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormRepresentative()} className="h-12 rounded-2xl font-bold" />
+                      <Button onClick={handleFormRepresentative} disabled={!formRepresentative.trim()} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"><ArrowRight size={20} /></Button>
+                    </motion.div>
+                  )}
+
+                  {step === STEP.FORM_EMAIL && !isTyping && renderBotStep(STEP.FORM_EMAIL,
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
                       <Input type="email" placeholder={t('quoteForm.emailPlaceholder')} value={formEmail} onChange={e => setFormEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormEmail()} className="h-12 rounded-2xl font-bold" />
                       <Button onClick={handleFormEmail} disabled={!formEmail.includes('@')} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"><ArrowRight size={20} /></Button>
                     </motion.div>
                   )}
-                  {step === STEP.FORM_PHONE && !isTyping && (
+
+                  {step === STEP.FORM_PHONE && !isTyping && renderBotStep(STEP.FORM_PHONE,
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
                       <Input type="tel" placeholder={t('quoteForm.phonePlaceholder')} value={formPhone} onChange={e => setFormPhone(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormPhone()} className="h-12 rounded-2xl font-bold" />
                       <Button onClick={handleFormPhone} disabled={!formPhone.trim()} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"><ArrowRight size={20} /></Button>
                     </motion.div>
                   )}
-                  {step === STEP.FORM_ADDRESS && !isTyping && (
+
+                  {step === STEP.FORM_ADDRESS && !isTyping && renderBotStep(STEP.FORM_ADDRESS,
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
-                      <Input placeholder={t('quoteForm.addressPlaceholder')} value={formAddress} onChange={e => setFormAddress(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormAddress()} className="h-12 rounded-2xl font-bold" />
+                      <Input type="text" placeholder={t('quoteForm.addressPlaceholder')} value={formAddress} onChange={e => setFormAddress(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormAddress()} className="h-12 rounded-2xl font-bold" />
                       <Button onClick={handleFormAddress} disabled={!formAddress.trim()} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"><ArrowRight size={20} /></Button>
                     </motion.div>
                   )}
-                  {step === STEP.GENERATING && (
+
+                  {step === STEP.CONTRAT && !isTyping && (
+                    <div className="space-y-4">
+                      {/* Contract card - always visible, compact when approved */}
+                      {renderBotStep(STEP.CONTRAT,
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                          <div className={cn("bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden", contractReadApproved && "max-h-[45vh]")}>
+                            <div className="p-4 border-b border-slate-100 bg-zinc-950 text-white">
+                              <h3 className="font-black text-sm uppercase tracking-widest">{locale === 'fr' ? 'Contrat de location' : 'Rental contract'}</h3>
+                            </div>
+                            <div className={cn("px-2 overflow-y-auto w-full", contractReadApproved ? "max-h-[28vh]" : "max-h-[350px]")}>
+                              <ContractDocument
+                                pack={activePack}
+                                renter={renterDetails}
+                                signatureDataUrl={signatureDataUrl}
+                                isValidated={signatureValidated}
+                                projectMode={configState.projectType as 'vente' | 'location'}
+                                rentalPeriod={configState.rentalStartDate && configState.rentalEndDate ? { from: configState.rentalStartDate, to: configState.rentalEndDate } : undefined}
+                                rentalStartTime={configState.rentalStartTime}
+                                rentalEndTime={configState.rentalEndTime}
+                                productImage={selectedProduct?.imageUrl || selectedProduct?.image}
+                                saleContractTemplate={settings.estimationFlow?.saleContractTemplate}
+                                rentalContractTemplate={settings.estimationFlow?.rentalContractTemplate}
+                                isPdfMode={true}
+                              />
+                            </div>
+                            {!contractReadApproved && (
+                              <div className="px-4 pb-4">
+                                <Button
+                                  onClick={() => {
+                                    setContractReadApproved(true);
+                                    setTimeout(() => scrollToBottom(), 100);
+                                  }}
+                                  className="w-full h-14 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider shadow-md active:scale-95 transition-all"
+                                >
+                                  {locale === 'fr' ? 'J\'ai lu et j\'approuve' : 'I have read and approve'}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Signature card - slides up when approved, replaced by loader when submitting */}
+                      {contractReadApproved && !isSubmittingContract && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 50 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ type: 'spring', damping: 22, stiffness: 180 }}
+                        >
+                          {renderBotStep(STEP.CONTRAT,
+                            <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
+                              <div className="p-4 border-b border-slate-100">
+                                <h3 className="font-black text-slate-800 text-sm uppercase tracking-widest">{locale === 'fr' ? 'Signez votre estimation' : 'Sign your quote'}</h3>
+                              </div>
+                              <div className="px-4">
+                                <SignaturePad
+                                  onSave={handleSignatureSave}
+                                  onClear={handleSignatureClear}
+                                  isValidated={signatureValidated}
+                                />
+                              </div>
+                              <div className="px-4 pb-4">
+                                <Button
+                                  onClick={handleContractAccept}
+                                  disabled={!signatureValidated}
+                                  className="w-full h-14 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider shadow-md active:scale-95 transition-all disabled:opacity-30"
+                                >
+                                  {locale === 'fr' ? 'Accepter & continuer' : 'Accept & continue'}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+
+                      {/* Loading state while submitting contract */}
+                      {isSubmittingContract && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          {renderBotStep(STEP.CONTRAT,
+                            <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 flex flex-col items-center gap-4">
+                              <Loader2 size={28} className="animate-spin text-[#0f766e]" />
+                              <p className="font-bold text-slate-700 text-sm">{locale === 'fr' ? 'Création de votre estimation...' : 'Creating your estimate...'}</p>
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
+
+                  {step === STEP.SECURITE && !isTyping && renderBotStep(STEP.SECURITE,
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3 bg-white rounded-3xl shadow-lg border border-slate-100 p-4">
+                      <div className="flex items-center gap-3 mb-1">
+                        <Shield size={20} className="text-[#0f766e]" />
+                        <p className="font-bold text-slate-800 text-sm">{locale === 'fr' ? 'Code de vérification' : 'Verification code'}</p>
+                      </div>
+                      <p className="text-xs text-slate-500">{locale === 'fr' ? 'Entrez le code reçu par email' : 'Enter the code sent by email'}</p>
+                      <div className="flex gap-2">
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="000000"
+                          value={otpCode}
+                          onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          onKeyDown={e => e.key === 'Enter' && handleOtpSubmit()}
+                          className="h-12 rounded-2xl font-bold text-center text-lg tracking-[0.3em]"
+                        />
+                        <Button
+                          onClick={handleOtpSubmit}
+                          disabled={otpCode.length < 6 || otpAttempts >= 3}
+                          className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"
+                        >
+                          <Check size={20} />
+                        </Button>
+                      </div>
+
+                      {/* Paste button */}
+                      {otpCode.length < 6 && (
+                        <button
+                          onClick={handlePasteCode}
+                          className="text-xs text-[#0f766e] font-bold underline underline-offset-2 hover:text-[#0f766e]/80 self-start"
+                        >
+                          {locale === 'fr' ? '📋 Coller le code' : '📋 Paste code'}
+                        </button>
+                      )}
+
+                      {/* Countdown */}
+                      {otpCooldown > 0 && (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                          <Clock size={12} />
+                          <span>{locale === 'fr' ? 'Expire dans' : 'Expires in'}</span>
+                          <span className={`font-mono font-bold px-1.5 py-0.5 rounded leading-none ${otpCooldown <= 60 ? 'text-red-600 bg-red-100 animate-pulse' : 'text-slate-800 bg-slate-100'}`}>
+                            {`${Math.floor(otpCooldown / 60).toString().padStart(2, '0')}:${(otpCooldown % 60).toString().padStart(2, '0')}`}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Attempts remaining */}
+                      {otpAttempts > 0 && (
+                        <p className="text-xs text-amber-600 font-bold">
+                          {locale === 'fr'
+                            ? `Tentative ${otpAttempts}/3`
+                            : `Attempt ${otpAttempts}/3`}
+                        </p>
+                      )}
+
+                      {otpError && (
+                        <p className="text-red-500 text-xs font-bold">{otpError}</p>
+                      )}
+
+                      {otpCooldown <= 0 && (
+                        <button
+                          onClick={handleResendOtp}
+                          disabled={isResending || otpAttempts >= 3}
+                          className="text-xs text-[#0f766e] font-bold underline underline-offset-2 hover:text-[#0f766e]/80 disabled:opacity-40 self-start"
+                        >
+                          {isResending
+                            ? (locale === 'fr' ? 'Renvol en cours...' : 'Resending...')
+                            : (otpAttempts >= 3
+                              ? (locale === 'fr' ? 'Tentatives épuisées' : 'No attempts left')
+                              : (locale === 'fr' ? 'Renvoyer le code' : 'Resend code'))}
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {step === STEP.FELICITATIONS && !isTyping && renderBotStep(STEP.FELICITATIONS,
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 flex flex-col gap-5">
+                      <div className="w-14 h-14 bg-zinc-950 text-white rounded-[18px] flex items-center justify-center shadow-md">
+                        <Check size={26} strokeWidth={3} />
+                      </div>
+                      <div>
+                        <h2 className="text-3xl font-black text-zinc-900 uppercase tracking-tight">{t('signature.confirmationStep')}</h2>
+                        <span className="text-blue-600 text-2xl font-black block">{t('signature.confirmationDesc')}</span>
+                      </div>
+                      <div className="bg-blue-50 border border-blue-200 rounded-[20px] p-5 space-y-2">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle2 size={18} className="text-blue-600 stroke-[2.5] shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-bold text-blue-900">{t('signature.estimationConfirmed')}</p>
+                            <p className="text-xs text-blue-700 mt-1 leading-relaxed">{t('signature.estimationConfirmedDesc')}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-zinc-400 leading-relaxed">{t('signature.thankYouMessage')}</p>
+                      <div className="flex flex-col gap-3">
+                        <Button onClick={onClose} className="w-full h-14 rounded-2xl bg-zinc-950 hover:bg-zinc-800 text-white font-black text-xs uppercase tracking-widest">
+                          {t('signature.newQuote')}
+                        </Button>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              if (pdfUrl) { window.open(pdfUrl, '_blank'); }
+                              else if (quoteId) { window.open(`/quote/success?id=${quoteId}`, '_blank'); }
+                            }}
+                            disabled={!quoteId || isPdfLoading}
+                            className="h-12 rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-bold text-xs uppercase tracking-wider transition-all"
+                          >
+                            {isPdfLoading ? (locale === 'fr' ? 'Chargement...' : 'Loading...') : t('signature.consulterPdf')}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              if (pdfUrl) {
+                                const a = document.createElement('a');
+                                a.href = pdfUrl;
+                                a.download = `estimation-${quoteId}.pdf`;
+                                a.click();
+                              } else if (quoteId) {
+                                window.open(`/quote/success?id=${quoteId}`, '_blank');
+                              }
+                            }}
+                            disabled={!quoteId || isPdfLoading}
+                            className="h-12 rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 font-bold text-xs uppercase tracking-wider transition-all"
+                          >
+                            {isPdfLoading ? (locale === 'fr' ? 'Chargement...' : 'Loading...') : t('signature.downloadPdf')}
+                          </Button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {step === STEP.GENERATING && renderBotStep(STEP.GENERATING,
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center bg-white p-6 rounded-3xl shadow-lg border border-slate-100 gap-4">
                       <Loader2 size={32} className="animate-spin text-[#0f766e]" />
                       <p className="font-bold text-slate-800 animate-pulse">{locale === 'en' ? "Generating your PDF estimate..." : "Génération de votre estimation PDF en cours..."}</p>
@@ -1721,8 +1914,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
               )}
             </AnimatePresence>
           </motion.div>
-          <input type="file" id="site-photo-upload-camera" className="hidden" accept="image/*" capture="environment" onChange={handlePhotoUpload} />
-          <input type="file" id="site-photo-upload-gallery" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+
 
           <AnimatePresence>
             {lightboxUrl && (
@@ -1756,7 +1948,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[300] bg-white flex flex-col"
+            className="fixed inset-0 z-[300] bg-white flex flex-col pointer-events-auto"
           >
             <ProductComparator
               products={matchingProducts}

@@ -44,6 +44,7 @@ import { useToast } from '@/hooks/use-toast';
 import { X, Check } from 'lucide-react';
 import { translateStatus } from '../../../../lib/utils';
 import { useI18n, IntlHelpers } from '@/lib/i18n';
+import { useAdminT } from '@/hooks/useAdminT';
 
 const DAYS_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 const MONTH_KEYS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'] as const;
@@ -86,6 +87,7 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userName, userAvatar, userRole, rawRole }) => {
   const { t, locale } = useI18n();
+  const { t: adt } = useAdminT();
   const { user, userProfile } = useUser();
   const router = useRouter();
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
@@ -1303,9 +1305,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
         <div className="hidden md:flex flex-col bg-black/90 backdrop-blur-md rounded-3xl p-4 gap-3 shadow-2xl border border-white/10">
           <div className="flex items-center gap-1.5">
             {[
-              { key: 'all', label: 'Tous' },
-                { key: 'sale', label: 'Vente' },
-                { key: 'rental', label: 'Location' },
+              { key: 'all', label: adt('All') },
+                { key: 'sale', label: adt('Sale') },
+                { key: 'rental', label: adt('Rental') },
               ].map(({ key, label }) => (
                 <button
                   key={key}
@@ -1443,7 +1445,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                       <div className="flex items-center gap-3">
                         <RefreshCw className="w-4 h-4 font-black group-hover:rotate-180 transition-transform duration-500" />
                         <span className="text-sm font-black uppercase tracking-widest text-left">
-                          Reset <span className="text-[9px] opacity-80 font-bold ml-2">— Reset to zero</span>
+                          {adt('Reset')} <span className="text-[9px] opacity-80 font-bold ml-2">{adt('— Reset to zero')}</span>
                         </span>
                       </div>
                       <ChevronRight className="w-4 h-4 opacity-50" />

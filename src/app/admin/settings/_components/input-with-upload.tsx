@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2, Trash2 } from 'lucide-react';
+import { useAdminT } from '@/hooks/useAdminT';
 import { uploadImage } from '@/lib/uploadImage';
 import Image from 'next/image';
 
@@ -16,6 +17,7 @@ interface InputWithUploadProps {
 
 export function InputWithUpload({ value, onChange, placeholder }: InputWithUploadProps) {
   const { toast } = useToast();
+  const { t } = useAdminT();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -27,10 +29,10 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
     try {
       const downloadURL = await uploadImage(file);
       onChange(downloadURL);
-      toast({ variant: 'success', title: 'Upload successful' });
+      toast({ variant: 'success', title: t('Upload successful') });
     } catch (error) {
       console.error('Upload failed', error);
-      toast({ variant: 'destructive', title: 'Upload error', description: (error as Error).message });
+      toast({ variant: 'destructive', title: t('Upload error'), description: (error as Error).message });
     } finally {
       setIsUploading(false);
     }
@@ -55,7 +57,7 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
             size="icon"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            title="Upload a file"
+            title={t('Upload a file')}
           >
             {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           </Button>
@@ -65,7 +67,7 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
                 variant="destructive-ghost"
                 size="icon"
                 onClick={handleRemoveImage}
-                title="Remove image"
+                title={t('Remove image')}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -83,12 +85,12 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
         <div className="relative w-28 h-20 shrink-0 rounded-md overflow-hidden border bg-slate-900 flex items-center justify-center">
            {value.includes('youtube.com') || value.includes('youtu.be') ? (
              <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-white text-[10px] p-2 text-center font-bold">
-                YouTube Link
+                 {t('YouTube Link')}
              </div>
            ) : value.match(/\.(mp4|webm|ogg|mov)(\?|$)/i) || value.includes('Devis%20Ecran') || value.includes('.mp4') ? (
              <video src={value} className="w-full h-full object-cover" muted playsInline autoPlay loop />
            ) : (
-             <img src={value} alt="Preview" className="w-full h-full object-cover" />
+              <img src={value} alt={t('Preview')} className="w-full h-full object-cover" />
            )}
         </div>
       )}

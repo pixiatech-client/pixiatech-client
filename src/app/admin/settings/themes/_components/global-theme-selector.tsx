@@ -27,10 +27,10 @@ const CATEGORY_STYLES: Record<string, string> = {
 };
 
 const SWATCH_KEYS: Array<{ key: keyof PaletteColors; label: string }> = [
-  { key: 'primary', label: 'Primaire' },
+  { key: 'primary', label: 'Primary' },
   { key: 'accent', label: 'Accent' },
-  { key: 'adminBackground', label: 'Fond' },
-  { key: 'card', label: 'Carte' },
+  { key: 'adminBackground', label: 'Background' },
+  { key: 'card', label: 'Card' },
   { key: 'sidebarBg', label: 'Sidebar' },
 ];
 
@@ -201,7 +201,7 @@ function SaveModal({ baseColors, baseMode, onSave, onClose }: SaveModalProps) {
         {/* Preview */}
         <div className="flex gap-1.5 mb-5 p-3 rounded-2xl border border-slate-100 bg-slate-50">
           {SWATCH_KEYS.map(({ key, label }) => (
-            <SwatchPicker key={key} colorKey={key} label={label} currentHsl={colors[key] as string}
+            <SwatchPicker key={key} colorKey={key} label={t(label)} currentHsl={colors[key] as string}
               onChange={handleColorChange} />
           ))}
           <span className="ml-2 text-[11px] text-slate-400 self-center">{t('Click to edit')}</span>
@@ -226,7 +226,7 @@ function SaveModal({ baseColors, baseMode, onSave, onClose }: SaveModalProps) {
               <select value={category} onChange={e => setCategory(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black/10 bg-white">
                 <option value="audacieux">{t('Bold')}</option>
-                <option value="pastel">Pastel</option>
+                <option value="pastel">{t('Pastel')}</option>
               </select>
             </div>
             <div className="flex-1">
@@ -378,7 +378,7 @@ function ThemeCard({ palette, isActive, isCustomized, getColor, onSelect, onColo
         {/* Clickable swatches */}
         <div className="flex gap-1.5 items-center">
           {SWATCH_KEYS.map(({ key, label }) => (
-            <SwatchPicker key={key} colorKey={key} label={label} currentHsl={getColor(key)}
+            <SwatchPicker key={key} colorKey={key} label={t(label)} currentHsl={getColor(key)}
               onChange={onColorChange} />
           ))}
         </div>

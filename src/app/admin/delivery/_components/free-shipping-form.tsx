@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { useAdminT } from '@/hooks/useAdminT';
 
 const freeShippingSchema = z.object({
   isFreeDeliveryEnabled: z.boolean(),
@@ -25,6 +26,7 @@ type FormValues = z.infer<typeof freeShippingSchema>;
 
 export function FreeShippingForm({ initialSettings }: { initialSettings: DeliverySettings }) {
   const { toast } = useToast();
+  const { t } = useAdminT();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(freeShippingSchema),
@@ -46,9 +48,9 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
 
     const result = await updateDeliverySettings(formattedData);
     if (result.success) {
-      toast({ title: 'Success', description: 'Free shipping settings updated.', variant: 'success' });
+      toast({ title: t('Success'), description: t('Free shipping settings updated.'), variant: 'success' });
     } else {
-      toast({ variant: 'destructive', title: 'Error', description: 'An error occurred.' });
+      toast({ variant: 'destructive', title: t('Error'), description: t('An error occurred.') });
     }
   };
 
@@ -56,14 +58,14 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <Card className="border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white">
             <CardHeader className="px-0 md:px-6">
-                <CardTitle>Free shipping by threshold</CardTitle>
-                <CardDescription>Offer free shipping for orders exceeding a certain amount.</CardDescription>
+                <CardTitle>{t('Free shipping by threshold')}</CardTitle>
+                <CardDescription>{t('Offer free shipping for orders exceeding a certain amount.')}</CardDescription>
             </CardHeader>
             <CardContent className="px-0 md:px-6">
                 <fieldset disabled={isTotalFreeDeliveryEnabled} className="space-y-6 group">
                     <div className="flex items-center justify-between rounded-none md:rounded-lg border-x-0 md:border-x border-y p-4 group-disabled:opacity-50 transition-opacity">
                         <div>
-                            <Label htmlFor="isFreeDeliveryEnabled" className="font-semibold">Enable free shipping by threshold</Label>
+                            <Label htmlFor="isFreeDeliveryEnabled" className="font-semibold">{t('Enable free shipping by threshold')}</Label>
                         </div>
                         <div className='flex items-center gap-4'>
                             <Input
@@ -92,13 +94,13 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
 
         <Card className="border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white">
             <CardHeader className="px-0 md:px-6">
-                <CardTitle>Total Free Shipping</CardTitle>
-                <CardDescription>Makes shipping free for all orders, ignoring other fees.</CardDescription>
+                <CardTitle>{t('Total Free Shipping')}</CardTitle>
+                <CardDescription>{t('Makes shipping free for all orders, ignoring other fees.')}</CardDescription>
             </CardHeader>
             <CardContent className="px-0 md:px-6">
                 <div className="flex items-center justify-between rounded-none md:rounded-lg border-x-0 md:border-x border-y p-4">
                     <div>
-                        <Label htmlFor="isTotalFreeDeliveryEnabled" className="font-semibold">Enable free shipping for everyone</Label>
+                        <Label htmlFor="isTotalFreeDeliveryEnabled" className="font-semibold">{t('Enable free shipping for everyone')}</Label>
                     </div>
                     <Controller
                         control={form.control}
@@ -117,9 +119,9 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
         
         <Card className="border-0 md:border rounded-none md:rounded-xl shadow-none md:shadow-sm bg-transparent md:bg-white">
           <CardHeader className="px-0 md:px-6">
-            <CardTitle>Message for unconfigured zone</CardTitle>
+            <CardTitle>{t('Message for unconfigured zone')}</CardTitle>
             <CardDescription>
-              This message will appear if a customer searches for a city not yet in your database.
+              {t('This message will appear if a customer searches for a city not yet in your database.')}
             </CardDescription>
           </CardHeader>
           <CardContent className="px-0 md:px-6">
@@ -130,7 +132,7 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
                 <Textarea
                   {...field}
                   rows={4}
-                  placeholder="This zone is not yet configured..."
+                  placeholder={t("This zone is not yet configured...")}
                 />
               )}
             />
@@ -139,7 +141,7 @@ export function FreeShippingForm({ initialSettings }: { initialSettings: Deliver
 
       <div className="flex justify-end pt-4">
         <Button variant="styled" type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Saving...' : 'Save'}
+          {form.formState.isSubmitting ? t('Saving...') : t('Save')}
         </Button>
       </div>
     </form>

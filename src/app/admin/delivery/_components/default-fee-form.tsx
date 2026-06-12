@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
+import { useAdminT } from '@/hooks/useAdminT';
 
 const defaultFeeSchema = z.object({
   isDefaultFeeEnabled: z.boolean(),
@@ -23,6 +24,7 @@ type FormValues = z.infer<typeof defaultFeeSchema>;
 
 export function DefaultFeeForm({ initialSettings }: { initialSettings: DeliverySettings }) {
   const { toast } = useToast();
+  const { t } = useAdminT();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(defaultFeeSchema),
@@ -43,9 +45,9 @@ export function DefaultFeeForm({ initialSettings }: { initialSettings: DeliveryS
 
     const result = await updateDeliverySettings(formattedData);
     if (result.success) {
-      toast({ title: 'Success', description: 'Default fees updated.', variant: 'success' });
+      toast({ title: t('Success'), description: t('Default fees updated.'), variant: 'success' });
     } else {
-      toast({ variant: 'destructive', title: 'Error', description: 'An error occurred.' });
+      toast({ variant: 'destructive', title: t('Error'), description: t('An error occurred.') });
     }
   };
 
@@ -55,16 +57,16 @@ export function DefaultFeeForm({ initialSettings }: { initialSettings: DeliveryS
           {isOverridden && (
               <Alert variant="info">
                   <Info className="h-4 w-4" />
-                  <AlertDescription>
-                       Total free shipping is enabled. Default fees are ignored and cannot be modified.
-                  </AlertDescription>
+                   <AlertDescription>
+                        {t('Total free shipping is enabled. Default fees are ignored and cannot be modified.')}
+                   </AlertDescription>
               </Alert>
           )}
           <div className="rounded-none md:rounded-lg border-x-0 md:border-x border-y p-4 transition-opacity group-disabled:opacity-50">
             <div className="flex items-center justify-between">
               <div>
-                  <Label htmlFor="isDefaultFeeEnabled" className="font-semibold">Default shipping fees</Label>
-                  <p className="text-sm text-muted-foreground">Apply a base rate for all deliveries.</p>
+                  <Label htmlFor="isDefaultFeeEnabled" className="font-semibold">{t('Default shipping fees')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('Apply a base rate for all deliveries.')}</p>
               </div>
               <div className='flex items-center gap-4'>
                   <Input
@@ -92,14 +94,14 @@ export function DefaultFeeForm({ initialSettings }: { initialSettings: DeliveryS
             <Alert variant="info">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                Enabling this option will disable zone rates and apply these general fees instead.
+                {t('Enabling this option will disable zone rates and apply these general fees instead.')}
                 </AlertDescription>
             </Alert>
           )}
        </fieldset>
       <div className="flex justify-end pt-4">
         <Button variant="styled" type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Saving...' : 'Save'}
+          {form.formState.isSubmitting ? t('Saving...') : t('Save')}
         </Button>
       </div>
     </form>

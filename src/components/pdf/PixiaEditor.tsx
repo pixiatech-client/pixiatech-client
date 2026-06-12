@@ -46,6 +46,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
+import { useAdminT } from '@/hooks/useAdminT';
 import { DEFAULT_DATA } from "./template-data";
 
 // ─────────────────────────────────────────────
@@ -209,6 +210,7 @@ const E = ({
 // ─────────────────────────────────────────────
 
 const SmartToolbar = ({ currentStyle, onUpdate, onReset, onClose, isMobile }) => {
+  const { t } = useAdminT();
   const [activeMenu, setActiveMenu] = useState(null);
 
   const updateStyle = (key, val) => {
@@ -281,14 +283,14 @@ const SmartToolbar = ({ currentStyle, onUpdate, onReset, onClose, isMobile }) =>
           <div className="flex items-center gap-1 bg-gray-50 rounded-lg p-0.5">
             <button onClick={() => updateStyle('marginTop', (currentStyle.marginTop || 0) - 2)} className="p-1 hover:bg-white rounded transition-colors text-gray-400 hover:text-indigo-600"><ChevronUp size={12} /></button>
             <button onClick={() => updateStyle('marginTop', (currentStyle.marginTop || 0) + 2)} className="p-1 hover:bg-white rounded transition-colors text-gray-400 hover:text-indigo-600"><ChevronDown size={12} /></button>
-            <span className="text-[8px] font-black uppercase text-gray-300 ml-1">Décalage</span>
+            <span className="text-[8px] font-black uppercase text-gray-300 ml-1">{t('Décalage')}</span>
           </div>
           <div className="flex items-center gap-2 text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">
             <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            Édition
+            {t('Édition')}
           </div>
         </div>
-        <button onClick={onReset} className="text-[10px] text-indigo-400 hover:text-indigo-600 font-black uppercase tracking-widest transition-colors">Réinit.</button>
+        <button onClick={onReset} className="text-[10px] text-indigo-400 hover:text-indigo-600 font-black uppercase tracking-widest transition-colors">{t('Réinit.')}</button>
       </div>
 
       {isMobile && (
@@ -297,7 +299,7 @@ const SmartToolbar = ({ currentStyle, onUpdate, onReset, onClose, isMobile }) =>
           className="mt-6 w-full rounded-[24px] py-7 font-bold text-gray-400 uppercase tracking-widest" 
           onClick={onClose}
         >
-          Fermer
+          {t('Fermer')}
         </Button>
       )}
     </motion.div>
@@ -305,6 +307,7 @@ const SmartToolbar = ({ currentStyle, onUpdate, onReset, onClose, isMobile }) =>
 };
 
 const LogoToolbar = ({ logoConfig, onUpdate, onClose, isMobile }) => {
+  const { t } = useAdminT();
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -336,7 +339,7 @@ const LogoToolbar = ({ logoConfig, onUpdate, onClose, isMobile }) => {
         "font-black uppercase tracking-[0.2em] text-gray-300",
         isMobile ? "text-sm mb-8" : "text-[11px]"
       )}>
-        Modifier le Logo
+        {t('Modifier le Logo')}
       </span>
 
       <div className={cn("flex items-center gap-4", isMobile && "flex-col w-full")}>
@@ -346,7 +349,7 @@ const LogoToolbar = ({ logoConfig, onUpdate, onClose, isMobile }) => {
         )}>
           <ImageIcon size={isMobile ? 24 : 18} className="text-indigo-500 group-hover:scale-110 transition-transform" />
           <span className={cn("font-black text-indigo-700 uppercase tracking-wider", isMobile ? "text-sm" : "text-[12px]")}>
-            Téléverser PNG
+            {t('Téléverser PNG')}
           </span>
           <input type="file" hidden accept="image/png,image/jpeg" onChange={handleImageUpload} />
         </label>
@@ -359,7 +362,7 @@ const LogoToolbar = ({ logoConfig, onUpdate, onClose, isMobile }) => {
               isMobile ? "text-xs py-2 mt-2" : "text-[10px]"
             )}
           >
-            Supprimer le logo actuel
+            {t('Supprimer le logo actuel')}
           </button>
         )}
       </div>
@@ -370,7 +373,7 @@ const LogoToolbar = ({ logoConfig, onUpdate, onClose, isMobile }) => {
           className="mt-8 w-full rounded-[24px] py-7 font-bold text-gray-400 uppercase tracking-widest" 
           onClick={onClose}
         >
-          Fermer
+          {t('Fermer')}
         </Button>
       )}
     </motion.div>
@@ -378,6 +381,7 @@ const LogoToolbar = ({ logoConfig, onUpdate, onClose, isMobile }) => {
 };
 
 const BgToolbar = ({ config, onUpdate, onClose, isMobile }) => {
+  const { t } = useAdminT();
   const colors = ["#ffffff", "#f8fafc", "#f1f5f9", "#fffbeb", "#fef2f2", "#f0fdf4", "#f5f3ff", "#fafafa"];
 
   const handleImageUpload = (e) => {
@@ -411,12 +415,12 @@ const BgToolbar = ({ config, onUpdate, onClose, isMobile }) => {
         "font-black uppercase tracking-[0.2em] text-gray-300",
         isMobile ? "text-sm mb-8" : "text-[11px]"
       )}>
-        Arrière-Plan PDF
+        {t('Arrière-Plan PDF')}
       </span>
 
       <div className={cn("flex items-center gap-4", isMobile && "flex-col w-full gap-6")}>
         <div className="flex flex-col items-center gap-3">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">Couleur de fond</span>
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.1em]">{t('Couleur de fond')}</span>
           <div className="flex flex-wrap justify-center gap-2">
             {colors.map(c => (
               <button
@@ -445,7 +449,7 @@ const BgToolbar = ({ config, onUpdate, onClose, isMobile }) => {
             isMobile ? "w-full justify-center py-5 rounded-[24px]" : "px-4 py-2 rounded-2xl"
           )}>
             <ImageIcon size={isMobile ? 24 : 16} className="text-gray-400 group-hover:scale-110 transition-transform" />
-            <span className={cn("font-bold text-gray-600", isMobile ? "text-sm" : "text-[11px]")}>Photo de fond</span>
+            <span className={cn("font-bold text-gray-600", isMobile ? "text-sm" : "text-[11px]")}>{t('Photo de fond')}</span>
             <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
           </label>
 
@@ -454,7 +458,7 @@ const BgToolbar = ({ config, onUpdate, onClose, isMobile }) => {
               onClick={() => onUpdate({ ...config, pdfBgImage: null })} 
               className="text-[10px] font-bold text-red-500 hover:underline uppercase tracking-widest"
             >
-              Supprimer la photo
+              {t('Supprimer la photo')}
             </button>
           )}
         </div>
@@ -466,7 +470,7 @@ const BgToolbar = ({ config, onUpdate, onClose, isMobile }) => {
           className="mt-8 w-full rounded-[24px] py-7 font-bold text-gray-400 uppercase tracking-widest" 
           onClick={onClose}
         >
-          Fermer
+          {t('Fermer')}
         </Button>
       )}
     </motion.div>
@@ -491,6 +495,7 @@ const THEMES = [
 ];
 
 export default function PixiaEditor() {
+  const { t } = useAdminT();
   const [data, setData] = useState(DEFAULT_DATA);
   const [workspaceBg, setWorkspaceBg] = useState("#f3f4f6");
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
@@ -658,9 +663,9 @@ export default function PixiaEditor() {
 
     const res = await updatePdfSettings(settingsToSave);
     if (res.success) {
-      toast.success("Modifications sauvegardées avec succès !");
+      toast.success(t("Modifications sauvegardées avec succès !"));
     } else {
-      toast.error("Erreur lors de la sauvegarde : " + res.error);
+      toast.error(t("Erreur lors de la sauvegarde : ") + res.error);
     }
   };
 
@@ -691,9 +696,9 @@ export default function PixiaEditor() {
         pdfBgImage: firestoreSettings.backgroundUrl || null,
         themeId: firestoreSettings.themeId || 'indigo'
       }));
-      toast.success("Version sauvegardée restaurée !");
+      toast.success(t("Version sauvegardée restaurée !"));
     } else {
-      toast.error("Aucune sauvegarde trouvée.");
+      toast.error(t("Aucune sauvegarde trouvée."));
     }
   };
 
@@ -821,14 +826,14 @@ export default function PixiaEditor() {
           <button 
             onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.min(prev + 0.1, 2)); }}
             className="w-14 h-14 bg-white border border-slate-200 shadow-2xl rounded-2xl flex items-center justify-center text-slate-700 active:scale-90 transition-all"
-            title="Zoom avant"
+            title={t('Zoom avant')}
           >
             <ZoomIn size={24} />
           </button>
           <button 
             onClick={(e) => { e.stopPropagation(); setZoom(prev => Math.max(prev - 0.1, 0.1)); }}
             className="w-14 h-14 bg-white border border-slate-200 shadow-2xl rounded-2xl flex items-center justify-center text-slate-700 active:scale-90 transition-all"
-            title="Zoom arrière"
+            title={t('Zoom arrière')}
           >
             <ZoomOut size={24} />
           </button>
@@ -844,7 +849,7 @@ export default function PixiaEditor() {
                 "w-14 h-14 shadow-2xl rounded-2xl flex items-center justify-center transition-all border",
                 isMobileActionsOpen ? "bg-indigo-600 text-white border-indigo-500" : "bg-white text-slate-700 border-slate-200"
               )}
-              title="Actions"
+              title={t('Actions')}
             >
               <Grid3X3 size={24} />
             </button>
@@ -887,8 +892,8 @@ export default function PixiaEditor() {
                           <Palette size={24} />
                         </div>
                         <div className="flex flex-col items-start">
-                          <span className="text-[13px] font-black uppercase tracking-wider text-slate-800">Thèmes Document</span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase">Changer les couleurs & styles</span>
+                          <span className="text-[13px] font-black uppercase tracking-wider text-slate-800">{t('Thèmes Document')}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">{t('Changer les couleurs & styles')}</span>
                         </div>
                       </button>
                       
@@ -896,11 +901,11 @@ export default function PixiaEditor() {
                       
                       <div className="grid grid-cols-1 gap-2">
                         {[
-                          { id: 'tech', label: 'Technique', sub: 'Détails des produits', icon: Grid3X3, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', active: pdfConfig.showTechnical, key: 'showTechnical' },
-                          { id: 'info', label: 'Infos', sub: 'Notes & Informations', icon: Info, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', active: pdfConfig.showInfo, key: 'showInfo' },
-                          { id: 'pay', label: 'Paiement', sub: 'RIB & Conditions', icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', active: pdfConfig.showTerms, key: 'showTerms' },
-                          { id: 'badge', label: 'Certifs', sub: 'Labels & Qualité', icon: CheckSquare, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', active: pdfConfig.showBadges, key: 'showBadges' },
-                          { id: 'side', label: 'Barre', sub: 'Liseré de couleur', icon: Columns, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-100', active: pdfConfig.showSidebar, key: 'showSidebar' },
+                          { id: 'tech', label: t('Technique'), sub: t('Détails des produits'), icon: Grid3X3, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', active: pdfConfig.showTechnical, key: 'showTechnical' },
+                          { id: 'info', label: t('Infos'), sub: t('Notes & Informations'), icon: Info, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', active: pdfConfig.showInfo, key: 'showInfo' },
+                          { id: 'pay', label: t('Paiement'), sub: t('RIB & Conditions'), icon: FileText, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', active: pdfConfig.showTerms, key: 'showTerms' },
+                          { id: 'badge', label: t('Certifs'), sub: t('Labels & Qualité'), icon: CheckSquare, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', active: pdfConfig.showBadges, key: 'showBadges' },
+                          { id: 'side', label: t('Barre'), sub: t('Liseré de couleur'), icon: Columns, color: 'text-slate-600', bg: 'bg-slate-50', border: 'border-slate-100', active: pdfConfig.showSidebar, key: 'showSidebar' },
                         ].map((item) => (
                           <button 
                             key={item.id}
@@ -939,8 +944,8 @@ export default function PixiaEditor() {
                           <RotateCcw size={24} />
                         </div>
                         <div className="flex flex-col items-start text-red-600">
-                          <span className="text-[13px] font-black uppercase tracking-wider">Réinitialiser tout</span>
-                          <span className="text-[10px] font-bold opacity-70 uppercase">Remettre le document à zéro</span>
+                          <span className="text-[13px] font-black uppercase tracking-wider">{t('Réinitialiser tout')}</span>
+                          <span className="text-[10px] font-bold opacity-70 uppercase">{t('Remettre le document à zéro')}</span>
                         </div>
                       </button>
                     </div>
@@ -960,10 +965,10 @@ export default function PixiaEditor() {
               <button
                 onClick={toggleThemeMenu}
                 className={`p-2.5 rounded-2xl transition-all flex items-center gap-2 ${activeDrawer === 'themes' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-500 hover:bg-gray-50'}`}
-                title="Thèmes"
+                title={t('Thèmes')}
               >
                 <Palette size={18} />
-                <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider">Thèmes</span>
+                <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider">{t('Thèmes')}</span>
               </button>
 
               {/* Desktop Theme Menu */}
@@ -976,7 +981,7 @@ export default function PixiaEditor() {
                     className="absolute bottom-full right-0 mb-3 p-3 bg-white border border-gray-100 shadow-2xl rounded-2xl min-w-[220px] grid grid-cols-5 gap-2"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="col-span-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 px-1">Choisir un thème</div>
+                    <div className="col-span-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 px-1">{t('Choisir un thème')}</div>
                     {THEMES.map(t => (
                       <button
                         key={t.id}
@@ -997,52 +1002,52 @@ export default function PixiaEditor() {
               <button
                 onClick={() => updatePdfConfig({ ...pdfConfig, showTechnical: !pdfConfig.showTechnical })}
                 className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showTechnical ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                title="Détails techniques"
+                title={t('Détails techniques')}
               >
                 <Settings2 size={16} />
-                <span className="text-[10px] font-bold uppercase">Tech</span>
+                <span className="text-[10px] font-bold uppercase">{t('Tech')}</span>
               </button>
               <button
                 onClick={() => updatePdfConfig({ ...pdfConfig, showInfo: !pdfConfig.showInfo })}
                 className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showInfo ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                title="Information"
+                title={t('Information')}
               >
                 <Info size={16} />
-                <span className="text-[10px] font-bold uppercase">Info</span>
+                <span className="text-[10px] font-bold uppercase">{t('Info')}</span>
               </button>
               <button
                 onClick={() => updatePdfConfig({ ...pdfConfig, showTerms: !pdfConfig.showTerms })}
                 className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showTerms ? 'bg-white text-amber-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                title="Paiement"
+                title={t('Paiement')}
               >
                 <FileText size={16} />
-                <span className="text-[10px] font-bold uppercase">Paiem.</span>
+                <span className="text-[10px] font-bold uppercase">{t('Paiem.')}</span>
               </button>
               <button
                 onClick={() => updatePdfConfig({ ...pdfConfig, showBadges: !pdfConfig.showBadges })}
                 className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showBadges ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                title="Certificats"
+                title={t('Certificats')}
               >
                 <CheckSquare size={16} />
-                <span className="text-[10px] font-bold uppercase">Certif.</span>
+                <span className="text-[10px] font-bold uppercase">{t('Certif.')}</span>
               </button>
               <button
                 onClick={() => updatePdfConfig({ ...pdfConfig, showSidebar: !pdfConfig.showSidebar })}
                 className={`p-2 rounded-xl transition-all flex items-center gap-1.5 ${pdfConfig.showSidebar ? 'bg-white text-slate-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                title="Barre latérale"
+                title={t('Barre latérale')}
               >
                 <Columns size={16} />
-                <span className="text-[10px] font-bold uppercase">Barre</span>
+                <span className="text-[10px] font-bold uppercase">{t('Barre')}</span>
               </button>
             </div>
 
             <div className="w-px h-5 bg-gray-100 mx-1" />
 
             <div className="flex items-center gap-1">
-              <button onClick={undo} disabled={!canUndo} title="Annuler" className={`p-2.5 rounded-xl transition-all ${canUndo ? "text-indigo-600 hover:bg-indigo-50" : "text-gray-200"}`}><Undo2 size={18} /></button>
-              <button onClick={handleSaveToDev} title="Sauvegarder pour Dev" className="p-2.5 text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"><Download size={18} /></button>
-              <button onClick={handleRestore} title="Restaurer la version sauvegardée" className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-xl transition-all"><RotateCcw size={18} /></button>
-              <button onClick={resetAll} title="Réinitialiser tout par défaut" className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><RotateCcw size={18} /></button>
+              <button onClick={undo} disabled={!canUndo} title={t('Annuler')} className={`p-2.5 rounded-xl transition-all ${canUndo ? "text-indigo-600 hover:bg-indigo-50" : "text-gray-200"}`}><Undo2 size={18} /></button>
+              <button onClick={handleSaveToDev} title={t('Sauvegarder pour Dev')} className="p-2.5 text-emerald-500 hover:bg-emerald-50 rounded-xl transition-all"><Download size={18} /></button>
+              <button onClick={handleRestore} title={t('Restaurer la version sauvegardée')} className="p-2.5 text-blue-500 hover:bg-blue-50 rounded-xl transition-all"><RotateCcw size={18} /></button>
+              <button onClick={resetAll} title={t('Réinitialiser tout par défaut')} className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><RotateCcw size={18} /></button>
             </div>
           </div>
         </div>
@@ -1095,7 +1100,7 @@ export default function PixiaEditor() {
                   ) : (
                     <div className="flex flex-col items-center gap-1 text-gray-300">
                       <ImageIcon size={24} />
-                      <span className="text-[8px] font-bold uppercase tracking-widest">Logo PNG</span>
+                      <span className="text-[8px] font-bold uppercase tracking-widest">{t('Logo PNG')}</span>
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors opacity-0 group-hover:opacity-100 no-print flex items-center justify-center">
@@ -1123,7 +1128,7 @@ export default function PixiaEditor() {
                   style={{ fontSize: "3.8em", fontWeight: 900, textAlign: "right", color: currentTheme.text, lineHeight: 0.8, letterSpacing: "-0.05em" }}
                 />
                 <div className="flex gap-2">
-                  {[{ l: "Numéro", p: "quote.numero", v: data.quote.numero, id: "q_num" }, { l: "Date", p: "quote.date", v: data.quote.date, id: "q_date" }, { l: "Validité", p: "quote.validite", v: data.quote.validite, id: "q_val" }].map(box => (
+                  {[{ l: t("Numéro"), p: "quote.numero", v: data.quote.numero, id: "q_num" }, { l: t("Date"), p: "quote.date", v: data.quote.date, id: "q_date" }, { l: t("Validité"), p: "quote.validite", v: data.quote.validite, id: "q_val" }].map(box => (
                     <div key={box.l} className="border border-gray-200 rounded-lg p-2 text-center min-w-[6.5em] bg-[#fafafa]">
                       <div className="uppercase text-[0.72em] text-gray-400 font-bold tracking-wider mb-0.5">{box.l}</div>
                       <E id={box.id} selectedId={selectedId} setSelectedId={setSelectedId} value={box.v} onChange={(v) => update(box.p, v)} elementStyle={styles[box.id]} style={{ fontSize: "0.88em", fontWeight: 700, color: "#1f2937" }} />
@@ -1137,7 +1142,7 @@ export default function PixiaEditor() {
                 <User size={24} strokeWidth={2.5} />
               </div>
               <div className="flex-1 flex flex-col gap-0">
-                <span className="uppercase text-[0.72em] text-gray-400 font-black tracking-[0.1em]">Client Destinataire</span>
+                <span className="uppercase text-[0.72em] text-gray-400 font-black tracking-[0.1em]">{t('Client Destinataire')}</span>
                 <E id="cl_name" selectedId={selectedId} setSelectedId={setSelectedId} value={data.client.name} onChange={(v) => update("client.name", v)} elementStyle={styles.cl_name} style={{ fontSize: "1.6em", fontWeight: 900, color: currentTheme.text, letterSpacing: "-0.02em", marginBottom: "1px" }} />
 
                 <div className="flex flex-col gap-1 mt-1">
@@ -1168,10 +1173,10 @@ export default function PixiaEditor() {
                 style={{ borderColor: currentTheme.primary, color: currentTheme.text }}
               >
                 <span>#</span>
-                <span>Description détaillée</span>
-                <span className="text-right">Qté</span>
-                <span className="text-right">Unit. HT</span>
-                <span className="text-right">Total HT</span>
+                <span>{t('Description détaillée')}</span>
+                <span className="text-right">{t('Qté')}</span>
+                <span className="text-right">{t('Unit. HT')}</span>
+                <span className="text-right">{t('Total HT')}</span>
               </div>
               {data.items.map((item, idx) => (
                 <div
@@ -1222,7 +1227,7 @@ export default function PixiaEditor() {
                       elementStyle={styles[`it_pr_${item.id}`]}
                       style={{ textAlign: "right", color: "#475569", fontWeight: 600, fontSize: "1em" }}
                     />
-                    <span className="text-[0.65em] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">EUROS</span>
+                    <span className="text-[0.65em] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">{t('EUROS')}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-[1.2em] font-black tracking-tight" style={{ color: currentTheme.text }}>
@@ -1241,22 +1246,22 @@ export default function PixiaEditor() {
                     <>
                       <div className="flex items-center gap-2 pb-1.5 mb-2 border-b border-blue-100 shrink-0">
                         <Cpu size={14} className="text-blue-500" />
-                        <span className="text-[0.75em] font-black uppercase tracking-widest text-slate-800">DÉTAILS TECHNIQUES</span>
+                        <span className="text-[0.75em] font-black uppercase tracking-widest text-slate-800">{t('DÉTAILS TECHNIQUES')}</span>
                       </div>
 
                       <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-6 flex-1">
                         <div className="grid grid-cols-2 gap-x-6 gap-y-4">
                           {[
-                            { label: "SURFACE TOTALE:", key: "surface", id: "tech_s", icon: Maximize, color: "#3b82f6" },
-                            { label: "RÉSOLUTION:", key: "resolution", id: "tech_r", icon: Monitor, color: "#a855f7" },
-                            { label: "NOMBRE DE MODULES LED:", key: "modules", id: "tech_m", icon: Cpu, color: "#ec4899" },
-                            { label: "PUISSANCE MAXIMALE:", key: "puissanceMax", id: "tech_p", icon: Zap, color: "#22c55e" },
-                            { label: "PUISSANCE MOYENNE:", key: "puissanceMoy", id: "tech_pm", icon: Zap, color: "#3b82f6" },
-                            { label: "DISJONCTEUR RECOMMANDÉ:", key: "disjoncteur", id: "tech_d", icon: Zap, color: "#f97316" },
-                            { label: "TYPE DE PROJET:", key: "typeProjet", id: "tech_tp", icon: Truck, color: "#f97316" },
-                            { label: "ENVIRONNEMENT:", key: "environnement", id: "tech_env", icon: Sun, color: "#14b8a6" },
-                            { label: "DISTANCE DE VISIONNAGE:", key: "distance", id: "tech_dist", icon: Eye, color: "#06b6d4" },
-                            { label: "PIXEL PITCH:", key: "pitch", id: "tech_pitch", icon: Grid3X3, color: "#ef4444" }
+                            { label: t("SURFACE TOTALE:"), key: "surface", id: "tech_s", icon: Maximize, color: "#3b82f6" },
+                            { label: t("RÉSOLUTION:"), key: "resolution", id: "tech_r", icon: Monitor, color: "#a855f7" },
+                            { label: t("NOMBRE DE MODULES LED:"), key: "modules", id: "tech_m", icon: Cpu, color: "#ec4899" },
+                            { label: t("PUISSANCE MAXIMALE:"), key: "puissanceMax", id: "tech_p", icon: Zap, color: "#22c55e" },
+                            { label: t("PUISSANCE MOYENNE:"), key: "puissanceMoy", id: "tech_pm", icon: Zap, color: "#3b82f6" },
+                            { label: t("DISJONCTEUR RECOMMANDÉ:"), key: "disjoncteur", id: "tech_d", icon: Zap, color: "#f97316" },
+                            { label: t("TYPE DE PROJET:"), key: "typeProjet", id: "tech_tp", icon: Truck, color: "#f97316" },
+                            { label: t("ENVIRONNEMENT:"), key: "environnement", id: "tech_env", icon: Sun, color: "#14b8a6" },
+                            { label: t("DISTANCE DE VISIONNAGE:"), key: "distance", id: "tech_dist", icon: Eye, color: "#06b6d4" },
+                            { label: t("PIXEL PITCH:"), key: "pitch", id: "tech_pitch", icon: Grid3X3, color: "#ef4444" }
                           ].map((r, i) => (
                             <div key={i} className="flex items-center gap-3">
                               <div
@@ -1291,15 +1296,15 @@ export default function PixiaEditor() {
                 <div className="space-y-4 flex flex-col">
                   <div className="flex items-center gap-2 pb-1.5 mb-2 border-b border-orange-100 shrink-0">
                     <BarChart3 size={14} className="text-orange-500" />
-                    <span className="text-[0.75em] font-black uppercase tracking-widest text-slate-800">RÉCAPITULATIF</span>
+                    <span className="text-[0.75em] font-black uppercase tracking-widest text-slate-800">{t('RÉCAPITULATIF')}</span>
                   </div>
 
                   <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-8 flex-1 flex flex-col justify-between">
                     <div className="flex flex-col gap-5 px-1">
                       {[
-                        ["Sous-total HT", data.summary.sousTotal, "sum_st"],
-                        ["Installation", data.summary.installation, "sum_ins"],
-                        ["Livraison", data.summary.livraison, "sum_liv"],
+                        [t("Sous-total HT"), data.summary.sousTotal, "sum_st"],
+                        [t("Installation"), data.summary.installation, "sum_ins"],
+                        [t("Livraison"), data.summary.livraison, "sum_liv"],
                       ].map(r => (
                         <div key={r[0] as string} className="flex justify-between items-center text-[0.78em]">
                           <span className="text-slate-500 font-medium">{r[0]}</span>
@@ -1319,8 +1324,8 @@ export default function PixiaEditor() {
 
                     <div className="mt-8 rounded-xl p-5 flex justify-between items-center text-white shadow-md mx-[-2px]" style={{ background: `linear-gradient(135deg, ${currentTheme.primary} 0%, ${currentTheme.primary}dd 100%)` }}>
                       <div className="flex flex-col">
-                        <span className="text-[0.65em] font-black uppercase tracking-widest opacity-90">TOTAL</span>
-                        <span className="text-[1.1em] font-black uppercase tracking-tight">HT</span>
+                        <span className="text-[0.65em] font-black uppercase tracking-widest opacity-90">{t('TOTAL')}</span>
+                        <span className="text-[1.1em] font-black uppercase tracking-tight">{t('HT')}</span>
                       </div>
                       <E
                         id="total_val"
@@ -1343,7 +1348,7 @@ export default function PixiaEditor() {
                   <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 space-y-3 group transition-all">
                     <div className="flex items-center gap-2 font-extrabold text-[0.78em] uppercase tracking-widest" style={{ color: currentTheme.primary }}>
                       <Info size={14} className="stroke-[3]" />
-                      <span>Information</span>
+                      <span>{t('Information')}</span>
                     </div>
                     <E id="inf" selectedId={selectedId} setSelectedId={setSelectedId} value={data.information} onChange={(v) => update("information", v)} elementStyle={styles.inf} multiline style={{ fontSize: "0.85em", color: "#64748b", lineHeight: "1.4", fontWeight: 500 }} />
                   </motion.div>
@@ -1352,7 +1357,7 @@ export default function PixiaEditor() {
                   <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 space-y-3 group transition-all">
                     <div className="flex items-center gap-2 font-extrabold text-[0.78em] uppercase tracking-widest" style={{ color: currentTheme.primary }}>
                       <FileText size={14} className="stroke-[3]" />
-                      <span>Conditions de paiement</span>
+                      <span>{t('Conditions de paiement')}</span>
                     </div>
                     <E id="tems" selectedId={selectedId} setSelectedId={setSelectedId} value={data.paymentTerms} onChange={(v) => update("paymentTerms", v)} elementStyle={styles.tems} multiline style={{ fontSize: "0.85em", color: "#64748b", lineHeight: "1.4", fontWeight: 500 }} />
                   </motion.div>
@@ -1437,7 +1442,7 @@ export default function PixiaEditor() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-1.5 bg-gray-100 rounded-full mx-auto mb-8 shrink-0" />
-            <div className="text-sm font-black uppercase tracking-[0.2em] text-gray-300 mb-10 text-center">Choisir un Thème</div>
+            <div className="text-sm font-black uppercase tracking-[0.2em] text-gray-300 mb-10 text-center">{t('Choisir un Thème')}</div>
             <div className="grid grid-cols-5 gap-4 overflow-y-auto max-h-[40vh] p-2">
               {THEMES.map(t => (
                 <button
@@ -1448,7 +1453,7 @@ export default function PixiaEditor() {
                 />
               ))}
             </div>
-            <Button variant="ghost" className="mt-10 w-full rounded-[24px] py-7 font-bold text-gray-400 uppercase tracking-widest" onClick={() => setActiveDrawer(null)}>Fermer</Button>
+            <Button variant="ghost" className="mt-10 w-full rounded-[24px] py-7 font-bold text-gray-400 uppercase tracking-widest" onClick={() => setActiveDrawer(null)}>{t('Fermer')}</Button>
           </motion.div>
         )}
       </AnimatePresence>

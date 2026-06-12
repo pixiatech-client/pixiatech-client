@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { updateQuoteStatus, updateQuoteClientDetails, updateProductSpecs } from '@/app/admin/actions';
 import { useState, useEffect } from 'react';
 import { debounce } from 'lodash';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface EditableFieldProps {
     value: string | number;
@@ -23,6 +24,7 @@ interface EditableFieldProps {
 const EditableField = ({ value, onSave, multiline = false, className, placeholder, type = 'text' }: EditableFieldProps) => {
     const [currentValue, setCurrentValue] = useState(value);
     const { toast } = useToast();
+    const { t } = useAdminT();
 
     useEffect(() => {
         setCurrentValue(value);
@@ -31,9 +33,9 @@ const EditableField = ({ value, onSave, multiline = false, className, placeholde
     const debouncedSave = debounce(async (newValue: string | number) => {
         try {
             await onSave(newValue);
-            toast({ title: "Field saved", variant: 'success', duration: 2000 });
+            toast({ title: t("Field saved"), variant: 'success', duration: 2000 });
         } catch (error) {
-            toast({ title: "Error", description: "Unable to save the field.", variant: 'destructive' });
+            toast({ title: "Error", description: t("Unable to save the field."), variant: 'destructive' });
         }
     }, 1000);
 

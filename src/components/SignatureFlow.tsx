@@ -754,7 +754,7 @@ export default function SignatureFlow({
   // Verify code typed manually
   const handleManualCodeVerify = async (codeToVerify: string) => {
     if (!quoteId) {
-      setOtpError('Aucun devis en cours de validation');
+      setOtpError('Aucune estimation en cours de validation');
       return;
     }
     try {
@@ -1810,13 +1810,9 @@ export default function SignatureFlow({
                     </div>
                     <span className="text-xs leading-relaxed">
                       {projectMode === 'vente' ? (
-                        <span>
-                          {t('signature.gdprSale')}
-                        </span>
+                        <span dangerouslySetInnerHTML={{ __html: t('signature.gdprSale') }} />
                       ) : (
-                        <span>
-                          {t('signature.cgvRental')}
-                        </span>
+                        <span dangerouslySetInnerHTML={{ __html: t('signature.cgvRental') }} />
                       )}
                     </span>
                   </label>
@@ -2126,12 +2122,12 @@ export default function SignatureFlow({
                         }
                       } else {
                         setEmailDeliveryStatus('failed');
-                        setOtpError(result.error || 'Erreur lors de la création du devis');
+                        setOtpError(result.error || 'Erreur lors de la création de l\'estimation');
                       }
                     } catch (e) {
                       console.error("createQuoteWithContract exception:", e);
                       setEmailDeliveryStatus('failed');
-                      setOtpError('Erreur lors de la création du devis');
+                      setOtpError('Erreur lors de la création de l\'estimation');
                     }
                   };
 

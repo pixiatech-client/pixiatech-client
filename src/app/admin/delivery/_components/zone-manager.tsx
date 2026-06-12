@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { Pagination } from '@/components/ui/Pagination';
+import { useAdminT } from '@/hooks/useAdminT';
 
 
 const ITEMS_PER_PAGE = 8;
@@ -35,6 +36,7 @@ const COLORS = [
 function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { t } = useAdminT();
   const [isPending, startTransition] = useTransition();
   const [newZoneName, setNewZoneName] = useState('');
   const [newZoneColor, setNewZoneColor] = useState(COLORS[0]);
@@ -47,12 +49,12 @@ function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
     startTransition(async () => {
       try {
         await addDoc(collection(firestore, 'zones'), { name: newZoneName.trim(), color: newZoneColor });
-        toast({ title: "Zone added", variant: 'success' });
+        toast({ title: t("Zone added"), variant: 'success' });
         setNewZoneName('');
         setNewZoneColor(COLORS[0]);
         onZoneUpdate();
       } catch (error) {
-        toast({ title: "Error", description: "Unable to add zone.", variant: 'destructive' });
+        toast({ title: t("Error"), description: t("Unable to add zone."), variant: 'destructive' });
       }
     });
   };
@@ -72,11 +74,11 @@ function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
 
             await deleteDoc(doc(firestore, 'zones', zoneId));
 
-            toast({ title: "Zone deleted", description: "Associated cities have been unassigned.", variant: 'info' });
+            toast({ title: t("Zone deleted"), description: t("Associated cities have been unassigned."), variant: 'info' });
             onZoneUpdate();
         } catch (error) {
             console.error("Error deleting zone: ", error);
-            toast({ title: "Error", description: "Unable to delete zone.", variant: 'destructive' });
+            toast({ title: t("Error"), description: t("Unable to delete zone."), variant: 'destructive' });
         }
     });
   };
@@ -151,6 +153,7 @@ function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
 export function ZoneManager() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { t } = useAdminT();
   const [isPending, startTransition] = useTransition();
 
   const [cities, setCities] = useState<City[]>([]);
@@ -487,7 +490,7 @@ export function ZoneManager() {
         <AlertDialog open={!!editingCity} onOpenChange={(open) => !open && setEditingCity(null)}>
             <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Edit city</AlertDialogTitle>
+                <AlertDialogTitle>{t('Edit city')}</AlertDialogTitle>
                 <AlertDialogDescription>
                     Modify the name or postal code of this city.
                 </AlertDialogDescription>
@@ -507,7 +510,7 @@ export function ZoneManager() {
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleUpdateCity} disabled={isPending}>
-                {isPending ? 'Saving...' : 'Save'}
+                {isPending ? t('Saving...') : t('Save')}
                 </AlertDialogAction>
             </AlertDialogFooter>
             </AlertDialogContent>
@@ -517,13 +520,13 @@ export function ZoneManager() {
         <AlertDialog open={!!citiesToDelete} onOpenChange={(open) => !open && setCitiesToDelete(null)}>
             <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure you want to delete {citiesToDelete?.length} city(ies)?</AlertDialogTitle>
-                <AlertDialogDescription>This action is irreversible.</AlertDialogDescription>
+                <AlertDialogTitle>{t('Are you sure you want to delete ')}{citiesToDelete?.length}{t(' city(ies)?')}</AlertDialogTitle>
+                <AlertDialogDescription>{t('This action is irreversible.')}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleDeleteCities} disabled={isPending}>
-                {isPending ? 'Deleting...' : 'Delete'}
+                {isPending ? t('Deleting...') : t('Delete')}
                 </AlertDialogAction>
             </AlertDialogFooter>
             </AlertDialogContent>

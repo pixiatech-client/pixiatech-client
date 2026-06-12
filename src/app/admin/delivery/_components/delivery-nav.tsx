@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useAdminT } from '@/hooks/useAdminT';
 import type { LucideIcon } from 'lucide-react';
 import { Percent, Truck, Settings, Map } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -22,6 +23,7 @@ const tabs: Tab[] = [
 ];
 
 export function DeliveryNav() {
+    const { t } = useAdminT();
     const pathname = usePathname();
 
     return (
@@ -49,7 +51,7 @@ export function DeliveryNav() {
                 )}
                 <tab.icon className={cn("w-4 h-4 z-20 transition-colors", isActive ? 'text-blue-500' : 'text-slate-400')} />
                 <span className="hidden md:inline-block z-20">
-                    {tab.label}
+                    {t(tab.label)}
                 </span>
               </Link>
             );

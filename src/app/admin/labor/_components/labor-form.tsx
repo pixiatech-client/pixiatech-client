@@ -12,6 +12,7 @@ import { Trash2, PlusCircle, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { useAdminT } from '@/hooks/useAdminT';
 
 const laborRuleSchema = z.object({
   id: z.string(),
@@ -28,6 +29,7 @@ type FormValues = z.infer<typeof laborSettingsSchema>;
 
 export function LaborForm({ initialSettings }: { initialSettings: LaborSettings }) {
   const { toast } = useToast();
+  const { t } = useAdminT();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(laborSettingsSchema),
@@ -47,9 +49,9 @@ export function LaborForm({ initialSettings }: { initialSettings: LaborSettings 
     
     const result = await updateLaborSettings({ ...data, rules: sortedRules });
     if (result.success) {
-      toast({ title: 'Success', description: 'Labor rules updated.', variant: 'success' });
+      toast({ title: t('Success'), description: t('Labor rules updated.'), variant: 'success' });
     } else {
-      toast({ variant: 'destructive', title: 'Error', description: 'An error occurred.' });
+      toast({ variant: 'destructive', title: t('Error'), description: t('An error occurred.') });
     }
   };
 
@@ -59,25 +61,25 @@ export function LaborForm({ initialSettings }: { initialSettings: LaborSettings 
       ...ruleToClone,
       id: `rule_${Date.now()}`, // Ensure a new unique ID
     });
-    toast({ title: 'Rule cloned', description: 'The rule has been duplicated.', variant: 'info' });
+    toast({ title: t('Rule cloned'), description: t('The rule has been duplicated.'), variant: 'info' });
   };
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
       <Card>
         <CardContent className="pt-6 space-y-4">
-            <h3 className="font-medium">Labor scale</h3>
+            <h3 className="font-medium">{t('Labor scale')}</h3>
             <div className="hidden sm:grid grid-cols-[1fr_1fr_1fr_auto_auto] items-center gap-4 px-3 py-2 font-medium text-muted-foreground">
-                <Label>From (m²)</Label>
-                <Label>No. Technicians</Label>
-                <Label>Rate (€)</Label>
+                <Label>{t('From (m²)')}</Label>
+                <Label>{t('No. Technicians')}</Label>
+                <Label>{t('Rate (€)')}</Label>
                 <span className="w-9"></span>
                 <span className="w-9"></span>
             </div>
             <div className="space-y-3">
               {fields.map((field, index) => (
                 <div key={field.id} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto_auto] items-center gap-4 p-3 rounded-lg border bg-slate-50/80 dark:bg-slate-800/20">
-                  <div className='sm:hidden'><Label>From (m²)</Label></div>
+                  <div className='sm:hidden'><Label>{t('From (m²)')}</Label></div>
                   <Controller
                     control={form.control}
                     name={`rules.${index}.minSqM`}
@@ -85,7 +87,7 @@ export function LaborForm({ initialSettings }: { initialSettings: LaborSettings 
                       <Input type="number" placeholder="0" {...inputField} />
                     )}
                   />
-                  <div className='sm:hidden'><Label>No. Technicians</Label></div>
+                  <div className='sm:hidden'><Label>{t('No. Technicians')}</Label></div>
                   <Controller
                     control={form.control}
                     name={`rules.${index}.technicians`}
@@ -93,7 +95,7 @@ export function LaborForm({ initialSettings }: { initialSettings: LaborSettings 
                       <Input type="number" placeholder="2" {...inputField} />
                     )}
                   />
-                   <div className='sm:hidden'><Label>Rate (€)</Label></div>
+                   <div className='sm:hidden'><Label>{t('Rate (€)')}</Label></div>
                   <Controller
                     control={form.control}
                     name={`rules.${index}.price`}
@@ -117,14 +119,14 @@ export function LaborForm({ initialSettings }: { initialSettings: LaborSettings 
               onClick={() => append({ id: `rule_${Date.now()}`, minSqM: 0, technicians: 2, price: 100 })}
             >
               <PlusCircle className="mr-2 h-4 w-4" />
-              Add a rule
+              {t('Add a rule')}
             </Button>
         </CardContent>
       </Card>
 
       <div className="flex justify-end pt-4">
         <Button variant="styled" type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Saving...' : 'Save rules'}
+          {form.formState.isSubmitting ? t('Saving...') : t('Save rules')}
         </Button>
       </div>
     </form>

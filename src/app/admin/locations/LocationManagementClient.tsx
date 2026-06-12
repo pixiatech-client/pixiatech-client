@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useAdminT } from '@/hooks/useAdminT';
 
 // --- Types ---
 type LocationStatus = 'pending' | 'processed' | 'sent' | 'archived' | 'all';
@@ -29,6 +30,7 @@ const MobileLocationCard = React.memo(({
   isActive, 
   onClick 
 }: any) => {
+  const { t } = useAdminT();
   const statusConfig = {
     pending: { label: 'Pending', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Clock },
     processed: { label: 'Approved', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: CheckCircle2 },
@@ -51,26 +53,26 @@ const MobileLocationCard = React.memo(({
     >
       <div className="flex justify-between items-start">
         <div className="space-y-1">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contrat #{location.number || location.id.slice(0, 8)}</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('Contract #')}{location.number || location.id.slice(0, 8)}</p>
           <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter leading-none">
-            {location.client?.companyName || location.client?.name || 'Unknown Client'}
+            {location.client?.companyName || location.client?.name || t('Unknown Client')}
           </h3>
         </div>
         <div className={cn("px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border", config.color)}>
           <config.icon className="w-3 h-3" />
-          {config.label}
+          {t(config.label)}
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-slate-50 p-4 rounded-2xl">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Start date</p>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('Start date')}</p>
           <p className="text-sm font-bold text-slate-900">
             {location.createdAt ? format(location.createdAt.toDate ? location.createdAt.toDate() : new Date(location.createdAt), 'dd MMMM yyyy', { locale: fr }) : '—'}
           </p>
         </div>
         <div className="bg-slate-50 p-4 rounded-2xl">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Amount</p>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('Total Amount')}</p>
           <p className="text-sm font-bold text-blue-600">
             {location.totalAmount?.toLocaleString('fr-FR')} €
           </p>
@@ -82,7 +84,7 @@ const MobileLocationCard = React.memo(({
           <Package className="w-4 h-4" />
         </div>
         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-          {location.products?.length || 0} rental products
+          {location.products?.length || 0} {t((location.products?.length || 0) > 1 ? 'rental products' : 'rental product')}
         </p>
         <ChevronRight className="w-4 h-4 text-slate-300 ml-auto" />
       </div>
@@ -92,6 +94,7 @@ const MobileLocationCard = React.memo(({
 
 // --- Location List Item Component ---
 const LocationListItem = ({ location, onClick }: any) => {
+  const { t } = useAdminT();
   const statusConfig = {
     pending: { label: 'Pending', color: 'bg-amber-50 text-amber-600 border-amber-100', icon: Clock },
     processed: { label: 'Approved', color: 'bg-blue-50 text-blue-600 border-blue-100', icon: CheckCircle2 },
@@ -117,29 +120,29 @@ const LocationListItem = ({ location, onClick }: any) => {
 
       <div className="flex-1 grid grid-cols-4 gap-4 items-center">
         <div className="col-span-1">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Client</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">{t('Client')}</p>
           <h4 className="font-black text-slate-900 uppercase tracking-tighter truncate">
-            {location.client?.companyName || location.client?.name || 'Unknown Client'}
+            {location.client?.companyName || location.client?.name || t('Unknown Client')}
           </h4>
         </div>
 
         <div className="col-span-1">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Status</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">{t('Status')}</p>
           <div className={cn("inline-flex items-center gap-2 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border", config.color)}>
             <config.icon className="w-3 h-3" />
-            {config.label}
+            {t(config.label)}
           </div>
         </div>
 
         <div className="col-span-1">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Date</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">{t('Date')}</p>
           <p className="text-xs font-bold text-slate-600 uppercase">
             {location.createdAt ? format(location.createdAt.toDate ? location.createdAt.toDate() : new Date(location.createdAt), 'dd/MM/yyyy') : '—'}
           </p>
         </div>
 
         <div className="col-span-1 text-right">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Total</p>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">{t('Total')}</p>
           <p className="text-sm font-black text-blue-600">
             {location.totalAmount?.toLocaleString('fr-FR')} €
           </p>
@@ -155,6 +158,7 @@ const LocationListItem = ({ location, onClick }: any) => {
 
 // --- Main Component ---
 const GestionLocations = () => {
+  const { t } = useAdminT();
   const [locations, setLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -238,7 +242,7 @@ const GestionLocations = () => {
             <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search for a rental..."
+              placeholder={t('Search for a rental...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 h-10 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all"
@@ -250,28 +254,28 @@ const GestionLocations = () => {
           <div className="relative">
             <CustomSelect
               options={[
-                { value: 'all', label: 'All', icon: LayoutGrid },
-                { value: 'pending', label: 'Pending', icon: Clock },
-                { value: 'processed', label: 'Approved', icon: CheckCircle2 },
-                { value: 'sent', label: 'Delivered', icon: Truck },
-                { value: 'archived', label: 'Archived', icon: Archive },
+                { value: 'all', label: t('All'), icon: LayoutGrid },
+                { value: 'pending', label: t('Pending'), icon: Clock },
+                { value: 'processed', label: t('Approved'), icon: CheckCircle2 },
+                { value: 'sent', label: t('Delivered'), icon: Truck },
+                { value: 'archived', label: t('Archived'), icon: Archive },
               ]}
               value={filterStatus}
               onChange={(val) => setFilterStatus(val as any)}
-              placeholder="Filter by status"
+              placeholder={t('Filter by status')}
               className="w-56"
             />
           </div>
 
           <CustomSelect
             options={[
-                { value: 'date', label: 'By Date' },
-                { value: 'amount', label: 'By Amount' },
-                { value: 'client', label: 'By Client' },
+                { value: 'date', label: t('By Date') },
+                { value: 'amount', label: t('By Amount') },
+                { value: 'client', label: t('By Client') },
             ]}
             value={sortBy}
             onChange={setSortBy}
-            placeholder="Sort by"
+            placeholder={t('Sort by')}
             className="w-40"
           />
         </div>
@@ -294,8 +298,8 @@ const GestionLocations = () => {
             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
               <Calendar className="w-10 h-10 text-slate-300" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No rentals found</h3>
-            <p className="text-slate-500 font-medium">Modify your filters or start a new search</p>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">{t('No rentals found')}</h3>
+            <p className="text-slate-500 font-medium">{t('Modify your filters or start a new search')}</p>
           </div>
         )}
       </div>
@@ -305,11 +309,11 @@ const GestionLocations = () => {
         {/* Filters Horizontal Scroll for Mobile (as requested "same as categories Produits") */}
         <div className="flex gap-2 overflow-x-auto pb-6 scrollbar-hide mb-4 no-scrollbar">
           {[
-            { id: 'all', label: 'All', icon: LayoutGrid },
-            { id: 'pending', label: 'Pending', icon: Clock },
-            { id: 'processed', label: 'Approved', icon: CheckCircle2 },
-            { id: 'sent', label: 'Delivered', icon: Truck },
-            { id: 'archived', label: 'Archived', icon: Archive },
+            { id: 'all', label: t('All'), icon: LayoutGrid },
+            { id: 'pending', label: t('Pending'), icon: Clock },
+            { id: 'processed', label: t('Approved'), icon: CheckCircle2 },
+            { id: 'sent', label: t('Delivered'), icon: Truck },
+            { id: 'archived', label: t('Archived'), icon: Archive },
           ].map((opt) => (
             <button
               key={opt.id}
@@ -344,7 +348,7 @@ const GestionLocations = () => {
         {filteredLocations.length === 0 && (
           <div className="py-20 text-center">
             <Calendar className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-black uppercase tracking-widest">No rentals</p>
+            <p className="text-slate-400 font-black uppercase tracking-widest">{t('No rentals')}</p>
           </div>
         )}
       </div>
@@ -361,6 +365,7 @@ const GestionLocations = () => {
 };
 
 export default function LocationManagementClient() {
+  const { t } = useAdminT();
   const slideVariants = {
     enter: (direction: number) => ({
       x: direction > 0 ? 50 : -50,
@@ -394,7 +399,7 @@ export default function LocationManagementClient() {
                   transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                 />
                 <Calendar className="w-4 h-4 z-20 text-theme-sidebar-active-text" />
-                <span className="z-20">Location Management</span>
+                <span className="z-20">{t('Location Management')}</span>
               </button>
             </div>
           </div>
@@ -410,7 +415,7 @@ export default function LocationManagementClient() {
           </motion.div>
           
           <p className="text-center mt-8 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] opacity-40">
-            Aura Admin v3.2 • Pixiatech Ecosystem
+            {t('Aura Admin v3.2 • Pixiatech Ecosystem')}
           </p>
         </div>
       </main>
