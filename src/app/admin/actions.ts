@@ -227,9 +227,21 @@ export async function registerUser(data: unknown) {
       return { success: false, error: 'A user with this email already exists.' };
     } catch (error: any) {
       if (error.code !== 'auth/user-not-found') {
-        throw error; // Re-throw unexpected errors
+        throw error;
       }
-      // User does not exist, so we can proceed
+    }
+
+    // Check if phone number already exists in Auth
+    if (phone) {
+      const formattedPhone = formatPhoneNumber(phone);
+      try {
+        await adminAuth.getUserByPhoneNumber(formattedPhone);
+        return { success: false, error: 'A user with this phone number already exists.' };
+      } catch (error: any) {
+        if (error.code !== 'auth/user-not-found') {
+          throw error;
+        }
+      }
     }
 
     const defaultRole = await getDefaultRole();
