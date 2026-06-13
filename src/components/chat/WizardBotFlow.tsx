@@ -126,7 +126,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const [isSubmittingContract, setIsSubmittingContract] = useState(false);
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [otpCooldown, setOtpCooldown] = useState(0);
-  const [resendAttemptsLeft, setResendAttemptsLeft] = useState(3);
+  const [resendAttemptsLeft, setResendAttemptsLeft] = useState(2);
   const [otpResent, setOtpResent] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -287,6 +287,11 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       confettiInstanceRef.current({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
     }
   }, [step]);
+
+  // Reset pdfUrl when locale changes so PDF regenerates with new language
+  useEffect(() => {
+    setPdfUrl(null);
+  }, [locale]);
 
   // Fetch PDF URL in background during OTP so it's ready for FELICITATIONS
   useEffect(() => {
@@ -767,7 +772,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           }
           setOtpCooldown(300);
           setOtpAttempts(0);
-          setResendAttemptsLeft(3);
+          setResendAttemptsLeft(2);
           setOtpResent(false);
           updateStep(STEP.SECURITE);
           setBotStatus('default');
@@ -1045,7 +1050,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
   const handleResendOtp = async () => {
     if (!quoteId || isResending) return;
-    if (resendAttemptsLeft <= 1) {
+    if (resendAttemptsLeft <= 0) {
       setTimeout(() => onClose(), 2000);
       return;
     }
@@ -1153,7 +1158,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                       <button
                         onClick={handleBack}
                         className={`w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all active:scale-95 border border-white/10 ${
-                          stepHistory.length > 0 ? "opacity-100" : "opacity-0 pointer-events-none"
+                          stepHistory.length > 0 && step !== STEP.SECURITE ? "opacity-100" : "opacity-0 pointer-events-none"
                         }`}
                       >
                         <ArrowLeft size={18} />
@@ -1833,7 +1838,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             />
                             <Button
                               onClick={() => handleOtpSubmit()}
-                              disabled={otpCode.length < 6 || otpAttempts >= 3 || resendAttemptsLeft <= 1}
+                              disabled={otpCode.length < 6 || otpAttempts >= 3 || resendAttemptsLeft <= 0}
                               className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"
                             >
                               <Check size={20} />
@@ -1891,14 +1896,14 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                         <div className="flex items-center gap-4 text-xs">
                           <button
                             onClick={handleResendOtp}
-                            disabled={isResending || resendAttemptsLeft <= 1}
+                            disabled={isResending || resendAttemptsLeft <= 0}
                             className="text-[#0f766e] font-bold underline underline-offset-2 hover:text-[#0f766e]/80 disabled:opacity-40"
                           >
                             {isResending
                               ? (locale === 'fr' ? 'Renvol en cours...' : 'Resending...')
                               : (locale === 'fr' ? 'Renvoyer le code' : 'Resend code')}
                           </button>
-                          {resendAttemptsLeft < 3 && (
+                          {resendAttemptsLeft < 2 && (
                             <span className={`font-bold ${resendAttemptsLeft === 1 ? 'text-red-600' : 'text-amber-600'}`}>
                               {resendAttemptsLeft === 1
                                 ? (locale === 'fr' ? 'Dernière tentative' : 'Last attempt')
@@ -1908,7 +1913,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                         </div>
                       )}
 
-                      {(otpAttempts >= 3 || resendAttemptsLeft <= 1) && (
+                      {(otpAttempts >= 3 || resendAttemptsLeft <= 0) && (
                         <div className="flex flex-col gap-3 pt-2 border-t border-slate-200">
                           <p className="text-xs text-red-600 font-bold text-center">
                             {locale === 'fr'
