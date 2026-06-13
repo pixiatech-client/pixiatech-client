@@ -75,7 +75,7 @@ export default function WizardPage() {
     if (!settings) return;
     setSettings({
       ...settings,
-      viewingDistances: [...settings.viewingDistances, { id: generateId(), value: '0-0m' }]
+      viewingDistances: [...settings.viewingDistances, { id: generateId(), value: '0-0m', recommended: false }]
     });
   };
 
@@ -87,12 +87,14 @@ export default function WizardPage() {
     });
   };
 
-  const updateViewingDistance = (id: string, value: string) => {
+  const updateViewingDistance = (id: string, field: string | boolean, value?: string | boolean) => {
     if (!settings) return;
-    setSettings({
-      ...settings,
-      viewingDistances: settings.viewingDistances.map(v => v.id === id ? { ...v, value } : v)
-    });
+    if (typeof field === 'string' && value !== undefined) {
+      setSettings({
+        ...settings,
+        viewingDistances: settings.viewingDistances.map(v => v.id === id ? { ...v, [field]: value } : v)
+      });
+    }
   };
 
   if (isLoading || !settings) {
@@ -251,10 +253,17 @@ export default function WizardPage() {
                 <span className="text-xs font-mono text-slate-400 w-6">{index + 1}</span>
                 <Input
                   value={vd.value}
-                  onChange={(e) => updateViewingDistance(vd.id, e.target.value)}
+                  onChange={(e) => updateViewingDistance(vd.id, 'value', e.target.value)}
                   className="w-32"
                   placeholder="0-5m"
                 />
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={vd.recommended ?? false}
+                    onCheckedChange={(checked) => updateViewingDistance(vd.id, 'recommended', checked)}
+                  />
+                  <Label className="text-xs text-slate-500">{t('Recommended')}</Label>
+                </div>
                 <Button variant="ghost" size="icon" onClick={() => removeViewingDistance(vd.id)} className="ml-auto text-red-500 hover:text-red-600">
                   <Trash2 className="w-4 h-4" />
                 </Button>

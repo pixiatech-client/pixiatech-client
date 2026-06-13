@@ -416,12 +416,14 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
                       <button
                         onClick={nextStep}
                         disabled={
+                          (state.step === 3 && !state.viewingDistance) ||
                           (state.step === 8 && (state.selectionMode === 'multi' ? (!state.selectedProducts || state.selectedProducts.length === 0) : !state.selectedProduct)) ||
                           (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate))
                         }
                         className={cn(
                           "flex-1 h-12 bg-black rounded-[18px] flex items-center px-6 transition-all duration-300 group active:scale-[0.98] overflow-hidden relative",
-                          ((state.step === 8 && (state.selectionMode === 'multi' ? (!state.selectedProducts || state.selectedProducts.length === 0) : !state.selectedProduct)) ||
+                          ((state.step === 3 && !state.viewingDistance) ||
+                           (state.step === 8 && (state.selectionMode === 'multi' ? (!state.selectedProducts || state.selectedProducts.length === 0) : !state.selectedProduct)) ||
                            (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate))) &&
                           "opacity-50 cursor-not-allowed grayscale"
                         )}
@@ -728,7 +730,14 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
                       : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
                   )}
                 >
-                  <span>{d.value}</span>
+                  <span className="flex items-center gap-2">
+                    {d.value}
+                    {d.recommended && (
+                      <span className="text-[8px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                        {t('common.recommended')}
+                      </span>
+                    )}
+                  </span>
                   <div className={cn(
                     "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
                     state.viewingDistance === d.value ? "border-[#c6ff00] bg-[#c6ff00] text-black" : "border-slate-200 group-hover:border-black"

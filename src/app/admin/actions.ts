@@ -2632,6 +2632,7 @@ const wizardEnvironmentSettingSchema = z.object({
 const viewingDistanceOptionSchema = z.object({
   id: z.string(),
   value: z.string().min(1, "Value cannot be empty."),
+  recommended: z.boolean().optional(),
 });
 
 const pixelPitchOptionSchema = z.object({

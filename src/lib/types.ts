@@ -453,6 +453,7 @@ export type ViewingDistanceOption = {
   id: string;
   value: string;
   imageUrl?: string;
+  recommended?: boolean;
 };
 
 export type PixelPitchOption = {
