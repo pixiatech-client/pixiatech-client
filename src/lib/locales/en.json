@@ -1613,7 +1613,7 @@
         "zoneNotConfiguredDesc": "PixiaTech does not yet cover this area for automated configurations.",
         "resetToParis": "Reset to Paris",
         "nextStep": "Proceed to contract",
-        "demoData": "Fill with demo data",
+
         "productLabel": "Product",
         "surfaceTech": "For a total area of {area} m², your project requires {count} technician(s).",
         "costTech": "Cost: {cost} €",

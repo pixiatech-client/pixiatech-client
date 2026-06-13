@@ -1412,7 +1412,7 @@
         "zoneNotConfiguredDesc": "L'entreprise PixiaTech ne couvre pas encore cette zone pour les configurations automatisées.",
         "resetToParis": "Réinitialiser à Paris",
         "nextStep": "Valider et continuer vers le contrat",
-        "demoData": "Remplir avec des données de démonstration",
+
         "productLabel": "Produit",
         "surfaceTech": "Pour une surface totale de {area} m², votre projet nécessite {count} technicien(s).",
         "costTech": "Coût : {cost} €",

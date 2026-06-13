@@ -211,7 +211,7 @@ function HumanSilhouette({
           label="1.83 M" 
           color="#1e293b"
           isDarkMode={isDarkMode}
-          occlude={true}
+          occlude={false}
         />
       </group>
     </group>
@@ -502,7 +502,7 @@ function Screen({
           label={`LARGEUR: ${width.toFixed(2)} M`} 
           color="#1e293b"
           isDarkMode={isDarkMode}
-          occlude={true}
+          occlude={false}
         />
         
         <DimensionLine 

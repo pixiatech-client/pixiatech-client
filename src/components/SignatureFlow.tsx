@@ -37,7 +37,6 @@ import {
   Sliders,
   Eye,
   EyeOff,
-  Sparkles,
   Zap,
   Sun,
   FileCheck2,
@@ -1411,32 +1410,7 @@ export default function SignatureFlow({
                 </div>
 
                 {/* Left pane navigation buttons */}
-                <div className="border-t border-zinc-150/80 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 w-full select-none">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setWidth(12);
-                      setHeight(6.5);
-                      setQuantity(1);
-                      setRenterDetails({
-                        company: 'Pixia Tech Europe',
-                        representative: 'Moulebhar',
-                        address: '46 cite 68 logts ENRIO',
-                        postcode: '75000',
-                        city: 'Paris',
-                        email: 'ayanhil@gmail.com',
-                        phone: '0777657080'
-                      });
-                      setCitySearchQuery('Paris (75000)');
-                      setSelectedCityId('1');
-                    }}
-                    className="text-xs font-semibold text-zinc-500 hover:text-zinc-950 underline underline-offset-4 decoration-zinc-250 hover:decoration-zinc-950 transition-all cursor-pointer flex items-center gap-1.5 self-start py-2"
-                  >
-                    <Sparkles size={13} className="text-blue-650" />
-                    <span>{t('signature.demoData')}</span>
-                  </button>
-
-                </div>
+                <div className="border-t border-zinc-150/80 pt-8 w-full select-none"></div>
 
               </div>
 
@@ -1696,14 +1670,6 @@ export default function SignatureFlow({
 
             </div>
 
-            {/* DEV: bouton temporaire pour zapper contrat + signature et aller direct en confirmation */}
-            <button
-              type="button"
-              onClick={() => setCurrentStep('confirmation')}
-              className="w-full mb-3 py-2.5 bg-yellow-200 hover:bg-yellow-300 text-yellow-900 text-xs font-black uppercase tracking-wider rounded-xl border-2 border-yellow-400 cursor-pointer transition-all"
-            >
-              ⚡ SKIP → Félicitations (DEV)
-            </button>
             <FloatingFooterNav
               onBack={onBackToConfigurator}
               onNext={() => {
@@ -2778,7 +2744,7 @@ export default function SignatureFlow({
       </main>
 
       {/* Primary footer bottom credits & links */}
-      <footer className="w-full bg-white border-t border-[#e2e8f0] py-6 px-4 text-center mt-auto space-y-3 shadow-inner">
+      <footer className="w-full border-t border-[#e2e8f0] py-3 px-4 text-center mt-auto space-y-2">
         <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 text-xs text-zinc-400 font-semibold uppercase tracking-wider">
           <a href="https://pixiatech.com/gestion-cookies/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">{t('signature.footerSecurity')}</a>
           <span>•</span>
