@@ -9,7 +9,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Message, MessageOption, WizardSettings, Product, Settings, LaborSettings, DeliverySettings, Locations } from '@/lib/types';
+import { Message, MessageOption, WizardSettings, Product, Settings, LaborSettings, DeliverySettings, Locations, PdfSettings, QuoteRequest } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import MessageItem from './MessageItem';
 import { doc, getDoc } from 'firebase/firestore';
@@ -18,6 +18,7 @@ import { ref, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase/config';
 import { uploadBytes } from 'firebase/storage';
 import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import { ConfigState, INITIAL_STATE } from '@/lib/configurator-wizard-types';
 import { StepDimensions, StepSummary } from '@/components/configurator-wizard';
 import { ProductNotFound } from '@/components/ProductNotFound';
@@ -30,10 +31,11 @@ import type { Pack } from '@/lib/signature-types';
 import { getContractTemplate } from '@/lib/contract-templates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp, getBlockedPeriods } from '@/app/actions/quote-actions';
+import { createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp, getBlockedPeriods, getPdfSettings } from '@/app/actions/quote-actions';
 import { updateQuotePdfUrl } from '@/app/admin/actions';
 import { useUser } from '@/firebase';
 import { useI18n } from '@/lib/i18n';
+import { QuotePDF } from '@/app/admin/quote-pdf';
 import confetti from 'canvas-confetti';
 
 import type { QuoteDetails } from '@/lib/types';
@@ -129,8 +131,10 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [pdfSettings, setPdfSettings] = useState<PdfSettings | null>(null);
   const confettiCanvasRef = useRef<HTMLCanvasElement>(null);
   const confettiInstanceRef = useRef<any>(null);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
 
   const takeSnapshot = useCallback(() => {
     setStepHistory(prev => [
@@ -245,6 +249,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       }
     };
     fetchSettings();
+    getPdfSettings().then(setPdfSettings).catch(() => {});
   }, []);
 
   const scrollToBottom = useCallback(() => {
@@ -767,58 +772,91 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
-  const ensurePdfReady = useCallback(async () => {
-    if (pdfUrl || !quoteId || isGeneratingPdf) return pdfUrl;
-    setIsGeneratingPdf(true);
+  const renderPagesToPdf = async (container: HTMLElement, pdf: jsPDF) => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const pages = container.querySelectorAll('.page-break-after');
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i] as HTMLElement;
+      const canvas = await html2canvas(page, {
+        scale: 2, useCORS: true, logging: false, allowTaint: true, backgroundColor: '#ffffff'
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      if (i > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+    }
+    return pages.length;
+  };
+
+  const uploadPdfToStorage = async (pdf: jsPDF, id: string) => {
     try {
-      const snap = await getDoc(doc(db, 'quotes', quoteId));
-      const data = snap.data();
-      if (data?.pdfUrl) {
-        setPdfUrl(data.pdfUrl);
-        return data.pdfUrl;
-      }
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageW = pdf.internal.pageSize.getWidth();
-      let y = 20;
-      const write = (text: string, size = 12, bold = false) => {
-        if (bold) pdf.setFont('Helvetica', 'bold');
-        else pdf.setFont('Helvetica', 'normal');
-        pdf.setFontSize(size);
-        const lines = pdf.splitTextToSize(text, pageW - 40);
-        if (y + lines.length * (size * 0.3528) > 287) {
-          pdf.addPage();
-          y = 20;
-        }
-        lines.forEach((l: string) => { pdf.text(l, 20, y); y += size * 0.3528 + 2; });
-      };
-      write('Estimation PIXIA TECH', 22, true);
-      y += 8;
-      write(`Client: ${data.client?.companyName || formCompany}`, 12, true);
-      write(`Email: ${data.client?.email || formEmail}`, 10);
-      write(`Tel: ${data.client?.phone || ''}`, 10);
-      write(`Adresse: ${data.client?.address || ''}`, 10);
-      y += 6;
-      write(`Produit: ${data.productName || selectedProduct?.name || ''}`, 12, true);
-      write(`Dimensions: ${data.width || configState.width}m x ${data.height || configState.height}m`, 10);
-      write(`Quantité: ${data.quantity || configState.quantity || 1}`, 10);
-      write(`Type: ${data.transactionType === 'sale' ? 'Vente' : 'Location'}`, 10);
-      y += 6;
-      const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + ' €';
-      write(`Total: ${fmt(data.totalQuote || totalQuote)}`, 14, true);
       const blob = pdf.output('blob');
-      const storageRef = ref(storage, `quotes/pdfs/${quoteId}.pdf`);
+      const storageRef = ref(storage, `quotes/pdfs/${id}.pdf`);
       await uploadBytes(storageRef, blob);
       const url = await getDownloadURL(storageRef);
-      await updateQuotePdfUrl(quoteId, url);
-      setPdfUrl(url);
+      await updateQuotePdfUrl(id, url);
       return url;
     } catch (e) {
-      console.error('PDF generation error:', e);
+      console.error('Failed to upload PDF to storage:', e);
       return null;
+    }
+  };
+
+  const handleViewPdf = async () => {
+    if (pdfUrl) { window.open(pdfUrl, '_blank'); return; }
+    setIsGeneratingPdf(true);
+    const pdfWindow = window.open('', '_blank');
+    if (!pdfWindow) { setIsGeneratingPdf(false); return; }
+    pdfWindow.document.write('<div style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;color:#666;">Génération du PDF...</div>');
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const container = pdfContainerRef.current;
+      if (!container) { pdfWindow.close(); setIsGeneratingPdf(false); return; }
+      const pageCount = await renderPagesToPdf(container, pdf);
+      if (pageCount === 0) { pdfWindow.close(); setIsGeneratingPdf(false); return; }
+      const url = await uploadPdfToStorage(pdf, quoteId || 'temp');
+      if (url) {
+        setPdfUrl(url);
+        pdfWindow.location.href = url;
+      } else {
+        pdfWindow.close();
+      }
+    } catch (e) {
+      console.error('PDF view error:', e);
+      pdfWindow.close();
     } finally {
       setIsGeneratingPdf(false);
     }
-  }, [quoteId, pdfUrl, isGeneratingPdf, formCompany, formEmail, selectedProduct, configState, totalQuote]);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (pdfUrl) {
+      const a = document.createElement('a');
+      a.href = pdfUrl;
+      a.download = `estimation-${quoteId}.pdf`;
+      a.click();
+      return;
+    }
+    setIsGeneratingPdf(true);
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const container = pdfContainerRef.current;
+      if (!container) { setIsGeneratingPdf(false); return; }
+      const pageCount = await renderPagesToPdf(container, pdf);
+      if (pageCount === 0) { setIsGeneratingPdf(false); return; }
+      pdf.save(`Pixiatech_Devis_${formCompany.replace(/\s+/g, '_')}.pdf`);
+      if (quoteId) {
+        uploadPdfToStorage(pdf, quoteId).then(url => {
+          if (url) setPdfUrl(url);
+        });
+      }
+    } catch (e) {
+      console.error('PDF download error:', e);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   const handleFormCompany = () => {
     if (!formCompany.trim()) return;
@@ -1862,6 +1900,68 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                     </motion.div>
                   )}
 
+                  {/* Hidden QuotePDF container for html2canvas PDF generation */}
+                  <div
+                    ref={pdfContainerRef}
+                    id="wizard-pdf-container"
+                    style={{ position: 'absolute', left: '-99999px', top: 0, width: '820px' }}
+                  >
+                    {quoteId && pdfSettings && (
+                      <QuotePDF
+                        key={`pdf-${locale}`}
+                        id="wizard-pdf-view"
+                        request={{
+                          id: quoteId,
+                          createdAt: new Date(),
+                          status: 'pending',
+                          isRead: false,
+                          emailVerified: true,
+                          client: {
+                            companyName: formCompany,
+                            email: formEmail,
+                            phone: formPhone,
+                            address: formAddress,
+                            notes: '',
+                          },
+                          products: selectedProduct ? [{
+                            id: `config_${Date.now()}`,
+                            productId: String(configState.selectedProduct),
+                            productType: (configState.environment === 'interieur' ? 'indoor' : configState.environment === 'exterieur' ? 'outdoor' : 'showcase') as 'indoor' | 'outdoor' | 'showcase',
+                            width: configState.width,
+                            height: configState.height,
+                            quantity: configState.quantity || 1,
+                            transactionType: configState.projectType === 'vente' ? 'sale' : 'rental',
+                            rentalDuration: 1,
+                            rentalUnit: 'day',
+                            productName: selectedProduct?.name || '',
+                            lineTotal,
+                          }] : [],
+                          installationCost: includeInstallation ? 0 : 0,
+                          deliveryCost: 0,
+                          totalQuote,
+                          transactionType: configState.projectType === 'vente' ? 'sale' : 'rental',
+                          lang: locale as 'fr' | 'en',
+                          width: configState.width,
+                          height: configState.height,
+                          productName: selectedProduct?.name ?? '',
+                          screenType: 'indoor',
+                          includeInstallation,
+                          techniciansRequired: includeInstallation ? 1 : 0,
+                          includeDelivery: false,
+                          rentalPeriod: configState.rentalStartDate && configState.rentalEndDate
+                            ? { from: new Date(configState.rentalStartDate), to: new Date(configState.rentalEndDate) }
+                            : undefined,
+                          rentalStartTime: configState.rentalStartTime,
+                          rentalEndTime: configState.rentalEndTime,
+                        } as QuoteRequest}
+                        settings={pdfSettings}
+                        selectedCity={null as any}
+                        globalSettings={settings}
+                        allProducts={allProducts}
+                      />
+                    )}
+                  </div>
+
                   {step === STEP.FELICITATIONS && !isTyping && renderBotStep(STEP.FELICITATIONS,
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 flex flex-col gap-5">
                       <div className="w-14 h-14 bg-zinc-950 text-white rounded-[18px] flex items-center justify-center shadow-md">
@@ -1888,10 +1988,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                         <div className="grid grid-cols-2 gap-3">
                           <Button
                             variant="outline"
-                            onClick={async () => {
-                              const url = await ensurePdfReady();
-                              if (url) window.open(url, '_blank');
-                            }}
+                            onClick={handleViewPdf}
                             disabled={isGeneratingPdf}
                             className="h-12 rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-bold text-xs uppercase tracking-wider transition-all"
                           >
@@ -1899,15 +1996,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                           </Button>
                           <Button
                             variant="outline"
-                            onClick={async () => {
-                              const url = await ensurePdfReady();
-                              if (url) {
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = `estimation-${quoteId}.pdf`;
-                                a.click();
-                              }
-                            }}
+                            onClick={handleDownloadPdf}
                             disabled={isGeneratingPdf}
                             className="h-12 rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 font-bold text-xs uppercase tracking-wider transition-all"
                           >
