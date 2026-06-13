@@ -79,6 +79,7 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
                   <video
                     ref={videoRef}
                     src="/bot-avatars/pixia_robot.webm"
+                    poster="/bot-avatars/010.webp"
                     autoPlay
                     muted
                     playsInline
