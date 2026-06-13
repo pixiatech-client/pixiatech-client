@@ -33,6 +33,20 @@ function NotificationPage() {
   
   const { data: firestoreNotifications } = useCollection<NotificationFirestore>(notificationsQuery, { suppressPermissionError: true });
 
+  const getRelativeTime = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHr = Math.floor(diffMs / 3600000);
+    const diffDay = Math.floor(diffMs / 86400000);
+
+    if (diffMin < 1) return t('notification.justNow');
+    if (diffMin < 60) return t('notification.minAgo', { min: String(diffMin) });
+    if (diffHr < 24) return t('notification.hAgo', { h: String(diffHr) });
+    if (diffDay < 7) return t('notification.dAgo', { d: String(diffDay) });
+    return date.toLocaleDateString('en-US');
+  };
+
   const notifications = useMemo(() => {
     if (!firestoreNotifications) return [];
     // Manual sort by descending date (avoids Firestore index errors)
@@ -92,20 +106,6 @@ function NotificationPage() {
       case 'estimation_unarchived': return { icon: ArchiveRestore, color: 'bg-blue-50 text-blue-600' };
       default: return { icon: Bell, color: 'bg-gray-50 text-gray-600' };
     }
-  };
-
-  const getRelativeTime = (date: Date): string => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
-    const diffHr = Math.floor(diffMs / 3600000);
-    const diffDay = Math.floor(diffMs / 86400000);
-
-    if (diffMin < 1) return t('notification.justNow');
-    if (diffMin < 60) return t('notification.minAgo', { min: String(diffMin) });
-    if (diffHr < 24) return t('notification.hAgo', { h: String(diffHr) });
-    if (diffDay < 7) return t('notification.dAgo', { d: String(diffDay) });
-    return date.toLocaleDateString('en-US');
   };
 
   const markAsRead = async (id: string) => {
