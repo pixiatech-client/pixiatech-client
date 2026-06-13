@@ -620,6 +620,12 @@ export async function deleteAllUsersAndData() {
     return { success: false, error: "Admin SDK not initialized" };
   }
 
+  // Security: Only admins can delete all data
+  const adminUser = await getCurrentAdminUser();
+  if (!adminUser || 'error' in adminUser || adminUser.role !== 'admin') {
+    return { success: false, error: 'Unauthorized: Only administrators can reset the database.' };
+  }
+
   try {
     // Delete all users from Auth
     const listUsersResult = await adminAuth.listUsers(1000);

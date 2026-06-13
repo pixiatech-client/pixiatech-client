@@ -7,12 +7,6 @@ import {
   CheckCircle2,
   Truck,
   Package,
-  Archive,
-  Trash2,
-  Users,
-  TrendingUp,
-  Calendar as CalendarIcon,
-  Filter,
   ArrowUpRight,
   ArrowDownRight,
   Search,
@@ -23,13 +17,8 @@ import {
   ChevronRight,
   MoreHorizontal,
   Download,
-  Package as PackageIcon,
-  ShoppingCart,
-  AlertCircle,
-  Star,
-  ArrowRight
+  AlertCircle
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useI18n } from '@/lib/i18n';
 

@@ -3,7 +3,7 @@
 import type { QuoteDetails, PdfSettings } from '@/lib/types';
 import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import nodemailer from 'nodemailer';
+
 import fr from '@/lib/locales/fr.json';
 import en from '@/lib/locales/en.json';
 import { getSettings } from '@/app/admin/actions';
@@ -37,7 +37,7 @@ function getBaseUrl(): string {
   }
   return envUrl || 'http://localhost:3000';
 }
-import { buildOtpEmailHtml, buildVerificationEmailHtml, buildSecureEmailHtml } from '@/lib/email-templates';
+import { buildVerificationEmailHtml, buildSecureEmailHtml } from '@/lib/email-templates';
 
 const formSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),

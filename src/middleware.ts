@@ -1,55 +1,39 @@
-
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
-  const sessionCookie = request.cookies.get('session')?.value;
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
+  // Public pages: cache on CDN
+  const publicPages = ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify'];
+  if (publicPages.includes(pathname)) {
+    const response = NextResponse.next();
+    response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
+    return response;
+  }
+
+  // Admin routes: session check
+  const sessionCookie = request.cookies.get('session')?.value;
   const loginUrl = new URL('/admin/login', request.url);
   const adminUrl = new URL('/admin', request.url);
-
   const isAuthPage = pathname.startsWith('/admin/login') || pathname.startsWith('/admin/register');
 
-  // If there's no session cookie and the user is trying to access a protected admin page
   if (!sessionCookie && !isAuthPage) {
-    // Redirect to the login page
     return NextResponse.redirect(loginUrl);
   }
 
-  // If there is a session cookie and the user is trying to access an auth page
   if (sessionCookie && isAuthPage) {
-    // Redirect to the admin dashboard
     return NextResponse.redirect(adminUrl);
   }
 
-  // For all other cases, allow the request to proceed.
   const response = NextResponse.next();
-
-  // Security Headers for Production and Iframe Support
-  // 🔓 Permissive CSP and COOP for better support in internal browsers and iframes
-  const csp = "frame-ancestors 'self' *;"; 
-  response.headers.set('Content-Security-Policy', csp);
-  
-  // Allow popups to communicate back even in restricted environments
-  response.headers.set('Cross-Origin-Opener-Policy', 'unsafe-none');
-  response.headers.set('Cross-Origin-Embedder-Policy', 'unsafe-none');
-  
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'no-referrer-when-downgrade');
-  
-  // CORS for credentials (needed for cookies in iframes)
-  response.headers.set('Access-Control-Allow-Credentials', 'true');
-  const origin = request.headers.get('origin');
-  if (origin) {
-    response.headers.set('Access-Control-Allow-Origin', origin);
-  }
-
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   return response;
 }
 
 export const config = {
-  // This matcher applies the middleware to all routes under /admin,
-  // including the root /admin page itself.
-  matcher: ['/admin', '/admin/:path*'],
+  matcher: ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify', '/admin', '/admin/:path*', '/api/:path*'],
 };

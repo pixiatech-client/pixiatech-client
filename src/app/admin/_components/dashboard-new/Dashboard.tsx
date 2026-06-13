@@ -4,41 +4,27 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
   TrendingUp, 
-  FileText, 
   Clock, 
   CheckCircle2, 
   Trash2, 
   Archive, 
   Users, 
   Package, 
-  Calendar as CalendarIcon,
-  Filter,
-  ArrowUpRight,
-  ArrowDownRight,
-  Search,
-  User as UserIcon,
-  Download,
   Eye,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   MoreHorizontal,
-  MessageSquare,
-  Share2,
-  Bell,
-  Settings,
   RefreshCw,
-  LogOut,
-  Maximize2,
   Calendar,
-  LayoutGrid,
-  ShoppingBag
+  ShoppingBag,
+  AlertTriangle
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, limit, where, onSnapshot } from 'firebase/firestore';
-import { Quote, QuoteStatus, Activity, UserRole, User as UserType } from './types';
+import { collection, query, orderBy, where, onSnapshot } from 'firebase/firestore';
+import { QuoteStatus } from './types';
 import { moveQuotesToTrash, resetPerformancePoints, resetConfiguratorStats, getSettings } from '@/app/admin/actions';
 import { useToast } from '@/hooks/use-toast';
 import { X, Check } from 'lucide-react';
@@ -109,6 +95,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isPerformanceMenuOpen, setIsPerformanceMenuOpen] = useState(false);
   const [performancePeriod, setPerformancePeriod] = useState<'1-month' | '2-months' | '3-months' | 'year'>('1-month');
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [performanceSettings, setPerformanceSettings] = useState<any>(null);
   const { toast } = useToast();
 
@@ -117,7 +104,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   }, []);
 
   const handleResetPerformance = async () => {
-    if (!window.confirm(t('admin.resetPerformanceConfirm'))) return;
     const res = await resetPerformancePoints();
     if (res.success) {
       toast({
@@ -137,7 +123,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   };
 
   const handleResetConfiguratorStats = async () => {
-    if (!window.confirm(t('admin.resetConfiguratorConfirm'))) return;
     const res = await resetConfiguratorStats();
     if (res.success) {
       toast({
@@ -156,7 +141,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   };
 
   const handleDelete = async (quoteId: string) => {
-    if (!window.confirm(t('admin.deleteQuoteConfirm'))) return;
     setIsDeleting(quoteId);
     try {
       await moveQuotesToTrash([quoteId]);
@@ -870,7 +854,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                           </Link>
                           {(rawRole === 'admin' || userRole === 'Administrateur') ? (
                             <button 
-                              onClick={() => handleDelete(quote.id)}
+                              onClick={() => setConfirmDialog({ message: t('admin.deleteQuoteConfirm'), onConfirm: () => { setConfirmDialog(null); handleDelete(quote.id); } })}
                               disabled={isDeleting === quote.id}
                               className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50"
                             >
@@ -991,7 +975,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                             </Link>
                             {(rawRole === 'admin' || userRole === 'Administrateur') ? (
                               <button 
-                                onClick={() => handleDelete(quote.id)}
+                              onClick={() => setConfirmDialog({ message: t('admin.deleteQuoteConfirm'), onConfirm: () => { setConfirmDialog(null); handleDelete(quote.id); } })}
                                 disabled={isDeleting === quote.id}
                                 className={`p-3 rounded-xl border flex items-center justify-center bg-red-50 border-red-100 active:scale-95 transition-all disabled:opacity-50 dark:bg-red-950/20 dark:border-red-900/30`}
                               >
@@ -1157,7 +1141,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                          {(rawRole === 'admin' || userRole === 'admin' || userRole === 'Administrateur') && (
                            <div className="border-t border-gray-100">
                              <button
-                               onClick={() => { handleResetPerformance(); setIsPerformanceMenuOpen(false); }}
+                                onClick={() => { setConfirmDialog({ message: t('admin.resetPerformanceConfirm'), onConfirm: () => { setConfirmDialog(null); handleResetPerformance(); } }); setIsPerformanceMenuOpen(false); }}
                                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-all"
                              >
                                <RefreshCw className="w-4 h-4" />
@@ -1270,7 +1254,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
             </div>
             {(rawRole === 'admin' || userRole === 'admin' || userRole === 'Administrateur') && (
               <button
-                onClick={handleResetConfiguratorStats}
+                onClick={() => setConfirmDialog({ message: t('admin.resetConfiguratorConfirm'), onConfirm: () => { setConfirmDialog(null); handleResetConfiguratorStats(); } })}
                 className={`p-2 rounded-lg transition-colors ${isDark ? 'text-gray-400 hover:text-red-400 hover:bg-red-500/10' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
                 title={t('admin.resetCounters')}
               >
@@ -1439,8 +1423,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 {(rawRole === 'admin' || userRole === 'admin' || userRole === 'Administrateur') && (
                   <div className="pt-4 mt-2">
                     <button
-                      onClick={handleResetPerformance}
-                      className="w-full flex items-center justify-between py-3 px-6 rounded-2xl bg-red-600 border-2 border-red-700 text-white hover:bg-red-700 transition-all group shadow-lg shadow-red-200"
+                       onClick={() => setConfirmDialog({ message: t('admin.resetPerformanceConfirm'), onConfirm: () => { setConfirmDialog(null); handleResetPerformance(); } })}
+                       className="w-full flex items-center justify-between py-3 px-6 rounded-2xl bg-red-600 border-2 border-red-700 text-white hover:bg-red-700 transition-all group shadow-lg shadow-red-200"
                     >
                       <div className="flex items-center gap-3">
                         <RefreshCw className="w-4 h-4 font-black group-hover:rotate-180 transition-transform duration-500" />
@@ -1455,6 +1439,50 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Confirm Dialog */}
+      <AnimatePresence>
+        {confirmDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setConfirmDialog(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-[2rem] shadow-2xl p-6 max-w-sm w-full border border-red-100"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">{t('admin.productManagement.deleteConfirmTitle')}</h3>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed mb-6">{confirmDialog.message}</p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setConfirmDialog(null)}
+                  className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  {t('admin.productManagement.cancel')}
+                </button>
+                <button
+                  onClick={confirmDialog.onConfirm}
+                  className="px-5 py-2.5 text-sm font-bold bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+                >
+                  {t('admin.productManagement.delete')}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

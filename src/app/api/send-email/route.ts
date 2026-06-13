@@ -2,8 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { buildSecureEmailHtml } from '@/lib/email-templates';
 import { getSmtpSettings } from '@/lib/smtpService';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
+  // Auth check: verify session cookie
+  const sessionCookie = request.cookies.get('session')?.value;
+  if (!sessionCookie) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  try {
+    const { adminAuth } = getFirebaseAdmin();
+    await adminAuth.verifySessionCookie(sessionCookie, true);
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { to, code, smtpConfig, companyName, companySlogan, documentLabel, validityMinutes, messageStyle, theme, lang } = body;
@@ -41,7 +54,7 @@ export async function POST(request: NextRequest) {
       port,
       secure: isSecure,
       auth: { user, pass },
-      tls: { rejectUnauthorized: false, minVersion: 'TLSv1.2' },
+      tls: { rejectUnauthorized: true, minVersion: 'TLSv1.2' },
       connectionTimeout: 15000,
       greetingTimeout: 15000,
       socketTimeout: 15000,

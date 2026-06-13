@@ -52,17 +52,17 @@ service cloud.firestore {
 
     match /products/{productId} {
       allow read: if true;
-      allow write: if isLoggedIn();
+      allow write: if isAdmin();
     }
     
     match /characteristics/{charId} {
       allow read: if true;
-      allow write: if isLoggedIn();
+      allow write: if isAdmin();
     }
 
     match /product_specs/{productId} {
       allow read: if true;
-      allow write: if isLoggedIn();
+      allow write: if isAdmin();
     }
 
     match /cities/{cityId} {
@@ -94,21 +94,21 @@ service cloud.firestore {
     }
 
 match /chats {
-       allow list: if true;
+       allow list: if isLoggedIn();
 }
 
 match /chats/{chatId} {
-         allow read: if true;
-         allow create: if true;
-         allow update: if true;
-         allow delete: if true;
+         allow read: if isLoggedIn();
+         allow create: if isLoggedIn();
+         allow update: if isLoggedIn();
+         allow delete: if isAdmin();
  
          match /messages/{messageId} {
-           allow read: if true;
-           allow list: if true;
-           allow create: if true;
-           allow update: if true;
-           allow delete: if true;
+           allow read: if isLoggedIn();
+           allow list: if isLoggedIn();
+           allow create: if isLoggedIn();
+           allow update: if isLoggedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+           allow delete: if isAdmin();
          }
        }
    }

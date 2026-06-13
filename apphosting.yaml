@@ -2,6 +2,7 @@
 # Last updated: 2026-05-07T21:15:00Z
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+  minInstances: 1
+  maxInstances: 10
+  cpu: 2
+  memoryMiB: 1024

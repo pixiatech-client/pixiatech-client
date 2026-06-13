@@ -107,10 +107,8 @@ export default function LoginPage() {
     clearSession();
 
     const savedEmail = localStorage.getItem('remember-email');
-    const savedPassword = localStorage.getItem('remember-password');
-    if (savedEmail && savedPassword) {
+    if (savedEmail) {
       setLoginEmail(savedEmail);
-      setLoginPassword(savedPassword);
       setRememberMe(true);
     }
 
@@ -142,14 +140,10 @@ export default function LoginPage() {
     }
 
     try {
-      console.log('[Login] Starting signInWithEmailAndPassword for:', loginEmail);
       const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
-      console.log('[Login] Auth success, UID:', userCredential.user.uid);
 
       const { checkUserStatus } = await import('@/app/admin/actions');
-      console.log('[Login] Calling checkUserStatus server action...');
       const statusResult = await checkUserStatus(userCredential.user.uid);
-      console.log('[Login] statusResult:', statusResult);
 
       if (!statusResult.success) {
         console.warn('[Login] checkUserStatus returned failure:', statusResult.error);
@@ -169,7 +163,6 @@ export default function LoginPage() {
         throw new Error(t('Your account has been suspended.'));
       }
 
-      console.log('[Login] All checks passed, creating session...');
       const idToken = await userCredential.user.getIdToken();
       const sessionResult = await createSession(idToken);
 
@@ -178,13 +171,11 @@ export default function LoginPage() {
         throw new Error(sessionResult.error || t('Session creation failed.'));
       }
 
-      console.log('[Login] Session created, redirecting to /admin');
+
       if (rememberMe) {
         localStorage.setItem('remember-email', loginEmail);
-        localStorage.setItem('remember-password', loginPassword);
       } else {
         localStorage.removeItem('remember-email');
-        localStorage.removeItem('remember-password');
       }
 
       router.push('/admin');

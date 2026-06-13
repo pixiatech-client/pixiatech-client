@@ -1,6 +1,7 @@
 "use client";
 import { GoogleGenAI } from "@google/genai";
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -67,6 +68,125 @@ const getSafeImageUrl = (product: any) => {
 
   return null;
 };
+
+// --- Distance and Pitch columns for ProductListItem ---
+function DistanceColumn({ product, t }: { product: any, t: (key: string) => string }) {
+  const { distance } = getPrimaryDistanceInfo(product);
+  return (
+    <div className="hidden md:flex flex-col gap-1">
+      <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">{t('admin.productManagement.distance')}</span>
+      <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-slate-900">{distance}</span>
+    </div>
+  );
+}
+
+function PitchColumn({ product, t }: { product: any, t: (key: string) => string }) {
+  const { pitches } = getPrimaryDistanceInfo(product);
+  return (
+    <div className="hidden md:flex flex-col gap-1">
+      <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">{t('admin.productManagement.pitch')}</span>
+      {pitches.length > 0 ? (
+        <PitchBadge pitches={pitches} t={t} />
+      ) : (
+        <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-slate-900">—</span>
+      )}
+    </div>
+  );
+}
+
+// --- Helper: extract primary distance and its pitches from product ---
+function getPrimaryDistanceInfo(product: any): { distance: string, pitches: string[] } {
+  const mapping = product.distancePitches || {};
+  const keys = Object.keys(mapping).filter(k => (mapping[k] || []).length > 0);
+  if (keys.length > 0) {
+    return { distance: keys[0], pitches: mapping[keys[0]] || [] };
+  }
+  return { distance: product.distance || '—', pitches: product.pitch ? [product.pitch] : [] };
+}
+
+// --- Pitch Badge Dropdown on Product Cards ---
+function PitchBadge({ pitches, t }: { pitches: string[], t: (key: string) => string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+
+  const updatePosition = useCallback(() => {
+    if (!open || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDropdownStyle({
+      position: 'fixed',
+      left: rect.left + 'px',
+      top: (rect.bottom + 4) + 'px',
+      minWidth: '160px',
+      zIndex: 9999,
+    });
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [open, updatePosition]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (ref.current && !ref.current.contains(target) && !(document.getElementById('pitch-portal')?.contains(target))) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  if (pitches.length === 0) return null;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="bg-[#c6ff00] px-3 py-1.5 rounded-xl text-[9px] font-black text-slate-900 shadow-lg border border-white/20 flex items-center gap-1.5 hover:bg-[#b8f000] transition-colors"
+      >
+        <Grid className="w-3 h-3" />
+        <span>{pitches.length}</span>
+        <ChevronDown className={cn("w-3 h-3 transition-transform", open && "rotate-180")} />
+      </button>
+
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              key="pitch-dropdown"
+              initial={{ opacity: 0, y: 6, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              style={dropdownStyle}
+              className="bg-[#0f172a] rounded-2xl border border-slate-800 shadow-2xl overflow-hidden"
+            >
+              <div className="p-3 space-y-1.5">
+                {pitches.map((p) => (
+                  <div key={p} className="text-[11px] font-bold text-white bg-white/10 px-3 py-2 rounded-xl">
+                    {p}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+    </div>
+  );
+}
 
 // --- Mobile Product Card Component ---
 // --- Optimized Mobile Product Card ---
@@ -161,14 +281,25 @@ const MobileProductCard = React.memo(({
 
               {/* Badges Overlay */}
               <div className="absolute bottom-6 left-6 right-6 flex flex-wrap gap-2">
-                <div className="bg-[#c6ff00] px-3 py-1.5 rounded-lg text-[9px] font-black text-slate-900 shadow-lg border border-white/20">
-                  <p className="opacity-50 uppercase leading-none mb-0.5">{t('admin.productManagement.pitch')}</p>
-                  <p className="leading-none">{pitchChar?.value || product.pitch || '—'}</p>
-                </div>
-                <div className="bg-[#c6ff00] px-3 py-1.5 rounded-xl text-[9px] font-black text-slate-900 shadow-lg border border-white/20">
-                  <p className="opacity-50 uppercase leading-none mb-0.5">{t('admin.productManagement.distance')}</p>
-                  <p className="leading-none">{distanceChar?.value || product.distance || '—'}</p>
-                </div>
+                {(() => {
+                  const { distance, pitches } = getPrimaryDistanceInfo(product);
+                  return (
+                    <>
+                      <div className="bg-[#c6ff00] px-3 py-1.5 rounded-xl text-[9px] font-black text-slate-900 shadow-lg border border-white/20">
+                        <p className="opacity-50 uppercase leading-none mb-0.5">{t('admin.productManagement.distance')}</p>
+                        <p className="leading-none">{distance}</p>
+                      </div>
+                      {pitches.length > 0 ? (
+                        <PitchBadge pitches={pitches} t={t} />
+                      ) : (
+                        <div className="bg-[#c6ff00] px-3 py-1.5 rounded-lg text-[9px] font-black text-slate-900 shadow-lg border border-white/20">
+                          <p className="opacity-50 uppercase leading-none mb-0.5">{t('admin.productManagement.pitch')}</p>
+                          <p className="leading-none">—</p>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Media Icons */}
@@ -461,15 +592,8 @@ const ProductListItem = ({
           </div>
         </div>
 
-        <div className="hidden md:flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">{t('admin.productManagement.pitch')}</span>
-          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-slate-900">{product.pitch || '—'}</span>
-        </div>
-
-        <div className="hidden md:flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">{t('admin.productManagement.distance')}</span>
-          <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-slate-900">{product.distance || '—'}</span>
-        </div>
+        <DistanceColumn product={product} t={t} />
+        <PitchColumn product={product} t={t} />
 
         <div className="hidden md:flex flex-col gap-1 items-center">
           <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">{t('admin.productManagement.salePerM2')}</span>
@@ -2220,7 +2344,7 @@ const ProduitPage = ({
                     );
                   }}
                   className={cn(
-                    "relative flex-1 flex items-center justify-center gap-2 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                    "relative flex-1 flex items-center justify-center gap-1.5 px-3 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
                     mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
                   )}
                 >
@@ -2231,7 +2355,7 @@ const ProduitPage = ({
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
-                  <ShoppingCart className={cn("w-4 h-4 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                  <ShoppingCart className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
                   <span className="z-20 whitespace-nowrap">{t('admin.productManagement.sale')}</span>
                 </button>
                 <button
@@ -2243,7 +2367,7 @@ const ProduitPage = ({
                     );
                   }}
                   className={cn(
-                    "relative flex-1 flex items-center justify-center gap-2 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                    "relative flex-1 flex items-center justify-center gap-1.5 px-3 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
                     mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
                   )}
                 >
@@ -2254,7 +2378,7 @@ const ProduitPage = ({
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
-                  <Calendar className={cn("w-4 h-4 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                  <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
                   <span className="z-20 whitespace-nowrap">{t('admin.productManagement.rental')}</span>
                 </button>
               </div>
@@ -2812,7 +2936,7 @@ const ProduitPage = ({
                           );
                         }}
                         className={cn(
-                          "relative flex-1 flex items-center justify-center gap-2 px-4 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                          "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
                           mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
                         )}
                       >
@@ -2823,7 +2947,7 @@ const ProduitPage = ({
                             transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                           />
                         )}
-                        <ShoppingCart className={cn("w-4 h-4 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                        <ShoppingCart className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
                         <span className="z-20 whitespace-nowrap">{t('admin.productManagement.sale')}</span>
                       </button>
 
@@ -2836,7 +2960,7 @@ const ProduitPage = ({
                           );
                         }}
                         className={cn(
-                          "relative flex-1 flex items-center justify-center gap-2 px-4 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                          "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
                           mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
                         )}
                       >
@@ -2847,7 +2971,7 @@ const ProduitPage = ({
                             transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                           />
                         )}
-                        <Calendar className={cn("w-4 h-4 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                        <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
                         <span className="z-20 whitespace-nowrap">{t('admin.productManagement.rental')}</span>
                       </button>
                     </div>

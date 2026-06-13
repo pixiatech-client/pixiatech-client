@@ -9,6 +9,5 @@ export async function GET() {
 
   return NextResponse.json({
     configured,
-    host: configured ? host : null,
   });
 }

@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast as sonnerToast } from 'sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  ArrowLeft,
   ListTodo,
   Package,
   Settings,
@@ -14,7 +13,6 @@ import {
   User,
   History,
   Menu,
-  Image as ImageIcon,
   Palette,
   AlertTriangle,
   MessageSquare,
@@ -29,13 +27,12 @@ import {
   HardHat,
   FileType,
   Calculator,
-  LogIn,
   ShieldCheck,
   Zap,
   Mail
 } from 'lucide-react';
 import Link from 'next/link';
-import { logout, getThemes, updateSettings, getSettings, updateUser, type UserRole, getUsers, saveSidebarConfig } from '@/app/admin/actions';
+import { logout, getThemes, getSettings, type UserRole, saveSidebarConfig } from '@/app/admin/actions';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebase';
