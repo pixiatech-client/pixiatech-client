@@ -1,33 +1,39 @@
 
-import { QuoteBuilder } from '@/components/quote-builder';
-import type { Settings, DeliverySettings, LaborSettings, Product, Locations, WizardSettings } from '@/lib/types';
-import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLocations, getWizardSettings } from '@/app/admin/actions';
+import { ChatWidgetClient } from '@/app/chat-widget/ChatWidgetClient';
+import type { Settings, DeliverySettings, LaborSettings, Product, Locations } from '@/lib/types';
+import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLocations } from '@/app/admin/actions';
 
 export const dynamic = 'force-dynamic';
 
-export default async function EmbedPage() {
+interface PageProps {
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default async function EmbedPage({ searchParams }: PageProps) {
   const settings: Settings = await getSettings();
   
-  const [deliverySettings, laborSettings, productsResult, locations, wizardSettings] = await Promise.all([
+  const langQuery = typeof searchParams.lang === 'string' ? searchParams.lang : 'en';
+  const lang = langQuery === 'fr' ? 'fr' : 'en';
+  
+  const [deliverySettings, laborSettings, productsResult, locations] = await Promise.all([
     getDeliverySettings(),
     getLaborSettings(),
     getProducts({ limit: 1000 }),
-    getLocations(),
-    getWizardSettings()
+    getLocations()
   ]);
 
   const allProducts: Product[] = productsResult.products;
-  
+
   return (
-    <main className="flex-1 container mx-auto p-4 md:p-6">
-        <QuoteBuilder 
-          initialSettings={settings}
-          deliverySettings={deliverySettings}
-          laborSettings={laborSettings}
-          allProducts={allProducts}
-          locations={locations}
-          wizardSettings={wizardSettings}
-        />
+    <main className="w-full h-screen bg-transparent overflow-hidden flex flex-col">
+      <ChatWidgetClient 
+        settings={settings}
+        deliverySettings={deliverySettings}
+        laborSettings={laborSettings}
+        allProducts={allProducts}
+        locations={locations}
+        lang={lang}
+      />
     </main>
   );
 }

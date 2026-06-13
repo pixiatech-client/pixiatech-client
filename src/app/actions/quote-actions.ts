@@ -16,6 +16,26 @@ type Locale = 'fr' | 'en';
 const translations = { fr, en };
 
 import { validatePhone } from '@/lib/phone-validation';
+
+/**
+ * Returns the canonical base URL for the app.
+ * Priority: NEXT_PUBLIC_SITE_URL env var → Firebase App Hosting URL → localhost fallback.
+ * Ensures that even if NEXT_PUBLIC_SITE_URL is accidentally set to localhost in production,
+ * the real hosted URL is used instead.
+ */
+function getBaseUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '');
+  const firebaseUrl = 'https://studio--studio-9205859220-a6440.us-central1.hosted.app';
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (envUrl && !envUrl.includes('localhost')) {
+    return envUrl;
+  }
+  if (isProduction) {
+    return firebaseUrl;
+  }
+  return envUrl || 'http://localhost:3000';
+}
 import { buildOtpEmailHtml, buildVerificationEmailHtml, buildSecureEmailHtml } from '@/lib/email-templates';
 
 const formSchema = z.object({
@@ -116,14 +136,7 @@ export async function updatePdfSettings(data: Partial<PdfSettings>) {
 
 
 async function sendQuoteEmail(recipientEmail: string, verificationToken: string, lang: Locale) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
-    || (process.env.NODE_ENV === 'production'
-      ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
-      : 'http://localhost:3000');
-
-  const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
-    ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
-    : baseUrl;
+  const safeBaseUrl = getBaseUrl();
 
   const verificationUrl = `${safeBaseUrl}/quote/verify?token=${verificationToken}`;
   const t = translations[lang] || translations.fr;
@@ -596,14 +609,7 @@ export async function createQuoteWithContract(
 
     if (isEmailVerificationEnabled) {
       // Prepare SMTP and send OTP email
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
-        || (process.env.NODE_ENV === 'production'
-          ? 'https://studio--studio-9205859220-a6440.us-west1.hosted.app'
-          : 'http://localhost:3000');
-
-      const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
-        ? 'https://studio--studio-9205859220-a6440.us-west1.hosted.app'
-        : baseUrl;
+      const safeBaseUrl = getBaseUrl();
 
       const verificationUrl = `${safeBaseUrl}/verification-securite?otp=${otpCode}&id=${docRef.id}`;
 
