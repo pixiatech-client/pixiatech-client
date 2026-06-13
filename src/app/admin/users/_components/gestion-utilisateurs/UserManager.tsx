@@ -250,6 +250,7 @@ export function UserManager() {
 
         const updateResult = await updateUser({
           uid: data.id,
+          email: data.email,
           displayName: data.name,
           phone: data.phone,
           description: data.description,
@@ -261,6 +262,12 @@ export function UserManager() {
         });
 
         if (!updateResult.success) throw new Error(updateResult.error || ta('Error during update.'));
+
+        if ((data as any).password) {
+          const { updatePassword } = await import('@/app/admin/actions');
+          const pwResult = await updatePassword({ uid: data.id, password: (data as any).password });
+          if (!pwResult.success) throw new Error(pwResult.error || ta('Error updating password.'));
+        }
 
         toast.success(ta('Profile updated successfully.'));
         // Re-fetch from Firestore to ensure data is fresh

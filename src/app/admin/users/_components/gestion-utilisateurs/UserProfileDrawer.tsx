@@ -94,7 +94,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
       toast.error(t('Please fill in all required fields'));
       return;
     }
-    onSave({ ...user, ...formData } as User);
+    onSave({ ...user, ...formData, password } as unknown as User);
     onClose();
   };
 

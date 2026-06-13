@@ -80,41 +80,16 @@ export default function LoginPage() {
   const [isSavingGoogleProfile, setIsSavingGoogleProfile] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const clearSession = async () => {
-      if (!auth) {
-        if (!cancelled) setIsSigningOut(false);
-        return;
-      }
-
-      // Only sign out if a user is actually signed in (avoid race condition with Google sign-in)
-      if (!auth.currentUser) {
-        if (!cancelled) setIsSigningOut(false);
-        return;
-      }
-
-      try {
-        await signOut(auth);
-        if (!cancelled) console.log('[Login] Session cleared');
-      } catch (error) {
-        if (!cancelled) console.warn('[Login] Sign-out warning:', error);
-      } finally {
-        if (!cancelled) setIsSigningOut(false);
-      }
-    };
-
-    clearSession();
+    if (auth) {
+      console.log('[Login] Page ready (auth available)');
+    }
+    setIsSigningOut(false);
 
     const savedEmail = localStorage.getItem('remember-email');
     if (savedEmail) {
       setLoginEmail(savedEmail);
       setRememberMe(true);
     }
-
-    return () => {
-      cancelled = true;
-    };
   }, [auth]);
 
   const activeTitle = useMemo(() => {

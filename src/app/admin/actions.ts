@@ -54,22 +54,16 @@ export async function createSession(idToken: string) {
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
     console.log('[Session Action] Session cookie created successfully.');
 
-    const isProd = process.env.NODE_ENV === 'production';
-    
-    // Detect if we are behind a proxy with HTTPS (common for internal previews)
-    // We use a more robust check for development environments that need cross-site cookies
-    const isSecure = isProd || true; // Force secure for cookies to work in modern browsers/proxies
-    
-    // @ts-ignore - partitioned is supported in newer Next.js versions but might not be in the types yet
+    const isSecure = process.env.NODE_ENV === 'production';
+
     cookies().set('session', sessionCookie, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
-      secure: isSecure, 
+      secure: isSecure,
       path: '/',
-      sameSite: 'none', // Required for iframe support
-      partitioned: true, // Essential for iframe support (CHIPS)
+      sameSite: 'lax',
     });
-    console.log('[Session Action] Cookie set in headers (Secure; SameSite=None; Partitioned).');
+    console.log('[Session Action] Session cookie set (sameSite=lax, secure=' + isSecure + ').');
 
     return { success: true };
   } catch (error: any) {
@@ -462,10 +456,20 @@ export async function updateUser(data: unknown) {
       await adminAuth.updateUser(uid, authPayload);
     }
 
-    // If role is changing, update custom claims and revoke sessions
+    // If role is provided, check if it's actually changing before revoking sessions
     if (updateData.role) {
-      await adminAuth.setCustomUserClaims(uid, { role: updateData.role });
-      await adminAuth.revokeRefreshTokens(uid);
+      try {
+        const userRecord = await adminAuth.getUser(uid);
+        const currentRole = userRecord.customClaims?.role;
+        if (currentRole !== updateData.role) {
+          await adminAuth.setCustomUserClaims(uid, { role: updateData.role });
+          await adminAuth.revokeRefreshTokens(uid);
+        }
+      } catch {
+        // If we can't fetch the user, still try to update claims
+        await adminAuth.setCustomUserClaims(uid, { role: updateData.role });
+        await adminAuth.revokeRefreshTokens(uid);
+      }
     }
 
     // Update Firestore document
