@@ -17,7 +17,6 @@ interface SettingsContentProps {
 }
 
 const GeneralContent = lazy(() => import('../general/page'));
-const ImagesContent = lazy(() => import('../images/page'));
 const WizardContent = lazy(() => import('../../wizard/page'));
 const LivraisonContent = lazy(() => import('../../_components/delivery-redirect'));
 const LaborContent = lazy(() => import('../../labor/page'));
@@ -45,9 +44,8 @@ interface TabItem {
 
 const tabsConfigDefs = [
     { id: 'general' as SettingsSection, labelKey: 'General', icon: Settings },
-    { id: 'images' as SettingsSection, labelKey: 'Images', icon: ImageIcon },
     { id: 'appearance' as SettingsSection, labelKey: 'Appearance', icon: Palette },
-    { id: 'wizard' as SettingsSection, labelKey: 'Wizard', icon: Wand2 },
+    { id: 'wizard' as SettingsSection, labelKey: 'Assistant & Images', icon: Wand2 },
     { id: 'livraison' as SettingsSection, labelKey: 'Delivery', icon: Truck },
     { id: 'main-doeuvre' as SettingsSection, labelKey: 'Labor', icon: HardHat },
     { id: 'pdf' as SettingsSection, labelKey: 'PDF', icon: FileType },
@@ -110,8 +108,6 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
         switch (currentSection) {
             case 'general':
                 return <GeneralContent />;
-            case 'images':
-                return <ImagesContent />;
             case 'wizard':
                 return <WizardContent />;
             case 'livraison':
@@ -192,8 +188,9 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
             <div className="flex-1 min-w-0 flex flex-col pt-2 lg:pt-0">
                 {!isMobile && (
                     <div className="mb-6 md:mb-8 px-4 lg:px-0">
-                        <h2 className="text-2xl md:text-3xl font-black text-[#1a1d21]">{t('System Configuration')}</h2>
-                        <p className="text-gray-400 font-medium text-xs md:text-sm mt-2">{t('Manage global options, resources, and security settings for your platform.')}</p>
+                        <h2 className="text-2xl md:text-3xl font-black text-[#1a1d21]">
+                            {tabsConfig.find(tab => tab.id === currentSection)?.label || ''}
+                        </h2>
                     </div>
                 )}
                 

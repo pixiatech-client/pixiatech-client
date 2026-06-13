@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { buildSecureEmailHtml } from '@/lib/email-templates';
+import { getSmtpSettings } from '@/lib/smtpService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,11 +12,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "L'adresse e-mail du destinataire est requise." }, { status: 400 });
     }
 
-    const host = smtpConfig?.host || process.env.SMTP_HOST || process.env.MAIL_HOST;
-    const portStr = smtpConfig?.port || process.env.SMTP_PORT || process.env.MAIL_PORT;
-    const user = smtpConfig?.user || process.env.SMTP_USER || process.env.MAIL_USER || process.env.MAIL_USERNAME;
-    const pass = smtpConfig?.pass || process.env.SMTP_PASS || process.env.MAIL_PASS || process.env.MAIL_PASSWORD;
-    const from = smtpConfig?.from || process.env.SMTP_FROM || process.env.MAIL_FROM || 'PixiaTech Pro <noreply@pixiatech.com>';
+    const dbSmtp = await getSmtpSettings();
+    const host = smtpConfig?.host || (dbSmtp.isCustom ? dbSmtp.host : null) || process.env.SMTP_HOST || process.env.MAIL_HOST;
+    const portStr = smtpConfig?.port || (dbSmtp.isCustom ? String(dbSmtp.port) : null) || process.env.SMTP_PORT || process.env.MAIL_PORT;
+    const user = smtpConfig?.user || (dbSmtp.isCustom ? dbSmtp.user : null) || process.env.SMTP_USER || process.env.MAIL_USER || process.env.MAIL_USERNAME;
+    const pass = smtpConfig?.pass || (dbSmtp.isCustom ? dbSmtp.pass : null) || process.env.SMTP_PASS || process.env.MAIL_PASS || process.env.MAIL_PASSWORD;
+    const from = smtpConfig?.from || (dbSmtp.isCustom ? `"${dbSmtp.fromName}" <${dbSmtp.fromEmail}>` : null) || process.env.SMTP_FROM || process.env.MAIL_FROM || 'PixiaTech Pro <noreply@pixiatech.com>';
 
     if (!host || !user || !pass) {
       return NextResponse.json({ 

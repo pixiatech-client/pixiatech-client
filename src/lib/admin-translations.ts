@@ -59,7 +59,7 @@ const adminTranslations: Record<string, string> = {
   // Navigation & Layout
   'Calculator': 'Calculatrice',
   'Emergency': 'Urgence',
-  'Software': 'Logiciel',
+  'Software': 'Serveur SMTP',
   'General': 'Général',
   'Images': 'Images',
   'Content': 'Contenu',
@@ -422,7 +422,7 @@ const adminTranslations: Record<string, string> = {
   'Admin Background': 'Arrière-plan admin',
 
   // Software Settings
-  'Software Settings': 'Paramètres logiciels',
+  'Software Settings': 'Paramètres Serveur SMTP',
   'SMTP Settings': 'Paramètres SMTP',
   'SMTP configuration and diagnostic tools for sending emails.': 'Configuration SMTP et outils de diagnostic pour l\'envoi d\'emails.',
   'SMTP Host': 'Hôte SMTP',
@@ -858,6 +858,10 @@ const adminTranslations: Record<string, string> = {
   'Multiselection': 'Multisélection',
   'Maximum number of products a customer can select': 'Nombre maximum de produits qu\'un client peut sélectionner',
   'Max products per quote': 'Maximum produits par estimation',
+  'Zoom 3D Simulator': 'Zoom 3D Simulateur',
+  'Set the zoom limits for the 3D preview.': 'Définir les limites de zoom pour l\'aperçu 3D.',
+  'Max zoom out': 'Zoom arrière max',
+  'Max zoom in': 'Zoom avant max',
 
   // Estimation Table (Table.tsx)
   'Email verified': 'Email vérifié',

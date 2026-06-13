@@ -496,6 +496,17 @@ export default function StepDimensions({
                 </div>
               </div>
 
+              {/* Surface totale */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-teal-700 font-black text-xs uppercase tracking-wider">
+                  <Calculator className="w-4 h-4" />
+                  {t('wizard.dimensions.totalSurface')}
+                </div>
+                <div className="text-slate-800 font-bold text-sm ml-6 font-mono">
+                  {(state.width * state.height).toFixed(2)} m²
+                </div>
+              </div>
+
               {/* Note Section */}
               <div className="flex items-start gap-2 text-slate-500 font-medium text-[10px] uppercase tracking-wide ml-1">
                 <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
@@ -565,6 +576,8 @@ export default function StepDimensions({
               setIsDarkMode={setIsDarkMode}
               videoUrl={settings?.previewScreenVideoUrl || settings?.previewScreenImageUrl}
               t={t}
+              maxDistance={settings?.zoomMaxDistance}
+              minDistance={settings?.zoomMinDistance}
             />
           </div>
         </div>

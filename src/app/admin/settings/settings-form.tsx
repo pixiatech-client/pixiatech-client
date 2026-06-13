@@ -45,6 +45,8 @@ const settingsSchema = z.object({
   maxRentalWidth: z.coerce.number().min(1).optional(),
   maxRentalHeight: z.coerce.number().min(1).optional(),
   maxProductsPerQuote: z.coerce.number().min(1, 'Must be at least 1').optional(),
+  zoomMaxDistance: z.coerce.number().min(1, 'Must be at least 1').optional(),
+  zoomMinDistance: z.coerce.number().min(0.1, 'Must be at least 0.1').optional(),
   previewScreenImageUrl: z.string().optional(),
   previewScreenVideoUrl: z.string().optional(),
   emergencyStopEnabled: z.boolean().optional(),
@@ -298,21 +300,44 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
               </div>
             </div>
 
-            {configMode === 'sale' && (
-              <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-amber-600" />
-                  <span className="text-sm font-bold text-slate-900">{t('Multiselection')}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {configMode === 'sale' && (
+                <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-amber-600" />
+                    <span className="text-sm font-bold text-slate-900">{t('Multiselection')}</span>
+                  </div>
+                  <p className="text-xs text-slate-500">{t('Maximum number of products a customer can select')}</p>
+                  <div className="space-y-1 w-32">
+                    <Label className="text-xs font-semibold text-slate-600">{t('Max products per quote')}</Label>
+                    <Input type="number" min="1" step="1" className="h-9 rounded-xl bg-white border-slate-200"
+                      {...form.register('estimationFlow.sale.maxProductsPerQuote')}
+                    />
+                  </div>
                 </div>
-                <p className="text-xs text-slate-500">{t('Maximum number of products a customer can select')}</p>
-                <div className="space-y-1 w-32">
-                  <Label className="text-xs font-semibold text-slate-600">{t('Max products per quote')}</Label>
-                  <Input type="number" min="1" step="1" className="h-9 rounded-xl bg-white border-slate-200"
-                    {...form.register('estimationFlow.sale.maxProductsPerQuote')}
-                  />
+              )}
+              <div className="rounded-2xl border border-blue-100 bg-blue-50/30 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-4 h-4 text-blue-600 flex items-center justify-center font-bold text-sm">3D</span>
+                  <span className="text-sm font-bold text-slate-900">{t('Zoom 3D Simulator')}</span>
+                </div>
+                <p className="text-xs text-slate-500">{t('Set the zoom limits for the 3D preview.')}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-600">{t('Max zoom out')}</Label>
+                    <Input type="number" min="1" step="1" className="h-9 rounded-xl bg-white border-slate-200"
+                      {...form.register('zoomMaxDistance')}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-slate-600">{t('Max zoom in')}</Label>
+                    <Input type="number" min="0.1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
+                      {...form.register('zoomMinDistance')}
+                    />
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
 
             <div className="space-y-4 pt-4 border-t">
               <h4 className="font-medium">{t('Estimation Process')}</h4>

@@ -452,7 +452,7 @@ export default function ScreenViewer(props: Screen3DProps) {
           enablePan={true} 
           enableZoom={true} 
           minDistance={1} 
-          maxDistance={50} 
+          maxDistance={500} 
           maxPolarAngle={Math.PI / 1.5}
         />
         

@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, RefreshCw, Image, Sparkles } from 'lucide-react';
-import { getWizardSettings, updateWizardSettings } from '@/app/admin/actions';
-import type { WizardSettings, PixelPitchOption, ViewingDistanceOption } from '@/lib/types';
+import { getWizardSettings, updateWizardSettings, getSettings, updateSettings } from '@/app/admin/actions';
+import type { WizardSettings, PixelPitchOption, ViewingDistanceOption, Settings as AppSettings } from '@/lib/types';
 import { InputWithUpload } from '../settings/_components/input-with-upload';
 import { useAdminT } from '@/hooks/useAdminT';
 
@@ -21,22 +21,27 @@ export default function WizardPage() {
   const { toast } = useToast();
   const { t } = useAdminT();
   const [settings, setSettings] = useState<WizardSettings | null>(null);
+  const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    getWizardSettings().then(data => {
-      setSettings(data);
+    Promise.all([getWizardSettings(), getSettings()]).then(([wizardData, appData]) => {
+      setSettings(wizardData);
+      setAppSettings(appData);
       setIsLoading(false);
     });
   }, []);
 
   const handleSave = async () => {
-    if (!settings) return;
+    if (!settings || !appSettings) return;
     setIsSaving(true);
     try {
-      const result = await updateWizardSettings(settings);
-      if (result.success) {
+      const [wizardResult, appResult] = await Promise.all([
+        updateWizardSettings(settings),
+        updateSettings(appSettings)
+      ]);
+      if (wizardResult.success && appResult.success) {
         toast({ title: t('Settings saved'), variant: 'success' });
       } else {
         toast({ title: t('Error'), description: t('Save failed'), variant: 'destructive' });
@@ -47,57 +52,9 @@ export default function WizardPage() {
     setIsSaving(false);
   };
 
-  const addPixelPitch = () => {
-    if (!settings) return;
-    setSettings({
-      ...settings,
-      pixelPitches: [...settings.pixelPitches, { id: generateId(), value: 'P NEW', recommended: false }]
-    });
-  };
 
-  const removePixelPitch = (id: string) => {
-    if (!settings) return;
-    setSettings({
-      ...settings,
-      pixelPitches: settings.pixelPitches.filter(p => p.id !== id)
-    });
-  };
 
-  const updatePixelPitch = (id: string, field: keyof PixelPitchOption, value: string | boolean) => {
-    if (!settings) return;
-    setSettings({
-      ...settings,
-      pixelPitches: settings.pixelPitches.map(p => p.id === id ? { ...p, [field]: value } : p)
-    });
-  };
-
-  const addViewingDistance = () => {
-    if (!settings) return;
-    setSettings({
-      ...settings,
-      viewingDistances: [...settings.viewingDistances, { id: generateId(), value: '0-0m', recommended: false }]
-    });
-  };
-
-  const removeViewingDistance = (id: string) => {
-    if (!settings) return;
-    setSettings({
-      ...settings,
-      viewingDistances: settings.viewingDistances.filter(v => v.id !== id)
-    });
-  };
-
-  const updateViewingDistance = (id: string, field: string | boolean, value?: string | boolean) => {
-    if (!settings) return;
-    if (typeof field === 'string' && value !== undefined) {
-      setSettings({
-        ...settings,
-        viewingDistances: settings.viewingDistances.map(v => v.id === id ? { ...v, [field]: value } : v)
-      });
-    }
-  };
-
-  if (isLoading || !settings) {
+  if (isLoading || !settings || !appSettings) {
     return (
       <div className="flex items-center justify-center h-96">
         <RefreshCw className="w-8 h-8 animate-spin text-slate-400" />
@@ -170,6 +127,31 @@ export default function WizardPage() {
           </div>
         </CardContent>
       </Card>
+      {/* Application Images */}
+      <Card className="rounded-xl border border-slate-200/60">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-bold">{t('Application Images')}</CardTitle>
+          <CardDescription>{t('Configure the background screen image and dimensions video.')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase text-slate-400">{t('Screen Image (URL)')}</Label>
+            <InputWithUpload
+              placeholder="https://..."
+              value={appSettings.previewScreenImageUrl || ''}
+              onChange={(newUrl) => setAppSettings(prev => prev ? { ...prev, previewScreenImageUrl: newUrl } : null)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase text-slate-400">{t('Screen Dimensions (Video URL)')}</Label>
+            <InputWithUpload
+              placeholder="https://..."
+              value={appSettings.previewScreenVideoUrl || ''}
+              onChange={(newUrl) => setAppSettings(prev => prev ? { ...prev, previewScreenVideoUrl: newUrl } : null)}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Step Images */}
       <Card className="rounded-xl border border-slate-200/60">
@@ -193,82 +175,6 @@ export default function WizardPage() {
               value={settings.pixelPitchImageUrl || ''}
               onChange={(newUrl) => setSettings({ ...settings, pixelPitchImageUrl: newUrl })}
             />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pixel Pitches */}
-      <Card className="rounded-xl border border-slate-200/60">
-        <CardHeader className="pb-4 flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-lg font-bold">{t('Pixel Pitches')}</CardTitle>
-            <CardDescription>{t('Configure the available pixel pitches.')}</CardDescription>
-          </div>
-          <Button variant="outline" size="sm" onClick={addPixelPitch} className="gap-2">
-            <Plus className="w-4 h-4" /> {t('Add')}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {settings.pixelPitches.map((pp, index) => (
-              <div key={pp.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-                <span className="text-xs font-mono text-slate-400 w-6">{index + 1}</span>
-                <Input
-                  value={pp.value}
-                  onChange={(e) => updatePixelPitch(pp.id, 'value', e.target.value)}
-                  className="w-24"
-                  placeholder="P2.5"
-                />
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={pp.recommended}
-                    onCheckedChange={(checked) => updatePixelPitch(pp.id, 'recommended', checked)}
-                  />
-                  <Label className="text-xs text-slate-500">{t('Recommended')}</Label>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => removePixelPitch(pp.id)} className="ml-auto text-red-500 hover:text-red-600">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Viewing Distances */}
-      <Card className="rounded-xl border border-slate-200/60">
-        <CardHeader className="pb-4 flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-lg font-bold">{t('Viewing Distances')}</CardTitle>
-            <CardDescription>{t('Configure the available viewing distances.')}</CardDescription>
-          </div>
-          <Button variant="outline" size="sm" onClick={addViewingDistance} className="gap-2">
-            <Plus className="w-4 h-4" /> {t('Add')}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {settings.viewingDistances.map((vd, index) => (
-              <div key={vd.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg">
-                <span className="text-xs font-mono text-slate-400 w-6">{index + 1}</span>
-                <Input
-                  value={vd.value}
-                  onChange={(e) => updateViewingDistance(vd.id, 'value', e.target.value)}
-                  className="w-32"
-                  placeholder="0-5m"
-                />
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={vd.recommended ?? false}
-                    onCheckedChange={(checked) => updateViewingDistance(vd.id, 'recommended', checked)}
-                  />
-                  <Label className="text-xs text-slate-500">{t('Recommended')}</Label>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => removeViewingDistance(vd.id)} className="ml-auto text-red-500 hover:text-red-600">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
           </div>
         </CardContent>
       </Card>

@@ -103,6 +103,7 @@
             "curved": "INCURVÉ",
             "calculated": "Calculé",
             "aspectRatio": "Ratio d'aspect actuel",
+            "totalSurface": "Surface totale",
             "note": "Note: Les dimensions sont basées sur des modules (Dalles) de 50cm x 50cm.",
             "tileConfig": "Configuration dalles",
             "tileCount": "Cette configuration utilise <span className=\"font-black text-teal-700\">{count} dalles</span> ({w} × {h})",
@@ -739,7 +740,7 @@
             "pdf": "PDF",
             "emergency": "Urgence",
             "messaging": "Messagerie",
-            "software": "Logiciel"
+            "software": "Serveur SMTP"
         },
         "resetCounters": "Réinitialiser les compteurs à zéro",
         "impersonate": "Se connecter",

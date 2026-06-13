@@ -137,10 +137,10 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
         'outdoor': 'exterieur'
       };
       const environment = envRevMap[initialConfiguredProduct.productType] || 'interieur';
-      
+
       const prod = allProducts.find(p => p.id === initialConfiguredProduct.productId);
-      const pixelPitch = prod?.pitch || wizardSettings?.pixelPitches?.find(p => p.recommended)?.value || INITIAL_STATE.pixelPitch;
-      const viewingDistance = prod?.distance || wizardSettings?.viewingDistances?.find(d => d.recommended)?.value || INITIAL_STATE.viewingDistance;
+      const pixelPitch = prod?.pitch || INITIAL_STATE.pixelPitch;
+      const viewingDistance = prod?.distance || INITIAL_STATE.viewingDistance;
 
       return {
         ...INITIAL_STATE,
@@ -167,13 +167,11 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
         curveRight: initialConfiguredProduct.curveRight || 0,
       };
     }
-    const defaultDistance = wizardSettings?.viewingDistances?.find(d => d.recommended)?.value || INITIAL_STATE.viewingDistance;
-    const defaultPitch = wizardSettings?.pixelPitches?.find(p => p.recommended)?.value || INITIAL_STATE.pixelPitch;
     return {
       ...INITIAL_STATE,
       step: initialStep,
-      viewingDistance: defaultDistance,
-      pixelPitch: defaultPitch
+      viewingDistance: INITIAL_STATE.viewingDistance,
+      pixelPitch: INITIAL_STATE.pixelPitch
     };
   });
   const { userProfile } = useUser();
@@ -404,7 +402,7 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
                 <div>
                   {renderStep(state, updateState, userProfile, wizardSettings, settings, allProducts, setIsInteracting, t, locale)}
                 </div>
-                
+
                 <footer className="p-4 md:p-6 bg-transparent mt-4">
                   <div className="relative p-1.5 bg-black/20 backdrop-blur-md border border-white/50 rounded-[24px] pointer-events-auto w-full max-w-[650px] mx-auto before:absolute before:inset-0 before:rounded-[24px] before:bg-gradient-to-br before:from-white/60 before:via-transparent before:to-transparent before:opacity-70 before:pointer-events-none after:absolute after:inset-0 after:rounded-[24px] after:bg-gradient-to-tl after:from-white/30 after:via-transparent after:to-transparent after:opacity-50 after:pointer-events-none">
                     <div className="relative z-10 flex items-center gap-2 w-full">
@@ -421,14 +419,16 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
                         onClick={nextStep}
                         disabled={
                           (state.step === 3 && !state.viewingDistance) ||
+                          (state.step === 4 && !state.pixelPitch) ||
                           (state.step === 8 && (state.selectionMode === 'multi' ? (!state.selectedProducts || state.selectedProducts.length === 0) : !state.selectedProduct)) ||
                           (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate))
                         }
                         className={cn(
                           "flex-1 h-12 bg-black rounded-[18px] flex items-center px-6 transition-all duration-300 group active:scale-[0.98] overflow-hidden relative",
                           ((state.step === 3 && !state.viewingDistance) ||
-                           (state.step === 8 && (state.selectionMode === 'multi' ? (!state.selectedProducts || state.selectedProducts.length === 0) : !state.selectedProduct)) ||
-                           (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate))) &&
+                            (state.step === 4 && !state.pixelPitch) ||
+                            (state.step === 8 && (state.selectionMode === 'multi' ? (!state.selectedProducts || state.selectedProducts.length === 0) : !state.selectedProduct)) ||
+                            (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate))) &&
                           "opacity-50 cursor-not-allowed grayscale"
                         )}
                       >
@@ -448,7 +448,7 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
           </AnimatePresence>
         </main>
 
-        
+
       </div>
     </div>
   );
@@ -474,7 +474,7 @@ function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigSta
     case 1: return <StepProjectType state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
     case 2: return <StepEnvironment state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
     case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} locale={locale} />;
-    case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} locale={locale} />;
+    case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} products={products} t={t} locale={locale} />;
     case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} t={t} />;
     case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} products={products} t={t} locale={locale} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
     case 7: return <StepSummary state={state} t={t} locale={locale} />;
@@ -742,11 +742,6 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
                       {state.viewingDistance === d.value && <Check className="w-3 h-3" strokeWidth={4} />}
                     </div>
                   </button>
-                  {d.recommended && (
-                    <span className="absolute -top-2.5 right-2 bg-blue-500 text-[10px] text-white px-2 py-0.5 rounded-full font-medium shadow-sm z-20">
-                      {locale === 'fr' ? 'Recommandé' : 'Recommended'}
-                    </span>
-                  )}
                 </div>
               ))}
             </div>
@@ -757,10 +752,50 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
   );
 }
 
-export function StepPixelPitch({ state, updateState, userProfile, wizardSettings, t, locale = 'en' }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, t: any, locale?: string }) {
+export function StepPixelPitch({ state, updateState, userProfile, wizardSettings, products, t, locale = 'en' }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, products?: Product[], t: any, locale?: string }) {
   const allPitches = wizardSettings?.pixelPitches || [];
   const uniquePitches = Array.from(new Map(allPitches.map(p => [p.value, p])).values());
-  const pixelPitches = uniquePitches;
+
+  // Dynamic filtering of pitches based on compatible products
+  const matchedProducts = (products || []).filter(p => {
+    if (p.isHidden) return false;
+
+    // Match project type (transactionType)
+    const prodModes = p.availableFor || [];
+    const targetMode: 'sale' | 'rental' = state.projectType === 'location' ? 'rental' : 'sale';
+    const matchesMode = prodModes.includes(targetMode);
+
+    // Match environment — map wizard internal values to product type values
+    const prodTypes = p.type || [];
+    const targetType: 'indoor' | 'outdoor' | 'showcase' =
+      state.environment === 'interieur' ? 'indoor'
+        : state.environment === 'semi-exterieur' ? 'showcase'
+          : 'outdoor';
+    const matchesEnv = prodTypes.includes(targetType);
+
+    return matchesMode && matchesEnv;
+  });
+
+  const compatiblePitches = new Set<string>();
+  matchedProducts.forEach(p => {
+    if (p.distancePitches) {
+      const pitchesForDist = p.distancePitches[state.viewingDistance] || [];
+      pitchesForDist.forEach(pitch => compatiblePitches.add(pitch));
+    } else {
+      // Legacy fallback
+      const distances = p.distance ? p.distance.split(',').map((s: string) => s.trim()) : [];
+      if (distances.includes(state.viewingDistance)) {
+        const pitches = p.pitch ? p.pitch.split(',').map((s: string) => s.trim()) : [];
+        pitches.forEach(pitch => compatiblePitches.add(pitch));
+      }
+    }
+  });
+
+  const pixelPitches = uniquePitches.filter(p => {
+    if (!state.viewingDistance) return true;
+    return compatiblePitches.has(p.value);
+  });
+
   const pixelPitchImageUrl = wizardSettings?.pixelPitchImageUrl;
   const mainImage = pixelPitchImageUrl || "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&q=90&w=2000"; // City skyline
 
@@ -840,52 +875,96 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
 
         {/* Right: Selection */}
         <div className="w-full space-y-4">
-          <div className="space-y-3 py-1">
-            {/* Small Buttons Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {pixelPitches.map((p) => (
-                <div key={p.id} className="relative">
-                  <button
-                    onClick={() => updateState({ pixelPitch: p.value })}
-                    className={cn(
-                      "group w-full py-3 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
-                      state.pixelPitch === p.value
-                        ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]"
-                        : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
-                    )}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>{p.value}</span>
-                      {marketingEquivalents[p.value] && (
-                        <>
-                          <span className="opacity-50">•</span>
-                          <span className={cn(
-                            "text-[10px] normal-case tracking-normal font-bold",
-                            state.pixelPitch === p.value ? "text-[#c6ff00]" : "text-slate-400"
-                          )}>
-                            {marketingEquivalents[p.value]}
-                          </span>
-                        </>
+          {pixelPitches.length > 0 ? (
+            <div className="space-y-3 py-1">
+              {/* Small Buttons Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {pixelPitches.map((p) => (
+                  <div key={p.id} className="relative">
+                    <button
+                      onClick={() => updateState({ pixelPitch: p.value })}
+                      className={cn(
+                        "group w-full py-3 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
+                        state.pixelPitch === p.value
+                          ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]"
+                          : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
                       )}
-                    </div>
-                    <div className={cn(
-                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0",
-                      state.pixelPitch === p.value ? "border-[#c6ff00] bg-[#c6ff00] text-black" : "border-slate-200 group-hover:border-black"
-                    )}>
-                      {state.pixelPitch === p.value && <Check className="w-3 h-3" strokeWidth={4} />}
-                    </div>
-                  </button>
-                  {p.recommended && (
-                    <span className="absolute -top-2.5 right-2 bg-blue-500 text-[10px] text-white px-2 py-0.5 rounded-full font-medium shadow-sm z-20">
-                      {locale === 'fr' ? 'Recommandé' : 'Recommended'}
-                    </span>
-                  )}
-                </div>
-              ))}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>{p.value}</span>
+                        {marketingEquivalents[p.value] && (
+                          <>
+                            <span className="opacity-50">•</span>
+                            <span className={cn(
+                              "text-[10px] normal-case tracking-normal font-bold",
+                              state.pixelPitch === p.value ? "text-[#c6ff00]" : "text-slate-400"
+                            )}>
+                              {marketingEquivalents[p.value]}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <div className={cn(
+                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0",
+                        state.pixelPitch === p.value ? "border-[#c6ff00] bg-[#c6ff00] text-black" : "border-slate-200 group-hover:border-black"
+                      )}>
+                        {state.pixelPitch === p.value && <Check className="w-3 h-3" strokeWidth={4} />}
+                      </div>
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
+          ) : (
+            <div className="bg-gradient-to-br from-emerald-50/95 to-blue-50/60 backdrop-blur-md border border-emerald-200/80 rounded-[2.5rem] p-8 text-center shadow-[0_20px_40px_rgba(16,185,129,0.05)] max-w-md mx-auto space-y-4 relative overflow-hidden">
+              {/* Premium Gradient Top Border */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-500" />
+              
+              {/* Pulsing Colored Icon Container */}
+              <div className="w-14 h-14 bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-emerald-500/20 relative">
+                <div className="absolute inset-0 rounded-2xl bg-emerald-500/5 animate-ping opacity-75" />
+                <Info className="w-6 h-6 relative z-10" />
+              </div>
 
+              <div className="space-y-2 relative z-10">
+                <h4 className="text-sm font-black text-emerald-800 uppercase tracking-wider">
+                  {locale === 'fr' ? "Configuration sur mesure requise" : "Custom Configuration Required"}
+                </h4>
+                <p className="text-xs text-emerald-900/85 leading-relaxed font-medium">
+                  {locale === 'fr' ? (
+                    <>
+                      Aucun modèle de Pixel Pitch standard n'est pré-configuré pour la distance de visionnage{" "}
+                      <span className="font-extrabold px-1.5 py-0.5 bg-emerald-100/80 text-emerald-800 rounded-md border border-emerald-200 whitespace-nowrap">
+                        {state.viewingDistance || ''}
+                      </span>{" "}
+                      avec vos critères actuels.
+                    </>
+                  ) : (
+                    <>
+                      No standard Pixel Pitch models are pre-configured for a viewing distance of{" "}
+                      <span className="font-extrabold px-1.5 py-0.5 bg-emerald-100/80 text-emerald-800 rounded-md border border-emerald-200 whitespace-nowrap">
+                        {state.viewingDistance || ''}
+                      </span>{" "}
+                      under your current criteria.
+                    </>
+                  )}
+                </p>
 
-          </div>
+                <div className="pt-4 mt-4 border-t border-emerald-200/60 space-y-2">
+                  <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">
+                    {locale === 'fr'
+                      ? "Besoin d'une solution personnalisée ?"
+                      : "Need a custom solution?"}
+                  </p>
+                  <p className="text-[10px] text-slate-600 leading-relaxed font-medium">
+                    {locale === 'fr'
+                      ? "Nos ingénieurs conçoivent des écrans LED sur mesure. Contactez notre équipe commerciale pour étudier votre projet."
+                      : "Our engineering team designs bespoke LED displays. Contact our sales team to discuss your custom project."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1145,7 +1224,7 @@ export function StepRentalDatesAndPhoto({ state, updateState, products = [], t, 
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="font-semibold text-slate-400 text-sm px-1 text-center w-8 shrink-0">
                   {t('wizard.rental.to')}
                 </div>
@@ -1313,27 +1392,61 @@ function DetailItem({ icon, iconBg = "bg-slate-100", label, value }: { icon: Rea
 
 export function StepFinal({ state, updateState, products, settings, t, locale, hideBackButton }: { state: ConfigState, updateState: any, products?: Product[], settings: Settings, t: any, locale: string, hideBackButton?: boolean }) {
   const area = state.width * state.height;
-  const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 2.5;
   const maxPerQuote = settings.estimationFlow?.sale?.maxProductsPerQuote ?? settings.maxProductsPerQuote ?? 5;
 
-  const filteredProducts = (products || []).filter(p => {
-    if (p.isHidden) return false;
-    if (!p.pitch && !p.distance) return true;
-    const productPitch = p.pitch ? parseFloat(String(p.pitch).replace('P', '')) : null;
-    if (productPitch !== null) {
-      const diff = Math.abs(productPitch - pitchValue);
-      if (diff > 1.5) return false;
-    }
-    return true;
-  });
+  // Map environment wizard values to product type values
+  const targetEnvType: 'indoor' | 'outdoor' | 'showcase' =
+    state.environment === 'interieur' ? 'indoor'
+      : state.environment === 'semi-exterieur' ? 'showcase'
+        : 'outdoor';
 
+  // Map projectType to availableFor value
+  const targetMode: 'sale' | 'rental' = state.projectType === 'location' ? 'rental' : 'sale';
+
+  // Helper: check if a product is compatible with the selected distance AND pitch
+  const isCompatible = (p: Product): boolean => {
+    if (p.isHidden) return false;
+    // Check environment and mode
+    if (!p.type?.includes(targetEnvType)) return false;
+    if (!p.availableFor?.includes(targetMode)) return false;
+
+    // Check distance + pitch compatibility
+    if (p.distancePitches && Object.keys(p.distancePitches).length > 0) {
+      const pitchesForDist = p.distancePitches[state.viewingDistance] || [];
+      return pitchesForDist.includes(state.pixelPitch);
+    }
+
+    // Legacy fallback: check distance and pitch fields
+    const productDistances = p.distance ? p.distance.split(',').map((s: string) => s.trim()) : [];
+    const productPitches = p.pitch ? p.pitch.split(',').map((s: string) => s.trim()) : [];
+    const distanceMatch = !state.viewingDistance || productDistances.length === 0 || productDistances.includes(state.viewingDistance);
+    const pitchMatch = !state.pixelPitch || productPitches.length === 0 || productPitches.includes(state.pixelPitch);
+    return distanceMatch && pitchMatch;
+  };
+
+  const filteredProducts = (products || []).filter(isCompatible);
   const hasMatchingProducts = filteredProducts.length > 0;
 
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    const aPitch = a.pitch ? parseFloat(String(a.pitch).replace('P', '')) || 999 : 999;
-    const bPitch = b.pitch ? parseFloat(String(b.pitch).replace('P', '')) || 999 : 999;
-    return Math.abs(aPitch - pitchValue) - Math.abs(bPitch - pitchValue);
-  });
+  // Helper: compute unit price for sorting
+  const getUnitPrice = (p: Product): number => {
+    if (state.projectType === 'vente') {
+      if (p.hasDimensions && p.tileWidth && p.tileHeight && p.pricePerTile && p.pricePerTile > 0) {
+        const tilesW = Math.ceil((state.width * 100) / p.tileWidth);
+        const tilesH = Math.ceil((state.height * 100) / p.tileHeight);
+        return tilesW * tilesH * p.pricePerTile;
+      }
+      return (p.salePricePerSqM || 0) * area;
+    } else {
+      if (p.hasDimensions && p.tileWidth && p.tileHeight && p.pricePerTile && p.pricePerTile > 0) {
+        return (p.rentalPricePerDay || 0) * area;
+      }
+      return (typeof p.rentalPricePerDay === 'number' && p.rentalPricePerDay > 0 ? p.rentalPricePerDay : 0) * area;
+    }
+  };
+
+  // Sort by price ascending (cheapest = recommended)
+  const sortedProducts = [...filteredProducts].sort((a, b) => getUnitPrice(a) - getUnitPrice(b));
+  const [recommendedProduct, ...otherProducts] = sortedProducts;
 
   const [showComparator, setShowComparator] = useState(false);
   const [compareProductIds, setCompareProductIds] = useState<string[]>([]);
@@ -1466,7 +1579,7 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
             }
 
             const totalPrice = unitPrice * quantity * duration;
-            
+
             const hasNoPricingData = !product.pricePerTile && !product.salePricePerSqM && !product.rentalPricePerDay;
             const showOnEstimate = settings.isPriceHidden || hasNoPricingData;
             const displayedUnitPrice = isRental ? unitPrice * duration : unitPrice;
@@ -1580,15 +1693,15 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                   <div className="pt-2">
                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('wizard.products.priceLabel')}</p>
                     <p className="text-lg font-black text-slate-900">
-                      <BlurredPrice 
-                        price={totalPrice > 0 ? `${totalPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} \u20ac` : t('wizard.products.onEstimate') || 'Sur estimation'} 
-                        isPriceHidden={!!settings.isPriceHidden} 
+                      <BlurredPrice
+                        price={totalPrice > 0 ? `${totalPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')} \u20ac` : t('wizard.products.onEstimate') || 'Sur estimation'}
+                        isPriceHidden={!!settings.isPriceHidden}
                       />
                     </p>
                     {quantity > 1 && (
                       <p className="text-[10px] font-bold text-slate-400 italic">
-                        {t('wizard.products.perUnit', { 
-                          price: (isRental ? unitPrice * duration : unitPrice).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US') 
+                        {t('wizard.products.perUnit', {
+                          price: (isRental ? unitPrice * duration : unitPrice).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')
                         })}
                       </p>
                     )}

@@ -55,6 +55,7 @@ export type Product = {
   manualUrl?: string;
   specs?: Record<string, string>;
   selectedChars?: { id: string | number; name?: string; value: string }[];
+  distancePitches?: Record<string, string[]>;
   isHidden?: boolean;
 };
 
@@ -177,6 +178,8 @@ export type Settings = {
   isWizardBotEnabled?: boolean;
   isGuidedConfigEnabled?: boolean;
   isManualConfigEnabled?: boolean;
+  zoomMaxDistance?: number;
+  zoomMinDistance?: number;
   hintBubble?: HintBubbleSettings;
   lightThemeId?: string;
   darkThemeId?: string;

@@ -106,7 +106,7 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
     <div className="relative" onMouseLeave={() => setIsOpen(false)}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`group relative p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-theme-sidebar-active-bg' : 'bg-white hover:bg-theme-sidebar-active-bg'} shadow-sm border border-transparent hover:border-gray-800 dark:hover:border-white/10`}
+        className={`group relative p-2.5 rounded-xl transition-all outline-none focus:outline-none focus-visible:outline-none ${isDark ? 'bg-white/5 hover:bg-theme-sidebar-active-bg' : 'bg-white hover:bg-theme-sidebar-active-bg'} shadow-sm border border-transparent`}
       >
         <Bell className={`w-5 h-5 transition-colors ${isDark ? 'text-gray-400 group-hover:text-rose-400' : 'text-gray-500 group-hover:text-rose-500'}`} />
         {unreadCount > 0 && (

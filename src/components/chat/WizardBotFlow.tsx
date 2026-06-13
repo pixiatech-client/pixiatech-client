@@ -1204,7 +1204,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
             <div
               ref={scrollContainerRef}
               onScroll={handleScroll}
-              className={cn("flex-1 overflow-y-auto p-4 md:p-5 space-y-4 custom-scrollbar relative min-h-0 bg-[#efeae2]", (isCalendarOpen || activeTimePicker) && "overflow-hidden")}
+               className={cn("flex-1 overflow-y-auto pt-4 md:pt-5 px-4 md:px-5 pb-2 space-y-4 custom-scrollbar relative min-h-0 bg-[#efeae2]", (isCalendarOpen || activeTimePicker) && "overflow-hidden")}
             >
               {step === STEP.SUCCESS ? (
                 <SuccessView quoteId={quoteId} onNewQuote={() => window.location.reload()} initialEmail={formEmail} />

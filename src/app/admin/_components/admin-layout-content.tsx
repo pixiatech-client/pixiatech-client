@@ -31,7 +31,8 @@ import {
   Calculator,
   LogIn,
   ShieldCheck,
-  Zap
+  Zap,
+  Mail
 } from 'lucide-react';
 import Link from 'next/link';
 import { logout, getThemes, updateSettings, getSettings, updateUser, type UserRole, getUsers, saveSidebarConfig } from '@/app/admin/actions';
@@ -393,7 +394,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => router.push('/')}
+                onClick={() => window.open('/', '_blank')}
                 title={t('admin.siteAccess')}
                 className={cn(
                   "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
@@ -547,8 +548,10 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   <ChevronDown className="w-4 h-4 text-gray-300 -rotate-90" />
                 </Link>
 
-                <Link
+                <a
                   href="/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => setIsProfileOpen(false)}
                   className="flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition-all group/item border-b border-gray-100"
                 >
@@ -559,7 +562,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">{t('admin.siteAccess')}</span>
                   </div>
                   <ChevronDown className="w-4 h-4 text-gray-300 -rotate-90" />
-                </Link>
+                </a>
 
                 <button
                   onClick={handleLogout}
@@ -611,16 +614,15 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               <div className="flex-1 overflow-y-auto p-3 space-y-1.5 custom-scrollbar">
                 {[
                   { id: 'general', label: t('admin.settingsMenu.general'), icon: Settings, color: 'text-blue-600', bg: 'bg-blue-100/80', href: '/admin/settings/general' },
-                  { id: 'images', label: t('admin.settingsMenu.images'), icon: ImageIcon, color: 'text-purple-600', bg: 'bg-purple-100/80', href: '/admin/settings/images' },
                   { id: 'content', label: t('admin.settingsMenu.content'), icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-100/80', href: '/admin/settings/content' },
                   { id: 'appearance', label: t('admin.settingsMenu.appearance'), icon: Palette, color: 'text-pink-600', bg: 'bg-pink-100/80', href: '/admin/settings/themes' },
-                  { id: 'wizard', label: t('admin.settingsMenu.wizard'), icon: Wand2, color: 'text-indigo-600', bg: 'bg-indigo-100/80', href: '/admin/settings/wizard' },
+                  { id: 'wizard', label: t('admin.settingsMenu.wizard', { defaultValue: 'Assistant & Images' }), icon: Wand2, color: 'text-indigo-600', bg: 'bg-indigo-100/80', href: '/admin/settings/wizard' },
                   { id: 'livraison', label: t('admin.settingsMenu.delivery'), icon: Truck, color: 'text-cyan-600', bg: 'bg-cyan-100/80', href: '/admin/settings/livraison' },
                   { id: 'labor', label: t('admin.settingsMenu.labor'), icon: HardHat, color: 'text-orange-600', bg: 'bg-orange-100/80', href: '/admin/settings/main-doeuvre' },
                   { id: 'pdf', label: t('admin.settingsMenu.pdf'), icon: FileType, color: 'text-rose-600', bg: 'bg-rose-100/80', href: '/admin/settings/pdf' },
                   { id: 'messaging', label: t('admin.settingsMenu.messaging'), icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-100/80', href: '/admin/settings/messaging' },
                   { id: 'emergency', label: t('admin.settingsMenu.emergency', { defaultValue: 'Urgence' }), icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100/80', href: '/admin/settings/emergency' },
-                  { id: 'software', label: t('admin.settingsMenu.software', { defaultValue: 'Logiciel' }), icon: Settings, color: 'text-slate-600', bg: 'bg-slate-100/80', href: '/admin/settings/software' },
+                  { id: 'software', label: t('admin.settingsMenu.software', { defaultValue: 'Serveur SMTP' }), icon: Mail, color: 'text-slate-600', bg: 'bg-slate-100/80', href: '/admin/settings/software' },
                   { id: 'email-verification', label: t('admin.emailVerification', { defaultValue: 'Vérification Email' }), icon: ShieldCheck, color: 'text-indigo-600', bg: 'bg-indigo-100/80', href: '/admin/settings/email-verification' },
                   { id: 'flow', label: t('admin.settingsMenu.flow', { defaultValue: 'Parcours client' }), icon: Zap, color: 'text-orange-600', bg: 'bg-orange-100/80', href: '/admin/settings/flow' },
                  ].map((item) => (
@@ -705,7 +707,7 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
 
 // Determine initial settings section from pathname
    useEffect(() => {
-     if (pathname.includes('/settings/images')) setActiveSettingsSection('images');
+     if (pathname.includes('/settings/images')) setActiveSettingsSection('wizard');
      else if (pathname.includes('/settings/content')) setActiveSettingsSection('content');
      else if (pathname.includes('/settings/themes') || pathname.includes('/settings/appearance')) setActiveSettingsSection('appearance');
      else if (pathname.includes('/settings/wizard')) setActiveSettingsSection('wizard');

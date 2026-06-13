@@ -22,6 +22,7 @@ import { DocumentData, Timestamp, QueryDocumentSnapshot } from 'firebase-admin/f
 import fr from '@/lib/locales/fr.json';
 import en from '@/lib/locales/en.json';
 import { getQuoteStats, updateStatsOnStatusChange, updateStatsOnDelete, resyncStats } from '@/lib/statsService';
+import { getSmtpSettings as getSmtpSettingsDb, updateSmtpSettings as updateSmtpSettingsDb, getSmtpTransport } from '@/lib/smtpService';
 
 export type { UserRole };
 
@@ -1532,29 +1533,18 @@ async function findQuoteRef(adminDb: admin.Firestore, quoteId: string): Promise<
 }
 
 async function sendSupplierEmail(supplierEmail: string, quoteNumber: string, clientName: string, message?: string) {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn('SMTP credentials not configured, skipping supplier email.');
-    return;
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
-  });
-
-  const emailHtml = buildSupplierEmailHtml(supplierEmail, quoteNumber, clientName, message);
-
   try {
+    const { transporter, fromHeader, host, user, pass } = await getSmtpTransport();
+
+    if (!host || !user || !pass) {
+      console.warn('SMTP credentials not configured, skipping supplier email.');
+      return;
+    }
+
+    const emailHtml = buildSupplierEmailHtml(supplierEmail, quoteNumber, clientName, message);
+
     await transporter.sendMail({
-      from: `"PixiaTech" <${process.env.SMTP_USER}>`,
+      from: fromHeader,
       to: supplierEmail,
       subject: `[PIXIATECH] Nouvelle estimation N°${quoteNumber}`,
       html: emailHtml,
@@ -2780,6 +2770,19 @@ export async function updateSettings(data: unknown) {
     return { success: false, error: { formErrors: ['Failed to save settings.'] } };
   }
 }
+
+export async function getSmtpSettings() {
+  return await getSmtpSettingsDb();
+}
+
+export async function updateSmtpSettings(data: any) {
+  const res = await updateSmtpSettingsDb(data);
+  if (res.success) {
+    revalidatePath('/admin/settings', 'layout');
+  }
+  return res;
+}
+
 
 // --- Dedicated Sidebar Config Action (for partial updates: order + logo) ---
 

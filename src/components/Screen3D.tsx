@@ -19,6 +19,8 @@ interface Screen3DProps {
   setIsDarkMode: (val: boolean) => void;
   videoUrl?: string;
   t: any;
+  maxDistance?: number;
+  minDistance?: number;
 }
 
 function Dalle({ position, args, texture, uvOffset, uvScale, isPlaying }: { position: [number, number, number], args: [number, number], texture: THREE.Texture | null, uvOffset: [number, number], uvScale: [number, number], isPlaying: boolean }) {
@@ -699,8 +701,8 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
           enabled={controlsEnabled}
           enablePan={true} 
           enableZoom={true} 
-          minDistance={1} 
-          maxDistance={50} 
+          minDistance={props.minDistance ?? 1} 
+          maxDistance={props.maxDistance ?? 500} 
           maxPolarAngle={Math.PI / 1.5}
         />
         

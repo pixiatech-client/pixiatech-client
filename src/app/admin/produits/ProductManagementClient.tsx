@@ -80,6 +80,7 @@ const MobileProductCard = React.memo(({
   onOpenActions,
   isActive
 }: any) => {
+  const { t } = useI18n();
   const imageUrl = getSafeImageUrl(product);
 
   // Extract key chars for badges
@@ -113,14 +114,14 @@ const MobileProductCard = React.memo(({
               <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
                 <AlertTriangle className="w-8 h-8 text-white" />
               </div>
-              <h4 className="text-white font-black text-lg mb-1 leading-tight uppercase">Delete?</h4>
+              <h4 className="text-white font-black text-lg mb-1 leading-tight uppercase">{t('admin.productManagement.deleteConfirmTitle')}</h4>
 
               <div className="flex items-center gap-4 w-full mt-8">
                 <button
                   onClick={(e) => { e.stopPropagation(); setDeletingId(null); }}
                   className="flex-1 py-4 text-[10px] font-black text-white bg-white/10 rounded-2xl uppercase tracking-widest active:bg-white/20"
                 >
-                  No
+                  {t('admin.productManagement.no')}
                 </button>
                 <button
                   onClick={(e) => {
@@ -131,7 +132,7 @@ const MobileProductCard = React.memo(({
                   }}
                   className="flex-1 py-4 text-[10px] font-black text-red-600 bg-white rounded-2xl shadow-xl uppercase tracking-widest active:scale-95 transition-transform"
                 >
-                  Yes
+                  {t('admin.productManagement.yes')}
                 </button>
               </div>
             </motion.div>
@@ -161,11 +162,11 @@ const MobileProductCard = React.memo(({
               {/* Badges Overlay */}
               <div className="absolute bottom-6 left-6 right-6 flex flex-wrap gap-2">
                 <div className="bg-[#c6ff00] px-3 py-1.5 rounded-lg text-[9px] font-black text-slate-900 shadow-lg border border-white/20">
-                  <p className="opacity-50 uppercase leading-none mb-0.5">Pitch</p>
+                  <p className="opacity-50 uppercase leading-none mb-0.5">{t('admin.productManagement.pitch')}</p>
                   <p className="leading-none">{pitchChar?.value || product.pitch || '—'}</p>
                 </div>
                 <div className="bg-[#c6ff00] px-3 py-1.5 rounded-xl text-[9px] font-black text-slate-900 shadow-lg border border-white/20">
-                  <p className="opacity-50 uppercase leading-none mb-0.5">Distance</p>
+                  <p className="opacity-50 uppercase leading-none mb-0.5">{t('admin.productManagement.distance')}</p>
                   <p className="leading-none">{distanceChar?.value || product.distance || '—'}</p>
                 </div>
               </div>
@@ -230,14 +231,14 @@ const MobileProductCard = React.memo(({
 
           <div className="flex flex-wrap justify-center gap-1.5">
             {/* Environment Badges */}
-            {Array.from(new Set((Array.isArray(product.type) ? product.type : [product.type]).filter(Boolean))).map((t: any, idx: number) => {
-              const val = String(t).toLowerCase();
-              let label = t;
+            {Array.from(new Set((Array.isArray(product.type) ? product.type : [product.type]).filter(Boolean))).map((typeVal: any, idx: number) => {
+              const val = String(typeVal).toLowerCase();
+              let label = typeVal;
               let colors = "bg-slate-50 text-slate-500 border-slate-100";
 
-              if (val.includes('interieur') || val.includes('indoor')) { label = 'Indoor'; colors = "bg-purple-50 text-purple-700 border-purple-100"; }
-              else if (val.includes('exterieur') || val.includes('outdoor')) { label = 'Outdoor'; colors = "bg-orange-50 text-orange-700 border-orange-100"; }
-              else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = 'Showcase'; colors = "bg-cyan-50 text-cyan-700 border-cyan-100"; }
+              if (val.includes('interieur') || val.includes('indoor')) { label = t('admin.productManagement.indoor'); colors = "bg-purple-50 text-purple-700 border-purple-100"; }
+              else if (val.includes('exterieur') || val.includes('outdoor')) { label = t('admin.productManagement.outdoor'); colors = "bg-orange-50 text-orange-700 border-orange-100"; }
+              else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = t('admin.productManagement.semiOutdoor'); colors = "bg-cyan-50 text-cyan-700 border-cyan-100"; }
 
               return (
                 <div key={`type-${idx}`} className={cn("px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest", colors)}>
@@ -265,6 +266,7 @@ const MobileProductCard = React.memo(({
 
 
 const ProductActionsDrawer = ({ isOpen, onClose, product, onEdit, onDuplicate, onDelete, children, title }: any) => {
+  const { t } = useI18n();
   return (
     <AnimatePresence>
       {isOpen && (
@@ -306,15 +308,15 @@ const ProductActionsDrawer = ({ isOpen, onClose, product, onEdit, onDuplicate, o
                 <div className="grid grid-cols-1 gap-3">
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => { onEdit(product); onClose(); }} className="w-full flex items-center gap-4 p-4 bg-slate-50 rounded-xl text-slate-900 active:bg-black active:text-white transition-all">
                     <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center"><Edit2 className="w-4 h-4" /></div>
-                    <span className="font-black text-xs uppercase tracking-widest">Edit</span>
+                    <span className="font-black text-xs uppercase tracking-widest">{t('admin.productManagement.edit')}</span>
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => { onDuplicate(product); onClose(); }} className="w-full flex items-center gap-4 p-4 bg-slate-50 rounded-xl text-slate-900 active:bg-black active:text-white transition-all">
                     <div className="w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center"><Copy className="w-4 h-4" /></div>
-                    <span className="font-black text-xs uppercase tracking-widest">Duplicate</span>
+                    <span className="font-black text-xs uppercase tracking-widest">{t('admin.productManagement.duplicate')}</span>
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => { onDelete(product.id); onClose(); }} className="w-full flex items-center gap-4 p-4 bg-red-50 rounded-xl text-red-600 active:bg-red-600 active:text-white transition-all">
                     <div className="w-8 h-8 bg-red-100 text-red-600 rounded-lg flex items-center justify-center"><Trash2 className="w-4 h-4" /></div>
-                    <span className="font-black text-xs uppercase tracking-widest">Delete</span>
+                    <span className="font-black text-xs uppercase tracking-widest">{t('admin.productManagement.delete')}</span>
                   </motion.button>
                 </div>
               )}
@@ -336,6 +338,7 @@ const ProductListItem = ({
   setDeletingId,
   deletingId
 }: any) => {
+  const { t } = useI18n();
   const dragControls = useDragControls();
 
   return (
@@ -406,21 +409,21 @@ const ProductListItem = ({
           <h3 className="font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-slate-900 transition-colors truncate flex items-center gap-1.5">
             {product.name}
             {product.isHidden && (
-              <span title="Hidden product" className="text-orange-500 shrink-0">
+              <span title={t('admin.productManagement.hiddenProduct')} className="text-orange-500 shrink-0">
                 <EyeOff className="w-3.5 h-3.5 animate-pulse" />
               </span>
             )}
           </h3>
           <div className="flex flex-wrap items-center gap-2 mt-1.5">
             {/* Environment Badges */}
-            {Array.from(new Set((Array.isArray(product.type) ? product.type : [product.type]).filter(Boolean))).map((t: any, idx: number) => {
-              const val = String(t).toLowerCase();
-              let label = t;
+            {Array.from(new Set((Array.isArray(product.type) ? product.type : [product.type]).filter(Boolean))).map((typeVal: any, idx: number) => {
+              const val = String(typeVal).toLowerCase();
+              let label = typeVal;
               let colors = "bg-slate-100 text-slate-600";
 
-              if (val.includes('interieur') || val.includes('indoor')) { label = 'Indoor'; colors = "bg-purple-100 text-purple-700 border-purple-200"; }
-              else if (val.includes('exterieur') || val.includes('outdoor')) { label = 'Outdoor'; colors = "bg-orange-100 text-orange-700 border-orange-200"; }
-              else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = 'Showcase'; colors = "bg-cyan-100 text-cyan-700 border-cyan-200"; }
+              if (val.includes('interieur') || val.includes('indoor')) { label = t('admin.productManagement.indoor'); colors = "bg-purple-100 text-purple-700 border-purple-200"; }
+              else if (val.includes('exterieur') || val.includes('outdoor')) { label = t('admin.productManagement.outdoor'); colors = "bg-orange-100 text-orange-700 border-orange-200"; }
+              else if (val.includes('vitrine') || val.includes('showcase') || val.includes('semi')) { label = t('admin.productManagement.semiOutdoor'); colors = "bg-cyan-100 text-cyan-700 border-cyan-200"; }
 
               return (
                 <span key={`type-${idx}`} className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors", colors)}>
@@ -435,8 +438,8 @@ const ProductListItem = ({
               let label = m;
               let colors = "bg-slate-100 text-slate-600";
 
-              if (val.includes('vente') || val.includes('sale')) { label = 'Purchase'; colors = "bg-emerald-100 text-emerald-700 border-emerald-200"; }
-              else if (val.includes('location') || val.includes('rental')) { label = 'Rental'; colors = "bg-violet-100 text-violet-700 border-violet-200"; }
+              if (val.includes('vente') || val.includes('sale')) { label = t('admin.productManagement.sale'); colors = "bg-emerald-100 text-emerald-700 border-emerald-200"; }
+              else if (val.includes('location') || val.includes('rental')) { label = t('admin.productManagement.rental'); colors = "bg-violet-100 text-violet-700 border-violet-200"; }
 
               return (
                 <span key={`mode-${idx}`} className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors", colors)}>
@@ -452,24 +455,24 @@ const ProductListItem = ({
                 product.screenType === '360' ? "bg-purple-100 text-purple-700 border-purple-200" :
                 product.screenType === 'curved' ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-slate-100 text-slate-500 border-slate-200"
               )}>
-                {product.screenType === '360' ? '360°' : product.screenType === 'curved' ? 'Curved' : 'Flat'}
+                {product.screenType === '360' ? '360°' : product.screenType === 'curved' ? t('admin.productManagement.curved') : t('admin.productManagement.flat')}
               </span>
             )}
           </div>
         </div>
 
         <div className="hidden md:flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">Pitch</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">{t('admin.productManagement.pitch')}</span>
           <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-slate-900">{product.pitch || '—'}</span>
         </div>
 
         <div className="hidden md:flex flex-col gap-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">Distance</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">{t('admin.productManagement.distance')}</span>
           <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-slate-900">{product.distance || '—'}</span>
         </div>
 
         <div className="hidden md:flex flex-col gap-1 items-center">
-          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">Sale /m²</span>
+          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">{t('admin.productManagement.salePerM2')}</span>
           <span className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-slate-900 transition-colors duration-300">
             {product.oldPrice && (
               <span className="text-xs font-semibold text-orange-500 line-through mr-1.5">{product.oldPrice} €</span>
@@ -483,21 +486,21 @@ const ProductListItem = ({
         <button
           onClick={(e) => { e.stopPropagation(); onEditProduct(product); }}
           className="p-2 text-slate-400 hover:text-[#a3e635] transition-colors"
-          title="Edit"
+          title={t('admin.productManagement.edit')}
         >
           <Edit2 className="w-4 h-4" />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); onDuplicateProduct(product); }}
           className="p-2 text-blue-500 hover:text-blue-400 transition-colors"
-          title="Duplicate"
+          title={t('admin.productManagement.duplicate')}
         >
           <Copy className="w-4 h-4" />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); setDeletingId(product.id); }}
           className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-          title="Delete"
+          title={t('admin.productManagement.delete')}
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -517,8 +520,8 @@ const ProductListItem = ({
                 <AlertTriangle className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h4 className="text-white font-bold text-sm">Delete this product?</h4>
-                <p className="text-red-100 text-[10px] uppercase font-bold tracking-wider">This action is irreversible</p>
+                <h4 className="text-white font-bold text-sm">{t('admin.productManagement.deleteConfirmHeading')}</h4>
+                <p className="text-red-100 text-[10px] uppercase font-bold tracking-wider">{t('admin.productManagement.deleteConfirmSubtext')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -526,7 +529,7 @@ const ProductListItem = ({
                 onClick={() => setDeletingId(null)}
                 className="px-4 py-2 text-xs font-bold text-white hover:bg-white/10 rounded-xl transition-colors"
               >
-                Cancel
+                {t('admin.productManagement.cancel')}
               </button>
               <button
                 onClick={() => {
@@ -535,7 +538,7 @@ const ProductListItem = ({
                 }}
                 className="px-4 py-2 text-xs font-bold bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all shadow-lg"
               >
-                Delete
+                {t('admin.productManagement.delete')}
               </button>
             </div>
           </motion.div>
@@ -631,6 +634,7 @@ const AISettingsSheet = ({
   const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [showApiKey, setShowApiKey] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     if (isOpen) {
@@ -723,8 +727,8 @@ const AISettingsSheet = ({
                   <Brain className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">AI Configuration</h2>
-                  <p className="text-xs text-slate-500">Analysis & extraction settings</p>
+                  <h2 className="text-lg font-bold text-slate-900">{t('admin.productManagement.aiConfigTitle')}</h2>
+                  <p className="text-xs text-slate-500">{t('admin.productManagement.aiConfigSubtitle')}</p>
                 </div>
               </div>
               <button
@@ -743,8 +747,8 @@ const AISettingsSheet = ({
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-slate-900">Enable AI</div>
-                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Automatic Analysis</div>
+                    <div className="text-sm font-bold text-slate-900">{t('admin.productManagement.enableAi')}</div>
+                    <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">{t('admin.productManagement.autoAnalysis')}</div>
                   </div>
                 </div>
                 <button
@@ -765,7 +769,7 @@ const AISettingsSheet = ({
                 {/* Fournisseur */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                    <Globe className="w-3 h-3" /> Provider
+                    <Globe className="w-3 h-3" /> {t('admin.productManagement.provider')}
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {(['gemini', 'openai', 'anthropic'] as AIProvider[]).map(p => (
@@ -788,7 +792,7 @@ const AISettingsSheet = ({
                 {/* API Key */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                    <ShieldCheck className="w-3 h-3" /> API Key
+                    <ShieldCheck className="w-3 h-3" /> {t('admin.productManagement.apiKey')}
                   </label>
                   <div className="relative">
                     <input
@@ -797,7 +801,7 @@ const AISettingsSheet = ({
                       onChange={e => setLocalSettings(prev => ({ ...prev, apiKey: e.target.value }))}
                       onBlur={() => fetchModels(localSettings.provider, localSettings.apiKey)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-12 text-sm font-medium focus:outline-none focus:border-slate-900 transition-colors"
-                      placeholder={`Enter your ${localSettings.provider} key`}
+                      placeholder={t('admin.productManagement.apiKeyPlaceholder', { provider: localSettings.provider })}
                     />
                     <button
                       type="button"
@@ -812,14 +816,14 @@ const AISettingsSheet = ({
                 {/* Model */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                    <ZapIcon className="w-3 h-3" /> Model
+                    <ZapIcon className="w-3 h-3" /> {t('admin.productManagement.modelLabel')}
                   </label>
                   <div className="relative">
                     <CustomSelect
                       options={models.map(m => ({ value: m, label: m }))}
                       value={localSettings.model}
                       onChange={val => setLocalSettings(prev => ({ ...prev, model: val }))}
-                      placeholder="Select a model"
+                      placeholder={t('admin.productManagement.selectModel')}
                       className="w-full"
                     />
                     {isLoadingModels && (
@@ -832,11 +836,11 @@ const AISettingsSheet = ({
 
                 {/* Advanced Settings */}
                 <div className="pt-4 border-t border-slate-100 space-y-6">
-                  <h3 className="text-sm font-bold text-slate-900">Advanced Settings</h3>
+                  <h3 className="text-sm font-bold text-slate-900">{t('admin.productManagement.advancedSettings')}</h3>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Max Tokens</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{t('admin.productManagement.maxTokens')}</label>
                       <input
                         type="number"
                         value={localSettings.maxTokens}
@@ -845,7 +849,7 @@ const AISettingsSheet = ({
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">PDF Size (MB)</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{t('admin.productManagement.pdfSize')}</label>
                       <input
                         type="number"
                         value={localSettings.pdfMaxSize}
@@ -861,8 +865,8 @@ const AISettingsSheet = ({
                         <PlusCircle className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="text-xs font-bold text-slate-900">Auto-creation</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Characteristics</div>
+                        <div className="text-xs font-bold text-slate-900">{t('admin.productManagement.autoCreation')}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">{t('admin.productManagement.characteristicsToggle')}</div>
                       </div>
                     </div>
                     <button
@@ -902,13 +906,13 @@ const AISettingsSheet = ({
                 ) : (
                   <Activity className="w-4 h-4" />
                 )}
-                {testStatus === 'testing' ? 'Testing...' : testStatus === 'success' ? 'Connection OK' : testStatus === 'error' ? 'Error' : 'Test AI'}
+                {testStatus === 'testing' ? t('admin.productManagement.testing') : testStatus === 'success' ? t('admin.productManagement.connectionOk') : testStatus === 'error' ? t('admin.productManagement.errorLabel') : t('admin.productManagement.testAi')}
               </button>
               <button
                 onClick={() => { onSave(localSettings); onClose(); }}
                 className="flex-[2] bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
               >
-                <Save className="w-4 h-4" /> Save
+                <Save className="w-4 h-4" /> {t('admin.productManagement.save')}
               </button>
             </div>
           </motion.div>
@@ -986,11 +990,24 @@ const CaracteristiquesPage = ({
   const [isSaved, setIsSaved] = useState(false);
   const [charPage, setCharPage] = useState(1);
   const [prevCharPage, setPrevCharPage] = useState(1);
+  const [charSearch, setCharSearch] = useState('');
   const charItemsPerPage = 6;
 
-  const totalCharPages = Math.ceil(characteristics.length / charItemsPerPage);
-  const paginatedChars = characteristics.slice((charPage - 1) * charItemsPerPage, charPage * charItemsPerPage);
+  const filteredCharacteristics = React.useMemo(() => {
+    if (!charSearch.trim()) return characteristics;
+    return characteristics.filter(c => 
+      c.name.toLowerCase().includes(charSearch.toLowerCase().trim()) ||
+      c.options.some((opt: string) => opt.toLowerCase().includes(charSearch.toLowerCase().trim()))
+    );
+  }, [characteristics, charSearch]);
+
+  const totalCharPages = Math.ceil(filteredCharacteristics.length / charItemsPerPage);
+  const paginatedChars = filteredCharacteristics.slice((charPage - 1) * charItemsPerPage, charPage * charItemsPerPage);
   const charDirection = charPage >= prevCharPage ? 1 : -1;
+
+  useEffect(() => {
+    setCharPage(1);
+  }, [charSearch]);
 
   const colors = [
     { name: 'Blue', class: 'text-blue-400', bg: 'bg-blue-400' },
@@ -1078,8 +1095,8 @@ const CaracteristiquesPage = ({
     if (!name.trim() || variants.every(v => !v.value.trim())) return;
     if (!user) {
       toast({
-        title: "Login required",
-        description: "You must be logged in to save a characteristic.",
+        title: t('admin.productManagement.loginRequiredToast'),
+        description: t('admin.productManagement.loginRequiredDesc'),
         variant: "destructive"
       });
       return;
@@ -1290,7 +1307,7 @@ const CaracteristiquesPage = ({
                 className="bg-white rounded-3xl p-6 w-full max-w-md relative z-10 shadow-2xl border border-slate-200"
               >
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-slate-900">Choose an icon</h3>
+                  <h3 className="text-xl font-bold text-slate-900">{t('admin.productManagement.chooseIcon')}</h3>
                   <button onClick={() => setShowIconPicker(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                     <X className="w-5 h-5 text-slate-500" />
                   </button>
@@ -1320,7 +1337,7 @@ const CaracteristiquesPage = ({
                   })}
                   {/* Upload Custom Icon Option */}
                   <div className="col-span-4 mt-4 pt-4 border-t border-slate-100">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Or upload a custom icon</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">{t('admin.productManagement.uploadCustomIcon')}</label>
                     <input
                       type="file"
                       id="custom-icon-upload"
@@ -1332,7 +1349,7 @@ const CaracteristiquesPage = ({
                       htmlFor="custom-icon-upload"
                       className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all text-sm font-bold text-slate-600 group"
                     >
-                      <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Upload an icon
+                      <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> {t('admin.productManagement.uploadIcon')}
                     </label>
                   </div>
                 </div>
@@ -1346,7 +1363,7 @@ const CaracteristiquesPage = ({
           <div className="lg:col-span-5 flex flex-col space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Tag className="w-4 h-4 text-slate-500" /> Available Characteristics ({characteristics.length})
+                <Tag className="w-4 h-4 text-slate-500" /> {t('admin.productManagement.availableCharacteristics')} ({filteredCharacteristics.length})
               </h3>
               <div className="flex items-center gap-2">
                 <button
@@ -1414,6 +1431,27 @@ const CaracteristiquesPage = ({
                 </button>
               </div>
             </div>
+
+            {/* Search Input Bar */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder={t('admin.productManagement.searchCharacteristic')}
+                value={charSearch}
+                onChange={(e) => setCharSearch(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 text-sm border-2 border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white transition-all text-slate-800 placeholder:text-slate-400 font-bold"
+              />
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              {charSearch && (
+                <button
+                  onClick={() => setCharSearch('')}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 active:scale-95 transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
             <div className="relative overflow-hidden min-h-[400px]">
               <AnimatePresence mode="popLayout" initial={false} custom={charDirection}>
                 <motion.div
@@ -1466,13 +1504,13 @@ const CaracteristiquesPage = ({
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDelete(char.id); }}
                               className="p-2 text-slate-400 group-hover:text-white hover:!text-red-500 hover:bg-white/10 rounded-lg transition-colors"
-                              title="Delete"
+                              title={t('admin.productManagement.delete')}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                           {(char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && (
-                            <div className="p-2 text-slate-300 group-hover:text-white/20 cursor-not-allowed" title="System characteristic (Locked)">
+                            <div className="p-2 text-slate-300 group-hover:text-white/20 cursor-not-allowed" title={t('admin.productManagement.systemCharLocked')}>
                               <Trash2 className="w-4 h-4" />
                             </div>
                           )}
@@ -1499,22 +1537,22 @@ const CaracteristiquesPage = ({
                     <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
                       <Check className="w-8 h-8" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-2">Characteristic saved!</h3>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">{t('admin.productManagement.characteristicSaved')}</h3>
                     <p className="text-slate-500 text-sm mb-8 max-w-sm">
-                      The characteristic "{name}" has been {editingId ? 'modified' : 'added'} successfully.
+                      {t('admin.productManagement.characteristicSavedDesc', { name })}
                     </p>
                     <div className="flex items-center gap-4">
                       <button
                         onClick={handleReset}
                         className="px-6 h-10 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all shadow-sm flex items-center justify-center gap-2"
                       >
-                        <Plus className="w-4 h-4" /> Create new
+                        <Plus className="w-4 h-4" /> {t('admin.productManagement.createNew')}
                       </button>
                       <button
                         onClick={() => setIsSaved(false)}
                         className="px-6 h-10 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2 group"
                       >
-                        <Edit2 className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Continue editing
+                        <Edit2 className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> {t('admin.productManagement.continueEditing')}
                       </button>
                     </div>
                   </motion.div>
@@ -1523,14 +1561,14 @@ const CaracteristiquesPage = ({
 
               <h3 className="text-sm font-bold text-slate-900 mb-6 flex items-center gap-2">
                 <Settings2 className="w-4 h-4 text-slate-500" />
-                {editingId ? 'Edit characteristic' : 'Create a characteristic'}
+                {editingId ? t('admin.productManagement.editCharacteristic') : t('admin.productManagement.createCharacteristic')}
               </h3>
 
               <div className="space-y-6">
                 {/* Icon and Name */}
                 <div className="flex flex-col sm:flex-row gap-6">
                   <div className="shrink-0">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Icon</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">{t('admin.productManagement.icon')}</label>
                     <button
                       onClick={() => setShowIconPicker(true)}
                       className={cn(
@@ -1546,13 +1584,13 @@ const CaracteristiquesPage = ({
                     </button>
                   </div>
                   <div className="flex-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Characteristic name</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">{t('admin.productManagement.characteristicName')}</label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       disabled={editingId && ['Pixel pitch', 'Distance de visionnage'].includes(characteristics.find(c => c.id === editingId)?.name)}
-                      placeholder="E.g.: Viewing distance, Pixel pitch..."
+                      placeholder={t('admin.productManagement.charNamePlaceholder')}
                       className={cn(
                         "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all",
                         editingId && ['Pixel pitch', 'Distance de visionnage'].includes(characteristics.find(c => c.id === editingId)?.name) && "opacity-60 cursor-not-allowed"
@@ -1569,8 +1607,8 @@ const CaracteristiquesPage = ({
                         {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-slate-900">Lock</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Prevent deletion</div>
+                        <div className="text-sm font-bold text-slate-900">{t('admin.productManagement.lockToggle')}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">{t('admin.productManagement.preventDeletion')}</div>
                       </div>
                     </div>
                     <button
@@ -1593,8 +1631,8 @@ const CaracteristiquesPage = ({
                         <Pin className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-slate-900">Pin</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Add by default</div>
+                        <div className="text-sm font-bold text-slate-900">{t('admin.productManagement.pinToggle')}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">{t('admin.productManagement.addByDefault')}</div>
                       </div>
                     </div>
                     <button
@@ -1614,7 +1652,7 @@ const CaracteristiquesPage = ({
 
                 {/* Palette de couleurs */}
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">Icon color</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">{t('admin.productManagement.iconColor')}</label>
                   <div className="flex flex-wrap gap-3">
                     {colors.map((color) => (
                       <button
@@ -1634,7 +1672,7 @@ const CaracteristiquesPage = ({
 
                 {/* Variantes */}
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">Characteristic variants</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">{t('admin.productManagement.charVariants')}</label>
 
                   <div className="space-y-3">
                     {variants.map((variant) => (
@@ -1644,7 +1682,7 @@ const CaracteristiquesPage = ({
                             type="text"
                             value={variant.value}
                             onChange={(e) => updateVariant(variant.id, 'value', e.target.value)}
-                            placeholder="E.g.: 2 meters, 4 meters..."
+                            placeholder={t('admin.productManagement.variantPlaceholder')}
                             className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
                           />
                         </div>
@@ -1664,7 +1702,7 @@ const CaracteristiquesPage = ({
                               "flex items-center justify-center w-10 h-10 rounded-lg border border-dashed cursor-pointer transition-colors overflow-hidden",
                               variant.image ? "border-slate-300 bg-slate-100" : "border-slate-300 hover:border-slate-400 hover:bg-slate-100 text-slate-400"
                             )}
-                            title="Add an image/icon"
+                            title={t('admin.productManagement.addImageIcon')}
                           >
                             {variant.image ? (
                               <img src={variant.image.url} alt="Variant" className="w-full h-full object-cover" />
@@ -1700,7 +1738,7 @@ const CaracteristiquesPage = ({
                     onClick={addVariant}
                     className="mt-4 w-full h-10 bg-white border border-slate-200 border-dashed rounded-xl text-slate-600 font-black text-[10px] uppercase tracking-widest hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
                   >
-                    <Plus className="w-4 h-4" /> Add a variant
+                    <Plus className="w-4 h-4" /> {t('admin.productManagement.addVariant')}
                   </button>
                 </div>
               </div>
@@ -1711,7 +1749,7 @@ const CaracteristiquesPage = ({
                   onClick={handleReset}
                   className="px-6 h-10 bg-white border border-transparent text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:text-slate-900 hover:border-slate-200 transition-all flex items-center gap-2"
                 >
-                  <PlusCircle className="w-4 h-4" /> New
+                  <PlusCircle className="w-4 h-4" /> {t('admin.productManagement.newLabel')}
                 </button>
                 <div className="flex-1" />
                 <button
@@ -1724,7 +1762,7 @@ const CaracteristiquesPage = ({
                   ) : (
                     <Save className="w-4 h-4 group-hover:text-[#a3e635] group-hover:drop-shadow-[0_0_8px_rgba(163,230,53,0.8)] transition-all" />
                   )}
-                  <span>{isSaving ? 'Saving...' : (editingId ? 'Update' : 'Save')}</span>
+                  <span>{isSaving ? t('admin.productManagement.saving') : (editingId ? t('admin.productManagement.update') : t('admin.productManagement.save'))}</span>
                 </button>
               </div>
 
@@ -1744,7 +1782,7 @@ const CaracteristiquesPage = ({
                       className="flex-1 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-[18px] flex items-center px-6 transition-all group shadow-lg overflow-hidden relative disabled:opacity-50"
                     >
                       <span className="relative z-10 font-black uppercase tracking-[0.3em] text-[10px] ml-2">
-                        {editingId ? 'Save' : 'Add'}
+                        {editingId ? t('admin.productManagement.save') : t('admin.productManagement.add')}
                       </span>
                       <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center">
                         {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-current" />}
@@ -1760,6 +1798,245 @@ const CaracteristiquesPage = ({
     </div>
   );
 };
+
+interface DistancePitchSelectorProps {
+  availableDistances: string[];
+  availablePitches: string[];
+  distancePitches: Record<string, string[]>;
+  setDistancePitches: (val: Record<string, string[]>) => void;
+}
+
+function DistancePitchSelector({
+  availableDistances,
+  availablePitches,
+  distancePitches = {},
+  setDistancePitches,
+}: DistancePitchSelectorProps) {
+  const { t } = useI18n();
+  const [selectedDistance, setSelectedDistance] = useState<string>('');
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Initialize selectedDistance to first available distance or first mapped distance
+  useEffect(() => {
+    if (!selectedDistance && availableDistances.length > 0) {
+      const firstMapped = Object.keys(distancePitches || {}).find(
+        (d) => (distancePitches[d] || []).length > 0
+      );
+      setSelectedDistance(firstMapped || availableDistances[0]);
+    }
+  }, [availableDistances, distancePitches, selectedDistance]);
+
+  // Handle outside click to close the dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const currentPitches = selectedDistance ? (distancePitches[selectedDistance] || []) : [];
+
+  const togglePitch = (pitch: string) => {
+    if (!selectedDistance) return;
+    const current = distancePitches[selectedDistance] || [];
+    const updated = current.includes(pitch)
+      ? current.filter((p) => p !== pitch)
+      : [...current, pitch];
+    setDistancePitches({
+      ...distancePitches,
+      [selectedDistance]: updated,
+    });
+  };
+
+  if (availableDistances.length === 0 || availablePitches.length === 0) {
+    return (
+      <div className="bg-[#0f172a] text-white rounded-[2.5rem] p-6 shadow-xl border border-slate-800 mt-4">
+        <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-2">
+          {t('admin.productManagement.distancePixelMapping')}
+        </span>
+        <div className="text-xs text-orange-400 font-bold bg-orange-500/10 p-3 rounded-xl border border-orange-500/20">
+          {t('admin.productManagement.noMappingConfig')}
+        </div>
+      </div>
+    );
+  }
+
+  const buttonText = currentPitches.length > 0 ? currentPitches.join(', ') : t('admin.productManagement.selectLabel');
+
+  return (
+    <div className="pt-4 border-t border-slate-800/50 mt-4">
+      <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1 block mb-3">
+        {t('admin.productManagement.distancePixelMapping')}
+      </span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Card 1: Distance de visionnage */}
+        <div className="bg-[#0f172a] text-white rounded-2xl p-4 flex flex-col justify-between shadow-xl relative border border-slate-800">
+          <div className="flex items-center gap-2 mb-2 pr-6">
+            <div className="p-1.5 rounded-lg bg-white/5 text-blue-400">
+              <Eye className="w-4 h-4" />
+            </div>
+            <span className="text-slate-300 text-[11px] font-bold uppercase tracking-tight">
+              {t('admin.productManagement.distanceLabel')}
+            </span>
+          </div>
+          <CustomSelect
+            options={availableDistances.map((d) => ({ value: d, label: d }))}
+            value={selectedDistance}
+            onChange={(val) => setSelectedDistance(val)}
+            isDark={true}
+            className="w-full"
+          />
+        </div>
+
+        {/* Card 2: Pixel Pitch (Multi-Select) */}
+        <div className="bg-[#0f172a] text-white rounded-2xl p-4 flex flex-col justify-between shadow-xl relative border border-slate-800">
+          <div className="flex items-center gap-2 mb-2 pr-6">
+            <div className="p-1.5 rounded-lg bg-white/5 text-purple-400">
+              <Grid className="w-4 h-4" />
+            </div>
+            <span className="text-slate-300 text-[11px] font-bold uppercase tracking-tight">
+              {t('admin.productManagement.pitchLabel')}
+            </span>
+          </div>
+
+          <div className="relative w-full" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsOpen(!isOpen)}
+              className={cn(
+                "w-full flex items-center justify-between px-3 h-10 rounded-xl border text-sm transition-all duration-150 outline-none active:scale-[0.97]",
+                "bg-white/5 border-white/10 text-white hover:bg-white/10"
+              )}
+            >
+              <span className="truncate font-medium text-left">
+                {buttonText}
+              </span>
+              <ChevronDown className={cn("w-4 h-4 ml-2 transition-transform duration-200 ease-out", isOpen ? "rotate-180" : "")} />
+            </button>
+
+            {/* Desktop Dropdown */}
+            <AnimatePresence>
+              {isOpen && (
+                <div className="hidden md:block">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 5, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                    className="absolute left-0 right-0 z-50 rounded-2xl border shadow-2xl overflow-hidden bg-zinc-900 border-white/10"
+                  >
+                    <div className="p-1 max-h-[200px] overflow-y-auto custom-scrollbar">
+                      {availablePitches.map((pitch) => {
+                        const isChecked = currentPitches.includes(pitch);
+                        return (
+                          <button
+                            key={pitch}
+                            type="button"
+                            onClick={() => togglePitch(pitch)}
+                            className={cn(
+                              "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-150 active:scale-[0.97]",
+                              isChecked
+                                ? "bg-white/10 text-white font-medium"
+                                : "text-gray-400 hover:bg-white/5 hover:text-white"
+                            )}
+                          >
+                            <span className="font-medium">{pitch}</span>
+                            <div className={cn(
+                              "w-4 h-4 rounded border flex items-center justify-center transition-all duration-150",
+                              isChecked
+                                ? "border-[#a3e635] bg-[#a3e635] text-black"
+                                : "border-white/20 bg-white/5"
+                            )}>
+                              {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
+            {/* Mobile Bottom Sheet */}
+            <AnimatePresence>
+              {isOpen && (
+                <div className="md:hidden">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsOpen(false)}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+                  />
+                  <motion.div
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "100%" }}
+                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                    className="fixed left-0 right-0 bottom-0 z-[101] rounded-t-[32px] shadow-2xl flex flex-col max-h-[75vh] bg-[#141414] border-t border-white/5"
+                  >
+                    <div className="shrink-0 flex items-center justify-between px-6 pt-6 pb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-white">
+                          {t('admin.productManagement.pitchLabel')}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">{t('admin.productManagement.selectForDistance', { distance: selectedDistance })}</p>
+                      </div>
+                      <button
+                        onClick={() => setIsOpen(false)}
+                        className="p-2 rounded-full transition-colors bg-white/5 hover:bg-white/10 text-gray-400"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <div
+                      className="flex-1 overflow-y-auto overscroll-contain px-6 pb-10 space-y-2"
+                      style={{ WebkitOverflowScrolling: 'touch' }}
+                    >
+                      {availablePitches.map((pitch) => {
+                        const isChecked = currentPitches.includes(pitch);
+                        return (
+                          <button
+                            key={pitch}
+                            type="button"
+                            onClick={() => togglePitch(pitch)}
+                            className={cn(
+                              "w-full flex items-center justify-between p-5 rounded-2xl text-left transition-all active:scale-[0.97]",
+                              isChecked
+                                ? "bg-white/10 ring-1 ring-white/20"
+                                : "bg-white/5 hover:bg-white/10"
+                            )}
+                          >
+                            <span className="text-base font-bold text-white">
+                              {pitch}
+                            </span>
+                            <div className={cn(
+                              "w-6 h-6 rounded-full flex items-center justify-center transition-all",
+                              isChecked ? "bg-[#a3e635] text-black" : "bg-white/5 border border-white/20"
+                            )}>
+                              {isChecked && <Check className="w-4 h-4 stroke-[3]" />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const ProduitPage = ({
   editingProduct,
@@ -1842,16 +2119,30 @@ const ProduitPage = ({
   isHidden,
   setIsHidden,
   rentalStock,
-  setRentalStock
+  setRentalStock,
+  distancePitches = {},
+  setDistancePitches
 }: any) => {
+  const { t } = useI18n();
   const [specPage, setSpecPage] = useState(1);
   const [prevSpecPage, setPrevSpecPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const specItemsPerPage = 6;
 
+  const distanceCharDef = (characteristics || []).find((c: any) => c.name === 'Distance de visionnage');
+  const pitchCharDef = (characteristics || []).find((c: any) => c.name === 'Pixel pitch');
+  const availableDistances = distanceCharDef?.options || [];
+  const availablePitches = pitchCharDef?.options || [];
+
   const filteredSpecs = React.useMemo(() => {
-    if (!searchTerm.trim()) return selectedChars;
-    return selectedChars.filter((sc: any) => {
+    // Filter out core mapping characteristics from this generic grid
+    const list = (selectedChars || []).filter((sc: any) => {
+      const charDef = characteristics.find((c: any) => c.id === sc.id);
+      if (!charDef) return false;
+      return charDef.name !== 'Distance de visionnage' && charDef.name !== 'Pixel pitch';
+    });
+    if (!searchTerm.trim()) return list;
+    return list.filter((sc: any) => {
       const charDef = characteristics.find((c: any) => c.id === sc.id);
       if (!charDef) return false;
       return charDef.name.toLowerCase().includes(searchTerm.toLowerCase().trim());
@@ -1881,12 +2172,12 @@ const ProduitPage = ({
 
             {/* 1. Nom du produit */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Product name</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.productName')}</label>
               <input
                 type="text"
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
-                placeholder="Product Name"
+                placeholder={t('admin.productManagement.productNamePlaceholder')}
                 className="w-full border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white transition-all"
               />
             </div>
@@ -1910,15 +2201,15 @@ const ProduitPage = ({
                   </div>
                 </div>
                 <div className="relative z-10 text-center">
-                  <span className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-900 block mb-0.5">Mode & Environment</span>
-                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Marketing settings</div>
+                  <span className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-900 block mb-0.5">{t('admin.productManagement.modeEnvironment')}</span>
+                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{t('admin.productManagement.modeEnvironmentSub')}</div>
                 </div>
               </button>
             </div>
 
             {/* Desktop Only: Mode de commercialisation */}
             <div className="hidden md:block space-y-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Sales mode</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.salesMode')}</label>
               <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
                 <button
                   onClick={() => {
@@ -1941,7 +2232,7 @@ const ProduitPage = ({
                     />
                   )}
                   <ShoppingCart className={cn("w-4 h-4 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                  <span className="z-20 whitespace-nowrap">Sale</span>
+                  <span className="z-20 whitespace-nowrap">{t('admin.productManagement.sale')}</span>
                 </button>
                 <button
                   onClick={() => {
@@ -1964,14 +2255,14 @@ const ProduitPage = ({
                     />
                   )}
                   <Calendar className={cn("w-4 h-4 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                  <span className="z-20 whitespace-nowrap">Rental</span>
+                  <span className="z-20 whitespace-nowrap">{t('admin.productManagement.rental')}</span>
                 </button>
               </div>
             </div>
 
             {/* Desktop Only: Screen type */}
             <div className="hidden md:block space-y-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Screen type</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.screenType')}</label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setScreenType('flat')}
@@ -1981,7 +2272,7 @@ const ProduitPage = ({
                   )}
                 >
                   <Monitor className={cn("w-4 h-4", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-300")} />
-                  <span>Flat</span>
+                  <span>{t('admin.productManagement.flat')}</span>
                 </button>
                 <button
                   onClick={() => setScreenType('curved')}
@@ -1994,7 +2285,7 @@ const ProduitPage = ({
                     <path d="M2 17C2 17 4 15 12 15C20 15 22 17 22 17V7C22 7 20 5 12 5C4 5 2 7 2 7V17Z" />
                     <path d="M12 15V19M10 19H14" />
                   </svg>
-                  <span>Curved</span>
+                  <span>{t('admin.productManagement.curved')}</span>
                 </button>
                 <button
                   onClick={() => setScreenType('360')}
@@ -2014,12 +2305,12 @@ const ProduitPage = ({
 
             {/* Desktop Only: Environnement */}
             <div className="hidden md:block space-y-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Environment</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.environment')}</label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { id: 'interieur', label: 'Indoor', icon: Monitor, color: 'text-blue-400' },
-                  { id: 'semi-exterieur', label: 'Semi-outdoor', icon: Store, color: 'text-purple-400' },
-                  { id: 'exterieur', label: 'Outdoor', icon: Sun, color: 'text-yellow-400' }
+                  { id: 'interieur', label: t('admin.productManagement.indoor'), icon: Monitor, color: 'text-blue-400' },
+                  { id: 'semi-exterieur', label: t('admin.productManagement.semiOutdoor'), icon: Store, color: 'text-purple-400' },
+                  { id: 'exterieur', label: t('admin.productManagement.outdoor'), icon: Sun, color: 'text-yellow-400' }
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -2042,10 +2333,18 @@ const ProduitPage = ({
               </div>
             </div>
 
+            {/* 4. Distance → Pixel Pitch Mapping */}
+            <DistancePitchSelector
+              availableDistances={availableDistances}
+              availablePitches={availablePitches}
+              distancePitches={distancePitches || {}}
+              setDistancePitches={setDistancePitches}
+            />
+
             {/* Technical Specs Grid */}
-            <div className="space-y-3 pt-1">
+            <div className="space-y-3 pt-4 border-t border-slate-100 mt-4">
               <div className="flex items-center justify-between mb-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Technical Specifications</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.technicalSpecifications')}</label>
                 {totalSpecPages > 1 && (
                   <div className="flex items-center gap-2">
                     <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.max(prev - 1, 1)); }} disabled={specPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
@@ -2057,7 +2356,7 @@ const ProduitPage = ({
               <div className="relative mb-2">
                 <input
                   type="text"
-                  placeholder="Search for a specification..."
+                  placeholder={t('admin.productManagement.searchSpecification')}
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -2136,7 +2435,7 @@ const ProduitPage = ({
                   className="w-full h-10 bg-white hover:bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all border border-slate-200 border-dashed hover:border-slate-400"
                 >
                   <PlusCircle className="w-4 h-4 text-[#a3e635]" />
-                  <span>Add a characteristic</span>
+                  <span>{t('admin.productManagement.addCharacteristic')}</span>
                 </button>
               </div>
             </div>
@@ -2154,7 +2453,7 @@ const ProduitPage = ({
                   <div className="w-10 h-10 bg-cyan-400/10 rounded-xl flex items-center justify-center border border-cyan-400/20">
                     <Tag className="w-5 h-5 text-cyan-400 transform -rotate-90" />
                   </div>
-                  <h3 className="text-2xl font-black text-white uppercase tracking-tight">Pricing</h3>
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tight">{t('admin.productManagement.pricing')}</h3>
                 </div>
 
                 <div className="space-y-4 flex-1">
@@ -2162,14 +2461,14 @@ const ProduitPage = ({
                   {/* Prix de Vente (Teal Box like screenshot) */}
                   <div className="bg-cyan-950/40 p-4 rounded-2xl border border-cyan-500/20 relative group overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-transparent pointer-events-none" />
-                    <label className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1.5 block">Selling price (€)</label>
+                    <label className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1.5 block">{t('admin.productManagement.sellingPrice')}</label>
                     <NumberInput
                       value={prixVente}
                       onChange={setPrixVente}
-                      placeholder="Ex: 1200"
+                      placeholder={t('admin.productManagement.sellingPricePlaceholder')}
                       isDark
                     />
-                    <div className="text-[9px] text-cyan-400/40 mt-1 font-medium italic tracking-tight">Recommended retail price per m².</div>
+                    <div className="text-[9px] text-cyan-400/40 mt-1 font-medium italic tracking-tight">{t('admin.productManagement.sellingPriceHelp')}</div>
                   </div>
 
                   {/* Ancien Prix de Vente (Optionnel) */}
@@ -2177,16 +2476,16 @@ const ProduitPage = ({
                     <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/50 to-transparent" />
                     <label className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_6px_rgba(249,115,22,0.8)]" />
-                      Old selling price (€) (Optional)
+                      {t('admin.productManagement.oldSellingPrice')}
                     </label>
                     <NumberInput
                       value={oldPrice}
                       onChange={setOldPrice}
-                      placeholder="Ex: 1500"
+                      placeholder={t('admin.productManagement.oldSellingPricePlaceholder')}
                       isDark
                       colorTheme="orange"
                     />
-                    <div className="text-[9px] text-orange-400 mt-1 font-medium italic tracking-tight">Enter an old price to show a strikethrough discount.</div>
+                    <div className="text-[9px] text-orange-400 mt-1 font-medium italic tracking-tight">{t('admin.productManagement.oldSellingPriceHelp')}</div>
                   </div>
 
                   {Array.isArray(mode) && mode.includes('location') && (
@@ -2194,12 +2493,12 @@ const ProduitPage = ({
                       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
                       <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
-                        Available quantity
+                        {t('admin.productManagement.availableQuantity')}
                       </label>
                       <NumberInput
                         value={rentalStock}
                         onChange={(val) => setRentalStock(String(val ?? ''))}
-                        placeholder="Ex: 10"
+                        placeholder={t('admin.productManagement.availableQuantityPlaceholder')}
                         isDark
                       />
                     </div>
@@ -2210,10 +2509,10 @@ const ProduitPage = ({
                     <div className="pr-4">
                       <div className="text-xs font-black text-white uppercase tracking-tight flex items-center gap-1.5">
                         <EyeOff className="w-4 h-4 text-orange-400" />
-                        Hide product
+                        {t('admin.productManagement.hideProduct')}
                       </div>
                       <div className="text-[9px] text-slate-400 mt-1 leading-tight">
-                        Hides this product from configurator and robot suggestions.
+                        {t('admin.productManagement.hideProductHelp')}
                       </div>
                     </div>
                     <button
@@ -2227,13 +2526,13 @@ const ProduitPage = ({
 
                   {/* Surface Minimum */}
                   <div className="space-y-2">
-                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Minimum Required Area (M²)</label>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">{t('admin.productManagement.minimumArea')}</label>
                     <NumberInput
                       value={surfaceMinRequise || surface.toString()}
                       onChange={(val) => { setSurfaceMinRequise(val); setSurface(parseFloat(val) || 0); }}
                       isDark
                     />
-                    <p className="text-[9px] text-slate-500 mt-1 px-1 leading-relaxed">Defines the minimum area for quote calculation.</p>
+                    <p className="text-[9px] text-slate-500 mt-1 px-1 leading-relaxed">{t('admin.productManagement.minimumAreaHelp')}</p>
                   </div>
 
                   <div className="h-px bg-slate-800/50 my-0.5" />
@@ -2243,8 +2542,8 @@ const ProduitPage = ({
                     <div className="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
                       <div className="flex justify-between items-center mb-4">
                         <div className="pr-4">
-                          <div className="text-xs font-black text-white uppercase tracking-tight">Manage dimensions and price per tile</div>
-                          <div className="text-[9px] text-slate-500 mt-1 leading-tight">Enable this to calculate the price based on tile dimensions.</div>
+                          <div className="text-xs font-black text-white uppercase tracking-tight">{t('admin.productManagement.tileDimensions')}</div>
+                          <div className="text-[9px] text-slate-500 mt-1 leading-tight">{t('admin.productManagement.tileDimensionsHelp')}</div>
                         </div>
                         <button
                           onClick={() => setDimensionsEnabled(!dimensionsEnabled)}
@@ -2258,16 +2557,16 @@ const ProduitPage = ({
                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-4 pt-2 overflow-hidden">
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tile width (cm)</label>
+                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t('admin.productManagement.tileWidth')}</label>
                               <NumberInput value={largeurDalle} onChange={setLargeurDalle} isDark compact />
                             </div>
                             <div className="space-y-1.5">
-                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tile height (cm)</label>
+                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t('admin.productManagement.tileHeight')}</label>
                               <NumberInput value={hauteurDalle} onChange={setHauteurDalle} isDark compact />
                             </div>
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Price per tile (€)</label>
+                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{t('admin.productManagement.pricePerTile')}</label>
                             <NumberInput value={prixDalle} onChange={setPrixDalle} isDark compact />
                           </div>
                         </motion.div>
@@ -2279,12 +2578,12 @@ const ProduitPage = ({
                   {mode.includes('location') && (
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800/50">
                       <div className="space-y-2">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Price per hour (€)</label>
-                        <NumberInput value={prixLocationHeure} onChange={setPrixLocationHeure} placeholder="Ex: 50" isDark compact />
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">{t('admin.productManagement.pricePerHour')}</label>
+                        <NumberInput value={prixLocationHeure} onChange={setPrixLocationHeure} placeholder={t('admin.productManagement.pricePerHourPlaceholder')} isDark compact />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Price per day (€)</label>
-                        <NumberInput value={prixLocationJour} onChange={setPrixLocationJour} placeholder="Ex: 300" isDark compact />
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">{t('admin.productManagement.pricePerDay')}</label>
+                        <NumberInput value={prixLocationJour} onChange={setPrixLocationJour} placeholder={t('admin.productManagement.pricePerDayPlaceholder')} isDark compact />
                       </div>
                     </div>
                   )}
@@ -2306,7 +2605,7 @@ const ProduitPage = ({
                   <div className="w-full h-full cursor-pointer" onClick={triggerUpload}>
                     <img src={previewSrc} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="px-6 py-3 bg-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl">Replace photo</div>
+                      <div className="px-6 py-3 bg-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl">{t('admin.productManagement.replacePhoto')}</div>
                     </div>
                   </div>
                 ) : (
@@ -2330,7 +2629,7 @@ const ProduitPage = ({
                     ) : (
                       <div className="flex flex-col items-center gap-3">
                         <Video className="w-16 h-16 text-white/20" />
-                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">No video</p>
+                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">{t('admin.productManagement.noVideo')}</p>
                       </div>
                     )}
 
@@ -2340,29 +2639,29 @@ const ProduitPage = ({
                       className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur-md text-slate-900 rounded-xl shadow-xl border border-white/20 opacity-0 group-hover:opacity-100 transition-all active:scale-95 flex items-center gap-2 z-30"
                     >
                       <RefreshCw className="w-4 h-4 text-blue-500" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Replace video</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{t('admin.productManagement.replaceVideo')}</span>
                     </button>
                   </div>
                 )}
-                <div className="absolute top-4 left-4 px-4 py-2 bg-black/60 backdrop-blur-md text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 z-20 pointer-events-none">Media preview</div>
+                <div className="absolute top-4 left-4 px-4 py-2 bg-black/60 backdrop-blur-md text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 z-20 pointer-events-none">{t('admin.productManagement.mediaPreview')}</div>
               </div>
 
               {/* Media Settings Card */}
               <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3">
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Media type</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">{t('admin.productManagement.mediaType')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button onClick={() => setMediaType('photo')} className={cn("h-10 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all border", mediaType === 'photo' ? "bg-black text-white border-black" : "bg-slate-50 text-slate-500 border-slate-200")}>
-                      <Camera className={cn("w-4 h-4", mediaType === 'photo' ? "text-cyan-400" : "")} /> Photo
+                      <Camera className={cn("w-4 h-4", mediaType === 'photo' ? "text-cyan-400" : "")} /> {t('admin.productManagement.photo')}
                     </button>
                     <button onClick={() => setMediaType('video')} className={cn("h-10 rounded-xl flex items-center justify-center gap-2 text-xs font-bold transition-all border", mediaType === 'video' ? "bg-black text-white border-black" : "bg-slate-50 text-slate-500 border-slate-200")}>
-                      <Video className={cn("w-4 h-4", mediaType === 'video' ? "text-blue-400" : "")} /> Video
+                      <Video className={cn("w-4 h-4", mediaType === 'video' ? "text-blue-400" : "")} /> {t('admin.productManagement.video')}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Media link (URL)</label>
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">{t('admin.productManagement.mediaLink')}</label>
                   <div className="flex gap-2">
                     <input type="text" value={currentMediaUrl} onChange={handleUrlChange} placeholder="data:image/..." className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:ring-2 focus:ring-slate-900" />
                     <button onClick={triggerUpload} className="p-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100 shadow-sm active:scale-95 transition-all"><Upload className="w-4 h-4" /></button>
@@ -2380,11 +2679,11 @@ const ProduitPage = ({
                     <LinkIcon className="w-5 h-5 text-slate-400" />
                   </div>
                   <div className="flex flex-col">
-                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Product Sheet</h4>
+                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t('admin.productManagement.productSheet')}</h4>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Max Size:</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{t('admin.productManagement.maxSize')}</span>
                   <CustomSelect
                     options={[{ value: '1', label: '1 MB' }, { value: '5', label: '5 MB' }, { value: '10', label: '10 MB' }, { value: '20', label: '20 MB' }, { value: '50', label: '50 MB' }]}
                     value={String(aiSettings.pdfMaxSize)}
@@ -2420,10 +2719,10 @@ const ProduitPage = ({
                     )}
                   </div>
                   <span className="text-xs font-black text-slate-900 uppercase tracking-widest mb-1">
-                    {(pdfUrl || uploadedPdf) ? 'Technical sheet added' : 'Add product sheet (PDF)'}
+                    {(pdfUrl || uploadedPdf) ? t('admin.productManagement.techSheetAdded') : t('admin.productManagement.addProductSheet')}
                   </span>
                   <span className="text-[9px] text-slate-400 uppercase tracking-widest">
-                    {(pdfUrl || uploadedPdf) ? (uploadedPdf ? uploadedPdf.name : 'File saved') : 'Official technical sheet'}
+                    {(pdfUrl || uploadedPdf) ? (uploadedPdf ? uploadedPdf.name : t('admin.productManagement.fileSaved')) : t('admin.productManagement.officialTechSheet')}
                   </span>
 
                   {(pdfUrl || uploadedPdf) && (
@@ -2432,13 +2731,13 @@ const ProduitPage = ({
                         onClick={() => window.open(uploadedPdf ? URL.createObjectURL(uploadedPdf) : pdfUrl, '_blank')}
                         className="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-600 hover:text-white transition-all"
                       >
-                        View PDF
+                        {t('admin.productManagement.viewPdf')}
                       </button>
                       <button
                         onClick={() => { setPdfUrl(''); setUploadedPdf(null); }}
                         className="px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all"
                       >
-                        Delete
+                        {t('admin.productManagement.delete')}
                       </button>
                     </div>
                   )}
@@ -2453,13 +2752,13 @@ const ProduitPage = ({
                   className="w-full h-10 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl font-black uppercase tracking-[0.2em] text-xs hover:shadow-2xl hover:shadow-black/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
                   {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus className="w-5 h-5 text-theme-sidebar-active-text" />}
-                  {editingProduct ? 'Save changes' : 'Add to catalog'}
+                  {editingProduct ? t('admin.productManagement.saveChanges') : t('admin.productManagement.addToCatalog')}
                 </button>
                 <button
                   onClick={() => { setEditingProduct(null); setActivePage('gestion'); }}
                   className="w-full h-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] hover:text-slate-900 transition-colors border border-transparent hover:border-slate-200 rounded-xl"
                 >
-                  Cancel
+                  {t('admin.productManagement.cancel')}
                 </button>
               </div>
             </div>
@@ -2491,8 +2790,8 @@ const ProduitPage = ({
                       <Settings className="w-5 h-5 text-cyan-600" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Advanced Settings</h3>
-                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Mode & Environment</p>
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t('admin.productManagement.advancedSettings')}</h3>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{t('admin.productManagement.modeEnvironment')}</p>
                     </div>
                   </div>
                   <button onClick={() => setIsPricingMediaOpen(false)} className="p-2 bg-slate-100 text-slate-500 rounded-xl"><X className="w-5 h-5" /></button>
@@ -2502,7 +2801,7 @@ const ProduitPage = ({
 
                   {/* Mode de commercialisation */}
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Sales mode</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.salesMode')}</label>
                     <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
                       <button
                         onClick={() => {
@@ -2525,7 +2824,7 @@ const ProduitPage = ({
                           />
                         )}
                         <ShoppingCart className={cn("w-4 h-4 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                        <span className="z-20 whitespace-nowrap">Sale</span>
+                        <span className="z-20 whitespace-nowrap">{t('admin.productManagement.sale')}</span>
                       </button>
 
                       <button
@@ -2549,14 +2848,14 @@ const ProduitPage = ({
                           />
                         )}
                         <Calendar className={cn("w-4 h-4 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                        <span className="z-20 whitespace-nowrap">Rental</span>
+                        <span className="z-20 whitespace-nowrap">{t('admin.productManagement.rental')}</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Screen Type (Mobile) */}
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Screen type</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.screenType')}</label>
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => setScreenType('flat')}
@@ -2568,7 +2867,7 @@ const ProduitPage = ({
                         <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'flat' ? "bg-white/10" : "bg-slate-200")}>
                           <Monitor className={cn("w-3.5 h-3.5", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-400")} />
                         </div>
-                        <span className="text-[9px] font-black uppercase tracking-widest truncate">Flat</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest truncate">{t('admin.productManagement.flat')}</span>
                       </button>
                       <button
                         onClick={() => setScreenType('curved')}
@@ -2583,7 +2882,7 @@ const ProduitPage = ({
                             <path d="M12 15V19M10 19H14" />
                           </svg>
                         </div>
-                        <span className="text-[9px] font-black uppercase tracking-widest truncate">Curved</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest truncate">{t('admin.productManagement.curved')}</span>
                       </button>
                       <button
                         onClick={() => setScreenType('360')}
@@ -2605,12 +2904,12 @@ const ProduitPage = ({
 
                   {/* Environnement */}
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Environment</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.environment')}</label>
                     <div className="grid grid-cols-1 gap-2">
                       {[
-                        { id: 'interieur', label: 'Indoor', icon: Monitor, color: 'text-blue-400' },
-                        { id: 'semi-exterieur', label: 'Semi-outdoor', icon: Store, color: 'text-purple-400' },
-{ id: 'exterieur', label: 'Outdoor', icon: Sun, color: 'text-yellow-400' }
+                        { id: 'interieur', label: t('admin.productManagement.indoor'), icon: Monitor, color: 'text-blue-400' },
+                        { id: 'semi-exterieur', label: t('admin.productManagement.semiOutdoor'), icon: Store, color: 'text-purple-400' },
+{ id: 'exterieur', label: t('admin.productManagement.outdoor'), icon: Sun, color: 'text-yellow-400' }
                       ].map((item) => (
                         <button
                           key={item.id}
@@ -2637,7 +2936,7 @@ const ProduitPage = ({
                 </div>
 
                 <div className="shrink-0 p-4 bg-white border-t border-slate-100">
-                  <button onClick={() => setIsPricingMediaOpen(false)} className="w-full h-12 bg-black text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-black/20">Confirm & Close</button>
+                  <button onClick={() => setIsPricingMediaOpen(false)} className="w-full h-12 bg-black text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-black/20">{t('admin.productManagement.confirmClose')}</button>
                 </div>
               </motion.div>
             </div>
@@ -2660,7 +2959,7 @@ const ProduitPage = ({
                 className="flex-1 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-[18px] flex items-center px-6 transition-all group shadow-lg overflow-hidden relative disabled:opacity-50"
               >
                 <span className="relative z-10 font-black uppercase tracking-[0.3em] text-[10px] ml-2">
-                  {editingProduct ? 'Save' : 'Add'}
+                  {editingProduct ? t('admin.productManagement.save') : t('admin.productManagement.add')}
                 </span>
                 <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center">
                   {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-current" />}
@@ -2726,10 +3025,10 @@ const GestionProduits = ({
   }, [emblaApi]);
 
   const filterOptions = [
-{ id: 'all', label: 'All types', icon: Layers },
-    { id: 'interieur', label: 'Indoor', icon: Monitor },
-    { id: 'exterieur', label: 'Outdoor', icon: Sun },
-    { id: 'semi-exterieur', label: 'Semi-outdoor', icon: Store },
+    { id: 'all', label: t('admin.productManagement.allTypes'), icon: Layers },
+    { id: 'interieur', label: t('admin.productManagement.indoor'), icon: Monitor },
+    { id: 'exterieur', label: t('admin.productManagement.outdoor'), icon: Sun },
+    { id: 'semi-exterieur', label: t('admin.productManagement.semiOutdoor'), icon: Store },
   ];
 
   const handleBulkDelete = () => {
@@ -2783,7 +3082,7 @@ const GestionProduits = ({
             <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search for a product..."
+              placeholder={t('admin.productManagement.searchProduct')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 h-10 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all"
@@ -2794,7 +3093,7 @@ const GestionProduits = ({
             className="flex items-center gap-3 px-6 h-10 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl text-sm font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg active:scale-[0.98] shrink-0"
           >
             <Plus className="w-5 h-5" />
-            <span>Add a product</span>
+            <span>{t('admin.productManagement.addProduct')}</span>
           </button>
         </div>
 
@@ -2810,13 +3109,13 @@ const GestionProduits = ({
                     exit={{ opacity: 0, scale: 0.9 }}
                     className="flex items-center gap-2 bg-red-600 p-1 rounded-xl border border-red-500 shadow-xl shadow-red-500/20"
                   >
-                    <span className="text-[10px] font-black text-white px-2">Delete {selectedIds.length}?</span>
-                    <button onClick={() => setShowBulkConfirm(false)} className="px-2 py-1 text-[10px] font-bold text-white hover:bg-white/10 rounded-lg">No</button>
-                    <button onClick={handleBulkDelete} className="bg-white text-red-600 px-3 py-1 text-[10px] font-black rounded-lg">Yes</button>
+                    <span className="text-[10px] font-black text-white px-2">{t('admin.productManagement.deleteBulkText', { count: selectedIds.length })}</span>
+                    <button onClick={() => setShowBulkConfirm(false)} className="px-2 py-1 text-[10px] font-bold text-white hover:bg-white/10 rounded-lg">{t('admin.productManagement.no')}</button>
+                    <button onClick={handleBulkDelete} className="bg-white text-red-600 px-3 py-1 text-[10px] font-black rounded-lg">{t('admin.productManagement.yes')}</button>
                   </motion.div>
                 ) : (
                   <button onClick={() => setShowBulkConfirm(true)} className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm font-bold hover:bg-red-600 hover:text-white transition-all">
-                    <Trash2 className="w-4 h-4" /> Delete ({selectedIds.length})
+                    <Trash2 className="w-4 h-4" /> {t('admin.productManagement.deleteBulkButton', { count: selectedIds.length })}
                   </button>
                 )}
               </AnimatePresence>
@@ -2826,28 +3125,28 @@ const GestionProduits = ({
           <div className="relative">
             <CustomSelect
               options={[
-{ value: 'all', label: 'All types', icon: Layers },
-                { value: 'interieur', label: 'Indoor', icon: Monitor },
-                { value: 'exterieur', label: 'Outdoor', icon: Sun },
-                { value: 'semi-exterieur', label: 'Semi-outdoor', icon: Store },
+                { value: 'all', label: t('admin.productManagement.allTypes'), icon: Layers },
+                { value: 'interieur', label: t('admin.productManagement.indoor'), icon: Monitor },
+                { value: 'exterieur', label: t('admin.productManagement.outdoor'), icon: Sun },
+                { value: 'semi-exterieur', label: t('admin.productManagement.semiOutdoor'), icon: Store },
               ]}
               value={filterType}
               onChange={(val) => setFilterType(val as any)}
-              placeholder="Filter by type"
+              placeholder={t('admin.productManagement.filterByType')}
               className="w-56"
             />
           </div>
 
           <CustomSelect
             options={[
-              { value: 'manual', label: 'Manual' },
-              { value: 'name', label: 'Name' },
-              { value: 'price', label: 'Price' },
-              { value: 'date', label: 'Date' },
+              { value: 'manual', label: t('admin.productManagement.sortManual') },
+              { value: 'name', label: t('admin.productManagement.sortName') },
+              { value: 'price', label: t('admin.productManagement.sortPrice') },
+              { value: 'date', label: t('admin.productManagement.sortDate') },
             ]}
             value={sortBy}
             onChange={setSortBy}
-            placeholder="Sort by"
+            placeholder={t('admin.productManagement.sortBy')}
             className="w-40"
           />
         </div>
@@ -2872,7 +3171,7 @@ const GestionProduits = ({
               )}
             >
               <Filter className="w-4 h-4" />
-              <span>Filters</span>
+              <span>{t('admin.productManagement.filters')}</span>
             </button>
           </div>
 
@@ -2884,7 +3183,7 @@ const GestionProduits = ({
             )}
           >
             <ArrowUpDown className="w-4 h-4" />
-            <span>Sort</span>
+            <span>{t('admin.productManagement.sort')}</span>
           </button>
         </div>
       </div>
@@ -2928,7 +3227,7 @@ const GestionProduits = ({
               >
                 <div className="absolute inset-0 bg-theme-sidebar-active-bg opacity-0 group-hover:opacity-10 transition-opacity duration-300" />
                 <span className="relative z-10 font-black uppercase tracking-[0.3em] text-[10px] ml-2 transition-colors duration-300">
-                  Add a product
+                  {t('admin.productManagement.addProduct')}
                 </span>
                 <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/20 flex items-center justify-center transition-all duration-300 group-hover:scale-105">
                   <Plus size={14} strokeWidth={3} className="text-current" />
@@ -2954,7 +3253,7 @@ const GestionProduits = ({
         </div>
       </div>
 
-      <ProductActionsDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} title="Filter by type">
+      <ProductActionsDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} title={t('admin.productManagement.filterByType')}>
         <div className="grid grid-cols-1 gap-3">
           {filterOptions.map((opt) => (
             <button key={opt.id} onClick={() => { setFilterType(opt.id as any); setIsFilterOpen(false); }} className={cn("w-full flex items-center justify-between p-5 rounded-2xl transition-all", filterType === opt.id ? "bg-black text-white" : "bg-slate-50 text-slate-600")}>
@@ -2965,9 +3264,9 @@ const GestionProduits = ({
         </div>
       </ProductActionsDrawer>
 
-      <ProductActionsDrawer isOpen={isSortOpen} onClose={() => setIsSortOpen(false)} title="Sort list">
+      <ProductActionsDrawer isOpen={isSortOpen} onClose={() => setIsSortOpen(false)} title={t('admin.productManagement.sortList')}>
         <div className="grid grid-cols-1 gap-3">
-          {[{ value: 'manual', label: 'Manual Order', icon: GripVertical }, { value: 'name', label: 'By Name', icon: FileText }, { value: 'price', label: 'By Price', icon: Zap }, { value: 'date', label: 'By Date', icon: Calendar }].map((opt) => (
+          {[{ value: 'manual', label: t('admin.productManagement.sortManual'), icon: GripVertical }, { value: 'name', label: t('admin.productManagement.sortName'), icon: FileText }, { value: 'price', label: t('admin.productManagement.sortPrice'), icon: Zap }, { value: 'date', label: t('admin.productManagement.sortDate'), icon: Calendar }].map((opt) => (
             <button key={opt.value} onClick={() => { setSortBy(opt.value as any); setIsSortOpen(false); }} className={cn("w-full flex items-center justify-between p-5 rounded-2xl transition-all", sortBy === opt.value ? "bg-black text-white" : "bg-slate-50 text-slate-600")}>
               <div className="flex items-center gap-4"><opt.icon className="w-6 h-6" /> <span className="text-lg font-black uppercase tracking-widest">{opt.label}</span></div>
               {sortBy === opt.value && <Check className="w-5 h-5 text-[#c6ff00]" />}
@@ -3010,7 +3309,7 @@ const GestionProduits = ({
                   <input
                     autoFocus
                     type="text"
-                    placeholder="Search for a product..."
+                    placeholder={t('admin.productManagement.searchProduct')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-14 pr-6 py-4 bg-slate-100 border-2 border-transparent focus:border-black rounded-[1.5rem] text-lg font-black uppercase tracking-widest transition-all"
@@ -3020,7 +3319,7 @@ const GestionProduits = ({
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">Suggested results</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">{t('admin.productManagement.suggestedResults')}</p>
               {products
                 .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
                 .map(p => (
@@ -3047,7 +3346,7 @@ const GestionProduits = ({
               {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
                 <div className="py-20 text-center">
                   <Package className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-                  <p className="text-slate-400 font-black uppercase tracking-widest">No results</p>
+                  <p className="text-slate-400 font-black uppercase tracking-widest">{t('admin.productManagement.noResults')}</p>
                 </div>
               )}
             </div>
@@ -3057,7 +3356,7 @@ const GestionProduits = ({
                 onClick={() => setIsSearchOpen(false)}
                 className="w-full py-5 bg-black text-white rounded-[2rem] font-black uppercase tracking-[0.3em] shadow-2xl"
               >
-                Done
+                {t('admin.productManagement.done')}
               </button>
             </div>
           </motion.div>
@@ -3080,9 +3379,9 @@ const GestionProduits = ({
         {filteredProducts.length === 0 && (
           <div className="bg-white rounded-[32px] border border-slate-200 border-dashed p-12 text-center group/empty">
             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover/empty:bg-black/5 transition-colors"><Package className="w-10 h-10 text-slate-300" /></div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No products</h3>
-            <p className="text-slate-500 font-medium mb-8">Start by creating your first product</p>
-            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>Create a product</span></button>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">{t('admin.productManagement.noProducts')}</h3>
+            <p className="text-slate-500 font-medium mb-8">{t('admin.productManagement.startByCreating')}</p>
+            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>{t('admin.productManagement.createProduct')}</span></button>
           </div>
         )}
       </div>
@@ -3377,18 +3676,18 @@ export default function ProductManagementClient() {
 
   const handleFirestoreError = (error: any, action: string, collection: string) => {
     console.error(`Firestore error ${action} ${collection}:`, error);
-    let message = `Error accessing ${collection}.`;
+    let message = t('admin.productManagement.errorAccessing', { collection });
 
     if (error.code === 'permission-denied') {
-      message = `Access denied to ${collection}. Check your Firestore permissions (Project: ${auth.app.options.projectId})`;
+      message = t('admin.productManagement.errorPermissionDenied', { collection, projectId: auth.app.options.projectId });
     } else if (error.code === 'unavailable') {
-      message = "The database is temporarily unavailable.";
+      message = t('admin.productManagement.errorDatabaseUnavailable');
     } else {
-      message = `Firebase error (${error.code}): ${error.message}`;
+      message = t('admin.productManagement.errorFirebase', { code: error.code, message: error.message });
     }
 
     toast({
-      title: "Database error",
+      title: t('admin.productManagement.databaseError'),
       description: message,
       variant: "destructive"
     });
@@ -3486,6 +3785,7 @@ export default function ProductManagementClient() {
   const [selectedChars, setSelectedChars] = useState<any[]>([]);
   const [showCharPanel, setShowCharPanel] = useState(false);
   const [tempSelectedChars, setTempSelectedChars] = useState<string[]>([]);
+  const [distancePitches, setDistancePitches] = useState<Record<string, string[]>>({});
 
   const availableChars = characteristics.filter(c => !selectedChars.some(sc => sc.id === c.id));
 
@@ -3590,8 +3890,8 @@ export default function ProductManagementClient() {
     if (!user) return;
     if (Array.isArray(mode) && mode.includes('location') && (!rentalStock || Number(rentalStock) <= 0)) {
       toast({
-        title: "Stock required",
-        description: "Please enter a stock quantity for rental.",
+        title: t('admin.productManagement.stockRequired'),
+        description: t('admin.productManagement.stockRequiredDesc'),
         variant: "destructive"
       });
       return;
@@ -3627,6 +3927,28 @@ export default function ProductManagementClient() {
         finalPdfUrl = await getDownloadURL(uploadResult.ref);
       }
 
+      // Compute flat compatible values for backward compatibility
+      const distVal = Object.keys(distancePitches || {}).filter(k => (distancePitches || {})[k]?.length > 0).join(', ');
+      const pitchVal = Array.from(new Set(Object.values(distancePitches || {}).flat())).join(', ');
+
+      const distCharDef = characteristics.find(c => c.name === 'Distance de visionnage');
+      const pitchCharDef = characteristics.find(c => c.name === 'Pixel pitch');
+
+      const filteredSelectedChars = (selectedChars || []).filter(c => {
+        const charDef = characteristics.find(cd => cd.id === c.id);
+        return charDef?.name !== 'Distance de visionnage' && charDef?.name !== 'Pixel pitch';
+      }).map(c => ({
+        id: String(c.id || ''),
+        value: String(c.value || '')
+      }));
+
+      if (distCharDef) {
+        filteredSelectedChars.push({ id: String(distCharDef.id), value: distVal });
+      }
+      if (pitchCharDef) {
+        filteredSelectedChars.push({ id: String(pitchCharDef.id), value: pitchVal });
+      }
+
       // --- DATA SANITIZATION ---
       const rawData: any = {
         name: productName || '',
@@ -3651,14 +3973,9 @@ export default function ProductManagementClient() {
         image: finalPhotoUrl || '',
         videoUrl: finalVideoUrl || '',
         pdfUrl: finalPdfUrl || '',
-        pitch: String(selectedChars.find(c => {
-          const charDef = characteristics.find(cd => cd.id === c.id);
-          return charDef?.name === 'Pixel pitch';
-        })?.value || ''),
-        distance: String(selectedChars.find(c => {
-          const charDef = characteristics.find(cd => cd.id === c.id);
-          return charDef?.name === 'Distance de visionnage';
-        })?.value || ''),
+        pitch: pitchVal,
+        distance: distVal,
+        distancePitches: distancePitches || {},
         power: String(selectedChars.find(c => {
           const charDef = characteristics.find(cd => cd.id === c.id);
           return charDef?.name === 'Puissance maximale';
@@ -3679,10 +3996,7 @@ export default function ProductManagementClient() {
         isHidden: !!isHidden,
         date: new Date().toISOString(),
         uid: user?.uid || 'system',
-        selectedChars: (selectedChars || []).map(c => ({
-          id: String(c.id || ''),
-          value: String(c.value || '')
-        }))
+        selectedChars: filteredSelectedChars
       };
 
       // Final pass to remove any undefined that might have sneaked in
@@ -3694,15 +4008,15 @@ export default function ProductManagementClient() {
         console.log("Updating product:", editingProduct.id, productData);
         await updateDoc(doc(db, "products", editingProduct.id), productData);
         toast({
-          title: "Product updated",
-          description: `${productName} has been successfully updated.`,
+          title: t('admin.productManagement.productUpdated'),
+          description: t('admin.productManagement.productUpdatedDesc', { name: productName }),
           variant: "success"
         });
       } else {
         await addDoc(collection(db, "products"), productData);
         toast({
-          title: "Product added",
-          description: `${productName} has been added to the catalog.`,
+          title: t('admin.productManagement.productAdded'),
+          description: t('admin.productManagement.productAddedDesc', { name: productName }),
           variant: "success"
         });
       }
@@ -3716,8 +4030,8 @@ export default function ProductManagementClient() {
     } catch (error: any) {
       console.error('Error saving product:', error);
       toast({
-        title: "Save error",
-        description: error.message || "An error occurred while saving.",
+        title: t('admin.productManagement.saveErrorToast'),
+        description: error.message || t('admin.productManagement.saveErrorDesc'),
         variant: "destructive"
       });
     } finally {
@@ -4043,6 +4357,27 @@ export default function ProductManagementClient() {
         setSelectedChars(initialChars);
       }
 
+      // Initialize distancePitches
+      if (editingProduct.distancePitches) {
+        setDistancePitches(editingProduct.distancePitches);
+      } else {
+        // Fallback mapping for legacy products
+        const legacyDist = editingProduct.distance || (editingProduct.selectedChars && Array.isArray(editingProduct.selectedChars) ? editingProduct.selectedChars.find((c: any) => {
+          const charDef = characteristics.find(cd => cd.id === c.id);
+          return charDef?.name === 'Distance de visionnage';
+        })?.value : null);
+        const legacyPitch = editingProduct.pitch || (editingProduct.selectedChars && Array.isArray(editingProduct.selectedChars) ? editingProduct.selectedChars.find((c: any) => {
+          const charDef = characteristics.find(cd => cd.id === c.id);
+          return charDef?.name === 'Pixel pitch';
+        })?.value : null);
+        
+        if (legacyDist && legacyPitch) {
+          setDistancePitches({ [legacyDist]: [legacyPitch] });
+        } else {
+          setDistancePitches({});
+        }
+      }
+
       setPhotoUrl(getSafeImageUrl(editingProduct) || '');
       setVideoUrl(editingProduct.videoUrl || '');
 
@@ -4106,6 +4441,7 @@ export default function ProductManagementClient() {
       const allChars = [...pinnedChars, ...requiredChars.map(c => ({ id: c.id, value: c.options[0] }))];
 
       setSelectedChars(allChars);
+      setDistancePitches({});
       setPhotoUrl('');
       setVideoUrl('');
       setPdfUrl('');
@@ -4167,7 +4503,7 @@ export default function ProductManagementClient() {
               <Zap className="w-10 h-10 text-blue-600 group-hover:text-white transition-colors relative z-10" />
             </motion.div>
             <h1 className="text-4xl font-black text-white tracking-tight mb-2">PIXIATECH<span className="text-blue-500">.</span></h1>
-            <p className="text-slate-400 font-medium">Audiovisual Catalog Management</p>
+            <p className="text-slate-400 font-medium">{t('admin.productManagement.catalogManagement')}</p>
           </div>
 
           {/* Auth Card */}
@@ -4182,8 +4518,8 @@ export default function ProductManagementClient() {
                   className="space-y-6"
                 >
                   <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900">Welcome</h2>
-                    <p className="text-slate-500 text-sm">Log in to continue</p>
+                    <h2 className="text-2xl font-bold text-slate-900">{t('admin.productManagement.welcomeTitle')}</h2>
+                    <p className="text-slate-500 text-sm">{t('admin.productManagement.welcomeSubtitle')}</p>
                   </div>
 
                   <div className="space-y-4">
@@ -4198,37 +4534,37 @@ export default function ProductManagementClient() {
                         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
                         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                       </svg>
-                      Continue with Google
+                      {t('admin.productManagement.continueWithGoogle')}
                     </button>
 
                     <div className="relative flex items-center justify-center py-2">
                       <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                      <span className="relative bg-white px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">or with email</span>
+                      <span className="relative bg-white px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('admin.productManagement.orWithEmail')}</span>
                     </div>
 
                     <form onSubmit={handleEmailLogin} className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Professional email</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">{t('admin.productManagement.professionalEmail')}</label>
                         <div className="relative">
                           <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                           <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="admin@pixiatech.com"
+                            placeholder={t('admin.productManagement.emailPlaceholder')}
                             className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                           />
                         </div>
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between ml-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Password</label>
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{t('admin.productManagement.password')}</label>
                           <button
                             type="button"
                             onClick={() => setAuthView('forgot-password')}
                             className="text-[10px] font-bold text-blue-600 hover:text-blue-700"
                           >
-                            Forgot?
+                            {t('admin.productManagement.forgotLink')}
                           </button>
                         </div>
                         <div className="relative">
@@ -4265,7 +4601,7 @@ export default function ProductManagementClient() {
                           onChange={(e) => setRememberMe(e.target.checked)}
                           className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <label htmlFor="remember" className="text-xs text-slate-500 font-medium cursor-pointer">Keep me signed in</label>
+                        <label htmlFor="remember" className="text-xs text-slate-500 font-medium cursor-pointer">{t('admin.productManagement.keepMeSignedIn')}</label>
                       </div>
 
                       <button
@@ -4276,18 +4612,18 @@ export default function ProductManagementClient() {
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
-                          <>Log in <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
+                          <>{t('admin.productManagement.logIn')} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
                         )}
                       </button>
                     </form>
 
                     <p className="text-center text-xs text-slate-500 font-medium">
-                      No account yet?{' '}
+                      {t('admin.productManagement.noAccountYet')}{' '}
                       <button
                         onClick={() => setAuthView('signup')}
                         className="text-blue-600 font-bold hover:underline"
                       >
-                        Create an account
+                        {t('admin.productManagement.createAnAccount')}
                       </button>
                     </p>
                   </div>
@@ -4303,20 +4639,20 @@ export default function ProductManagementClient() {
                   className="space-y-6"
                 >
                   <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900">Request access</h2>
-                    <p className="text-slate-500 text-sm">Create your admin account</p>
+                    <h2 className="text-2xl font-bold text-slate-900">{t('admin.productManagement.requestAccess')}</h2>
+                    <p className="text-slate-500 text-sm">{t('admin.productManagement.requestAccessSubtitle')}</p>
                   </div>
 
                   <form onSubmit={handleEmailSignUp} className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Professional email</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">{t('admin.productManagement.professionalEmail')}</label>
                       <div className="relative">
                         <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                         <input
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          placeholder="votre@email.com"
+                          placeholder={t('admin.productManagement.emailPlaceholder')}
                           className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                           required
                         />
@@ -4324,14 +4660,14 @@ export default function ProductManagementClient() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Mot de passe</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">{t('admin.productManagement.password')}</label>
                       <div className="relative">
                         <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                         <input
                           type="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Minimum 8 characters"
+                          placeholder={t('admin.productManagement.passwordPlaceholder')}
                           className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
                           required
                           minLength={8}
@@ -4354,18 +4690,18 @@ export default function ProductManagementClient() {
                       {isAuthenticating ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
-                        "Create account"
+                        t('admin.productManagement.createAccount')
                       )}
                     </button>
                   </form>
 
                   <p className="text-center text-xs text-slate-500 font-medium">
-                    Already have an account?{' '}
+                    {t('admin.productManagement.alreadyHaveAccount')}{' '}
                     <button
                       onClick={() => setAuthView('login')}
                       className="text-blue-600 font-bold hover:underline"
                     >
-                      Log in
+                      {t('admin.productManagement.logIn')}
                     </button>
                   </p>
                 </motion.div>
@@ -4380,8 +4716,8 @@ export default function ProductManagementClient() {
                   className="space-y-6"
                 >
                   <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900">Forgot password?</h2>
-                    <p className="text-slate-500 text-sm">Enter your email to request a reset</p>
+                    <h2 className="text-2xl font-bold text-slate-900">{t('admin.productManagement.forgotPassword')}</h2>
+                    <p className="text-slate-500 text-sm">{t('admin.productManagement.forgotPasswordSubtitle')}</p>
                   </div>
 
                   {resetEmailSent ? (
@@ -4393,26 +4729,26 @@ export default function ProductManagementClient() {
                       <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Mail className="w-6 h-6" />
                       </div>
-                      <h4 className="text-sm font-bold text-green-800 mb-1">Email sent!</h4>
-                      <p className="text-xs text-green-600 mb-6">Check your inbox for instructions.</p>
+                      <h4 className="text-sm font-bold text-green-800 mb-1">{t('admin.productManagement.emailSent')}</h4>
+                      <p className="text-xs text-green-600 mb-6">{t('admin.productManagement.emailSentSubtitle')}</p>
                       <button
                         onClick={() => { setResetEmailSent(false); setAuthView('login'); }}
                         className="text-xs font-bold text-slate-900 hover:underline"
                       >
-                        Back to login
+                        {t('admin.productManagement.backToLogin')}
                       </button>
                     </motion.div>
                   ) : (
                     <form onSubmit={handleResetPassword} className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Account email</label>
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">{t('admin.productManagement.accountEmail')}</label>
                         <div className="relative">
                           <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                           <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="votre@email.com"
+                            placeholder={t('admin.productManagement.emailPlaceholder')}
                             className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             required
                           />
@@ -4434,7 +4770,7 @@ export default function ProductManagementClient() {
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
-                          "Send link"
+                          t('admin.productManagement.sendLink')
                         )}
                       </button>
 
@@ -4443,7 +4779,7 @@ export default function ProductManagementClient() {
                         onClick={() => setAuthView('login')}
                         className="w-full py-3 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
                       >
-                        Annuler
+                        {t('admin.productManagement.cancel')}
                       </button>
                     </form>
                   )}
@@ -4635,6 +4971,8 @@ export default function ProductManagementClient() {
                   setIsAISettingsOpen={setIsAISettingsOpen}
                   screenType={screenType}
                   setScreenType={setScreenType}
+                  distancePitches={distancePitches}
+                  setDistancePitches={setDistancePitches}
                 />
               </motion.div>
             )}

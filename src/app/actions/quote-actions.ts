@@ -11,6 +11,7 @@ import { updateStatsOnCreate } from '@/lib/statsService';
 import { createHash } from 'crypto';
 import { Timestamp } from 'firebase-admin/firestore';
 import type { MessageStyle, PreviewTheme } from '@/components/verification/types';
+import { getSmtpTransport, type SmtpSettings } from '@/lib/smtpService';
 
 type Locale = 'fr' | 'en';
 const translations = { fr, en };
@@ -141,25 +142,13 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
   const verificationUrl = `${safeBaseUrl}/quote/verify?token=${verificationToken}`;
   const t = translations[lang] || translations.fr;
 
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
-  const isSecure = smtpPort === 465;
-
-  const transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: isSecure,
-    auth: { user: smtpUser, pass: smtpPass },
-    tls: { rejectUnauthorized: false }
-  });
+  const { transporter, fromHeader } = await getSmtpTransport();
 
   const emailHtml = buildVerificationEmailHtml(verificationUrl, lang);
 
   try {
     const result = await transporter.sendMail({
-      from: `"PixiaTech" <${process.env.SMTP_USER}>`,
+      from: fromHeader,
       to: recipientEmail,
       subject: t.email.subject,
       html: emailHtml,
@@ -172,43 +161,29 @@ async function sendQuoteEmail(recipientEmail: string, verificationToken: string,
 }
 
 export async function testSmtpConnection(
-  testEmail?: string
+  testEmail?: string,
+  config?: SmtpSettings
 ): Promise<{ success: boolean; message: string; details?: Record<string, any> }> {
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
-  const isSecure = smtpPort === 465;
-
-  if (!smtpHost || !smtpUser || !smtpPass) {
-    return {
-      success: false,
-      message: 'Missing SMTP configuration (SMTP_HOST, SMTP_USER or SMTP_PASS not set).',
-      details: {
-        hostPresent: !!smtpHost,
-        userPresent: !!smtpUser,
-        passPresent: !!smtpPass,
-      },
-    };
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: isSecure,
-    auth: { user: smtpUser, pass: smtpPass },
-    tls: { rejectUnauthorized: false },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-  });
-
   try {
+    const { transporter, fromHeader, host, user, pass, port } = await getSmtpTransport(config);
+
+    if (!host || !user || !pass) {
+      return {
+        success: false,
+        message: 'Missing SMTP configuration.',
+        details: {
+          hostPresent: !!host,
+          userPresent: !!user,
+          passPresent: !!pass,
+        },
+      };
+    }
+
     await transporter.verify();
 
     if (testEmail) {
       const info = await transporter.sendMail({
-        from: `"PixiaTech Test" <${smtpUser}>`,
+        from: fromHeader,
         to: testEmail,
         subject: 'Test SMTP PixiaTech - Connection Successful',
         text: 'This message confirms that the SMTP configuration is operational.',
@@ -222,7 +197,7 @@ export async function testSmtpConnection(
 
     return {
       success: true,
-      message: `SMTP connection successful (${smtpHost}:${smtpPort}).`,
+      message: `SMTP connection successful (${host}:${port}).`,
     };
   } catch (error: any) {
     const code = error.code;
@@ -656,19 +631,7 @@ async function sendSignatureOtpEmail(
     previewTheme?: string;
   }
 ) {
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
-  const isSecure = smtpPort === 465;
-
-  const transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: isSecure,
-    auth: { user: smtpUser, pass: smtpPass },
-    tls: { rejectUnauthorized: false }
-  });
+  const { transporter, fromHeader, user, isCustom } = await getSmtpTransport();
 
   const emailHtml = buildSecureEmailHtml({
     code: otpCode,
@@ -682,10 +645,11 @@ async function sendSignatureOtpEmail(
   });
 
   const displayName = emailSettings?.companyName || 'PixiaTech';
+  const finalFrom = isCustom ? fromHeader : `"${displayName}" <${user || process.env.SMTP_USER}>`;
 
   try {
     await transporter.sendMail({
-      from: `"${displayName}" <${process.env.SMTP_USER}>`,
+      from: finalFrom,
       to: recipientEmail,
       subject: lang === 'fr' ? `🛡️ Authentification ${displayName}` : `🛡️ ${displayName} Authentication`,
       html: emailHtml,
