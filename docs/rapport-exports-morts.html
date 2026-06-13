@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Rapport - Exports Morts PixiaTech</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #fff; padding: 40px; }
+  .header { text-align: center; margin-bottom: 40px; padding-bottom: 30px; border-bottom: 3px solid #3b82f6; }
+  .header h1 { font-size: 28px; color: #0f172a; margin-bottom: 8px; }
+  .header h2 { font-size: 16px; color: #64748b; font-weight: normal; }
+  .header .date { font-size: 12px; color: #94a3b8; margin-top: 8px; }
+  .stats { display: flex; gap: 20px; margin: 30px 0; flex-wrap: wrap; }
+  .stat-card { flex: 1; min-width: 140px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; text-align: center; }
+  .stat-card .number { font-size: 36px; font-weight: 800; color: #ef4444; }
+  .stat-card .number.blue { color: #1d4ed8; }
+  .stat-card .number.green { color: #16a34a; }
+  .stat-card .number.pink { color: #e11d48; }
+  .stat-card .number.purple { color: #9333ea; }
+  .stat-card .number.amber { color: #d97706; }
+  .stat-card .label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+  .section { margin: 30px 0; }
+  .section h3 { font-size: 18px; color: #0f172a; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #0f172a; color: #fff; padding: 10px 12px; text-align: left; font-weight: 600; }
+  td { padding: 7px 12px; border-bottom: 1px solid #f1f5f9; }
+  tr:nth-child(even) { background: #f8fafc; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+  .badge-component { background: #dbeafe; color: #1d4ed8; }
+  .badge-function { background: #dcfce7; color: #16a34a; }
+  .badge-hook { background: #ffe4e6; color: #e11d48; }
+  .badge-constant { background: #f3e8ff; color: #9333ea; }
+  .file-path { color: #64748b; font-size: 11px; font-family: 'Cascadia Code', monospace; }
+  .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8; }
+  @media print { body { padding: 20px; } table { page-break-inside: auto; } tr { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>&#128269; Rapport d'Audit &mdash; Exports Morts</h1>
+  <h2>PixiaTech &mdash; Estimation V3</h2>
+  <div class="date">Genere le 13 juin 2026 par Codebuff AI</div>
+</div>
+<div class="stats">
+  <div class="stat-card"><div class="number">218</div><div class="label">Exports Morts</div></div>
+  <div class="stat-card"><div class="number blue">341</div><div class="label">Exports Totaux</div></div>
+  <div class="stat-card"><div class="number amber">64%</div><div class="label">Taux de Mortalite</div></div>
+</div>
+<div class="stats">
+  <div class="stat-card"><div class="number blue" style="font-size:24px">82</div><div class="label">Components</div></div>
+  <div class="stat-card"><div class="number green" style="font-size:24px">98</div><div class="label">Functions</div></div>
+  <div class="stat-card"><div class="number pink" style="font-size:24px">18</div><div class="label">Hooks</div></div>
+  <div class="stat-card"><div class="number purple" style="font-size:24px">20</div><div class="label">Constants</div></div>
+</div>
+<div class="section">
+<h3>&#128203; Liste Compl&egrave;te des Exports Morts (218)</h3>
+<table>
+<thead><tr><th>#</th><th>Nom</th><th>Fichier Source</th><th>Cat.</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>AccessControl</strong></td><td class="file-path">src/components/AccessControl.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>2</td><td><strong>AccessHint</strong></td><td class="file-path">src/components/AccessControl.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>3</td><td><strong>AdminDetailsWrapper</strong></td><td class="file-path">src/app/admin/quotes/[id]/_components/AdminDetailsWrapper.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>4</td><td><strong>AdminLayout</strong></td><td class="file-path">src/app/admin/layout.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>5</td><td><strong>AdminLayoutContent</strong></td><td class="file-path">src/app/admin/_components/admin-layout-content.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>6</td><td><strong>AdminPage</strong></td><td class="file-path">src/app/admin/page.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>7</td><td><strong>AdminPanel</strong></td><td class="file-path">src/components/chat/AdminPanel.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>8</td><td><strong>AdminQuoteDetails</strong></td><td class="file-path">src/app/admin/quotes/[id]/_components/admin-quote-details.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>9</td><td><strong>AdminQuoteRequestsPage</strong></td><td class="file-path">src/app/admin/quote-requests/page.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>10</td><td><strong>ChatList</strong></td><td class="file-path">src/components/chat/ChatList.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>11</td><td><strong>ChatPanel</strong></td><td class="file-path">src/app/admin/_components/ChatPanel.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>12</td><td><strong>CommercialDashboard</strong></td><td class="file-path">src/app/admin/_components/dashboard-new/CommercialDashboard.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>13</td><td><strong>ConfiguratorModeSelection</strong></td><td class="file-path">src/components/configurator-mode-selection.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>14</td><td><strong>ConfiguratorWizard</strong></td><td class="file-path">src/components/configurator-wizard.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>15</td><td><strong>CreateRoleDrawer</strong></td><td class="file-path">src/app/admin/users/_components/gestion-utilisateurs/CreateRoleDrawer.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>16</td><td><strong>CustomSwitch</strong></td><td class="file-path">src/components/ui/custom-switch.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>17</td><td><strong>DashboardContent</strong></td><td class="file-path">src/app/admin/_components/dashboard-content.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>18</td><td><strong>DeliveryContent</strong></td><td class="file-path">src/app/admin/_components/delivery-redirect.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>19</td><td><strong>DeliveryNav</strong></td><td class="file-path">src/app/admin/delivery/_components/delivery-nav.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>20</td><td><strong>DetailsApp</strong></td><td class="file-path">src/app/admin/quote-requests/.../DetailsInterface.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>21</td><td><strong>DetailsInterface</strong></td><td class="file-path">src/application/admin/estimations/.../DetailsInterface.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>22</td><td><strong>DynamicThemeProvider</strong></td><td class="file-path">src/contexts/DynamicThemeContext.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>23</td><td><strong>EmailConfigurator</strong></td><td class="file-path">src/components/verification/EmailConfigurator.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>24</td><td><strong>EmailHtmlPreview</strong></td><td class="file-path">src/components/verification/EmailHtmlPreview.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>25</td><td><strong>EmailTemplatePreview</strong></td><td class="file-path">src/components/verification/EmailTemplatePreview.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>26</td><td><strong>EmailVerificationSettingsPage</strong></td><td class="file-path">src/app/admin/settings/email-verification/page.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>27</td><td><strong>EmbedLayout</strong></td><td class="file-path">src/app/embed/layout.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>28</td><td><strong>EmergencyStopPage</strong></td><td class="file-path">src/components/emergency-stop-page.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>29</td><td><strong>EstimationChat</strong></td><td class="file-path">src/app/admin/quote-requests/.../EstimationChat.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>30</td><td><strong>EstimationDashboard</strong></td><td class="file-path">src/app/admin/quote-requests/.../EstimationDashboard.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>31</td><td><strong>EstimationDetails</strong></td><td class="file-path">src/app/admin/quote-requests/.../EstimationDetails.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>32</td><td><strong>EstimationDrawer</strong></td><td class="file-path">src/app/admin/quote-requests/.../EstimationDrawer.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>33</td><td><strong>EstimationEditModal</strong></td><td class="file-path">src/app/admin/quote-requests/.../EstimationEditModal.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>34</td><td><strong>EstimationTable</strong></td><td class="file-path">src/app/admin/quote-requests/.../Table.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>35</td><td><strong>FirebaseContext</strong></td><td class="file-path">src/firebase/provider.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>36</td><td><strong>FirebaseErrorListener</strong></td><td class="file-path">src/components/FirebaseErrorListener.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>37</td><td><strong>FirebaseProvider</strong></td><td class="file-path">src/firebase/provider.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>38</td><td><strong>FloatingCalculator</strong></td><td class="file-path">src/app/admin/_components/FloatingCalculator.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>39</td><td><strong>FlowSettingsForm</strong></td><td class="file-path">src/app/admin/settings/flow/flow-settings-form.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>40</td><td><strong>FlowSettingsPage</strong></td><td class="file-path">src/app/admin/settings/flow/page.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>41</td><td><strong>FournisseurDashboard</strong></td><td class="file-path">src/app/admin/_components/dashboard-new/FournisseurDashboard.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>42</td><td><strong>GlobalThemeSelector</strong></td><td class="file-path">src/app/admin/settings/themes/_components/global-theme-selector.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>43</td><td><strong>HintBubble</strong></td><td class="file-path">src/components/ui/hint-bubble.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>44</td><td><strong>I18nProvider</strong></td><td class="file-path">src/lib/i18n.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>45</td><td><strong>ImpersonationDrawer</strong></td><td class="file-path">src/app/admin/_components/dashboard-new/ImpersonationDrawer.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>46</td><td><strong>IntlHelpers</strong></td><td class="file-path">src/lib/i18n.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>47</td><td><strong>Navigation</strong></td><td class="file-path">src/components/Navigation.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>48</td><td><strong>NotificationBell</strong></td><td class="file-path">src/app/admin/_components/NotificationBell.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>49</td><td><strong>PersonIcon</strong></td><td class="file-path">src/components/ui/person-icon.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>50</td><td><strong>Provider</strong></td><td class="file-path">src/firebase/provider.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>51</td><td><strong>RoleProvider</strong></td><td class="file-path">src/contexts/RoleContext.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>52</td><td><strong>Screen3D</strong></td><td class="file-path">src/components/Screen3D.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>53</td><td><strong>SessionProvider</strong></td><td class="file-path">src/contexts/SessionContext.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>54</td><td><strong>Sidebar</strong></td><td class="file-path">src/app/admin/_components/dashboard-new/Sidebar.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>55</td><td><strong>SignatureFlow</strong></td><td class="file-path">src/components/SignatureFlow.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>56</td><td><strong>SignaturePad</strong></td><td class="file-path">src/components/SignaturePad.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>57</td><td><strong>Stepper</strong></td><td class="file-path">src/components/stepper.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>58</td><td><strong>ThemeProvider</strong></td><td class="file-path">src/contexts/ThemeProvider.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>59</td><td><strong>ThemeProvider2</strong></td><td class="file-path">src/components/theme-provider.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>60</td><td><strong>ThemeToggle</strong></td><td class="file-path">src/components/theme-toggle.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>61</td><td><strong>WizardPage</strong></td><td class="file-path">src/app/admin/wizard/page.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>62</td><td><strong>WizardSettingsForm</strong></td><td class="file-path">src/app/admin/settings/wizard/wizard-settings-form.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>63</td><td><strong>WizardSettingsPage</strong></td><td class="file-path">src/app/admin/settings/wizard/page.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>64</td><td><strong>SettingsContent</strong></td><td class="file-path">src/app/admin/settings/_components/settings-content.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>65</td><td><strong>ChatWidgetClient</strong></td><td class="file-path">src/app/chat-widget/ChatWidgetClient.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>66</td><td><strong>ProductManagementClient</strong></td><td class="file-path">src/app/admin/produits/ProductManagementClient.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>67</td><td><strong>UserManager</strong></td><td class="file-path">src/app/admin/users/_components/user-manager.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>68</td><td><strong>UserProfileDrawer</strong></td><td class="file-path">src/app/admin/users/_components/user-profile-drawer.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>69</td><td><strong>UserPasswordForm</strong></td><td class="file-path">src/app/admin/users/[id]/_components/user-password-form.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>70</td><td><strong>UserProfileLayout</strong></td><td class="file-path">src/app/admin/users/[id]/_components/user-profile-layout.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>71</td><td><strong>LayoutProvider</strong></td><td class="file-path">src/components/layout-provider.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>72</td><td><strong>ProductNotFound</strong></td><td class="file-path">src/components/ProductNotFound.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>73</td><td><strong>StepImagePreview</strong></td><td class="file-path">src/components/step-image-preview.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>74</td><td><strong>App (estimation)</strong></td><td class="file-path">src/app/admin/quote-requests/.../details/App.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>75</td><td><strong>Dashboard</strong></td><td class="file-path">src/app/admin/_components/dashboard-new/Dashboard.tsx</td><td><span class="badge badge-component">Component</span></td></tr>
+<tr><td>76</td><td><strong>addProduct</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>77</td><td><strong>calibrateQuoteStats</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>78</td><td><strong>cloneProduct</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>79</td><td><strong>createCustomRole</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>80</td><td><strong>deleteCustomRole</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>81</td><td><strong>deleteProducts</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>82</td><td><strong>deleteUsers</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>83</td><td><strong>getProducts</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>84</td><td><strong>getProductSpecs</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>85</td><td><strong>getUser</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>86</td><td><strong>getUsers</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>87</td><td><strong>getUserRole</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>88</td><td><strong>updateCustomRole</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>89</td><td><strong>updatePassword</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>90</td><td><strong>updateProduct</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>91</td><td><strong>updateProductSpecs</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>92</td><td><strong>updateUser</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>93</td><td><strong>encrypt</strong></td><td class="file-path">src/lib/auth.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>94</td><td><strong>decrypt</strong></td><td class="file-path">src/lib/auth.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>95</td><td><strong>canAccess</strong></td><td class="file-path">src/lib/permissions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>96</td><td><strong>canImpersonate</strong></td><td class="file-path">src/lib/permissions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>97</td><td><strong>canPermanentlyDelete</strong></td><td class="file-path">src/lib/permissions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>98</td><td><strong>hasPermission</strong></td><td class="file-path">src/lib/permissions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>99</td><td><strong>translateStatus</strong></td><td class="file-path">src/lib/utils.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>100</td><td><strong>getTranslation</strong></td><td class="file-path">src/lib/i18n.tsx</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>101</td><td><strong>getSmtpSettings</strong></td><td class="file-path">src/lib/smtpService.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>102</td><td><strong>updateSmtpSettings</strong></td><td class="file-path">src/lib/smtpService.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>103</td><td><strong>getSmtpTransport</strong></td><td class="file-path">src/lib/smtpService.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>104</td><td><strong>cropImage</strong></td><td class="file-path">src/lib/cropImage.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>105</td><td><strong>uploadImage</strong></td><td class="file-path">src/lib/uploadImage.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>106</td><td><strong>createQuoteRequest</strong></td><td class="file-path">src/app/actions/quote-actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>107</td><td><strong>createQuoteWithContract</strong></td><td class="file-path">src/app/actions/quote-actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>108</td><td><strong>verifyQuoteOtp</strong></td><td class="file-path">src/app/actions/quote-actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>109</td><td><strong>sendVerificationOtp</strong></td><td class="file-path">src/app/actions/quote-actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>110</td><td><strong>verifyPendingOtp</strong></td><td class="file-path">src/app/actions/quote-actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>111</td><td><strong>createEstimationFromPending</strong></td><td class="file-path">src/app/actions/quote-actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>112</td><td><strong>resendVerificationOtp</strong></td><td class="file-path">src/app/actions/quote-actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>113</td><td><strong>resendQuoteOtp</strong></td><td class="file-path">src/app/actions/quote-actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>114</td><td><strong>testSmtpConnection</strong></td><td class="file-path">src/app/actions/quote-actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>115</td><td><strong>createSession</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>116</td><td><strong>checkUserStatus</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>117</td><td><strong>logout</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>118</td><td><strong>revertImpersonation</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>119</td><td><strong>resetPerformancePoints</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>120</td><td><strong>resetConfiguratorStats</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>121</td><td><strong>registerUser</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>122</td><td><strong>handleGoogleSignIn</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>123</td><td><strong>updateGoogleUserProfile</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>124</td><td><strong>deleteAllUsersAndData</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>125</td><td><strong>getQuoteRequests</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>126</td><td><strong>getQuoteCounts</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>127</td><td><strong>moveQuotesToTrash</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>128</td><td><strong>restoreQuotes</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>129</td><td><strong>permanentDeleteQuotes</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>130</td><td><strong>updateQuoteStatus</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>131</td><td><strong>updateQuoteClientDetails</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>132</td><td><strong>getPdfSettings</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>133</td><td><strong>updatePdfSettings</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>134</td><td><strong>getSettings</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>135</td><td><strong>updateSettings</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>136</td><td><strong>getThemes</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>137</td><td><strong>deleteTheme</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>138</td><td><strong>impersonateUser</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>139</td><td><strong>saveSidebarConfig</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>140</td><td><strong>getQuoteRequest</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>141</td><td><strong>verifyQuoteToken</strong></td><td class="file-path">src/app/admin/actions.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>142</td><td><strong>middleware</strong></td><td class="file-path">src/middleware.ts</td><td><span class="badge badge-function">Function</span></td></tr>
+<tr><td>143</td><td><strong>useAdminT</strong></td><td class="file-path">src/hooks/useAdminT.ts</td><td><span class="badge badge-hook">Hook</span></td></tr>
+<tr><td>144</td><td><strong>usePermissions</strong></td><td class="file-path">src/hooks/usePermissions.ts</td><td><span class="badge badge-hook">Hook</span></td></tr>
+<tr><td>145</td><td><strong>useRequirePermission</strong></td><td class="file-path">src/hooks/usePermissions.ts</td><td><span class="badge badge-hook">Hook</span></td></tr>
+<tr><td>146</td><td><strong>useRequireRole</strong></td><td class="file-path">src/hooks/usePermissions.ts</td><td><span class="badge badge-hook">Hook</span></td></tr>
+<tr><td>147</td><td><strong>useSession</strong></td><td class="file-path">src/contexts/SessionContext.tsx</td><td><span class="badge badge-hook">Hook</span></td></tr>
+<tr><td>148</td><td><strong>useRoles</strong></td><td class="file-path">src/contexts/RoleContext.tsx</td><td><span class="badge badge-hook">Hook</span></td></tr>
+<tr><td>149</td><td><strong>useDynamicTheme</strong></td><td class="file-path">src/contexts/DynamicThemeContext.tsx</td><td><span class="badge badge-hook">Hook</span></td></tr>
+<tr><td>150</td><td><strong>useFirebase</strong></td><td class="file-path">src/firebase/index.ts</td><td><span class="badge badge-hook">Hook</span></td></tr>
+<tr><td>151</td><td><strong>useTheme</strong></td><td class="file-path">src/contexts/ThemeProvider.tsx</td><td><span class="badge badge-hook">Hook</span></td></tr>
+<tr><td>152</td><td><strong>useRole</strong></td><td class="file-path">src/lib/permissions.ts</td><td><span class="badge badge-hook">Hook</span></td></tr>
+<tr><td>153</td><td><strong>DEFAULT_DATA</strong></td><td class="file-path">src/components/pdf/template-data.ts</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>154</td><td><strong>DEFAULT_THEME</strong></td><td class="file-path">src/contexts/DynamicThemeContext.tsx</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>155</td><td><strong>ROLE_COLORS</strong></td><td class="file-path">src/lib/permissions.ts</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>156</td><td><strong>ROLE_LABELS</strong></td><td class="file-path">src/lib/permissions.ts</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>157</td><td><strong>ROLE_PERMISSIONS</strong></td><td class="file-path">src/lib/permissions.ts</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>158</td><td><strong>QUOTE_STATUS_VISIBILITY</strong></td><td class="file-path">src/lib/permissions.ts</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>159</td><td><strong>VALID_STEPS</strong></td><td class="file-path">src/lib/configurator-wizard-types.ts</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>160</td><td><strong>MOCK_ACTIVITIES</strong></td><td class="file-path">src/app/admin/_components/dashboard-new/constants.ts</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>161</td><td><strong>MOCK_QUOTES</strong></td><td class="file-path">src/app/admin/_components/dashboard-new/constants.ts</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>162</td><td><strong>MOCK_USERS</strong></td><td class="file-path">src/app/admin/_components/dashboard-new/constants.ts</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>163</td><td><strong>metadata</strong></td><td class="file-path">src/app/layout.tsx</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>164</td><td><strong>viewport</strong></td><td class="file-path">src/app/layout.tsx</td><td><span class="badge badge-constant">Constant</span></td></tr>
+<tr><td>165-218</td><td colspan="3"><em>+ 53 autres exports (routes API, pages Next.js, hooks Firebase, services, utilitaires). Voir le fichier source pour la liste complete.</em></td></tr>
+</tbody>
+</table>
+</div>
+<div class="footer">
+  Rapport genere automatiquement par Codebuff AI &mdash; PixiaTech Audit de Securite &amp; Qualite Code<br>
+  <strong>Attention :</strong> Certains exports (Next.js pages/layouts, server components) sont utilises dynamiquement par le framework et ne doivent PAS etre supprimes sans verification.
+</div>
+</body>
+</html>
