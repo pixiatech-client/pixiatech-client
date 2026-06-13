@@ -47,15 +47,19 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Session exists but Firebase hasn't resolved yet — wait only during loading (race condition prevention)
-    if (hasSession && !hasValidFirebaseUser && (isUserLoading || sessionLoading)) return;
+    const elapsed = Date.now() - mountedAt.current;
+
+    // Session exists but Firebase hasn't resolved yet — wait during loading + 4s debounce
+    // (Firebase onAuthStateChanged can lag behind session cookie after login)
+    if (hasSession && !hasValidFirebaseUser) {
+      if (isUserLoading || sessionLoading || elapsed < 4000) return;
+    }
 
     // Session exists and Firebase resolved — all good
     if (hasSession && hasValidFirebaseUser) return;
 
     // No session and no Firebase user — genuinely logged out
     // Short debounce prevents logout during navigation where Firebase briefly goes null
-    const elapsed = Date.now() - mountedAt.current;
     if (elapsed < 2000 && !hasSession) return;
 
     if (!hasValidFirebaseUser) {
