@@ -313,8 +313,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       case STEP.PRODUCTS: return '/bot-avatars/30.webp';
       case STEP.QUANTITY: return '/bot-avatars/20.webp';
       case STEP.SITE_PHOTO: return '/bot-avatars/012.webp';
-      case STEP.FORM_REPRESENTATIVE:
-      case STEP.FORM_EMAIL: return '/bot-avatars/007.webp';
+      case STEP.FORM_REPRESENTATIVE: return '/bot-avatars/007.webp';
+      case STEP.FORM_EMAIL: return '/bot-avatars/011.webp';
       case STEP.FORM_COMPANY: return '/bot-avatars/22.webp';
       case STEP.FORM_PHONE: return '/bot-avatars/009.webp';
       case STEP.FORM_ADDRESS: return '/bot-avatars/013.webp';
@@ -1035,7 +1035,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
         className="hidden md:block w-16 h-16 flex-shrink-0 drop-shadow-md z-10"
       >
-        <img src="/bot-avatars/18.webp" alt="Bot" className="w-full h-full object-contain scale-[1.3] origin-bottom" />
+        <img src={getBotImageForStep(stepNum)} alt="Bot" className="w-full h-full object-contain scale-[1.3] origin-bottom" />
       </motion.div>
       <div className="flex flex-col gap-1 flex-1 min-w-0">
         <span className="hidden md:block text-[10px] font-black uppercase tracking-widest text-slate-900">Lumi</span>
