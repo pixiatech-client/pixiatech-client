@@ -321,7 +321,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       case STEP.INSTALLATION: return '/bot-avatars/29.webp';
       case STEP.CONTRAT: return '/bot-avatars/24.webp';
       case STEP.SECURITE: return '/bot-avatars/14.webp';
-      case STEP.FELICITATIONS: return '/bot-avatars/002.webp';
+      case STEP.FELICITATIONS: return '/bot-avatars/14.webp';
       case STEP.GENERATING: return '/bot-avatars/003.webp';
       case STEP.SUCCESS: return '/bot-avatars/002.webp';
       case STEP.RENTAL_PERIOD: return '/bot-avatars/34.webp';
