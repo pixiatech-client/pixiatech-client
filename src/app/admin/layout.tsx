@@ -47,8 +47,8 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Session exists but Firebase hasn't resolved yet — wait (race condition prevention)
-    if (hasSession && !hasValidFirebaseUser) return;
+    // Session exists but Firebase hasn't resolved yet — wait only during loading (race condition prevention)
+    if (hasSession && !hasValidFirebaseUser && (isUserLoading || sessionLoading)) return;
 
     // Session exists and Firebase resolved — all good
     if (hasSession && hasValidFirebaseUser) return;
