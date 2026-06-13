@@ -88,6 +88,12 @@ export default function LoginPage() {
         return;
       }
 
+      // Only sign out if a user is actually signed in (avoid race condition with Google sign-in)
+      if (!auth.currentUser) {
+        if (!cancelled) setIsSigningOut(false);
+        return;
+      }
+
       try {
         await signOut(auth);
         if (!cancelled) console.log('[Login] Session cleared');
