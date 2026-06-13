@@ -767,14 +767,7 @@ export async function sendVerificationOtp(params: {
       createdAt: FieldValue.serverTimestamp(),
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
-      || (process.env.NODE_ENV === 'production'
-        ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
-        : 'http://localhost:3000');
-
-    const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
-      ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
-      : baseUrl;
+    const safeBaseUrl = getBaseUrl();
 
     const verificationUrl = `${safeBaseUrl}/verification-securite?otp=${otpCode}&id=${docRef.id}`;
 
@@ -968,14 +961,7 @@ export async function resendVerificationOtp(pendingId: string): Promise<{ succes
       verified: false,
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
-      || (process.env.NODE_ENV === 'production'
-        ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
-        : 'http://localhost:3000');
-
-    const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
-      ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
-      : baseUrl;
+    const safeBaseUrl = getBaseUrl();
 
     const verificationUrl = `${safeBaseUrl}/verification-securite?otp=${otpCode}&id=${pendingId}`;
 
@@ -1044,14 +1030,7 @@ export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolea
     const height = quoteData.height || 0;
     const productName = quoteData.productName || '';
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
-      || (process.env.NODE_ENV === 'production'
-        ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
-        : 'http://localhost:3000');
-
-    const safeBaseUrl = (process.env.NODE_ENV === 'production' && baseUrl.includes('localhost'))
-      ? 'https://studio--studio-9205859220-a6440.us-central1.hosted.app'
-      : baseUrl;
+    const safeBaseUrl = getBaseUrl();
 
     const verificationUrl = `${safeBaseUrl}/verification-securite?otp=${otpCode}&id=${quoteId}`;
 
