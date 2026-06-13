@@ -90,7 +90,7 @@
   pointer-events: none;
 }
 
-/* Image du Robot Lumi */
+/* Image / Video du Robot Lumi */
 .chat-widget-avatar {
   width: 100%;
   height: 100%;
@@ -98,6 +98,14 @@
   filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.15));
   user-select: none;
   -webkit-user-drag: none;
+  display: block;
+  background: transparent !important;
+}
+.chat-widget-avatar::-webkit-media-controls {
+  display: none !important;
+}
+.chat-widget-avatar::-webkit-media-controls-enclosure {
+  display: none !important;
 }
 
 /* Icône fermer */
