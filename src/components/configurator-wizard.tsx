@@ -139,8 +139,8 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
       const environment = envRevMap[initialConfiguredProduct.productType] || 'interieur';
       
       const prod = allProducts.find(p => p.id === initialConfiguredProduct.productId);
-      const pixelPitch = prod?.pitch || 'P2.5';
-      const viewingDistance = prod?.distance || '2-5m';
+      const pixelPitch = prod?.pitch || wizardSettings?.pixelPitches?.find(p => p.recommended)?.value || INITIAL_STATE.pixelPitch;
+      const viewingDistance = prod?.distance || wizardSettings?.viewingDistances?.find(d => d.recommended)?.value || INITIAL_STATE.viewingDistance;
 
       return {
         ...INITIAL_STATE,
@@ -168,10 +168,12 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
       };
     }
     const defaultDistance = wizardSettings?.viewingDistances?.find(d => d.recommended)?.value || INITIAL_STATE.viewingDistance;
+    const defaultPitch = wizardSettings?.pixelPitches?.find(p => p.recommended)?.value || INITIAL_STATE.pixelPitch;
     return {
       ...INITIAL_STATE,
       step: initialStep,
-      viewingDistance: defaultDistance
+      viewingDistance: defaultDistance,
+      pixelPitch: defaultPitch
     };
   });
   const { userProfile } = useUser();
