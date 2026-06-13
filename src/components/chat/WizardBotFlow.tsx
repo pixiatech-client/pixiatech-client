@@ -974,7 +974,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
         className="hidden md:block w-16 h-16 flex-shrink-0 drop-shadow-md z-10"
       >
-        <img src="/bot-avatars/30.webp" alt="Bot" className="w-full h-full object-contain scale-[1.3] origin-bottom" />
+        <img src="/bot-avatars/25.webp" alt="Bot" className="w-full h-full object-contain scale-[1.3] origin-bottom" />
       </motion.div>
       <div className="flex flex-col gap-1 flex-1 min-w-0">
         <span className="hidden md:block text-[10px] font-black uppercase tracking-widest text-slate-900">Lumi</span>
