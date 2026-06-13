@@ -134,14 +134,16 @@
   @media screen and (min-width: 1024px) and (max-width: 1279px) {
     html {
       zoom: 0.82;
+      overflow: hidden;
     }
     body {
-      min-height: calc(100dvh / 0.82);
+      min-height: 100dvh;
+      overflow: auto;
     }
     #admin-root, .admin-sidebar {
       width: 100%;
       max-width: 100%;
-      min-height: calc(100dvh / 0.82);
+      min-height: 100dvh;
     }
     #admin-root {
       overflow: hidden;
@@ -152,14 +154,16 @@
   @media screen and (min-width: 1280px) and (max-width: 1600px) {
     html {
       zoom: 0.85;
+      overflow: hidden;
     }
     body {
-      min-height: calc(100dvh / 0.85);
+      min-height: 100dvh;
+      overflow: auto;
     }
     #admin-root, .admin-sidebar {
       width: 100%;
       max-width: 100%;
-      min-height: calc(100dvh / 0.85);
+      min-height: 100dvh;
     }
     #admin-root {
       overflow: hidden;

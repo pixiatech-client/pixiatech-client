@@ -43,7 +43,7 @@ export default async function StepPage({ params, searchParams }: {
   const allProducts: Product[] = productsResult.products;
 
   return (
-    <div className="w-full relative">
+    <div className="w-full flex flex-col flex-1 relative">
       <QuoteBuilder
         initialSettings={settings}
         deliverySettings={deliverySettings}

@@ -219,6 +219,29 @@ export default function SignatureFlow({
   const [emailError, setEmailError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
+  // Dynamically remove main layout's padding and force stretch to eliminate margins/empty spaces around the signature flow
+  useEffect(() => {
+    const mainEl = document.querySelector('main');
+    if (mainEl) {
+      const originalClassName = mainEl.className;
+      
+      // Remove default padding classes
+      const paddingClasses = ['px-4', 'pb-4', 'pt-1', 'md:px-6', 'md:pb-6', 'md:pt-2'];
+      paddingClasses.forEach(cls => mainEl.classList.remove(cls));
+      
+      // Swap items-start for items-stretch
+      if (mainEl.classList.contains('items-start')) {
+        mainEl.classList.remove('items-start');
+        mainEl.classList.add('items-stretch');
+      }
+
+      return () => {
+        // Restore original main class on cleanup
+        mainEl.className = originalClassName;
+      };
+    }
+  }, []);
+
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
@@ -998,7 +1021,7 @@ export default function SignatureFlow({
     : null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafc] text-zinc-800 font-sans antialiased">
+    <div className="w-full flex-1 flex flex-col bg-[#f8fafc] text-zinc-800 font-sans antialiased">
       
       {/* Header removed - workflow has its own step system */}
 

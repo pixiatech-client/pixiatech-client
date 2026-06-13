@@ -5,6 +5,7 @@ interface ChatWidgetConfig {
   position?: 'left' | 'right';
   iframeUrl?: string;
   avatarUrl?: string;
+  posterUrl?: string;
   videoUrl?: string;
   entranceAnimation?: boolean;
   tooltipText?: string;
@@ -16,6 +17,7 @@ const DEFAULT_CONFIG: Required<ChatWidgetConfig> = {
   position: 'right',
   iframeUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app/chat-widget',
   avatarUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app/bot-avatars/pixia_robot.webm',
+  posterUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app/bot-avatars/010.webp',
   entranceAnimation: true,
   tooltipText: 'Besoin d\'aide ? Discutons !',
   lang: ''
@@ -101,7 +103,7 @@ class PixiatechChatWidget {
       <!-- Bouton Flottant (Robot Lumi) -->
       <button class="chat-widget-button" aria-label="Discuter avec Lumi">
         <div class="chat-widget-avatar-container">
-          <video class="chat-widget-avatar" src="${this.config.avatarUrl}" autoplay muted playsinline loop></video>
+          <video id="lumi-video" class="chat-widget-avatar" src="${this.config.avatarUrl}" poster="${this.config.posterUrl}" muted playsinline loop></video>
         </div>
         <div class="chat-widget-close-icon">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -126,6 +128,34 @@ class PixiatechChatWidget {
         </div>
       </div>
     `;
+
+    // Lancer la vidéo manuellement après l'injection dans le Shadow DOM
+    this.initVideo();
+  }
+
+  private initVideo() {
+    if (!this.shadow) return;
+    const video = this.shadow.getElementById('lumi-video') as HTMLVideoElement | null;
+    if (!video) return;
+
+    const startPlayback = () => {
+      video.play().catch(() => {
+        // Autoplay bloqué — on reste sur le poster, c'est le fallback naturel
+      });
+    };
+
+    // Si la vidéo est déjà chargée, on lance tout de suite
+    if (video.readyState >= 2) {
+      startPlayback();
+    } else {
+      video.addEventListener('canplay', startPlayback, { once: true });
+      // Timeout de sécurité : si la vidéo ne charge pas en 5s, on abandonne
+      setTimeout(() => {
+        if (video.paused && video.readyState < 2) {
+          // La vidéo ne charge pas — le poster reste affiché
+        }
+      }, 5000);
+    }
   }
 
   private bindEvents() {
