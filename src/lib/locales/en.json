@@ -1500,6 +1500,7 @@
         "theClient": "The Client (Lessee)",
         "pending": "Pending",
         "completeBelow": "Complete below",
+        "repPrompt": "What is the full name of the signer (legal representative)?",
         "representativeDefault": "A representative",
         "signedElectronically": "Electronically signed",
         "signatureRequired": "Signature required",

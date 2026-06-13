@@ -1498,6 +1498,7 @@
         "theClient": "Le Client (Preneur)",
         "pending": "En attente",
         "completeBelow": "Complétez ci-dessous",
+        "repPrompt": "Quel est le nom et le prénom du signataire (représentant légal) ?",
         "representativeDefault": "Un représentant",
         "signedElectronically": "Signé électroniquement",
         "signatureRequired": "Signature requise",

@@ -314,7 +314,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       case STEP.QUANTITY: return '/bot-avatars/28.webp';
       case STEP.SITE_PHOTO: return '/bot-avatars/012.webp';
       case STEP.FORM_REPRESENTATIVE: return '/bot-avatars/26.webp';
-      case STEP.FORM_EMAIL: return '/bot-avatars/011.webp';
+      case STEP.FORM_EMAIL: return '/bot-avatars/26.webp';
       case STEP.FORM_COMPANY: return '/bot-avatars/22.webp';
       case STEP.FORM_PHONE: return '/bot-avatars/009.webp';
       case STEP.FORM_ADDRESS: return '/bot-avatars/013.webp';
@@ -824,9 +824,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     if (!formCompany.trim()) return;
     takeSnapshot();
     pushUserMessage(formCompany);
-    const repPrompt = locale === 'fr'
-      ? "Quel est le nom et le prénom du signataire (représentant légal) ?"
-      : "What is the full name of the signer (legal representative)?";
+    const repPrompt = t('signature.repPrompt');
     pushBotMessage(repPrompt, undefined, 800, '/bot-avatars/22.webp', () => {
       updateStep(STEP.FORM_REPRESENTATIVE);
     });
