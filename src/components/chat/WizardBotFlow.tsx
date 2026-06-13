@@ -121,6 +121,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const [isSubmittingContract, setIsSubmittingContract] = useState(false);
   const [otpAttempts, setOtpAttempts] = useState(0);
   const [otpCooldown, setOtpCooldown] = useState(0);
+  const [resendAttemptsLeft, setResendAttemptsLeft] = useState(3);
+  const [otpResent, setOtpResent] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const confettiCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -307,9 +309,9 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       case STEP.PRODUCTS: return '/bot-avatars/30.webp';
       case STEP.QUANTITY: return '/bot-avatars/20.webp';
       case STEP.SITE_PHOTO:
-      case STEP.FORM_COMPANY:
       case STEP.FORM_REPRESENTATIVE:
       case STEP.FORM_EMAIL: return '/bot-avatars/007.webp';
+      case STEP.FORM_COMPANY: return '/bot-avatars/22.webp';
       case STEP.FORM_PHONE: return '/bot-avatars/009.webp';
       case STEP.FORM_ADDRESS: return '/bot-avatars/013.webp';
       case STEP.INSTALLATION: return '/bot-avatars/29.webp';
@@ -658,7 +660,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         setConfigState(prev => ({ ...prev, installationPhoto: dataUrl }));
         pushUserMessage(t('bot.photoPreview'), dataUrl);
         pushBotMessage(t('bot.photoSuccess'), undefined, 0, '/bot-avatars/26.webp', undefined, 'bot.photoSuccess');
-        setTimeout(() => pushBotMessage(t('bot.company'), undefined, 1500, '/bot-avatars/25.webp', () => {
+        setTimeout(() => pushBotMessage(t('bot.company'), undefined, 1500, '/bot-avatars/22.webp', () => {
           updateStep(STEP.FORM_COMPANY);
         }, 'bot.company'), 1500);
       };
@@ -669,7 +671,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const handlePhotoSkip = () => {
     takeSnapshot();
     pushUserMessage(t('bot.skip'));
-    pushBotMessage(t('bot.company'), undefined, 800, '/bot-avatars/25.webp', () => {
+    pushBotMessage(t('bot.company'), undefined, 800, '/bot-avatars/22.webp', () => {
       updateStep(STEP.FORM_COMPANY);
     }, 'bot.company');
   };
@@ -739,6 +741,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           }
           setOtpCooldown(300);
           setOtpAttempts(0);
+          setResendAttemptsLeft(3);
+          setOtpResent(false);
           updateStep(STEP.SECURITE);
           setBotStatus('default');
           pushBotMessage(t('bot.otpSent'), undefined, 800, '/bot-avatars/35.webp', undefined, 'bot.otpSent');
@@ -763,7 +767,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     const repPrompt = locale === 'fr'
       ? "Quel est le nom et le prénom du signataire (représentant légal) ?"
       : "What is the full name of the signer (legal representative)?";
-    pushBotMessage(repPrompt, undefined, 800, '/bot-avatars/007.webp', () => {
+    pushBotMessage(repPrompt, undefined, 800, '/bot-avatars/22.webp', () => {
       updateStep(STEP.FORM_REPRESENTATIVE);
     });
   };
@@ -772,7 +776,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     if (!formRepresentative.trim()) return;
     takeSnapshot();
     pushUserMessage(formRepresentative);
-    pushBotMessage(t('bot.email'), undefined, 800, '/bot-avatars/28.webp', () => {
+    pushBotMessage(t('bot.email'), undefined, 800, '/bot-avatars/22.webp', () => {
       updateStep(STEP.FORM_EMAIL);
     }, 'bot.email');
   };
@@ -927,16 +931,20 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
   const handleResendOtp = async () => {
     if (!quoteId || isResending) return;
+    if (resendAttemptsLeft <= 1) {
+      setTimeout(() => onClose(), 2000);
+      return;
+    }
+    setResendAttemptsLeft(prev => prev - 1);
     setIsResending(true);
     try {
-      const res = await resendQuoteOtp(quoteId);
-      if (!res.success) {
-        setOtpError(res.error || t('bot.otpError'));
-      } else {
-        setOtpCooldown(300);
-        setOtpAttempts(0);
-        setOtpCode('');
-      }
+      await resendQuoteOtp(quoteId);
+      setOtpCooldown(300);
+      setOtpAttempts(0);
+      setOtpCode('');
+      setOtpError('');
+      setOtpResent(true);
+      setTimeout(() => setOtpResent(false), 4000);
     } catch (e) {
       setOtpError(t('bot.otpError'));
     } finally {
@@ -1500,33 +1508,36 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                         className="hidden"
                         id="site-photo-gallery"
                       />
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => document.getElementById('site-photo-upload')?.click()}
-                          className="flex-1 h-12 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-xs shadow-md active:scale-95 transition-all hidden md:inline-flex"
-                        >
-                          {locale === 'fr' ? '📁 Téléverser une photo' : '📁 Upload a photo'}
-                        </Button>
+                      {/* Desktop: single upload button */}
+                      <Button
+                        onClick={() => document.getElementById('site-photo-upload')?.click()}
+                        className="h-12 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-xs shadow-md active:scale-95 transition-all hidden md:inline-flex"
+                      >
+                        {locale === 'fr' ? '📁 Téléverser une photo' : '📁 Upload a photo'}
+                      </Button>
+                      {/* Mobile: gallery + camera side by side */}
+                      <div className="flex gap-2 md:hidden">
                         <Button
                           onClick={() => document.getElementById('site-photo-gallery')?.click()}
-                          className="flex-1 h-12 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-xs shadow-md active:scale-95 transition-all md:hidden"
+                          className="flex-1 h-12 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-xs shadow-md active:scale-95 transition-all"
                         >
                           {locale === 'fr' ? '📁 Téléverser de la galerie' : '📁 Upload from gallery'}
                         </Button>
                         <Button
                           onClick={() => document.getElementById('site-photo-upload')?.click()}
-                          className="flex-1 h-12 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-xs shadow-md active:scale-95 transition-all md:hidden"
+                          className="flex-1 h-12 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-xs shadow-md active:scale-95 transition-all"
                         >
                           {locale === 'fr' ? '📷 Prendre une photo' : '📷 Take a photo'}
                         </Button>
-                        <Button
-                          onClick={handlePhotoSkip}
-                          variant="outline"
-                          className="h-12 rounded-2xl border-slate-200 text-slate-500 hover:text-[#B3E140] hover:border-[#B3E140] font-bold text-xs transition-all"
-                        >
-                          {locale === 'fr' ? 'Passer' : 'Skip'}
-                        </Button>
                       </div>
+                      {/* Passer full width below */}
+                      <Button
+                        onClick={handlePhotoSkip}
+                        variant="outline"
+                        className="w-full h-12 rounded-2xl border-slate-200 text-slate-500 hover:text-[#B3E140] hover:border-[#B3E140] font-bold text-xs transition-all"
+                      >
+                        {locale === 'fr' ? 'Passer' : 'Skip'}
+                      </Button>
                     </motion.div>
                   )}
 
@@ -1703,7 +1714,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                         />
                         <Button
                           onClick={handleOtpSubmit}
-                          disabled={otpCode.length < 6 || otpAttempts >= 3}
+                          disabled={otpCode.length < 6 || otpAttempts >= 3 || resendAttemptsLeft <= 1}
                           className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"
                         >
                           <Check size={20} />
@@ -1745,23 +1756,38 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                         </p>
                       )}
 
+                      {otpResent && (
+                        <div className="text-[10px] text-emerald-700 font-extrabold bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl animate-bounce flex items-center gap-1 self-start">
+                          <span>{locale === 'fr' ? 'Code renvoyé !' : 'Code resent!'}</span>
+                        </div>
+                      )}
+
                       {otpError && (
                         <p className="text-red-500 text-xs font-bold">{otpError}</p>
                       )}
 
-                      {otpCooldown <= 0 && otpAttempts < 3 && (
-                        <button
-                          onClick={handleResendOtp}
-                          disabled={isResending}
-                          className="text-xs text-[#0f766e] font-bold underline underline-offset-2 hover:text-[#0f766e]/80 disabled:opacity-40 self-start"
-                        >
-                          {isResending
-                            ? (locale === 'fr' ? 'Renvol en cours...' : 'Resending...')
-                            : (locale === 'fr' ? 'Renvoyer le code' : 'Resend code')}
-                        </button>
+                      {otpAttempts < 3 && (
+                        <div className="flex items-center gap-4 text-xs">
+                          <button
+                            onClick={handleResendOtp}
+                            disabled={isResending || resendAttemptsLeft <= 1}
+                            className="text-[#0f766e] font-bold underline underline-offset-2 hover:text-[#0f766e]/80 disabled:opacity-40"
+                          >
+                            {isResending
+                              ? (locale === 'fr' ? 'Renvol en cours...' : 'Resending...')
+                              : (locale === 'fr' ? 'Renvoyer le code' : 'Resend code')}
+                          </button>
+                          {resendAttemptsLeft < 3 && (
+                            <span className={`font-bold ${resendAttemptsLeft === 1 ? 'text-red-600' : 'text-amber-600'}`}>
+                              {resendAttemptsLeft === 1
+                                ? (locale === 'fr' ? 'Dernière tentative' : 'Last attempt')
+                                : (locale === 'fr' ? `Il vous reste ${resendAttemptsLeft} tentatives` : `${resendAttemptsLeft} attempts left`)}
+                            </span>
+                          )}
+                        </div>
                       )}
 
-                      {otpAttempts >= 3 && (
+                      {(otpAttempts >= 3 || resendAttemptsLeft <= 1) && (
                         <div className="flex flex-col gap-3 pt-2 border-t border-slate-200">
                           <p className="text-xs text-red-600 font-bold text-center">
                             {locale === 'fr'

@@ -70,6 +70,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const applyTheme = useCallback((theme: typeof DEFAULT_PALETTES[number], customOverrides?: Record<string, string>) => {
     const root = document.documentElement;
+
+    // Save original state before modifying (for cleanup)
+    const originals = {
+      htmlClasses: root.className,
+      bodyClasses: document.body.className,
+      inlineStyles: root.getAttribute('style') || '',
+      darkClass: root.classList.contains('dark'),
+    };
+    (root as any).__themeOriginals = originals;
+
     root.style.transition = THEME_TRANSITION;
     
     if (theme.mode === 'dark') {
@@ -150,6 +160,34 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       }
     }
     load();
+
+    // Cleanup: restore original CSS variables and classes when leaving admin
+    return () => {
+      const root = document.documentElement;
+      const originals = (root as any).__themeOriginals;
+      if (originals) {
+        root.className = originals.htmlClasses;
+        document.body.className = originals.bodyClasses;
+        root.setAttribute('style', originals.inlineStyles);
+        delete (root as any).__themeOriginals;
+      } else {
+        // Fallback: remove dark class and clear inline style overrides
+        root.classList.remove('dark');
+        document.body.classList.remove('dark-theme', 'light-theme');
+        // Remove only the CSS variables that ThemeProvider sets
+        Object.values(CSS_VAR_MAP).forEach(v => root.style.removeProperty(v));
+        [
+          '--theme-page-bg', '--theme-app-bg', '--theme-card-bg', '--theme-card-border',
+          '--theme-card-text', '--theme-hover-bg', '--theme-active-bg', '--theme-text-primary',
+          '--theme-text-secondary', '--theme-icon', '--theme-sidebar-bg', '--theme-sidebar-text',
+          '--theme-sidebar-border', '--theme-sidebar-active-bg', '--theme-sidebar-active-text',
+          '--theme-btn-primary-bg', '--theme-btn-primary-text', '--theme-btn-primary-hover',
+          '--theme-btn-secondary-bg', '--theme-btn-secondary-text', '--theme-btn-secondary-hover',
+          '--theme-nav-bg', '--theme-nav-text',
+        ].forEach(v => root.style.removeProperty(v));
+        root.style.removeProperty('transition');
+      }
+    };
   }, [applyTheme]);
 
   const setTheme = useCallback(async (themeName: string) => {
