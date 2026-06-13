@@ -17,10 +17,50 @@ import {
   ChevronRight,
   MoreHorizontal,
   Download,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  RefreshCw,
+  ShoppingBag,
+  TrendingUp,
+  Calendar,
+  DollarSign,
+  User,
+  Settings,
+  ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useI18n } from '@/lib/i18n';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, orderBy, where } from 'firebase/firestore';
+import { useAdminT } from '@/hooks/useAdminT';
+
+const formatDate = (date: Date | null | undefined, locale: string) => {
+  if (!date) return '';
+  try {
+    return date.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'short' });
+  } catch {
+    return '';
+  }
+};
+
+const getQuoteAmount = (quote: any): number => {
+  if (quote.totalAmount != null) return Number(quote.totalAmount);
+  if (quote.products?.length) {
+    return quote.products.reduce((sum: number, p: any) => sum + (Number(p.totalPrice || p.price || 0) * (p.quantity || 1)), 0);
+  }
+  return 0;
+};
+
+const statusMeta: Record<string, { label: string; color: string; bg: string }> = {
+  pending: { label: 'En attente', color: 'text-yellow-600', bg: 'bg-yellow-50' },
+  processed: { label: 'Traité', color: 'text-blue-600', bg: 'bg-blue-50' },
+  in_progress: { label: 'En cours', color: 'text-orange-600', bg: 'bg-orange-50' },
+  sent: { label: 'Livré', color: 'text-green-600', bg: 'bg-green-50' },
+  delivered: { label: 'Livré', color: 'text-green-600', bg: 'bg-green-50' },
+  archived: { label: 'Archivé', color: 'text-gray-600', bg: 'bg-gray-50' },
+  returned: { label: 'Retourné', color: 'text-purple-600', bg: 'bg-purple-50' },
+  rented: { label: 'Loué', color: 'text-teal-600', bg: 'bg-teal-50' },
+};
 
 interface FournisseurDashboardProps {
   userName?: string;
@@ -29,37 +69,93 @@ interface FournisseurDashboardProps {
 }
 
 export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ userName, userAvatar, isDark }) => {
-  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
   const { t, locale } = useI18n();
+  const { t: adt } = useAdminT();
+  const { user, userProfile } = useUser();
+  const firestore = useFirestore();
+  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
 
-  const stats = [
-    { label: t('admin.fournisseurDashboard.statReceived'), value: 12, icon: FileText, color: 'text-orange-500', bg: 'bg-orange-50' },
-    { label: t('admin.fournisseurDashboard.statInProgress'), value: 5, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { label: t('admin.fournisseurDashboard.statDelivered'), value: 47, icon: Truck, color: 'text-green-500', bg: 'bg-green-50' },
-    { label: t('admin.fournisseurDashboard.statProducts'), value: 23, icon: Package, color: 'text-purple-500', bg: 'bg-purple-50' },
+  const uid = userProfile?.uid;
+
+  // Fetch quotes where supplierId matches the current user
+  const supplierQuery = useMemoFirebase(() => {
+    if (!firestore || !uid) return null;
+    return query(
+      collection(firestore, 'quotes'),
+      where('supplierId', '==', uid),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, uid]);
+  const { data: supplierQuotes, isLoading: loadingSupplier } = useCollection<any>(supplierQuery);
+
+  // Fetch all quotes for status-based filtering (fournisseur visibility)
+  const allQuotesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'quotes'), orderBy('createdAt', 'desc'));
+  }, [firestore]);
+  const { data: allQuotesRaw, isLoading: loadingAll } = useCollection<any>(allQuotesQuery);
+
+  // Fetch products count
+  const productsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'products'));
+  }, [firestore]);
+  const { data: allProducts } = useCollection<any>(productsQuery);
+
+  // Derive the quotes visible to this fournisseur
+  const visibleQuotes = useMemo(() => {
+    if (!allQuotesRaw) return [];
+    return allQuotesRaw.filter((q: any) => {
+      const status = q.status;
+      return status === 'in_progress' || status === 'sent' || status === 'delivered' || status === 'returned';
+    });
+  }, [allQuotesRaw]);
+
+  // Stats
+  const stats = useMemo(() => {
+    if (!visibleQuotes.length && !supplierQuotes) return { received: 0, inProgress: 0, delivered: 0, products: 0 };
+
+    const assigned = supplierQuotes || [];
+    const received = assigned.filter((q: any) => q.status === 'pending' || q.status === 'processed').length;
+    const inProgress = visibleQuotes.filter((q: any) => q.status === 'in_progress').length;
+    const delivered = visibleQuotes.filter((q: any) => q.status === 'sent' || q.status === 'delivered').length;
+    const products = allProducts?.length || 0;
+
+    return { received, inProgress, delivered, products };
+  }, [visibleQuotes, supplierQuotes, allProducts]);
+
+  // Recent estimations
+  const recentEstimations = useMemo(() => {
+    const items = supplierQuotes || visibleQuotes;
+    if (!items.length) return [];
+    return items.slice(0, 5).map((q: any) => {
+      const statusStr = q.status || 'pending';
+      const meta = statusMeta[statusStr] || { label: statusStr, color: 'text-gray-600', bg: 'bg-gray-50' };
+      return {
+        id: q.estimationNumber || q.id?.slice(0, 8) || 'N/A',
+        client: q.clientName || q.clientEmail || q.userName || 'Client',
+        statusLabel: meta.label,
+        statusColor: meta.color,
+        statusBg: meta.bg,
+        amount: getQuoteAmount(q),
+        date: q.createdAt?.toDate ? formatDate(q.createdAt.toDate(), locale) : q.createdAt || '',
+        raw: q,
+      };
+    });
+  }, [supplierQuotes, visibleQuotes, locale]);
+
+  // Quick actions
+  const quickActions = [
+    { label: adt('Voir les demandes'), icon: Eye, color: 'text-orange-500', bg: 'bg-orange-50', href: '/admin/quote-requests' },
+    { label: adt('Gérer les livraisons'), icon: Truck, color: 'text-green-500', bg: 'bg-green-50', href: '/admin/quote-requests?status=sent' },
+    { label: adt('Messagerie'), icon: MessageSquare, color: 'text-blue-500', bg: 'bg-blue-50', href: '/admin/messages' },
   ];
-
-  const recentEstimations = [
-    { id: 'EST-2026-001', client: 'Jean Dupont', status: t('admin.fournisseurDashboard.statInProgress'), amount: '1 250,50 €', date: 'March 25, 2026' },
-    { id: 'EST-2026-003', client: 'Robert Martin', status: t('admin.fournisseurDashboard.statDelivered'), amount: '2 100,25 €', date: 'March 27, 2026' },
-    { id: 'EST-2026-008', client: 'Emma Leroy', status: t('admin.fournisseurDashboard.statInProgress'), amount: '1 750,00 €', date: 'March 30, 2026' },
-    { id: 'EST-2026-009', client: 'Lucas Bernard', status: t('admin.fournisseurDashboard.statReceived'), amount: '890,00 €', date: 'Apr 1, 2026' },
-  ];
-
-  const topProducts = [
-    { name: 'Module Solar X1', sales: 15, revenue: '12 450 €', trend: '+12%', trendUp: true },
-    { name: 'Panneau Photovoltaïque Pro', sales: 8, revenue: '8 320 €', trend: '+5%', trendUp: true },
-    { name: 'Kit Installation Complete', sales: 6, revenue: '6 180 €', trend: '-2%', trendUp: false },
-    { name: 'Batterie Stockage Ultra', sales: 4, revenue: '4 800 €', trend: '+8%', trendUp: true },
-  ];
-
-  const quickActions: { label: string; action: string; icon: any; color: string; href: string; bg: string }[] = [];
 
   const activities = [
-    { id: 1, user: 'Jean Dupont', action: t('admin.fournisseurDashboard.newRequest'), details: `Estimate #EST-2026-009 for €890`, time: '10:32', type: 'client' },
-    { id: 2, user: 'Admin', action: t('admin.fournisseurDashboard.processed'), details: 'Estimate #EST-2026-003 approved', time: '09:15', type: 'admin' },
-    { id: 3, user: 'Sophie Durand', action: t('admin.fournisseurDashboard.paymentReceived'), details: 'Amount: €2,100 for #EST-2026-003', time: '14:22', type: 'payment' },
+    { id: 1, user: 'Admin', action: adt('Nouvelle demande affectée'), details: `Estimation #${recentEstimations[0]?.id || '---'}`, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), type: 'admin' },
   ];
+
+  const isLoading = loadingSupplier && loadingAll;
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 min-h-screen text-gray-900 px-3 md:px-0">
@@ -67,18 +163,26 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('admin.fournisseurDashboard.greeting', { userName: userName || 'Supplier' })}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+              {t('admin.fournisseurDashboard.greeting', { userName: userName || 'Fournisseur' })}
+            </h1>
             <p className="text-sm mt-1 text-gray-500">
               {t('admin.fournisseurDashboard.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button className={`p-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'}`}>
+            <Link
+              href="/admin/quote-requests"
+              className={`p-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'} hover:bg-theme-sidebar-active-bg transition-colors`}
+            >
               <Search className="w-5 h-5 text-gray-400" />
-            </button>
-            <button className={`p-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'}`}>
+            </Link>
+            <Link
+              href="/admin/notifications"
+              className={`p-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'} hover:bg-theme-sidebar-active-bg transition-colors`}
+            >
               <Bell className="w-5 h-5 text-gray-400" />
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -88,29 +192,36 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
             <div className="max-w-md">
               <h2 className="text-xl font-semibold mb-2">{t('admin.fournisseurDashboard.heroTitle')}</h2>
               <p className="text-emerald-100 text-sm mb-6">
-                {t('admin.fournisseurDashboard.heroBody', { count: 47 })}
+                {t('admin.fournisseurDashboard.heroBody', { count: stats.delivered })}
               </p>
               <Link href="/admin/quote-requests" className="inline-block px-6 py-2.5 bg-white text-emerald-600 rounded-xl font-bold text-sm hover:bg-emerald-50 transition-colors shadow-lg shadow-black/10">
                 {t('admin.fournisseurDashboard.heroCta')}
               </Link>
             </div>
 
-            <div className="bg-black/90 backdrop-blur-md rounded-3xl p-4 flex items-center gap-2 shadow-2xl border border-white/10">
-              <div className="flex flex-col items-center gap-1 min-w-[40px]">
+            <div className="bg-black/90 backdrop-blur-md rounded-3xl p-4 flex items-center gap-4 shadow-2xl border border-white/10">
+              <div className="flex flex-col items-center gap-1 min-w-[48px]">
                 <FileText className="w-5 h-5 text-orange-400" />
-                <span className="text-lg font-bold">12</span>
+                <span className="text-lg font-bold">{stats.received}</span>
+                <span className="text-[9px] text-gray-400 uppercase tracking-wider">{t('admin.fournisseurDashboard.statReceived')}</span>
               </div>
-              <div className="flex flex-col items-center gap-1 min-w-[40px]">
+              <div className="w-px h-10 bg-white/10" />
+              <div className="flex flex-col items-center gap-1 min-w-[48px]">
                 <Clock className="w-5 h-5 text-yellow-500" />
-                <span className="text-lg font-bold">5</span>
+                <span className="text-lg font-bold">{stats.inProgress}</span>
+                <span className="text-[9px] text-gray-400 uppercase tracking-wider">{t('admin.fournisseurDashboard.statInProgress')}</span>
               </div>
-              <div className="flex flex-col items-center gap-1 min-w-[40px]">
+              <div className="w-px h-10 bg-white/10" />
+              <div className="flex flex-col items-center gap-1 min-w-[48px]">
                 <Truck className="w-5 h-5 text-green-400" />
-                <span className="text-lg font-bold">47</span>
+                <span className="text-lg font-bold">{stats.delivered}</span>
+                <span className="text-[9px] text-gray-400 uppercase tracking-wider">{t('admin.fournisseurDashboard.statDelivered')}</span>
               </div>
-              <div className="flex flex-col items-center gap-1 min-w-[40px]">
+              <div className="w-px h-10 bg-white/10" />
+              <div className="flex flex-col items-center gap-1 min-w-[48px]">
                 <Package className="w-5 h-5 text-purple-400" />
-                <span className="text-lg font-bold">23</span>
+                <span className="text-lg font-bold">{stats.products}</span>
+                <span className="text-[9px] text-gray-400 uppercase tracking-wider">{t('admin.fournisseurDashboard.statProducts')}</span>
               </div>
             </div>
           </div>
@@ -122,7 +233,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {quickActions.map((action) => (
             <Link
               key={action.label}
@@ -157,11 +268,23 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                   <th className="pb-4 font-semibold">{t('admin.status')}</th>
                   <th className="pb-4 font-semibold">{t('admin.amount')}</th>
                   <th className="pb-4 font-semibold">{t('admin.date')}</th>
-                  <th className="pb-4 font-semibold text-right">{t('admin.status')}</th>
+                  <th className="pb-4 font-semibold text-right">{t('admin.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                {recentEstimations.map((quote) => (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-gray-400">
+                      <RefreshCw className="w-5 h-5 animate-spin mx-auto" />
+                    </td>
+                  </tr>
+                ) : recentEstimations.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-gray-400 italic">
+                      {t('admin.noEstimations') || 'Aucune estimation pour le moment'}
+                    </td>
+                  </tr>
+                ) : recentEstimations.map((quote) => (
                   <tr key={quote.id} className="group hover:bg-theme-sidebar-active-bg/10 transition-colors">
                     <td className="py-4">
                       <span className="text-sm font-semibold group-hover:text-white transition-colors">{quote.id}</span>
@@ -172,17 +295,14 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                       </span>
                     </td>
                     <td className="py-4">
-                      <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-                        quote.status === t('admin.fournisseurDashboard.statInProgress') ? 'bg-blue-500/10 text-blue-500 group-hover:bg-blue-500/20 group-hover:text-blue-400' :
-                        quote.status === t('admin.fournisseurDashboard.statDelivered') ? 'bg-green-500/10 text-green-500 group-hover:bg-green-500/20 group-hover:text-green-400' :
-                        quote.status === t('admin.fournisseurDashboard.statReceived') ? 'bg-yellow-500/10 text-yellow-500 group-hover:bg-yellow-500/20 group-hover:text-yellow-400' :
-                        'bg-gray-500/10 text-gray-500 group-hover:bg-zinc-800 group-hover:text-zinc-400'
-                      } transition-colors`}>
-                        {quote.status}
+                      <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${quote.statusBg} ${quote.statusColor} transition-colors`}>
+                        {quote.statusLabel}
                       </span>
                     </td>
                     <td className="py-4">
-                      <span className="text-sm font-bold group-hover:text-white transition-colors">{quote.amount}</span>
+                      <span className="text-sm font-bold group-hover:text-white transition-colors">
+                        {quote.amount.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US', { style: 'currency', currency: 'EUR' })}
+                      </span>
                     </td>
                     <td className="py-4">
                       <span className={`text-sm ${isDark ? 'text-gray-400 group-hover:text-zinc-300' : 'text-gray-500 group-hover:text-zinc-400'} transition-colors`}>
@@ -191,11 +311,14 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                     </td>
                     <td className="py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button className="p-2 rounded-lg text-gray-400 hover:bg-zinc-800 hover:text-white group-hover:text-zinc-400 transition-colors">
+                        <Link
+                          href={`/admin/quote-requests?id=${quote.raw?.id}`}
+                          className="p-2 rounded-lg text-gray-400 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                        <button className="p-2 rounded-lg text-gray-400 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-colors">
                           <Download className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 rounded-lg text-gray-400 hover:bg-zinc-800 hover:text-white group-hover:text-zinc-400 transition-colors">
-                          <MoreHorizontal className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -206,64 +329,43 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
           </div>
         </div>
 
-        {/* Top Products & Alerts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Top Products */}
+        {/* Stats Cards Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold">{t('admin.fournisseurDashboard.topProductsTitle')}</h3>
-              <Link href="/admin/produits" className="text-xs font-medium text-blue-500 cursor-pointer hover:underline">{t('admin.viewAll')}</Link>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold">{t('admin.fournisseurDashboard.totalRevenue') || 'Chiffre d\'affaires'}</h3>
+              <DollarSign className="w-5 h-5 text-emerald-500" />
             </div>
-            <div className="space-y-4">
-              {topProducts.map((product, idx) => (
-                <div key={idx} className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-xs ${
-                    idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-amber-600' : 'bg-purple-500'
-                  }`}>
-                    {idx + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-bold truncate">{product.name}</h4>
-                    <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('admin.fournisseurDashboard.salesRevenue', { sales: product.sales, revenue: product.revenue })}</p>
-                  </div>
-                  <div className={`flex items-center gap-1 text-xs font-bold ${product.trendUp ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    {product.trendUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                    {product.trend}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <p className="text-2xl font-black">
+              {visibleQuotes.reduce((sum: number, q: any) => sum + getQuoteAmount(q), 0).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US', { style: 'currency', currency: 'EUR' })}
+            </p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              {visibleQuotes.length} {t('admin.estimations') || 'estimations'}
+            </p>
           </div>
-
-          {/* Alerts */}
           <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold">{t('admin.fournisseurDashboard.alertsTitle')}</h3>
-              <span className="px-2 py-1 bg-red-500/10 text-red-500 text-[10px] font-bold rounded-full">{t('admin.fournisseurDashboard.newAlertsBadge', { count: 3 })}</span>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold">{t('admin.fournisseurDashboard.avgPerQuote') || 'Moyen par devis'}</h3>
+              <TrendingUp className="w-5 h-5 text-blue-500" />
             </div>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-xl border border-yellow-100">
-                <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-gray-900">{t('admin.fournisseurDashboard.alertLowStock')}</p>
-                   <p className="text-xs text-gray-500">Module Solar X1 - 3 units remaining</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                <Clock className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-gray-900">{t('admin.fournisseurDashboard.alertPendingEstimate')}</p>
-                   <p className="text-xs text-gray-500">EST-2026-009 pending for 2 days</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 p-3 bg-green-50 rounded-xl border border-green-100">
-                <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-bold text-gray-900">{t('admin.fournisseurDashboard.alertPaymentReceived')}</p>
-                   <p className="text-xs text-gray-500">€2,100 for estimate #EST-2026-003</p>
-                </div>
-              </div>
+            <p className="text-2xl font-black">
+              {visibleQuotes.length > 0
+                ? (visibleQuotes.reduce((sum: number, q: any) => sum + getQuoteAmount(q), 0) / visibleQuotes.length).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US', { style: 'currency', currency: 'EUR' })
+                : '0 €'}
+            </p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              {t('admin.fournisseurDashboard.estimatesProcessed') || 'Devis traités'}
+            </p>
+          </div>
+          <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold">{t('admin.fournisseurDashboard.productsManaged') || 'Produits gérés'}</h3>
+              <Package className="w-5 h-5 text-purple-500" />
             </div>
+            <p className="text-2xl font-black">{stats.products}</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+              {t('admin.products') || 'Produits'}
+            </p>
           </div>
         </div>
       </div>
@@ -285,54 +387,63 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="w-20 h-20 rounded-full border-4 border-white dark:border-white/10 shadow-xl mx-auto bg-blue-600 flex items-center justify-center text-white font-bold text-2xl">
+              <div className="w-20 h-20 rounded-full border-4 border-white dark:border-white/10 shadow-xl mx-auto bg-emerald-600 flex items-center justify-center text-white font-bold text-2xl">
                 {userName?.charAt(0)?.toUpperCase() || '?'}
               </div>
             )}
           </div>
-          <h3 className="text-lg font-bold">{userName || 'Supplier'}</h3>
+          <h3 className="text-lg font-bold">{userName || 'Fournisseur'}</h3>
           <p className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('admin.supplier')}</p>
 
           <div className="flex items-center justify-center gap-4 mt-6">
             <Link
-              href={`/admin/users/`}
+              href="/admin/messages"
               className={`p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-50 hover:bg-gray-100'}`}
             >
               <MessageSquare className="w-4 h-4 text-gray-400" />
             </Link>
-            <button className={`p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-50 hover:bg-gray-100'}`}>
+            <Link
+              href="/admin/notifications"
+              className={`p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-50 hover:bg-gray-100'}`}
+            >
               <Bell className="w-4 h-4 text-gray-400" />
-            </button>
-            <button className={`p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-50 hover:bg-gray-100'}`}>
-              <Share2 className="w-4 h-4 text-gray-400" />
-            </button>
+            </Link>
+            <Link
+              href="/admin/quote-requests"
+              className={`p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-50 hover:bg-gray-100'}`}
+            >
+              <ExternalLink className="w-4 h-4 text-gray-400" />
+            </Link>
           </div>
         </div>
 
-        {/* Calendar */}
+        {/* Monthly Summary */}
         <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-bold">{t('admin.calendarMonthYear', { month: t('admin.months.april'), year: '2026' })}</h3>
-            <div className="flex items-center gap-2">
-              <ChevronLeft className="w-4 h-4 text-gray-400 cursor-pointer" />
-              <ChevronRight className="w-4 h-4 text-gray-400 cursor-pointer" />
-            </div>
-          </div>
-          <div className="grid grid-cols-7 gap-y-2 text-center">
-            {[t('admin.days.mon'), t('admin.days.tue'), t('admin.days.wed'), t('admin.days.thu'), t('admin.days.fri'), t('admin.days.sat'), t('admin.days.sun')].map(day => (
-              <span key={day} className={`text-[10px] font-bold uppercase ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>{day}</span>
-            ))}
-            {Array.from({ length: 30 }, (_, i) => i + 1).map(day => (
-              <div key={day} className="flex items-center justify-center py-1">
-                <span className={`text-xs font-medium w-7 h-7 flex items-center justify-center rounded-lg transition-all ${
-                  day === 2
-                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                    : `${isDark ? 'text-gray-400 hover:bg-white/5' : 'text-gray-600 hover:bg-gray-50'}`
-                }`}>
-                  {day}
-                </span>
+          <h3 className="text-sm font-bold mb-4">{t('admin.monthlySummary')}</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <DollarSign className="w-5 h-5 text-emerald-500" />
+                <span className="text-sm font-medium">{t('admin.fournisseurDashboard.totalRevenue')}</span>
               </div>
-            ))}
+              <span className="text-sm font-bold text-emerald-600">
+                {visibleQuotes.reduce((sum: number, q: any) => sum + getQuoteAmount(q), 0).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US', { style: 'currency', currency: 'EUR' })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <ShoppingBag className="w-5 h-5 text-orange-500" />
+                <span className="text-sm font-medium">{t('admin.fournisseurDashboard.estimatesCompleted') || 'Devis complétés'}</span>
+              </div>
+              <span className="text-sm font-bold text-orange-600">{stats.delivered}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-blue-500" />
+                <span className="text-sm font-medium">{t('admin.fournisseurDashboard.inProgress') || 'En cours'}</span>
+              </div>
+              <span className="text-sm font-bold text-blue-600">{stats.inProgress}</span>
+            </div>
           </div>
         </div>
 
@@ -341,13 +452,17 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
           <h3 className="text-sm font-bold mb-6">{t('admin.fournisseurDashboard.recentActivities')}</h3>
           <div className="relative space-y-6 pl-6">
             <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gray-100 dark:bg-white/5"></div>
-            {activities.map((activity, idx) => (
+            {activities.length === 0 ? (
+              <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'} italic`}>
+                {t('admin.noRecentActivity') || 'Aucune activité récente'}
+              </p>
+            ) : activities.map((activity, idx) => (
               <div key={activity.id} className="relative">
                 <div className={`absolute -left-[23px] top-1.5 w-2.5 h-2.5 rounded-full border-2 ${
                   idx === 0 ? 'bg-orange-500 border-orange-100 dark:border-orange-900' :
                   idx === 1 ? 'bg-blue-500 border-blue-100 dark:border-blue-900' :
                   'bg-green-500 border-green-100 dark:border-green-900'
-                }`}></div>
+                }`} />
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-[10px] font-bold uppercase tracking-wider ${
                     idx === 0 ? 'text-orange-500' : idx === 1 ? 'text-blue-500' : 'text-green-500'

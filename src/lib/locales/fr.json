@@ -576,6 +576,8 @@
         "topCommercialsTitle": "Meilleurs Commerciaux",
         "noCommercialRegistered": "Aucun commercial enregistré",
         "noRecentActivity": "Aucune activité récente",
+        "noEstimations": "Aucune estimation pour le moment",
+        "noClientsYet": "Aucun client pour le moment",
         "configuratorMethodsTitle": "Méthodes de configuration",
         "globalUsage": "Utilisation globale",
         "configuratorLumi": "Lumi",
@@ -890,7 +892,12 @@
             "estimatesCreated": "Estimations créées",
             "conversionRate": "Taux de conversion",
             "onlineBadge": "En ligne",
-            "recentActivities": "Activités récentes"
+            "recentActivities": "Activités récentes",
+            "pending": "En attente",
+            "processed": "Traité",
+            "inDelivery": "En livraison",
+            "archivedPl": "Archivées",
+            "totalClients": "Clients"
         },
         "fournisseurDashboard": {
             "greeting": "Bonjour, {userName} 👋",
@@ -908,7 +915,13 @@
             "newAlertsBadge": "{count} nouvelles",
             "alertLowStock": "Stock faible",
             "alertPendingEstimate": "Estimation en attente",
-            "alertPaymentReceived": "Paiement reçu"
+            "alertPaymentReceived": "Paiement reçu",
+            "totalRevenue": "Chiffre d'affaires",
+            "avgPerQuote": "Moyen par devis",
+            "estimatesProcessed": "Devis traités",
+            "productsManaged": "Produits gérés",
+            "estimatesCompleted": "Devis complétés",
+            "inProgress": "En cours"
         },
         "sidebar": {
             "appNamePlaceholder": "Ex: Mon App",
