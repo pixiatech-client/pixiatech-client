@@ -320,7 +320,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       case STEP.FORM_ADDRESS: return '/bot-avatars/013.webp';
       case STEP.INSTALLATION: return '/bot-avatars/33.webp';
       case STEP.CONTRAT: return '/bot-avatars/24.webp';
-      case STEP.SECURITE: return '/bot-avatars/14.webp';
+      case STEP.SECURITE: return '/bot-avatars/35.webp';
       case STEP.FELICITATIONS: return '/bot-avatars/14.webp';
       case STEP.GENERATING: return '/bot-avatars/003.webp';
       case STEP.SUCCESS: return '/bot-avatars/002.webp';
@@ -962,15 +962,16 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   };
 
 
-  const handleOtpSubmit = async () => {
-    if (!quoteId || otpCode.length < 6) return;
+  const handleOtpSubmit = async (pastedCode?: string) => {
+    const code = pastedCode || otpCode;
+    if (!quoteId || code.length < 6) return;
     if (otpAttempts >= 3) {
       setOtpError(locale === 'fr' ? 'Trop de tentatives. Veuillez recommencer.' : 'Too many attempts. Please restart.');
       return;
     }
     setOtpError('');
     try {
-      const res = await verifyQuoteOtp(quoteId, otpCode);
+      const res = await verifyQuoteOtp(quoteId, code);
       if (res.success) {
         setOtpVerified(true);
         updateStep(STEP.FELICITATIONS);
@@ -1017,7 +1018,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       const digits = text.replace(/\D/g, '').slice(0, 6);
       if (digits.length === 6) {
         setOtpCode(digits);
-        setTimeout(() => handleOtpSubmit(), 100);
+        handleOtpSubmit(digits);
       }
     } catch { /* clipboard access denied */ }
   };
@@ -1766,7 +1767,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                               className="h-12 rounded-2xl font-bold text-center text-lg tracking-[0.3em]"
                             />
                             <Button
-                              onClick={handleOtpSubmit}
+                              onClick={() => handleOtpSubmit()}
                               disabled={otpCode.length < 6 || otpAttempts >= 3 || resendAttemptsLeft <= 1}
                               className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"
                             >
