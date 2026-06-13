@@ -41,7 +41,7 @@
         "wizardTitle": "Configuration Guidée",
         "wizardDesc": "Recommandé — Rapide, simple et sans prise de tête.",
         "manualTitle": "Assistance guidée",
-        "manualDesc": "Avancé — Pour ceux qui savent déjà ce qu'ils veulent."
+        "manualDesc": "Besoin d'aide ? Notre assistant intelligent peut vous accompagner à chaque étape pour optimiser votre configuration technique"
     },
     "wizard": {
         "steps": {

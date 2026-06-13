@@ -90,7 +90,7 @@ export function ConfiguratorModeSelection({ onSelectMode, onOpenBot, settings }:
                         {t('modeSelection.manualTitle')}
                       </h3>
                       <p className="text-sm text-purple-800/70 mt-1 leading-relaxed">
-                        Besoin d'aide ? Notre assistant intelligent peut vous accompagner à chaque étape pour optimiser votre configuration technique
+                        {t('modeSelection.manualDesc')}
                       </p>
                     </div>
                   </div>
