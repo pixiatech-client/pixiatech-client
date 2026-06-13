@@ -135,6 +135,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const confettiCanvasRef = useRef<HTMLCanvasElement>(null);
   const confettiInstanceRef = useRef<any>(null);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
+  const contractScrollRef = useRef<HTMLDivElement>(null);
+  const [hasScrolledContract, setHasScrolledContract] = useState(false);
 
   const takeSnapshot = useCallback(() => {
     setStepHistory(prev => [
@@ -306,6 +308,19 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     const timer = setTimeout(fetchPdf, 2000);
     return () => clearTimeout(timer);
   }, [step, quoteId, pdfUrl]);
+
+  // Auto-enable "J'ai lu et j'approuve" if contract fits without scrolling
+  useEffect(() => {
+    if (step === STEP.CONTRAT) {
+      setHasScrolledContract(false);
+      if (contractScrollRef.current) {
+        const el = contractScrollRef.current;
+        if (el.scrollHeight <= el.clientHeight) {
+          setHasScrolledContract(true);
+        }
+      }
+    }
+  }, [step]);
 
   const getBotImageForStep = (s: number) => {
     switch (s) {
@@ -1710,7 +1725,17 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             <div className="p-4 border-b border-slate-100 bg-zinc-950 text-white">
                               <h3 className="font-black text-sm uppercase tracking-widest">{locale === 'fr' ? 'Contrat de location' : 'Rental contract'}</h3>
                             </div>
-                            <div className={cn("px-2 overflow-y-auto w-full", contractReadApproved ? "max-h-[28vh]" : "max-h-[350px]")}>
+                            <div
+                              ref={contractScrollRef}
+                              className={cn("px-2 overflow-y-auto w-full", contractReadApproved ? "max-h-[28vh]" : "max-h-[350px]")}
+                              onScroll={() => {
+                                if (hasScrolledContract || !contractScrollRef.current) return;
+                                const el = contractScrollRef.current;
+                                if (el.scrollHeight - el.scrollTop - el.clientHeight < 20) {
+                                  setHasScrolledContract(true);
+                                }
+                              }}
+                            >
                               <ContractDocument
                                 pack={activePack}
                                 renter={renterDetails}
@@ -1733,7 +1758,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                     setContractReadApproved(true);
                                     setTimeout(() => scrollToBottom(), 100);
                                   }}
-                                  className="w-full h-14 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider shadow-md active:scale-95 transition-all"
+                                  disabled={!hasScrolledContract}
+                                  className="w-full h-14 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider shadow-md active:scale-95 transition-all disabled:opacity-30"
                                 >
                                   {locale === 'fr' ? 'J\'ai lu et j\'approuve' : 'I have read and approve'}
                                 </Button>
