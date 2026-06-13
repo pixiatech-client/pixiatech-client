@@ -1,5 +1,6 @@
 {
     "langName": "EN",
+    "recommended": "Recommended",
     "common": {
         "loading": "Loading...",
         "errorLoading": "Loading Error",

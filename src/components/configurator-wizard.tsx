@@ -167,9 +167,11 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
         curveRight: initialConfiguredProduct.curveRight || 0,
       };
     }
+    const defaultDistance = wizardSettings?.viewingDistances?.find(d => d.recommended)?.value || INITIAL_STATE.viewingDistance;
     return {
       ...INITIAL_STATE,
-      step: initialStep
+      step: initialStep,
+      viewingDistance: defaultDistance
     };
   });
   const { userProfile } = useUser();
@@ -469,7 +471,7 @@ function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigSta
   switch (state.step) {
     case 1: return <StepProjectType state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
     case 2: return <StepEnvironment state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
-    case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} />;
+    case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} locale={locale} />;
     case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} locale={locale} />;
     case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} t={t} />;
     case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} products={products} t={t} locale={locale} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
@@ -679,7 +681,7 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
   );
 }
 
-export function StepViewingDistance({ state, updateState, userProfile, wizardSettings, t }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, t: any }) {
+export function StepViewingDistance({ state, updateState, userProfile, wizardSettings, t, locale = 'en' }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, t: any, locale?: string }) {
   const allDistances = wizardSettings?.viewingDistances || [];
   const uniqueDistances = Array.from(new Map(allDistances.map(d => [d.value, d])).values());
   const viewingDistances = uniqueDistances;
@@ -720,31 +722,30 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
             {/* Small Buttons Grid */}
             <div className="grid grid-cols-2 gap-3">
               {viewingDistances.map((d) => (
-                <button
-                  key={d.id}
-                  onClick={() => updateState({ viewingDistance: d.value })}
-                  className={cn(
-                    "group py-4 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
-                    state.viewingDistance === d.value
-                      ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]"
-                      : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
-                  )}
-                >
-                  <span className="flex items-center gap-2">
-                    {d.value}
-                    {d.recommended && (
-                      <span className="text-[8px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                        {t('common.recommended')}
-                      </span>
+                <div key={d.id} className="relative">
+                  <button
+                    onClick={() => updateState({ viewingDistance: d.value })}
+                    className={cn(
+                      "group w-full py-4 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
+                      state.viewingDistance === d.value
+                        ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]"
+                        : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
                     )}
-                  </span>
-                  <div className={cn(
-                    "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
-                    state.viewingDistance === d.value ? "border-[#c6ff00] bg-[#c6ff00] text-black" : "border-slate-200 group-hover:border-black"
-                  )}>
-                    {state.viewingDistance === d.value && <Check className="w-3 h-3" strokeWidth={4} />}
-                  </div>
-                </button>
+                  >
+                    <span>{d.value}</span>
+                    <div className={cn(
+                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0",
+                      state.viewingDistance === d.value ? "border-[#c6ff00] bg-[#c6ff00] text-black" : "border-slate-200 group-hover:border-black"
+                    )}>
+                      {state.viewingDistance === d.value && <Check className="w-3 h-3" strokeWidth={4} />}
+                    </div>
+                  </button>
+                  {d.recommended && (
+                    <span className="absolute -top-2.5 right-2 bg-blue-500 text-[10px] text-white px-2 py-0.5 rounded-full font-medium shadow-sm z-20">
+                      {locale === 'fr' ? 'Recommandé' : 'Recommended'}
+                    </span>
+                  )}
+                </div>
               ))}
             </div>
           </div>
