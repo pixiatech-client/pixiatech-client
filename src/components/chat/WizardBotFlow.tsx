@@ -311,7 +311,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       case STEP.PITCH: return '/bot-avatars/005.webp';
       case STEP.SUMMARY: return '/bot-avatars/006.webp';
       case STEP.PRODUCTS: return '/bot-avatars/30.webp';
-      case STEP.QUANTITY: return '/bot-avatars/20.webp';
+      case STEP.QUANTITY: return '/bot-avatars/17.webp';
       case STEP.SITE_PHOTO: return '/bot-avatars/012.webp';
       case STEP.FORM_REPRESENTATIVE: return '/bot-avatars/007.webp';
       case STEP.FORM_EMAIL: return '/bot-avatars/011.webp';
@@ -1545,7 +1545,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                         onKeyDown={e => e.key === 'Enter' && handleQuantitySubmit()}
                         className="h-12 rounded-2xl font-bold"
                       />
-                      <Button onClick={handleQuantitySubmit} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black shadow-md active:scale-95 transition-all">
+                      <Button onClick={handleQuantitySubmit} disabled={!configState.quantity || configState.quantity < 1} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black shadow-md active:scale-95 transition-all">
                         <ArrowRight size={20} />
                       </Button>
                     </motion.div>
