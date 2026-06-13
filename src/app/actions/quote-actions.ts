@@ -685,6 +685,7 @@ async function sendSignatureOtpEmail(
     });
   } catch (error) {
     console.error(`[Email] Error sending OTP email to ${recipientEmail}:`, error);
+    throw error; // Re-throw so callers can handle the failure
   }
 }
 
