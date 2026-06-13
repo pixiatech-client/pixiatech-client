@@ -736,6 +736,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           rentalPeriod,
           rentalStartTime: configState.rentalStartTime,
           rentalEndTime: configState.rentalEndTime,
+          configuratorType: 'lumi',
         },
         signatureDataUrl || ''
       );

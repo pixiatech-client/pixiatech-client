@@ -537,6 +537,7 @@ export async function createQuoteWithContract(
     rentalPeriod?: { from: string; to: string };
     rentalStartTime?: string;
     rentalEndTime?: string;
+    configuratorType?: 'guided' | 'manual' | 'lumi';
   },
   signatureDataUrl: string
 ): Promise<{ success: boolean; id?: string; otpCode?: string; error?: string }> {

@@ -2091,6 +2091,7 @@ export default function SignatureFlow({
                             : undefined,
                           rentalStartTime: projectMode === 'location' ? rentalStartTime : undefined,
                           rentalEndTime: projectMode === 'location' ? rentalEndTime : undefined,
+                          configuratorType: 'guided',
                         },
                         signatureDataUrl || ''
                       );
