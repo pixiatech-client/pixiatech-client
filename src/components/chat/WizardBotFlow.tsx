@@ -16,6 +16,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { firestore as db } from '@/firebase/config';
 import { ref, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase/config';
+import { uploadBytes } from 'firebase/storage';
+import { jsPDF } from 'jspdf';
 import { ConfigState, INITIAL_STATE } from '@/lib/configurator-wizard-types';
 import { StepDimensions, StepSummary } from '@/components/configurator-wizard';
 import { ProductNotFound } from '@/components/ProductNotFound';
@@ -29,6 +31,7 @@ import { getContractTemplate } from '@/lib/contract-templates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp, getBlockedPeriods } from '@/app/actions/quote-actions';
+import { updateQuotePdfUrl } from '@/app/admin/actions';
 import { useUser } from '@/firebase';
 import { useI18n } from '@/lib/i18n';
 import confetti from 'canvas-confetti';
@@ -123,6 +126,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [resendAttemptsLeft, setResendAttemptsLeft] = useState(3);
   const [otpResent, setOtpResent] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isPdfLoading, setIsPdfLoading] = useState(false);
   const confettiCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -733,6 +737,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
       if (res.success && res.id) {
         setQuoteId(res.id);
+        setIsSendingCode(false);
         const isEvEnabled = settings.isEmailVerificationEnabled ?? true;
         if (isEvEnabled) {
           // Auto-copy OTP to clipboard (same as guided config)
@@ -750,15 +755,70 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           updateStep(STEP.FELICITATIONS);
         }
       } else {
-        setIsSubmittingContract(false);
+        setIsSendingCode(false);
         pushBotMessage(res.error || t('bot.errorQuote'), undefined, 800, '/bot-avatars/19.webp', undefined, 'bot.errorQuote');
       }
     } catch (e) {
       console.error('submitFinalQuoteWithContract error:', e);
-      setIsSubmittingContract(false);
+      setIsSendingCode(false);
       pushBotMessage(t('bot.errorQuote'), undefined, 800, '/bot-avatars/19.webp', undefined, 'bot.errorQuote');
     }
   };
+
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  const ensurePdfReady = useCallback(async () => {
+    if (pdfUrl || !quoteId || isGeneratingPdf) return pdfUrl;
+    setIsGeneratingPdf(true);
+    try {
+      const snap = await getDoc(doc(db, 'quotes', quoteId));
+      const data = snap.data();
+      if (data?.pdfUrl) {
+        setPdfUrl(data.pdfUrl);
+        return data.pdfUrl;
+      }
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageW = pdf.internal.pageSize.getWidth();
+      let y = 20;
+      const write = (text: string, size = 12, bold = false) => {
+        if (bold) pdf.setFont('Helvetica', 'bold');
+        else pdf.setFont('Helvetica', 'normal');
+        pdf.setFontSize(size);
+        const lines = pdf.splitTextToSize(text, pageW - 40);
+        if (y + lines.length * (size * 0.3528) > 287) {
+          pdf.addPage();
+          y = 20;
+        }
+        lines.forEach((l: string) => { pdf.text(l, 20, y); y += size * 0.3528 + 2; });
+      };
+      write('Estimation PIXIA TECH', 22, true);
+      y += 8;
+      write(`Client: ${data.client?.companyName || formCompany}`, 12, true);
+      write(`Email: ${data.client?.email || formEmail}`, 10);
+      write(`Tel: ${data.client?.phone || ''}`, 10);
+      write(`Adresse: ${data.client?.address || ''}`, 10);
+      y += 6;
+      write(`Produit: ${data.productName || selectedProduct?.name || ''}`, 12, true);
+      write(`Dimensions: ${data.width || configState.width}m x ${data.height || configState.height}m`, 10);
+      write(`Quantité: ${data.quantity || configState.quantity || 1}`, 10);
+      write(`Type: ${data.transactionType === 'sale' ? 'Vente' : 'Location'}`, 10);
+      y += 6;
+      const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + ' €';
+      write(`Total: ${fmt(data.totalQuote || totalQuote)}`, 14, true);
+      const blob = pdf.output('blob');
+      const storageRef = ref(storage, `quotes/pdfs/${quoteId}.pdf`);
+      await uploadBytes(storageRef, blob);
+      const url = await getDownloadURL(storageRef);
+      await updateQuotePdfUrl(quoteId, url);
+      setPdfUrl(url);
+      return url;
+    } catch (e) {
+      console.error('PDF generation error:', e);
+      return null;
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }, [quoteId, pdfUrl, isGeneratingPdf, formCompany, formEmail, selectedProduct, configState, totalQuote]);
 
   const handleFormCompany = () => {
     if (!formCompany.trim()) return;
@@ -896,7 +956,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const handleContractAccept = () => {
     if (!signatureValidated) return;
     setContractAccepted(true);
-    setIsSubmittingContract(true);
+    setIsSendingCode(true);
+    updateStep(STEP.SECURITE);
     pushBotMessage(t('bot.contractSigned'), undefined, 400, '/bot-avatars/24.webp', () => {
       submitFinalQuoteWithContract();
     }, 'bot.contractSigned');
@@ -974,7 +1035,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
         className="hidden md:block w-16 h-16 flex-shrink-0 drop-shadow-md z-10"
       >
-        <img src="/bot-avatars/14.webp" alt="Bot" className="w-full h-full object-contain scale-[1.3] origin-bottom" />
+        <img src="/bot-avatars/23.webp" alt="Bot" className="w-full h-full object-contain scale-[1.3] origin-bottom" />
       </motion.div>
       <div className="flex flex-col gap-1 flex-1 min-w-0">
         <span className="hidden md:block text-[10px] font-black uppercase tracking-widest text-slate-900">Lumi</span>
@@ -1677,20 +1738,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                         </motion.div>
                       )}
 
-                      {/* Loading state while submitting contract */}
-                      {isSubmittingContract && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          {renderBotStep(STEP.CONTRAT,
-                            <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 flex flex-col items-center gap-4">
-                              <Loader2 size={28} className="animate-spin text-[#0f766e]" />
-                              <p className="font-bold text-slate-700 text-sm">{locale === 'fr' ? 'Création de votre estimation...' : 'Creating your estimate...'}</p>
-                            </div>
-                          )}
-                        </motion.div>
-                      )}
+
                     </div>
                   )}
 
@@ -1702,23 +1750,32 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                       </div>
                       <p className="text-xs text-slate-500">{locale === 'fr' ? 'Entrez le code reçu par email' : 'Enter the code sent by email'}</p>
                       <div className="flex gap-2">
-                        <Input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={6}
-                          placeholder="000000"
-                          value={otpCode}
-                          onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          onKeyDown={e => e.key === 'Enter' && handleOtpSubmit()}
-                          className="h-12 rounded-2xl font-bold text-center text-lg tracking-[0.3em]"
-                        />
-                        <Button
-                          onClick={handleOtpSubmit}
-                          disabled={otpCode.length < 6 || otpAttempts >= 3 || resendAttemptsLeft <= 1}
-                          className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"
-                        >
-                          <Check size={20} />
-                        </Button>
+                        {isSendingCode ? (
+                          <div className="flex items-center gap-2 h-12 w-full justify-center">
+                            <Loader2 size={18} className="animate-spin text-[#0f766e]" />
+                            <span className="text-sm font-bold text-slate-500">{locale === 'fr' ? 'Envoi du code de vérification...' : 'Sending verification code...'}</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={6}
+                              placeholder="000000"
+                              value={otpCode}
+                              onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                              onKeyDown={e => e.key === 'Enter' && handleOtpSubmit()}
+                              className="h-12 rounded-2xl font-bold text-center text-lg tracking-[0.3em]"
+                            />
+                            <Button
+                              onClick={handleOtpSubmit}
+                              disabled={otpCode.length < 6 || otpAttempts >= 3 || resendAttemptsLeft <= 1}
+                              className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"
+                            >
+                              <Check size={20} />
+                            </Button>
+                          </>
+                        )}
                       </div>
 
                       {/* Paste button */}
@@ -1832,28 +1889,30 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                         <div className="grid grid-cols-2 gap-3">
                           <Button
                             variant="outline"
-                            onClick={() => {
-                              if (pdfUrl) window.open(pdfUrl, '_blank');
+                            onClick={async () => {
+                              const url = await ensurePdfReady();
+                              if (url) window.open(url, '_blank');
                             }}
-                            disabled={!pdfUrl}
+                            disabled={isGeneratingPdf}
                             className="h-12 rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-bold text-xs uppercase tracking-wider transition-all"
                           >
-                            {t('signature.consulterPdf')}
+                            {isGeneratingPdf ? <Loader2 size={14} className="animate-spin" /> : t('signature.consulterPdf')}
                           </Button>
                           <Button
                             variant="outline"
-                            onClick={() => {
-                              if (pdfUrl) {
+                            onClick={async () => {
+                              const url = await ensurePdfReady();
+                              if (url) {
                                 const a = document.createElement('a');
-                                a.href = pdfUrl;
+                                a.href = url;
                                 a.download = `estimation-${quoteId}.pdf`;
                                 a.click();
                               }
                             }}
-                            disabled={!pdfUrl}
+                            disabled={isGeneratingPdf}
                             className="h-12 rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 font-bold text-xs uppercase tracking-wider transition-all"
                           >
-                            {t('signature.downloadPdf')}
+                            {isGeneratingPdf ? <Loader2 size={14} className="animate-spin" /> : t('signature.downloadPdf')}
                           </Button>
                         </div>
                       </div>
