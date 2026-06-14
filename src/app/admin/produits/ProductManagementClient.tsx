@@ -1941,13 +1941,17 @@ function DistancePitchSelector({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Initialize selectedDistance to first available distance or first mapped distance
+  // Initialize selectedDistance to first mapped distance or first available
   useEffect(() => {
-    if (!selectedDistance && availableDistances.length > 0) {
-      const firstMapped = Object.keys(distancePitches || {}).find(
-        (d) => (distancePitches[d] || []).length > 0
-      );
-      setSelectedDistance(firstMapped || availableDistances[0]);
+    const firstMapped = Object.keys(distancePitches || {}).find(
+      (d) => (distancePitches[d] || []).length > 0
+    );
+    if (firstMapped && availableDistances.includes(firstMapped)) {
+      if (selectedDistance !== firstMapped) {
+        setSelectedDistance(firstMapped);
+      }
+    } else if (!selectedDistance && availableDistances.length > 0) {
+      setSelectedDistance(availableDistances[0]);
     }
   }, [availableDistances, distancePitches, selectedDistance]);
 
