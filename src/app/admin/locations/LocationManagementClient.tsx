@@ -13,13 +13,14 @@ import { cn } from '@/lib/utils';
 import { Pagination } from '@/components/ui/Pagination';
 import { CustomSelect } from '@/components/ui/custom-select';
 import useEmblaCarousel from 'embla-carousel-react';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { 
   collection, query, where, orderBy, onSnapshot, doc, updateDoc, deleteDoc 
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAdminT } from '@/hooks/useAdminT';
+import { useRouter } from 'next/navigation';
 
 // --- Types ---
 type LocationStatus = 'pending' | 'processed' | 'sent' | 'archived' | 'all';
@@ -366,6 +367,17 @@ const GestionLocations = () => {
 
 export default function LocationManagementClient() {
   const { t } = useAdminT();
+  const { userProfile } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (userProfile && userProfile.role !== 'admin') {
+      router.replace('/admin');
+    }
+  }, [userProfile, router]);
+
+  if (!userProfile || userProfile.role !== 'admin') return null;
+
   const slideVariants = {
     enter: (direction: number) => ({
       x: direction > 0 ? 50 : -50,
