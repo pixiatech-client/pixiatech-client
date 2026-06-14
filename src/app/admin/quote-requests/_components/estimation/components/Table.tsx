@@ -378,8 +378,8 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 {est.number}
               </span>
               {est.trackingNumber && (
-                <span className="text-[9px] font-semibold text-zinc-400 truncate flex items-center gap-1">
-                  <Package className="w-2.5 h-2.5 shrink-0" />
+                <span className="text-[9px] font-semibold text-zinc-400 truncate flex items-center gap-1 group-hover:text-orange-600 transition-colors">
+                  <Package className="w-2.5 h-2.5 shrink-0 group-hover:text-orange-500 transition-colors" />
                   {est.trackingNumber}
                 </span>
               )}
@@ -757,7 +757,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">{est.number}</span>
                       {est.trackingNumber && (
                         <span className="text-[8px] font-semibold text-zinc-400 flex items-center gap-0.5">
-                          <Package className="w-2.5 h-2.5" />
+                          <Package className="w-2.5 h-2.5 group-hover:text-orange-500 transition-colors" />
                           {est.trackingNumber}
                         </span>
                       )}
