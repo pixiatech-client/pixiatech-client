@@ -369,12 +369,12 @@ export function ZoneManager() {
                     <TableHead>Ville</TableHead>
                     <TableHead>Code Postal</TableHead>
                     <TableHead>Zone</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-right">{t('Actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                 {isLoadingCities ? (
-                    <TableRow><TableCell colSpan={5} className="text-center h-24"><Loader2 className="animate-spin inline-block mr-2" /> Loading...</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center h-24"><Loader2 className="animate-spin inline-block mr-2" /> {t('Loading...')}</TableCell></TableRow>
                 ) : cities && cities.length > 0 ? (
                     cities.map(city => {
                         const zone = zones?.find(z => z.id === city.zoneId);

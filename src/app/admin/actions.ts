@@ -53,10 +53,6 @@ export async function createSession(idToken: string) {
     const uid = decodedToken.uid;
 
     const settings = await getSettings();
-    if (!settings.allowMultipleSessions) {
-      console.log('[Session Action] Multiple sessions disabled — revoking existing sessions for', uid);
-      await adminAuth.revokeRefreshTokens(uid);
-    }
 
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
     console.log('[Session Action] Creating session cookie...');
@@ -2602,7 +2598,6 @@ const settingsSchema = z.object({
   isWizardBotEnabled: z.boolean().optional(),
   isGuidedConfigEnabled: z.boolean().optional(),
   isManualConfigEnabled: z.boolean().optional(),
-  allowMultipleSessions: z.boolean().optional(),
   hintBubble: hintBubbleSchema.optional(),
   lightThemeId: z.string().optional(),
   darkThemeId: z.string().optional(),
@@ -2714,7 +2709,6 @@ export async function getSettings(): Promise<Settings> {
     isEmailVerificationEnabled: true,
     isPriceHidden: false,
     isWizardBotEnabled: true,
-    allowMultipleSessions: true,
     hintBubble: {
       enabled: true,
       text: "Pour démarrer, veuillez cliquer sur<br /> le bouton <b>+ Ajouter un produit</b>.",
@@ -2778,29 +2772,9 @@ export async function updateSettings(data: unknown) {
     return { success: false, error: result.error.flatten() };
   }
 
-  const { adminDb, adminAuth } = getFirebaseAdmin();
+  const { adminDb } = getFirebaseAdmin();
   try {
     await adminDb.collection('settings').doc(SETTINGS_DOC_ID).set(result.data, { merge: true });
-
-    const oldSettings = await getSettings();
-    const wasMultipleAllowed = oldSettings.allowMultipleSessions !== false;
-    const nowMultipleDisallowed = result.data.allowMultipleSessions === false;
-
-    let reauthToken: string | undefined;
-
-    if (wasMultipleAllowed && nowMultipleDisallowed) {
-      const sessionCookie = cookies().get('session')?.value;
-      if (sessionCookie) {
-        try {
-          const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
-          await adminAuth.revokeRefreshTokens(decoded.uid);
-          reauthToken = await adminAuth.createCustomToken(decoded.uid);
-          console.log('[updateSettings] Revoked all sessions for', decoded.uid, '— reauth token created');
-        } catch (e) {
-          console.error('[updateSettings] Failed to revoke sessions:', e);
-        }
-      }
-    }
 
     // Check if a YouTube URL is configured
     const videoUrl = result.data.previewScreenVideoUrl || result.data.previewScreenImageUrl;
@@ -2820,7 +2794,7 @@ export async function updateSettings(data: unknown) {
     _settingsCache = null; // Invalidate cache so next read picks up fresh data
     revalidatePath('/admin/settings', 'layout');
     revalidatePath('/');
-    return { success: true, reauthToken };
+    return { success: true };
   } catch (error) {
     console.error('Failed to update settings in Firestore:', error);
     return { success: false, error: { formErrors: ['Failed to save settings.'] } };
@@ -3249,8 +3223,7 @@ export async function getSessionUid() {
 
   try {
     const { adminAuth } = getFirebaseAdmin();
-    const settings = await getSettings();
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, !settings.allowMultipleSessions);
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
     return { uid: decoded.uid };
   } catch {
     return { uid: null };
@@ -3267,8 +3240,7 @@ export const getCurrentAdminUser = cache(async (): Promise<UserProfile | { error
   }
 
   try {
-    const settings = await getSettings();
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, !settings.allowMultipleSessions);
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, false);
     const userDoc = await adminDb.collection('users').doc(decodedClaims.uid).get();
     if (!userDoc.exists) return null;
 

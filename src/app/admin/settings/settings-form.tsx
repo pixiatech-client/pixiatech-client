@@ -1,8 +1,6 @@
 'use client';
 
 import { useForm, Controller } from 'react-hook-form';
-import { signInWithCustomToken } from 'firebase/auth';
-import { useAuth } from '@/firebase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -11,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings, TranslatedString, Theme } from '@/lib/types';
 import { updateSettings } from '../actions';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, Monitor, Smartphone, Orbit, Layers, LogIn } from 'lucide-react';
+import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, Monitor, Smartphone, Orbit, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -68,7 +66,7 @@ const settingsSchema = z.object({
   isPriceHidden: z.boolean().optional(),
   isWizardBotEnabled: z.boolean().optional(),
   isGuidedConfigEnabled: z.boolean().optional(),
-  allowMultipleSessions: z.boolean().optional(),
+
   hintBubble: hintBubbleSchema.optional(),
   lightThemeId: z.string().optional(),
   darkThemeId: z.string().optional(),
@@ -113,7 +111,6 @@ interface SettingsFormProps {
 export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
   const { toast } = useToast();
   const { t } = useAdminT();
-  const auth = useAuth();
   const [configMode, setConfigMode] = useState<'sale' | 'rental'>('sale');
   
   const form = useForm<FormValues>({
@@ -124,7 +121,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       isPriceHidden: initialSettings.isPriceHidden ?? false,
       isWizardBotEnabled: initialSettings.isWizardBotEnabled ?? true,
       isGuidedConfigEnabled: initialSettings.isGuidedConfigEnabled ?? true,
-      allowMultipleSessions: initialSettings.allowMultipleSessions ?? true,
+
       estimationFlow: {
         ...initialSettings.estimationFlow,
         sale: initialSettings.estimationFlow?.sale || {
@@ -159,13 +156,6 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
         description: t('Section "{sectionName}" has been updated.').replace('{sectionName}', sectionName),
         variant: 'success',
       });
-      if (result.reauthToken) {
-        try {
-          await signInWithCustomToken(auth, result.reauthToken);
-        } catch (e) {
-          console.error('[Settings] Reauth failed, user will be redirected to login', e);
-        }
-      }
     } else {
        toast({
         variant: 'destructive',
@@ -389,27 +379,6 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                             id="isPriceHidden"
                             checked={field.value}
                             onCheckedChange={field.onChange}
-                        />
-                    )}
-                />
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50/30 p-4">
-                <div className='flex items-center gap-2'>
-                  <LogIn className="h-5 w-5 text-red-500" />
-                  <div>
-                      <Label htmlFor="allowMultipleSessions" className="font-semibold text-red-800">{t('Allow multiple sessions')}</Label>
-                      <p className="text-sm text-red-600/80">{t('If disabled, each user can only be logged in on one device at a time. A new login will automatically disconnect previous sessions.')}</p>
-                  </div>
-                </div>
-                <Controller
-                    control={form.control}
-                    name="allowMultipleSessions"
-                    render={({ field }) => (
-                        <Switch
-                            id="allowMultipleSessions"
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            className="data-[state=checked]:bg-red-500"
                         />
                     )}
                 />

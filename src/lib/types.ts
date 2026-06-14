@@ -201,7 +201,7 @@ export type Settings = {
     validityMinutes: number;
     previewTheme?: string;
   };
-  allowMultipleSessions?: boolean;
+
   estimationFlow?: {
     enableRentalPeriod: boolean;
     enableDigitalSignature: boolean;

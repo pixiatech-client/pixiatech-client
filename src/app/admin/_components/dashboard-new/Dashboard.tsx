@@ -1,7 +1,8 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   TrendingUp, 
   Clock, 
@@ -18,7 +19,8 @@ import {
   RefreshCw,
   Calendar,
   ShoppingBag,
-  AlertTriangle
+  AlertTriangle,
+  Search
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -86,10 +88,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const [statusFilter, setStatusFilter] = useState<QuoteStatus | 'ALL'>('ALL');
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, typeFilter, selectedDate, dateRange]);
+
+  useEffect(() => {
+    if (isSearchOpen && searchRef.current) {
+      searchRef.current.focus();
+    }
+  }, [isSearchOpen]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -313,12 +324,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
     return quotes;
   }, [allQuotesRaw, statusFilter, selectedDate, dateRange, typeFilter]);
 
+  const searchFilteredQuotes = useMemo(() => {
+    if (!searchQuery.trim()) return filteredQuotes;
+    const q = searchQuery.toLowerCase();
+    return filteredQuotes.filter(e =>
+      e.id.toLowerCase().includes(q) ||
+      (e.client?.companyName?.toLowerCase() || '').includes(q) ||
+      (e.status || '').toLowerCase().includes(q)
+    );
+  }, [filteredQuotes, searchQuery]);
+
   const itemsPerPage = 5;
-  const totalPages = Math.ceil(filteredQuotes.length / itemsPerPage);
+  const totalPages = Math.ceil(searchFilteredQuotes.length / itemsPerPage);
   const paginatedQuotes = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
-    return filteredQuotes.slice(start, start + itemsPerPage);
-  }, [filteredQuotes, currentPage, itemsPerPage]);
+    return searchFilteredQuotes.slice(start, start + itemsPerPage);
+  }, [searchFilteredQuotes, currentPage, itemsPerPage]);
 
   const counts = useMemo(() => {
     if (!allQuotesRaw) return { all: 0, sale: 0, rental: 0 };
@@ -683,94 +704,133 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
         </div>
 
         <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-8">
-            <div className="flex items-center justify-between xl:justify-start gap-4">
-              <h3 className="text-xl font-extrabold tracking-tight">{t('admin.recentEstimations')}</h3>
-              <button 
-                onClick={() => router.push('/admin/quote-requests')}
-                className="xl:hidden text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-600 transition-colors"
-              >
-                {t('admin.viewAll')}
-              </button>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              {/* Type Switcher Tabs */}
-              <div className="flex items-center bg-gray-100 dark:bg-white/5 p-1 rounded-2xl border border-gray-200/50 dark:border-white/5 self-start sm:self-auto">
+          <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6 mb-8">
+            <div className="flex flex-wrap xl:flex-nowrap items-center gap-3">
+              <h3 className="text-xl font-extrabold tracking-tight">
+                {isSearchOpen && searchQuery
+                  ? `${t('admin.searchResults') || 'Search results'}`
+                  : t('admin.recentEstimations')}
+              </h3>
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setTypeFilter('all')}
-                  className={`relative px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 ${
-                    typeFilter === 'all'
-                      ? 'bg-white dark:bg-[#202020] text-blue-500 shadow-sm'
-                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                  }`}
+                  onClick={() => setIsSearchOpen(!isSearchOpen)}
+                  className={`p-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'} hover:bg-theme-sidebar-active-bg transition-colors ${isSearchOpen ? 'bg-theme-sidebar-active-bg text-theme-sidebar-active-text ring-2 ring-theme-sidebar-active-bg' : ''}`}
                 >
-                  <span>{t('admin.all', { defaultValue: 'Tous' })}</span>
-                  <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-colors ${
-                    typeFilter === 'all' ? 'bg-blue-500/10 text-blue-500' : 'bg-gray-200 dark:bg-white/10 text-gray-500'
-                  }`}>
-                    {counts.all}
-                  </span>
+                  {isSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5 text-gray-400" />}
                 </button>
-                
-                <button
-                  onClick={() => setTypeFilter('sale')}
-                  className={`relative px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 ${
-                    typeFilter === 'sale'
-                      ? 'bg-white dark:bg-[#202020] text-emerald-500 shadow-sm'
-                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                  }`}
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>{t('admin.sale', { defaultValue: 'Vente' })}</span>
-                  <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-colors ${
-                    typeFilter === 'sale' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-gray-200 dark:bg-white/10 text-gray-500'
-                  }`}>
-                    {counts.sale}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => setTypeFilter('rental')}
-                  className={`relative px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 ${
-                    typeFilter === 'rental'
-                      ? 'bg-white dark:bg-[#202020] text-violet-500 shadow-sm'
-                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                  }`}
-                >
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{t('admin.rental', { defaultValue: 'Location' })}</span>
-                  <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-colors ${
-                    typeFilter === 'rental' ? 'bg-violet-500/10 text-violet-500' : 'bg-gray-200 dark:bg-white/10 text-gray-500'
-                  }`}>
-                    {counts.rental}
-                  </span>
-                </button>
-              </div>
-
-              {/* Status and Action Buttons */}
-              <div className="flex items-center gap-3">
-                <CustomSelect
-                  options={[
-                    { value: 'ALL', label: t('admin.allStatuses') },
-                    { value: 'Traité', label: t('admin.processed'), color: 'text-emerald-500' },
-                    { value: 'En attente', label: t('admin.pending'), color: 'text-yellow-500' },
-                    { value: 'Corbeille', label: t('admin.trashed'), color: 'text-rose-500' },
-                    { value: 'Archive', label: t('admin.archived'), color: 'text-gray-500' },
-                  ]}
-                  value={statusFilter}
-                  onChange={(val) => setStatusFilter(val as QuoteStatus | 'ALL')}
-                  isDark={isDark}
-                  placeholder={t('admin.status')}
-                  className="w-full sm:min-w-[160px]"
-                />
                 <button 
                   onClick={() => router.push('/admin/quote-requests')}
-                  className="hidden xl:flex items-center gap-2 text-xs font-semibold text-blue-500 hover:text-blue-600 cursor-pointer hover:underline whitespace-nowrap"
+                  className="xl:hidden text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-600 transition-colors"
                 >
-                  {t('admin.viewAll')} <ChevronRight className="w-3.5 h-3.5" />
+                  {t('admin.viewAll')}
                 </button>
               </div>
+              <div className="bg-gray-100 dark:bg-white/5 p-1 rounded-2xl border border-gray-200/50 dark:border-white/5 self-start min-w-[450px]">
+                {isSearchOpen ? (
+                  <div className="w-full">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        ref={searchRef}
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Rechercher par ID, client ou statut..."
+                        className="w-full pl-9 pr-8 py-[7px] text-sm rounded-xl border outline-none transition-colors bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-gray-300 dark:bg-black/20 dark:border-white/10 dark:text-white dark:placeholder-gray-500 dark:focus:border-white/20"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    {searchQuery && (
+                      <p className={`text-xs mt-1 px-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                        {searchFilteredQuotes.length} résultat{searchFilteredQuotes.length !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => setTypeFilter('all')}
+                      className={`relative px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 ${
+                        typeFilter === 'all'
+                          ? 'bg-white dark:bg-[#202020] text-blue-500 shadow-sm'
+                          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      <span>{t('admin.all', { defaultValue: 'Tous' })}</span>
+                      <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-colors ${
+                        typeFilter === 'all' ? 'bg-blue-500/10 text-blue-500' : 'bg-gray-200 dark:bg-white/10 text-gray-500'
+                      }`}>
+                        {counts.all}
+                      </span>
+                    </button>
+                    
+                    <button
+                      onClick={() => setTypeFilter('sale')}
+                      className={`relative px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 ${
+                        typeFilter === 'sale'
+                          ? 'bg-white dark:bg-[#202020] text-emerald-500 shadow-sm'
+                          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>{t('admin.sale', { defaultValue: 'Vente' })}</span>
+                      <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-colors ${
+                        typeFilter === 'sale' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-gray-200 dark:bg-white/10 text-gray-500'
+                      }`}>
+                        {counts.sale}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => setTypeFilter('rental')}
+                      className={`relative px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 ${
+                        typeFilter === 'rental'
+                          ? 'bg-white dark:bg-[#202020] text-violet-500 shadow-sm'
+                          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>{t('admin.rental', { defaultValue: 'Location' })}</span>
+                      <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-bold transition-colors ${
+                        typeFilter === 'rental' ? 'bg-violet-500/10 text-violet-500' : 'bg-gray-200 dark:bg-white/10 text-gray-500'
+                      }`}>
+                        {counts.rental}
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <CustomSelect
+                options={[
+                  { value: 'ALL', label: t('admin.allStatuses') },
+                  { value: 'Traité', label: t('admin.processed'), color: 'text-emerald-500' },
+                  { value: 'En attente', label: t('admin.pending'), color: 'text-yellow-500' },
+                  { value: 'Corbeille', label: t('admin.trashed'), color: 'text-rose-500' },
+                  { value: 'Archive', label: t('admin.archived'), color: 'text-gray-500' },
+                ]}
+                value={statusFilter}
+                onChange={(val) => setStatusFilter(val as QuoteStatus | 'ALL')}
+                isDark={isDark}
+                placeholder={t('admin.status')}
+                className="w-full sm:min-w-[160px]"
+              />
+              <button 
+                onClick={() => router.push('/admin/quote-requests')}
+                className="hidden xl:inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:border-blue-300 dark:hover:border-blue-700 cursor-pointer whitespace-nowrap group"
+              >
+                {t('admin.viewAll')}
+                <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+              </button>
             </div>
           </div>
           {/* Desktop View */}
@@ -872,7 +932,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 }) : (
                   <tr>
                     <td colSpan={6} className={`py-8 text-center ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {t('admin.noEstimationFound')}
+                      {searchQuery ? (t('admin.noSearchResults') || 'Aucun résultat pour cette recherche') : t('admin.noEstimationFound')}
                     </td>
                   </tr>
                 )}
@@ -1276,9 +1336,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
 
             <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-purple-500/10 to-transparent border border-purple-500/20 hover:scale-[1.02] transition-transform">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                  <span className="text-purple-500 text-lg">🤖</span>
-                </div>
+                <Image
+                  src="/bot-avatars/AssistantBotPixia.png"
+                  alt="Bot"
+                  width={28}
+                  height={28}
+                  className="w-7 h-7 object-contain shrink-0"
+                />
                 <span className="text-sm font-bold">{t('bot.title')}</span>
               </div>
               <span className="text-lg font-black text-purple-600 dark:text-purple-500">{configuratorStats.lumi}</span>

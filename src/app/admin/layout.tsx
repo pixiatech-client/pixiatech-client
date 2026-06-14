@@ -4,12 +4,11 @@
 import { useUser } from '@/firebase';
 import { AdminLayoutContent } from './_components/admin-layout-content';
 import { usePathname, useRouter } from 'next/navigation';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { getSessionUid, logout, clearSession } from './actions';
+import { getSessionUid, clearSession } from './actions';
 import { ThemeProvider } from '@/contexts/ThemeProvider';
 
-function AdminGatedLayout({ children }: { children: React.ReactNode }) {
+function AdminContent({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const pathname = usePathname();
   const router = useRouter();
@@ -23,10 +22,17 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
 
   // Fetch session cookie UID on mount (server-side verification)
   useEffect(() => {
-    getSessionUid().then((result) => {
-      setSessionUid(result.uid);
-      setSessionLoading(false);
-    });
+    getSessionUid()
+      .then((result) => {
+        setSessionUid(result.uid);
+        setSessionLoading(false);
+      })
+      .catch(() => {
+        // Server action failed (network issue, transient, etc.)
+        // Don't crash — treat as no session cookie (Firebase auth still works)
+        setSessionUid(null);
+        setSessionLoading(false);
+      });
   }, []);
 
   // Logout guard: only logout if genuinely unauthenticated, never during Firebase resolution race
@@ -39,7 +45,7 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
     // Security: UID mismatch between session cookie and Firebase auth
     if (hasValidFirebaseUser && hasSession && user.uid !== sessionUid) {
       console.warn(
-        '[AdminGatedLayout] Session UID mismatch: cookie=',
+        '[AdminContent] Session UID mismatch: cookie=',
         sessionUid,
         'firebase=',
         user.uid
@@ -51,7 +57,6 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
     const elapsed = Date.now() - mountedAt.current;
 
     // Session exists but Firebase hasn't resolved yet — wait during loading + 4s debounce
-    // (Firebase onAuthStateChanged can lag behind session cookie after login)
     if (hasSession && !hasValidFirebaseUser) {
       if (isUserLoading || sessionLoading || elapsed < 4000) return;
     }
@@ -60,7 +65,6 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
     if (hasSession && hasValidFirebaseUser) return;
 
     // No session and no Firebase user — genuinely logged out
-    // Short debounce prevents logout during navigation where Firebase briefly goes null
     if (elapsed < 2000 && !hasSession) return;
 
     // Stale session or no Firebase user: clear the stale cookie and redirect
@@ -72,35 +76,14 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isUserLoading, isAuthPage, user, sessionUid, sessionLoading, isLoggingOut]);
 
-  // While loading Firebase or session, show skeleton (except on auth pages)
-  if ((isUserLoading || sessionLoading) && !isAuthPage) {
-    return (
-      <ThemeProvider>
-        <AdminLayoutContent>{children}</AdminLayoutContent>
-      </ThemeProvider>
-    );
-  }
-
-  // Auth pages render minimal layout (middleware handles redirect if already logged in)
+  // Auth pages: minimal layout (middleware handles redirect if already logged in)
   if (isAuthPage) {
     return <>{children}</>;
   }
 
-  // Protected page with a valid user
-  if (!isAuthPage && user && !user.isAnonymous && !sessionLoading) {
-    return (
-      <ThemeProvider>
-        <AdminLayoutContent>{children}</AdminLayoutContent>
-      </ThemeProvider>
-    );
-  }
-
-  // Fallback: middleware should have redirected, show loader during transition
-  return (
-    <div className="flex min-h-screen w-full items-center justify-center p-4 bg-muted/40">
-      <Skeleton className="h-48 w-full max-w-sm rounded-2xl" />
-    </div>
-  );
+  // Protected pages: always show AdminLayoutContent (sidebar, header, etc.)
+  // ThemeProvider wraps at the top level so the theme never resets between states
+  return <AdminLayoutContent>{children}</AdminLayoutContent>;
 }
 
 
@@ -110,8 +93,10 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AdminGatedLayout>
+    <ThemeProvider>
+      <AdminContent>
         {children}
-    </AdminGatedLayout>
+      </AdminContent>
+    </ThemeProvider>
   );
 }

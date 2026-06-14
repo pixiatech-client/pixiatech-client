@@ -59,10 +59,10 @@ export function CustomSelect({
           type="button"
           onClick={() => setIsOpen(true)}
           className={cn(
-            "w-full flex items-center justify-between px-3 h-10 rounded-xl border text-sm transition-all outline-none",
+            "w-full flex items-center justify-between px-4 py-2 rounded-xl border text-xs font-bold transition-all duration-200 outline-none",
             isDark 
-              ? "bg-white/5 border-white/10 text-white hover:bg-white/10" 
-              : "bg-gray-50 border-gray-200 text-gray-900 hover:bg-gray-100 shadow-sm"
+              ? "bg-blue-950/50 border-blue-800 text-blue-400 hover:bg-blue-900/50 hover:border-blue-700" 
+              : "bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100 hover:border-blue-300"
           )}
         >
           <span className={cn("truncate font-medium", selectedOption?.color)}>

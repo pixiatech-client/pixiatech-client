@@ -21,7 +21,10 @@
         "delete": "Supprimer",
         "user": "Utilisateur",
         "select": "Sélectionner",
-        "selected": "Sélectionné"
+        "selected": "Sélectionné",
+        "admin": "Admin",
+        "commercial": "Commercial",
+        "supplier": "Fournisseur"
     },
     "header": {
         "login": "Se connecter"
@@ -443,6 +446,7 @@
         "myProfile": "Mon Profil",
         "settings": "Paramètres",
         "logout": "Déconnexion",
+        "switchLanguage": "Passer en Français",
         "floatingCalculator": "Calculatrice",
         "siteAccess": "Accéder au site",
         "profile": "Profil",
@@ -494,6 +498,11 @@
         "client": "Client",
         "date": "Date",
         "amount": "Montant",
+        "amountHeader": "Montant",
+        "actions": "Actions",
+        "searchResults": "Résultats de recherche",
+        "noSearchResults": "Aucun résultat",
+        "resetPerformanceSuccess": "Scores réinitialisés",
         "status": "Statut",
         "processed": "Traité",
         "pending": "En attente",
@@ -892,6 +901,8 @@
             "estimatesCreated": "Estimations créées",
             "conversionRate": "Taux de conversion",
             "online": "En ligne",
+            "onlineBadge": "En ligne",
+            "recentActivities": "Activités récentes",
             "activitiesRecent": "Activités récentes",
             "pending": "En attente",
             "processed": "Traité",
@@ -923,6 +934,7 @@
             "estimatesCompleted": "Devis complétés",
             "inProgress": "En cours",
             "online": "En ligne",
+            "searchPlaceholder": "Rechercher une estimation...",
             "activitiesRecent": "Activités récentes"
         },
         "sidebar": {
@@ -952,7 +964,8 @@
             "pdf": "PDF",
             "emergency": "Urgence",
             "messaging": "Messagerie",
-            "software": "Serveur SMTP"
+            "software": "Serveur SMTP",
+            "flow": "Parcours client"
         },
         "resetCounters": "Réinitialiser les compteurs à zéro",
         "impersonate": "Se connecter",

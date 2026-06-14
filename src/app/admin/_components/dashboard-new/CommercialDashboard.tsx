@@ -333,9 +333,13 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
                 ? `${t('admin.searchResults') || 'Résultats de recherche'}`
                 : t('admin.recentEstimations')}
             </h3>
-            <div className="flex items-center gap-2 text-xs font-medium text-blue-500 cursor-pointer hover:underline">
-              <Link href="/admin/quote-requests">{t('admin.viewAll')}</Link> <ChevronRight className="w-3 h-3" />
-            </div>
+            <Link
+              href="/admin/quote-requests"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:border-blue-300 dark:hover:border-blue-700 group"
+            >
+              {t('admin.viewAll')}
+              <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+            </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -411,7 +415,13 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
         <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold">{t('admin.commercialDashboard.topClientsTitle')}</h3>
-            <Link href="/admin/users" className="text-xs font-medium text-blue-500 cursor-pointer hover:underline">{t('admin.viewAll')}</Link>
+            <Link
+              href="/admin/users"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:border-blue-300 dark:hover:border-blue-700 group"
+            >
+              {t('admin.viewAll')}
+              <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+            </Link>
           </div>
           {topClients.length === 0 ? (
             <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'} italic`}>

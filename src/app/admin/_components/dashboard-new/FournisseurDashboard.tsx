@@ -53,15 +53,15 @@ const getQuoteAmount = (quote: any): number => {
   return 0;
 };
 
-const statusMeta: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: 'En attente', color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  processed: { label: 'Traité', color: 'text-blue-600', bg: 'bg-blue-50' },
-  in_progress: { label: 'En cours', color: 'text-orange-600', bg: 'bg-orange-50' },
-  sent: { label: 'Livré', color: 'text-green-600', bg: 'bg-green-50' },
-  delivered: { label: 'Livré', color: 'text-green-600', bg: 'bg-green-50' },
-  archived: { label: 'Archivé', color: 'text-gray-600', bg: 'bg-gray-50' },
-  returned: { label: 'Retourné', color: 'text-purple-600', bg: 'bg-purple-50' },
-  rented: { label: 'Loué', color: 'text-teal-600', bg: 'bg-teal-50' },
+const statusMeta: Record<string, { labelEn: string; labelFr: string; color: string; bg: string }> = {
+  pending: { labelEn: 'Pending', labelFr: 'En attente', color: 'text-yellow-600', bg: 'bg-yellow-50' },
+  processed: { labelEn: 'Processed', labelFr: 'Traité', color: 'text-blue-600', bg: 'bg-blue-50' },
+  in_progress: { labelEn: 'In progress', labelFr: 'En cours', color: 'text-orange-600', bg: 'bg-orange-50' },
+  sent: { labelEn: 'Sent', labelFr: 'Livré', color: 'text-green-600', bg: 'bg-green-50' },
+  delivered: { labelEn: 'Delivered', labelFr: 'Livré', color: 'text-green-600', bg: 'bg-green-50' },
+  archived: { labelEn: 'Archived', labelFr: 'Archivé', color: 'text-gray-600', bg: 'bg-gray-50' },
+  returned: { labelEn: 'Returned', labelFr: 'Retourné', color: 'text-purple-600', bg: 'bg-purple-50' },
+  rented: { labelEn: 'Rented', labelFr: 'Loué', color: 'text-teal-600', bg: 'bg-teal-50' },
 };
 
 interface FournisseurDashboardProps {
@@ -135,11 +135,11 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
     if (!items.length) return [];
     return items.slice(0, 5).map((q: any) => {
       const statusStr = q.status || 'pending';
-      const meta = statusMeta[statusStr] || { label: statusStr, color: 'text-gray-600', bg: 'bg-gray-50' };
+      const meta = statusMeta[statusStr] || { labelEn: statusStr, labelFr: statusStr, color: 'text-gray-600', bg: 'bg-gray-50' };
       return {
         id: q.estimationNumber || q.id?.slice(0, 8) || 'N/A',
         client: q.clientName || q.clientEmail || q.userName || 'Client',
-        statusLabel: meta.label,
+        statusLabel: locale === 'fr' ? meta.labelFr : meta.labelEn,
         statusColor: meta.color,
         statusBg: meta.bg,
         amount: getQuoteAmount(q),
@@ -157,7 +157,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
   ];
 
   const activities = [
-    { id: 1, user: 'Admin', action: adt('Nouvelle demande affectée'), details: `Estimation #${recentEstimations[0]?.id || '---'}`, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), type: 'admin' },
+    { id: 1, user: adt('Admin'), action: adt('Nouvelle demande affectée'), details: `Estimation #${recentEstimations[0]?.id || '---'}`, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), type: 'admin' },
   ];
 
   useEffect(() => {
@@ -317,9 +317,13 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                 ? `${t('admin.searchResults') || 'Résultats de recherche'}`
                 : t('admin.recentEstimations')}
             </h3>
-            <div className="flex items-center gap-2 text-xs font-medium text-blue-500 cursor-pointer hover:underline">
-              <Link href="/admin/quote-requests">{t('admin.viewAll')}</Link> <ChevronRight className="w-3 h-3" />
-            </div>
+            <Link
+              href="/admin/quote-requests"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:border-blue-300 dark:hover:border-blue-700 group"
+            >
+              {t('admin.viewAll')}
+              <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+            </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">

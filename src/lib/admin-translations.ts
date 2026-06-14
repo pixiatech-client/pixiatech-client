@@ -475,8 +475,7 @@ const adminTranslations: Record<string, string> = {
   'If disabled, customers go directly to the PDF.': 'Si désactivé, les clients vont directement au PDF.',
   'Hide price and show animation': 'Masquer le prix et afficher l\'animation',
   'Replaces the price with an animated "Estimating..." text.': 'Remplace le prix par un texte animé "Estimation en cours...".',
-  'Allow multiple sessions': 'Autoriser les connexions multiples',
-  'If disabled, each user can only be logged in on one device at a time. A new login will automatically disconnect previous sessions.': 'Si désactivé, chaque utilisateur ne peut être connecté que sur un seul appareil à la fois. Une nouvelle connexion déconnectera automatiquement les sessions précédentes.',
+
   'Enable email verification': 'Activer la vérification email',
   'Enable global messaging': 'Activer la messagerie globale',
 
@@ -928,6 +927,54 @@ const adminTranslations: Record<string, string> = {
   'Maximum products per estimate': 'Maximum produits par estimation',
   'Min curve': 'Courbe min',
   'Max curve': 'Courbe max',
+
+  // Dashboard missing translations
+  'Admin': 'Admin',
+  'Access Denied': 'Accès refusé',
+  'The administrator has removed your access to Chat.': 'L\'administrateur a supprimé votre accès au chat.',
+  'Administrateur': 'Administrateur',
+  'Administrateur principal du système Pixiatech.': 'Administrateur principal du système Pixiatech.',
+  'Administratrice adjointe.': 'Administratrice adjointe.',
+  'Administratrice système senior.': 'Administratrice système senior.',
+  'Administrateur réseau.': 'Administrateur réseau.',
+  'Switch to English': 'Switch to English',
+  'Passer en Français': 'Passer en Français',
+  'Fournisseur': 'Fournisseur',
+  'Commercial': 'Commercial',
+
+  // Sidebar_fix missing translations
+  'Collapse': 'Réduire',
+  'Edit Logo': 'Modifier le logo',
+  'Text': 'Texte',
+  'Letter': 'Lettre',
+  'Color': 'Couleur',
+
+  // ImpersonationDrawer missing translations
+  'Log in as': 'Se connecter en tant que',
+  'No user found': 'Aucun utilisateur trouvé',
+
+  // Supplier quote details missing translations
+  'Fiche Technique pour Fournisseur': 'Fiche Technique pour Fournisseur',
+  'Quantité': 'Quantité',
+  'Dimensions': 'Dimensions',
+  'Surface / Dalles': 'Surface / Dalles',
+  'Spécifications': 'Spécifications',
+  'Notes additionnelles du client': 'Notes additionnelles du client',
+  'Photo de l\'installation': 'Photo de l\'installation',
+
+  // Settings software page missing translations
+  'SmtpHostPlaceholder': 'PixiaTech',
+  'TestRecipientEmail': 'Email destinataire du test',
+  'RunFullDiagnostic': 'Lancer le diagnostic complet',
+  'SentTo': 'Envoyé à',
+  'ServerUsed': 'Serveur utilisé',
+  'MessageId': 'MessageId',
+
+  // Global theme selector missing translations
+  'QuickTints': 'Teintes rapides',
+
+  // Personalization editor missing translations
+  'Action': 'Action',
 };
 
 export default adminTranslations;

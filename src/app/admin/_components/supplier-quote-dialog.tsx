@@ -85,9 +85,9 @@ export function SupplierQuoteDialog({ quote, allProducts, productSpecs, children
       </DialogTrigger>
       <DialogContent className="sm:max-w-4xl h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Supplier View</DialogTitle>
+          <DialogTitle>{t('Supplier View')}</DialogTitle>
           <DialogDescription>
-            Preview and download the simplified technical sheet.
+            {t('Preview and download the simplified technical sheet.')}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-auto bg-gray-200 p-4 rounded-md">

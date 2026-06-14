@@ -22,6 +22,8 @@ const STATUS_TRANSLATIONS: Record<string, { fr: string; en: string }> = {
   returned: { fr: 'Retourné', en: 'Returned' },
   supplier: { fr: 'Fournisseur', en: 'Supplier' },
   rented: { fr: 'Loué', en: 'Rented' },
+  in_progress: { fr: 'En cours', en: 'In progress' },
+  sent: { fr: 'Envoyé', en: 'Sent' },
   sale: { fr: 'Vente', en: 'Sale' },
   rental: { fr: 'Location', en: 'Rental' },
 };

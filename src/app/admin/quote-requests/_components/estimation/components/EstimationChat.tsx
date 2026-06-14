@@ -20,6 +20,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore as db, storage } from '@/firebase/config';
 import { Estimation } from '../types';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface SimpleUser {
   uid: string;
@@ -58,6 +59,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
   suppliers,
   onMessageSent,
 }) => {
+  const { t: adt } = useAdminT();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [otherUser, setOtherUser] = useState<SimpleUser | null>(null);
@@ -110,7 +112,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
         setOtherUser({
           uid: estimation.treatedBy || 'admin',
           email: '',
-          displayName: estimation.treatedByName || 'Admin',
+          displayName: estimation.treatedByName || adt('Admin'),
           photoURL: undefined,
           role: (estimation.treatedByRole as any) || 'admin',
         });
@@ -486,7 +488,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
                   const isMine = msg.senderId === currentUser.uid;
                   const senderName = msg.senderName || (isMine ? 'Vous' : 'Inconnu');
                   const senderRole = msg.senderRole || (isMine ? currentUser.role : 'unknown');
-                  const roleLabel = senderRole === 'admin' ? 'Admin' : senderRole === 'prestataire' ? 'Fournisseur' : 'Commercial';
+                  const roleLabel = senderRole === 'admin' ? adt('Admin') : senderRole === 'prestataire' ? adt('Fournisseur') : adt('Commercial');
                   const roleColor = senderRole === 'admin' ? 'bg-blue-500/20 text-blue-400' : senderRole === 'prestataire' ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400';
                   
                   return (

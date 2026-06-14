@@ -184,7 +184,7 @@ const isFournisseur = userRole === 'fournisseur';
    const currentUser = useMemo(() => ({
      uid: userId || userName || 'unknown',
      email: '',
-      displayName: userName || (userRole === 'admin' ? 'Admin' : userRole === 'commercial' ? 'Commercial' : 'Supplier'),
+      displayName: userName || (userRole === 'admin' ? t('common.admin') : userRole === 'commercial' ? t('common.commercial') : t('common.supplier')),
      photoURL: '',
      role: userRole === 'fournisseur' ? 'prestataire' : (userRole as any),
    }), [userId, userName, userRole]);

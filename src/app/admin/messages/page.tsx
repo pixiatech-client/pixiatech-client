@@ -9,6 +9,7 @@ import ChatList from '@/components/chat/ChatList';
 import ChatWindow from '@/components/chat/ChatWindow';
 import ContactList from '@/components/chat/ContactList';
 import { MessageSquare, Shield, LogOut, Users } from 'lucide-react';
+import { useAdminT } from '@/hooks/useAdminT';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import MiniChat from '@/components/chat/MiniChat';
@@ -27,6 +28,7 @@ export default function MessagesPage() {
   const [activeMobileTab, setActiveMobileTab] = useState<'discussions' | 'annuaire' | 'chat'>('discussions');
   const [isMiniChatOpen, setIsMiniChatOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 1024px)');
+  const { t: adt } = useAdminT();
 
   // 1. Real-time Current User
   useEffect(() => {
@@ -145,8 +147,8 @@ export default function MessagesPage() {
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md rounded-[40px] bg-white p-10 shadow-2xl border border-gray-100 text-center">
           <div className="mb-8 flex justify-center text-red-600"><Shield size={48} /></div>
-          <h1 className="mb-4 text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-emerald-600">Access Denied</h1>
-          <p className="text-gray-500 font-medium">The administrator has removed your access to Chat.</p>
+          <h1 className="mb-4 text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-emerald-600">{adt('Access Denied')}</h1>
+          <p className="text-gray-500 font-medium">{adt('The administrator has removed your access to Chat.')}</p>
         </div>
       </div>
     );

@@ -412,7 +412,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 variant="ghost"
                 size="icon"
                 onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')}
-                title={locale === 'fr' ? "Switch to English" : "Passer en Français"}
+                title={t('admin.switchLanguage')}
                 className={cn(
                   "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
                   "bg-white hover:bg-theme-sidebar-active-bg hover:text-blue-700"

@@ -21,7 +21,10 @@
         "delete": "Delete",
         "user": "User",
         "select": "Select",
-        "selected": "Selected"
+        "selected": "Selected",
+        "admin": "Admin",
+        "commercial": "Commercial",
+        "supplier": "Supplier"
     },
     "header": {
         "login": "Login"
@@ -447,6 +450,7 @@
         "myProfile": "My Profile",
         "settings": "Settings",
         "logout": "Log out",
+        "switchLanguage": "Switch to English",
         "floatingCalculator": "Calculator",
         "siteAccess": "Access Site",
         "profile": "Profile",
@@ -498,6 +502,11 @@
         "client": "Client",
         "date": "Date",
         "amount": "Amount",
+        "amountHeader": "Amount",
+        "actions": "Actions",
+        "searchResults": "Search results",
+        "noSearchResults": "No results",
+        "resetPerformanceSuccess": "Scores reset",
         "status": "Status",
         "processed": "Processed",
         "pending": "Pending",
@@ -600,6 +609,8 @@
             "estimatesCreated": "Estimates created",
             "conversionRate": "Conversion rate",
             "online": "Online",
+            "onlineBadge": "Online",
+            "recentActivities": "Recent activities",
             "activitiesRecent": "Recent activities",
             "pending": "Pending",
             "processed": "Processed",
@@ -631,6 +642,7 @@
             "estimatesCompleted": "Estimates completed",
             "inProgress": "In progress",
             "online": "Online",
+            "searchPlaceholder": "Search for an estimate...",
             "activitiesRecent": "Recent activities"
         },
         "sidebar": {
@@ -956,7 +968,8 @@
             "pdf": "PDF",
             "emergency": "Emergency",
             "messaging": "Messaging",
-            "software": "SMTP Server"
+            "software": "SMTP Server",
+            "flow": "Customer Flow"
         },
         "resetCounters": "Reset counters to zero",
         "impersonate": "Log in",
