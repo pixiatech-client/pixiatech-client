@@ -43,6 +43,7 @@ export interface Estimation {
   treatedByRole?: string;
   treatedAt?: any;
   supplierNotes?: string;
+  supplierNotesRead?: boolean;
   emailVerified?: boolean;
   sitePhoto?: string;
   pdfUrl?: string;

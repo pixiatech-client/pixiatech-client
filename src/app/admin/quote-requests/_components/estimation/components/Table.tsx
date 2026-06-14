@@ -493,9 +493,9 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       >
                          <div className="relative">
                            <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
-                           {est.supplierNotes && (
-                             <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />
-                           )}
+{est.supplierNotes && !est.supplierNotesRead && (
+    <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" />
+  )}
                          </div>
                       </button>
                       <button 
@@ -573,9 +573,9 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-amber-500'}`} title={t('estimation.viewReason')}>
                          <div className="relative">
                            <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
-                           {est.supplierNotes && (
-                             <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />
-                           )}
+{est.supplierNotes && !est.supplierNotesRead && (
+    <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" />
+  )}
                          </div>
                       </button>
                       <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title={t('estimation.addTracking')}>
@@ -594,9 +594,9 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title={t('estimation.viewReason')}>
                          <div className="relative">
                            <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
-                           {est.supplierNotes && (
-                             <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />
-                           )}
+{est.supplierNotes && !est.supplierNotesRead && (
+    <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" />
+  )}
                          </div>
                       </button>
                       <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title={t('estimation.edit')}>

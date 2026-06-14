@@ -765,6 +765,13 @@ const filteredEstimations = useMemo(() => {
         });
       }
       setIsMessagePopupOpen(true);
+      
+      // Mark supplier notes as read locally so the red badge disappears
+      if (est.supplierNotes) {
+        setEstimations(prev => prev.map(e =>
+          e.id === id ? { ...e, supplierNotesRead: true } : e
+        ));
+      }
     }, [estimations, fullQuotes]);
 
     const handleUpdateTracking = useCallback((id: string, info: TrackingInfo) => {
@@ -1325,44 +1332,46 @@ const filteredEstimations = useMemo(() => {
     <div className="min-h-screen px-3 py-4 md:p-6 overflow-x-hidden bg-transparent">
       <div className="max-w-7xl mx-auto w-full">
 
-        <div className="flex justify-end mb-6">
-          <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full md:w-auto overflow-hidden shadow-sm">
-            <button
-              onClick={() => setEstimationMode('vente')}
-              className={cn(
-                "relative flex-1 md:flex-none flex items-center justify-center gap-2 md:gap-3 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                estimationMode === 'vente' ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
-              )}
-            >
-              {estimationMode === 'vente' && (
-                <motion.span
-                  layoutId="estimation-mode-bubble"
-                  className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
-                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                />
-              )}
-<ShoppingBag className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'vente' ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-               <span className="z-20 whitespace-nowrap">{t('admin.saleMode')}</span>
-            </button>
-            <button
-              onClick={() => setEstimationMode('location')}
-              className={cn(
-                "relative flex-1 md:flex-none flex items-center justify-center gap-2 md:gap-3 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                estimationMode === 'location' ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
-              )}
-            >
-              {estimationMode === 'location' && (
-                <motion.span
-                  layoutId="estimation-mode-bubble"
-                  className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
-                  transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                />
-              )}
-<Calendar className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'location' ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-               <span className="z-20 whitespace-nowrap">{t('admin.rentalMode')}</span>
-            </button>
+        {!isFournisseur && (
+          <div className="flex justify-end mb-6">
+            <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full md:w-auto overflow-hidden shadow-sm">
+              <button
+                onClick={() => setEstimationMode('vente')}
+                className={cn(
+                  "relative flex-1 md:flex-none flex items-center justify-center gap-2 md:gap-3 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                  estimationMode === 'vente' ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
+                )}
+              >
+                {estimationMode === 'vente' && (
+                  <motion.span
+                    layoutId="estimation-mode-bubble"
+                    className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                  />
+                )}
+  <ShoppingBag className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'vente' ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                 <span className="z-20 whitespace-nowrap">{t('admin.saleMode')}</span>
+              </button>
+              <button
+                onClick={() => setEstimationMode('location')}
+                className={cn(
+                  "relative flex-1 md:flex-none flex items-center justify-center gap-2 md:gap-3 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                  estimationMode === 'location' ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
+                )}
+              >
+                {estimationMode === 'location' && (
+                  <motion.span
+                    layoutId="estimation-mode-bubble"
+                    className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                  />
+                )}
+  <Calendar className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'location' ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                 <span className="z-20 whitespace-nowrap">{t('admin.rentalMode')}</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <TabNavigation
           activeTab={activeTab}
