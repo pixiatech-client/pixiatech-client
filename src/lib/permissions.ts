@@ -156,7 +156,7 @@ export function canAccessRoute(role: UserRole | undefined, route: string): boole
   if (!role) return false;
 
   // Restrict products and history pages to admin only
-  if (route.startsWith('/admin/products') || route.startsWith('/admin/history') || route.startsWith('/admin/amine')) {
+  if (route.startsWith('/admin/products') || route.startsWith('/admin/history') || route.startsWith('/admin/amine') || route.startsWith('/admin/locations')) {
     return hasPermission(role, '*');
   }
 
