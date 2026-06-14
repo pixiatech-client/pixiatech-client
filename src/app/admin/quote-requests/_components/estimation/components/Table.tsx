@@ -1397,12 +1397,12 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
             >
               <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
                     <Package className="w-4 h-4 text-white" />
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-gray-900 tracking-tight uppercase">{t('estimation.trackingTitle')}</h2>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{selectedEstimation.number}</p>
+                    <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wide">{selectedEstimation.number}</p>
                   </div>
                 </div>
                 <button onClick={() => setIsTrackingPanelOpen(false)} className="p-2 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer">
