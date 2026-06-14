@@ -1418,7 +1418,7 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                     value={trackingForm.number}
                     onChange={(e) => setTrackingForm({ ...trackingForm, number: e.target.value })}
                     placeholder={t('estimation.trackingPlaceholder')}
-                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
+                    className="w-full px-4 py-2.5 bg-white border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
 
