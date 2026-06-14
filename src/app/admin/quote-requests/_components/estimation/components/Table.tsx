@@ -410,6 +410,15 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                   <Phone className="w-3 h-3" />
                   {est.phone || 'Non renseigné'}
                 </a>
+                {est.supplier && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 ${
+                    isSelected 
+                      ? 'bg-sky-100 text-sky-700' 
+                      : 'bg-sky-50 text-sky-600 group-hover:bg-sky-100'
+                  }`}>
+                    {est.supplier}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -951,6 +960,11 @@ title={est.isLocked ? t('estimation.unlock') : t('estimation.lock')}
                       >
                         {est.phone}
                       </button>
+                      {est.supplier && (
+                        <div className="text-xs font-medium text-sky-600 mt-1 flex items-center gap-1">
+                          <span className="text-zinc-400">→</span> {est.supplier}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </motion.div>
