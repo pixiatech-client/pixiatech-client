@@ -383,12 +383,12 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                     )}
                 />
               </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
+              <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50/30 p-4">
                 <div className='flex items-center gap-2'>
-                  <LogIn className="h-5 w-5 text-muted-foreground" />
+                  <LogIn className="h-5 w-5 text-red-500" />
                   <div>
-                      <Label htmlFor="allowMultipleSessions" className="font-semibold">{t('Allow multiple sessions')}</Label>
-                      <p className="text-sm text-muted-foreground">{t('If disabled, each user can only be logged in on one device at a time. A new login will automatically disconnect previous sessions.')}</p>
+                      <Label htmlFor="allowMultipleSessions" className="font-semibold text-red-800">{t('Allow multiple sessions')}</Label>
+                      <p className="text-sm text-red-600/80">{t('If disabled, each user can only be logged in on one device at a time. A new login will automatically disconnect previous sessions.')}</p>
                   </div>
                 </div>
                 <Controller
@@ -399,6 +399,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                             id="allowMultipleSessions"
                             checked={field.value}
                             onCheckedChange={field.onChange}
+                            className="data-[state=checked]:bg-red-500"
                         />
                     )}
                 />
