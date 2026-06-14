@@ -1381,77 +1381,77 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsTrackingPanelOpen(false)}
-              className="absolute inset-0 bg-theme-sidebar-active-bg/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-[400px] bg-theme-sidebar-active-bg h-full shadow-2xl flex flex-col border-l border-white/10"
+              className="relative w-[400px] bg-white h-full shadow-xl flex flex-col border-l border-gray-200"
             >
-              <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                    <Package className="w-4 h-4 text-black" />
+                  <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+                    <Package className="w-4 h-4 text-white" />
                   </div>
                   <div>
-<h2 className="text-base font-bold text-theme-sidebar-active-text tracking-tight uppercase">{t('estimation.trackingTitle')}</h2>
-                     <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">{selectedEstimation.number}</p>
-                   </div>
-                 </div>
-                 <button onClick={() => setIsTrackingPanelOpen(false)} className="p-2 hover:bg-white/10 rounded-lg transition-all">
-                   <X className="w-5 h-5 text-zinc-500" />
-                 </button>
-               </div>
+                    <h2 className="text-base font-bold text-gray-900 tracking-tight uppercase">{t('estimation.trackingTitle')}</h2>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{selectedEstimation.number}</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsTrackingPanelOpen(false)} className="p-2 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer">
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
 
-               <div className="flex-1 p-4 space-y-6 bg-theme-sidebar-active-bg">
-                 <div className="space-y-1.5">
-                   <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide ml-3">{t('estimation.trackingNumber')}</label>
-                   <div className="relative">
-                     <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                     <input
-                       type="text"
-                       value={trackingForm.number}
-                       onChange={(e) => setTrackingForm({ ...trackingForm, number: e.target.value })}
-                       placeholder={t('estimation.trackingPlaceholder')}
-                       className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-theme-sidebar-active-text"
-                     />
-                   </div>
-                 </div>
+              <div className="flex-1 p-6 space-y-6 bg-white">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.trackingNumber')}</label>
+                  <div className="relative">
+                    <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={trackingForm.number}
+                      onChange={(e) => setTrackingForm({ ...trackingForm, number: e.target.value })}
+                      placeholder={t('estimation.trackingPlaceholder')}
+                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
+                    />
+                  </div>
+                </div>
 
-                 <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-1.5">
-                     <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide ml-3">{t('estimation.deliveryDate')}</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.deliveryDate')}</label>
                     <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
                         type="date"
                         min={new Date().toISOString().split('T')[0]}
                         value={trackingForm.deliveryDate}
                         onChange={(e) => setTrackingForm({ ...trackingForm, deliveryDate: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-theme-sidebar-active-text"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm font-medium text-gray-900"
                       />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide ml-3">{t('estimation.receiptDateLabel')}</label>
+                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.receiptDateLabel')}</label>
                     <div className="relative">
-                      <History className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <History className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                       <input
                         type="date"
                         min={new Date().toISOString().split('T')[0]}
                         value={trackingForm.receiptDate}
                         onChange={(e) => setTrackingForm({ ...trackingForm, receiptDate: e.target.value })}
-                        className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-theme-sidebar-active-text"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm font-medium text-gray-900"
                       />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 bg-zinc-900 border-t border-white/10 flex gap-3">
-                <button onClick={() => setIsTrackingPanelOpen(false)} className="flex-1 py-2.5 bg-theme-sidebar-active-bg border border-white/10 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-white/5 transition-all">
+              <div className="p-4 bg-gray-50 border-t border-gray-200 flex gap-3">
+                <button onClick={() => setIsTrackingPanelOpen(false)} className="flex-1 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-[11px] font-semibold uppercase tracking-wide hover:bg-gray-100 transition-colors cursor-pointer">
                   {t('estimation.cancel')}
                 </button>
                 <button
@@ -1461,7 +1461,7 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                       setIsTrackingPanelOpen(false);
                     }
                   }}
-                  className="flex-1 py-2.5 bg-[#1447e6] text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-blue-500 transition-all"
+                  className="flex-1 py-2.5 bg-gray-900 text-white rounded-lg text-[11px] font-semibold uppercase tracking-wide hover:bg-gray-800 transition-colors cursor-pointer"
                 >
                   {t('estimation.save')}
                 </button>
