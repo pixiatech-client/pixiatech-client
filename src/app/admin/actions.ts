@@ -49,7 +49,16 @@ export async function createSession(idToken: string) {
   console.log('[Session Action] Starting session creation...');
   const { adminAuth } = getFirebaseAdmin();
   try {
-    const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+
+    const settings = await getSettings();
+    if (!settings.allowMultipleSessions) {
+      console.log('[Session Action] Multiple sessions disabled — revoking existing sessions for', uid);
+      await adminAuth.revokeRefreshTokens(uid);
+    }
+
+    const expiresIn = 60 * 60 * 24 * 5 * 1000;
     console.log('[Session Action] Creating session cookie...');
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
     console.log('[Session Action] Session cookie created successfully.');
@@ -2593,6 +2602,7 @@ const settingsSchema = z.object({
   isWizardBotEnabled: z.boolean().optional(),
   isGuidedConfigEnabled: z.boolean().optional(),
   isManualConfigEnabled: z.boolean().optional(),
+  allowMultipleSessions: z.boolean().optional(),
   hintBubble: hintBubbleSchema.optional(),
   lightThemeId: z.string().optional(),
   darkThemeId: z.string().optional(),
@@ -2704,6 +2714,7 @@ export async function getSettings(): Promise<Settings> {
     isEmailVerificationEnabled: true,
     isPriceHidden: false,
     isWizardBotEnabled: true,
+    allowMultipleSessions: true,
     hintBubble: {
       enabled: true,
       text: "Pour démarrer, veuillez cliquer sur<br /> le bouton <b>+ Ajouter un produit</b>.",
@@ -3218,7 +3229,8 @@ export async function getSessionUid() {
 
   try {
     const { adminAuth } = getFirebaseAdmin();
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+    const settings = await getSettings();
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, !settings.allowMultipleSessions);
     return { uid: decoded.uid };
   } catch {
     return { uid: null };
@@ -3235,7 +3247,8 @@ export const getCurrentAdminUser = cache(async (): Promise<UserProfile | { error
   }
 
   try {
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, false);
+    const settings = await getSettings();
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, !settings.allowMultipleSessions);
     const userDoc = await adminDb.collection('users').doc(decodedClaims.uid).get();
     if (!userDoc.exists) return null;
 

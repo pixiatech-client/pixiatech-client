@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings, TranslatedString, Theme } from '@/lib/types';
 import { updateSettings } from '../actions';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, Monitor, Smartphone, Orbit, Layers } from 'lucide-react';
+import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, Monitor, Smartphone, Orbit, Layers, LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -66,6 +66,7 @@ const settingsSchema = z.object({
   isPriceHidden: z.boolean().optional(),
   isWizardBotEnabled: z.boolean().optional(),
   isGuidedConfigEnabled: z.boolean().optional(),
+  allowMultipleSessions: z.boolean().optional(),
   hintBubble: hintBubbleSchema.optional(),
   lightThemeId: z.string().optional(),
   darkThemeId: z.string().optional(),
@@ -120,6 +121,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       isPriceHidden: initialSettings.isPriceHidden ?? false,
       isWizardBotEnabled: initialSettings.isWizardBotEnabled ?? true,
       isGuidedConfigEnabled: initialSettings.isGuidedConfigEnabled ?? true,
+      allowMultipleSessions: initialSettings.allowMultipleSessions ?? true,
       estimationFlow: {
         ...initialSettings.estimationFlow,
         sale: initialSettings.estimationFlow?.sale || {
@@ -375,6 +377,26 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                     render={({ field }) => (
                         <Switch
                             id="isPriceHidden"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                        />
+                    )}
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div className='flex items-center gap-2'>
+                  <LogIn className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                      <Label htmlFor="allowMultipleSessions" className="font-semibold">{t('Allow multiple sessions')}</Label>
+                      <p className="text-sm text-muted-foreground">{t('If disabled, each user can only be logged in on one device at a time. A new login will automatically disconnect previous sessions.')}</p>
+                  </div>
+                </div>
+                <Controller
+                    control={form.control}
+                    name="allowMultipleSessions"
+                    render={({ field }) => (
+                        <Switch
+                            id="allowMultipleSessions"
                             checked={field.value}
                             onCheckedChange={field.onChange}
                         />

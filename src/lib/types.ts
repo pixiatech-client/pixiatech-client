@@ -201,6 +201,7 @@ export type Settings = {
     validityMinutes: number;
     previewTheme?: string;
   };
+  allowMultipleSessions?: boolean;
   estimationFlow?: {
     enableRentalPeriod: boolean;
     enableDigitalSignature: boolean;
@@ -310,6 +311,9 @@ export type UserProfile = {
   status: 'pending' | 'approved';
   createdAt: any; 
   originalAdminUid?: string;
+  activeSessionId?: string;
+  lastLoginAt?: any;
+  lastLoginIp?: string;
   themeSettings?: ThemeSettings;
 };
 
