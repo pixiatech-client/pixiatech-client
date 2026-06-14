@@ -401,14 +401,14 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 <a 
                   href={`tel:${est.phone}`}
                   onClick={(e) => e.stopPropagation()}
-                  className={`px-2 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1 transition-all ${
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 transition-all ${
                     isSelected 
-                      ? 'bg-theme-app text-theme-card-text/60 hover:bg-theme-sidebar-active-bg hover:text-black' 
-                      : 'bg-theme-app/50 text-theme-card-text/40 group-hover:bg-theme-app group-hover:text-theme-card-text/60 hover:!bg-theme-sidebar-active-bg hover:!text-black'
+                      ? 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200' 
+                      : 'bg-zinc-100/80 text-zinc-600 group-hover:bg-zinc-100 group-hover:text-zinc-800'
                   }`}
                 >
-                  <Phone className="w-2.5 h-2.5" />
-                  {est.phone}
+                  <Phone className="w-3 h-3" />
+                  {est.phone || 'Non renseigné'}
                 </a>
               </div>
             </div>
@@ -458,12 +458,6 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
               <span className={`text-[10px] font-medium ${isSelected ? 'text-zinc-500' : 'group-hover:text-zinc-500 text-zinc-400'}`}>
                 {est.date || '--/--/----'}
               </span>
-              {est.trackingNumber && (
-                <div className="mt-1 flex items-center gap-1.5 bg-theme-sidebar-active-bg/10 px-1.5 py-0.5 rounded w-max">
-                  <Package className="w-3 h-3 text-theme-sidebar-active-text" />
-                  <span className="text-[9px] font-bold text-theme-sidebar-active-text tracking-tighter">{est.trackingNumber}</span>
-                </div>
-              )}
             </div>
 
             {/* Price Column Hidden for Supplier (Except in specific tabs if needed) */}
