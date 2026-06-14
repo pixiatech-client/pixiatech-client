@@ -1410,34 +1410,30 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                 </button>
               </div>
 
-              <div className="flex-1 p-6 space-y-6 bg-white">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.trackingNumber')}</label>
-                  <div className="relative">
-                    <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <div className="flex-1 p-4 space-y-4 bg-white">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.trackingNumber')}</label>
                     <input
                       type="text"
                       value={trackingForm.number}
                       onChange={(e) => setTrackingForm({ ...trackingForm, number: e.target.value })}
                       placeholder={t('estimation.trackingPlaceholder')}
-                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
+                      className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.deliveryDate')}</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.deliveryDate')}</label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button className="w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm">
+                        <button className="w-full flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm">
                           <CalendarIcon className="w-4 h-4 text-gray-400 shrink-0" />
-                          <span className={trackingForm.deliveryDate ? 'text-gray-900 font-medium' : 'text-gray-400'}>
-                            {trackingForm.deliveryDate ? format(new Date(trackingForm.deliveryDate), 'dd MMM yyyy') : t('estimation.selectDate')}
+                          <span className={`truncate ${trackingForm.deliveryDate ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+                            {trackingForm.deliveryDate ? format(new Date(trackingForm.deliveryDate), 'dd MMM') : t('estimation.selectDate')}
                           </span>
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="z-[200] w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={trackingForm.deliveryDate ? new Date(trackingForm.deliveryDate) : undefined}
@@ -1456,21 +1452,21 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.receiptDateLabel')}</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.receiptDateLabel')}</label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <button
                           disabled={!trackingForm.deliveryDate}
-                          className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm ${!trackingForm.deliveryDate ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          className={`w-full flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm ${!trackingForm.deliveryDate ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           <History className="w-4 h-4 text-gray-400 shrink-0" />
-                          <span className={trackingForm.receiptDate ? 'text-gray-900 font-medium' : 'text-gray-400'}>
-                            {trackingForm.receiptDate ? format(new Date(trackingForm.receiptDate), 'dd MMM yyyy') : t('estimation.selectDate')}
+                          <span className={`truncate ${trackingForm.receiptDate ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+                            {trackingForm.receiptDate ? format(new Date(trackingForm.receiptDate), 'dd MMM') : t('estimation.selectDate')}
                           </span>
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="z-[200] w-auto p-0" align="start">
                         <Calendar
                           mode="single"
                           selected={trackingForm.receiptDate ? new Date(trackingForm.receiptDate) : undefined}
