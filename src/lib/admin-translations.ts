@@ -475,6 +475,8 @@ const adminTranslations: Record<string, string> = {
   'If disabled, customers go directly to the PDF.': 'Si désactivé, les clients vont directement au PDF.',
   'Hide price and show animation': 'Masquer le prix et afficher l\'animation',
   'Replaces the price with an animated "Estimating..." text.': 'Remplace le prix par un texte animé "Estimation en cours...".',
+  'Allow multiple sessions': 'Autoriser les connexions multiples',
+  'If disabled, each user can only be logged in on one device at a time. A new login will automatically disconnect previous sessions.': 'Si désactivé, chaque utilisateur ne peut être connecté que sur un seul appareil à la fois. Une nouvelle connexion déconnectera automatiquement les sessions précédentes.',
   'Enable email verification': 'Activer la vérification email',
   'Enable global messaging': 'Activer la messagerie globale',
 
