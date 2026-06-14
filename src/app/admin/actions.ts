@@ -101,18 +101,21 @@ export async function logout() {
   if (sessionCookie && adminAuth) {
     try {
       const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
-      if (decodedClaims.original_admin_uid) {
-        // If it's an impersonation session, just clear the cookie
-        // without revoking tokens of the impersonated user.
-      } else {
+      if (!decodedClaims.original_admin_uid) {
         await adminAuth.revokeRefreshTokens(decodedClaims.sub);
       }
     } catch (error) {
-      // Ignore errors, especially if the token was already revoked
+      // Ignore errors
     }
   }
   cookies().delete('session');
   redirect('/admin/login');
+}
+
+/** Clear stale session cookie without revoking tokens or redirecting.
+ *  Used by the layout guard to break cookie/Firebase mismatch loops. */
+export async function clearSession() {
+  cookies().delete('session');
 }
 
 export async function revertImpersonation() {

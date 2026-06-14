@@ -3,15 +3,16 @@
 
 import { useUser } from '@/firebase';
 import { AdminLayoutContent } from './_components/admin-layout-content';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { getSessionUid, logout } from './actions';
+import { getSessionUid, logout, clearSession } from './actions';
 import { ThemeProvider } from '@/contexts/ThemeProvider';
 
 function AdminGatedLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const pathname = usePathname();
+  const router = useRouter();
   const [isLoggingOut, startLogout] = useTransition();
 
   const [sessionUid, setSessionUid] = useState<string | null>(null);
@@ -43,7 +44,7 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
         'firebase=',
         user.uid
       );
-      startLogout(() => logout());
+      startLogout(() => { clearSession(); });
       return;
     }
 
@@ -62,8 +63,12 @@ function AdminGatedLayout({ children }: { children: React.ReactNode }) {
     // Short debounce prevents logout during navigation where Firebase briefly goes null
     if (elapsed < 2000 && !hasSession) return;
 
+    // Stale session or no Firebase user: clear the stale cookie and redirect
     if (!hasValidFirebaseUser) {
-      startLogout(() => logout());
+      startLogout(async () => {
+        await clearSession();
+        router.push('/admin/login');
+      });
     }
   }, [isUserLoading, isAuthPage, user, sessionUid, sessionLoading, isLoggingOut]);
 
