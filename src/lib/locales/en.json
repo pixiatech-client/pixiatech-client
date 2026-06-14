@@ -1242,6 +1242,7 @@
         "trackingNumber": "Tracking number",
         "deliveryDate": "Delivery date",
         "receiptDate": "Receipt date",
+        "selectDate": "Select a date",
         "inProgress": "In progress",
         "selectedEstimates": "Selected Estimates",
         "restoreAll": "Restore all",

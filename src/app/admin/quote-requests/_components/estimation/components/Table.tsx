@@ -2,7 +2,12 @@
 
 import React from 'react';
 import { EstimationStatus } from '../types';
-import { Search, Phone, MoreVertical, Trash2, Send, RotateCcw, PlusCircle, Clock, CheckCircle2, Truck, Archive, User, Users, Pencil, AlertTriangle, Filter, Calendar, DollarSign, Check, ChevronDown, X, Package, Mail, Undo2, Lock, Unlock, History, XCircle, ShieldCheck, Link, MessageSquare, ImageIcon, Paperclip, Key, Timer } from 'lucide-react';
+import { Search, Phone, MoreVertical, Trash2, Send, RotateCcw, PlusCircle, Clock, CheckCircle2, Truck, Archive, User, Users, Pencil, AlertTriangle, Filter, DollarSign, Check, ChevronDown, X, Package, Mail, Undo2, Lock, Unlock, History, XCircle, ShieldCheck, Link, MessageSquare, ImageIcon, Paperclip, Key, Timer } from 'lucide-react';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
 import { Estimation, TrackingInfo } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/firebase';
@@ -58,7 +63,7 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
   const { t } = useI18n();
 
   const filterItems = [
-    { label: t('estimation.date'), field: 'date', icon: Calendar, color: '#ff5c1a' },
+    { label: t('estimation.date'), field: 'date', icon: CalendarIcon, color: '#ff5c1a' },
     { label: t('estimation.time'), field: 'time', icon: Clock, color: '#22c55e' },
     ...(!isFournisseur ? [
       { label: t('estimation.price'), field: 'price', icon: DollarSign, color: '#3b82f6' },
@@ -1423,32 +1428,62 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.deliveryDate')}</label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="date"
-                        min={new Date().toISOString().split('T')[0]}
-                        value={trackingForm.deliveryDate}
-                        onChange={(e) => {
-                          setTrackingForm({ ...trackingForm, deliveryDate: e.target.value });
-                        }}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm font-medium text-gray-900"
-                      />
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm">
+                          <CalendarIcon className="w-4 h-4 text-gray-400 shrink-0" />
+                          <span className={trackingForm.deliveryDate ? 'text-gray-900 font-medium' : 'text-gray-400'}>
+                            {trackingForm.deliveryDate ? format(new Date(trackingForm.deliveryDate), 'dd MMM yyyy') : t('estimation.selectDate')}
+                          </span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={trackingForm.deliveryDate ? new Date(trackingForm.deliveryDate) : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              const formatted = format(date, 'yyyy-MM-dd');
+                              setTrackingForm({ ...trackingForm, deliveryDate: formatted });
+                              if (trackingForm.receiptDate && date > new Date(trackingForm.receiptDate)) {
+                                setTrackingForm(prev => ({ ...prev, receiptDate: '' }));
+                              }
+                            }
+                          }}
+                          disabled={{ before: new Date() }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.receiptDateLabel')}</label>
-                    <div className="relative">
-                      <History className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="date"
-                        disabled={!trackingForm.deliveryDate}
-                        min={trackingForm.deliveryDate || new Date().toISOString().split('T')[0]}
-                        value={trackingForm.receiptDate}
-                        onChange={(e) => setTrackingForm({ ...trackingForm, receiptDate: e.target.value })}
-                        className={`w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm font-medium text-gray-900 ${!trackingForm.deliveryDate ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      />
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          disabled={!trackingForm.deliveryDate}
+                          className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all text-sm ${!trackingForm.deliveryDate ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          <History className="w-4 h-4 text-gray-400 shrink-0" />
+                          <span className={trackingForm.receiptDate ? 'text-gray-900 font-medium' : 'text-gray-400'}>
+                            {trackingForm.receiptDate ? format(new Date(trackingForm.receiptDate), 'dd MMM yyyy') : t('estimation.selectDate')}
+                          </span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={trackingForm.receiptDate ? new Date(trackingForm.receiptDate) : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              setTrackingForm({ ...trackingForm, receiptDate: format(date, 'yyyy-MM-dd') });
+                            }
+                          }}
+                          disabled={{ before: new Date(trackingForm.deliveryDate) }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               </div>

@@ -1238,6 +1238,7 @@
         "trackingNumber": "Numéro de suivi",
         "deliveryDate": "Date de livraison",
         "receiptDate": "Date de réception",
+        "selectDate": "Sélectionner une date",
         "inProgress": "En cours",
         "selectedEstimates": "Estimations Sélectionnées",
         "restoreAll": "Restaurer tout",
