@@ -379,12 +379,6 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
               <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-orange-400' : 'text-orange-600'}`}>
                 {est.number}
               </span>
-              {est.trackingNumber && (
-                <span className="text-[9px] font-semibold text-zinc-400 truncate flex items-center gap-1 group-hover:text-orange-600 transition-colors">
-                  <Package className="w-2.5 h-2.5 shrink-0 group-hover:text-orange-500 transition-colors" />
-                  {est.trackingNumber}
-                </span>
-              )}
             </div>
 
             {/* Client */}
@@ -423,6 +417,18 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 )}
               </div>
             </div>
+
+            {/* Numéro de suivi */}
+            {est.trackingNumber && (
+              <div className="w-32 px-3 flex flex-col justify-center">
+                <span className={`text-[11px] font-bold tracking-tight flex items-center gap-1.5 ${
+                  isSelected ? 'text-orange-400' : 'text-orange-600'
+                }`}>
+                  <Package className="w-3.5 h-3.5 shrink-0" />
+                  {est.trackingNumber}
+                </span>
+              </div>
+            )}
 
             {/* Statut */}
             <div className="w-32 px-2 flex flex-col items-start gap-1">
@@ -767,8 +773,8 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">{est.number}</span>
                       {est.trackingNumber && (
-                        <span className="text-[8px] font-semibold text-zinc-400 flex items-center gap-0.5">
-                          <Package className="w-2.5 h-2.5 group-hover:text-orange-500 transition-colors" />
+                        <span className="text-[8px] font-bold text-orange-600 flex items-center gap-0.5">
+                          <Package className="w-2.5 h-2.5" />
                           {est.trackingNumber}
                         </span>
                       )}
