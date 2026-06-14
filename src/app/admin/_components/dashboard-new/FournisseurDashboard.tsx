@@ -403,12 +403,6 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
               <MessageSquare className="w-4 h-4 text-gray-400" />
             </Link>
             <Link
-              href="/admin/notifications"
-              className={`p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-50 hover:bg-gray-100'}`}
-            >
-              <Bell className="w-4 h-4 text-gray-400" />
-            </Link>
-            <Link
               href="/admin/quote-requests"
               className={`p-2.5 rounded-xl transition-all ${isDark ? 'bg-white/5 hover:bg-white/10' : 'bg-gray-50 hover:bg-gray-100'}`}
             >
