@@ -464,33 +464,33 @@ const filteredEstimations = useMemo(() => {
       // Rule #1: Cannot move to 'Traité' without a supplier (Except for Admin)
       if (currentStatus === 'En attente' && targetStatus === 'Traité') {
         if (!estimation.supplierId && !estimation.supplier && userRole !== 'admin') {
-          return { valid: false, error: 'Please ASSIGN A SUPPLIER before processing this estimation' };
+          return { valid: false, error: 'Veuillez ASSIGNER UN FOURNISSEUR avant de traiter cette estimation' };
         }
       }
       
       // Rule #2: Cannot move to 'Livraison' without trackingNumber + deliveryDate
       if (currentStatus === 'Fournisseur' && targetStatus === 'Livraison') {
         if (!estimation.trackingNumber || !estimation.trackingInfo?.deliveryDate) {
-          return { valid: false, error: 'Please enter the TRACKING NUMBER and DELIVERY DATE before moving to delivery' };
+          return { valid: false, error: 'Veuillez saisir le NUMÉRO DE SUIVI et la DATE DE LIVRAISON avant de passer en livraison' };
         }
       }
       
       // Rule #3: Only ADMIN can restore from Trash
       if (currentStatus === 'Corbeille' && targetStatus === 'En attente') {
         if (userRole !== 'admin') {
-          return { valid: false, error: 'Only the ADMINISTRATOR can restore from the Trash' };
+          return { valid: false, error: 'Seul l\'ADMINISTRATEUR peut restaurer depuis la Corbeille' };
         }
       }
       
       // Rule #4: No automatic return to En attente from Livraison
       if (currentStatus === 'Livraison' && targetStatus === 'En attente') {
-        return { valid: false, error: 'Unauthorized transition: cannot return to "En attente" from "Livraison"' };
+        return { valid: false, error: 'Transition non autorisée : impossible de revenir à "En attente" depuis "Livraison"' };
       }
       
       // Rule #5: Only ADMIN can permanently delete
       if (targetStatus === 'Corbeille' && currentStatus === 'Corbeille') {
         if (userRole !== 'admin') {
-          return { valid: false, error: 'Only the ADMINISTRATOR can permanently delete' };
+          return { valid: false, error: 'Seul l\'ADMINISTRATEUR peut supprimer définitivement' };
         }
       }
 
@@ -609,8 +609,8 @@ const filteredEstimations = useMemo(() => {
       const validation = validateStatusTransition(est.status, nextStatus, est, currentUser.role);
       if (!validation.valid) {
         setPopupData({
-          title: 'Action denied',
-          message: validation.error || 'This action is impossible.',
+          title: 'Action refusée',
+          message: validation.error || 'Cette action est impossible.',
           subtitle: `Estimation ${est.number}`,
           variant: 'alert'
         });
@@ -778,7 +778,7 @@ const filteredEstimations = useMemo(() => {
 // Rule #3: Only ADMIN can restore from Trash
     const handleRestore = useCallback(async (id: string) => {
       if (currentUser.role !== 'admin') {
-        alert('Only the ADMINISTRATOR can restore from the Trash');
+        alert('Seul l\'ADMINISTRATEUR peut restaurer depuis la Corbeille');
         return;
       }
       
@@ -809,7 +809,7 @@ const filteredEstimations = useMemo(() => {
    const handleBulkRestore = useCallback(async () => {
      if (selectedItems.size === 0) return;
       if (currentUser.role !== 'admin') {
-        alert('Only the ADMINISTRATOR can restore estimations');
+        alert('Seul l\'ADMINISTRATEUR peut restaurer des estimations');
        return;
      }
 
