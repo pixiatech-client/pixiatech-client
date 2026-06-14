@@ -629,7 +629,9 @@
             "estimatesProcessed": "Estimates processed",
             "productsManaged": "Products managed",
             "estimatesCompleted": "Estimates completed",
-            "inProgress": "In progress"
+            "inProgress": "In progress",
+            "online": "Online",
+            "activitiesRecent": "Recent activities"
         },
         "sidebar": {
             "appNamePlaceholder": "Ex: My App",

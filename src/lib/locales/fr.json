@@ -921,7 +921,9 @@
             "estimatesProcessed": "Devis traités",
             "productsManaged": "Produits gérés",
             "estimatesCompleted": "Devis complétés",
-            "inProgress": "En cours"
+            "inProgress": "En cours",
+            "online": "En ligne",
+            "activitiesRecent": "Activités récentes"
         },
         "sidebar": {
             "appNamePlaceholder": "Ex: Mon App",
