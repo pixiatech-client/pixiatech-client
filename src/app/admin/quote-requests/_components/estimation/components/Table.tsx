@@ -373,10 +373,16 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             </div>
 
             {/* Number & Ref */}
-            <div className="w-32 px-3 flex items-center gap-3">
-              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900 dark:text-zinc-100'}`}>
+            <div className="w-40 px-3 flex flex-col gap-0.5">
+              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-orange-400' : 'text-orange-600'}`}>
                 {est.number}
               </span>
+              {est.trackingNumber && (
+                <span className="text-[9px] font-semibold text-zinc-400 truncate flex items-center gap-1">
+                  <Package className="w-2.5 h-2.5 shrink-0" />
+                  {est.trackingNumber}
+                </span>
+              )}
             </div>
 
             {/* Client */}
@@ -753,7 +759,15 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       <span className="font-black text-zinc-900 dark:text-zinc-100 text-base tracking-tighter truncate">{est.client}</span>
                       <Mail className={`w-3.5 h-3.5 shrink-0 ${est.emailVerified ? 'text-emerald-500' : 'text-red-500'}`} />
                     </div>
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{est.number}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">{est.number}</span>
+                      {est.trackingNumber && (
+                        <span className="text-[8px] font-semibold text-zinc-400 flex items-center gap-0.5">
+                          <Package className="w-2.5 h-2.5" />
+                          {est.trackingNumber}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
