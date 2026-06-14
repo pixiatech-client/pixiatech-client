@@ -2034,14 +2034,14 @@ function DistancePitchSelector({
               type="button"
               onClick={() => setIsOpen(!isOpen)}
               className={cn(
-                "w-full flex items-center justify-between px-3 h-10 rounded-xl border text-sm transition-all duration-150 outline-none active:scale-[0.97]",
-                "bg-white/5 border-white/10 text-white hover:bg-white/10"
+                "w-full flex items-center justify-between px-4 py-2 rounded-xl border text-xs font-bold transition-all duration-200 outline-none",
+                "bg-blue-950/50 border-blue-800 text-blue-400 hover:bg-blue-900/50 hover:border-blue-700"
               )}
             >
               <span className="truncate font-medium text-left">
                 {buttonText}
               </span>
-              <ChevronDown className={cn("w-4 h-4 ml-2 transition-transform duration-200 ease-out", isOpen ? "rotate-180" : "")} />
+              <ChevronDown className={cn("w-4 h-4 ml-2 transition-transform duration-300", isOpen ? "rotate-180" : "")} />
             </button>
 
             {/* Desktop Dropdown */}
@@ -2053,7 +2053,7 @@ function DistancePitchSelector({
                     animate={{ opacity: 1, y: 5, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-                    className="absolute left-0 right-0 z-50 rounded-2xl border shadow-2xl overflow-hidden bg-zinc-900 border-white/10"
+                    className="absolute left-0 right-0 z-50 rounded-2xl border shadow-2xl overflow-hidden bg-zinc-900 border-blue-800/30"
                   >
                     <div className="p-1 max-h-[200px] overflow-y-auto custom-scrollbar">
                       {availablePitches.map((pitch) => {
@@ -2066,15 +2066,15 @@ function DistancePitchSelector({
                             className={cn(
                               "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all duration-150 active:scale-[0.97]",
                               isChecked
-                                ? "bg-white/10 text-white font-medium"
-                                : "text-gray-400 hover:bg-white/5 hover:text-white"
+                                ? "bg-blue-900/30 text-blue-300 font-medium"
+                                : "text-gray-400 hover:bg-blue-900/20 hover:text-blue-300"
                             )}
                           >
                             <span className="font-medium">{pitch}</span>
                             <div className={cn(
                               "w-4 h-4 rounded border flex items-center justify-center transition-all duration-150",
                               isChecked
-                                ? "border-[#a3e635] bg-[#a3e635] text-black"
+                                ? "border-blue-500 bg-blue-500 text-white"
                                 : "border-white/20 bg-white/5"
                             )}>
                               {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
@@ -2334,7 +2334,7 @@ const ProduitPage = ({
             {/* Desktop Only: Mode de commercialisation */}
             <div className="hidden md:block space-y-1.5">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.salesMode')}</label>
-              <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
+              <div className="relative flex bg-slate-100/80 p-1 gap-2 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
                 <button
                   onClick={() => {
                     setMode((prev: string[]) =>
@@ -2345,17 +2345,17 @@ const ProduitPage = ({
                   }}
                   className={cn(
                     "relative flex-1 flex items-center justify-center gap-1.5 px-3 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                    mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
+                    mode.includes('vente') ? "text-[#0F172A]" : "text-[#0F172A] hover:text-[#0F172A]/60"
                   )}
                 >
                   {mode.includes('vente') && (
                     <motion.span
                       layoutId="mode-bubble-vente"
-                      className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
+                      className="absolute inset-0 z-10 bg-slate-200 rounded-xl shadow-sm border border-slate-300"
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
-                  <ShoppingCart className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                  <ShoppingCart className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('vente') ? "text-[#0F172A]" : "text-[#0F172A]/60")} />
                   <span className="z-20 whitespace-nowrap">{t('admin.productManagement.sale')}</span>
                 </button>
                 <button
@@ -2368,17 +2368,17 @@ const ProduitPage = ({
                   }}
                   className={cn(
                     "relative flex-1 flex items-center justify-center gap-1.5 px-3 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                    mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
+                    mode.includes('location') ? "text-[#0F172A]" : "text-[#0F172A] hover:text-[#0F172A]/60"
                   )}
                 >
                   {mode.includes('location') && (
                     <motion.span
                       layoutId="mode-bubble-location"
-                      className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
+                      className="absolute inset-0 z-10 bg-slate-200 rounded-xl shadow-sm border border-slate-300"
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
-                  <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                  <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-[#0F172A]" : "text-[#0F172A]/60")} />
                   <span className="z-20 whitespace-nowrap">{t('admin.productManagement.rental')}</span>
                 </button>
               </div>
@@ -2923,59 +2923,59 @@ const ProduitPage = ({
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-6 pb-20">
 
-                  {/* Mode de commercialisation */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.salesMode')}</label>
-                    <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
-                      <button
-                        onClick={() => {
-                          setMode((prev: string[]) =>
-                            prev.includes('vente')
-                              ? (prev.length > 1 ? prev.filter(m => m !== 'vente') : prev)
-                              : [...prev, 'vente']
-                          );
-                        }}
-                        className={cn(
-                          "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                          mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
-                        )}
-                      >
-                        {mode.includes('vente') && (
-                          <motion.span
-                            layoutId="mode-bubble-mobile-vente"
-                            className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
-                            transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                          />
-                        )}
-                        <ShoppingCart className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('vente') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                        <span className="z-20 whitespace-nowrap">{t('admin.productManagement.sale')}</span>
-                      </button>
+                    {/* Mode de commercialisation */}
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.salesMode')}</label>
+                      <div className="relative flex bg-slate-100/80 p-1 gap-2 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
+                        <button
+                          onClick={() => {
+                            setMode((prev: string[]) =>
+                              prev.includes('vente')
+                                ? (prev.length > 1 ? prev.filter(m => m !== 'vente') : prev)
+                                : [...prev, 'vente']
+                            );
+                          }}
+                          className={cn(
+                            "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                            mode.includes('vente') ? "text-[#0F172A]" : "text-[#0F172A] hover:text-[#0F172A]/60"
+                          )}
+                        >
+                          {mode.includes('vente') && (
+                            <motion.span
+                              layoutId="mode-bubble-mobile-vente"
+                              className="absolute inset-0 z-10 bg-slate-200 rounded-xl shadow-sm border border-slate-300"
+                              transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                            />
+                          )}
+                          <ShoppingCart className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('vente') ? "text-[#0F172A]" : "text-[#0F172A]/60")} />
+                          <span className="z-20 whitespace-nowrap">{t('admin.productManagement.sale')}</span>
+                        </button>
 
-                      <button
-                        onClick={() => {
-                          setMode((prev: string[]) =>
-                            prev.includes('location')
-                              ? (prev.length > 1 ? prev.filter(m => m !== 'location') : prev)
-                              : [...prev, 'location']
-                          );
-                        }}
-                        className={cn(
-                          "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                          mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400 hover:text-slate-700"
-                        )}
-                      >
-                        {mode.includes('location') && (
-                          <motion.span
-                            layoutId="mode-bubble-mobile-location"
-                            className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-xl shadow-lg border border-theme-sidebar-active-bg"
-                            transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                          />
-                        )}
-                        <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                        <span className="z-20 whitespace-nowrap">{t('admin.productManagement.rental')}</span>
-                      </button>
+                        <button
+                          onClick={() => {
+                            setMode((prev: string[]) =>
+                              prev.includes('location')
+                                ? (prev.length > 1 ? prev.filter(m => m !== 'location') : prev)
+                                : [...prev, 'location']
+                            );
+                          }}
+                          className={cn(
+                            "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                            mode.includes('location') ? "text-[#0F172A]" : "text-[#0F172A] hover:text-[#0F172A]/60"
+                          )}
+                        >
+                          {mode.includes('location') && (
+                            <motion.span
+                              layoutId="mode-bubble-mobile-location"
+                              className="absolute inset-0 z-10 bg-slate-200 rounded-xl shadow-sm border border-slate-300"
+                              transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                            />
+                          )}
+                          <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-[#0F172A]" : "text-[#0F172A]/60")} />
+                          <span className="z-20 whitespace-nowrap">{t('admin.productManagement.rental')}</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
                   {/* Screen Type (Mobile) */}
                   <div className="space-y-3">
@@ -3757,6 +3757,330 @@ const MOCK_PRODUCTS = [
   }
 ];
 
+// ─────────────────────────────────────────────────────────────────────────
+// OUTIL DE MIGRATION : Distance → Pitch
+// ─────────────────────────────────────────────────────────────────────────
+function DistancePitchMigrationModal({
+  isOpen,
+  onClose,
+  products,
+  characteristics,
+  t,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  products: any[];
+  characteristics: any[];
+  t: (k: string) => string;
+}) {
+  const { toast } = useToast();
+
+  // Current distance & pitch options from characteristics
+  const distanceCharDef = characteristics.find((c: any) => c.name === 'Distance de visionnage');
+  const pitchCharDef = characteristics.find((c: any) => c.name === 'Pixel pitch');
+  const validDistances: string[] = distanceCharDef?.options || [];
+  const validPitches: string[] = pitchCharDef?.options || [];
+
+  // Collect all unique keys used in products
+  const allProductKeys = React.useMemo(() => {
+    const keys = new Set<string>();
+    products.forEach((p: any) => {
+      if (p.distancePitches && typeof p.distancePitches === 'object') {
+        Object.keys(p.distancePitches).forEach(k => keys.add(k));
+      }
+    });
+    return Array.from(keys);
+  }, [products]);
+
+  // mapping: old key → new key (initialised to identity if already valid)
+  const [mapping, setMapping] = React.useState<Record<string, string>>({});
+  const [isMigrating, setIsMigrating] = React.useState(false);
+  const [result, setResult] = React.useState<{ updated: number; skipped: number; errors: string[] } | null>(null);
+
+  // Re-init mapping when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+    setResult(null);
+    const init: Record<string, string> = {};
+    allProductKeys.forEach(k => {
+      // Auto-map if already a valid distance
+      init[k] = validDistances.includes(k) ? k : (validDistances[0] || '');
+    });
+    setMapping(init);
+  }, [isOpen, allProductKeys, validDistances]);
+
+  // Products that have at least one invalid key
+  const affectedProducts = React.useMemo(() => {
+    return products.filter((p: any) => {
+      if (!p.distancePitches || typeof p.distancePitches !== 'object') return false;
+      return Object.keys(p.distancePitches).some(k => !validDistances.includes(k));
+    });
+  }, [products, validDistances]);
+
+  const handleApplyMigration = async () => {
+    setIsMigrating(true);
+    let updated = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const product of affectedProducts) {
+      try {
+        const oldDp: Record<string, string[]> = product.distancePitches || {};
+        const newDp: Record<string, string[]> = {};
+
+        for (const [oldKey, pitches] of Object.entries(oldDp)) {
+          const newKey = mapping[oldKey];
+          if (!newKey) { skipped++; continue; }
+          if (!newDp[newKey]) newDp[newKey] = [];
+          // Merge pitches, keeping only valid ones
+          const validPitchList = (pitches as string[]).filter(p => validPitches.includes(p));
+          validPitchList.forEach(p => {
+            if (!newDp[newKey].includes(p)) newDp[newKey].push(p);
+          });
+        }
+
+        // Recompute flat distance/pitch strings
+        const distVal = Object.keys(newDp)
+          .filter(k => (newDp[k] || []).length > 0)
+          .join(', ');
+        const pitchVal = Array.from(new Set(Object.values(newDp).flat())).join(', ');
+
+        await updateDoc(doc(db, 'products', product.id), {
+          distancePitches: newDp,
+          distance: distVal,
+          pitch: pitchVal,
+          updatedAt: new Date().toISOString(),
+        });
+        updated++;
+      } catch (e: any) {
+        errors.push(`${product.name}: ${e.message}`);
+      }
+    }
+
+    setIsMigrating(false);
+    setResult({ updated, skipped, errors });
+
+    if (errors.length === 0) {
+      toast({
+        title: '✅ Migration réussie',
+        description: `${updated} produit(s) mis à jour.`,
+        variant: 'success',
+      });
+    } else {
+      toast({
+        title: '⚠️ Migration partielle',
+        description: `${updated} mis à jour, ${errors.length} erreur(s).`,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/70 backdrop-blur-md"
+      />
+
+      {/* Panel */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 32 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92, y: 32 }}
+        transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+        className="bg-[#0f172a] text-white rounded-[2.5rem] w-full max-w-2xl relative z-10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+      >
+        {/* Header */}
+        <div className="px-8 pt-8 pb-6 border-b border-slate-800 flex items-start justify-between shrink-0">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-xl bg-[#c6ff00]/10 border border-[#c6ff00]/20 flex items-center justify-center">
+                <RefreshCw className="w-5 h-5 text-[#c6ff00]" />
+              </div>
+              <h2 className="text-xl font-black uppercase tracking-tight">Migration Distance → Pitch</h2>
+            </div>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
+              Synchronise les clés de distance avec les options actuelles
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-500 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {/* Diagnostic */}
+          <div className="px-8 py-6 border-b border-slate-800">
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: 'Produits affectés', value: affectedProducts.length, color: affectedProducts.length > 0 ? 'text-orange-400' : 'text-emerald-400' },
+                { label: 'Options valides', value: validDistances.length, color: 'text-blue-400' },
+                { label: 'Clés orphelines', value: allProductKeys.filter(k => !validDistances.includes(k)).length, color: 'text-red-400' },
+              ].map(stat => (
+                <div key={stat.label} className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+                  <div className={`text-2xl font-black ${stat.color}`}>{stat.value}</div>
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {affectedProducts.length === 0 ? (
+            <div className="px-8 py-12 text-center">
+              <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="w-8 h-8 text-emerald-400" />
+              </div>
+              <h3 className="text-lg font-black text-emerald-400 mb-1">Tout est synchronisé !</h3>
+              <p className="text-slate-400 text-sm">
+                Tous les produits utilisent déjà des distances valides.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Mapping configuration */}
+              <div className="px-8 py-6 border-b border-slate-800">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+                  Correspondance des clés
+                </h3>
+                <div className="space-y-3">
+                  {allProductKeys.filter(k => !validDistances.includes(k)).map(oldKey => (
+                    <div key={oldKey} className="flex items-center gap-3">
+                      {/* Old key */}
+                      <div className="flex-1 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5 text-sm font-bold text-red-300">
+                        <span className="text-[9px] text-red-500/60 uppercase tracking-wider block mb-0.5">Clé ancienne</span>
+                        {oldKey || '(vide)'}
+                      </div>
+
+                      <ArrowRight className="w-4 h-4 text-slate-600 shrink-0" />
+
+                      {/* New key selector */}
+                      <div className="flex-1">
+                        <select
+                          value={mapping[oldKey] || ''}
+                          onChange={e => setMapping(prev => ({ ...prev, [oldKey]: e.target.value }))}
+                          className="w-full bg-[#1a2540] border border-[#c6ff00]/30 rounded-xl px-3 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-[#c6ff00] transition-colors"
+                        >
+                          <option value="">— Ignorer —</option>
+                          {validDistances.map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                        </select>
+                        <span className="text-[9px] text-[#c6ff00]/60 uppercase tracking-wider block mt-1 ml-1">Nouvelle distance</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {validDistances.length === 0 && (
+                  <div className="mt-4 bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3 text-xs text-orange-300 font-bold">
+                    ⚠️ Aucune option de distance trouvée. Configurez d'abord les caractéristiques "Distance de visionnage".
+                  </div>
+                )}
+              </div>
+
+              {/* Affected products list */}
+              <div className="px-8 py-6">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
+                  {affectedProducts.length} produit(s) à mettre à jour
+                </h3>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {affectedProducts.map((p: any) => {
+                    const badKeys = Object.keys(p.distancePitches || {}).filter(k => !validDistances.includes(k));
+                    return (
+                      <div key={p.id} className="flex items-center justify-between bg-white/5 rounded-xl px-4 py-2.5 border border-white/5">
+                        <span className="text-sm font-bold text-white truncate mr-3">{p.name}</span>
+                        <div className="flex flex-wrap gap-1 shrink-0">
+                          {badKeys.map(k => (
+                            <span key={k} className="text-[9px] font-black bg-red-500/20 text-red-300 border border-red-500/20 px-2 py-0.5 rounded-lg">
+                              {k || '(vide)'}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Result */}
+          {result && (
+            <div className="px-8 pb-6">
+              <div className={`rounded-2xl px-5 py-4 border ${
+                result.errors.length === 0
+                  ? 'bg-emerald-500/10 border-emerald-500/20'
+                  : 'bg-orange-500/10 border-orange-500/20'
+              }`}>
+                <p className={`text-sm font-black ${
+                  result.errors.length === 0 ? 'text-emerald-400' : 'text-orange-400'
+                }`}>
+                  {result.errors.length === 0 ? '✅' : '⚠️'} {result.updated} produit(s) migré(s)
+                  {result.skipped > 0 && `, ${result.skipped} ignoré(s)`}
+                </p>
+                {result.errors.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {result.errors.map((e, i) => (
+                      <li key={i} className="text-[11px] text-orange-300 font-medium">{e}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="px-8 py-5 border-t border-slate-800 flex items-center justify-between shrink-0 bg-black/20">
+          <button
+            onClick={onClose}
+            className="px-6 h-11 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
+          >
+            Fermer
+          </button>
+          {affectedProducts.length > 0 && !result && (
+            <button
+              onClick={handleApplyMigration}
+              disabled={isMigrating || validDistances.length === 0}
+              className="px-8 h-11 bg-[#c6ff00] text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-[#d4ff33] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+            >
+              {isMigrating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-slate-900/30 border-t-slate-900 rounded-full animate-spin" />
+                  Migration en cours…
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  Appliquer la migration
+                </>
+              )}
+            </button>
+          )}
+          {result && result.errors.length === 0 && (
+            <button
+              onClick={onClose}
+              className="px-8 h-11 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-400 transition-all flex items-center gap-2"
+            >
+              <Check className="w-4 h-4" /> Terminé
+            </button>
+          )}
+        </div>
+      </motion.div>
+    </div>,
+    document.body
+  );
+}
+
 // --- Main App Component ---
 export default function ProductManagementClient() {
   const { t } = useI18n();
@@ -3776,6 +4100,7 @@ export default function ProductManagementClient() {
 
   const [activePage, setActivePage] = useState<'gestion' | 'produit' | 'caracteristiques'>('gestion');
   const [prevActivePage, setPrevActivePage] = useState<'gestion' | 'produit' | 'caracteristiques'>('gestion');
+  const [isMigrationOpen, setIsMigrationOpen] = useState(false);
 
   const getPageOrder = (page: string) => {
     const order = { 'gestion': 0, 'produit': 1, 'caracteristiques': 2 };
@@ -4955,6 +5280,18 @@ export default function ProductManagementClient() {
                 );
               })}
             </div>
+
+            {/* Migration button — only visible when authenticated */}
+            {user && (
+              <button
+                onClick={() => setIsMigrationOpen(true)}
+                title="Outil de migration Distance → Pitch"
+                className="flex items-center gap-2 px-4 h-10 rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-400 text-[10px] font-black uppercase tracking-widest hover:bg-orange-500/20 hover:border-orange-500/50 transition-all shrink-0"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Migration</span>
+              </button>
+            )}
           </div>
 
           <AnimatePresence mode="popLayout" custom={pageDirection}>
@@ -5162,6 +5499,18 @@ export default function ProductManagementClient() {
             settings={aiSettings}
             onSave={handleSaveSettings}
           />
+
+          <AnimatePresence>
+            {isMigrationOpen && (
+              <DistancePitchMigrationModal
+                isOpen={isMigrationOpen}
+                onClose={() => setIsMigrationOpen(false)}
+                products={products}
+                characteristics={characteristics}
+                t={t}
+              />
+            )}
+          </AnimatePresence>
 
           <AnimatePresence>
             {showCharPanel && (

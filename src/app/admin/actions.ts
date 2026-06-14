@@ -3070,7 +3070,8 @@ export async function getActiveGlobalTheme(): Promise<{ themeId: string }> {
   try {
     const doc = await adminDb.collection('settings').doc(ACTIVE_THEME_DOC_ID).get();
     const data = doc.data();
-    return { themeId: data?.activeThemeId || 'Nuage' };
+    const defaultName = (await import('@/lib/color-palettes')).DEFAULT_PALETTES[0].name;
+    return { themeId: data?.activeThemeId || defaultName };
   } catch (error) {
     console.error("Error fetching active theme:", error);
     return { themeId: 'Nuage' };
