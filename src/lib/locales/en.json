@@ -599,7 +599,7 @@
             "revenueGenerated": "Revenue generated",
             "estimatesCreated": "Estimates created",
             "conversionRate": "Conversion rate",
-            "onlineBadge": "Online",
+            "online": "Online",
             "activitiesRecent": "Recent activities",
             "pending": "Pending",
             "processed": "Processed",

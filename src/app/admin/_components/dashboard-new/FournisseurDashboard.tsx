@@ -376,7 +376,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
         <div className={`p-6 rounded-[2rem] border text-center relative transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
           <div className="absolute top-6 right-6 flex items-center gap-1">
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">{t('admin.fournisseurDashboard.onlineBadge')}</span>
+            <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">{t('admin.fournisseurDashboard.online')}</span>
           </div>
           <div className="relative inline-block mb-4">
             {userAvatar ? (
