@@ -1422,7 +1422,7 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.deliveryDate')}</label>
                     <Popover>
