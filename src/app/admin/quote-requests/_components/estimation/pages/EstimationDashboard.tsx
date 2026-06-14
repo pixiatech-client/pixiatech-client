@@ -1341,34 +1341,34 @@ const filteredEstimations = useMemo(() => {
                 onClick={() => setEstimationMode('vente')}
                 className={cn(
                   "relative flex-1 md:flex-none flex items-center justify-center gap-2 md:gap-3 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                  estimationMode === 'vente' ? "text-[#0F172A]" : "text-[#0F172A] hover:text-[#0F172A]/60"
+                  estimationMode === 'vente' ? "text-white" : "text-slate-400 hover:text-slate-700"
                 )}
               >
                 {estimationMode === 'vente' && (
                   <motion.span
                     layoutId="estimation-mode-bubble"
-                    className="absolute inset-0 z-10 bg-slate-200 rounded-xl shadow-sm border border-slate-300"
+                    className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
-                <ShoppingBag className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'vente' ? "text-[#0F172A]" : "text-[#0F172A]/60")} />
+                <ShoppingBag className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'vente' ? "text-[#c6ff00]" : "text-slate-400")} />
                 <span className="z-20 whitespace-nowrap">{t('admin.saleMode')}</span>
               </button>
               <button
                 onClick={() => setEstimationMode('location')}
                 className={cn(
                   "relative flex-1 md:flex-none flex items-center justify-center gap-2 md:gap-3 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                  estimationMode === 'location' ? "text-[#0F172A]" : "text-[#0F172A] hover:text-[#0F172A]/60"
+                  estimationMode === 'location' ? "text-white" : "text-slate-400 hover:text-slate-700"
                 )}
               >
                 {estimationMode === 'location' && (
                   <motion.span
                     layoutId="estimation-mode-bubble"
-                    className="absolute inset-0 z-10 bg-slate-200 rounded-xl shadow-sm border border-slate-300"
+                    className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
-                <Calendar className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'location' ? "text-[#0F172A]" : "text-[#0F172A]/60")} />
+                <Calendar className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'location' ? "text-[#4fc3f7]" : "text-slate-400")} />
                 <span className="z-20 whitespace-nowrap">{t('admin.rentalMode')}</span>
               </button>
             </div>

@@ -153,8 +153,7 @@ export default function LoginPage() {
         localStorage.removeItem('remember-email');
       }
 
-      router.push('/admin');
-      router.refresh();
+      window.location.href = '/admin';
     } catch (error: any) {
       console.error('[Login] handleLogin Error:', error);
       setLoginError(getFirebaseErrorMessage(error, error.message || t('An error occurred. Please try again.'), t));
@@ -248,8 +247,7 @@ export default function LoginPage() {
         if (!sessionResult.success) {
 throw new Error(sessionResult.error || t('Session creation failed.'));
         }
-        router.push('/admin');
-        router.refresh();
+        window.location.href = '/admin';
       } else {
         setGoogleUser(result.userData);
         setGoogleDisplayName(result.userData?.displayName || userCredential.user.displayName || '');

@@ -74,8 +74,8 @@ function DistanceColumn({ product, t }: { product: any, t: (key: string) => stri
   const { distance } = getPrimaryDistanceInfo(product);
   return (
     <div className="hidden md:flex flex-col gap-1">
-      <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">{t('admin.productManagement.distance')}</span>
-      <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-slate-900">{distance}</span>
+      <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/60">{t('admin.productManagement.distance')}</span>
+      <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-white">{distance}</span>
     </div>
   );
 }
@@ -84,11 +84,11 @@ function PitchColumn({ product, t }: { product: any, t: (key: string) => string 
   const { pitches } = getPrimaryDistanceInfo(product);
   return (
     <div className="hidden md:flex flex-col gap-1">
-      <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">{t('admin.productManagement.pitch')}</span>
+      <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/60">{t('admin.productManagement.pitch')}</span>
       {pitches.length > 0 ? (
         <PitchBadge pitches={pitches} t={t} />
       ) : (
-        <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-slate-900">—</span>
+        <span className="text-sm font-medium text-slate-700 dark:text-zinc-300 group-hover/product:text-white">—</span>
       )}
     </div>
   );
@@ -153,7 +153,7 @@ function PitchBadge({ pitches, t }: { pitches: string[], t: (key: string) => str
         ref={buttonRef}
         type="button"
         onClick={() => setOpen(!open)}
-        className="bg-[#c6ff00] px-3 py-1.5 rounded-xl text-[9px] font-black text-slate-900 shadow-lg border border-white/20 flex items-center gap-1.5 hover:bg-[#b8f000] transition-colors"
+        className="bg-[#c6ff00] px-3 py-1.5 rounded-xl text-[9px] font-black text-slate-900 shadow-lg border border-white/20 flex items-center gap-1.5 hover:bg-[#b8f000] transition-colors group-hover/product:text-white"
       >
         <Grid className="w-3 h-3" />
         <span>{pitches.length}</span>
@@ -485,7 +485,7 @@ const ProductListItem = ({
         boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.15)"
       }}
       className={cn(
-        "bg-theme-card border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:-translate-y-1 hover:shadow-2xl dark:bg-theme-card/5 dark:border-theme-card-border",
+        "bg-theme-card border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-[#131E3F] hover:border-[#131E3F] hover:-translate-y-1 hover:shadow-2xl dark:bg-theme-card/5 dark:border-theme-card-border",
         selectedIds.includes(product.id) ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg" : "border-theme-card-border"
       )}
     >
@@ -512,7 +512,7 @@ const ProductListItem = ({
         </div>
       </div>
 
-      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 shadow-sm border border-slate-100 flex items-center justify-center relative group-hover/product:border-slate-800 transition-colors">
+      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 shadow-sm border border-slate-100 flex items-center justify-center relative group-hover/product:border-white/20 transition-colors">
         {getSafeImageUrl(product) ? (
           <img
             src={getSafeImageUrl(product)!}
@@ -537,7 +537,7 @@ const ProductListItem = ({
 
       <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
         <div className="md:col-span-2">
-          <h3 className="font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-slate-900 transition-colors truncate flex items-center gap-1.5">
+          <h3 className="font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-white transition-colors truncate flex items-center gap-1.5">
             {product.name}
             {product.isHidden && (
               <span title={t('admin.productManagement.hiddenProduct')} className="text-orange-500 shrink-0">
@@ -596,8 +596,8 @@ const ProductListItem = ({
         <PitchColumn product={product} t={t} />
 
         <div className="hidden md:flex flex-col gap-1 items-center">
-          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-slate-900/40">{t('admin.productManagement.salePerM2')}</span>
-          <span className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-slate-900 transition-colors duration-300">
+          <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/60">{t('admin.productManagement.salePerM2')}</span>
+          <span className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-white transition-colors duration-300">
             {product.oldPrice && (
               <span className="text-xs font-semibold text-orange-500 line-through mr-1.5">{product.oldPrice} €</span>
             )}
@@ -1034,7 +1034,7 @@ const AISettingsSheet = ({
               </button>
               <button
                 onClick={() => { onSave(localSettings); onClose(); }}
-                className="flex-[2] bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
+                className="flex-[2] bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
               >
                 <Save className="w-4 h-4" /> {t('admin.productManagement.save')}
               </button>
@@ -1471,7 +1471,7 @@ const CaracteristiquesPage = ({
                     />
                     <label
                       htmlFor="custom-icon-upload"
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all text-sm font-bold text-slate-600 group"
+                      className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-[#131E3F] hover:text-white transition-all text-sm font-bold text-slate-600 group"
                     >
                       <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> {t('admin.productManagement.uploadIcon')}
                     </label>
@@ -1528,7 +1528,7 @@ const CaracteristiquesPage = ({
                     setIsSaving(false);
                     toast({ title: t('admin.productManagement.syncTitle'), description: t('admin.productManagement.syncDesc') });
                   }}
-                  className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-sm group mr-2"
+                  className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-[#131E3F] hover:text-white transition-all shadow-sm group mr-2"
                   title={t('admin.productManagement.restoreTitle')}
                 >
                   <RefreshCw className="w-5 h-5 transition-colors group-hover:text-[#a3e635]" />
@@ -1539,7 +1539,7 @@ const CaracteristiquesPage = ({
                     setCharPage(prev => Math.max(prev - 1, 1));
                   }}
                   disabled={charPage === 1}
-                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
+                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
                 >
                   <ChevronLeft className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
                 </button>
@@ -1549,7 +1549,7 @@ const CaracteristiquesPage = ({
                     setCharPage(prev => Math.min(prev + 1, totalCharPages));
                   }}
                   disabled={charPage === totalCharPages || totalCharPages === 0}
-                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
+                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
                 >
                   <ChevronRight className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
                 </button>
@@ -1597,7 +1597,7 @@ const CaracteristiquesPage = ({
                           "bg-theme-card border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all cursor-pointer group relative overflow-hidden",
                           editingId === char.id
                             ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg"
-                            : "border-theme-card-border hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg",
+                            : "border-theme-card-border hover:bg-[#131E3F] hover:border-[#131E3F]",
                           (char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && !editingId && "bg-orange-50/50 border-orange-100"
                         )}
                         onClick={() => handleEdit(char)}
@@ -2245,7 +2245,8 @@ const ProduitPage = ({
   rentalStock,
   setRentalStock,
   distancePitches = {},
-  setDistancePitches
+  setDistancePitches,
+  wizardSettings
 }: any) => {
   const { t } = useI18n();
   const [specPage, setSpecPage] = useState(1);
@@ -2253,10 +2254,17 @@ const ProduitPage = ({
   const [searchTerm, setSearchTerm] = useState('');
   const specItemsPerPage = 6;
 
+  // Use wizard settings as the authoritative source for distance/pitch options.
+  // This prevents stale data from the characteristics collection options (which may have old seeded values)
+  // from overriding the live options configured in the wizard settings.
   const distanceCharDef = (characteristics || []).find((c: any) => c.name === 'Distance de visionnage');
   const pitchCharDef = (characteristics || []).find((c: any) => c.name === 'Pixel pitch');
-  const availableDistances = distanceCharDef?.options || [];
-  const availablePitches = pitchCharDef?.options || [];
+  const availableDistances = (wizardSettings?.viewingDistances?.length ?? 0) > 0
+    ? wizardSettings.viewingDistances
+    : (distanceCharDef?.options || []);
+  const availablePitches = (wizardSettings?.pixelPitches?.length ?? 0) > 0
+    ? wizardSettings.pixelPitches
+    : (pitchCharDef?.options || []);
 
   const filteredSpecs = React.useMemo(() => {
     // Filter out core mapping characteristics from this generic grid
@@ -2345,17 +2353,17 @@ const ProduitPage = ({
                   }}
                   className={cn(
                     "relative flex-1 flex items-center justify-center gap-1.5 px-3 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                    mode.includes('vente') ? "text-[#0F172A]" : "text-[#0F172A] hover:text-[#0F172A]/60"
+                    mode.includes('vente') ? "text-white" : "text-slate-400 hover:text-slate-700"
                   )}
                 >
                   {mode.includes('vente') && (
                     <motion.span
                       layoutId="mode-bubble-vente"
-                      className="absolute inset-0 z-10 bg-slate-200 rounded-xl shadow-sm border border-slate-300"
+                      className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
-                  <ShoppingCart className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('vente') ? "text-[#0F172A]" : "text-[#0F172A]/60")} />
+                  <ShoppingCart className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('vente') ? "text-[#c6ff00]" : "text-slate-400")} />
                   <span className="z-20 whitespace-nowrap">{t('admin.productManagement.sale')}</span>
                 </button>
                 <button
@@ -2368,17 +2376,17 @@ const ProduitPage = ({
                   }}
                   className={cn(
                     "relative flex-1 flex items-center justify-center gap-1.5 px-3 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                    mode.includes('location') ? "text-[#0F172A]" : "text-[#0F172A] hover:text-[#0F172A]/60"
+                    mode.includes('location') ? "text-white" : "text-slate-400 hover:text-slate-700"
                   )}
                 >
                   {mode.includes('location') && (
                     <motion.span
                       layoutId="mode-bubble-location"
-                      className="absolute inset-0 z-10 bg-slate-200 rounded-xl shadow-sm border border-slate-300"
+                      className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
-                  <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-[#0F172A]" : "text-[#0F172A]/60")} />
+                  <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-[#4fc3f7]" : "text-slate-400")} />
                   <span className="z-20 whitespace-nowrap">{t('admin.productManagement.rental')}</span>
                 </button>
               </div>
@@ -2392,7 +2400,7 @@ const ProduitPage = ({
                   onClick={() => setScreenType('flat')}
                   className={cn(
                     "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                    screenType === 'flat' ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                    screenType === 'flat' ? "bg-[#131E3F] text-white border-[#131E3F] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                   )}
                 >
                   <Monitor className={cn("w-4 h-4", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-300")} />
@@ -2402,7 +2410,7 @@ const ProduitPage = ({
                   onClick={() => setScreenType('curved')}
                   className={cn(
                     "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                    screenType === 'curved' ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                    screenType === 'curved' ? "bg-[#131E3F] text-white border-[#131E3F] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                   )}
                 >
                   <svg className={cn("w-4 h-4", screenType === 'curved' ? "text-blue-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2415,7 +2423,7 @@ const ProduitPage = ({
                   onClick={() => setScreenType('360')}
                   className={cn(
                     "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                    screenType === '360' ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                    screenType === '360' ? "bg-[#131E3F] text-white border-[#131E3F] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                   )}
                 >
                   <svg className={cn("w-4 h-4", screenType === '360' ? "text-purple-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2447,7 +2455,7 @@ const ProduitPage = ({
                     }}
                     className={cn(
                       "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                      environment.includes(item.id as any) ? "bg-theme-sidebar-active-bg text-theme-sidebar-active-text border-theme-sidebar-active-bg shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                      environment.includes(item.id as any) ? "bg-[#131E3F] text-white border-[#131E3F] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                     )}
                   >
                     <item.icon className={cn("w-4 h-4", environment.includes(item.id as any) ? item.color : "text-slate-300")} />
@@ -2471,8 +2479,8 @@ const ProduitPage = ({
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.technicalSpecifications')}</label>
                 {totalSpecPages > 1 && (
                   <div className="flex items-center gap-2">
-                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.max(prev - 1, 1)); }} disabled={specPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
-                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.min(prev + 1, totalSpecPages)); }} disabled={specPage === totalSpecPages} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.max(prev - 1, 1)); }} disabled={specPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
+                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.min(prev + 1, totalSpecPages)); }} disabled={specPage === totalSpecPages} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
                   </div>
                 )}
               </div>
@@ -2937,17 +2945,17 @@ const ProduitPage = ({
                           }}
                           className={cn(
                             "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                            mode.includes('vente') ? "text-[#0F172A]" : "text-[#0F172A] hover:text-[#0F172A]/60"
+                            mode.includes('vente') ? "text-white" : "text-slate-400 hover:text-slate-700"
                           )}
                         >
                           {mode.includes('vente') && (
                             <motion.span
                               layoutId="mode-bubble-mobile-vente"
-                              className="absolute inset-0 z-10 bg-slate-200 rounded-xl shadow-sm border border-slate-300"
+                              className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
                               transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                             />
                           )}
-                          <ShoppingCart className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('vente') ? "text-[#0F172A]" : "text-[#0F172A]/60")} />
+                          <ShoppingCart className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('vente') ? "text-[#c6ff00]" : "text-slate-400")} />
                           <span className="z-20 whitespace-nowrap">{t('admin.productManagement.sale')}</span>
                         </button>
 
@@ -2961,17 +2969,17 @@ const ProduitPage = ({
                           }}
                           className={cn(
                             "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                            mode.includes('location') ? "text-[#0F172A]" : "text-[#0F172A] hover:text-[#0F172A]/60"
+                            mode.includes('location') ? "text-white" : "text-slate-400 hover:text-slate-700"
                           )}
                         >
                           {mode.includes('location') && (
                             <motion.span
                               layoutId="mode-bubble-mobile-location"
-                              className="absolute inset-0 z-10 bg-slate-200 rounded-xl shadow-sm border border-slate-300"
+                              className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
                               transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                             />
                           )}
-                          <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-[#0F172A]" : "text-[#0F172A]/60")} />
+                          <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-[#4fc3f7]" : "text-slate-400")} />
                           <span className="z-20 whitespace-nowrap">{t('admin.productManagement.rental')}</span>
                         </button>
                       </div>
@@ -2985,7 +2993,7 @@ const ProduitPage = ({
                         onClick={() => setScreenType('flat')}
                         className={cn(
                           "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
-                          screenType === 'flat' ? "bg-black text-white" : "bg-slate-100 text-slate-400"
+                          screenType === 'flat' ? "bg-[#131E3F] text-white" : "bg-slate-100 text-slate-400"
                         )}
                       >
                         <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'flat' ? "bg-white/10" : "bg-slate-200")}>
@@ -2997,7 +3005,7 @@ const ProduitPage = ({
                         onClick={() => setScreenType('curved')}
                         className={cn(
                           "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
-                          screenType === 'curved' ? "bg-black text-white" : "bg-slate-100 text-slate-400"
+                          screenType === 'curved' ? "bg-[#131E3F] text-white" : "bg-slate-100 text-slate-400"
                         )}
                       >
                         <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'curved' ? "bg-white/10" : "bg-slate-200")}>
@@ -3012,7 +3020,7 @@ const ProduitPage = ({
                         onClick={() => setScreenType('360')}
                         className={cn(
                           "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
-                          screenType === '360' ? "bg-black text-white" : "bg-slate-100 text-slate-400"
+                          screenType === '360' ? "bg-[#131E3F] text-white" : "bg-slate-100 text-slate-400"
                         )}
                       >
                         <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === '360' ? "bg-white/10" : "bg-slate-200")}>
@@ -3046,7 +3054,7 @@ const ProduitPage = ({
                           }}
                           className={cn(
                             "w-full h-12 rounded-xl flex items-center px-4 gap-3 transition-all duration-300 relative overflow-hidden group",
-                            environment.includes(item.id as any) ? "bg-black text-white" : "bg-slate-100 text-slate-400"
+                            environment.includes(item.id as any) ? "bg-[#131E3F] text-white" : "bg-slate-100 text-slate-400"
                           )}
                         >
                           <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", environment.includes(item.id as any) ? "bg-white/10" : "bg-slate-200")}>
@@ -3505,7 +3513,7 @@ const GestionProduits = ({
             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover/empty:bg-black/5 transition-colors"><Package className="w-10 h-10 text-slate-300" /></div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">{t('admin.productManagement.noProducts')}</h3>
             <p className="text-slate-500 font-medium mb-8">{t('admin.productManagement.startByCreating')}</p>
-            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>{t('admin.productManagement.createProduct')}</span></button>
+            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>{t('admin.productManagement.createProduct')}</span></button>
           </div>
         )}
       </div>
@@ -4122,6 +4130,7 @@ export default function ProductManagementClient() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [productName, setProductName] = useState('');
   const [characteristics, setCharacteristics] = useState<any[]>([]);
+  const [wizardSettings, setWizardSettings] = useState<{ viewingDistances: string[], pixelPitches: string[] }>({ viewingDistances: [], pixelPitches: [] });
 
   const handleFirestoreError = (error: any, action: string, collection: string) => {
     console.error(`Firestore error ${action} ${collection}:`, error);
@@ -4225,9 +4234,25 @@ export default function ProductManagementClient() {
       setCharacteristics(chars);
     }, (error) => handleFirestoreError(error, 'fetching', 'characteristics'));
 
+    // Listen to wizard settings for authoritative distance/pitch options
+    const wizardRef = doc(db, 'settings', 'wizard');
+    const unsubWizard = onSnapshot(wizardRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as any;
+        const viewingDistances: string[] = (data.viewingDistances || [])
+          .map((d: any) => (typeof d === 'string' ? d : d?.value || ''))
+          .filter(Boolean);
+        const pixelPitches: string[] = (data.pixelPitches || [])
+          .map((p: any) => (typeof p === 'string' ? p : p?.value || ''))
+          .filter(Boolean);
+        setWizardSettings({ viewingDistances, pixelPitches });
+      }
+    });
+
     return () => {
       unsubProducts();
       unsubChars();
+      unsubWizard();
     };
   }, [user]); // Re-run if user changes to ensure UID is correct for seeding
 
@@ -4744,8 +4769,18 @@ export default function ProductManagementClient() {
   const [rentalStock, setRentalStock] = useState<string>('');
   const [rentalQuantity, setRentalQuantity] = useState<string>('1');
 
-  // Pre-fill form when editing
+  // Ref to track which product ID has already been initialized, preventing
+  // the form from re-resetting when characteristics load asynchronously (F5 race condition fix).
+  const lastInitializedProductId = useRef<string | null>(undefined as any);
+
+  // Pre-fill form when editing — only re-runs when editingProduct actually changes (by ID).
+  // Characteristics are used only for legacy fallback paths; they do NOT trigger re-initialization.
   useEffect(() => {
+    const newProductId = editingProduct?.id ?? null;
+    // Guard: skip if this product was already initialized (prevents re-init when characteristics arrives)
+    if (lastInitializedProductId.current === newProductId) return;
+    lastInitializedProductId.current = newProductId;
+
     if (editingProduct) {
       setProductName(editingProduct.name);
 
@@ -4806,11 +4841,11 @@ export default function ProductManagementClient() {
         setSelectedChars(initialChars);
       }
 
-      // Initialize distancePitches
+      // Initialize distancePitches — always read directly from the product document (single source of truth)
       if (editingProduct.distancePitches) {
         setDistancePitches(editingProduct.distancePitches);
       } else {
-        // Fallback mapping for legacy products
+        // Fallback mapping for legacy products without distancePitches
         const legacyDist = editingProduct.distance || (editingProduct.selectedChars && Array.isArray(editingProduct.selectedChars) ? editingProduct.selectedChars.find((c: any) => {
           const charDef = characteristics.find(cd => cd.id === c.id);
           return charDef?.name === 'Distance de visionnage';
@@ -4856,7 +4891,7 @@ export default function ProductManagementClient() {
       setSurface(parseFloat(editingProduct.surfaceMinRequise || '0') || 9.00);
       setIsHidden(!!editingProduct.isHidden);
     } else {
-      // Reset form
+      // Reset form for new product creation
       setProductName('');
       setMode(['vente']);
       setEnvironment(['exterieur']);
@@ -4898,7 +4933,8 @@ export default function ProductManagementClient() {
       setUploadedVideo(null);
       setUploadedPdf(null);
     }
-  }, [editingProduct, characteristics]); // Added characteristics to dependency array to ensure new products get defaults when chars load
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingProduct]); // Only re-init when the product being edited changes, NOT when characteristics loads async
 
   // Dimensions State
   const [largeurDalle, setLargeurDalle] = useState<string>('50');
@@ -5056,7 +5092,7 @@ export default function ProductManagementClient() {
                       <button
                         type="submit"
                         disabled={isAuthenticating}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
                       >
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -5134,7 +5170,7 @@ export default function ProductManagementClient() {
                     <button
                       type="submit"
                       disabled={isAuthenticating}
-                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
                     >
                       {isAuthenticating ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -5214,7 +5250,7 @@ export default function ProductManagementClient() {
                       <button
                         type="submit"
                         disabled={isAuthenticating}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
                       >
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -5434,6 +5470,7 @@ export default function ProductManagementClient() {
                   setScreenType={setScreenType}
                   distancePitches={distancePitches}
                   setDistancePitches={setDistancePitches}
+                  wizardSettings={wizardSettings}
                 />
               </motion.div>
             )}
