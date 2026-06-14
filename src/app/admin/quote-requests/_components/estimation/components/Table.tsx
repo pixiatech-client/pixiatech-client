@@ -1413,13 +1413,16 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
               <div className="flex-1 p-6 space-y-5 bg-white">
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.trackingNumber')}</label>
-                  <input
-                    type="text"
-                    value={trackingForm.number}
-                    onChange={(e) => setTrackingForm({ ...trackingForm, number: e.target.value })}
-                    placeholder={t('estimation.trackingPlaceholder')}
-                    className="w-full px-4 py-2.5 bg-white border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
-                  />
+                  <div className="relative">
+                    <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
+                    <input
+                      type="text"
+                      value={trackingForm.number}
+                      onChange={(e) => setTrackingForm({ ...trackingForm, number: e.target.value })}
+                      placeholder={t('estimation.trackingPlaceholder')}
+                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-4">
