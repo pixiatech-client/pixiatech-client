@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Clock,
   CheckCircle2,
@@ -8,6 +8,7 @@ import {
   Archive,
   TrendingUp,
   Search,
+  X,
   Bell,
   ChevronLeft,
   ChevronRight,
@@ -27,7 +28,7 @@ import {
   Users,
   ExternalLink,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useI18n } from '@/lib/i18n';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
@@ -75,6 +76,9 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
   const { user, userProfile } = useUser();
   const firestore = useFirestore();
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Fetch all quotes that the commercial can see
   const quotesQuery = useMemoFirebase(() => {
@@ -140,6 +144,22 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
     });
   }, [visibleQuotes, locale]);
 
+  useEffect(() => {
+    if (isSearchOpen && searchRef.current) {
+      searchRef.current.focus();
+    }
+  }, [isSearchOpen]);
+
+  const filteredEstimations = useMemo(() => {
+    if (!searchQuery.trim()) return recentEstimations;
+    const q = searchQuery.toLowerCase();
+    return recentEstimations.filter(e =>
+      e.id.toLowerCase().includes(q) ||
+      e.client.toLowerCase().includes(q) ||
+      e.statusLabel.toLowerCase().includes(q)
+    );
+  }, [recentEstimations, searchQuery]);
+
   // Top clients
   const topClients = useMemo(() => {
     if (!visibleQuotes.length) return [];
@@ -182,12 +202,12 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href="/admin/quote-requests"
-              className={`p-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'} hover:bg-theme-sidebar-active-bg transition-colors`}
+            <button
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              className={`p-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'} hover:bg-theme-sidebar-active-bg transition-colors ${isSearchOpen ? 'bg-theme-sidebar-active-bg text-theme-sidebar-active-text ring-2 ring-theme-sidebar-active-bg' : ''}`}
             >
-              <Search className="w-5 h-5 text-gray-400" />
-            </Link>
+              {isSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5 text-gray-400" />}
+            </button>
             <Link
               href="/admin/notifications"
               className={`p-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'} hover:bg-theme-sidebar-active-bg transition-colors`}
@@ -196,6 +216,49 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
             </Link>
           </div>
         </div>
+
+        <AnimatePresence>
+          {isSearchOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className={`p-4 rounded-2xl border transition-colors ${isDark ? 'bg-[#141414] border-white/5' : 'bg-white border-gray-200 shadow-sm'}`}>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t('admin.fournisseurDashboard.searchPlaceholder') || 'Rechercher une estimation...'}
+                    className={`w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border outline-none transition-colors ${
+                      isDark
+                        ? 'bg-black/20 border-white/10 text-white placeholder-gray-500 focus:border-white/20'
+                        : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400 focus:border-gray-300'
+                    }`}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                {searchQuery && (
+                  <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {filteredEstimations.length} résultat{filteredEstimations.length !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Hero Banner */}
         <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-amber-500 to-orange-600 p-8 text-white">
@@ -265,7 +328,11 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
         {/* Recent Estimations Table */}
         <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold">{t('admin.recentEstimations')}</h3>
+            <h3 className="text-lg font-bold">
+              {isSearchOpen && searchQuery
+                ? `${t('admin.searchResults') || 'Résultats de recherche'}`
+                : t('admin.recentEstimations')}
+            </h3>
             <div className="flex items-center gap-2 text-xs font-medium text-blue-500 cursor-pointer hover:underline">
               <Link href="/admin/quote-requests">{t('admin.viewAll')}</Link> <ChevronRight className="w-3 h-3" />
             </div>
@@ -289,13 +356,13 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
                       <RefreshCw className="w-5 h-5 animate-spin mx-auto" />
                     </td>
                   </tr>
-                ) : recentEstimations.length === 0 ? (
+                ) : filteredEstimations.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-gray-400 italic">
-                      {t('admin.noEstimations') || 'Aucune estimation pour le moment'}
+                      {searchQuery ? t('admin.noSearchResults') || 'Aucun résultat pour cette recherche' : t('admin.noEstimations') || 'Aucune estimation pour le moment'}
                     </td>
                   </tr>
-                ) : recentEstimations.map((quote) => (
+                ) : filteredEstimations.map((quote) => (
                   <tr key={quote.id} className="group hover:bg-theme-sidebar-active-bg/10 transition-colors">
                     <td className="py-4">
                       <span className="text-sm font-semibold group-hover:text-white transition-colors">{quote.id}</span>
