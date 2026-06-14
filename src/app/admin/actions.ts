@@ -2778,9 +2778,29 @@ export async function updateSettings(data: unknown) {
     return { success: false, error: result.error.flatten() };
   }
 
-  const { adminDb } = getFirebaseAdmin();
+  const { adminDb, adminAuth } = getFirebaseAdmin();
   try {
     await adminDb.collection('settings').doc(SETTINGS_DOC_ID).set(result.data, { merge: true });
+
+    const oldSettings = await getSettings();
+    const wasMultipleAllowed = oldSettings.allowMultipleSessions !== false;
+    const nowMultipleDisallowed = result.data.allowMultipleSessions === false;
+
+    let reauthToken: string | undefined;
+
+    if (wasMultipleAllowed && nowMultipleDisallowed) {
+      const sessionCookie = cookies().get('session')?.value;
+      if (sessionCookie) {
+        try {
+          const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+          await adminAuth.revokeRefreshTokens(decoded.uid);
+          reauthToken = await adminAuth.createCustomToken(decoded.uid);
+          console.log('[updateSettings] Revoked all sessions for', decoded.uid, '— reauth token created');
+        } catch (e) {
+          console.error('[updateSettings] Failed to revoke sessions:', e);
+        }
+      }
+    }
 
     // Check if a YouTube URL is configured
     const videoUrl = result.data.previewScreenVideoUrl || result.data.previewScreenImageUrl;
@@ -2800,7 +2820,7 @@ export async function updateSettings(data: unknown) {
     _settingsCache = null; // Invalidate cache so next read picks up fresh data
     revalidatePath('/admin/settings', 'layout');
     revalidatePath('/');
-    return { success: true };
+    return { success: true, reauthToken };
   } catch (error) {
     console.error('Failed to update settings in Firestore:', error);
     return { success: false, error: { formErrors: ['Failed to save settings.'] } };

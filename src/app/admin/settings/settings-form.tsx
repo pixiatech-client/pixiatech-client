@@ -1,6 +1,8 @@
 'use client';
 
 import { useForm, Controller } from 'react-hook-form';
+import { signInWithCustomToken } from 'firebase/auth';
+import { useAuth } from '@/firebase';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -111,6 +113,7 @@ interface SettingsFormProps {
 export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
   const { toast } = useToast();
   const { t } = useAdminT();
+  const auth = useAuth();
   const [configMode, setConfigMode] = useState<'sale' | 'rental'>('sale');
   
   const form = useForm<FormValues>({
@@ -156,6 +159,13 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
         description: t('Section "{sectionName}" has been updated.').replace('{sectionName}', sectionName),
         variant: 'success',
       });
+      if (result.reauthToken) {
+        try {
+          await signInWithCustomToken(auth, result.reauthToken);
+        } catch (e) {
+          console.error('[Settings] Reauth failed, user will be redirected to login', e);
+        }
+      }
     } else {
        toast({
         variant: 'destructive',
