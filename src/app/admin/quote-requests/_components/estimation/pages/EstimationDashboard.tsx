@@ -1103,11 +1103,10 @@ const filteredEstimations = useMemo(() => {
 
     const handleMarkAsDelivered = useCallback(async (id: string) => {
       try {
-        await updateQuoteStatus(id, { status: 'processed' as any });
+        await updateQuoteStatus(id, { status: 'archived' as any });
         setEstimations(prev => prev.map(est =>
           est.id === id ? { ...est, status: 'Archivé' as EstimationStatus, isLocked: true } : est
         ));
-        // Switch to Archive tab
         setActiveTab('Archivé');
       } catch (error) {
         console.error('Failed to mark as delivered:', error);
