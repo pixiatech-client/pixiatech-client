@@ -37,21 +37,17 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ total, selectedCount, 
   return (
     <div className="flex items-center gap-3 bg-theme-sidebar-active-bg px-4 py-3 rounded-xl shadow-sm border border-white/10 w-full md:w-auto md:min-w-[150px]">
       <div className="relative group">
-        <div className={`p-1.5 rounded-lg transition-colors ${isAdmin && onResync ? 'bg-white/10 group-hover:bg-white/20' : 'bg-white/10'}`}>
-          {isAdmin && onResync ? (
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onResync();
-              }}
-              title="Recalculate statistics"
-              className="flex items-center justify-center"
-            >
-              <Calculator className="w-4 h-4 text-theme-sidebar-active-text group-hover:scale-110 transition-transform" />
-            </button>
-          ) : (
-            <Calculator className="w-4 h-4 text-theme-sidebar-active-text" />
-          )}
+        <div className="p-1.5 rounded-lg transition-colors bg-white/10 group-hover:bg-white/20">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onResync?.();
+            }}
+            title="Synchroniser les données"
+            className="flex items-center justify-center"
+          >
+            <Calculator className="w-4 h-4 text-theme-sidebar-active-text group-hover:scale-110 transition-transform" />
+          </button>
         </div>
       </div>
       <div className="flex flex-col flex-1 min-w-0">

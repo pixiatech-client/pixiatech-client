@@ -271,6 +271,7 @@ interface EstimationRowProps {
   setSelectedEstimation: (est: Estimation) => void;
   setIsTrackingPanelOpen: (open: boolean) => void;
   setIsRefusalPanelOpen: (open: boolean) => void;
+  setPreviewImageUrl: (url: string | null) => void;
   estimationMode?: 'vente' | 'location';
 }
 
@@ -297,6 +298,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
   setSelectedEstimation,
   setIsTrackingPanelOpen,
   setIsRefusalPanelOpen,
+  setPreviewImageUrl,
   estimationMode = 'vente',
 }) => {
    const { t } = useI18n();
@@ -351,7 +353,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 <div
                   className="shrink-0 relative group/photo cursor-pointer"
                   title={t('estimation.sitePhotoTooltip')}
-                  onClick={(e) => { e.stopPropagation(); window.open(est.sitePhoto, '_blank'); }}
+                  onClick={(e) => { e.stopPropagation(); setPreviewImageUrl(est.sitePhoto!); }}
                 >
                   <svg viewBox="0 0 504.41 363.26" className="w-5 h-5 transition-transform group-hover/photo:scale-110 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg">
                     <g>
@@ -741,8 +743,8 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
                   {est.sitePhoto && (
                     <div
-                      className="shrink-0 relative mr-1"
-                      onClick={(e) => { e.stopPropagation(); window.open(est.sitePhoto, '_blank'); }}
+                      className="shrink-0 relative mr-1 cursor-pointer"
+                      onClick={(e) => { e.stopPropagation(); setPreviewImageUrl(est.sitePhoto!); }}
                     >
                       <svg viewBox="0 0 504.41 363.26" className="w-5 h-5 drop-shadow-sm" xmlns="http://www.w3.org/2000/svg">
                         <g>
@@ -1085,6 +1087,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
   const [isTrackingPanelOpen, setIsTrackingPanelOpen] = React.useState(false);
   const [isRefusalPanelOpen, setIsRefusalPanelOpen] = React.useState(false);
   const [selectedEstimation, setSelectedEstimation] = React.useState<Estimation | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = React.useState<string | null>(null);
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [refusalForm, setRefusalForm] = React.useState({ subject: '', message: '' });
   
@@ -1388,6 +1391,7 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                   setSelectedEstimation={setSelectedEstimation}
                   setIsTrackingPanelOpen={setIsTrackingPanelOpen}
                   setIsRefusalPanelOpen={setIsRefusalPanelOpen}
+                  setPreviewImageUrl={setPreviewImageUrl}
                   estimationMode={estimationMode}
                 />
               ))}
@@ -1685,6 +1689,48 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Image Preview Modal */}
+      <AnimatePresence>
+        {previewImageUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setPreviewImageUrl(null)}
+            className="fixed inset-0 z-[300] flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-3xl w-full max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl"
+            >
+              <div className="absolute top-4 right-4 z-10">
+                <button
+                  onClick={() => setPreviewImageUrl(null)}
+                  className="w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center transition-colors"
+                >
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <img
+                src={previewImageUrl}
+                alt="Site photo"
+                className="w-full h-full object-contain bg-black"
+                style={{ maxHeight: '90vh' }}
+              />
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12">
+                <p className="text-white/80 text-xs font-medium">Cliquez en dehors pour fermer</p>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

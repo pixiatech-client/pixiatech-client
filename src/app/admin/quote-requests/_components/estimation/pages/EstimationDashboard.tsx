@@ -15,7 +15,7 @@ const DetailsApp = dynamic(() => import('../details/App'), {
 import { EstimationDrawer } from '../components/EstimationDrawer';
 import { MobileFilterDrawer } from '../components/MobileFilterDrawer';
 
-import { X, ShoppingBag, Calendar } from 'lucide-react';
+import { X, ShoppingBag, Calendar, Calculator } from 'lucide-react';
 import { EstimationStatus, Estimation, TrackingInfo } from '../types';
 import { getQuoteRequests, getPaginatedQuotes, getQuoteCounts, updateQuoteStatus, moveQuotesToTrash, restoreQuotes, permanentDeleteQuotes, permanentDeleteAllTrashedQuotes, getUsers, getQuoteRequest, getProducts, getProductSpecs, calibrateQuoteStats } from '@/app/admin/actions';
 import type { QuoteRequest, UserProfile, Product, ProductSpec } from '@/lib/types';
@@ -146,6 +146,7 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
   const [popupData, setPopupData] = useState({ title: '', message: '', subtitle: '', variant: 'default' as 'default' | 'alert' });
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isEmptyTrashConfirming, setIsEmptyTrashConfirming] = useState(false);
+  const [isResyncConfirming, setIsResyncConfirming] = useState(false);
   const [isRentalModalOpen, setIsRentalModalOpen] = useState(false);
   const [pendingRentalId, setPendingRentalId] = useState<string | null>(null);
   const [lastDocIds, setLastDocIds] = useState<Record<number, string | null>>({ 1: null });
@@ -1286,23 +1287,25 @@ const filteredEstimations = useMemo(() => {
      }
    }, [selectedItems, activeTab, clearCache, updateCountsLocally, currentPage, fetchPage, lastDocIds, serverTabCounts]);
 
-   const handleResync = useCallback(async () => {
-     if (!window.confirm("Force a complete statistics recalculation? This operation is heavy and will overwrite persisted counters with real Firestore values.")) return;
-    setIsLoading(true);
-    try {
-      const result = await calibrateQuoteStats();
-      if (result) {
-        setServerTabCounts(result.counts);
-        setServerTabSums(result.sums);
-        alert("Recalculation completed successfully.");
+    const handleResync = useCallback(async () => {
+      setIsResyncConfirming(true);
+    }, []);
+
+    const confirmResync = useCallback(async () => {
+      setIsResyncConfirming(false);
+      setIsLoading(true);
+      try {
+        const result = await calibrateQuoteStats();
+        if (result) {
+          setServerTabCounts(result.counts);
+          setServerTabSums(result.sums);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {
-      console.error(e);
-      alert("Error during recalculation.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    }, []);
 
      const handleEmptyTrash = useCallback(async () => {
        if (!isAdmin) return;
@@ -1390,7 +1393,7 @@ const filteredEstimations = useMemo(() => {
            isFournisseur={isFournisseur}
            isAdmin={isAdmin}
            onEmptyTrash={handleEmptyTrash}
-           onResync={isAdmin ? handleResync : undefined}
+            onResync={handleResync}
            onSelectAll={handleSelectAll}
            isAllSelected={paginatedEstimations.length > 0 && selectedItems.size === paginatedEstimations.length}
            sortField={sortField}
@@ -1555,6 +1558,55 @@ const filteredEstimations = useMemo(() => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                 </svg>
                 {t('estimation.emptyTrash')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRMATION RESYNC */}
+      {isResyncConfirming && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setIsResyncConfirming(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            <div className="bg-amber-500 px-6 pt-6 pb-4 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <Calculator className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-black text-lg leading-tight">Synchroniser les données</h3>
+                <p className="text-amber-100 text-sm mt-1">Cette opération est irréversible</p>
+              </div>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-zinc-700 text-sm leading-relaxed">
+                Toutes les statistiques seront recalculées à partir des données Firestore. Les compteurs actuels seront remplacés.
+              </p>
+              <p className="text-amber-600 text-xs mt-3 leading-relaxed font-semibold flex items-center gap-1.5">
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                Action potentiellement lourde selon le volume de données
+              </p>
+            </div>
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => setIsResyncConfirming(false)}
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-zinc-200 text-zinc-700 font-bold text-sm hover:bg-zinc-50 transition-all"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmResync}
+                className="flex-1 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm transition-all shadow-lg shadow-amber-200 flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+                </svg>
+                Synchroniser
               </button>
             </div>
           </div>
