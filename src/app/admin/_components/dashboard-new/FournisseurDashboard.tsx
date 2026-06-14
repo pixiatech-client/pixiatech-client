@@ -449,7 +449,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
 
         {/* Activity Timeline */}
         <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
-          <h3 className="text-sm font-bold mb-6">{t('admin.fournisseurDashboard.recentActivities')}</h3>
+          <h3 className="text-sm font-bold mb-6">{t('admin.fournisseurDashboard.activitiesRecent')}</h3>
           <div className="relative space-y-6 pl-6">
             <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gray-100 dark:bg-white/5"></div>
             {activities.length === 0 ? (
