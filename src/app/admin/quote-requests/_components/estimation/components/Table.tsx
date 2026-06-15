@@ -115,9 +115,9 @@ export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearch
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className="h-full flex items-center gap-2 px-3 bg-zinc-100 border-y border-r border-zinc-200 rounded-r-lg text-xs font-bold uppercase tracking-wide hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-all group"
             >
-              <Filter className="w-3.5 h-3.5 text-zinc-400 group-hover:text-theme-sidebar-active-text" />
+              <Filter className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white" />
               <span className="hidden sm:inline">{t('estimation.filters')}</span>
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isFilterOpen ? 'rotate-180' : ''} group-hover:text-theme-sidebar-active-text`} />
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isFilterOpen ? 'rotate-180' : ''} group-hover:text-white`} />
             </button>
 
             <AnimatePresence>
@@ -324,12 +324,12 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
               isSelected 
                 ? (est.status === 'Corbeille' ? 'bg-red-600 border-red-600 text-white' : 'bg-theme-sidebar-active-bg border-theme-sidebar-active-bg text-theme-sidebar-active-text')
                 : est.isReturned 
-                  ? 'bg-red-50 border-red-200 text-red-900' 
-                  : est.status === 'Corbeille'
-                    ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors duration-300'
-                  : est.status === 'Archivé'
-                    ? 'bg-theme-app/50 border-theme-card-border text-theme-card-text/40 opacity-60 grayscale hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
-                    : 'bg-theme-card border-theme-card-border hover:bg-theme-sidebar-active-bg hover:border-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
+          ? 'bg-red-50 border-red-200 text-red-900 hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white transition-colors duration-300'
+          : est.status === 'Corbeille'
+            ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors duration-300'
+          : est.status === 'Archivé'
+            ? 'bg-theme-app/50 border-theme-card-border text-theme-card-text/40 opacity-60 grayscale hover:opacity-100 hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white'
+            : 'bg-theme-card border-theme-card-border hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white'
             }`}
             onClick={() => onEdit(est.id)}
           >
@@ -376,7 +376,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
             {/* Number & Ref */}
             <div className="w-40 px-3 flex flex-col gap-0.5">
-              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-orange-400' : 'text-orange-600'}`}>
+              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-white' : 'text-zinc-900 dark:text-zinc-100 group-hover:text-white'}`}>
                 {est.number}
               </span>
             </div>
@@ -384,7 +384,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             {/* Client */}
             <div className="flex-1 px-3 flex flex-col justify-center min-w-0">
               <div className="flex items-center gap-2 min-w-0">
-                <span className={`font-bold text-sm truncate ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900 dark:text-zinc-100'}`}>
+                <span className={`font-bold text-sm truncate ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-white text-zinc-900 dark:text-zinc-100'}`}>
                   {est.client}
                 </span>
                 {est.emailVerified && (
@@ -422,7 +422,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             {est.trackingNumber && (
               <div className="w-32 px-3 flex flex-col justify-center">
                 <span className={`text-[11px] font-bold tracking-tight flex items-center gap-1.5 ${
-                  isSelected ? 'text-orange-400' : 'text-orange-600'
+                  isSelected ? 'text-white' : 'text-zinc-900 dark:text-zinc-100 group-hover:text-white'
                 }`}>
                   <Package className="w-3.5 h-3.5 shrink-0" />
                   {est.trackingNumber}
@@ -444,6 +444,11 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 <StatusIcon className="w-3 h-3" />
                 {est.isReturned ? getStatusLabel('Retourné') : getStatusLabel(est.status as EstimationStatus)}
               </button>
+              {est.status === 'Fournisseur' && est.supplier && (
+                <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 truncate max-w-full group-hover:text-white/70">
+                  {est.supplier}
+                </span>
+              )}
               {/* Rental remaining days indicator */}
               {estimationMode === 'location' && est.rentalPeriod && (est.status === 'Traité' || est.status === 'Loué') && (() => {
                 const days = getRemainingDays(est.rentalPeriod);
@@ -469,7 +474,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
             {/* Heure / Date */}
             <div className="w-28 px-3 flex flex-col justify-center">
-              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900 dark:text-zinc-100'}`}>
+              <span className={`font-bold text-sm tracking-tight ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-white text-zinc-900 dark:text-zinc-100'}`}>
                 {est.time || '--:--'}
               </span>
               <span className={`text-[10px] font-medium ${isSelected ? 'text-zinc-500' : 'group-hover:text-zinc-500 text-zinc-400'}`}>
@@ -481,7 +486,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             {!isFournisseur && (
               <div className="w-36 px-3 flex flex-col items-start justify-center">
                 <span className={`text-[8px] font-black uppercase tracking-[0.2em] mb-0.5 ${isSelected ? 'text-zinc-600' : 'group-hover:text-zinc-600 text-zinc-300'}`}>{t('estimation.totalAmount')}</span>
-                <span className={`font-black text-lg tracking-tighter whitespace-nowrap ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-theme-sidebar-active-text text-zinc-900 dark:text-zinc-100'}`}>
+                <span className={`font-black text-lg tracking-tighter whitespace-nowrap ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-white text-zinc-900 dark:text-zinc-100'}`}>
                   {Math.max(est.totalClient, 0.01).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
               </div>
@@ -566,7 +571,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 <div className="flex items-center gap-0.5">
                   {est.status === 'En attente' && (
                     <>
-                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title={t('estimation.edit')}>
+                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-white'}`} title={t('estimation.edit')}>
                          <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title={t('estimation.process')}>
@@ -576,7 +581,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                   )}
                   {est.status === 'Traité' && (
                     <>
-                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title={t('estimation.edit')}>
+                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-white'}`} title={t('estimation.edit')}>
                          <Pencil className="w-4 h-4" />
                       </button>
                       {estimationMode === 'location' ? (
@@ -613,7 +618,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                   )}
                   {est.status === 'Retourné' && (
                     <>
-                      <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title={t('estimation.viewReason')}>
+                      <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-white'}`} title={t('estimation.viewReason')}>
                          <div className="relative">
                            <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
 {est.supplierNotes && !est.supplierNotesRead && (
@@ -621,7 +626,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
   )}
                          </div>
                       </button>
-                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title={t('estimation.edit')}>
+                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-white'}`} title={t('estimation.edit')}>
                          <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title={t('estimation.transfer')}>
@@ -631,7 +636,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                   )}
                   {est.status === 'Livraison' && (
                     <>
-                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-theme-sidebar-active-text'}`} title={t('estimation.consulter')}>
+                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-white'}`} title={t('estimation.consulter')}>
                          <PlusCircle className="w-4 h-4" />
                       </button>
                       <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title={t('estimation.viewTracking')}>
@@ -722,14 +727,14 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
           {/* ROW MOBILE */}
           <motion.div
             layout
-            className={`md:hidden group relative flex flex-col rounded-2xl border transition-all duration-300 overflow-hidden mb-3 shadow-sm ${
-              est.isReturned ? 'bg-red-50 border-red-200' : est.status === 'Corbeille' ? 'bg-red-50 border-red-200' : activeTab === 'Archivé' && est.isLocked ? 'bg-theme-app/50 border-theme-card-border opacity-60 grayscale' : 'bg-theme-card border-theme-card-border hover:border-theme-sidebar-active-bg'
+            className={`md:hidden group relative flex flex-col rounded-2xl border transition-all duration-300 overflow-hidden mb-3 shadow-sm hover:-translate-y-1 hover:shadow-2xl ${
+              est.isReturned ? 'bg-red-50 border-red-200 hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white transition-colors duration-300' : est.status === 'Corbeille' ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors duration-300' : activeTab === 'Archivé' && est.isLocked ? 'bg-theme-app/50 border-theme-card-border text-theme-card-text/40 opacity-60 grayscale' : 'bg-theme-card border-theme-card-border hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white'
             } ${
               isSelected ? (est.status === 'Corbeille' ? 'border-red-600 ring-2 ring-red-600 ring-offset-1' : 'border-theme-sidebar-active-bg ring-2 ring-theme-sidebar-active-bg ring-offset-1') : ''
             }`}
           >
             <div 
-              className="flex flex-col p-5 cursor-pointer hover:bg-theme-hover transition-colors w-full"
+              className="flex flex-col p-5 cursor-pointer transition-colors w-full"
               onClick={() => setExpandedId(expandedId === est.id ? null : est.id)}
             >
               <div className="flex items-center justify-between w-full gap-3">
@@ -767,13 +772,13 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
                   <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-black text-zinc-900 dark:text-zinc-100 text-base tracking-tighter truncate">{est.client}</span>
+                      <span className="font-black text-zinc-900 dark:text-zinc-100 text-base tracking-tighter truncate group-hover:text-white">{est.client}</span>
                       <Mail className={`w-3.5 h-3.5 shrink-0 ${est.emailVerified ? 'text-emerald-500' : 'text-red-500'}`} />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">{est.number}</span>
+                      <span className="text-[10px] font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest group-hover:text-white">{est.number}</span>
                       {est.trackingNumber && (
-                        <span className="text-[8px] font-bold text-orange-600 flex items-center gap-0.5">
+                        <span className="text-[8px] font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-0.5 group-hover:text-white">
                           <Package className="w-2.5 h-2.5" />
                           {est.trackingNumber}
                         </span>
@@ -793,14 +798,19 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                   <StatusIcon className="w-3 h-3" />
                   {est.isReturned ? getStatusLabel('Retourné') : getStatusLabel(est.status as EstimationStatus)}
                 </button>
+                {est.status === 'Fournisseur' && est.supplier && (
+                  <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 truncate max-w-full">
+                    {est.supplier}
+                  </span>
+                )}
               </div>
 
               <div className="h-px bg-zinc-100/80 w-full my-4" />
 
               <div className="flex items-center justify-between gap-4 w-full">
                 <div className="flex flex-col">
-                   <span className="text-[8px] text-zinc-400 font-black uppercase tracking-[0.2em] mb-0.5">{t('estimation.totalAmount')}</span>
-                   <span className="font-black text-zinc-900 dark:text-zinc-100 text-lg tracking-tighter">
+                   <span className="text-[8px] text-zinc-400 font-black uppercase tracking-[0.2em] mb-0.5 group-hover:text-white">{t('estimation.totalAmount')}</span>
+                   <span className="font-black text-zinc-900 dark:text-zinc-100 text-lg tracking-tighter group-hover:text-white">
                      {est.totalClient.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                    </span>
                 </div>
@@ -1141,56 +1151,56 @@ const isAllSelected = estimations.length > 0 && selectedIds.size === estimations
 return (
      <div className="flex flex-col gap-3">
        {/* HEADER PC */}
-       <div className="hidden md:flex items-center px-8 py-4 bg-theme-sidebar-active-bg rounded-2xl border border-zinc-800 text-[10px] font-black text-theme-sidebar-active-text uppercase tracking-[0.15em] mb-4">
-         <div className="w-12 mr-2 flex items-center justify-center">
-           <input
-             type="checkbox"
-             checked={isAllSelected}
-             onChange={onSelectAll}
-             className="rounded-sm border-white bg-white text-black focus:ring-0 cursor-pointer w-4 h-4"
-           />
-         </div>
-         <div className="w-8 flex items-center justify-center">
-           <Paperclip className="w-4 h-4 text-theme-sidebar-active-text" />
-         </div>
-         <div className="w-32 px-3 flex items-center gap-2.5">
-           <PlusCircle className="w-4 h-4 text-theme-sidebar-active-text" />
-           {t('estimation.numberHeader')}
-         </div>
-         <div className="flex-1 px-3 flex items-center gap-2.5">
-           <User className="w-4 h-4 text-theme-sidebar-active-text" />
-           {t('estimation.clientHeader')}
-         </div>
-         <div className="w-32 px-2 flex items-center gap-2.5">
-           <Clock className="w-4 h-4 text-theme-sidebar-active-text" />
-           {t('estimation.statusHeader')}
-         </div>
-         <div className="w-28 px-3 flex items-center gap-2.5">
-           <RotateCcw className="w-4 h-4 text-theme-sidebar-active-text" />
-           {t('estimation.timeDateHeader')}
-         </div>
-{!isFournisseur && (
+        <div className="hidden md:flex items-center px-8 py-4 bg-zinc-900 rounded-2xl border border-zinc-800/60 text-[10px] font-black text-zinc-300 uppercase tracking-[0.15em] mb-4 shadow-sm">
+          <div className="w-12 mr-2 flex items-center justify-center">
+            <input
+              type="checkbox"
+              checked={isAllSelected}
+              onChange={onSelectAll}
+              className="rounded-sm border-zinc-600 bg-zinc-800 text-white focus:ring-0 cursor-pointer w-4 h-4"
+            />
+          </div>
+          <div className="w-8 flex items-center justify-center">
+            <Paperclip className="w-4 h-4 text-blue-400" />
+          </div>
+          <div className="w-32 px-3 flex items-center gap-2.5">
+            <PlusCircle className="w-4 h-4 text-blue-400" />
+            {t('estimation.numberHeader')}
+          </div>
+          <div className="flex-1 px-3 flex items-center gap-2.5">
+            <User className="w-4 h-4 text-emerald-400" />
+            {t('estimation.clientHeader')}
+          </div>
+          <div className="w-32 px-2 flex items-center gap-2.5">
+            <Clock className="w-4 h-4 text-amber-400" />
+            {t('estimation.statusHeader')}
+          </div>
+          <div className="w-28 px-3 flex items-center gap-2.5">
+            <RotateCcw className="w-4 h-4 text-purple-400" />
+            {t('estimation.timeDateHeader')}
+          </div>
+ {!isFournisseur && (
             <button
               onClick={handlePriceHeaderClick}
-              className="w-36 px-3 flex items-center justify-start gap-2 font-black tracking-widest hover:text-theme-sidebar-active-text transition-colors group"
+              className="w-36 px-3 flex items-center justify-start gap-2 font-black tracking-widest hover:text-white transition-colors group"
             >
-              <DollarSign className="w-4 h-4 text-theme-sidebar-active-text shrink-0" />
+              <DollarSign className="w-4 h-4 text-emerald-400 group-hover:text-white shrink-0" />
               <span>{t('estimation.priceHeader')}</span>
               <span className={`text-[8px] transition-opacity ${sortField === 'price' ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'}`}>
                 {sortDirection === 'asc' ? '↑' : '↓'}
               </span>
             </button>
           )}
-         {!isFournisseur && (
-           <div className="hidden 2xl:flex w-28 px-4 items-center justify-center gap-2 font-black tracking-widest">
-             <Mail className="w-4 h-4 text-theme-sidebar-active-text shrink-0" />
-             <span>{t('estimation.emailHeader')}</span>
-           </div>
-         )}
-         <div className="w-32 px-3 mr-2 flex items-center justify-end gap-2 font-black tracking-widest">
-           <MoreVertical className="w-4 h-4 text-theme-sidebar-active-text shrink-0" />
-           <span>{t('estimation.actionHeader')}</span>
-         </div>
+          {!isFournisseur && (
+            <div className="hidden 2xl:flex w-28 px-4 items-center justify-center gap-2 font-black tracking-widest">
+              <Mail className="w-4 h-4 text-sky-400 shrink-0" />
+              <span>{t('estimation.emailHeader')}</span>
+            </div>
+          )}
+          <div className="w-32 px-3 mr-2 flex items-center justify-end gap-2 font-black tracking-widest">
+            <MoreVertical className="w-4 h-4 text-zinc-400 shrink-0" />
+            <span>{t('estimation.actionHeader')}</span>
+          </div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -1270,12 +1280,12 @@ return (
                     >
                       {estimationMode === 'location' ? (
                         <>
-<Key className="w-3.5 h-3.5 text-purple-500 group-hover:text-theme-sidebar-active-text transition-colors" />
+<Key className="w-3.5 h-3.5 text-purple-500 group-hover:text-white transition-colors" />
                            {t('estimation.rent')}
                         </>
                       ) : (
                         <>
-<Send className="w-3.5 h-3.5 text-[#1447e6] group-hover:text-theme-sidebar-active-text transition-colors" />
+<Send className="w-3.5 h-3.5 text-[#1447e6] group-hover:text-white transition-colors" />
                            {t('estimation.transfer')}
                         </>
                       )}
@@ -1316,7 +1326,7 @@ return (
                       onClick={() => setIsBulkConfirming(true)}
                       className="flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-red-600 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all group shrink-0"
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-red-500 group-hover:text-theme-sidebar-active-text transition-colors" />
+                      <Trash2 className="w-3.5 h-3.5 text-red-500 group-hover:text-white transition-colors" />
                       <span>{t('estimation.delete')}</span>
                     </button>
                   )}
@@ -1434,7 +1444,7 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                   </div>
                   <div>
                     <h2 className="text-base font-bold text-gray-900 tracking-tight uppercase">{t('estimation.trackingTitle')}</h2>
-                    <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wide">{selectedEstimation.number}</p>
+                    <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wide">{selectedEstimation.number}</p>
                   </div>
                 </div>
                 <button onClick={() => setIsTrackingPanelOpen(false)} className="p-2 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer">

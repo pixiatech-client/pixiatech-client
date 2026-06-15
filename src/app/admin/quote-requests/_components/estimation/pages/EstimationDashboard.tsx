@@ -15,7 +15,8 @@ const DetailsApp = dynamic(() => import('../details/App'), {
 import { EstimationDrawer } from '../components/EstimationDrawer';
 import { MobileFilterDrawer } from '../components/MobileFilterDrawer';
 
-import { X, ShoppingBag, Calendar, Calculator } from 'lucide-react';
+import { X, ShoppingBag, Calendar, Calculator, Database, Trash2 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EstimationStatus, Estimation, TrackingInfo } from '../types';
 import { getQuoteRequests, getPaginatedQuotes, getQuoteCounts, updateQuoteStatus, moveQuotesToTrash, restoreQuotes, permanentDeleteQuotes, permanentDeleteAllTrashedQuotes, getUsers, getQuoteRequest, getProducts, getProductSpecs, calibrateQuoteStats } from '@/app/admin/actions';
 import type { QuoteRequest, UserProfile, Product, ProductSpec } from '@/lib/types';
@@ -145,8 +146,10 @@ export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRo
   const [isMessagePopupOpen, setIsMessagePopupOpen] = useState(false);
   const [popupData, setPopupData] = useState({ title: '', message: '', subtitle: '', variant: 'default' as 'default' | 'alert' });
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
-  const [isEmptyTrashConfirming, setIsEmptyTrashConfirming] = useState(false);
-  const [isResyncConfirming, setIsResyncConfirming] = useState(false);
+   const [isEmptyTrashConfirming, setIsEmptyTrashConfirming] = useState(false);
+   const [isResyncConfirming, setIsResyncConfirming] = useState(false);
+   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [isRentalModalOpen, setIsRentalModalOpen] = useState(false);
   const [pendingRentalId, setPendingRentalId] = useState<string | null>(null);
   const [lastDocIds, setLastDocIds] = useState<Record<number, string | null>>({ 1: null });
@@ -1204,8 +1207,11 @@ const filteredEstimations = useMemo(() => {
      }
    };
 
-   const handleDelete = useCallback(async (id: string, skipConfirm: boolean = false) => {
-      if (!skipConfirm && !window.confirm(activeTab === 'Corbeille' ? 'Permanently delete?' : 'Move to trash?')) return;
+    const handleDelete = useCallback(async (id: string, skipConfirm: boolean = false) => {
+      if (!skipConfirm) {
+        setConfirmDeleteId(id);
+        return;
+      }
      
      try {
        setIsLoading(true);
@@ -1242,9 +1248,12 @@ const filteredEstimations = useMemo(() => {
      }
    }, [activeTab, estimations, clearCache, updateCountsLocally, currentPage, fetchPage, lastDocIds, serverTabCounts]);
 
-   const handleBulkDelete = useCallback(async (skipConfirm: boolean = false) => {
-     if (selectedItems.size === 0) return;
-      if (!skipConfirm && !window.confirm(`Are you sure you want to delete these ${selectedItems.size} estimations?`)) return;
+    const handleBulkDelete = useCallback(async (skipConfirm: boolean = false) => {
+      if (selectedItems.size === 0) return;
+      if (!skipConfirm) {
+        setConfirmBulkDelete(true);
+        return;
+      }
      
      try {
        setIsLoading(true);
@@ -1336,39 +1345,39 @@ const filteredEstimations = useMemo(() => {
 
         {!isFournisseur && (
           <div className="flex justify-end mb-6">
-            <div className="relative flex bg-slate-100/80 p-1 gap-2 rounded-2xl border border-slate-200 w-full md:w-auto overflow-hidden shadow-sm">
+            <div className="relative flex bg-white p-1 gap-2 rounded-2xl border border-zinc-200 w-full md:w-auto overflow-hidden shadow-sm">
               <button
                 onClick={() => setEstimationMode('vente')}
                 className={cn(
                   "relative flex-1 md:flex-none flex items-center justify-center gap-2 md:gap-3 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                  estimationMode === 'vente' ? "text-white" : "text-slate-400 hover:text-slate-700"
+                  estimationMode === 'vente' ? "text-white" : "text-zinc-400 hover:text-zinc-900"
                 )}
               >
                 {estimationMode === 'vente' && (
                   <motion.span
                     layoutId="estimation-mode-bubble"
-                    className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
+                    className="absolute inset-0 z-10 bg-[#18181B] rounded-xl shadow-lg border border-[#18181B]"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
-                <ShoppingBag className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'vente' ? "text-[#c6ff00]" : "text-slate-400")} />
+                <ShoppingBag className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'vente' ? "text-[#A7E40C]" : "text-zinc-500")} />
                 <span className="z-20 whitespace-nowrap">{t('admin.saleMode')}</span>
               </button>
               <button
                 onClick={() => setEstimationMode('location')}
                 className={cn(
                   "relative flex-1 md:flex-none flex items-center justify-center gap-2 md:gap-3 px-6 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                  estimationMode === 'location' ? "text-white" : "text-slate-400 hover:text-slate-700"
+                  estimationMode === 'location' ? "text-white" : "text-zinc-400 hover:text-zinc-900"
                 )}
               >
                 {estimationMode === 'location' && (
                   <motion.span
                     layoutId="estimation-mode-bubble"
-                    className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
+                    className="absolute inset-0 z-10 bg-[#18181B] rounded-xl shadow-lg border border-[#18181B]"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
-                <Calendar className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'location' ? "text-[#4fc3f7]" : "text-slate-400")} />
+                <Calendar className={cn("w-4 h-4 z-20 transition-colors", estimationMode === 'location' ? "text-[#A7E40C]" : "text-zinc-500")} />
                 <span className="z-20 whitespace-nowrap">{t('admin.rentalMode')}</span>
               </button>
             </div>
@@ -1607,6 +1616,103 @@ const filteredEstimations = useMemo(() => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
                 </svg>
                 Synchroniser
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM SUPPRESSION */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setConfirmDeleteId(null)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            <div className="bg-red-600 px-6 pt-6 pb-4 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-black text-lg leading-tight">
+                  {activeTab === 'Corbeille' ? 'Supprimer définitivement' : 'Mettre à la corbeille'}
+                </h3>
+                <p className="text-red-100 text-sm mt-1">Cette action est irréversible</p>
+              </div>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-zinc-700 text-sm leading-relaxed">
+                {activeTab === 'Corbeille'
+                  ? 'Cette estimation sera supprimée définitivement, ainsi que son historique de chat.'
+                  : 'L\'estimation sera déplacée dans la corbeille. Vous pourrez la restaurer ultérieurement.'}
+              </p>
+            </div>
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-zinc-200 text-zinc-700 font-bold text-sm hover:bg-zinc-50 transition-all"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  const id = confirmDeleteId;
+                  setConfirmDeleteId(null);
+                  handleDelete(id, true);
+                }}
+                className="flex-1 px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm transition-all shadow-lg shadow-red-200 flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                {activeTab === 'Corbeille' ? 'Supprimer' : 'Mettre à la corbeille'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM SUPPRESSION MULTIPLE */}
+      {confirmBulkDelete && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setConfirmBulkDelete(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            <div className="bg-red-600 px-6 pt-6 pb-4 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-black text-lg leading-tight">
+                  {activeTab === 'Corbeille' ? 'Supprimer définitivement' : 'Mettre à la corbeille'}
+                </h3>
+                <p className="text-red-100 text-sm mt-1">{selectedItems.size} estimation(s) concernée(s)</p>
+              </div>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-zinc-700 text-sm leading-relaxed">
+                {activeTab === 'Corbeille'
+                  ? 'Ces estimations seront supprimées définitivement, ainsi que leurs historiques de chat.'
+                  : 'Ces estimations seront déplacées dans la corbeille.'}
+              </p>
+            </div>
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => setConfirmBulkDelete(false)}
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-zinc-200 text-zinc-700 font-bold text-sm hover:bg-zinc-50 transition-all"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  setConfirmBulkDelete(false);
+                  handleBulkDelete(true);
+                }}
+                className="flex-1 px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm transition-all shadow-lg shadow-red-200 flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                {activeTab === 'Corbeille' ? 'Supprimer' : 'Mettre à la corbeille'}
               </button>
             </div>
           </div>

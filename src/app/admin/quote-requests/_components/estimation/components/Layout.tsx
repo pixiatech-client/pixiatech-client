@@ -35,9 +35,9 @@ interface SummaryCardProps {
 
 export const SummaryCard: React.FC<SummaryCardProps> = ({ total, selectedCount, isAdmin, onResync }) => {
   return (
-    <div className="flex items-center gap-3 bg-theme-sidebar-active-bg px-4 py-3 rounded-xl shadow-sm border border-white/10 w-full md:w-auto md:min-w-[150px]">
+    <div className="flex items-center gap-3 bg-[#18181B] px-4 py-3 rounded-xl shadow-sm border border-zinc-700/50 w-full md:w-auto md:min-w-[150px]">
       <div className="relative group">
-        <div className="p-1.5 rounded-lg transition-colors bg-white/10 group-hover:bg-white/20">
+        <div className="p-1.5 rounded-lg transition-colors bg-[#A7E40C] group-hover:bg-[#95d00a]">
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -46,15 +46,15 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({ total, selectedCount, 
             title="Synchroniser les données"
             className="flex items-center justify-center"
           >
-            <Calculator className="w-4 h-4 text-theme-sidebar-active-text group-hover:scale-110 transition-transform" />
+            <Calculator className="w-4 h-4 text-black group-hover:scale-110 transition-transform" />
           </button>
         </div>
       </div>
       <div className="flex flex-col flex-1 min-w-0">
-        <span className="text-[7px] uppercase tracking-[0.15em] text-zinc-500 font-bold leading-none mb-0.5">
+        <span className="text-[7px] uppercase tracking-[0.15em] text-white font-bold leading-none mb-0.5">
           {selectedCount > 0 ? `SELECTED (${selectedCount})` : 'TOTAL'}
         </span>
-        <span className="text-sm font-black text-theme-sidebar-active-text leading-none tracking-tight truncate">
+        <span className="text-sm font-black text-[#A7E40C] leading-none tracking-tight truncate">
           {total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
         </span>
       </div>
@@ -131,7 +131,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
         className="relative flex items-center gap-3 bg-theme-card p-2 rounded-2xl border border-theme-card-border shadow-sm w-fit"
       >
         <motion.div
-          className="absolute top-2 bottom-2 rounded-xl bg-theme-sidebar-active-bg shadow-lg z-0"
+          className="absolute top-2 bottom-2 rounded-xl bg-[#18181B] shadow-lg z-0"
           animate={{
             left: indicatorStyle.left,
             width: indicatorStyle.width,
@@ -159,10 +159,10 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
               className={`
                 relative flex items-center gap-2.5 px-6 py-3 text-xs font-bold uppercase tracking-[0.05em]
                 transition-all duration-300 rounded-xl z-10 group whitespace-nowrap
-                ${isActive 
-                  ? 'text-theme-sidebar-active-text cursor-default' 
-                  : 'text-zinc-500 hover:text-black hover:bg-zinc-100'
-                }
+                  ${isActive 
+                    ? 'text-white cursor-default' 
+                    : 'text-zinc-500 hover:text-black hover:bg-[#A7E40C] hover:shadow-md'
+                  }
               `}
             >
               <Icon 
@@ -174,8 +174,8 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
                 <span className={`
                   px-2 py-0.5 rounded-lg text-[10px] font-black transition-all duration-300
                   ${isActive 
-                    ? 'bg-white/20 text-white' 
-                    : 'bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200'
+                    ? 'bg-[#A7E40C]/20 text-[#A7E40C]' 
+                    : 'bg-zinc-100 text-zinc-600 group-hover:bg-black/10 group-hover:text-black'
                   }
                 `}>
                   {count}

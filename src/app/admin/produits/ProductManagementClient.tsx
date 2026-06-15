@@ -485,7 +485,7 @@ const ProductListItem = ({
         boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.15)"
       }}
       className={cn(
-        "bg-theme-card border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-[#131E3F] hover:border-[#131E3F] hover:-translate-y-1 hover:shadow-2xl dark:bg-theme-card/5 dark:border-theme-card-border",
+        "bg-theme-card border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-[#18181B] hover:border-[#18181B] hover:-translate-y-1 hover:shadow-2xl dark:bg-theme-card/5 dark:border-theme-card-border",
         selectedIds.includes(product.id) ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg" : "border-theme-card-border"
       )}
     >
@@ -1034,7 +1034,7 @@ const AISettingsSheet = ({
               </button>
               <button
                 onClick={() => { onSave(localSettings); onClose(); }}
-                className="flex-[2] bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
+                className="flex-[2] bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-[#18181B] hover:text-white transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
               >
                 <Save className="w-4 h-4" /> {t('admin.productManagement.save')}
               </button>
@@ -1471,7 +1471,7 @@ const CaracteristiquesPage = ({
                     />
                     <label
                       htmlFor="custom-icon-upload"
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-[#131E3F] hover:text-white transition-all text-sm font-bold text-slate-600 group"
+                      className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-[#18181B] hover:text-white transition-all text-sm font-bold text-slate-600 group"
                     >
                       <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> {t('admin.productManagement.uploadIcon')}
                     </label>
@@ -1528,7 +1528,7 @@ const CaracteristiquesPage = ({
                     setIsSaving(false);
                     toast({ title: t('admin.productManagement.syncTitle'), description: t('admin.productManagement.syncDesc') });
                   }}
-                  className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-[#131E3F] hover:text-white transition-all shadow-sm group mr-2"
+                  className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-[#18181B] hover:text-white transition-all shadow-sm group mr-2"
                   title={t('admin.productManagement.restoreTitle')}
                 >
                   <RefreshCw className="w-5 h-5 transition-colors group-hover:text-[#a3e635]" />
@@ -1539,7 +1539,7 @@ const CaracteristiquesPage = ({
                     setCharPage(prev => Math.max(prev - 1, 1));
                   }}
                   disabled={charPage === 1}
-                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
+                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#18181B] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
                 >
                   <ChevronLeft className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
                 </button>
@@ -1549,7 +1549,7 @@ const CaracteristiquesPage = ({
                     setCharPage(prev => Math.min(prev + 1, totalCharPages));
                   }}
                   disabled={charPage === totalCharPages || totalCharPages === 0}
-                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
+                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#18181B] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
                 >
                   <ChevronRight className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
                 </button>
@@ -1597,7 +1597,7 @@ const CaracteristiquesPage = ({
                           "bg-theme-card border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all cursor-pointer group relative overflow-hidden",
                           editingId === char.id
                             ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg"
-                            : "border-theme-card-border hover:bg-[#131E3F] hover:border-[#131E3F]",
+                            : "border-theme-card-border hover:bg-[#18181B] hover:border-[#18181B]",
                           (char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && !editingId && "bg-orange-50/50 border-orange-100"
                         )}
                         onClick={() => handleEdit(char)}
@@ -2363,7 +2363,7 @@ const ProduitPage = ({
                   {mode.includes('vente') && (
                     <motion.span
                       layoutId="mode-bubble-vente"
-                      className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
+                      className="absolute inset-0 z-10 bg-[#18181B] rounded-xl shadow-lg border border-[#18181B]"
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
@@ -2386,7 +2386,7 @@ const ProduitPage = ({
                   {mode.includes('location') && (
                     <motion.span
                       layoutId="mode-bubble-location"
-                      className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
+                      className="absolute inset-0 z-10 bg-[#18181B] rounded-xl shadow-lg border border-[#18181B]"
                       transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
@@ -2404,7 +2404,7 @@ const ProduitPage = ({
                   onClick={() => setScreenType('flat')}
                   className={cn(
                     "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                    screenType === 'flat' ? "bg-[#131E3F] text-white border-[#131E3F] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                    screenType === 'flat' ? "bg-[#18181B] text-white border-[#18181B] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                   )}
                 >
                   <Monitor className={cn("w-4 h-4", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-300")} />
@@ -2414,7 +2414,7 @@ const ProduitPage = ({
                   onClick={() => setScreenType('curved')}
                   className={cn(
                     "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                    screenType === 'curved' ? "bg-[#131E3F] text-white border-[#131E3F] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                    screenType === 'curved' ? "bg-[#18181B] text-white border-[#18181B] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                   )}
                 >
                   <svg className={cn("w-4 h-4", screenType === 'curved' ? "text-blue-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2427,7 +2427,7 @@ const ProduitPage = ({
                   onClick={() => setScreenType('360')}
                   className={cn(
                     "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                    screenType === '360' ? "bg-[#131E3F] text-white border-[#131E3F] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                    screenType === '360' ? "bg-[#18181B] text-white border-[#18181B] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                   )}
                 >
                   <svg className={cn("w-4 h-4", screenType === '360' ? "text-purple-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2459,7 +2459,7 @@ const ProduitPage = ({
                     }}
                     className={cn(
                       "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                      environment.includes(item.id as any) ? "bg-[#131E3F] text-white border-[#131E3F] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
+                      environment.includes(item.id as any) ? "bg-[#18181B] text-white border-[#18181B] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
                     )}
                   >
                     <item.icon className={cn("w-4 h-4", environment.includes(item.id as any) ? item.color : "text-slate-300")} />
@@ -2483,8 +2483,8 @@ const ProduitPage = ({
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.technicalSpecifications')}</label>
                 {totalSpecPages > 1 && (
                   <div className="flex items-center gap-2">
-                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.max(prev - 1, 1)); }} disabled={specPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
-                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.min(prev + 1, totalSpecPages)); }} disabled={specPage === totalSpecPages} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.max(prev - 1, 1)); }} disabled={specPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#18181B] hover:text-white disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
+                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.min(prev + 1, totalSpecPages)); }} disabled={specPage === totalSpecPages} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#18181B] hover:text-white disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
                   </div>
                 )}
               </div>
@@ -2955,7 +2955,7 @@ const ProduitPage = ({
                           {mode.includes('vente') && (
                             <motion.span
                               layoutId="mode-bubble-mobile-vente"
-                              className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
+                              className="absolute inset-0 z-10 bg-[#18181B] rounded-xl shadow-lg border border-[#18181B]"
                               transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                             />
                           )}
@@ -2979,7 +2979,7 @@ const ProduitPage = ({
                           {mode.includes('location') && (
                             <motion.span
                               layoutId="mode-bubble-mobile-location"
-                              className="absolute inset-0 z-10 bg-[#131E3F] rounded-xl shadow-lg border border-[#131E3F]"
+                              className="absolute inset-0 z-10 bg-[#18181B] rounded-xl shadow-lg border border-[#18181B]"
                               transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                             />
                           )}
@@ -2997,7 +2997,7 @@ const ProduitPage = ({
                         onClick={() => setScreenType('flat')}
                         className={cn(
                           "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
-                          screenType === 'flat' ? "bg-[#131E3F] text-white" : "bg-slate-100 text-slate-400"
+                          screenType === 'flat' ? "bg-[#18181B] text-white" : "bg-slate-100 text-slate-400"
                         )}
                       >
                         <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'flat' ? "bg-white/10" : "bg-slate-200")}>
@@ -3009,7 +3009,7 @@ const ProduitPage = ({
                         onClick={() => setScreenType('curved')}
                         className={cn(
                           "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
-                          screenType === 'curved' ? "bg-[#131E3F] text-white" : "bg-slate-100 text-slate-400"
+                          screenType === 'curved' ? "bg-[#18181B] text-white" : "bg-slate-100 text-slate-400"
                         )}
                       >
                         <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'curved' ? "bg-white/10" : "bg-slate-200")}>
@@ -3024,7 +3024,7 @@ const ProduitPage = ({
                         onClick={() => setScreenType('360')}
                         className={cn(
                           "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
-                          screenType === '360' ? "bg-[#131E3F] text-white" : "bg-slate-100 text-slate-400"
+                          screenType === '360' ? "bg-[#18181B] text-white" : "bg-slate-100 text-slate-400"
                         )}
                       >
                         <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === '360' ? "bg-white/10" : "bg-slate-200")}>
@@ -3058,7 +3058,7 @@ const ProduitPage = ({
                           }}
                           className={cn(
                             "w-full h-12 rounded-xl flex items-center px-4 gap-3 transition-all duration-300 relative overflow-hidden group",
-                            environment.includes(item.id as any) ? "bg-[#131E3F] text-white" : "bg-slate-100 text-slate-400"
+                            environment.includes(item.id as any) ? "bg-[#18181B] text-white" : "bg-slate-100 text-slate-400"
                           )}
                         >
                           <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", environment.includes(item.id as any) ? "bg-white/10" : "bg-slate-200")}>
@@ -3517,7 +3517,7 @@ const GestionProduits = ({
             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover/empty:bg-black/5 transition-colors"><Package className="w-10 h-10 text-slate-300" /></div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">{t('admin.productManagement.noProducts')}</h3>
             <p className="text-slate-500 font-medium mb-8">{t('admin.productManagement.startByCreating')}</p>
-            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>{t('admin.productManagement.createProduct')}</span></button>
+            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-[#18181B] hover:text-white transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>{t('admin.productManagement.createProduct')}</span></button>
           </div>
         )}
       </div>
@@ -3770,329 +3770,6 @@ const MOCK_PRODUCTS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
-// OUTIL DE MIGRATION : Distance → Pitch
-// ─────────────────────────────────────────────────────────────────────────
-function DistancePitchMigrationModal({
-  isOpen,
-  onClose,
-  products,
-  characteristics,
-  t,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  products: any[];
-  characteristics: any[];
-  t: (k: string) => string;
-}) {
-  const { toast } = useToast();
-
-  // Current distance & pitch options from characteristics
-  const distanceCharDef = characteristics.find((c: any) => c.name === 'Distance de visionnage');
-  const pitchCharDef = characteristics.find((c: any) => c.name === 'Pixel pitch');
-  const validDistances: string[] = distanceCharDef?.options || [];
-  const validPitches: string[] = pitchCharDef?.options || [];
-
-  // Collect all unique keys used in products
-  const allProductKeys = React.useMemo(() => {
-    const keys = new Set<string>();
-    products.forEach((p: any) => {
-      if (p.distancePitches && typeof p.distancePitches === 'object') {
-        Object.keys(p.distancePitches).forEach(k => keys.add(k));
-      }
-    });
-    return Array.from(keys);
-  }, [products]);
-
-  // mapping: old key → new key (initialised to identity if already valid)
-  const [mapping, setMapping] = React.useState<Record<string, string>>({});
-  const [isMigrating, setIsMigrating] = React.useState(false);
-  const [result, setResult] = React.useState<{ updated: number; skipped: number; errors: string[] } | null>(null);
-
-  // Re-init mapping when modal opens
-  useEffect(() => {
-    if (!isOpen) return;
-    setResult(null);
-    const init: Record<string, string> = {};
-    allProductKeys.forEach(k => {
-      // Auto-map if already a valid distance
-      init[k] = validDistances.includes(k) ? k : (validDistances[0] || '');
-    });
-    setMapping(init);
-  }, [isOpen, allProductKeys, validDistances]);
-
-  // Products that have at least one invalid key
-  const affectedProducts = React.useMemo(() => {
-    return products.filter((p: any) => {
-      if (!p.distancePitches || typeof p.distancePitches !== 'object') return false;
-      return Object.keys(p.distancePitches).some(k => !validDistances.includes(k));
-    });
-  }, [products, validDistances]);
-
-  const handleApplyMigration = async () => {
-    setIsMigrating(true);
-    let updated = 0;
-    let skipped = 0;
-    const errors: string[] = [];
-
-    for (const product of affectedProducts) {
-      try {
-        const oldDp: Record<string, string[]> = product.distancePitches || {};
-        const newDp: Record<string, string[]> = {};
-
-        for (const [oldKey, pitches] of Object.entries(oldDp)) {
-          const newKey = mapping[oldKey];
-          if (!newKey) { skipped++; continue; }
-          if (!newDp[newKey]) newDp[newKey] = [];
-          // Merge pitches, keeping only valid ones
-          const validPitchList = (pitches as string[]).filter(p => validPitches.includes(p));
-          validPitchList.forEach(p => {
-            if (!newDp[newKey].includes(p)) newDp[newKey].push(p);
-          });
-        }
-
-        // Recompute flat distance/pitch strings
-        const distVal = Object.keys(newDp)
-          .filter(k => (newDp[k] || []).length > 0)
-          .join(', ');
-        const pitchVal = Array.from(new Set(Object.values(newDp).flat())).join(', ');
-
-        await updateDoc(doc(db, 'products', product.id), {
-          distancePitches: newDp,
-          distance: distVal,
-          pitch: pitchVal,
-          updatedAt: new Date().toISOString(),
-        });
-        updated++;
-      } catch (e: any) {
-        errors.push(`${product.name}: ${e.message}`);
-      }
-    }
-
-    setIsMigrating(false);
-    setResult({ updated, skipped, errors });
-
-    if (errors.length === 0) {
-      toast({
-        title: '✅ Migration réussie',
-        description: `${updated} produit(s) mis à jour.`,
-        variant: 'success',
-      });
-    } else {
-      toast({
-        title: '⚠️ Migration partielle',
-        description: `${updated} mis à jour, ${errors.length} erreur(s).`,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="absolute inset-0 bg-black/70 backdrop-blur-md"
-      />
-
-      {/* Panel */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.92, y: 32 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.92, y: 32 }}
-        transition={{ type: 'spring', damping: 22, stiffness: 320 }}
-        className="bg-[#0f172a] text-white rounded-[2.5rem] w-full max-w-2xl relative z-10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-      >
-        {/* Header */}
-        <div className="px-8 pt-8 pb-6 border-b border-slate-800 flex items-start justify-between shrink-0">
-          <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 rounded-xl bg-[#c6ff00]/10 border border-[#c6ff00]/20 flex items-center justify-center">
-                <RefreshCw className="w-5 h-5 text-[#c6ff00]" />
-              </div>
-              <h2 className="text-xl font-black uppercase tracking-tight">Migration Distance → Pitch</h2>
-            </div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
-              Synchronise les clés de distance avec les options actuelles
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-500 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {/* Diagnostic */}
-          <div className="px-8 py-6 border-b border-slate-800">
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { label: 'Produits affectés', value: affectedProducts.length, color: affectedProducts.length > 0 ? 'text-orange-400' : 'text-emerald-400' },
-                { label: 'Options valides', value: validDistances.length, color: 'text-blue-400' },
-                { label: 'Clés orphelines', value: allProductKeys.filter(k => !validDistances.includes(k)).length, color: 'text-red-400' },
-              ].map(stat => (
-                <div key={stat.label} className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
-                  <div className={`text-2xl font-black ${stat.color}`}>{stat.value}</div>
-                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{stat.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {affectedProducts.length === 0 ? (
-            <div className="px-8 py-12 text-center">
-              <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="w-8 h-8 text-emerald-400" />
-              </div>
-              <h3 className="text-lg font-black text-emerald-400 mb-1">Tout est synchronisé !</h3>
-              <p className="text-slate-400 text-sm">
-                Tous les produits utilisent déjà des distances valides.
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Mapping configuration */}
-              <div className="px-8 py-6 border-b border-slate-800">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
-                  Correspondance des clés
-                </h3>
-                <div className="space-y-3">
-                  {allProductKeys.filter(k => !validDistances.includes(k)).map(oldKey => (
-                    <div key={oldKey} className="flex items-center gap-3">
-                      {/* Old key */}
-                      <div className="flex-1 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5 text-sm font-bold text-red-300">
-                        <span className="text-[9px] text-red-500/60 uppercase tracking-wider block mb-0.5">Clé ancienne</span>
-                        {oldKey || '(vide)'}
-                      </div>
-
-                      <ArrowRight className="w-4 h-4 text-slate-600 shrink-0" />
-
-                      {/* New key selector */}
-                      <div className="flex-1">
-                        <select
-                          value={mapping[oldKey] || ''}
-                          onChange={e => setMapping(prev => ({ ...prev, [oldKey]: e.target.value }))}
-                          className="w-full bg-[#1a2540] border border-[#c6ff00]/30 rounded-xl px-3 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-[#c6ff00] transition-colors"
-                        >
-                          <option value="">— Ignorer —</option>
-                          {validDistances.map(d => (
-                            <option key={d} value={d}>{d}</option>
-                          ))}
-                        </select>
-                        <span className="text-[9px] text-[#c6ff00]/60 uppercase tracking-wider block mt-1 ml-1">Nouvelle distance</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {validDistances.length === 0 && (
-                  <div className="mt-4 bg-orange-500/10 border border-orange-500/20 rounded-xl px-4 py-3 text-xs text-orange-300 font-bold">
-                    ⚠️ Aucune option de distance trouvée. Configurez d'abord les caractéristiques "Distance de visionnage".
-                  </div>
-                )}
-              </div>
-
-              {/* Affected products list */}
-              <div className="px-8 py-6">
-                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">
-                  {affectedProducts.length} produit(s) à mettre à jour
-                </h3>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                  {affectedProducts.map((p: any) => {
-                    const badKeys = Object.keys(p.distancePitches || {}).filter(k => !validDistances.includes(k));
-                    return (
-                      <div key={p.id} className="flex items-center justify-between bg-white/5 rounded-xl px-4 py-2.5 border border-white/5">
-                        <span className="text-sm font-bold text-white truncate mr-3">{p.name}</span>
-                        <div className="flex flex-wrap gap-1 shrink-0">
-                          {badKeys.map(k => (
-                            <span key={k} className="text-[9px] font-black bg-red-500/20 text-red-300 border border-red-500/20 px-2 py-0.5 rounded-lg">
-                              {k || '(vide)'}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Result */}
-          {result && (
-            <div className="px-8 pb-6">
-              <div className={`rounded-2xl px-5 py-4 border ${
-                result.errors.length === 0
-                  ? 'bg-emerald-500/10 border-emerald-500/20'
-                  : 'bg-orange-500/10 border-orange-500/20'
-              }`}>
-                <p className={`text-sm font-black ${
-                  result.errors.length === 0 ? 'text-emerald-400' : 'text-orange-400'
-                }`}>
-                  {result.errors.length === 0 ? '✅' : '⚠️'} {result.updated} produit(s) migré(s)
-                  {result.skipped > 0 && `, ${result.skipped} ignoré(s)`}
-                </p>
-                {result.errors.length > 0 && (
-                  <ul className="mt-2 space-y-1">
-                    {result.errors.map((e, i) => (
-                      <li key={i} className="text-[11px] text-orange-300 font-medium">{e}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer Actions */}
-        <div className="px-8 py-5 border-t border-slate-800 flex items-center justify-between shrink-0 bg-black/20">
-          <button
-            onClick={onClose}
-            className="px-6 h-11 text-xs font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors"
-          >
-            Fermer
-          </button>
-          {affectedProducts.length > 0 && !result && (
-            <button
-              onClick={handleApplyMigration}
-              disabled={isMigrating || validDistances.length === 0}
-              className="px-8 h-11 bg-[#c6ff00] text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-[#d4ff33] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-            >
-              {isMigrating ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-slate-900/30 border-t-slate-900 rounded-full animate-spin" />
-                  Migration en cours…
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4" />
-                  Appliquer la migration
-                </>
-              )}
-            </button>
-          )}
-          {result && result.errors.length === 0 && (
-            <button
-              onClick={onClose}
-              className="px-8 h-11 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-400 transition-all flex items-center gap-2"
-            >
-              <Check className="w-4 h-4" /> Terminé
-            </button>
-          )}
-        </div>
-      </motion.div>
-    </div>,
-    document.body
-  );
-}
-
 // --- Main App Component ---
 export default function ProductManagementClient() {
   const { t } = useI18n();
@@ -4112,7 +3789,7 @@ export default function ProductManagementClient() {
 
   const [activePage, setActivePage] = useState<'gestion' | 'produit' | 'caracteristiques'>('gestion');
   const [prevActivePage, setPrevActivePage] = useState<'gestion' | 'produit' | 'caracteristiques'>('gestion');
-  const [isMigrationOpen, setIsMigrationOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const getPageOrder = (page: string) => {
     const order = { 'gestion': 0, 'produit': 1, 'caracteristiques': 2 };
@@ -5096,7 +4773,7 @@ export default function ProductManagementClient() {
                       <button
                         type="submit"
                         disabled={isAuthenticating}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#18181B] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
                       >
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -5174,7 +4851,7 @@ export default function ProductManagementClient() {
                     <button
                       type="submit"
                       disabled={isAuthenticating}
-                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#18181B] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
                     >
                       {isAuthenticating ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -5254,7 +4931,7 @@ export default function ProductManagementClient() {
                       <button
                         type="submit"
                         disabled={isAuthenticating}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#18181B] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
                       >
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -5321,15 +4998,36 @@ export default function ProductManagementClient() {
               })}
             </div>
 
-            {/* Migration button — only visible when authenticated */}
+            {/* Sync button — only visible when authenticated */}
             {user && (
               <button
-                onClick={() => setIsMigrationOpen(true)}
-                title="Outil de migration Distance → Pitch"
-                className="flex items-center gap-2 px-4 h-10 rounded-2xl border border-orange-500/30 bg-orange-500/10 text-orange-400 text-[10px] font-black uppercase tracking-widest hover:bg-orange-500/20 hover:border-orange-500/50 transition-all shrink-0"
+                onClick={async () => {
+                  setIsSyncing(true);
+                  try {
+                    const productsSnap = await getDocs(collection(db, 'products'));
+                    const charsSnap = await getDocs(collection(db, 'characteristics'));
+                    setProducts(productsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any);
+                    setCharacteristics(charsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any);
+                    toast({
+                      title: '✅ Synchronisé',
+                      description: `${productsSnap.size} produit(s) · ${charsSnap.size} caractéristique(s)`,
+                      variant: 'success',
+                    });
+                  } catch (e: any) {
+                    toast({
+                      title: '❌ Erreur',
+                      description: e.message,
+                      variant: 'destructive',
+                    });
+                  } finally {
+                    setIsSyncing(false);
+                  }
+                }}
+                title="Synchroniser avec la base de données"
+                className="flex items-center gap-2 px-4 h-10 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all shrink-0"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Migration</span>
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span className="hidden md:inline">Synchronisation</span>
               </button>
             )}
           </div>
@@ -5540,18 +5238,6 @@ export default function ProductManagementClient() {
             settings={aiSettings}
             onSave={handleSaveSettings}
           />
-
-          <AnimatePresence>
-            {isMigrationOpen && (
-              <DistancePitchMigrationModal
-                isOpen={isMigrationOpen}
-                onClose={() => setIsMigrationOpen(false)}
-                products={products}
-                characteristics={characteristics}
-                t={t}
-              />
-            )}
-          </AnimatePresence>
 
           <AnimatePresence>
             {showCharPanel && (

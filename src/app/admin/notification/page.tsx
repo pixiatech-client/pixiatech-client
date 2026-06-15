@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { MessageSquare, FileText, Users, Truck, Send, XCircle, ShoppingCart, Archive, ArchiveRestore, CheckCircle2, Settings, Bell, Trash2, Mail, Clock } from 'lucide-react';
+import { MessageSquare, FileText, Users, Truck, Send, XCircle, ShoppingCart, Archive, ArchiveRestore, CheckCircle2, Settings, Bell, Trash2, Mail, Clock, Database } from 'lucide-react';
 import { toast as sonnerToast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
@@ -9,6 +9,7 @@ import { collection, query, where, orderBy, doc, updateDoc, deleteDoc, writeBatc
 import Link from 'next/link';
 import { NotificationFirestore } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 type NotificationCategory = 'all' | 'unread' | 'messages' | 'system';
 
@@ -16,6 +17,7 @@ function NotificationPage() {
   const { t } = useI18n();
   const [activeCategory, setActiveCategory] = useState<NotificationCategory>('all');
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   const firestore = useFirestore();
   const { user } = useUser();
@@ -152,8 +154,6 @@ function NotificationPage() {
       return;
     }
     
-    if (!window.confirm(t('notification.confirmDeleteAll', { count: notifications.length }))) return;
-    
     setIsLoading(true);
     try {
       // Process in chunks of 500 (Firestore batch limit)
@@ -222,13 +222,29 @@ function NotificationPage() {
               <span className="sm:hidden">{t('notification.readAll')}</span>
             </button>
             <button 
-              onClick={handleDeleteAll}
+              onClick={() => setConfirmDeleteAll(true)}
               className="flex-1 md:flex-none flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-600 px-4 py-2.5 text-xs md:text-sm font-bold text-white shadow-lg transition-all hover:bg-red-700 active:scale-95 disabled:opacity-50"
             >
               <Trash2 className="h-4 w-4" />
               <span className="hidden sm:inline">{t('notification.deleteAll')}</span>
               <span className="sm:hidden">{t('notification.deleteAll')}</span>
             </button>
+
+            <ConfirmDialog
+              open={confirmDeleteAll}
+              onOpenChange={setConfirmDeleteAll}
+              title={t('notification.deleteAll')}
+              subtitle="Cette action est irréversible"
+              description={t('notification.confirmDeleteAll', { count: notifications.length })}
+              confirmText={t('notification.deleteAll')}
+              headerColor="bg-red-600"
+              confirmButtonClass="bg-red-600 hover:bg-red-700"
+              icon={<Trash2 className="w-6 h-6 text-white" />}
+              onConfirm={() => {
+                setConfirmDeleteAll(false);
+                handleDeleteAll();
+              }}
+            />
           </div>
         </div>
 
