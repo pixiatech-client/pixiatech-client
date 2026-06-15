@@ -366,7 +366,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         id: `bot-${Date.now()}-${Math.random()}`,
         chatId: 'wizard-bot',
         senderId: 'bot',
-        senderName: 'Lumi',
+        senderName: 'Pixia',
         senderRole: 'bot',
         content,
         type: 'text',
@@ -1096,7 +1096,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
         <img src={getBotImageForStep(stepNum)} alt="Bot" className="w-full h-full object-contain scale-[1.3] origin-bottom" />
       </motion.div>
       <div className="flex flex-col gap-1 flex-1 min-w-0">
-        <span className="hidden md:block text-[10px] font-black uppercase tracking-widest text-slate-900">Lumi</span>
+        <span className="hidden md:block text-[10px] font-black uppercase tracking-widest text-slate-900">Pixia</span>
         {children}
       </div>
     </div>

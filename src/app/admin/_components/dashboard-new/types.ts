@@ -12,10 +12,12 @@ export enum UserStatus {
 }
 
 export enum QuoteStatus {
-  EN_ATTENTE = 'Pending',
-  TRAITE = 'Processed',
-  CORBEILLE = 'Trash',
-  ARCHIVE = 'Archive',
+  EN_ATTENTE = 'pending',
+  TRAITE = 'processed',
+  RETOURNE = 'returned',
+  EN_COURS = 'in_progress',
+  CORBEILLE = 'trashed',
+  ARCHIVE = 'archive',
 }
 
 export interface Quote {

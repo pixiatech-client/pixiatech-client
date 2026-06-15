@@ -10,8 +10,8 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import type { firestore as admin } from 'firebase-admin';
 import { getStorage } from 'firebase-admin/storage';
+import type { DocumentReference, DocumentSnapshot, Firestore, Query } from 'firebase-admin/firestore';
 import { createHash } from 'crypto';
 import nodemailer from 'nodemailer';
 import { buildSupplierEmailHtml } from '@/lib/email-templates';
@@ -23,8 +23,6 @@ import fr from '@/lib/locales/fr.json';
 import en from '@/lib/locales/en.json';
 import { getQuoteStats, updateStatsOnStatusChange, updateStatsOnDelete, resyncStats } from '@/lib/statsService';
 import { getSmtpSettings as getSmtpSettingsDb, updateSmtpSettings as updateSmtpSettingsDb, getSmtpTransport } from '@/lib/smtpService';
-
-export type { UserRole };
 
 type Locale = 'fr' | 'en';
 const translations = { fr, en };
@@ -78,7 +76,7 @@ export async function createSession(idToken: string) {
 
     const isSecure = process.env.NODE_ENV === 'production';
 
-    cookies().set('session', sessionCookie, {
+    (await cookies()).set('session', sessionCookie, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
       secure: isSecure,
@@ -87,7 +85,7 @@ export async function createSession(idToken: string) {
     });
 
     // Set sessionToken cookie (httpOnly so only server can read)
-    cookies().set('sessionToken', sessionToken, {
+    (await cookies()).set('sessionToken', sessionToken, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
       secure: isSecure,
@@ -129,7 +127,7 @@ export async function checkUserStatus(uid: string) {
 
 export async function logout() {
   const { adminAuth } = getFirebaseAdmin();
-  const sessionCookie = cookies().get('session')?.value;
+  const sessionCookie = (await cookies()).get('session')?.value;
   if (sessionCookie && adminAuth) {
     try {
       const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
@@ -140,21 +138,21 @@ export async function logout() {
       // Ignore errors
     }
   }
-  cookies().delete('session');
-  cookies().delete('sessionToken');
+  (await cookies()).delete('session');
+  (await cookies()).delete('sessionToken');
   redirect('/admin/login');
 }
 
 /** Clear stale session cookie without revoking tokens or redirecting.
  *  Used by the layout guard to break cookie/Firebase mismatch loops. */
 export async function clearSession() {
-  cookies().delete('session');
-  cookies().delete('sessionToken');
+  (await cookies()).delete('session');
+  (await cookies()).delete('sessionToken');
 }
 
 export async function revertImpersonation() {
   const { adminAuth } = getFirebaseAdmin();
-  const sessionCookie = cookies().get('session')?.value;
+  const sessionCookie = (await cookies()).get('session')?.value;
 
   if (!sessionCookie) return { success: false, error: "No active session." };
 
@@ -317,6 +315,30 @@ export async function registerUser(data: unknown) {
     await adminDb.collection('users').doc(userRecord.uid).set(userProfile);
     console.log('[Register Action] Firestore profile write SUCCESS.');
 
+    // Notify admin users about new registration
+    if (status === 'pending') {
+      const adminsSnap = await adminDb.collection('users')
+        .where('role', '==', 'admin')
+        .where('status', '==', 'approved')
+        .get();
+      if (!adminsSnap.empty) {
+        const notifBatch = adminDb.batch();
+        adminsSnap.forEach(doc => {
+          const notifRef = adminDb.collection('notifications').doc();
+          notifBatch.set(notifRef, {
+            userId: doc.id,
+            type: 'user',
+            title: 'Nouvel utilisateur',
+            description: `${displayName} (${email}) a créé un compte et est en attente d\'approbation.`,
+            href: '/admin/users',
+            read: false,
+            createdAt: FieldValue.serverTimestamp(),
+          });
+        });
+        await notifBatch.commit();
+      }
+    }
+
     return { success: true, uid: userRecord.uid };
   } catch (error: any) {
     console.error("Error during user registration:", error);
@@ -347,7 +369,7 @@ export async function handleGoogleSignIn(data: unknown) {
   }
 
   const { uid, email, displayName, photoURL } = result.data;
-  const { adminDb, adminAuth } = getFirebaseAdmin();
+  const { adminDb, adminAuth, FieldValue } = getFirebaseAdmin();
 
   if (!adminDb || !adminAuth) {
     return { success: false, error: 'Service unavailable.' };
@@ -397,6 +419,31 @@ export async function handleGoogleSignIn(data: unknown) {
 
     console.log('[Google Auth Action] Writing user profile to Firestore (role:', assignedRole, ')...');
     await adminDb.collection('users').doc(uid).set(userProfile);
+
+    // Notify admin users about new registration
+    if (assignedStatus === 'pending') {
+      const adminsSnap = await adminDb.collection('users')
+        .where('role', '==', 'admin')
+        .where('status', '==', 'approved')
+        .get();
+      if (!adminsSnap.empty) {
+        const notifBatch = adminDb.batch();
+        adminsSnap.forEach(doc => {
+          const notifRef = adminDb.collection('notifications').doc();
+          notifBatch.set(notifRef, {
+            userId: doc.id,
+            type: 'user',
+            title: 'Nouvel utilisateur',
+            description: `${displayName || email} (${email}) a créé un compte et est en attente d'approbation.`,
+            href: '/admin/users',
+            read: false,
+            createdAt: FieldValue.serverTimestamp(),
+          });
+        });
+        await notifBatch.commit();
+      }
+    }
+
     console.log('[Google Auth Action] Setting custom claims...');
     await adminAuth.setCustomUserClaims(uid, { role: assignedRole });
     console.log('[Google Auth Action] Google Sign-in SUCCESS.');
@@ -700,7 +747,7 @@ export async function deleteAllUsersAndData() {
     }
 
     // Clear session cookie
-    cookies().delete('session');
+    (await cookies()).delete('session');
 
     return { success: true, message: "All data (users, roles, estimates) has been deleted. The page will refresh." };
 
@@ -729,8 +776,8 @@ export async function getUsers({
 
   try {
     console.log('[getUsers Action] Fetching users with params:', { limit, startAfterId, searchTerm, userStatus });
-    let query: admin.Query = adminDb.collection('users');
-    let countQuery: admin.Query = adminDb.collection('users');
+    let query: Query = adminDb.collection('users');
+    let countQuery: Query = adminDb.collection('users');
 
     if (userStatus) {
       query = query.where('status', '==', userStatus);
@@ -981,7 +1028,7 @@ export async function getQuoteRequest(id: string): Promise<QuoteRequest | null> 
   }
 }
 
-async function processQuoteSnapshot(docSnap: admin.DocumentSnapshot): Promise<QuoteRequest | null> {
+async function processQuoteSnapshot(docSnap: DocumentSnapshot): Promise<QuoteRequest | null> {
   const data = docSnap.data();
   if (!data) return null;
 
@@ -1110,7 +1157,7 @@ export async function getQuoteCounts(clientSupplierId?: string, transactionType?
     try {
       // Phase 1: per-status counts via Firestore count() aggregation (index-only, no doc reads)
       const countPromises = statuses.map(async (status) => {
-        let q: admin.Query = adminDb.collection('quotes').where('status', '==', status);
+        let q: Query = adminDb.collection('quotes').where('status', '==', status);
         if (effectiveSupplierId) q = q.where('supplierId', '==', effectiveSupplierId);
         if (transactionType) q = q.where('transactionType', '==', transactionType);
         const snap = await q.count().get();
@@ -1119,7 +1166,7 @@ export async function getQuoteCounts(clientSupplierId?: string, transactionType?
       await Promise.all(countPromises);
 
       // Phase 2: lightweight sum query — only transfer 2 numeric fields per doc
-      let sumQ: admin.Query = adminDb.collection('quotes');
+      let sumQ: Query = adminDb.collection('quotes');
       if (effectiveSupplierId) sumQ = sumQ.where('supplierId', '==', effectiveSupplierId);
       if (transactionType) sumQ = sumQ.where('transactionType', '==', transactionType);
       const sumSnap = await sumQ.select('status', 'totalClient', 'totalQuote').get();
@@ -1144,7 +1191,7 @@ export async function getQuoteCounts(clientSupplierId?: string, transactionType?
         } else {
           // Use count() aggregation for legacy counts
           const legacyCountPromises = statuses.map(async (status) => {
-            let q: admin.Query = adminDb.collection('quotes')
+            let q: Query = adminDb.collection('quotes')
               .where('status', '==', status)
               .where('transactionType', 'not-in', ['sale', 'rental']);
             if (effectiveSupplierId) q = q.where('supplierId', '==', effectiveSupplierId);
@@ -1155,7 +1202,7 @@ export async function getQuoteCounts(clientSupplierId?: string, transactionType?
           legacyCountResults.forEach(r => { counts[r.status] += r.count; });
 
           // Lightweight sum query for legacy docs
-          let legacySumQ: admin.Query = adminDb.collection('quotes')
+          let legacySumQ: Query = adminDb.collection('quotes')
             .where('transactionType', 'not-in', ['sale', 'rental']);
           if (effectiveSupplierId) legacySumQ = legacySumQ.where('supplierId', '==', effectiveSupplierId);
           const legacySumSnap = await legacySumQ.select('status', 'totalClient', 'totalQuote').get();
@@ -1284,7 +1331,7 @@ export async function getPaginatedQuotes({
     return null;
   };
 
-  const mapDoc = (doc: admin.DocumentSnapshot) => {
+  const mapDoc = (doc: DocumentSnapshot) => {
     const data = doc.data() || {};
     return {
       id: doc.id,
@@ -1329,7 +1376,7 @@ export async function getPaginatedQuotes({
     };
   };
 
-  const applyProjection = (q: admin.Query) => {
+  const applyProjection = (q: Query) => {
     try {
       return (q as any).select(...LIST_FIELDS);
     } catch {
@@ -1339,7 +1386,7 @@ export async function getPaginatedQuotes({
 
   try {
     // ── Primary query: strictly-typed sale OR rental documents ──
-    let q: admin.Query = adminDb.collection('quotes');
+    let q: Query = adminDb.collection('quotes');
 
     if (effectiveSupplierId) {
       q = q.where('supplierId', '==', effectiveSupplierId);
@@ -1384,7 +1431,7 @@ export async function getPaginatedQuotes({
         allDocs = allDocs.slice(0, limit);
       } else {
         try {
-          let legacyQ: admin.Query = adminDb.collection('quotes');
+          let legacyQ: Query = adminDb.collection('quotes');
           if (effectiveSupplierId) {
             legacyQ = legacyQ.where('supplierId', '==', effectiveSupplierId);
           }
@@ -1447,7 +1494,7 @@ export async function getQuoteRequests({
     const user = await getCurrentAdminUser();
     if (!user || 'error' in user) throw new Error("Unauthorized");
 
-    let query: admin.Query = adminDb.collection('quotes');
+    let query: Query = adminDb.collection('quotes');
     
     // Role-based filtering
     if (user.role === 'fournisseur') {
@@ -1585,7 +1632,7 @@ export async function getQuoteRequests({
 }
 
 
-async function findQuoteRef(adminDb: admin.Firestore, quoteId: string): Promise<admin.DocumentReference | null> {
+async function findQuoteRef(adminDb: Firestore, quoteId: string): Promise<DocumentReference | null> {
   const docRef = adminDb.collection('quotes').doc(quoteId);
   const docSnap = await docRef.get();
   return docSnap.exists ? docRef : null;
@@ -1786,7 +1833,7 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
       });
     }
 
-    const historyEntry: Omit<QuoteHistoryEntry, 'timestamp'> & { timestamp: admin.Timestamp } = {
+    const historyEntry: Omit<QuoteHistoryEntry, 'timestamp'> & { timestamp: Timestamp } = {
       userId: adminUser.uid,
       userName: adminUser.displayName || 'Admin',
       userPhotoUrl: adminUser.photoURL || '',
@@ -1882,7 +1929,7 @@ export async function moveQuotesToTrash(quoteIds: string[]) {
           amount: quoteData.totalClient || quoteData.totalQuote || 0
         });
 
-        const historyEntry: Omit<QuoteHistoryEntry, 'timestamp'> & { timestamp: admin.Timestamp } = {
+        const historyEntry: Omit<QuoteHistoryEntry, 'timestamp'> & { timestamp: Timestamp } = {
           userId: adminUser.uid,
           userName: adminUser.displayName || 'Admin',
           userPhotoUrl: adminUser.photoURL || '',
@@ -2157,7 +2204,7 @@ export async function updateQuoteClientDetails(quoteId: string, clientData: unkn
     const adminUser = await getCurrentAdminUser();
 
     if (docRef && adminUser && !('error' in adminUser)) {
-      const historyEntry: Omit<QuoteHistoryEntry, 'timestamp'> & { timestamp: admin.Timestamp } = {
+      const historyEntry: Omit<QuoteHistoryEntry, 'timestamp'> & { timestamp: Timestamp } = {
         userId: adminUser.uid,
         userName: adminUser.displayName || 'Admin',
         userPhotoUrl: adminUser.photoURL || '',
@@ -2352,7 +2399,7 @@ export async function getProducts(options: { page?: number; limit?: number } = {
     let hasMore = false;
 
     if (limit > 0) {
-      let query: admin.Query = productsCollection.orderBy('name');
+      let query: Query = productsCollection.orderBy('name');
 
       if (page > 1) {
         const offset = (page - 1) * limit;
@@ -3254,7 +3301,7 @@ export async function getLocations(): Promise<Locations> {
 
 
 export async function getSessionUid() {
-  const sessionCookie = cookies().get('session')?.value;
+  const sessionCookie = (await cookies()).get('session')?.value;
   if (!sessionCookie) return { uid: null };
 
   try {
@@ -3268,8 +3315,8 @@ export async function getSessionUid() {
 
 export async function verifySession() {
   const { adminAuth, adminDb } = getFirebaseAdmin();
-  const sessionCookie = cookies().get('session')?.value;
-  const sessionTokenCookie = cookies().get('sessionToken')?.value;
+  const sessionCookie = (await cookies()).get('session')?.value;
+  const sessionTokenCookie = (await cookies()).get('sessionToken')?.value;
 
   if (!sessionCookie) {
     return { valid: false, reason: 'no_session' };
@@ -3313,7 +3360,7 @@ export async function verifySession() {
 }
 
 export const getCurrentAdminUser = cache(async (): Promise<UserProfile | { error: string } | null> => {
-  const sessionCookie = cookies().get('session')?.value;
+  const sessionCookie = (await cookies()).get('session')?.value;
   if (!sessionCookie) return null;
 
   const { adminAuth, adminDb } = getFirebaseAdmin();
@@ -3357,7 +3404,7 @@ async function urlToDataUri(url: string | undefined): Promise<string> {
 export async function impersonateUser(targetUserId: string) {
   const { adminAuth } = getFirebaseAdmin();
 
-  const sessionCookie = cookies().get('session')?.value;
+  const sessionCookie = (await cookies()).get('session')?.value;
   if (!sessionCookie) {
     return { success: false, error: 'Access denied. Invalid session.' };
   }

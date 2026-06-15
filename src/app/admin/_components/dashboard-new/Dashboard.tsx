@@ -813,10 +813,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
               <CustomSelect
                 options={[
                   { value: 'ALL', label: t('admin.allStatuses') },
-                  { value: 'Traité', label: t('admin.processed'), color: 'text-emerald-500' },
-                  { value: 'En attente', label: t('admin.pending'), color: 'text-yellow-500' },
-                  { value: 'Corbeille', label: t('admin.trashed'), color: 'text-rose-500' },
-                  { value: 'Archive', label: t('admin.archived'), color: 'text-gray-500' },
+                  { value: 'processed', label: t('admin.processed'), color: 'text-emerald-500' },
+                  { value: 'pending', label: t('admin.pending'), color: 'text-yellow-500' },
+                  { value: 'returned', label: t('admin.returned', { defaultValue: 'Retourné' }), color: 'text-orange-500' },
+                  { value: 'in_progress', label: t('admin.inProgress', { defaultValue: 'En cours' }), color: 'text-blue-500' },
+                  { value: 'trashed', label: t('admin.trashed'), color: 'text-rose-500' },
+                  { value: 'archive', label: t('admin.archived'), color: 'text-gray-500' },
                 ]}
                 value={statusFilter}
                 onChange={(val) => setStatusFilter(val as QuoteStatus | 'ALL')}
@@ -870,11 +872,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                         </div>
                       </td>
                       <td className="py-4">
-                        <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500 group-hover:text-zinc-600'} transition-colors`}>
-                          {quote.createdAt?.toDate 
-                            ? IntlHelpers.formatDate(quote.createdAt.toDate(), locale, { day: 'numeric', month: 'long', year: 'numeric' }) 
-                            : t('admin.unknownDate')}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500 group-hover:text-zinc-600'} transition-colors`}>
+                            {quote.createdAt?.toDate 
+                              ? IntlHelpers.formatDate(quote.createdAt.toDate(), locale, { day: 'numeric', month: 'long', year: 'numeric' }) 
+                              : t('admin.unknownDate')}
+                          </span>
+                          {quote.createdAt?.toDate && (
+                            <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'} mt-0.5`}>
+                              {IntlHelpers.formatDateTime(quote.createdAt.toDate(), locale)}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4">
                         {isRental ? (
@@ -898,6 +907,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                         <span className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
                           quote.status === 'processed' || quote.status === 'delivered' ? 'bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20' :
                           quote.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 group-hover:bg-yellow-500/20' :
+                          quote.status === 'returned' ? 'bg-orange-500/10 text-orange-500 group-hover:bg-orange-500/20' :
+                          quote.status === 'in_progress' ? 'bg-blue-500/10 text-blue-500 group-hover:bg-blue-500/20' :
                           quote.status === 'trashed' ? 'bg-red-500/10 text-red-500' :
                           'bg-gray-500/10 text-gray-500 group-hover:bg-zinc-800'
                         } transition-colors`}>
@@ -968,7 +979,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                         </div>
                         <div className="flex flex-col">
                           <span className="text-sm font-bold truncate max-w-[150px]">{quote.client?.companyName || t('admin.noNameClient')}</span>
-                          <span className="text-[10px] text-gray-400 uppercase font-medium">{dateStr}</span>
+                          <span className="text-[10px] text-gray-400 uppercase font-medium">
+                            {dateStr}
+                            {quote.createdAt?.toDate && (
+                              <span className="block text-[9px] font-normal normal-case mt-0.5">
+                                {IntlHelpers.formatDateTime(quote.createdAt.toDate(), locale)}
+                              </span>
+                            )}
+                          </span>
                         </div>
                       </div>
                       
@@ -976,6 +994,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                         <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${
                           quote.status === 'processed' || quote.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-500' :
                           quote.status === 'pending' ? 'bg-yellow-500/20 text-yellow-500' :
+                          quote.status === 'returned' ? 'bg-orange-500/20 text-orange-500' :
+                          quote.status === 'in_progress' ? 'bg-blue-500/20 text-blue-500' :
                           quote.status === 'trashed' ? 'bg-red-500/20 text-red-500' :
                           'bg-gray-500/20 text-gray-500'
                         }`}>

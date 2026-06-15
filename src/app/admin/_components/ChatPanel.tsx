@@ -146,7 +146,7 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
         participants: [currentUser.uid, userId],
         createdAt: serverTimestamp(),
         lastMessageAt: serverTimestamp(),
-        lastMessage: 'Bot Lumi',
+        lastMessage: 'Bot Pixia',
         unreadCount: {
           [currentUser.uid]: 0,
           [userId]: 0
@@ -162,7 +162,7 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
         await addDoc(messagesRef, {
           chatId: docRef.id,
           senderId: userId,
-          senderName: 'Bot Lumi',
+          senderName: 'Bot Pixia',
           senderRole: 'admin',
           content: 'Hello! 👋 I am your assistant for your LED screen project.',
           type: 'text',
@@ -174,7 +174,7 @@ export function ChatPanel({ isOpen, onClose, isDark = false, initialChatId = nul
         await addDoc(messagesRef, {
           chatId: docRef.id,
           senderId: userId,
-          senderName: 'Bot Lumi',
+          senderName: 'Bot Pixia',
           senderRole: 'admin',
           content: 'Let\'s start at the beginning: is this a rental or a purchase project?',
           type: 'text',

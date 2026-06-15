@@ -1,5 +1,5 @@
 import { getFirebaseAdmin } from './firebase-admin';
-import * as admin from 'firebase-admin';
+import type { Timestamp } from 'firebase-admin/firestore';
 
 export interface QuoteStats {
   pending: { count: number; total: number };
@@ -10,7 +10,7 @@ export interface QuoteStats {
   archived: { count: number; total: number };
   trashed: { count: number; total: number };
   rented: { count: number; total: number };
-  updatedAt: admin.firestore.Timestamp | null;
+  updatedAt: Timestamp | null;
   resyncVersion: number;
 }
 
@@ -77,7 +77,7 @@ export async function updateStatsOnCreate(status: string, amount: number) {
 
     data[status].count = (data[status].count || 0) + 1;
     data[status].total = (data[status].total || 0) + amount;
-    data.updatedAt = FieldValue.serverTimestamp() as admin.firestore.Timestamp;
+    data.updatedAt = FieldValue.serverTimestamp() as Timestamp;
 
     tx.set(statsRef, data, { merge: true });
     console.warn(`STATS UPDATE [CREATE]: ${status} count=${data[status].count} total=${data[status].total}`);
@@ -110,7 +110,7 @@ export async function updateStatsOnStatusChange(oldStatus: string | null, newSta
     }
 
     if (changed) {
-      data.updatedAt = FieldValue.serverTimestamp() as admin.firestore.Timestamp;
+      data.updatedAt = FieldValue.serverTimestamp() as Timestamp;
       tx.set(statsRef, data, { merge: true });
       console.warn(`STATS UPDATE [CHANGE]: ${oldStatus || 'none'} -> ${newStatus || 'none'} | Amount: ${amount} | Qty: ${quantity}`);
     }
@@ -132,7 +132,7 @@ export async function updateStatsOnDelete(status: string, amount: number, quanti
     if (data[status]) {
       data[status].count = Math.max(0, (data[status].count || 0) - quantity);
       data[status].total = Math.max(0, (data[status].total || 0) - amount);
-      data.updatedAt = FieldValue.serverTimestamp() as admin.firestore.Timestamp;
+      data.updatedAt = FieldValue.serverTimestamp() as Timestamp;
 
       tx.set(statsRef, data, { merge: true });
       console.warn(`STATS UPDATE [DELETE]: ${status} count=${data[status].count} total=${data[status].total}`);

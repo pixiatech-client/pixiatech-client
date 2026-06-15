@@ -13,8 +13,8 @@ export async function GET() {
   }
 
   try {
-    const sessionCookie = cookies().get('session')?.value;
-    const sessionTokenCookie = cookies().get('sessionToken')?.value;
+    const sessionCookie = (await cookies()).get('session')?.value;
+    const sessionTokenCookie = (await cookies()).get('sessionToken')?.value;
 
     if (!sessionCookie) {
       return NextResponse.json({ valid: false, reason: 'no_session' });

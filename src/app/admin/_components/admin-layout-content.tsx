@@ -32,12 +32,12 @@ import {
   Mail
 } from 'lucide-react';
 import Link from 'next/link';
-import { logout, getThemes, getSettings, type UserRole, saveSidebarConfig } from '@/app/admin/actions';
+import { logout, getThemes, getSettings, saveSidebarConfig } from '@/app/admin/actions';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebase';
 import { canAccessRoute } from '@/lib/permissions';
-import type { Theme, Settings as AppSettings, UserProfile } from '@/lib/types';
+import type { Theme, Settings as AppSettings, UserProfile, UserRole } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n';
 import { collection, orderBy, query, doc, onSnapshot } from 'firebase/firestore';

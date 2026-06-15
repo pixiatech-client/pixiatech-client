@@ -68,7 +68,7 @@ class PixiatechChatWidget {
     // 5. Mettre en place les écouteurs d'événements
     this.bindEvents();
 
-    // 6. Animation d'entrée du bouton flottant (Lumi)
+    // 6. Animation d'entrée du bouton flottant (Pixia)
     if (this.config.entranceAnimation) {
       setTimeout(() => {
         const button = this.shadow?.querySelector('.chat-widget-button');
@@ -100,10 +100,10 @@ class PixiatechChatWidget {
       <!-- Bulle d'aide / Tooltip -->
       <div class="chat-widget-tooltip">${this.config.tooltipText}</div>
 
-      <!-- Bouton Flottant (Robot Lumi) -->
-      <button class="chat-widget-button" aria-label="Discuter avec Lumi">
+      <!-- Bouton Flottant (Robot Pixia) -->
+      <button class="chat-widget-button" aria-label="Discuter avec Pixia">
         <div class="chat-widget-avatar-container">
-          <video id="lumi-video" class="chat-widget-avatar" src="${this.config.avatarUrl}" poster="${this.config.posterUrl}" muted playsinline loop></video>
+          <video id="pixia-video" class="chat-widget-avatar" src="${this.config.avatarUrl}" poster="${this.config.posterUrl}" muted playsinline loop></video>
         </div>
         <div class="chat-widget-close-icon">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -135,7 +135,7 @@ class PixiatechChatWidget {
 
   private initVideo() {
     if (!this.shadow) return;
-    const video = this.shadow.getElementById('lumi-video') as HTMLVideoElement | null;
+    const video = this.shadow.getElementById('pixia-video') as HTMLVideoElement | null;
     if (!video) return;
 
     const startPlayback = () => {
@@ -265,7 +265,7 @@ class PixiatechChatWidget {
     iframe.src = iframeSrc;
     // Autoriser les APIs courantes
     iframe.allow = 'camera; microphone; clipboard-read; clipboard-write; geolocation';
-    iframe.title = 'Assistant Bot Lumi';
+    iframe.title = 'Assistant Bot Pixia';
 
     iframe.onload = () => {
       if (spinner) {

@@ -10,7 +10,7 @@ export async function GET() {
     return NextResponse.json({ ok: false, reason: 'admin_sdk_not_initialized' }, { status: 500 });
   }
   try {
-    const sessionCookie = cookies().get('session')?.value;
+    const sessionCookie = (await cookies()).get('session')?.value;
     if (!sessionCookie) {
         return NextResponse.json({ ok: false, reason: 'no_cookie' }, { status: 401 });
     }

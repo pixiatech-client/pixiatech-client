@@ -362,7 +362,7 @@
         <div class="chat-widget-tooltip">${this.config.tooltipText}</div>
         <button class="chat-widget-button" aria-label="Discuter avec Lumi">
           <div class="chat-widget-avatar-container">
-            <video id="lumi-video" class="chat-widget-avatar" src="${this.config.avatarUrl}" poster="${this.config.posterUrl}" muted playsinline loop></video>
+            <video id="pixia-video" class="chat-widget-avatar" src="${this.config.avatarUrl}" poster="${this.config.posterUrl}" muted playsinline loop></video>
           </div>
           <div class="chat-widget-close-icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -386,7 +386,7 @@
     }
     initVideo() {
       if (!this.shadow) return;
-      const video = this.shadow.getElementById("lumi-video");
+      const video = this.shadow.getElementById("pixia-video");
       if (!video) return;
       const startPlayback = () => {
         video.play().catch(() => {

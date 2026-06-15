@@ -17,8 +17,10 @@ export async function middleware(request: NextRequest) {
   const loginUrl = new URL('/admin/login', request.url);
   const adminUrl = new URL('/admin', request.url);
   const isAuthPage = pathname.startsWith('/admin/login') || pathname.startsWith('/admin/register');
+  const isApiRoute = pathname.startsWith('/api/');
 
-  if (!sessionCookie && !isAuthPage) {
+  // Don't redirect API routes — they handle auth themselves via JSON
+  if (!sessionCookie && !isAuthPage && !isApiRoute) {
     return NextResponse.redirect(loginUrl);
   }
 
