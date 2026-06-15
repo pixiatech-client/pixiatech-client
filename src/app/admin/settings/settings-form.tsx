@@ -151,7 +151,50 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       });
       return;
     }
-    const result = await updateSettings(form.getValues());
+    const all = form.getValues();
+
+    const sectionKey = (Object.entries(sectionLabels) as [string, string][]).find(([, label]) => label === sectionName)?.[0] || sectionName;
+
+    const sectionFields: Record<string, string[]> = {
+      general: ['defaultWidth', 'defaultHeight', 'maxWidth', 'maxHeight', 'maxRentalWidth', 'maxRentalHeight', 'maxProductsPerQuote', 'zoomMaxDistance', 'zoomMinDistance', 'isEmailVerificationEnabled', 'isPriceHidden', 'isSingleSessionEnabled', 'isWizardBotEnabled', 'isGuidedConfigEnabled', 'estimationFlow'],
+      emergency: ['emergencyStopEnabled', 'emergencyReturnUrl', 'emergencyStopMessage'],
+      images: ['previewScreenImageUrl', 'previewScreenVideoUrl'],
+      content: ['congratulationsTitle', 'congratulationsMessage', 'deliveryTitle', 'deliveryMessage', 'installationTitle', 'installationMessage', 'disclaimerMessage', 'quoteFormNotesPlaceholder', 'isDeliveryStepEnabled', 'isInstallationStepEnabled'],
+      messaging: ['messaging'],
+      software: ['hintBubble', 'lightThemeId', 'darkThemeId'],
+      'email-verification': ['emailVerification'],
+      flow: ['estimationFlow'],
+    };
+
+    const fields = sectionFields[sectionKey];
+    if (!fields) {
+      const result = await updateSettings(all);
+      if (result.success) {
+        toast({
+          title: t('Settings saved'),
+          description: t('Section "{sectionName}" has been updated.').replace('{sectionName}', sectionName),
+          variant: 'success',
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: t('Error'),
+          description: t('An error occurred while saving.'),
+        });
+      }
+      return;
+    }
+
+    const picked: Record<string, unknown> = {};
+    const requiredFields = ['defaultWidth', 'defaultHeight', 'maxWidth', 'maxHeight'];
+    for (const key of fields) {
+      if (key in all) picked[key] = all[key as keyof typeof all];
+    }
+    for (const key of requiredFields) {
+      if (!(key in picked) && key in all) picked[key] = all[key as keyof typeof all];
+    }
+
+    const result = await updateSettings(picked);
     if (result.success) {
       toast({
         title: t('Settings saved'),
