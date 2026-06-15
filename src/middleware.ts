@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public pages: cache on CDN
@@ -24,6 +24,27 @@ export function middleware(request: NextRequest) {
 
   if (sessionCookie && isAuthPage) {
     return NextResponse.redirect(adminUrl);
+  }
+
+  // For authenticated admin pages, check sessionToken mismatch via internal API
+  if (sessionCookie && !isAuthPage && pathname.startsWith('/admin')) {
+    try {
+      const verifyUrl = new URL('/api/verify-session', request.url);
+      const verifyRes = await fetch(verifyUrl, {
+        headers: { cookie: request.headers.get('cookie') || '' },
+      });
+      const data = await verifyRes.json();
+
+      if (!data.valid && data.reason === 'session_mismatch') {
+        const response = NextResponse.redirect(loginUrl);
+        response.cookies.delete('session');
+        response.cookies.delete('sessionToken');
+        return response;
+      }
+    } catch (err) {
+      console.error('[Middleware] verify-session error:', err);
+      // Fail open: let the request through, client polling will catch it
+    }
   }
 
   const response = NextResponse.next();

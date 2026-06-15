@@ -476,6 +476,11 @@ const adminTranslations: Record<string, string> = {
   'Hide price and show animation': 'Masquer le prix et afficher l\'animation',
   'Replaces the price with an animated "Estimating..." text.': 'Remplace le prix par un texte animé "Estimation en cours...".',
 
+  'Force unique session': 'Forcer la session unique',
+  'If a user logs in on a new device, the previous session is immediately disconnected.': 'Si un utilisateur se connecte sur un nouvel appareil, la session précédente est immédiatement déconnectée.',
+  'Session unique activée — toute nouvelle connexion déconnecte immédiatement l\'ancienne session.': 'Session unique activée — toute nouvelle connexion déconnecte immédiatement l\'ancienne session.',
+  'Session unique désactivée — plusieurs sessions simultanées autorisées.': 'Session unique désactivée — plusieurs sessions simultanées autorisées.',
+
   'Enable email verification': 'Activer la vérification email',
   'Enable global messaging': 'Activer la messagerie globale',
 

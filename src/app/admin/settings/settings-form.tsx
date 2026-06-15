@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings, TranslatedString, Theme } from '@/lib/types';
 import { updateSettings } from '../actions';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, Monitor, Smartphone, Orbit, Layers } from 'lucide-react';
+import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, Monitor, Smartphone, Orbit, Layers, ShieldCheck, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -64,6 +64,7 @@ const settingsSchema = z.object({
   isInstallationStepEnabled: z.boolean().optional(),
   isEmailVerificationEnabled: z.boolean().optional(),
   isPriceHidden: z.boolean().optional(),
+  isSingleSessionEnabled: z.boolean().optional(),
   isWizardBotEnabled: z.boolean().optional(),
   isGuidedConfigEnabled: z.boolean().optional(),
 
@@ -119,6 +120,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       ...initialSettings, 
       isEmailVerificationEnabled: initialSettings.isEmailVerificationEnabled ?? true, 
       isPriceHidden: initialSettings.isPriceHidden ?? false,
+      isSingleSessionEnabled: initialSettings.isSingleSessionEnabled ?? false,
       isWizardBotEnabled: initialSettings.isWizardBotEnabled ?? true,
       isGuidedConfigEnabled: initialSettings.isGuidedConfigEnabled ?? true,
 
@@ -383,6 +385,45 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                     )}
                 />
               </div>
+
+              {/* Session unique */}
+              <div className="rounded-lg border border-red-200 bg-red-50/20 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className='flex items-center gap-2'>
+                    <ShieldCheck className="h-5 w-5 text-red-500" />
+                    <div>
+                      <Label htmlFor="isSingleSessionEnabled" className="font-semibold text-red-800">{t('Force unique session')}</Label>
+                      <p className="text-sm text-red-600/80">{t('If a user logs in on a new device, the previous session is immediately disconnected.')}</p>
+                    </div>
+                  </div>
+                  <Controller
+                    control={form.control}
+                    name="isSingleSessionEnabled"
+                    render={({ field }) => (
+                      <Switch
+                        id="isSingleSessionEnabled"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="data-[state=checked]:bg-red-600"
+                      />
+                    )}
+                  />
+                </div>
+                {/* State indicator */}
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                  form.watch('isSingleSessionEnabled')
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-zinc-100 text-zinc-500'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    form.watch('isSingleSessionEnabled') ? 'bg-red-500' : 'bg-zinc-400'
+                  }`} />
+                  {form.watch('isSingleSessionEnabled')
+                    ? t('Session unique activée — toute nouvelle connexion déconnecte immédiatement l\'ancienne session.')
+                    : t('Session unique désactivée — plusieurs sessions simultanées autorisées.')}
+                </div>
+              </div>
+
               {/* Card with orange style for estimation modes */}
               <div className="rounded-xl border border-amber-200 bg-amber-50/20 p-5 space-y-4 shadow-sm">
                 <div>

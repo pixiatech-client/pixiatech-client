@@ -485,7 +485,7 @@ const ProductListItem = ({
         boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.15)"
       }}
       className={cn(
-        "bg-theme-card border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-[#18181B] hover:border-[#18181B] hover:-translate-y-1 hover:shadow-2xl dark:bg-theme-card/5 dark:border-theme-card-border",
+        "bg-theme-card border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-[#131E3F] hover:border-[#131E3F] hover:-translate-y-1 hover:shadow-2xl dark:bg-theme-card/5 dark:border-theme-card-border",
         selectedIds.includes(product.id) ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg" : "border-theme-card-border"
       )}
     >
@@ -1034,7 +1034,7 @@ const AISettingsSheet = ({
               </button>
               <button
                 onClick={() => { onSave(localSettings); onClose(); }}
-                className="flex-[2] bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-[#18181B] hover:text-white transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
+                className="flex-[2] bg-slate-900 text-white py-3.5 rounded-xl text-sm font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2"
               >
                 <Save className="w-4 h-4" /> {t('admin.productManagement.save')}
               </button>
@@ -1471,7 +1471,7 @@ const CaracteristiquesPage = ({
                     />
                     <label
                       htmlFor="custom-icon-upload"
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-[#18181B] hover:text-white transition-all text-sm font-bold text-slate-600 group"
+                      className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-[#131E3F] hover:text-white transition-all text-sm font-bold text-slate-600 group"
                     >
                       <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> {t('admin.productManagement.uploadIcon')}
                     </label>
@@ -1528,7 +1528,7 @@ const CaracteristiquesPage = ({
                     setIsSaving(false);
                     toast({ title: t('admin.productManagement.syncTitle'), description: t('admin.productManagement.syncDesc') });
                   }}
-                  className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-[#18181B] hover:text-white transition-all shadow-sm group mr-2"
+                  className="w-10 h-10 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-[#131E3F] hover:text-white transition-all shadow-sm group mr-2"
                   title={t('admin.productManagement.restoreTitle')}
                 >
                   <RefreshCw className="w-5 h-5 transition-colors group-hover:text-[#a3e635]" />
@@ -1539,7 +1539,7 @@ const CaracteristiquesPage = ({
                     setCharPage(prev => Math.max(prev - 1, 1));
                   }}
                   disabled={charPage === 1}
-                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#18181B] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
+                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
                 >
                   <ChevronLeft className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
                 </button>
@@ -1549,7 +1549,7 @@ const CaracteristiquesPage = ({
                     setCharPage(prev => Math.min(prev + 1, totalCharPages));
                   }}
                   disabled={charPage === totalCharPages || totalCharPages === 0}
-                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#18181B] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
+                  className="w-10 h-10 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group"
                 >
                   <ChevronRight className="w-5 h-5 transition-colors group-hover:text-[#0078ff]" />
                 </button>
@@ -1597,7 +1597,7 @@ const CaracteristiquesPage = ({
                           "bg-theme-card border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all cursor-pointer group relative overflow-hidden",
                           editingId === char.id
                             ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg"
-                            : "border-theme-card-border hover:bg-[#18181B] hover:border-[#18181B]",
+                            : "border-theme-card-border hover:bg-[#131E3F] hover:border-[#131E3F]",
                           (char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && !editingId && "bg-orange-50/50 border-orange-100"
                         )}
                         onClick={() => handleEdit(char)}
@@ -2483,8 +2483,8 @@ const ProduitPage = ({
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.technicalSpecifications')}</label>
                 {totalSpecPages > 1 && (
                   <div className="flex items-center gap-2">
-                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.max(prev - 1, 1)); }} disabled={specPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#18181B] hover:text-white disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
-                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.min(prev + 1, totalSpecPages)); }} disabled={specPage === totalSpecPages} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#18181B] hover:text-white disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
+                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.max(prev - 1, 1)); }} disabled={specPage === 1} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white disabled:opacity-30"><ChevronLeft className="w-4 h-4" /></button>
+                    <button onClick={() => { setPrevSpecPage(specPage); setSpecPage(prev => Math.min(prev + 1, totalSpecPages)); }} disabled={specPage === totalSpecPages} className="w-8 h-8 flex items-center justify-center bg-slate-100 text-slate-500 rounded-full hover:bg-[#131E3F] hover:text-white disabled:opacity-30"><ChevronRight className="w-4 h-4" /></button>
                   </div>
                 )}
               </div>
@@ -3517,7 +3517,7 @@ const GestionProduits = ({
             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover/empty:bg-black/5 transition-colors"><Package className="w-10 h-10 text-slate-300" /></div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">{t('admin.productManagement.noProducts')}</h3>
             <p className="text-slate-500 font-medium mb-8">{t('admin.productManagement.startByCreating')}</p>
-            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-[#18181B] hover:text-white transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>{t('admin.productManagement.createProduct')}</span></button>
+            <button onClick={onAddProduct} className="px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-lg flex items-center gap-2 mx-auto"><Plus className="w-5 h-5" /> <span>{t('admin.productManagement.createProduct')}</span></button>
           </div>
         )}
       </div>
@@ -4773,7 +4773,7 @@ export default function ProductManagementClient() {
                       <button
                         type="submit"
                         disabled={isAuthenticating}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#18181B] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
                       >
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -4851,7 +4851,7 @@ export default function ProductManagementClient() {
                     <button
                       type="submit"
                       disabled={isAuthenticating}
-                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#18181B] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
                     >
                       {isAuthenticating ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -4931,7 +4931,7 @@ export default function ProductManagementClient() {
                       <button
                         type="submit"
                         disabled={isAuthenticating}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#18181B] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
                       >
                         {isAuthenticating ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

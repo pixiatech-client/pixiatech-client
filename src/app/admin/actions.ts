@@ -47,12 +47,29 @@ const THEMES_CACHE_TTL_MS = 120_000; // 2 minutes
 
 export async function createSession(idToken: string) {
   console.log('[Session Action] Starting session creation...');
-  const { adminAuth } = getFirebaseAdmin();
+  const { adminAuth, adminDb } = getFirebaseAdmin();
   try {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
     const settings = await getSettings();
+    const isSingleSession = settings?.isSingleSessionEnabled ?? false;
+
+    // Generate unique session token
+    const sessionToken =
+      crypto.randomUUID?.() ||
+      `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+
+    // Store session token on user document
+    if (adminDb) {
+      await adminDb.collection('users').doc(uid).set(
+        {
+          sessionToken,
+          sessionCreatedAt: Date.now(),
+        },
+        { merge: true }
+      );
+    }
 
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
     console.log('[Session Action] Creating session cookie...');
@@ -68,9 +85,19 @@ export async function createSession(idToken: string) {
       path: '/',
       sameSite: 'lax',
     });
-    console.log('[Session Action] Session cookie set (sameSite=lax, secure=' + isSecure + ').');
 
-    return { success: true };
+    // Set sessionToken cookie (httpOnly so only server can read)
+    cookies().set('sessionToken', sessionToken, {
+      maxAge: expiresIn / 1000,
+      httpOnly: true,
+      secure: isSecure,
+      path: '/',
+      sameSite: 'lax',
+    });
+
+    console.log('[Session Action] Session token stored and cookies set.');
+
+    return { success: true, sessionToken };
   } catch (error: any) {
     console.error('[Session Action] Error creating session:', error);
     return { success: false, error: 'Failed to create session: ' + error.message };
@@ -114,6 +141,7 @@ export async function logout() {
     }
   }
   cookies().delete('session');
+  cookies().delete('sessionToken');
   redirect('/admin/login');
 }
 
@@ -121,6 +149,7 @@ export async function logout() {
  *  Used by the layout guard to break cookie/Firebase mismatch loops. */
 export async function clearSession() {
   cookies().delete('session');
+  cookies().delete('sessionToken');
 }
 
 export async function revertImpersonation() {
@@ -2595,6 +2624,9 @@ const settingsSchema = z.object({
   isInstallationStepEnabled: z.boolean().optional(),
   isEmailVerificationEnabled: z.boolean().optional(),
   isPriceHidden: z.boolean().optional(),
+  isSingleSessionEnabled: z.boolean().optional(),
+  zoomMaxDistance: z.coerce.number().min(1, 'Must be at least 1').optional(),
+  zoomMinDistance: z.coerce.number().min(0.1, 'Must be at least 0.1').optional(),
   isWizardBotEnabled: z.boolean().optional(),
   isGuidedConfigEnabled: z.boolean().optional(),
   isManualConfigEnabled: z.boolean().optional(),
@@ -2708,6 +2740,9 @@ export async function getSettings(): Promise<Settings> {
     isInstallationStepEnabled: true,
     isEmailVerificationEnabled: true,
     isPriceHidden: false,
+    isSingleSessionEnabled: false,
+    zoomMaxDistance: 50,
+    zoomMinDistance: 50,
     isWizardBotEnabled: true,
     hintBubble: {
       enabled: true,
@@ -3228,6 +3263,52 @@ export async function getSessionUid() {
     return { uid: decoded.uid };
   } catch {
     return { uid: null };
+  }
+}
+
+export async function verifySession() {
+  const { adminAuth, adminDb } = getFirebaseAdmin();
+  const sessionCookie = cookies().get('session')?.value;
+  const sessionTokenCookie = cookies().get('sessionToken')?.value;
+
+  if (!sessionCookie) {
+    return { valid: false, reason: 'no_session' };
+  }
+
+  try {
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+    const uid = decoded.uid;
+
+    // Read settings directly from Firestore to bypass the 30s cache in getSettings()
+    let isSingleSession = false;
+    try {
+      const settingsDoc = await adminDb.collection('settings').doc(SETTINGS_DOC_ID).get();
+      const settingsData = settingsDoc.data();
+      isSingleSession = settingsData?.isSingleSessionEnabled === true;
+    } catch {
+      // Fail-safe: if we can't read settings, don't enforce single session
+    }
+    if (!isSingleSession) {
+      return { valid: true, uid };
+    }
+
+    const userDoc = await adminDb.collection('users').doc(uid).get();
+    if (!userDoc.exists) {
+      return { valid: false, reason: 'user_not_found' };
+    }
+
+    const userData = userDoc.data();
+    const storedToken = userData?.sessionToken;
+
+    // Only disconnect if a stored token exists and doesn't match the cookie
+    if (storedToken && storedToken !== sessionTokenCookie) {
+      return { valid: false, reason: 'session_mismatch', uid, sessionCreatedAt: userData?.sessionCreatedAt ?? null };
+    }
+
+    return { valid: true, uid };
+  } catch (error) {
+    console.error('[verifySession] Error:', error);
+    return { valid: false, reason: 'error' };
   }
 }
 

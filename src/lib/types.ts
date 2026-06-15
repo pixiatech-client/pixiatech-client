@@ -178,6 +178,7 @@ export type Settings = {
   isWizardBotEnabled?: boolean;
   isGuidedConfigEnabled?: boolean;
   isManualConfigEnabled?: boolean;
+  isSingleSessionEnabled?: boolean;
   zoomMaxDistance?: number;
   zoomMinDistance?: number;
   hintBubble?: HintBubbleSettings;
