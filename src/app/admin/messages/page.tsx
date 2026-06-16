@@ -10,6 +10,7 @@ import ChatWindow from '@/components/chat/ChatWindow';
 import ContactList from '@/components/chat/ContactList';
 import { MessageSquare, Shield, LogOut, Users } from 'lucide-react';
 import { useAdminT } from '@/hooks/useAdminT';
+import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import MiniChat from '@/components/chat/MiniChat';
@@ -29,6 +30,7 @@ export default function MessagesPage() {
   const [isMiniChatOpen, setIsMiniChatOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 1024px)');
   const { t: adt } = useAdminT();
+  const { t } = useI18n();
 
   // 1. Real-time Current User
   useEffect(() => {
@@ -142,7 +144,7 @@ export default function MessagesPage() {
 
   if (!user) return <div className="h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
 
-  if (user.role !== 'admin' && !user.permissions?.canChat) {
+  if (user.role !== 'admin' && user.permissions?.canChat === false) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md rounded-[40px] bg-white p-10 shadow-2xl border border-gray-100 text-center">
@@ -187,7 +189,7 @@ export default function MessagesPage() {
                 strokeWidth={3} 
                 className={cn(activeMobileTab === 'discussions' ? "text-[#15bcd7]" : "text-gray-400")}
               />
-              <span className="uppercase tracking-[0.15em]">Discussions</span>
+              <span className="uppercase tracking-[0.15em]">{t('chat.discussions')}</span>
             </button>
             <button 
               onClick={() => setActiveMobileTab('annuaire')}
@@ -201,7 +203,7 @@ export default function MessagesPage() {
                 strokeWidth={3} 
                 className={cn(activeMobileTab === 'annuaire' ? "text-[#15bcd7]" : "text-gray-400")}
               />
-              <span className="uppercase tracking-[0.15em]">Directory</span>
+              <span className="uppercase tracking-[0.15em]">{t('chat.directory')}</span>
             </button>
           </div>
         </div>
@@ -250,8 +252,8 @@ export default function MessagesPage() {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
               <div className="w-24 h-24 bg-white rounded-[32px] flex items-center justify-center text-blue-600 mb-6 shadow-xl"><MessageSquare size={48} /></div>
-              <h2 className="text-4xl font-black text-[#1a1d21] tracking-tighter">Select a conversation</h2>
-              <p className="text-gray-400 max-w-sm mt-4 text-lg font-medium leading-relaxed">Choose a discussion from the list to start chatting with your team.</p>
+              <h2 className="text-4xl font-black text-[#1a1d21] tracking-tighter">{t('chat.selectConversation')}</h2>
+              <p className="text-gray-400 max-w-sm mt-4 text-lg font-medium leading-relaxed">{t('chat.selectConversationDesc')}</p>
             </div>
           )}
         </div>

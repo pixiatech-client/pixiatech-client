@@ -514,6 +514,7 @@ export interface UserProfileChat extends UserProfile {
   permissions: UserPermissions;
   lastSeen?: any; 
   pinnedUserIds?: string[];
+  assignedSuppliers?: string[];
 }
 
 export type MessageType = 'text' | 'image' | 'video' | 'file' | 'audio' | 'summary';

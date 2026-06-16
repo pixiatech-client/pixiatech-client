@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { X, ChevronLeft, Shield, Check, CheckCheck, Trash2, Image, Video, Mic, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, ChevronLeft, Shield, Check, CheckCheck, Trash2, Image, Video, Mic, AlertTriangle, Loader2, UserPlus, UserMinus, Search } from 'lucide-react';
 import { useRoles } from '@/contexts/RoleContext';
 import { doc, updateDoc, onSnapshot, collection, setDoc, getDoc, getDocs } from 'firebase/firestore';
 import { firestore as db } from '@/firebase/config';
@@ -238,6 +238,13 @@ export default function AdminPanel({ onClose, onBack, currentUser }: AdminPanelP
   const [loading, setLoading] = useState(true);
   const { getRoleColor, getRoleName } = useRoles();
 
+  // Assignment modal state
+  const [assignModal, setAssignModal] = useState<{
+    isOpen: boolean;
+    user: UserProfile | null;
+    searchQuery: string;
+  }>({ isOpen: false, user: null, searchQuery: '' });
+
   useEffect(() => {
     setLoading(true);
     const unsubSettings = onSnapshot(doc(db, 'settings', 'global'), (snap) => {
@@ -270,6 +277,16 @@ export default function AdminPanel({ onClose, onBack, currentUser }: AdminPanelP
 
   const updateUserField = async (userId: string, field: string, value: any) => {
     await updateDoc(doc(db, 'users', userId), { [field]: value });
+  };
+
+  const handleAssignSupplier = async (commercialUid: string, supplierUid: string) => {
+    const commercial = users.find(u => u.uid === commercialUid) as any;
+    if (!commercial) return;
+    const current = commercial.assignedSuppliers || [];
+    const updated = current.includes(supplierUid)
+      ? current.filter((id: string) => id !== supplierUid)
+      : [...current, supplierUid];
+    await updateDoc(doc(db, 'users', commercialUid), { assignedSuppliers: updated });
   };
 
   if (loading) {
@@ -438,7 +455,7 @@ export default function AdminPanel({ onClose, onBack, currentUser }: AdminPanelP
 
         {activeTab === 'users' && (
           <div className="space-y-3">
-            {users.map(user => (
+            {users.filter(u => u.role !== 'admin').map(user => (
               <div key={user.uid} className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl">
                 <img src={user.photoURL} alt="" className="h-10 w-10 rounded-full object-cover" />
                 <div className="flex-1 min-w-0">
@@ -454,19 +471,87 @@ export default function AdminPanel({ onClose, onBack, currentUser }: AdminPanelP
                 >
                   {getRoleName(user.role)}
                 </span>
-                {user.role !== 'admin' && (
-                  <button 
-                    onClick={() => updateUserField(user.uid, 'isIsolated', !user.isIsolated)}
-                    className={cn(
-                      "p-2 rounded-lg transition-all",
-                      user.isIsolated ? "bg-red-500/20 text-red-400" : "bg-white/10 text-white/40"
-                    )}
+                {user.role === 'commercial' && (
+                  <button
+                    onClick={() => setAssignModal({ isOpen: true, user: user as any, searchQuery: '' })}
+                    className="p-2 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-all"
+                    title="Assigner fournisseurs"
                   >
-                    {user.isIsolated ? <CheckCheck size={16} /> : <Shield size={16} />}
+                    <UserPlus size={16} />
                   </button>
                 )}
+                <button 
+                  onClick={() => updateUserField(user.uid, 'isIsolated', !(user as any).isIsolated)}
+                  className={cn(
+                    "p-2 rounded-lg transition-all",
+                    (user as any).isIsolated ? "bg-red-500/20 text-red-400" : "bg-white/10 text-white/40"
+                  )}
+                >
+                  {(user as any).isIsolated ? <CheckCheck size={16} /> : <Shield size={16} />}
+                </button>
               </div>
             ))}
+
+            {/* Assignment Modal */}
+            {assignModal.isOpen && assignModal.user && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setAssignModal({ isOpen: false, user: null, searchQuery: '' })} />
+                <div className="relative w-full max-w-lg bg-[#1a1d21] border border-white/10 rounded-[32px] overflow-hidden shadow-2xl z-10">
+                  <div className="p-6 border-b border-white/5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-white">
+                        Assigner fournisseurs à <span className="text-blue-400">{assignModal.user.displayName}</span>
+                      </h3>
+                      <button onClick={() => setAssignModal({ isOpen: false, user: null, searchQuery: '' })} className="text-white/40 hover:text-white">
+                        <X size={20} />
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Rechercher fournisseur..."
+                        value={assignModal.searchQuery}
+                        onChange={(e) => setAssignModal(prev => ({ ...prev, searchQuery: e.target.value }))}
+                        className="w-full rounded-xl py-3 px-5 pl-12 text-sm outline-none bg-white/5 border border-white/10 text-white placeholder:text-white/30"
+                      />
+                      <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                    </div>
+                  </div>
+                  <div className="p-4 max-h-72 overflow-y-auto space-y-2">
+                    {users
+                      .filter(u => u.role === 'prestataire' || u.role === 'fournisseur')
+                      .filter(u => !assignModal.searchQuery || u.displayName.toLowerCase().includes(assignModal.searchQuery.toLowerCase()))
+                      .map(supplier => {
+                        const assigned = ((assignModal.user as any).assignedSuppliers || []).includes(supplier.uid);
+                        return (
+                          <button
+                            key={supplier.uid}
+                            onClick={() => handleAssignSupplier(assignModal.user!.uid, supplier.uid)}
+                            className={cn(
+                              "w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
+                              assigned
+                                ? "bg-emerald-500/10 border-emerald-500/30"
+                                : "bg-white/5 border-white/10 hover:border-white/20"
+                            )}
+                          >
+                            <img src={supplier.photoURL} alt="" className="h-9 w-9 rounded-full object-cover" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-white text-sm truncate">{supplier.displayName}</p>
+                              <p className="text-[10px] text-white/40 truncate">{supplier.email}</p>
+                            </div>
+                            {assigned && <Check size={18} className="text-emerald-400 shrink-0" />}
+                          </button>
+                        );
+                      })}
+                  </div>
+                  <div className="p-4 border-t border-white/5 bg-black/30">
+                    <p className="text-[10px] text-white/30 text-center font-medium">
+                      Cliquez pour assigner / retirer l'accès
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

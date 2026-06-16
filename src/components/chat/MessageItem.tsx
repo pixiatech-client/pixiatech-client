@@ -120,7 +120,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
             >
               <img 
                 src={msg.botImage || otherUserPhotoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}`} 
-                alt="Bot Avatar" 
+                alt={t('chat.botAvatar')} 
                 className="w-full h-full object-contain scale-[1.3] origin-bottom" 
               />
             </motion.div>
@@ -144,7 +144,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
                       color: msg.senderRole === 'bot' ? '#818cf8' : getRoleColor(msg.senderRole) 
                     }}
                   >
-                    {msg.senderRole === 'bot' ? 'Bot' : getRoleName(msg.senderRole)}
+                    {msg.senderRole === 'bot' ? t('chat.bot') : getRoleName(msg.senderRole)}
                   </span>
                 )}
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{msg.senderName || t('common.user')}</span>
@@ -205,7 +205,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
                   <Paperclip size={20} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate">{msg.content || 'Document'}</p>
+                  <p className="text-sm font-bold truncate">{msg.content || t('chat.document')}</p>
                   <p className="text-[10px] opacity-60 font-bold uppercase tracking-wider">PDF • 1.2 MB</p>
                 </div>
               </a>

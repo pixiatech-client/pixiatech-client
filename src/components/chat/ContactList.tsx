@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, User, Shield, MessageSquare, MoreVertical, Ban, BellOff, Trash2, CheckCircle2, UserX, EyeOff, Link2Off, X, Calendar, Info, Edit3, Eye, MessageCircle, UserMinus, Pin, FileText } from 'lucide-react';
+import { Search, User, Shield, MessageSquare, MoreVertical, Ban, BellOff, Trash2, CheckCircle2, UserX, EyeOff, Link2Off, X, Calendar, Info, Edit3, Eye, MessageCircle, UserMinus, Pin, FileText, UserPlus, Check } from 'lucide-react';
 import { UserProfileChat as UserProfile, QuoteRequest } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
@@ -9,6 +9,7 @@ import { doc, updateDoc, getDoc, collection, query, where, getDocs } from 'fireb
 import { firestore as db } from '@/firebase/config';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useRoles } from '@/contexts/RoleContext';
+import { useI18n } from '@/lib/i18n';
 
 interface ContactListProps {
   users: UserProfile[];
@@ -35,6 +36,7 @@ export default function ContactList({
   activeChatId,
   buttonPos
 }: ContactListProps) {
+  const { t } = useI18n();
   const isMobile = useMediaQuery('(max-width: 1024px)');
   const [searchQuery, setSearchQuery] = useState('');
   const [contextMenuUser, setContextMenuUser] = useState<string | null>(null);
@@ -50,6 +52,12 @@ export default function ContactList({
     contactUid: '',
     quotes: []
   });
+
+  const [assignModal, setAssignModal] = useState<{
+    isOpen: boolean;
+    user: UserProfile | null;
+    searchQuery: string;
+  }>({ isOpen: false, user: null, searchQuery: '' });
 
   const handleContactClick = async (clickedUser: UserProfile) => {
     const isProvider = clickedUser.role === 'prestataire' || currentUser.role === 'prestataire';
@@ -104,20 +112,36 @@ export default function ContactList({
     const isMe = u.uid === currentUser.uid;
     const matchesSearch = u.displayName.toLowerCase().includes(searchQuery.toLowerCase());
     
-    if (currentUser.role === 'commercial' && u.role === 'prestataire' && u.adminOnly) return false;
-    if (currentUser.role === 'prestataire' && currentUser.adminOnly && u.role !== 'admin') return false;
     if (currentUser.restrictedContacts?.includes(u.uid)) return false;
     
-     if (currentUser.role === 'admin') {
-       // Admin sees all users
-       return !isMe && matchesSearch;
-     }
-
-     // Non-admin isolation checks
-     if (currentUser.isIsolated && u.role !== 'admin') return false;
-     if (u.isIsolated) return false;
-
-     return !isMe && matchesSearch;
+    // Admin sees all users
+    if (currentUser.role === 'admin') {
+      return !isMe && matchesSearch;
+    }
+    
+    // Non-admin: isolated users are invisible
+    if (u.isIsolated) return false;
+    if (currentUser.isIsolated && u.role !== 'admin') return false;
+    
+    // Role-based visibility
+    if (currentUser.role === 'commercial') {
+      const isAdmin = u.role === 'admin';
+      // Fournisseur adminOnly → invisible aux commerciaux
+      const isAssignedSupplier = u.role === 'prestataire' 
+        && !u.adminOnly 
+        && currentUser.assignedSuppliers?.includes(u.uid);
+      return !isMe && matchesSearch && (isAdmin || isAssignedSupplier);
+    }
+    
+    if (currentUser.role === 'prestataire') {
+      const isAdmin = u.role === 'admin';
+      // Un fournisseur voit les commerciaux qui l'ont dans leur assignedSuppliers
+      const isAssignedCommercial = u.role === 'commercial' 
+        && u.assignedSuppliers?.includes(currentUser.uid);
+      return !isMe && matchesSearch && (isAdmin || isAssignedCommercial);
+    }
+    
+    return !isMe && matchesSearch;
   });
 
   const groupedUsers = filteredUsers.reduce((acc, user) => {
@@ -201,8 +225,23 @@ export default function ContactList({
       const currentPinned = currentUser.pinnedUserIds || [];
       const newPinned = currentPinned.includes(userId) ? currentPinned.filter(id => id !== userId) : [...currentPinned, userId];
       await updateDoc(doc(db, 'users', currentUser.uid), { pinnedUserIds: newPinned });
+    } else if (action === 'assign_suppliers') {
+      const target = users.find(u => u.uid === userId);
+      if (target && target.role === 'commercial') {
+        setAssignModal({ isOpen: true, user: target, searchQuery: '' });
+      }
     }
     setContextMenuUser(null);
+  };
+
+  const handleAssignSupplier = async (commercialUid: string, supplierUid: string) => {
+    const commercial = users.find(u => u.uid === commercialUid) as any;
+    if (!commercial) return;
+    const current = commercial.assignedSuppliers || [];
+    const updated = current.includes(supplierUid)
+      ? current.filter((id: string) => id !== supplierUid)
+      : [...current, supplierUid];
+    await updateDoc(doc(db, 'users', commercialUid), { assignedSuppliers: updated });
   };
 
   const updateExclusionMetadata = async (targetId: string, metadata: { reason?: string, isPublic?: boolean }) => {
@@ -242,7 +281,7 @@ export default function ContactList({
             {(selectedUsers.length > 0 || !isMobile) && (
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-4xl font-black tracking-tighter text-[#15bcd7]">
-                  {selectedUsers.length > 0 ? selectedUsers.length : "Annuaire"}
+                  {selectedUsers.length > 0 ? selectedUsers.length : t('chat.directory')}
                 </h1>
                 <div className="flex items-center gap-3">
                   {selectedUsers.length >= 2 && currentUser.role === 'admin' && (
@@ -250,7 +289,7 @@ export default function ContactList({
                       onClick={() => handleAction('pairwise_isolation', '')}
                       className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"
                     >
-                      <Link2Off size={14} className="shrink-0" /> <span className={cn(isMobile && "hidden")}>Isoler entre eux</span>
+                      <Link2Off size={14} className="shrink-0" /> <span className={cn(isMobile && "hidden")}>{t('chat.isolate')}</span>
                     </button>
                   )}
                   {selectedUsers.length > 0 && (
@@ -258,7 +297,7 @@ export default function ContactList({
                       onClick={() => onSelectedUsersChange?.([])}
                       className="text-[10px] font-black text-blue-500 hover:text-blue-400 uppercase tracking-widest"
                     >
-                      {isMobile ? "Annuler" : "Tout désélectionner"}
+                      {isMobile ? t('chat.cancel') : t('chat.deselectAll')}
                     </button>
                   )}
                 </div>
@@ -270,7 +309,7 @@ export default function ContactList({
                 <div className="flex-1 relative group">
                   <input
                     type="text"
-                    placeholder="Rechercher un contact..."
+                    placeholder={t('chat.searchContact')}
                     className={cn(
                       "w-full rounded-2xl py-3 px-5 text-sm outline-none border transition-all shadow-sm placeholder:text-gray-300 font-medium",
                       isMiniChat ? "bg-white/5 border-transparent focus:border-blue-500/20 text-white" : "bg-white border-transparent focus:border-blue-500/30 text-[#1a1d21]"
@@ -375,28 +414,36 @@ export default function ContactList({
                                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                                   <MessageSquare size={22} className="text-[#10b981]" />
                                 </div>
-                                <span>Démarres une nouvelle discussion</span>
+                                <span>{t('chat.startNewDiscussion')}</span>
                               </button>
                               
                               <button onClick={() => handleAction('annoying', user.uid)} className="w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-base font-bold text-gray-300 hover:bg-white/5">
                                 <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
                                   <UserMinus size={22} />
                                 </div>
-                                <span>{user.isAnnoying ? "Désactiver Ne pas déranger" : "Ne pas déranger"}</span>
+                                <span>{user.isAnnoying ? t('chat.disableDoNotDisturb') : t('chat.doNotDisturb')}</span>
                               </button>
 
                               <button onClick={() => handleAction('discussion', user.uid)} className="w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-base font-bold text-gray-300 hover:bg-white/5">
                                 <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
                                   <MessageCircle size={22} />
                                 </div>
-                                <span>{user.isInDiscussion ? "Quitter la discussion" : "En discussion"}</span>
+                                <span>{user.isInDiscussion ? t('chat.leaveDiscussion') : t('chat.inDiscussion')}</span>
                               </button>
 
+                              {user.role === 'commercial' && (
+                                <button onClick={() => handleAction('assign_suppliers', user.uid)} className="w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-base font-bold text-gray-300 hover:bg-white/5">
+                                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                                    <UserPlus size={22} />
+                                  </div>
+                                  <span>Assigner fournisseurs</span>
+                                </button>
+                              )}
                               <button onClick={() => handleAction('block', user.uid)} className="w-full flex items-center gap-4 p-4 rounded-2xl text-[#ff3b3b] hover:bg-red-500/10 transition-all text-base font-bold">
                                 <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
                                   <Ban size={22} className="text-[#ff3b3b]" />
                                 </div>
-                                <span>Bloquer le contact</span>
+                                <span>{t('chat.blockContact')}</span>
                               </button>
                             </motion.div>
                           </>
@@ -436,8 +483,8 @@ export default function ContactList({
                     <MessageSquare size={24} className="text-[#10b981]" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-xl font-black text-white leading-none mb-1">Sélectionner une estimation</h3>
-                    <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">Lier la discussion à un dossier</p>
+                    <h3 className="text-xl font-black text-white leading-none mb-1">{t('chat.selectEstimation')}</h3>
+                    <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">{t('chat.linkDiscussionToFolder')}</p>
                   </div>
                   <button
                     onClick={() => setQuoteSelectorConfig(prev => ({ ...prev, isOpen: false }))}
@@ -462,8 +509,8 @@ export default function ContactList({
                     <MessageCircle size={20} className="text-white/60" />
                   </div>
                   <div>
-                    <p className="font-bold text-white text-sm">Discussion générale</p>
-                    <p className="text-[11px] text-white/40">Sans lien avec une estimation</p>
+                    <p className="font-bold text-white text-sm">{t('chat.generalDiscussion')}</p>
+                    <p className="text-[11px] text-white/40">{t('chat.withoutEstimationLink')}</p>
                   </div>
                 </button>
 
@@ -474,9 +521,9 @@ export default function ContactList({
                     archived: '#6b7280', returned: '#ef4444'
                   };
                   const statusLabels: Record<string, string> = {
-                    pending: 'En attente', in_progress: 'En préparation', sent: 'Envoyée',
-                    delivered: 'Livrée', processed: 'Traitée', trashed: 'Supprimée',
-                    archived: 'Archivée', returned: 'Retournée'
+                    pending: t('chat.pending'), in_progress: t('chat.inProgress'), sent: t('chat.sent'),
+                    delivered: t('chat.delivered'), processed: t('chat.processed'), trashed: t('chat.trashed'),
+                    archived: t('chat.archived'), returned: t('chat.returned')
                   };
                   const color = statusColors[q.status] || '#6b7280';
                   const label = statusLabels[q.status] || q.status;
@@ -497,7 +544,7 @@ export default function ContactList({
                           <p className="font-black text-white text-sm">#{q.number || q.id.slice(0, 8)}</p>
                           <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full" style={{ backgroundColor: color + '20', color }}>{label}</span>
                         </div>
-                        <p className="text-xs text-white/50 truncate">{q.client?.companyName || 'Client inconnu'}</p>
+                        <p className="text-xs text-white/50 truncate">{q.client?.companyName || t('chat.unknownClient')}</p>
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-black text-white">{q.totalQuote ? q.totalQuote.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' }) : '–'}</p>
@@ -509,11 +556,79 @@ export default function ContactList({
 
               <div className="p-4 border-t border-white/5 bg-black/30">
                 <p className="text-[10px] text-white/30 text-center font-medium">
-                  Chaque discussion liée à une estimation est indépendante
+                  {t('chat.eachDiscussionIndependent')}
                 </p>
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Assignment Modal (Admin) */}
+      <AnimatePresence>
+        {assignModal.isOpen && assignModal.user && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[400]" onClick={() => setAssignModal({ isOpen: false, user: null, searchQuery: '' })} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg z-[401] bg-[#1a1d21] border border-white/10 rounded-[32px] overflow-hidden shadow-2xl"
+            >
+              <div className="p-6 border-b border-white/5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-white">
+                    Assigner fournisseurs à <span className="text-blue-400">{assignModal.user.displayName}</span>
+                  </h3>
+                  <button onClick={() => setAssignModal({ isOpen: false, user: null, searchQuery: '' })} className="text-white/40 hover:text-white">
+                    <X size={20} />
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Rechercher fournisseur..."
+                    value={assignModal.searchQuery}
+                    onChange={(e) => setAssignModal(prev => ({ ...prev, searchQuery: e.target.value }))}
+                    className="w-full rounded-xl py-3 px-5 pl-12 text-sm outline-none bg-white/5 border border-white/10 text-white placeholder:text-white/30"
+                  />
+                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                </div>
+              </div>
+              <div className="p-4 max-h-72 overflow-y-auto space-y-2">
+                {users
+                  .filter(u => u.role === 'prestataire' || u.role === 'fournisseur')
+                  .filter(u => !assignModal.searchQuery || u.displayName.toLowerCase().includes(assignModal.searchQuery.toLowerCase()))
+                  .map(supplier => {
+                    const assigned = ((assignModal.user as any).assignedSuppliers || []).includes(supplier.uid);
+                    return (
+                      <button
+                        key={supplier.uid}
+                        onClick={() => handleAssignSupplier(assignModal.user!.uid, supplier.uid)}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
+                          assigned
+                            ? "bg-emerald-500/10 border-emerald-500/30"
+                            : "bg-white/5 border-white/10 hover:border-white/20"
+                        )}
+                      >
+                        <img src={supplier.photoURL} alt="" className="h-9 w-9 rounded-full object-cover" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-white text-sm truncate">{supplier.displayName}</p>
+                          <p className="text-[10px] text-white/40 truncate">{supplier.email}</p>
+                        </div>
+                        {assigned && <Check size={18} className="text-emerald-400 shrink-0" />}
+                      </button>
+                    );
+                  })}
+              </div>
+              <div className="p-4 border-t border-white/5 bg-black/30">
+                <p className="text-[10px] text-white/30 text-center font-medium">
+                  Cliquez pour assigner / retirer l'accès
+                </p>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
@@ -580,6 +695,7 @@ function SwipeableContact({ user, currentUser, isSelected, onSelect, toggleSelec
 }
 
 function ContactItem({ user, currentUser, isMiniChat, isCollapsed, selectedUsers, onSelect, toggleSelect, contextMenuUser, setContextMenuUser }: any) {
+  const { t } = useI18n();
   const { getRoleColor, getRoleName } = useRoles();
   const roleColor = getRoleColor(user.role);
 
@@ -631,15 +747,21 @@ function ContactItem({ user, currentUser, isMiniChat, isCollapsed, selectedUsers
           boxShadow: `0 0 10px ${currentUser.blockedUsers?.includes(user.uid) ? "rgba(239,68,68,0.4)" : 
                        user.blockedUsers?.includes(currentUser.uid) ? "rgba(156,163,175,0.4)" : roleColor + "66"}`
         }}>
-          <img 
-            src={user.photoURL} 
-            alt="" 
-            className={cn(
-              "h-full w-full rounded-full object-cover",
-              (currentUser.blockedUsers?.includes(user.uid) || user.blockedUsers?.includes(currentUser.uid)) && "grayscale brightness-75"
-            )} 
-            referrerPolicy="no-referrer" 
-          />
+          {user.photoURL ? (
+            <img 
+              src={user.photoURL} 
+              alt="" 
+              className={cn(
+                "h-full w-full rounded-full object-cover",
+                (currentUser.blockedUsers?.includes(user.uid) || user.blockedUsers?.includes(currentUser.uid)) && "grayscale brightness-75"
+              )} 
+              referrerPolicy="no-referrer" 
+            />
+          ) : (
+            <div className="h-full w-full rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-sm">
+              {user.displayName?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || '?'}
+            </div>
+          )}
         </div>
         {user.isOnline && !currentUser.blockedUsers?.includes(user.uid) && !user.blockedUsers?.includes(currentUser.uid) && (
           <div 
@@ -668,7 +790,7 @@ function ContactItem({ user, currentUser, isMiniChat, isCollapsed, selectedUsers
                 {user.blockedUsers?.includes(currentUser.uid) && (
                   <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-500/10 border border-gray-500/20 rounded-full">
                     <Shield size={8} className="text-gray-500" />
-                    <span className="text-[7px] font-black uppercase text-gray-500 tracking-wider">Bloqué</span>
+                    <span className="text-[7px] font-black uppercase text-gray-500 tracking-wider">{t('chat.blocked')}</span>
                   </div>
                 )}
                 {user.isAnnoying && <div className="h-1.5 w-1.5 rounded-full bg-red-500" />}

@@ -11,6 +11,7 @@ import { doc, getDoc, deleteDoc, collection, query, getDocs, writeBatch, onSnaps
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useRoles } from '@/contexts/RoleContext';
 import ConfirmModal from './ConfirmModal';
+import { useI18n } from '@/lib/i18n';
 
 interface ChatListProps {
   chats: Chat[];
@@ -42,6 +43,7 @@ export default function ChatList({
   const [isDeleting, setIsDeleting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { roles, getRoleName, getRoleColor } = useRoles();
+  const { t } = useI18n();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -114,7 +116,7 @@ export default function ChatList({
       {!isMobile && (
         <div className="p-6 border-b border-gray-50 flex-shrink-0">
           <h1 className="text-4xl font-black tracking-tighter text-[#15bcd7] leading-none">
-            Discussion
+            {t('chat.discussions')}
           </h1>
         </div>
       )}
@@ -124,7 +126,7 @@ export default function ChatList({
             <div className="flex-1 relative group">
               <input
                 type="text"
-                placeholder="Rechercher"
+                placeholder={t('chat.search')}
                 className="w-full rounded-2xl bg-white py-3 px-5 text-sm outline-none border border-transparent focus:border-blue-500/30 shadow-sm transition-all placeholder:text-gray-300 font-medium"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -209,9 +211,9 @@ export default function ChatList({
               setChatToDelete(null);
             }
           }}
-          title="Supprimer la discussion"
-          message="Voulez-vous vraiment supprimer définitivement cette discussion ? Cette action est irréversible et supprimera tous les messages."
-          confirmText={isDeleting ? "Suppression..." : "Supprimer"}
+          title={t('chat.deleteChat')}
+          message={t('chat.deleteChatConfirm')}
+          confirmText={isDeleting ? t('chat.deleting') : t('chat.delete')}
         />
       </div>
     </div>
@@ -289,6 +291,7 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
   const [otherUser, setOtherUser] = useState<UserProfile | null>(null);
   const unreadCount = chat.unreadCount[currentUser.uid] || 0;
   const isMobile = useMediaQuery('(max-width: 1024px)');
+  const { t } = useI18n();
 
   useEffect(() => {
     const otherId = chat.participants.find(id => id !== currentUser.uid);
@@ -305,16 +308,16 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
   const isBlockedByOther = otherUser.blockedUsers?.includes(currentUser.uid);
 
   const renderLastMessage = (message: string) => {
-    if (!message) return 'Nouvelle conversation';
+    if (!message) return t('chat.newConversation');
     
-    const isMe = message.startsWith('Vous : ') || message.startsWith('You: ');
-    const prefix = isMe ? (message.startsWith('Vous : ') ? 'Vous : ' : 'You: ') : '';
+    const isMe = message.startsWith(t('chat.you') + ' : ') || message.startsWith(t('chat.you') + ': ');
+    const prefix = isMe ? (message.startsWith(t('chat.you') + ' : ') ? t('chat.you') + ' : ' : t('chat.you') + ': ') : '';
     const content = isMe ? message.substring(prefix.length) : message;
 
-    if (content === '[image]') return <span className="flex items-center gap-1.5">{prefix}<Image size={14} className="text-blue-500" /> Photo</span>;
-    if (content === '[video]') return <span className="flex items-center gap-1.5">{prefix}<Video size={14} className="text-purple-500" /> Vidéo</span>;
-    if (content === '[audio]') return <span className="flex items-center gap-1.5">{prefix}<Mic size={14} className="text-green-500" /> Audio</span>;
-    if (content === '[file]') return <span className="flex items-center gap-1.5">{prefix}<FileText size={14} className="text-orange-500" /> Fichier</span>;
+    if (content === '[image]') return <span className="flex items-center gap-1.5">{prefix}<Image size={14} className="text-blue-500" /> {t('chat.photo')}</span>;
+    if (content === '[video]') return <span className="flex items-center gap-1.5">{prefix}<Video size={14} className="text-purple-500" /> {t('chat.video')}</span>;
+    if (content === '[audio]') return <span className="flex items-center gap-1.5">{prefix}<Mic size={14} className="text-green-500" /> {t('chat.audio')}</span>;
+    if (content === '[file]') return <span className="flex items-center gap-1.5">{prefix}<FileText size={14} className="text-orange-500" /> {t('chat.file')}</span>;
     
     return message;
   };
@@ -341,15 +344,21 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
           "h-12 w-12 rounded-2xl p-0.5 border-2 transition-all",
           isBlocked ? "border-red-500" : "border-transparent"
         )}>
-          <img 
-            src={otherUser.photoURL} 
-            alt="" 
-            className={cn(
-              "h-full w-full rounded-[14px] object-cover",
-              isBlocked && "grayscale brightness-75"
-            )} 
-            referrerPolicy="no-referrer"
-          />
+          {otherUser.photoURL ? (
+            <img 
+              src={otherUser.photoURL} 
+              alt="" 
+              className={cn(
+                "h-full w-full rounded-[14px] object-cover",
+                isBlocked && "grayscale brightness-75"
+              )} 
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="h-full w-full rounded-[14px] bg-gray-700 flex items-center justify-center text-white font-bold text-sm">
+              {otherUser.displayName?.charAt(0)?.toUpperCase() || '?'}
+            </div>
+          )}
         </div>
         {otherUser.isOnline && !isBlocked && (
           <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-green-500" />
@@ -373,7 +382,7 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
           <div className="flex items-center gap-1 shrink-0">
             {isBlockedByOther && (
               <span className="text-[8px] font-black uppercase text-gray-400 tracking-wider px-1.5 py-0.5 bg-gray-100 rounded-full border border-gray-200">
-                Bloqué
+                {t('chat.blocked')}
               </span>
             )}
             <span className="text-[10px] font-medium text-gray-400">
@@ -387,7 +396,7 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
             unreadCount > 0 ? "text-blue-500 font-semibold" : (isActive ? "text-white/60" : "text-gray-500"),
             "group-hover:text-white/80"
           )}>
-            {otherUser.isTyping ? "En train d'écrire..." : renderLastMessage(chat.lastMessage)}
+            {otherUser.isTyping ? t('chat.typing') : renderLastMessage(chat.lastMessage)}
           </div>
           <div className="flex items-center gap-1.5">
             {unreadCount > 0 && (
@@ -408,7 +417,7 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
                       ? "text-red-400 hover:bg-red-500/20" 
                       : "text-gray-300 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-500/10 hover:shadow-red-500/10"
                   )}
-                  title="Supprimer la discussion"
+                  title={t('chat.deleteChat')}
                 >
                   <Trash2 size={16} />
                 </button>

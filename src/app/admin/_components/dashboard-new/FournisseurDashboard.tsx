@@ -307,7 +307,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
               <div className="flex-1">
                 <p className="text-sm font-bold text-gray-900 group-hover:text-white transition-colors">{action.label}</p>
               </div>
-              <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-[#95d230] transition-colors" />
+              <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-black transition-colors" />
             </Link>
           ))}
         </div>

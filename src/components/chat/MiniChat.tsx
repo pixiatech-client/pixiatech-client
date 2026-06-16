@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, ChevronLeft, Search, MessageSquare, Shield, User, Send, Mic, Paperclip, Video, MoreVertical, Ban, ImageIcon, Trash2, ChevronUp, ChevronDown, Mail, Image, FileText, Settings, CheckCircle2, Link2Off } from 'lucide-react';
 import { UserProfileChat as UserProfile, Chat, Message } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 import ChatWindow from './ChatWindow';
 import ContactList from './ContactList';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,6 +46,7 @@ export default function MiniChat({
   onForward, 
   activeChatId: propActiveChatId 
 }: MiniChatProps) {
+  const { t } = useI18n();
   const [step, setStep] = useState<'contacts' | 'discussion'>('contacts');
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isDeployed, setIsDeployed] = useState(false);
@@ -86,22 +88,26 @@ export default function MiniChat({
     const isMe = u.uid === currentUser.uid;
     if (isMe) return false;
 
-    const userRole = currentUser.role === 'prestataire' ? 'prestataire' : currentUser.role;
-    const otherRole = u.role === 'prestataire' ? 'prestataire' : u.role;
-
-    // 1. If I am a commercial, I cannot see suppliers with adminOnly = true
-    if (userRole === 'commercial' && otherRole === 'prestataire' && u.adminOnly) return false;
-    
-    // 2. If I am a supplier with adminOnly = true, I can only see admins
-    if (userRole === 'prestataire' && currentUser.adminOnly && otherRole !== 'admin') return false;
-
-    // 3. Restricted Contacts (Isolation)
     if (currentUser.restrictedContacts?.includes(u.uid)) return false;
 
-    // 4. Global Isolation
-    if (currentUser.role !== 'admin') {
-      if (currentUser.isIsolated && otherRole !== 'admin') return false;
-      if (u.isIsolated) return false;
+    if (currentUser.role === 'admin') return true;
+
+    if (u.isIsolated) return false;
+    if (currentUser.isIsolated && u.role !== 'admin') return false;
+
+    if (currentUser.role === 'commercial') {
+      const isAdmin = u.role === 'admin';
+      const isAssignedSupplier = u.role === 'prestataire'
+        && !u.adminOnly
+        && currentUser.assignedSuppliers?.includes(u.uid);
+      return isAdmin || isAssignedSupplier;
+    }
+
+    if (currentUser.role === 'prestataire') {
+      const isAdmin = u.role === 'admin';
+      const isAssignedCommercial = u.role === 'commercial'
+        && u.assignedSuppliers?.includes(currentUser.uid);
+      return isAdmin || isAssignedCommercial;
     }
 
     return true;
@@ -329,7 +335,7 @@ export default function MiniChat({
                     className="w-full flex flex-col items-center gap-1 p-2 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 hover:bg-red-500 hover:text-white transition-all group"
                   >
                     <Link2Off size={16} className="group-hover:scale-110 transition-transform" />
-                    <span className="text-[7px] font-black uppercase tracking-widest">Isoler ({selectedUserIds.length})</span>
+                    <span className="text-[7px] font-black uppercase tracking-widest">{t('chat.isolate')} ({selectedUserIds.length})</span>
                   </button>
                 </div>
               )}

@@ -494,20 +494,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
               </div>
             )}
 
-            {/* Email Verification Icon */}
-            {!isFournisseur && (
-              <div className="hidden 2xl:flex w-28 px-4 items-center justify-center">
-                {(est.status === 'En attente' || est.status === 'Traité') && (
-                  <span title={est.emailVerified ? adt('Email verified') : adt('Email not confirmed')} className="flex items-center">
-                    <Mail 
-                      className={`w-5 h-5 transition-all ${
-                        est.emailVerified ? 'text-emerald-500' : 'text-red-500'
-                      }`} 
-                    />
-                  </span>
-                )}
-              </div>
-            )}
+
 
             {/* Action Column - State Machine Logic */}
             <div className="w-32 px-3 flex items-center justify-end gap-1 mr-2" onClick={(e) => e.stopPropagation()}>
@@ -1223,12 +1210,7 @@ return (
               </span>
             </button>
           )}
-          {!isFournisseur && (
-            <div className="hidden 2xl:flex w-28 px-4 items-center justify-center gap-2 font-black tracking-widest">
-              <Mail className="w-4 h-4 text-sky-400 shrink-0" />
-              <span>{t('estimation.emailHeader')}</span>
-            </div>
-          )}
+
           <div className="w-32 px-3 mr-2 flex items-center justify-end gap-2 font-black tracking-widest">
             <MoreVertical className="w-4 h-4 text-zinc-400 shrink-0" />
             <span>{t('estimation.actionHeader')}</span>

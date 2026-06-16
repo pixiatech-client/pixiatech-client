@@ -11,6 +11,7 @@ import MessageItem from './MessageItem';
 import ConfirmModal from './ConfirmModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { useI18n } from '@/lib/i18n';
 
 interface ChatWindowProps {
   chatId: string;
@@ -60,6 +61,8 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
     variant: 'danger'
   });
 
+  const { t } = useI18n();
+
   const handleScroll = () => {
     if (!scrollContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
@@ -70,7 +73,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
   const startRecording = async () => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Votre navigateur ne supporte pas l'enregistrement audio.");
+        alert(t('chat.audioNotSupported'));
         return;
       }
 
@@ -81,7 +84,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
       const mimeType = types.find(type => MediaRecorder.isTypeSupported(type)) || '';
       
       if (!mimeType) {
-        alert("Aucun format audio supporté trouvé sur cet appareil.");
+        alert(t('chat.audioFormatNotSupported'));
         return;
       }
 
@@ -107,7 +110,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
           await sendVoiceMessage(downloadURL);
         } catch (uploadError) {
           console.error('Error uploading audio:', uploadError);
-          alert('Erreur lors de l\'envoi du message vocal');
+          alert(t('chat.errorSendingAudio'));
         } finally {
           // Stop all tracks to release the microphone
           stream.getTracks().forEach(track => track.stop());
@@ -123,8 +126,8 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
       }, 1000);
     } catch (err) {
       console.error("Error accessing microphone:", err);
-      const errorMsg = err instanceof Error ? err.message : "Inconnue";
-      alert(`Impossible d'accéder au micro : ${errorMsg}. Vérifiez les réglages de votre navigateur.`);
+      const errorMsg = err instanceof Error ? err.message : t('chat.unknownError');
+      alert(t('chat.microphoneError', { error: errorMsg }));
     }
   };
 
@@ -143,14 +146,14 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
   };
 
   const sendVoiceMessage = async (url: string) => {
-    if (!currentUser.permissions?.canChat && currentUser.role !== 'admin') return;
+    if (currentUser.permissions?.canChat === false && currentUser.role !== 'admin') return;
     
     const msgData: Partial<Message> = {
       chatId,
       senderId: currentUser.uid,
       senderName: currentUser.displayName,
       senderRole: currentUser.role,
-      content: 'Message vocal',
+      content: t('chat.voiceMessage'),
       type: 'audio',
       fileUrl: url,
       status: 'sent',
@@ -177,8 +180,8 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
            addDoc(collection(db, 'notifications'), {
             userId: pId,
             type: 'message',
-            title: `Nouveau message vocal de ${currentUser.displayName || 'quelqu\'un'}`,
-            description: 'Message vocal',
+            title: t('chat.newVoiceMessage', { user: currentUser.displayName || t('chat.unknownUser') }),
+            description: t('chat.voiceMessage'),
             href: '/admin/messages',
             read: false,
             createdAt: serverTimestamp()
@@ -195,7 +198,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !chatId) return;
-    if (!currentUser.permissions?.canChat && currentUser.role !== 'admin') return;
+    if (currentUser.permissions?.canChat === false && currentUser.role !== 'admin') return;
 
     setIsUploading(true);
     
@@ -242,7 +245,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
              addDoc(collection(db, 'notifications'), {
               userId: pId,
               type: 'message',
-              title: `Nouveau fichier de ${currentUser.displayName || 'quelqu\'un'}`,
+              title: t('chat.newFileFrom', { user: currentUser.displayName || t('chat.unknownUser') }),
               description: file.name,
               href: '/admin/messages',
               read: false,
@@ -346,7 +349,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
     e?.preventDefault();
     
     // Check if current user has chat access (admins always have access)
-    if (!currentUser.permissions?.canChat && currentUser.role !== 'admin') {
+    if (currentUser.permissions?.canChat === false && currentUser.role !== 'admin') {
       return;
     }
     
@@ -398,7 +401,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
            addDoc(collection(db, 'notifications'), {
             userId: pId,
             type: 'message',
-            title: `Nouveau message de ${currentUser.displayName || 'quelqu\'un'}`,
+            title: t('chat.newMessageFrom', { user: currentUser.displayName || t('chat.unknownUser') }),
             description: content.length > 100 ? content.substring(0, 100) + '...' : content,
             href: '/admin/messages',
             read: false,
@@ -412,9 +415,9 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
   const handleClearHistory = async () => {
     setModalConfig({
       isOpen: true,
-      title: "Effacer l'historique",
-      message: "Voulez-vous vraiment supprimer tout l'historique ? Cela supprimera aussi tous les fichiers et médias partagés. Cette action est irréversible.",
-      confirmText: "Effacer tout",
+      title: t('chat.clearHistory'),
+      message: t('chat.clearHistoryConfirm'),
+      confirmText: t('chat.clearAll'),
       variant: 'danger',
       onConfirm: async () => {
         try {
@@ -520,9 +523,9 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
   const handleDeleteChat = async () => {
     setModalConfig({
       isOpen: true,
-      title: "Supprimer la discussion",
-      message: "Voulez-vous vraiment supprimer cette discussion ? Tous les messages et médias seront perdus pour toujours.",
-      confirmText: "Supprimer définitivement",
+      title: t('chat.deleteChat'),
+      message: t('chat.deleteChatConfirmSimple'),
+      confirmText: t('chat.deletePermanently'),
       variant: 'danger',
       onConfirm: async () => {
         try {
@@ -551,9 +554,9 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
   const handleDeleteMessage = async (messageId: string) => {
     setModalConfig({
       isOpen: true,
-      title: "Supprimer le message",
-      message: "Voulez-vous vraiment supprimer ce message ?",
-      confirmText: "Supprimer",
+      title: t('chat.deleteMessage'),
+      message: t('chat.deleteMessageConfirm'),
+      confirmText: t('chat.delete'),
       variant: 'danger',
       onConfirm: async () => {
         setModalConfig(prev => ({ ...prev, isOpen: false }));
@@ -625,8 +628,8 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
             >
               <div className={cn("flex items-center justify-between", isMobile ? "mb-6" : "mb-10")}>
                 <div>
-                  <h4 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-1">Gestion</h4>
-                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Options de discussion</p>
+                  <h4 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 mb-1">{t('chat.manage')}</h4>
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">{t('chat.discussionOptions')}</p>
                 </div>
                 <button 
                   onClick={() => setShowMenu(false)}
@@ -694,7 +697,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
                   )}>
                     <Ban size={20} />
                   </div>
-                  <span className="font-bold text-sm text-white/80">Bloqué</span>
+                  <span className="font-bold text-sm text-white/80">{t('chat.blocked')}</span>
                 </button>
 
                 {currentUser.role === 'admin' && (
@@ -742,7 +745,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
                   <div className="h-10 w-10 rounded-xl bg-white/5 text-white/40 flex items-center justify-center group-hover:text-red-500 group-hover:bg-red-500/20">
                     <Trash2 size={20} />
                   </div>
-                  <span className="font-bold text-sm text-white/80 group-hover:text-red-500">Effacer historique</span>
+                  <span className="font-bold text-sm text-white/80 group-hover:text-red-500">{t('chat.clearHistory')}</span>
                 </button>
 
               </div>
@@ -750,7 +753,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
               {currentUser.role === 'admin' && otherUser?.role === 'prestataire' && (
                 <div className="mt-6 space-y-3">
                   <div className="px-4 py-2">
-                    <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Administration</h5>
+                    <h5 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">{t('chat.administration')}</h5>
                   </div>
                   <button 
                     onClick={handleToggleAdminOnly}
@@ -769,8 +772,8 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
                         <Shield size={24} />
                       </div>
                       <div className="text-left">
-                        <p className="font-bold text-sm text-white/80">Fournisseur Top Secret</p>
-                        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Visible seulement par Admin</p>
+                        <p className="font-bold text-sm text-white/80">{t('chat.supplierTopSecret')}</p>
+                        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">{t('chat.visibleOnlyAdmin')}</p>
                       </div>
                     </div>
                     <div className={cn(
@@ -832,7 +835,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
               {!isMobile && (
                 <h1 className="text-lg md:text-2xl font-bold text-heading truncate">
                   <span className="text-transparent bg-clip-text bg-gradient-to-r to-emerald-600 from-sky-400">
-                    {otherUser?.displayName || 'Utilisateur'}
+                    {otherUser?.displayName || t('chat.unknownUser')}
                   </span>
                 </h1>
               )}
@@ -840,39 +843,39 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
                 {isUserBlocked && (
                   <div className="flex items-center gap-1 px-2 py-0.5 bg-red-500/10 border border-red-500/20 rounded-full shrink-0">
                     <Ban size={10} className="text-red-500" />
-                    <span className="text-[8px] font-black uppercase text-red-500 tracking-wider">Bloqué</span>
+                    <span className="text-[8px] font-black uppercase text-red-500 tracking-wider">{t('chat.blocked')}</span>
                   </div>
                 )}
                 {isBlockedByOther && (
                   <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-500/10 border border-gray-500/20 rounded-full shrink-0">
                     <Shield size={10} className="text-gray-500" />
-                    <span className="text-[8px] font-black uppercase text-gray-500 tracking-wider">Vous a bloqué</span>
+                    <span className="text-[8px] font-black uppercase text-gray-500 tracking-wider">{t('chat.blockedByUser')}</span>
                   </div>
                 )}
                 {isAccessRevoked && (
                   <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-500/10 border border-orange-500/20 rounded-full shrink-0">
                     <UserX size={10} className="text-orange-500" />
-                    <span className="text-[8px] font-black uppercase text-orange-500 tracking-wider">Accès Retiré</span>
+                    <span className="text-[8px] font-black uppercase text-orange-500 tracking-wider">{t('chat.accessRevoked')}</span>
                   </div>
                 )}
                 {otherUser && currentUser.mutedUsers?.includes(otherUser.uid) && (
                   <div className="flex items-center gap-1 px-2 py-0.5 bg-purple-500/10 border border-purple-500/20 rounded-full shrink-0">
                     <BellOff size={10} className="text-purple-500" />
-                    <span className="text-[8px] font-black uppercase text-purple-500 tracking-wider">Mute</span>
+                    <span className="text-[8px] font-black uppercase text-purple-500 tracking-wider">{t('chat.mute')}</span>
                   </div>
                 )}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
-                {otherUser?.isOnline && !isUserBlocked ? 'En ligne maintenant' : 'Hors ligne'}
+                {otherUser?.isOnline && !isUserBlocked ? t('chat.online') : t('chat.offline')}
               </p>
               {chat?.quoteNumber && (
                 <>
                   <span className="text-white/20 text-xs hidden md:inline">•</span>
                   <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-[#10b981] uppercase tracking-wider shrink-0">
                     <FileText size={10} className="text-[#10b981]" />
-                    <span>Estimation #{chat.quoteNumber}</span>
+                    <span>{t('chat.estimateNumber', { number: chat.quoteNumber })}</span>
                   </div>
                 </>
               )}
@@ -919,7 +922,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
               <button 
                 onClick={handleDeleteChat}
                 className="h-10 w-10 rounded-xl transition-all flex items-center justify-center text-gray-400 hover:bg-red-500/10 hover:text-red-500"
-                title="Supprimer la discussion"
+                title={t('chat.deleteChat')}
               >
                 <Trash2 size={20} />
               </button>
@@ -953,7 +956,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4">
               <MessageSquare size={40} />
             </div>
-            <p className="text-sm font-medium">Aucun message</p>
+            <p className="text-sm font-medium">{t('chat.noMessages')}</p>
           </div>
         )}
         
@@ -1049,13 +1052,13 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
               <Ban size={20} />
             </div>
             <p className="font-bold text-red-500 text-center leading-relaxed text-xs max-w-[240px]">
-              Vous avez bloqué ce contact. Débloquez-le pour lui envoyer un message.
+              {t('chat.youBlockedThisContact')}
             </p>
             <button 
               onClick={handleBlockUser}
               className="px-6 py-2 bg-red-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-red-600 transition-all shadow-lg active:scale-95"
             >
-              Débloquer
+              {t('chat.unblock')}
             </button>
           </div>
         ) : isBlockedByOther ? (
@@ -1067,7 +1070,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
               <Shield size={20} />
             </div>
             <p className="font-bold text-gray-500 text-center leading-relaxed text-xs max-w-[240px]">
-              Ce contact vous a bloqué. Vous ne pouvez pas le contacter.
+              {t('chat.thisContactBlockedYou')}
             </p>
           </div>
         ) : isAccessRevoked ? (
@@ -1079,7 +1082,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
               <UserX size={20} />
             </div>
             <p className="font-bold text-orange-500 text-center leading-relaxed text-xs max-w-[240px]">
-              Votre accès à cette discussion a été retiré.
+              {t('chat.yourAccessRevoked')}
             </p>
           </div>
         ) : (
@@ -1147,7 +1150,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
                   ) : (
                     <textarea
                       rows={1}
-                      placeholder="MESSAGE"
+                      placeholder={t('chat.messagePlaceholder')}
                       className={cn(
                         "flex-1 bg-transparent border-none outline-none text-[#a2ff00] resize-none max-h-32 no-scrollbar placeholder:text-[#a2ff00]/20 font-black uppercase tracking-[0.1em] font-mono",
                         isMobile ? "py-2 px-1 text-[13px]" : "py-2 px-1 text-[15px]"
@@ -1209,7 +1212,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
               {selectedMedia.type === 'image' ? (
                 <img 
                   src={selectedMedia.url} 
-                  alt="Full screen" 
+                  alt={t('chat.fullScreen')} 
                   className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
                   referrerPolicy="no-referrer"
                 />

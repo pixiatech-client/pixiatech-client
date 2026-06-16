@@ -27,6 +27,8 @@ import {
   FileText,
   Users,
   ExternalLink,
+  ShoppingBag,
+  Calendar,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -34,6 +36,7 @@ import { useI18n } from '@/lib/i18n';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useAdminT } from '@/hooks/useAdminT';
+import { cn } from '@/lib/utils';
 
 const formatDate = (date: Date | null | undefined, locale: string) => {
   if (!date) return '';
@@ -78,6 +81,7 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
   const { user, userProfile } = useUser();
   const firestore = useFirestore();
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [estimationMode, setEstimationMode] = useState<'vente' | 'location'>('vente');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
@@ -99,11 +103,13 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
   // Derive the quotes visible to this commercial
   const visibleQuotes = useMemo(() => {
     if (!allQuotesRaw) return [];
+    const txType = estimationMode === 'location' ? 'rental' : 'sale';
     return allQuotesRaw.filter((q: any) => {
       const status = q.status;
-      return ['pending', 'processed', 'sent', 'delivered', 'archived', 'returned', 'rented'].includes(status);
+      const typeMatch = !q.transactionType || q.transactionType === txType;
+      return typeMatch && ['pending', 'processed', 'sent', 'delivered', 'archived', 'returned', 'rented'].includes(status);
     });
-  }, [allQuotesRaw]);
+  }, [allQuotesRaw, estimationMode]);
 
   // Stats
   const stats = useMemo(() => {
@@ -210,12 +216,7 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
             >
               {isSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5 text-gray-400" />}
             </button>
-            <Link
-              href="/admin/notifications"
-              className={`p-2 rounded-xl border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'} hover:bg-theme-sidebar-active-bg transition-colors`}
-            >
-              <Bell className="w-5 h-5 text-gray-400" />
-            </Link>
+
           </div>
         </div>
 
@@ -322,7 +323,7 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
               <div className="flex-1">
                 <p className="text-sm font-bold text-gray-900 group-hover:text-white transition-colors">{action.label}</p>
               </div>
-              <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-[#95d230] transition-colors" />
+              <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-black transition-colors" />
             </Link>
           ))}
         </div>
@@ -335,13 +336,51 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
                 ? `${t('admin.searchResults') || 'Résultats de recherche'}`
                 : t('admin.recentEstimations')}
             </h3>
-            <Link
-              href="/admin/quote-requests"
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:border-blue-300 dark:hover:border-blue-700 group"
-            >
-              {t('admin.viewAll')}
-              <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
-            </Link>
+            <div className="flex items-center gap-3">
+              <div className="relative flex bg-white p-0.5 gap-1 rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
+                <button
+                  onClick={() => setEstimationMode('vente')}
+                  className={cn(
+                    "relative flex items-center justify-center gap-1.5 px-3 h-7 text-[9px] font-bold transition-all z-20 uppercase tracking-widest rounded-lg",
+                    estimationMode === 'vente' ? "text-white" : "text-zinc-400 hover:text-zinc-900"
+                  )}
+                >
+                  {estimationMode === 'vente' && (
+                    <motion.span
+                      layoutId="commercial-est-mode"
+                      className="absolute inset-0 z-10 bg-[#18181B] rounded-lg shadow-sm"
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
+                    />
+                  )}
+                  <ShoppingBag className={cn("w-3 h-3 z-20", estimationMode === 'vente' ? "text-[#A7E40C]" : "text-zinc-400")} />
+                  <span className="z-20">{t('admin.saleMode')}</span>
+                </button>
+                <button
+                  onClick={() => setEstimationMode('location')}
+                  className={cn(
+                    "relative flex items-center justify-center gap-1.5 px-3 h-7 text-[9px] font-bold transition-all z-20 uppercase tracking-widest rounded-lg",
+                    estimationMode === 'location' ? "text-white" : "text-zinc-400 hover:text-zinc-900"
+                  )}
+                >
+                  {estimationMode === 'location' && (
+                    <motion.span
+                      layoutId="commercial-est-mode"
+                      className="absolute inset-0 z-10 bg-[#18181B] rounded-lg shadow-sm"
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
+                    />
+                  )}
+                  <Calendar className={cn("w-3 h-3 z-20", estimationMode === 'location' ? "text-[#A7E40C]" : "text-zinc-400")} />
+                  <span className="z-20">{t('admin.rentalMode')}</span>
+                </button>
+              </div>
+              <Link
+                href="/admin/quote-requests"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl border transition-all duration-200 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:border-blue-300 dark:hover:border-blue-700 group"
+              >
+                {t('admin.viewAll')}
+                <ChevronRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+              </Link>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -401,9 +440,7 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
-                        <button className="p-2 rounded-lg text-gray-400 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-colors">
-                          <Download className="w-4 h-4" />
-                        </button>
+
                       </div>
                     </td>
                   </tr>
