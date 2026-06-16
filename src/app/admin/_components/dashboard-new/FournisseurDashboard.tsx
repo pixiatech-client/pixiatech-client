@@ -354,7 +354,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                     </td>
                   </tr>
                 ) : filteredEstimations.map((quote) => (
-                  <tr key={quote.id} className="group hover:bg-theme-sidebar-active-bg/10 transition-colors">
+                  <tr key={quote.id} className="group hover:bg-[#131E3F] transition-all duration-200">
                     <td className="py-4">
                       <span className="text-sm font-semibold group-hover:text-white transition-colors">{quote.id}</span>
                     </td>
@@ -382,7 +382,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                       <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/admin/quote-requests?id=${quote.raw?.id}`}
-                          className="p-2 rounded-lg text-gray-400 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-colors"
+                          className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
                         >
                           <Eye className="w-4 h-4" />
                         </Link>

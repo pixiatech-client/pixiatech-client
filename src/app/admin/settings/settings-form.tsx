@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings, TranslatedString, Theme } from '@/lib/types';
 import { updateSettings } from '../actions';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, Monitor, Smartphone, Orbit, Layers, ShieldCheck, LogOut } from 'lucide-react';
+import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, ShieldCheck, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -112,7 +112,6 @@ interface SettingsFormProps {
 export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
   const { toast } = useToast();
   const { t } = useAdminT();
-  const [configMode, setConfigMode] = useState<'sale' | 'rental'>('sale');
   
   const form = useForm<FormValues>({
     resolver: zodResolver(settingsSchema),
@@ -156,7 +155,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
     const sectionKey = (Object.entries(sectionLabels) as [string, string][]).find(([, label]) => label === sectionName)?.[0] || sectionName;
 
     const sectionFields: Record<string, string[]> = {
-      general: ['defaultWidth', 'defaultHeight', 'maxWidth', 'maxHeight', 'maxRentalWidth', 'maxRentalHeight', 'maxProductsPerQuote', 'zoomMaxDistance', 'zoomMinDistance', 'isEmailVerificationEnabled', 'isPriceHidden', 'isSingleSessionEnabled', 'isWizardBotEnabled', 'isGuidedConfigEnabled', 'estimationFlow'],
+      general: ['defaultWidth', 'defaultHeight', 'maxWidth', 'maxHeight', 'maxRentalWidth', 'maxRentalHeight', 'maxProductsPerQuote', 'isEmailVerificationEnabled', 'isPriceHidden', 'isSingleSessionEnabled', 'isWizardBotEnabled', 'isGuidedConfigEnabled', 'estimationFlow'],
       emergency: ['emergencyStopEnabled', 'emergencyReturnUrl', 'emergencyStopMessage'],
       images: ['previewScreenImageUrl', 'previewScreenVideoUrl'],
       content: ['congratulationsTitle', 'congratulationsMessage', 'deliveryTitle', 'deliveryMessage', 'installationTitle', 'installationMessage', 'disclaimerMessage', 'quoteFormNotesPlaceholder', 'isDeliveryStepEnabled', 'isInstallationStepEnabled'],
@@ -210,6 +209,18 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
     }
   };
   
+  const autoSaveField = async (fieldName: string, value: unknown) => {
+    const payload = { [fieldName]: value };
+    const result = await updateSettings(payload);
+    if (!result.success) {
+      toast({
+        variant: 'destructive',
+        title: t('Error'),
+        description: t('An error occurred while saving.'),
+      });
+    }
+  };
+
   const sectionLabels: Record<SettingsSection, string> = {
       general: t('General'),
       emergency: t('Emergency'),
@@ -226,167 +237,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       <CardContent className="space-y-6 p-4 md:p-8">
         {section === 'general' && (
             <div className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-100">
-                <div className="space-y-1">
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight">{t('Estimation Configuration')}</h3>
-                    <p className="text-sm font-medium text-slate-500">{t('Set the limits and default values for the configurator.')}</p>
-                </div>
-                <div className="flex items-center gap-3 bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
-                    <button 
-                        onClick={() => setConfigMode('sale')}
-                        className={cn(
-                            "px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
-                            configMode === 'sale' ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200" : "text-slate-400 hover:text-slate-600"
-                        )}
-                    >
-                        {t('Sale')}
-                    </button>
-                    <button 
-                        onClick={() => setConfigMode('rental')}
-                        className={cn(
-                            "px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
-                            configMode === 'rental' ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200" : "text-slate-400 hover:text-slate-600"
-                        )}
-                    >
-                        {t('Rental')}
-                    </button>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Écran Plat */}
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Monitor className="w-4 h-4 text-slate-600" />
-                  <span className="text-sm font-bold text-slate-900">{t('Flat Screen')}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-slate-600">{t('Max Width (m)')}</Label>
-                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
-                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.flatScreen.maxWidth' : 'estimationFlow.rental.flatScreen.maxWidth')}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-slate-600">{t('Max Height (m)')}</Label>
-                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
-                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.flatScreen.maxHeight' : 'estimationFlow.rental.flatScreen.maxHeight')}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Écran Incurvé */}
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-slate-600" />
-                  <span className="text-sm font-bold text-slate-900">{t('Curved Screen')}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-slate-600">{t('Max Width (m)')}</Label>
-                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
-                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.curvedScreen.maxWidth' : 'estimationFlow.rental.curvedScreen.maxWidth')}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-slate-600">{t('Max Height (m)')}</Label>
-                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
-                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.curvedScreen.maxHeight' : 'estimationFlow.rental.curvedScreen.maxHeight')}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-slate-600">{t('Curve min')}</Label>
-                    <Controller
-                      control={form.control}
-                      name={configMode === 'sale' ? 'estimationFlow.sale.curvedScreen.curveMin' : 'estimationFlow.rental.curvedScreen.curveMin'}
-                      render={({ field }) => (
-                        <Input type="number" step="1" className="h-9 rounded-xl bg-white border-slate-200"
-                          value={field.value}
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value);
-                            field.onChange(isNaN(val) ? 0 : -Math.abs(val));
-                          }}
-                          onBlur={field.onBlur}
-                          ref={field.ref}
-                        />
-                      )}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-slate-600">{t('Curve max')}</Label>
-                    <Input type="number" step="1" className="h-9 rounded-xl bg-white border-slate-200"
-                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.curvedScreen.curveMax' : 'estimationFlow.rental.curvedScreen.curveMax')}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Écran 360° */}
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Orbit className="w-4 h-4 text-slate-600" />
-                  <span className="text-sm font-bold text-slate-900">{t('360° Screen')}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-slate-600">{t('Max diameter (m)')}</Label>
-                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
-                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.screen360.maxDiameter' : 'estimationFlow.rental.screen360.maxDiameter')}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-slate-600">{t('Max Height (m)')}</Label>
-                    <Input type="number" min="1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
-                      {...form.register(configMode === 'sale' ? 'estimationFlow.sale.screen360.maxHeight' : 'estimationFlow.rental.screen360.maxHeight')}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {configMode === 'sale' && (
-                <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-amber-600" />
-                    <span className="text-sm font-bold text-slate-900">{t('Multiselection')}</span>
-                  </div>
-                  <p className="text-xs text-slate-500">{t('Maximum number of products a customer can select')}</p>
-                  <div className="space-y-1 w-32">
-                    <Label className="text-xs font-semibold text-slate-600">{t('Max products per quote')}</Label>
-                    <Input type="number" min="1" step="1" className="h-9 rounded-xl bg-white border-slate-200"
-                      {...form.register('estimationFlow.sale.maxProductsPerQuote')}
-                    />
-                  </div>
-                </div>
-              )}
-              <div className="rounded-2xl border border-blue-100 bg-blue-50/30 p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-4 h-4 text-blue-600 flex items-center justify-center font-bold text-sm">3D</span>
-                  <span className="text-sm font-bold text-slate-900">{t('Zoom 3D Simulator')}</span>
-                </div>
-                <p className="text-xs text-slate-500">{t('Set the zoom limits for the 3D preview.')}</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-slate-600">{t('Max zoom out')}</Label>
-                    <Input type="number" min="1" step="1" className="h-9 rounded-xl bg-white border-slate-200"
-                      {...form.register('zoomMaxDistance')}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-slate-600">{t('Max zoom in')}</Label>
-                    <Input type="number" min="0.1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
-                      {...form.register('zoomMinDistance')}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t">
+            <div className="space-y-4">
               <h4 className="font-medium">{t('Estimation Process')}</h4>
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className='flex items-center gap-2'>
@@ -403,7 +254,10 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                         <Switch
                             id="isEmailVerificationEnabled"
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                autoSaveField('isEmailVerificationEnabled', checked);
+                            }}
                         />
                     )}
                 />
@@ -423,7 +277,10 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                         <Switch
                             id="isPriceHidden"
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                autoSaveField('isPriceHidden', checked);
+                            }}
                         />
                     )}
                 />
@@ -446,7 +303,10 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                       <Switch
                         id="isSingleSessionEnabled"
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            autoSaveField('isSingleSessionEnabled', checked);
+                        }}
                         className="data-[state=checked]:bg-red-600"
                       />
                     )}
@@ -508,6 +368,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                               }
                             }
                             field.onChange(checked);
+                            autoSaveField('isWizardBotEnabled', checked);
                           }}
                         />
                       )}
@@ -545,6 +406,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                               }
                             }
                             field.onChange(checked);
+                            autoSaveField('isGuidedConfigEnabled', checked);
                           }}
                         />
                       )}
@@ -700,11 +562,13 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
             </div>
         )}
 
+        {section !== 'general' && (
         <div className="pt-8 border-t border-slate-100">
             <Button onClick={() => handleSave(sectionLabels[section])} className="w-full md:w-auto min-w-[200px] h-12 rounded-xl font-black bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200 transition-all flex items-center justify-center gap-2">
                 {t('Save settings')}
             </Button>
         </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -17,6 +17,8 @@ import { Monitor, Smartphone, Orbit, Layers } from 'lucide-react';
 import { useAdminT } from '@/hooks/useAdminT';
 
 const flowSchema = z.object({
+  zoomMaxDistance: z.coerce.number().min(1, 'Must be at least 1').optional(),
+  zoomMinDistance: z.coerce.number().min(0.1, 'Must be at least 0.1').optional(),
   estimationFlow: z.object({
     enableRentalPeriod: z.boolean(),
     enableDigitalSignature: z.boolean(),
@@ -49,8 +51,7 @@ interface FlowSettingsFormProps {
 export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
   const { toast } = useToast();
   const { t } = useAdminT();
-  const [contractMode, setContractMode] = useState<'vente' | 'location'>('location');
-  const [screenMode, setScreenMode] = useState<'vente' | 'location'>('vente');
+  const [mode, setMode] = useState<'vente' | 'location'>('vente');
 
   const defaultSaleContract = [
     'CONDITIONS GÉNÉRALES DE VENTE, DE SERVICES ET DE LOCATION (CGV/CGL)',
@@ -233,7 +234,11 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(flowSchema),
-    defaultValues: { estimationFlow: flow },
+    defaultValues: {
+      zoomMaxDistance: initialSettings.zoomMaxDistance ?? 50,
+      zoomMinDistance: initialSettings.zoomMinDistance ?? 0.5,
+      estimationFlow: flow,
+    },
   });
 
   const taxEnabled = form.watch('estimationFlow.taxEnabled');
@@ -243,7 +248,12 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
 
   const saveAll = async () => {
     const values = form.getValues();
-    const payload = { ...initialSettings, ...values };
+    const payload = {
+      ...initialSettings,
+      zoomMaxDistance: values.zoomMaxDistance,
+      zoomMinDistance: values.zoomMinDistance,
+      estimationFlow: values.estimationFlow,
+    };
     const result = await updateSettings(payload);
     if (result.success) {
       toast({ title: t('Settings saved'), description: t('Tous les paramètres du parcours client ont été mis à jour.'), variant: 'success' });
@@ -252,12 +262,12 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     }
   };
 
-  const contractValue = contractMode === 'vente'
+  const contractValue = mode === 'vente'
     ? (saleContract || defaultSaleContract)
     : (rentalContract || defaultRentalContract);
 
   const setContractValue = (val: string) => {
-    if (contractMode === 'vente') {
+    if (mode === 'vente') {
       form.setValue('estimationFlow.saleContractTemplate', val);
     } else {
       form.setValue('estimationFlow.rentalContractTemplate', val);
@@ -265,80 +275,210 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-black text-slate-900 tracking-tight">{t('Parcours client')}</h3>
-          <p className="text-sm font-medium text-slate-500">{t("Contrôle des options du parcours d'estimation, signature, TVA et contrats.")}</p>
+          <h3 className="text-xl font-black text-slate-900 tracking-tight">{t('Parcours client')}</h3>
+          <p className="text-sm text-slate-500 mt-0.5">{t("Contrôle des options du parcours d'estimation, signature, TVA et contrats.")}</p>
         </div>
-        <Button onClick={saveAll} className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-lg cursor-pointer">
+        <Button onClick={saveAll} className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-lg cursor-pointer">
           {t('Save')}
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-
-        {/* LEFT COLUMN: Options + Tax config */}
-        <div className="lg:col-span-2 space-y-6">
-
-          {/* Options parcours */}
-          <Card className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <CardContent className="space-y-6 pt-6">
-              <div className="space-y-1 pb-4 border-b border-slate-100">
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">{t('Options parcours')}</h4>
-                <p className="text-xs text-slate-500">{t('Activer ou désactiver les fonctionnalités du parcours client.')}</p>
+      {/* CONFIGURATION ÉCRANS */}
+      <Card className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <CardContent className="p-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center text-violet-700 font-bold text-xs">🖵</div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">{t('Configuration écrans')}</h4>
+                <p className="text-[10px] text-slate-400">{t("Dimensions et limites par type d'écran")}</p>
               </div>
+            </div>
+            <div className="flex items-center gap-1.5 bg-slate-100 rounded-xl p-1">
+              <button type="button" onClick={() => setMode('vente')}
+                className={`px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                  mode === 'vente' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}>{t('Sale')}</button>
+              <button type="button" onClick={() => setMode('location')}
+                className={`px-4 py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
+                  mode === 'location' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}>{t('Rental')}</button>
+            </div>
+          </div>
 
-              <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/30">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Flat Screen */}
+            <div className="rounded-xl border border-slate-100 bg-slate-50/40 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Monitor className="w-4 h-4 text-slate-500" />
+                <span className="text-xs font-bold text-slate-900">{t('Flat Screen')}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-bold text-slate-900">{t('Période de location')}</Label>
-                  <p className="text-xs text-slate-500">{t('Afficher les dates et horaires de location')}</p>
+                  <Label className="text-[10px] font-semibold text-slate-500">{t('Width (m)')}</Label>
+                  <Input type="number" min="1" step="0.1"
+                    value={form.watch(mode === 'vente' ? 'estimationFlow.sale.flatScreen.maxWidth' : 'estimationFlow.rental.flatScreen.maxWidth')}
+                    onChange={(e) => form.setValue(mode === 'vente' ? 'estimationFlow.sale.flatScreen.maxWidth' : 'estimationFlow.rental.flatScreen.maxWidth', parseFloat(e.target.value) || 1)}
+                    className="h-8 rounded-lg bg-white border-slate-200 text-xs" />
                 </div>
-                <Switch
-                  checked={form.watch('estimationFlow.enableRentalPeriod')}
-                  onCheckedChange={(v) => form.setValue('estimationFlow.enableRentalPeriod', v)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/30">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-bold text-slate-900">{t('Signature numérique')}</Label>
-                  <p className="text-xs text-slate-500">{t('Activer la signature électronique des contrats')}</p>
+                  <Label className="text-[10px] font-semibold text-slate-500">{t('Height (m)')}</Label>
+                  <Input type="number" min="1" step="0.1"
+                    value={form.watch(mode === 'vente' ? 'estimationFlow.sale.flatScreen.maxHeight' : 'estimationFlow.rental.flatScreen.maxHeight')}
+                    onChange={(e) => form.setValue(mode === 'vente' ? 'estimationFlow.sale.flatScreen.maxHeight' : 'estimationFlow.rental.flatScreen.maxHeight', parseFloat(e.target.value) || 1)}
+                    className="h-8 rounded-lg bg-white border-slate-200 text-xs" />
                 </div>
-                <Switch
-                  checked={form.watch('estimationFlow.enableDigitalSignature')}
-                  onCheckedChange={(v) => form.setValue('estimationFlow.enableDigitalSignature', v)}
-                />
               </div>
+            </div>
 
-              <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/30">
+            {/* Curved Screen */}
+            <div className="rounded-xl border border-slate-100 bg-slate-50/40 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-slate-500" />
+                <span className="text-xs font-bold text-slate-900">{t('Curved Screen')}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-0.5">
-                  <Label className="text-sm font-bold text-slate-900">{t('Édition des contrats')}</Label>
-                  <p className="text-xs text-slate-500">{t('Permettre la modification des templates de contrats')}</p>
+                  <Label className="text-[10px] font-semibold text-slate-500">{t('Width (m)')}</Label>
+                  <Input type="number" min="1" step="0.1"
+                    value={form.watch(mode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxWidth' : 'estimationFlow.rental.curvedScreen.maxWidth')}
+                    onChange={(e) => form.setValue(mode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxWidth' : 'estimationFlow.rental.curvedScreen.maxWidth', parseFloat(e.target.value) || 1)}
+                    className="h-8 rounded-lg bg-white border-slate-200 text-xs" />
                 </div>
-                <Switch
-                  checked={form.watch('estimationFlow.enableContractEditing')}
-                  onCheckedChange={(v) => form.setValue('estimationFlow.enableContractEditing', v)}
-                />
+                <div className="space-y-0.5">
+                  <Label className="text-[10px] font-semibold text-slate-500">{t('Height (m)')}</Label>
+                  <Input type="number" min="1" step="0.1"
+                    value={form.watch(mode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxHeight' : 'estimationFlow.rental.curvedScreen.maxHeight')}
+                    onChange={(e) => form.setValue(mode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxHeight' : 'estimationFlow.rental.curvedScreen.maxHeight', parseFloat(e.target.value) || 1)}
+                    className="h-8 rounded-lg bg-white border-slate-200 text-xs" />
+                </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Configuration TVA */}
-          <Card className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <CardContent className="space-y-6 pt-6">
-              <div className="space-y-1 pb-4 border-b border-slate-100">
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">{t('Configuration TVA')}</h4>
-                <p className="text-xs text-slate-500">{t('Paramètres communs pour la vente et location')}</p>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
+                <div className="space-y-0.5">
+                  <Label className="text-[10px] font-semibold text-slate-500">{t('Curve min')}</Label>
+                  <Input type="number" step="1"
+                    value={form.watch(mode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMin' : 'estimationFlow.rental.curvedScreen.curveMin')}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      form.setValue(mode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMin' : 'estimationFlow.rental.curvedScreen.curveMin', isNaN(val) ? 0 : -Math.abs(val));
+                    }}
+                    className="h-8 rounded-lg bg-white border-slate-200 text-xs" />
+                </div>
+                <div className="space-y-0.5">
+                  <Label className="text-[10px] font-semibold text-slate-500">{t('Curve max')}</Label>
+                  <Input type="number" step="1"
+                    value={form.watch(mode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMax' : 'estimationFlow.rental.curvedScreen.curveMax')}
+                    onChange={(e) => form.setValue(mode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMax' : 'estimationFlow.rental.curvedScreen.curveMax', parseFloat(e.target.value) || 0)}
+                    className="h-8 rounded-lg bg-white border-slate-200 text-xs" />
+                </div>
               </div>
+            </div>
 
-              <div className="space-y-1.5">
+            {/* 360° Screen */}
+            <div className="rounded-xl border border-slate-100 bg-slate-50/40 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Orbit className="w-4 h-4 text-slate-500" />
+                <span className="text-xs font-bold text-slate-900">{t('360° Screen')}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-0.5">
+                  <Label className="text-[10px] font-semibold text-slate-500">{t('Diameter (m)')}</Label>
+                  <Input type="number" min="1" step="0.1"
+                    value={form.watch(mode === 'vente' ? 'estimationFlow.sale.screen360.maxDiameter' : 'estimationFlow.rental.screen360.maxDiameter')}
+                    onChange={(e) => form.setValue(mode === 'vente' ? 'estimationFlow.sale.screen360.maxDiameter' : 'estimationFlow.rental.screen360.maxDiameter', parseFloat(e.target.value) || 1)}
+                    className="h-8 rounded-lg bg-white border-slate-200 text-xs" />
+                </div>
+                <div className="space-y-0.5">
+                  <Label className="text-[10px] font-semibold text-slate-500">{t('Height (m)')}</Label>
+                  <Input type="number" min="1" step="0.1"
+                    value={form.watch(mode === 'vente' ? 'estimationFlow.sale.screen360.maxHeight' : 'estimationFlow.rental.screen360.maxHeight')}
+                    onChange={(e) => form.setValue(mode === 'vente' ? 'estimationFlow.sale.screen360.maxHeight' : 'estimationFlow.rental.screen360.maxHeight', parseFloat(e.target.value) || 1)}
+                    className="h-8 rounded-lg bg-white border-slate-200 text-xs" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Multi-selection */}
+          {mode === 'vente' && (
+            <div className="flex items-center justify-between p-4 rounded-xl border border-amber-100 bg-amber-50/30">
+              <div className="flex items-center gap-3">
+                <Layers className="w-5 h-5 text-amber-600" />
+                <div>
+                  <span className="text-xs font-bold text-slate-900">{t('Multi-selection')}</span>
+                  <p className="text-[10px] text-slate-500">{t("Nombre maximum de produits qu'un client peut sélectionner")}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-[10px] font-semibold text-slate-600 whitespace-nowrap">{t('Max produits')}</Label>
+                <Input type="number" min="1" step="1"
+                  value={form.watch('estimationFlow.sale.maxProductsPerQuote')}
+                  onChange={(e) => form.setValue('estimationFlow.sale.maxProductsPerQuote', parseInt(e.target.value) || 3)}
+                  className="h-8 w-20 rounded-lg bg-white border-slate-200 text-xs text-center" />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* TOP ROW: Options parcours / TVA / Zoom 3D */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Options parcours */}
+        <Card className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+              <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">⚙</div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">{t('Options parcours')}</h4>
+                <p className="text-[10px] text-slate-400">{t('Activer ou désactiver')}</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/40">
+                <div className="space-y-0.5 pr-2">
+                  <Label className="text-xs font-bold text-slate-900">{t('Période de location')}</Label>
+                  <p className="text-[10px] text-slate-400 leading-tight">{t('Afficher les dates et horaires de location')}</p>
+                </div>
+                <Switch checked={form.watch('estimationFlow.enableRentalPeriod')} onCheckedChange={(v) => form.setValue('estimationFlow.enableRentalPeriod', v)} />
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/40">
+                <div className="space-y-0.5 pr-2">
+                  <Label className="text-xs font-bold text-slate-900">{t('Signature numérique')}</Label>
+                  <p className="text-[10px] text-slate-400 leading-tight">{t('Activer la signature électronique des contrats')}</p>
+                </div>
+                <Switch checked={form.watch('estimationFlow.enableDigitalSignature')} onCheckedChange={(v) => form.setValue('estimationFlow.enableDigitalSignature', v)} />
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/40">
+                <div className="space-y-0.5 pr-2">
+                  <Label className="text-xs font-bold text-slate-900">{t('Édition des contrats')}</Label>
+                  <p className="text-[10px] text-slate-400 leading-tight">{t('Permettre la modification des templates')}</p>
+                </div>
+                <Switch checked={form.watch('estimationFlow.enableContractEditing')} onCheckedChange={(v) => form.setValue('estimationFlow.enableContractEditing', v)} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* TVA */}
+        <Card className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+              <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">%</div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">{t('TVA')}</h4>
+                <p className="text-[10px] text-slate-400">{t('Mode et taux')}</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-1">
                 <Label className="text-xs font-semibold text-slate-700">{t("Mode d'affichage")}</Label>
-                <Select
-                  value={form.watch('estimationFlow.taxMode')}
-                  onValueChange={(v) => form.setValue('estimationFlow.taxMode', v as 'ht' | 'ttc')}
-                >
-                  <SelectTrigger className="w-full">
+                <Select value={form.watch('estimationFlow.taxMode')} onValueChange={(v) => form.setValue('estimationFlow.taxMode', v as 'ht' | 'ttc')}>
+                  <SelectTrigger className="h-9 rounded-xl bg-white border-slate-200 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -347,261 +487,110 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/30">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-bold text-slate-900">{t('Activer TVA')}</Label>
-                  <p className="text-xs text-slate-500">{t('Appliquer un taux de TVA sur les montants')}</p>
-                </div>
-                <Switch
-                  checked={form.watch('estimationFlow.taxEnabled')}
-                  onCheckedChange={(v) => form.setValue('estimationFlow.taxEnabled', v)}
-                />
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/40">
+                <Label className="text-xs font-bold text-slate-900">{t('Activer TVA')}</Label>
+                <Switch checked={form.watch('estimationFlow.taxEnabled')} onCheckedChange={(v) => form.setValue('estimationFlow.taxEnabled', v)} />
               </div>
-
-              {taxEnabled && (
-                <div className="space-y-1.5">
+              {taxEnabled ? (
+                <div className="space-y-1">
                   <Label className="text-xs font-semibold text-slate-700">{t('Taux TVA (%)')}</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
+                  <Input type="number" min="0" max="100" step="0.1"
                     value={form.watch('estimationFlow.taxRate')}
                     onChange={(e) => form.setValue('estimationFlow.taxRate', parseFloat(e.target.value) || 0)}
-                    className="w-full"
-                  />
+                    className="h-9 rounded-xl bg-white border-slate-200" />
                 </div>
+              ) : (
+                <p className="text-[10px] text-slate-400 italic">{t('100% HT — Aucune TVA appliquée')}</p>
               )}
+            </div>
+          </CardContent>
+        </Card>
 
-              {!taxEnabled && (
-                <p className="text-xs text-slate-400 italic">{t('100% HT — Aucune TVA appliquée')}</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Configuration écrans */}
-          <Card className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <CardContent className="space-y-5 pt-6">
-              <div className="space-y-1 pb-4 border-b border-slate-100">
-                <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">{t('Configuration écrans')}</h4>
-                <p className="text-xs text-slate-500">{t("Dimensions et limites par type d'écran")}</p>
+        {/* Zoom 3D */}
+        <Card className="rounded-xl border border-blue-100 bg-white shadow-sm">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-blue-50">
+              <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">3D</div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">{t('Zoom 3D Simulator')}</h4>
+                <p className="text-[10px] text-slate-400">{t('Limites de zoom')}</p>
               </div>
-
-              <div className="flex items-center gap-2 bg-slate-100 rounded-xl p-1 w-fit">
-                <button type="button" onClick={() => setScreenMode('vente')}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    screenMode === 'vente' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >{t('Sale')}</button>
-                <button type="button" onClick={() => setScreenMode('location')}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                    screenMode === 'location' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >{t('Rental')}</button>
+            </div>
+            <p className="text-[10px] text-slate-500">{t('Set the zoom limits for the 3D preview.')}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-slate-600">{t('Max zoom out')}</Label>
+                <Input type="number" min="1" step="1" className="h-9 rounded-xl bg-white border-slate-200"
+                  {...form.register('zoomMaxDistance')} />
               </div>
-
-              <div className="space-y-3">
-                {/* Écran Plat */}
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Monitor className="w-5 h-5 text-slate-600" />
-                    <span className="text-sm font-bold text-slate-900">{t('Flat Screen')}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">{t('Max width (m)')}</Label>
-                      <Input type="number" min="1" step="0.1"
-                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxWidth' : 'estimationFlow.rental.flatScreen.maxWidth')}
-                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxWidth' : 'estimationFlow.rental.flatScreen.maxWidth', parseFloat(e.target.value) || 1)}
-                        className="h-9 rounded-xl bg-white border-slate-200" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">{t('Max height (m)')}</Label>
-                      <Input type="number" min="1" step="0.1"
-                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxHeight' : 'estimationFlow.rental.flatScreen.maxHeight')}
-                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.flatScreen.maxHeight' : 'estimationFlow.rental.flatScreen.maxHeight', parseFloat(e.target.value) || 1)}
-                        className="h-9 rounded-xl bg-white border-slate-200" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Écran Incurvé */}
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Smartphone className="w-5 h-5 text-slate-600" />
-                    <span className="text-sm font-bold text-slate-900">{t('Curved Screen')}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">{t('Max width (m)')}</Label>
-                      <Input type="number" min="1" step="0.1"
-                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxWidth' : 'estimationFlow.rental.curvedScreen.maxWidth')}
-                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxWidth' : 'estimationFlow.rental.curvedScreen.maxWidth', parseFloat(e.target.value) || 1)}
-                        className="h-9 rounded-xl bg-white border-slate-200" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">{t('Max height (m)')}</Label>
-                      <Input type="number" min="1" step="0.1"
-                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxHeight' : 'estimationFlow.rental.curvedScreen.maxHeight')}
-                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.maxHeight' : 'estimationFlow.rental.curvedScreen.maxHeight', parseFloat(e.target.value) || 1)}
-                        className="h-9 rounded-xl bg-white border-slate-200" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-200">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">{t('Min curve')}</Label>
-                      <Input type="number" step="1"
-                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMin' : 'estimationFlow.rental.curvedScreen.curveMin')}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value);
-                          form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMin' : 'estimationFlow.rental.curvedScreen.curveMin', isNaN(val) ? 0 : -Math.abs(val));
-                        }}
-                        className="h-9 rounded-xl bg-white border-slate-200" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">{t('Max curve')}</Label>
-                      <Input type="number" step="1"
-                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMax' : 'estimationFlow.rental.curvedScreen.curveMax')}
-                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.curvedScreen.curveMax' : 'estimationFlow.rental.curvedScreen.curveMax', parseFloat(e.target.value) || 0)}
-                        className="h-9 rounded-xl bg-white border-slate-200" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Écran 360° */}
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Orbit className="w-5 h-5 text-slate-600" />
-                    <span className="text-sm font-bold text-slate-900">{t('360° Screen')}</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">{t('Max diameter (m)')}</Label>
-                      <Input type="number" min="1" step="0.1"
-                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxDiameter' : 'estimationFlow.rental.screen360.maxDiameter')}
-                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxDiameter' : 'estimationFlow.rental.screen360.maxDiameter', parseFloat(e.target.value) || 1)}
-                        className="h-9 rounded-xl bg-white border-slate-200" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">{t('Max height (m)')}</Label>
-                      <Input type="number" min="1" step="0.1"
-                        value={form.watch(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxHeight' : 'estimationFlow.rental.screen360.maxHeight')}
-                        onChange={(e) => form.setValue(screenMode === 'vente' ? 'estimationFlow.sale.screen360.maxHeight' : 'estimationFlow.rental.screen360.maxHeight', parseFloat(e.target.value) || 1)}
-                        className="h-9 rounded-xl bg-white border-slate-200" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Multisélection - Vente uniquement */}
-                {screenMode === 'vente' && (
-                  <div className="rounded-2xl border border-amber-100 bg-amber-50/30 p-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <Layers className="w-5 h-5 text-amber-600" />
-                      <span className="text-sm font-bold text-slate-900">{t('Multi-selection')}</span>
-                    </div>
-                    <p className="text-xs text-slate-500">{t("Nombre maximum de produits qu'un client peut sélectionner")}</p>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-600">{t('Maximum products per estimate')}</Label>
-                      <Input type="number" min="1" step="1"
-                        value={form.watch('estimationFlow.sale.maxProductsPerQuote')}
-                        onChange={(e) => form.setValue('estimationFlow.sale.maxProductsPerQuote', parseInt(e.target.value) || 3)}
-                        className="h-9 rounded-xl bg-white border-slate-200 w-32" />
-                    </div>
-                  </div>
-                )}
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-slate-600">{t('Max zoom in')}</Label>
+                <Input type="number" min="0.1" step="0.1" className="h-9 rounded-xl bg-white border-slate-200"
+                  {...form.register('zoomMinDistance')} />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-        </div>
+      </div>
 
-        {/* RIGHT COLUMN: Contract template (preview + editor merged) */}
-        <div className="lg:col-span-3 space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider">{t('Template de contrat')}</h4>
-            <div className="flex items-center gap-2 bg-slate-100 rounded-xl p-1">
-              <button
-                type="button"
-                onClick={() => setContractMode('vente')}
-                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  contractMode === 'vente' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                {t('Sale')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setContractMode('location')}
-                className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  contractMode === 'location' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                {t('Rental')}
-              </button>
+      {/* TEMPLATE DE CONTRAT */}
+      <Card className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-xs">📄</div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">{t('Template de contrat')}</h4>
+                <p className="text-[10px] text-slate-400">{t('CGV/CGL — vente et location')}</p>
+              </div>
+            </div>
+            <div className="px-3 py-1.5 bg-slate-100 rounded-lg text-[10px] font-bold text-slate-600">
+              {mode === 'vente' ? t('Sale') : t('Rental')}
             </div>
           </div>
 
-          <Card className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <CardContent className="p-5">
-              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <span className="w-1.5 h-3.5 bg-blue-600 rounded-full"></span>
-                {t('Contrat')} {contractMode === 'vente' ? t('Sale') : t('Rental')}
-              </div>
-
-              <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 max-h-[800px] overflow-y-auto custom-scrollbar">
-                <div className="bg-white border border-zinc-200/80 p-5 rounded-lg shadow-sm text-xs text-zinc-700 leading-relaxed font-sans">
-                  <div className="text-center mb-4 border-b border-zinc-100 pb-3">
-                    <h4 className="text-sm font-bold text-zinc-900 uppercase tracking-tight">
-                      CONDITIONS GÉNÉRALES DE VENTE, DE SERVICES ET DE LOCATION (CGV/CGL)
-                    </h4>
+          <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 max-h-[600px] overflow-y-auto custom-scrollbar">
+            {canEditContract ? (
+              <textarea
+                className="w-full h-[400px] rounded-lg border border-slate-200 p-4 text-xs font-mono focus:outline-none focus:border-blue-500 resize-y bg-white"
+                value={contractValue}
+                onChange={(e) => setContractValue(e.target.value)}
+                placeholder={t('Laissez vide pour utiliser le contrat par défaut')}
+              />
+            ) : (
+              <div className="bg-white border border-zinc-200/80 p-5 rounded-lg shadow-sm text-xs text-zinc-700 leading-relaxed font-sans">
+                {contractValue ? (
+                  <div className="whitespace-pre-wrap font-mono text-[10px] text-zinc-500">{contractValue}</div>
+                ) : (
+                  <div className="space-y-3">
+                    {mode === 'vente' ? (
+                      <>
+                        <p className="font-semibold text-zinc-800">1. OBJET</p>
+                        <p>Les présentes conditions générales de vente (CGV) régissent la vente de produits et services d&apos;affichage LED par PIXIATECH.</p>
+                        <p className="font-semibold text-zinc-800 mt-3">2. PRIX ET PAIEMENT</p>
+                        <p>Les prix sont indiqués en euros. Le paiement est dû selon les modalités prévues à l'estimation acceptée.</p>
+                        <p className="font-semibold text-zinc-800 mt-3">3. LIVRAISON</p>
+                        <p>La livraison est effectuée à l&apos;adresse indiquée par le client, selon les délais convenus.</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-semibold text-zinc-800">1. OBJET</p>
+                        <p>Les présentes conditions générales de location (CGL) régissent la location de matériel d&apos;affichage LED par PIXIATECH.</p>
+                        <p className="font-semibold text-zinc-800 mt-3">2. DURÉE ET PÉRIODE</p>
+                        <p>La location est consentie pour la période indiquée dans le contrat, avec possibilité de prolongation.</p>
+                        <p className="font-semibold text-zinc-800 mt-3">3. CAUTION</p>
+                        <p>Un dépôt de garantie est requis pour couvrir d&apos;éventuels dommages au matériel loué.</p>
+                      </>
+                    )}
                   </div>
-
-                  {canEditContract ? (
-                    <textarea
-                      className="w-full h-[500px] rounded-lg border border-slate-200 p-3 text-xs font-mono focus:outline-none focus:border-blue-500 resize-y bg-white"
-                      value={contractValue}
-                      onChange={(e) => setContractValue(e.target.value)}
-                      placeholder={t('Laissez vide pour utiliser le contrat par défaut')}
-                    />
-                  ) : (
-                    <div className="text-[11px] text-zinc-600 space-y-3">
-                      {contractValue ? (
-                        <div className="whitespace-pre-wrap font-mono text-[10px] text-zinc-500 bg-zinc-50 p-3 rounded-lg border border-zinc-100">
-                          {contractValue}
-                        </div>
-                      ) : (
-                        <>
-                          {contractMode === 'vente' ? (
-                            <>
-                              <p className="font-semibold text-zinc-800">1. OBJET</p>
-                              <p>Les présentes conditions générales de vente (CGV) régissent la vente de produits et services d&apos;affichage LED par PIXIATECH.</p>
-                              <p className="font-semibold text-zinc-800 mt-3">2. PRIX ET PAIEMENT</p>
-                              <p>Les prix sont indiqués en euros. Le paiement est dû selon les modalités prévues à l'estimation acceptée.</p>
-                              <p className="font-semibold text-zinc-800 mt-3">3. LIVRAISON</p>
-                              <p>La livraison est effectuée à l&apos;adresse indiquée par le client, selon les délais convenus.</p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="font-semibold text-zinc-800">1. OBJET</p>
-                              <p>Les présentes conditions générales de location (CGL) régissent la location de matériel d&apos;affichage LED par PIXIATECH.</p>
-                              <p className="font-semibold text-zinc-800 mt-3">2. DURÉE ET PÉRIODE</p>
-                              <p>La location est consentie pour la période indiquée dans le contrat, avec possibilité de prolongation.</p>
-                              <p className="font-semibold text-zinc-800 mt-3">3. CAUTION</p>
-                              <p>Un dépôt de garantie est requis pour couvrir d&apos;éventuels dommages au matériel loué.</p>
-                            </>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-      </div>
     </div>
   );
 }

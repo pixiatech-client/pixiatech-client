@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { redirect } from 'next/navigation';
 import { QuoteBuilder } from '@/components/quote-builder';
 import { EmergencyStopPage } from '@/components/emergency-stop-page';
+
 import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLocations, getWizardSettings } from '@/app/admin/actions';
 import type { Settings, DeliverySettings, LaborSettings, Product, Locations, WizardSettings } from '@/lib/types';
 
