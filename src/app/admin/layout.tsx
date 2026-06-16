@@ -1,17 +1,19 @@
 
 'use client';
 
-import { useUser } from '@/firebase';
+import { useUser, useFirebase } from '@/firebase';
 import { AdminLayoutContent } from './_components/admin-layout-content';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
 import { getSessionUid, clearSession, verifySession } from './actions';
 import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { signOut, getAuth } from 'firebase/auth';
 import { SessionKickedModal } from '@/components/ui/SessionKickedModal';
+import { NetworkErrorModal } from '@/components/ui/NetworkErrorModal';
 
 function AdminContent({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
+  const { userError } = useFirebase();
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggingOut, startLogout] = useTransition();
@@ -20,9 +22,52 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [sessionKicked, setSessionKicked] = useState(false);
   const [sessionCreatedAt, setSessionCreatedAt] = useState<number | null>(null);
+  const [isNetworkError, setIsNetworkError] = useState(false);
   const mountedAt = useRef(Date.now());
 
   const isAuthPage = pathname.startsWith('/admin/login') || pathname.startsWith('/admin/register');
+
+  useEffect(() => {
+    const handleOffline = () => setIsNetworkError(true);
+    const handleOnline = () => setIsNetworkError(false);
+
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setIsNetworkError(true);
+    }
+
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (userError && 'code' in userError && (userError as any).code === 'auth/network-request-failed') {
+      setIsNetworkError(true);
+    }
+  }, [userError]);
+
+  // Filter out Firebase SDK console noise (errors already handled gracefully)
+  useEffect(() => {
+    const origError = console.error;
+    console.error = (...args: any[]) => {
+      const msg = args.join(' ');
+      if (
+        (msg.includes('Firestore') && msg.includes('permission-denied')) ||
+        msg.includes('INTERNAL ASSERTION FAILED')
+      ) return;
+      origError.apply(console, args);
+    };
+    return () => { console.error = origError; };
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    setIsNetworkError(false);
+    window.location.reload();
+  }, []);
 
   // Fetch session cookie UID on mount (server-side verification)
   useEffect(() => {
@@ -64,9 +109,9 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     };
     document.addEventListener('visibilitychange', onVisibility);
 
-    // Immediate check + periodic poll every 3s
+    // Immediate check + periodic poll every 60s
     const timeout = setTimeout(check, 2000);
-    pollingRef.current = setInterval(check, 3000);
+    pollingRef.current = setInterval(check, 60000);
 
     return () => {
       clearTimeout(timeout);
@@ -139,6 +184,10 @@ function AdminContent({ children }: { children: React.ReactNode }) {
         open={sessionKicked}
         sessionCreatedAt={sessionCreatedAt}
         onConfirm={handleSessionKickedConfirm}
+      />
+      <NetworkErrorModal
+        open={isNetworkError && !sessionKicked}
+        onRetry={handleRetry}
       />
     </>
   );

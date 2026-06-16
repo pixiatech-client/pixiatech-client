@@ -98,8 +98,9 @@ function quoteToEstimation(q: QuoteRequest): Estimation {
      totalPurchase: (q as any).totalPurchase || 0,
      totalClient: (q as any).totalClient || q.totalQuote || 0,
      reference: idShort,
-     trackingNumber: (q as any).trackingNumber,
-     supplierId: (q as any).supplierId,
+      trackingNumber: (q as any).trackingNumber,
+      trackingInfo: (q as any).trackingInfo,
+      supplierId: (q as any).supplierId,
      isReturned: (q as any).isReturned || false,
      returnReason: (q as any).returnReason,
      supplierNotes: (q as any).supplierNotes,
@@ -779,7 +780,7 @@ const filteredEstimations = useMemo(() => {
     }, [estimations, fullQuotes]);
 
     const handleUpdateTracking = useCallback((id: string, info: TrackingInfo) => {
-      updateQuoteStatus(id, { trackingNumber: info.number }).then(() => {
+      updateQuoteStatus(id, { trackingNumber: info.number, trackingInfo: info }).then(() => {
         setEstimations(prev => prev.map(est =>
           est.id === id ? { ...est, trackingInfo: info, trackingNumber: info.number } : est
         ));

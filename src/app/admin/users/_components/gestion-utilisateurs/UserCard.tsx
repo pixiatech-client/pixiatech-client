@@ -7,6 +7,7 @@ import { User, UserStatus } from './types';
 import { RoleBadge } from './RoleBadge';
 import { StatusBadge } from './StatusBadge';
 import { useAdminT } from '@/hooks/useAdminT';
+import { getAvatarUrl } from '@/lib/avatar';
 
 interface UserCardProps {
   user: User;
@@ -135,18 +136,12 @@ export const UserCard: React.FC<UserCardProps> = ({
       {/* Avatar - Overlapping */}
       <div className="absolute top-[100px] left-8">
         <div className="relative">
-          {user.avatar ? (
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="w-16 h-16 rounded-full border-4 border-white group-hover:border-[#141414] transition-colors object-cover shadow-lg"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-full border-4 border-white group-hover:border-[#141414] transition-colors bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
-              {user.name?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-          )}
+          <img
+            src={user.avatar || getAvatarUrl('', user.role, user.name)}
+            alt={user.name}
+            className="w-16 h-16 rounded-full border-4 border-white group-hover:border-[#141414] transition-colors object-cover shadow-lg"
+            referrerPolicy="no-referrer"
+          />
           <div className="absolute bottom-0 right-0 w-4 h-4 bg-emerald-500 border-2 border-white group-hover:border-[#141414] rounded-full transition-colors" />
         </div>
       </div>

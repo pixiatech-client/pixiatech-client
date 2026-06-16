@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NotificationFirestore } from '@/lib/types';
 import { useAdminT } from '@/hooks/useAdminT';
+import { useI18n } from '@/lib/i18n';
 
 interface Notification {
   id: string;
@@ -27,6 +28,7 @@ interface NotificationBellProps {
 
 export function NotificationBell({ isDark = false, userRole }: NotificationBellProps) {
   const { t } = useAdminT();
+  const { locale } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -62,7 +64,7 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
 
     return sorted.map((n) => {
       const createdAt = n.createdAt?.toDate ? n.createdAt.toDate() : null;
-      const timeAgo = createdAt ? getRelativeTime(createdAt, t) : '';
+      const timeAgo = createdAt ? getRelativeTime(createdAt, t, locale) : '';
       return {
         id: n.id,
         type: n.type,
@@ -162,12 +164,12 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
-                          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{notif.title}</p>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{t(notif.title)}</p>
                           {!notif.read && (
                             <div className="w-2 h-2 bg-[#3b82f6] rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{notif.description}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{t(notif.description)}</p>
                         <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 font-medium">{notif.time}</p>
                       </div>
                     </Link>
@@ -200,7 +202,7 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
   );
 }
 
-function getRelativeTime(date: Date, t: (s: string) => string): string {
+function getRelativeTime(date: Date, t: (s: string) => string, locale: string): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMin = Math.floor(diffMs / 60000);
@@ -209,7 +211,7 @@ function getRelativeTime(date: Date, t: (s: string) => string): string {
 
   if (diffMin < 1) return t('Just now');
   if (diffMin < 60) return `${diffMin} ${t('min ago')}`;
-  if (diffHr < 24) return `${diffHr}${t('h ago')}`;
-  if (diffDay < 7) return `${diffDay}${t('d ago')}`;
-  return date.toLocaleDateString('en-US');
+  if (diffHr < 24) return `${diffHr} ${t('h ago')}`;
+  if (diffDay < 7) return `${diffDay} ${t('d ago')}`;
+  return date.toLocaleDateString(locale);
 }

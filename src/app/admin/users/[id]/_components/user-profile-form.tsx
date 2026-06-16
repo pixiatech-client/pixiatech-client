@@ -58,7 +58,7 @@ export function UserProfileForm({ user, onUpdate }: UserProfileFormProps) {
       onUpdate({
         displayName: data.displayName,
         phone: data.phone,
-        photoURL: data.photoURL,
+        photoURL: result.photoURL || data.photoURL,
         role: data.role,
         status: data.status,
       });

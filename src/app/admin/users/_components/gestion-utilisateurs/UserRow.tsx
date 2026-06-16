@@ -5,6 +5,7 @@ import { User, UserStatus } from './types';
 import { RoleBadge } from './RoleBadge';
 import { StatusBadge } from './StatusBadge';
 import { useAdminT } from '@/hooks/useAdminT';
+import { getAvatarUrl } from '@/lib/avatar';
 
 interface UserRowProps {
   user: User;
@@ -39,18 +40,12 @@ export const UserRow: React.FC<UserRowProps> = ({
       <td className="py-4 px-4 text-xs font-mono text-gray-500">{user.id}</td>
       <td className="py-4 px-4">
         <div className="flex items-center gap-3">
-          {user.avatar ? (
-            <img
-              src={user.avatar}
-              alt={user.name}
-              className="w-10 h-10 rounded-full border border-gray-200 object-cover"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full border border-gray-200 bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
-              {user.name?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-          )}
+          <img
+            src={user.avatar || getAvatarUrl('', user.role, user.name)}
+            alt={user.name}
+            className="w-10 h-10 rounded-full border border-gray-200 object-cover"
+            referrerPolicy="no-referrer"
+          />
           <div>
             <div className="text-sm font-semibold text-gray-900">{user.name}</div>
             <div className="text-xs text-gray-500">{user.email}</div>

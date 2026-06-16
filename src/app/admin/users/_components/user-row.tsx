@@ -7,6 +7,7 @@ import { RoleBadge } from './role-badge';
 import { StatusBadge } from './status-badge';
 import type { AdaptedUser } from './user-card';
 import { useAdminT } from '@/hooks/useAdminT';
+import { getAvatarUrl } from '@/lib/avatar';
 
 interface UserRowProps {
   user: AdaptedUser;
@@ -41,7 +42,7 @@ export const UserRow: React.FC<UserRowProps> = ({
       <td className="py-4 px-4">
         <div className="flex items-center gap-3">
           <img
-            src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=random`}
+            src={getAvatarUrl(user.photoURL, user.role, user.displayName)}
             alt={user.displayName}
             className="w-10 h-10 rounded-full border border-gray-200 object-cover"
             referrerPolicy="no-referrer"

@@ -8,6 +8,7 @@ import { UserProfileForm } from './user-profile-form';
 import { UserPasswordForm } from './user-password-form';
 import { logout } from '@/app/admin/actions';
 import { useFirestore, useAuth, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { getAvatarUrl } from '@/lib/avatar';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { RoleBadge } from '@/app/admin/users/_components/role-badge';
 import { StatusBadge } from '@/app/admin/users/_components/status-badge';
@@ -59,7 +60,7 @@ export function UserProfileLayout({ user: initialUser }: UserProfileLayoutProps)
           >
             <div className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden bg-theme-card shadow-xl mb-4">
               <img
-                src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=random&size=96`}
+                src={getAvatarUrl(user.photoURL, user.role, user.displayName, 96)}
                 alt={user.displayName}
                 className="w-full h-full object-cover"
               />

@@ -9,12 +9,14 @@ import { collection, query, where, orderBy, doc, updateDoc, deleteDoc, writeBatc
 import Link from 'next/link';
 import { NotificationFirestore } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
+import { useAdminT } from '@/hooks/useAdminT';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 type NotificationCategory = 'all' | 'unread' | 'messages' | 'system';
 
 function NotificationPage() {
   const { t } = useI18n();
+  const { t: nt } = useAdminT();
   const [activeCategory, setActiveCategory] = useState<NotificationCategory>('all');
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
@@ -312,7 +314,7 @@ function NotificationPage() {
                       <div className="flex flex-1 flex-col gap-1.5 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                           <h4 className={`text-base font-bold text-gray-900 ${!notif.read ? 'text-blue-900' : ''} truncate`}>
-                            {notif.title}
+                            {nt(notif.title)}
                           </h4>
                           <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 whitespace-nowrap">
                             <Clock className="h-3 w-3" />
@@ -321,7 +323,7 @@ function NotificationPage() {
                         </div>
                         
                         <p className="text-sm text-gray-600 leading-relaxed max-w-2xl">
-                          {notif.description}
+                          {nt(notif.description)}
                         </p>
 
                         <div className="mt-3 flex items-center gap-6">

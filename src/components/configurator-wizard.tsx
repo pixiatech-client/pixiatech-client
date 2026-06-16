@@ -110,7 +110,7 @@ function HorizontalStepper({ currentStep, onStepClick, isMobile, t }: { currentS
                     ? "bg-white border-black text-black"
                     : "bg-gray-50 border-gray-100 text-gray-300"
               )}>
-                {React.cloneElement(step.icon as React.ReactElement, { size: isMobile ? 14 : 18 })}
+                {React.cloneElement(step.icon as React.ReactElement<any>, { size: isMobile ? 14 : 18 })}
               </div>
             </button>
             {index < steps.length - 1 && (

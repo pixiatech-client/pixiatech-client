@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { EstimationStatus } from '../types';
-import { Clock, CheckCircle2, Truck, Archive, Trash2, Calculator, Users, Hourglass, RotateCcw, Key } from 'lucide-react';
+import { Clock, CheckCircle2, Truck, Archive, Trash2, Calculator, Users, Hourglass, RotateCcw, Key, LucideIcon } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
 const useStatusLabel = () => {
@@ -70,7 +70,7 @@ interface TabNavigationProps {
   estimationMode?: 'vente' | 'location';
 }
 
-type TabDef = { label: EstimationStatus; icon: React.ElementType; color: string; hoverColor: string; hoverBg: string; roles: string[] };
+type TabDef = { label: EstimationStatus; icon: LucideIcon; color: string; hoverColor: string; hoverBg: string; roles: string[] };
 
 const venteTabs: TabDef[] = [
   { label: 'En attente', icon: Hourglass, color: '#f4af07', hoverColor: '#ffb86a', hoverBg: '#451a03', roles: ['admin', 'commercial'] },

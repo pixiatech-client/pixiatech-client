@@ -1,6 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['framer-motion', 'three'],
+  turbopack: {
+    resolveAlias: {
+      react: './node_modules/react/index.js',
+      'react-dom': './node_modules/react-dom/index.js',
+      scheduler: './node_modules/scheduler/index.js',
+    },
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: '4.5mb',

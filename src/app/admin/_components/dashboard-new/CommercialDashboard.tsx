@@ -32,7 +32,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useI18n } from '@/lib/i18n';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useAdminT } from '@/hooks/useAdminT';
 
 const formatDate = (date: Date | null | undefined, locale: string) => {
@@ -45,6 +45,8 @@ const formatDate = (date: Date | null | undefined, locale: string) => {
 };
 
 const getQuoteAmount = (quote: any): number => {
+  if (quote.totalClient != null) return Number(quote.totalClient);
+  if (quote.totalQuote != null) return Number(quote.totalQuote);
   if (quote.totalAmount != null) return Number(quote.totalAmount);
   if (quote.products?.length) {
     return quote.products.reduce((sum: number, p: any) => sum + (Number(p.totalPrice || p.price || 0) * (p.quantity || 1)), 0);
@@ -83,16 +85,16 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
   // Fetch all quotes that the commercial can see
   const quotesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'quotes'), orderBy('createdAt', 'desc'));
+    return query(collection(firestore, 'quotes'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore]);
-  const { data: allQuotesRaw, isLoading: loadingQuotes } = useCollection<any>(quotesQuery);
+  const { data: allQuotesRaw, isLoading: loadingQuotes } = useCollection<any>(quotesQuery, { suppressPermissionError: true });
 
   // Fetch users for client stats
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'users'));
+    return query(collection(firestore, 'users'), limit(200));
   }, [firestore]);
-  const { data: allUsers } = useCollection<any>(usersQuery);
+  const { data: allUsers } = useCollection<any>(usersQuery, { suppressPermissionError: true });
 
   // Derive the quotes visible to this commercial
   const visibleQuotes = useMemo(() => {
@@ -261,7 +263,7 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
         </AnimatePresence>
 
         {/* Hero Banner */}
-        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-amber-500 to-orange-600 p-8 text-white">
+        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-[#F0830B] to-orange-600 p-8 text-white">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
             <div className="max-w-md">
               <h2 className="text-xl font-semibold mb-2">{t('admin.encouragementGood')}</h2>
@@ -312,10 +314,10 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
             <Link
               key={action.label}
               href={action.href}
-              className="group flex items-center gap-4 bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:bg-theme-sidebar-active-bg hover:border-zinc-800 transition-all"
+              className="group flex items-center gap-4 bg-white static-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:bg-[#F0830B] hover:border-[#F0830B] transition-all duration-200"
             >
-              <div className={`w-12 h-12 rounded-xl ${action.bg} flex items-center justify-center transition-colors`}>
-                <action.icon className={`w-6 h-6 ${action.color}`} />
+              <div className={`w-12 h-12 rounded-xl ${action.bg} flex items-center justify-center transition-colors duration-200 group-hover:bg-white/10`}>
+                <action.icon className={`w-6 h-6 ${action.color} group-hover:text-white transition-colors duration-200`} />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-gray-900 group-hover:text-white transition-colors">{action.label}</p>

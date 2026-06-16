@@ -5,6 +5,7 @@ import { FournisseurDashboard } from './dashboard-new/FournisseurDashboard';
 import { CommercialDashboard } from './dashboard-new/CommercialDashboard';
 import { useTheme } from 'next-themes';
 import { useUser } from '@/firebase';
+import { getAvatarUrl } from '@/lib/avatar';
 
 export function DashboardContent() {
   const { theme } = useTheme();
@@ -21,7 +22,7 @@ export function DashboardContent() {
     return (
       <FournisseurDashboard
         userName={userProfile?.displayName}
-        userAvatar={userProfile?.photoURL}
+        userAvatar={getAvatarUrl(userProfile?.photoURL, 'fournisseur', userProfile?.displayName || '')}
         isDark={isDark}
       />
     );
@@ -31,7 +32,7 @@ export function DashboardContent() {
     return (
       <CommercialDashboard
         userName={userProfile?.displayName}
-        userAvatar={userProfile?.photoURL}
+        userAvatar={getAvatarUrl(userProfile?.photoURL, 'commercial', userProfile?.displayName || '')}
         isDark={isDark}
       />
     );

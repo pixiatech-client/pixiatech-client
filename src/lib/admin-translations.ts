@@ -388,7 +388,7 @@ const adminTranslations: Record<string, string> = {
   // Wizard
   'Wizard Settings': 'Paramètres du Wizard',
   'Project Types': 'Types de projet',
-  'Pixel Pitches': 'Pas de pixel',
+  'Pixel Pitches': 'Pitch pixel',
   'Viewing Distances': 'Distances de visionnage',
   'Viewing Distance': 'Distance de visionnage',
   'Environments': 'Environnements',
@@ -398,9 +398,9 @@ const adminTranslations: Record<string, string> = {
   'Configure the available project types in the wizard.': 'Configurez les types de projet disponibles dans le wizard.',
   'Configure the available viewing distances.': 'Configurez les distances de visionnage disponibles.',
   'Configure images for each environment.': 'Configurez les images pour chaque environnement.',
-  'Configure images displayed in the Viewing Distance and Pixel Pitch steps.': 'Configurez les images affichées dans les étapes Distance de visionnage et Pas de pixel.',
+  'Configure images displayed in the Viewing Distance and Pixel Pitch steps.': 'Configurez les images affichées dans les étapes Distance de visionnage et Pitch pixel.',
   'Configure the options and content of the guided configurator.': 'Configurez les options et le contenu du configurateur guidé.',
-  'Recommended Pixel Pitch': 'Pas de pixel recommandé',
+  'Recommended Pixel Pitch': 'Pitch pixel recommandé',
   'Recommended': 'Recommandé',
 
   // Themes
@@ -731,6 +731,12 @@ const adminTranslations: Record<string, string> = {
   'Status update': 'Mise à jour du statut',
   'Transmitted to supplier: ': 'Transmise au fournisseur : ',
   'Unknown': 'Inconnu',
+  'New user registration': 'Nouvel utilisateur',
+  'created an account and is pending approval.': 'a créé un compte et est en attente d\'approbation.',
+  'Just now': "À l'instant",
+  'min ago': 'min',
+  'h ago': 'h',
+  'd ago': 'j',
 
   // Login
   'Login': 'Connexion',

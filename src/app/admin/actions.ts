@@ -176,6 +176,21 @@ export async function revertImpersonation() {
 
 // --- Auth Actions ---
 
+// Role to default avatar mapping
+const DEFAULT_ROLE_AVATAR_MAP: Record<string, string> = {
+  admin: '/bot-avatars/Admin.png',
+  commercial: '/bot-avatars/Commercial.png',
+  fournisseur: '/bot-avatars/Fournisseur.png',
+};
+
+function getDefaultAvatarForRole(role: string): string | null {
+  return DEFAULT_ROLE_AVATAR_MAP[role] || null;
+}
+
+function isDefaultAvatar(photoURL: string): boolean {
+  return Object.values(DEFAULT_ROLE_AVATAR_MAP).includes(photoURL);
+}
+
 async function ensureDefaultRoles() {
   const { adminDb } = getFirebaseAdmin();
   const rolesRef = adminDb.collection('roles');
@@ -306,6 +321,7 @@ export async function registerUser(data: unknown) {
       displayName,
       phone: phone || '',
       description: result.data.description || '',
+      photoURL: getDefaultAvatarForRole(assignedRole) || '',
       role: assignedRole,
       status: status as 'pending' | 'approved',
       createdAt: FieldValue.serverTimestamp(),
@@ -328,8 +344,8 @@ export async function registerUser(data: unknown) {
           notifBatch.set(notifRef, {
             userId: doc.id,
             type: 'user',
-            title: 'Nouvel utilisateur',
-            description: `${displayName} (${email}) a créé un compte et est en attente d\'approbation.`,
+            title: 'New user registration',
+            description: `${displayName} (${email}) created an account and is pending approval.`,
             href: '/admin/users',
             read: false,
             createdAt: FieldValue.serverTimestamp(),
@@ -411,7 +427,7 @@ export async function handleGoogleSignIn(data: unknown) {
       email,
       displayName: displayName || '',
       phone: '',
-      photoURL: photoURL || '',
+      photoURL: photoURL || getDefaultAvatarForRole(assignedRole) || '',
       role: assignedRole,
       status: assignedStatus,
       createdAt: new Date(),
@@ -433,8 +449,8 @@ export async function handleGoogleSignIn(data: unknown) {
           notifBatch.set(notifRef, {
             userId: doc.id,
             type: 'user',
-            title: 'Nouvel utilisateur',
-            description: `${displayName || email} (${email}) a créé un compte et est en attente d'approbation.`,
+            title: 'New user registration',
+            description: `${displayName || email} (${email}) created an account and is pending approval.`,
             href: '/admin/users',
             read: false,
             createdAt: FieldValue.serverTimestamp(),
@@ -548,6 +564,15 @@ export async function updateUser(data: unknown) {
         if (currentRole !== updateData.role) {
           await adminAuth.setCustomUserClaims(uid, { role: updateData.role });
           await adminAuth.revokeRefreshTokens(uid);
+
+          // Update default avatar when role changes, unless a custom URL was explicitly provided
+          const incomingPhotoURL = 'photoURL' in updateData ? updateData.photoURL : undefined;
+          if (!incomingPhotoURL || isDefaultAvatar(incomingPhotoURL)) {
+            const newAvatar = getDefaultAvatarForRole(updateData.role);
+            if (newAvatar) {
+              updateData.photoURL = newAvatar;
+            }
+          }
         }
       } catch {
         // If we can't fetch the user, still try to update claims
@@ -562,7 +587,7 @@ export async function updateUser(data: unknown) {
     revalidatePath('/admin/users');
     revalidatePath('/admin', 'layout');
 
-    return { success: true };
+    return { success: true, photoURL: updateData.photoURL };
   } catch (error: any) {
     console.error('Error updating user:', error);
     return { success: false, error: error.message };

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Search, ChevronRight, Users, Shield, Truck, UserCircle, LogIn } from 'lucide-react';
+import { X, Search, ChevronRight, Users, Shield, Truck, UserCircle, LogIn, LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, where } from 'firebase/firestore';
@@ -16,7 +16,7 @@ interface ImpersonationDrawerProps {
   userRole?: string;
 }
 
-const roleConfig: Record<string, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
+const roleConfig: Record<string, { label: string; color: string; bgColor: string; icon: LucideIcon }> = {
   admin: { label: 'Administrator', color: '#a855f7', bgColor: '#2e1065', icon: Shield },
   fournisseur: { label: 'Supplier', color: '#3b82f6', bgColor: '#1e293b', icon: Truck },
   commercial: { label: 'Sales Rep', color: '#f59e0b', bgColor: '#2a1f00', icon: UserCircle },

@@ -25,7 +25,7 @@ import {
 import { CustomSelect } from '@/components/ui/custom-select';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, where, onSnapshot, limit } from 'firebase/firestore';
 import { QuoteStatus } from './types';
 import { moveQuotesToTrash, resetPerformancePoints, resetConfiguratorStats, getSettings } from '@/app/admin/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -175,14 +175,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const firestore = useFirestore();
 
   // Fetch real data from Firestore
-  const quotesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'quotes')) : null, [firestore]);
-  const { data: allQuotesRaw } = useCollection<any>(quotesQuery);
+  const quotesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'quotes'), limit(50)) : null, [firestore]);
+  const { data: allQuotesRaw } = useCollection<any>(quotesQuery, { suppressPermissionError: true });
 
-  const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users')) : null, [firestore]);
-  const { data: allUsers } = useCollection<any>(usersQuery);
+  const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), limit(200)) : null, [firestore]);
+  const { data: allUsers } = useCollection<any>(usersQuery, { suppressPermissionError: true });
 
-  const productsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'products')) : null, [firestore]);
-  const { data: allProducts } = useCollection<any>(productsQuery);
+  const productsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'products'), limit(200)) : null, [firestore]);
+  const { data: allProducts } = useCollection<any>(productsQuery, { suppressPermissionError: true });
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth);

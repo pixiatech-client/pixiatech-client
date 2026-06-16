@@ -1,5 +1,6 @@
 'use client';
 
+import { use } from 'react';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { UserProfileLayout } from './_components/user-profile-layout';
@@ -8,10 +9,11 @@ import { doc, getFirestore } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
 
-export default function UserProfilePage({ params }: { params: { id: string } }) {
+export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { t } = useI18n();
   const db = getFirestore();
-  const userRef = useMemoFirebase(() => doc(db, 'users', params.id), [db, params.id]);
+  const userRef = useMemoFirebase(() => doc(db, 'users', id), [db, id]);
   const { data: user, isLoading, error } = useDoc<UserProfile>(userRef);
 
   if (isLoading) {
@@ -36,7 +38,7 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
             </div>
             <h2 className="text-2xl font-bold text-gray-900">{t('profile.userNotFound')}</h2>
             <p className="text-sm text-gray-400">
-              {t('profile.unableToFindUser')} {params.id}
+              {t('profile.unableToFindUser')} {id}
             </p>
           </div>
         </div>

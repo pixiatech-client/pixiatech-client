@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "caveman": {
+      "source": "local",
+      "sourceType": "local",
+      "skillPath": "skills/caveman/SKILL.md",
+      "computedHash": "efa18bd8122987c3510a4d7ca206cf633df910a28d06eeb3f9dfdc755d62d7c0"
+    },
     "emil-design-eng": {
       "source": "emilkowalski/skill",
       "sourceType": "github",

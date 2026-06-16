@@ -1002,6 +1002,12 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const handleSignatureSave = (dataUrl: string) => {
     setSignatureDataUrl(dataUrl);
     setSignatureValidated(true);
+    setContractAccepted(true);
+    setIsSendingCode(true);
+    updateStep(STEP.SECURITE);
+    pushBotMessage(t('bot.contractSigned'), undefined, 400, '/bot-avatars/24.webp', () => {
+      submitFinalQuoteWithContract();
+    }, 'bot.contractSigned');
   };
 
   const handleSignatureClear = () => {
@@ -1634,21 +1640,13 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                       >
                         {locale === 'fr' ? '📁 Téléverser une photo' : '📁 Upload a photo'}
                       </Button>
-                      {/* Mobile: gallery + camera side by side */}
-                      <div className="flex gap-2 md:hidden">
-                        <Button
-                          onClick={() => document.getElementById('site-photo-gallery')?.click()}
-                          className="flex-1 h-12 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-xs shadow-md active:scale-95 transition-all"
-                        >
-                          {locale === 'fr' ? '📁 Téléverser de la galerie' : '📁 Upload from gallery'}
-                        </Button>
-                        <Button
-                          onClick={() => document.getElementById('site-photo-upload')?.click()}
-                          className="flex-1 h-12 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-xs shadow-md active:scale-95 transition-all"
-                        >
-                          {locale === 'fr' ? '📷 Prendre une photo' : '📷 Take a photo'}
-                        </Button>
-                      </div>
+                      {/* Mobile: single upload button (system choose gallery or camera) */}
+                      <Button
+                        onClick={() => document.getElementById('site-photo-gallery')?.click()}
+                        className="w-full h-12 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider text-xs shadow-md active:scale-95 transition-all md:hidden"
+                      >
+                        {locale === 'fr' ? '📁 Téléverser une photo' : '📁 Upload a photo'}
+                      </Button>
                       {/* Passer full width below */}
                       <Button
                         onClick={handlePhotoSkip}
@@ -1792,15 +1790,6 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                   onClear={handleSignatureClear}
                                   isValidated={signatureValidated}
                                 />
-                              </div>
-                              <div className="px-4 pb-4">
-                                <Button
-                                  onClick={handleContractAccept}
-                                  disabled={!signatureValidated}
-                                  className="w-full h-14 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider shadow-md active:scale-95 transition-all disabled:opacity-30"
-                                >
-                                  {locale === 'fr' ? 'Accepter & continuer' : 'Accept & continue'}
-                                </Button>
                               </div>
                             </div>
                           )}

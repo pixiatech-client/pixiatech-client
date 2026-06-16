@@ -10,6 +10,7 @@ import { CustomSelect } from './custom-select';
 import getCroppedImg from '@/lib/cropImage';
 import type { AdaptedUser } from './user-card';
 import { useAdminT } from '@/hooks/useAdminT';
+import { getAvatarUrl } from '@/lib/avatar';
 
 interface UserProfileDrawerProps {
   isOpen: boolean;
@@ -200,7 +201,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                   >
                     <div className="w-24 h-24 rounded-3xl border-4 border-white overflow-hidden bg-theme-card shadow-xl">
                       <img
-                        src={formData.photoURL || (user?.photoURL) || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.displayName || 'U')}&background=random&size=96`}
+                        src={formData.photoURL || (user?.photoURL) || getAvatarUrl('', formData.role || user?.role || '', formData.displayName || 'U', 96)}
                         alt={t('User avatar')}
                         className="w-full h-full object-cover"
                       />

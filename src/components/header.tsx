@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LogIn } from 'lucide-react';
+import { LogIn, LucideIcon } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
-export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; pageIcon?: React.ElementType } = {}) {
+export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; pageIcon?: LucideIcon } = {}) {
   const { user, isUserLoading } = useUser();
   const [isClient, setIsClient] = useState(false);
   const { locale, setLocale, t } = useI18n();

@@ -181,7 +181,7 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
           }`}
         >
           <Check size={16} />
-          <span>{isValidated ? 'Signature enregistrée avec succès' : 'Valider ma signature'}</span>
+          <span>{isValidated ? 'Signé ✓' : 'Signer & accepter'}</span>
         </button>
       </div>
     </div>

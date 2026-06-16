@@ -68,7 +68,7 @@ export function CustomSelect({
           <span className={cn("truncate font-medium", selectedOption?.color)}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
-          <ChevronDown className={cn("w-4 h-4 ml-2 transition-transform duration-300", isOpen ? "rotate-180" : "")} />
+            <ChevronDown className={cn("w-4 h-4 ml-2 transition-transform duration-300 shrink-0 text-gray-700", isDark ? "text-gray-400" : "text-gray-700", isOpen ? "rotate-180" : "")} />
         </button>
 
         {/* Desktop Dropdown */}

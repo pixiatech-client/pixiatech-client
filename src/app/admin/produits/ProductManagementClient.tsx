@@ -153,7 +153,7 @@ function PitchBadge({ pitches, t }: { pitches: string[], t: (key: string) => str
         ref={buttonRef}
         type="button"
         onClick={() => setOpen(!open)}
-        className="bg-[#c6ff00] px-3 py-1.5 rounded-xl text-[9px] font-black text-slate-900 shadow-lg border border-white/20 flex items-center gap-1.5 hover:bg-[#b8f000] transition-colors group-hover/product:text-white"
+        className="bg-white px-3 py-1.5 rounded-xl text-[9px] font-black text-slate-900 border border-white/20 flex items-center gap-1.5 hover:bg-[#131E3F] hover:text-blue-400 transition-colors"
       >
         <Grid className="w-3 h-3" />
         <span>{pitches.length}</span>
@@ -485,8 +485,8 @@ const ProductListItem = ({
         boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.15)"
       }}
       className={cn(
-        "bg-theme-card border rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-[#131E3F] hover:border-[#131E3F] hover:-translate-y-1 hover:shadow-2xl dark:bg-theme-card/5 dark:border-theme-card-border",
-        selectedIds.includes(product.id) ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg" : "border-theme-card-border"
+        "bg-theme-card rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-[#131E3F] dark:bg-theme-card/5 dark:border-theme-card-border",
+        selectedIds.includes(product.id) ? "ring-1 ring-theme-sidebar-active-bg" : ""
       )}
     >
       <div className="flex items-center gap-3 shrink-0">
@@ -505,14 +505,14 @@ const ProductListItem = ({
           {selectedIds.includes(product.id) && <Check className="w-3 h-3" />}
         </button>
         <div
-          className="text-slate-300 group-hover/product:text-[#a3e635] transition-colors cursor-grab active:cursor-grabbing p-1"
+          className="text-slate-300 transition-colors cursor-grab active:cursor-grabbing p-1"
           onPointerDown={(e) => dragControls.start(e)}
         >
           <GripVertical className="w-5 h-5" />
         </div>
       </div>
 
-      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 shadow-sm border border-slate-100 flex items-center justify-center relative group-hover/product:border-white/20 transition-colors">
+      <div className="w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 shadow-sm border border-slate-100 flex items-center justify-center relative transition-colors">
         {getSafeImageUrl(product) ? (
           <img
             src={getSafeImageUrl(product)!}
@@ -3162,9 +3162,9 @@ const GestionProduits = ({
 
   const filterOptions = [
     { id: 'all', label: t('admin.productManagement.allTypes'), icon: Layers },
-    { id: 'interieur', label: t('admin.productManagement.indoor'), icon: Monitor },
-    { id: 'exterieur', label: t('admin.productManagement.outdoor'), icon: Sun },
-    { id: 'semi-exterieur', label: t('admin.productManagement.semiOutdoor'), icon: Store },
+    { id: 'indoor', label: t('admin.productManagement.indoor'), icon: Monitor },
+    { id: 'outdoor', label: t('admin.productManagement.outdoor'), icon: Sun },
+    { id: 'showcase', label: t('admin.productManagement.semiOutdoor'), icon: Store },
   ];
 
   const handleBulkDelete = () => {
@@ -3203,6 +3203,12 @@ const GestionProduits = ({
   };
 
   useEffect(() => { setCurrentPage(1); }, [searchQuery, filterType, sortBy]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [filteredProducts.length, currentPage]);
 
   return (
     <div className="w-full space-y-6">
@@ -3258,19 +3264,19 @@ const GestionProduits = ({
             </div>
           )}
 
-          <div className="relative">
-            <CustomSelect
-              options={[
-                { value: 'all', label: t('admin.productManagement.allTypes'), icon: Layers },
-                { value: 'interieur', label: t('admin.productManagement.indoor'), icon: Monitor },
-                { value: 'exterieur', label: t('admin.productManagement.outdoor'), icon: Sun },
-                { value: 'semi-exterieur', label: t('admin.productManagement.semiOutdoor'), icon: Store },
-              ]}
-              value={filterType}
-              onChange={(val) => setFilterType(val as any)}
-              placeholder={t('admin.productManagement.filterByType')}
-              className="w-56"
-            />
+                <div className="relative">
+                  <CustomSelect
+                    options={[
+                      { value: 'all', label: t('admin.productManagement.allTypes'), icon: Layers },
+                      { value: 'indoor', label: t('admin.productManagement.indoor'), icon: Monitor },
+                      { value: 'outdoor', label: t('admin.productManagement.outdoor'), icon: Sun },
+                      { value: 'showcase', label: t('admin.productManagement.semiOutdoor'), icon: Store },
+                    ]}
+                    value={filterType}
+                    onChange={(val) => setFilterType(val as any)}
+                    placeholder={t('admin.productManagement.filterByType')}
+                    className="w-56"
+                  />
           </div>
 
           <CustomSelect

@@ -40,6 +40,7 @@ import { canAccessRoute } from '@/lib/permissions';
 import type { Theme, Settings as AppSettings, UserProfile, UserRole } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n';
+import { getAvatarUrl } from '@/lib/avatar';
 import { collection, orderBy, query, doc, onSnapshot } from 'firebase/firestore';
 import { Sidebar, type SidebarState, type SidebarTheme, type SettingsSection } from './dashboard-new/Sidebar';
 import { UserRole as UserRoleEnum } from './dashboard-new/dashboard-new-types';
@@ -428,17 +429,11 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     className="flex items-center p-0.5 rounded-full hover:ring-2 hover:ring-blue-500 transition-all outline-none"
                   >
                     <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm relative">
-                      {userProfile.photoURL ? (
-                        <img
-                          src={userProfile.photoURL}
-                          alt={userProfile.displayName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold uppercase">
-                          {userProfile.displayName?.[0] || 'U'}
-                        </div>
-                      )}
+                      <img
+                        src={getAvatarUrl(userProfile.photoURL, userProfile.role, userProfile.displayName)}
+                        alt={userProfile.displayName}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   </button>
                 </div>

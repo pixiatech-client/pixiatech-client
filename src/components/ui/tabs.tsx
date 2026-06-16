@@ -28,7 +28,7 @@ const TabsList = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & { activeTab?: string; hideBubble?: boolean; bubbleClassName?: string }
 >(({ className, children, activeTab: activeTabProp, hideBubble = false, bubbleClassName, ...props }, ref) => {
   const [internalActiveTab, setInternalActiveTab] = React.useState(
-    (React.Children.toArray(children)[0] as React.ReactElement).props.value
+    (React.Children.toArray(children)[0] as React.ReactElement<any>).props.value
   );
 
   const activeTab = activeTabProp !== undefined ? activeTabProp : internalActiveTab;
@@ -51,7 +51,8 @@ const TabsList = React.forwardRef<
        {React.Children.map(children, (child) => {
         if (!React.isValidElement(child)) return null;
         
-        const isChildActive = child.props.value === activeTab;
+        const tabChild = child as React.ReactElement<any>;
+        const isChildActive = tabChild.props.value === activeTab;
         
         return (
           <div className="relative w-full">
@@ -62,16 +63,16 @@ const TabsList = React.forwardRef<
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
-            {React.cloneElement(child, {
-              ...child.props,
+            {React.cloneElement(tabChild, {
+              ...tabChild.props,
               onClick: (e: any) => {
-                handleValueChange(child.props.value);
-                if (child.props.onClick) {
-                  child.props.onClick(e);
+                handleValueChange(tabChild.props.value);
+                if (tabChild.props.onClick) {
+                  tabChild.props.onClick(e);
                 }
               },
               className: cn(
-                child.props.className,
+                tabChild.props.className,
                 "transition-colors duration-300 w-full",
                 isChildActive 
                   ? "text-primary-foreground"

@@ -273,6 +273,7 @@ interface EstimationRowProps {
   setIsRefusalPanelOpen: (open: boolean) => void;
   setPreviewImageUrl: (url: string | null) => void;
   estimationMode?: 'vente' | 'location';
+  unreadCounts?: Record<string, number>;
 }
 
 const EstimationRow: React.FC<EstimationRowProps> = ({
@@ -300,6 +301,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
   setIsRefusalPanelOpen,
   setPreviewImageUrl,
   estimationMode = 'vente',
+  unreadCounts = {},
 }) => {
    const { t } = useI18n();
    const { t: adt } = useAdminT();
@@ -421,10 +423,10 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
             {/* Numéro de suivi */}
             {est.trackingNumber && (
               <div className="w-32 px-3 flex flex-col justify-center">
-                <span className={`text-[11px] font-bold tracking-tight flex items-center gap-1.5 ${
+                <span className={`text-sm font-black tracking-tight flex items-center gap-1.5 ${
                   isSelected ? 'text-white' : 'text-zinc-900 dark:text-zinc-100 group-hover:text-white'
                 }`}>
-                  <Package className="w-3.5 h-3.5 shrink-0" />
+                  <Package className="w-4 h-4 shrink-0 text-orange-500" />
                   {est.trackingNumber}
                 </span>
               </div>
@@ -512,25 +514,28 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
               {isFournisseur ? (
                 <>
                   {est.status === 'Fournisseur' && (
-                    <>
-                      <button 
-                        onClick={() => onViewMessage(est.id)}
-                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-amber-500'}`}
-                        title={t('estimation.viewReason')}
-                      >
-                         <div className="relative">
-                           <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
-{est.supplierNotes && !est.supplierNotesRead && (
-    <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" />
-  )}
-                         </div>
-                      </button>
-                      <button 
-                        onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }}
-                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
-                        title={t('estimation.addTracking')}
-                      >
-                         <Package className="w-4 h-4" />
+                     <>
+                       <button 
+                         onClick={() => onViewMessage(est.id)}
+                         className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:text-green-500'}`}
+                         title={t('estimation.viewMessages')}
+                       >
+                          <div className="relative">
+                            <Mail className={`w-4 h-4 transition-colors duration-200`} style={{ color: (unreadCounts?.[est.id] ?? 0) > 0 ? '#22c55e' : undefined }} />
+                            {(unreadCounts?.[est.id] ?? 0) > 0 && (
+                              <>
+                                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white animate-ping" />
+                              </>
+                            )}
+                          </div>
+                       </button>
+                       <button 
+                         onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }}
+                         className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
+                         title={t('estimation.addTracking')}
+                       >
+                          <Package className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => onStatusClick(est.id)}
@@ -544,31 +549,20 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                         className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-red-500/20 text-theme-sidebar-active-text/40 hover:text-red-500' : 'hover:bg-red-50 text-zinc-400 group-hover:hover:bg-red-500/20 group-hover:hover:text-red-500'}`}
                         title={t('estimation.returnToCommercial')}
                       >
-                         <RotateCcw className="w-4 h-4" />
-                      </button>
-                    </>
-                  )}
-                  {est.status === 'Livraison' && (
-                    <>
-                      <button 
-                        onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }}
-                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
-                        title={t('estimation.viewTracking')}
-                      >
-                         <Package className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => onMarkAsDelivered(est.id)}
-                        className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`}
-                        title={t('estimation.markAsDelivered')}
-                      >
-                         <ShieldCheck className="w-4 h-4" />
-                      </button>
-                    </>
-                  )}
-                </>
-              ) : (
-                <div className="flex items-center gap-0.5">
+                              <RotateCcw className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                          {est.status === 'Livraison' && (
+                            <>
+                              <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.viewTracking')}>
+                                <Package className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                       <div className="flex items-center gap-0.5">
                   {est.status === 'En attente' && (
                     <>
                       <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-white'}`} title={t('estimation.edit')}>
@@ -596,15 +590,18 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     </>
                   )}
                   {est.status === 'Fournisseur' && (
-                    <>
-                      <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-amber-500'}`} title={t('estimation.viewReason')}>
-                         <div className="relative">
-                           <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
-{est.supplierNotes && !est.supplierNotesRead && (
-    <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" />
-  )}
-                         </div>
-                      </button>
+                     <>
+                       <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:text-green-500'}`} title={t('estimation.viewMessages')}>
+                          <div className="relative">
+                            <Mail className={`w-4 h-4 transition-colors duration-200`} style={{ color: (unreadCounts?.[est.id] ?? 0) > 0 ? '#22c55e' : undefined }} />
+                            {(unreadCounts?.[est.id] ?? 0) > 0 && (
+                              <>
+                                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white animate-ping" />
+                              </>
+                            )}
+                          </div>
+                       </button>
                       <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title={t('estimation.addTracking')}>
                          <Package className="w-4 h-4" />
                       </button>
@@ -617,17 +614,20 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     </>
                   )}
                   {est.status === 'Retourné' && (
-                    <>
-                      <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-white'}`} title={t('estimation.viewReason')}>
-                         <div className="relative">
-                           <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
-{est.supplierNotes && !est.supplierNotesRead && (
-    <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" />
-  )}
-                         </div>
-                      </button>
-                      <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-white'}`} title={t('estimation.edit')}>
-                         <Pencil className="w-4 h-4" />
+                     <>
+                       <button onClick={() => onViewMessage(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:text-green-500'}`} title={t('estimation.viewMessages')}>
+                          <div className="relative">
+                            <Mail className={`w-4 h-4 transition-colors duration-200`} style={{ color: (unreadCounts?.[est.id] ?? 0) > 0 ? '#22c55e' : undefined }} />
+                            {(unreadCounts?.[est.id] ?? 0) > 0 && (
+                              <>
+                                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white animate-ping" />
+                              </>
+                            )}
+                          </div>
+                       </button>
+                       <button onClick={() => onEdit(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-white'}`} title={t('estimation.edit')}>
+                          <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title={t('estimation.transfer')}>
                          <Send className="w-4 h-4" />
@@ -778,8 +778,8 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest group-hover:text-white">{est.number}</span>
                       {est.trackingNumber && (
-                        <span className="text-[8px] font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-0.5 group-hover:text-white">
-                          <Package className="w-2.5 h-2.5" />
+                        <span className="text-[10px] font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-0.5 group-hover:text-white">
+                          <Package className="w-3 h-3 text-orange-500" />
                           {est.trackingNumber}
                         </span>
                       )}
@@ -811,46 +811,52 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 <div className="flex flex-col">
                    <span className="text-[8px] text-zinc-400 font-black uppercase tracking-[0.2em] mb-0.5 group-hover:text-white">{t('estimation.totalAmount')}</span>
                    <span className="font-black text-zinc-900 dark:text-zinc-100 text-lg tracking-tighter group-hover:text-white">
-                     {est.totalClient.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
-                   </span>
-                </div>
-                
-                <div className="flex items-center gap-1 shrink-0">
-                  <div className="flex items-center gap-1 bg-zinc-50/50 rounded-xl p-1" onClick={(e) => e.stopPropagation()}>
-                    {isFournisseur ? (
-                      <>
-                        {est.status === 'Fournisseur' && (
-                          <>
-                            <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-amber-500 rounded-lg transition-colors" title={t('estimation.viewReason')}>
-                              <div className="relative">
-                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
-                                {est.supplierNotes && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
-                              </div>
-                            </button>
-                            <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.addTracking')}>
-                              <Package className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title={t('estimation.sendDelivery')}>
-                              <Truck className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => { setSelectedEstimation(est); setIsRefusalPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-red-500 rounded-lg transition-colors" title={t('estimation.returnToCommercial')}>
-                              <RotateCcw className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                        {est.status === 'Livraison' && (
-                          <>
-                            <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.viewTracking')}>
-                              <Package className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => onMarkAsDelivered(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title={t('estimation.markAsDelivered')}>
-                              <ShieldCheck className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <div className="flex items-center gap-0.5">
+                      {est.totalClient.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                    </span>
+                 </div>
+                 
+                 <div className="flex items-center gap-1 shrink-0">
+                   <div className="flex items-center gap-1 bg-zinc-50/50 rounded-xl p-1" onClick={(e) => e.stopPropagation()}>
+                     {isFournisseur ? (
+                       <>
+                         {est.status === 'Fournisseur' && (
+                           <>
+                             <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-green-500 rounded-lg transition-colors duration-200" title={t('estimation.viewMessages')}>
+                               <div className="relative">
+                                 <Mail className={`w-4 h-4 transition-colors duration-200`} style={{ color: (unreadCounts?.[est.id] ?? 0) > 0 ? '#22c55e' : undefined }} />
+                                 {(unreadCounts?.[est.id] ?? 0) > 0 && (
+                                   <>
+                                     <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                                     <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white animate-ping" />
+                                   </>
+                                 )}
+                               </div>
+                             </button>
+                             <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.addTracking')}>
+                               <Package className="w-4 h-4" />
+                             </button>
+                             <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title={t('estimation.sendDelivery')}>
+                               <Truck className="w-4 h-4" />
+                             </button>
+                             <button onClick={() => { setSelectedEstimation(est); setIsRefusalPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-red-500 rounded-lg transition-colors" title={t('estimation.returnToCommercial')}>
+                          <RotateCcw className="w-4 h-4" />
+                       </button>
+                     </>
+                   )}
+                   {est.status === 'Livraison' && (
+                     <>
+                       <button 
+                         onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }}
+                         className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
+                         title={t('estimation.viewTracking')}
+                       >
+                          <Package className="w-4 h-4" />
+                       </button>
+                     </>
+                   )}
+                </>
+              ) : (
+                <div className="flex items-center gap-0.5">
                         {est.status === 'En attente' && (
                           <>
                             <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-theme-sidebar-active-text rounded-lg transition-colors" title={t('estimation.edit')}>
@@ -867,39 +873,49 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.transferToSupplier')}>
-                              <Send className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                        {est.status === 'Fournisseur' && (
-                          <>
-                            <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-amber-500 rounded-lg transition-colors" title={t('estimation.viewReason')}>
-                              <div className="relative">
-                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
-                                {est.supplierNotes && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
-                              </div>
-                            </button>
-                            <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.addTracking')}>
-                              <Package className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title={t('estimation.sendDelivery')}>
-                              <Truck className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => { setSelectedEstimation(est); setIsRefusalPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-red-500 rounded-lg transition-colors" title={t('estimation.returnToCommercial')}>
-                              <RotateCcw className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                        {est.status === 'Retourné' && (
-                          <>
-                            <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-amber-500 rounded-lg transition-colors" title={t('estimation.viewReason')}>
-                              <div className="relative">
-                                <Mail className={`w-4 h-4 ${est.supplierNotes ? 'text-theme-sidebar-active-text animate-pulse' : ''}`} />
-                                {est.supplierNotes && <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border border-white" />}
-                              </div>
-                            </button>
-                            <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-theme-sidebar-active-text rounded-lg transition-colors" title={t('estimation.edit')}>
-                              <Pencil className="w-4 h-4" />
+                               <Send className="w-4 h-4" />
+                             </button>
+                           </>
+                         )}
+                         {est.status === 'Fournisseur' && (
+                           <>
+                             <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-green-500 rounded-lg transition-colors duration-200" title={t('estimation.viewMessages')}>
+                               <div className="relative">
+                                 <Mail className={`w-4 h-4 transition-colors duration-200`} style={{ color: (unreadCounts?.[est.id] ?? 0) > 0 ? '#22c55e' : undefined }} />
+                                 {(unreadCounts?.[est.id] ?? 0) > 0 && (
+                                   <>
+                                     <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                                     <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white animate-ping" />
+                                   </>
+                                 )}
+                               </div>
+                             </button>
+                             <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.addTracking')}>
+                               <Package className="w-4 h-4" />
+                             </button>
+                             <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title={t('estimation.sendDelivery')}>
+                               <Truck className="w-4 h-4" />
+                             </button>
+                             <button onClick={() => { setSelectedEstimation(est); setIsRefusalPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-red-500 rounded-lg transition-colors" title={t('estimation.returnToCommercial')}>
+                                <RotateCcw className="w-4 h-4" />
+                             </button>
+                           </>
+                         )}
+                         {est.status === 'Retourné' && (
+                           <>
+                             <button onClick={() => onViewMessage(est.id)} className="p-2 text-zinc-400 hover:text-green-500 rounded-lg transition-colors duration-200" title={t('estimation.viewMessages')}>
+                               <div className="relative">
+                                 <Mail className={`w-4 h-4 transition-colors duration-200`} style={{ color: (unreadCounts?.[est.id] ?? 0) > 0 ? '#22c55e' : undefined }} />
+                                 {(unreadCounts?.[est.id] ?? 0) > 0 && (
+                                   <>
+                                     <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                                     <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white animate-ping" />
+                                   </>
+                                 )}
+                               </div>
+                             </button>
+                             <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-theme-sidebar-active-text rounded-lg transition-colors" title={t('estimation.edit')}>
+                               <Pencil className="w-4 h-4" />
                             </button>
                             <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.transfer')}>
                               <Send className="w-4 h-4" />
@@ -1114,6 +1130,18 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
     receiptDate: ''
   });
 
+  React.useEffect(() => {
+    if (selectedEstimation?.trackingInfo) {
+      setTrackingForm({
+        number: selectedEstimation.trackingInfo.number || '',
+        deliveryDate: selectedEstimation.trackingInfo.deliveryDate || '',
+        receiptDate: selectedEstimation.trackingInfo.receiptDate || ''
+      });
+    } else {
+      setTrackingForm({ number: '', deliveryDate: '', receiptDate: '' });
+    }
+  }, [selectedEstimation?.id, isTrackingPanelOpen]);
+
   const handleCall = (e: React.MouseEvent, phone: string) => {
     e.stopPropagation();
     window.location.href = `tel:${phone}`;
@@ -1170,6 +1198,10 @@ return (
           <div className="flex-1 px-3 flex items-center gap-2.5">
             <User className="w-4 h-4 text-emerald-400" />
             {t('estimation.clientHeader')}
+          </div>
+          <div className="w-32 px-3 flex items-center gap-2.5">
+            <Package className="w-4 h-4 text-orange-400" />
+            {t('estimation.trackingNumberLabel')}
           </div>
           <div className="w-32 px-2 flex items-center gap-2.5">
             <Clock className="w-4 h-4 text-amber-400" />

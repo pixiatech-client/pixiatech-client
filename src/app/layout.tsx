@@ -23,10 +23,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
-      <body className="font-body antialiased min-h-[100dvh] bg-white">
+      <body className="font-body antialiased min-h-[100dvh] bg-white" suppressHydrationWarning>
         <div className="flare cyan" aria-hidden="true" />
         <div className="flare magenta" aria-hidden="true" />
-        <div className="directional-flare" aria-hidden="true" />
+        <div className="directional-flare" aria-hidden="true" suppressHydrationWarning />
         <LayoutProvider>{children}</LayoutProvider>
         <script
           dangerouslySetInnerHTML={{

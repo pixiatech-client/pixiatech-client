@@ -13,11 +13,11 @@ import {
   X,
   Bell,
   MessageSquare,
+  Mail,
   Share2,
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
-  Download,
   AlertCircle,
   Eye,
   RefreshCw,
@@ -32,7 +32,7 @@ import {
 import Link from 'next/link';
 import { useI18n } from '@/lib/i18n';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, orderBy, where } from 'firebase/firestore';
+import { collection, query, orderBy, where, limit, onSnapshot } from 'firebase/firestore';
 import { useAdminT } from '@/hooks/useAdminT';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -45,13 +45,15 @@ const formatDate = (date: Date | null | undefined, locale: string) => {
   }
 };
 
-const getQuoteAmount = (quote: any): number => {
-  if (quote.totalAmount != null) return Number(quote.totalAmount);
-  if (quote.products?.length) {
-    return quote.products.reduce((sum: number, p: any) => sum + (Number(p.totalPrice || p.price || 0) * (p.quantity || 1)), 0);
-  }
-  return 0;
-};
+  const getQuoteAmount = (quote: any): number => {
+    if (quote.totalClient != null) return Number(quote.totalClient);
+    if (quote.totalQuote != null) return Number(quote.totalQuote);
+    if (quote.totalAmount != null) return Number(quote.totalAmount);
+    if (quote.products?.length) {
+      return quote.products.reduce((sum: number, p: any) => sum + (Number(p.totalPrice || p.price || 0) * (p.quantity || 1)), 0);
+    }
+    return 0;
+  };
 
 const statusMeta: Record<string, { labelEn: string; labelFr: string; color: string; bg: string }> = {
   pending: { labelEn: 'Pending', labelFr: 'En attente', color: 'text-yellow-600', bg: 'bg-yellow-50' },
@@ -88,24 +90,25 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
     return query(
       collection(firestore, 'quotes'),
       where('supplierId', '==', uid),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(20)
     );
   }, [firestore, uid]);
-  const { data: supplierQuotes, isLoading: loadingSupplier } = useCollection<any>(supplierQuery);
+  const { data: supplierQuotes, isLoading: loadingSupplier } = useCollection<any>(supplierQuery, { suppressPermissionError: true });
 
   // Fetch all quotes for status-based filtering (fournisseur visibility)
   const allQuotesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'quotes'), orderBy('createdAt', 'desc'));
+    return query(collection(firestore, 'quotes'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore]);
-  const { data: allQuotesRaw, isLoading: loadingAll } = useCollection<any>(allQuotesQuery);
+  const { data: allQuotesRaw, isLoading: loadingAll } = useCollection<any>(allQuotesQuery, { suppressPermissionError: true });
 
   // Fetch products count
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'products'));
+    return query(collection(firestore, 'products'), limit(200));
   }, [firestore]);
-  const { data: allProducts } = useCollection<any>(productsQuery);
+  const { data: allProducts } = useCollection<any>(productsQuery, { suppressPermissionError: true });
 
   // Derive the quotes visible to this fournisseur
   const visibleQuotes = useMemo(() => {
@@ -291,15 +294,15 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {quickActions.map((action) => (
-            <Link
-              key={action.label}
-              href={action.href}
-              className="group flex items-center gap-4 bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:bg-theme-sidebar-active-bg hover:border-zinc-800 transition-all"
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {quickActions.map((action) => (
+              <Link
+                key={action.label}
+                href={action.href}
+                className="group flex items-center gap-4 bg-white static-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:bg-[#0EA684] hover:border-[#0EA684] transition-all duration-200"
             >
-              <div className={`w-12 h-12 rounded-xl ${action.bg} flex items-center justify-center transition-colors`}>
-                <action.icon className={`w-6 h-6 ${action.color}`} />
+              <div className={`w-12 h-12 rounded-xl ${action.bg} flex items-center justify-center transition-colors duration-200 group-hover:bg-white/10`}>
+                <action.icon className={`w-6 h-6 ${action.color} group-hover:text-white transition-colors duration-200`} />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-gray-900 group-hover:text-white transition-colors">{action.label}</p>
@@ -383,9 +386,6 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
-                        <button className="p-2 rounded-lg text-gray-400 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-colors">
-                          <Download className="w-4 h-4" />
-                        </button>
                       </div>
                     </td>
                   </tr>

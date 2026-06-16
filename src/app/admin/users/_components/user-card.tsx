@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { RoleBadge } from './role-badge';
 import { StatusBadge } from './status-badge';
 import { useAdminT } from '@/hooks/useAdminT';
+import { getAvatarUrl } from '@/lib/avatar';
 
 export interface AdaptedUser {
   uid: string;
@@ -117,7 +118,7 @@ export const UserCard: React.FC<UserCardProps> = ({
       <div className="absolute top-[100px] left-8">
         <div className="relative">
           <img
-            src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=random`}
+            src={getAvatarUrl(user.photoURL, user.role, user.displayName)}
             alt={user.displayName}
             className="w-16 h-16 rounded-full border-4 border-white group-hover:border-[#141414] transition-colors object-cover shadow-lg"
             referrerPolicy="no-referrer"

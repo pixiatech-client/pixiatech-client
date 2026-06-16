@@ -374,6 +374,7 @@ export type QuoteRequest = Omit<QuoteDetails, 'products' | 'rentalPeriod'> & {
   selectedCityId?: string | null;
   supplierId?: string;
   trackingNumber?: string;
+  trackingInfo?: { number: string; deliveryDate: string; receiptDate: string };
   assignedAt?: Date;
   supplierNotes?: string;
   supplierTechDetails?: any;
