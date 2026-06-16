@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npx next dev -p 3000",
+    "dev": "npx next dev -p 3000 -H 0.0.0.0",
     "build": "npx next build",
     "start": "npx next start",
     "lint": "npx next lint"
@@ -89,7 +89,9 @@
   },
   "overrides": {
     "react": "$react",
-    "react-dom": "$react-dom"
+    "react-dom": "$react-dom",
+    "@types/react": "$@types/react",
+    "@types/react-dom": "$@types/react-dom"
   },
   "description": "This is a NextJS starter in Firebase Studio.",
   "main": "postcss.config.js",
