@@ -417,6 +417,15 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     {est.supplier}
                   </span>
                 )}
+                {est.treatedByName && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 ${
+                    isSelected 
+                      ? 'bg-purple-100 text-purple-700' 
+                      : 'bg-purple-50 text-purple-600 group-hover:bg-purple-100'
+                  }`}>
+                    {est.treatedByName}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -761,6 +770,9 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="font-black text-zinc-900 dark:text-zinc-100 text-base tracking-tighter truncate group-hover:text-white">{est.client}</span>
                       <Mail className={`w-3.5 h-3.5 shrink-0 ${est.emailVerified ? 'text-emerald-500' : 'text-red-500'}`} />
+                      {est.treatedByName && (
+                        <span className="text-[9px] font-bold bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded-full">{est.treatedByName}</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest group-hover:text-white">{est.number}</span>

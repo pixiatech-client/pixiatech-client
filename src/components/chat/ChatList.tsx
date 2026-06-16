@@ -156,13 +156,14 @@ export default function ChatList({
                   <div className="flex-1 h-[1px] bg-gray-100 ml-2" />
                 </div>
                 <div className="space-y-1">
-                  {chatsInRole.map((chat) => (
+                    {chatsInRole.map((chat) => (
                     <SwipeableChat 
                       key={chat.id}
                       chat={chat}
                       isActive={activeChatId === chat.id}
                       onClick={() => onChatSelect(chat.id)}
                       currentUser={currentUser}
+                      allUsers={allUsers}
                       isPinned={chat.participants.some(id => pinnedUserIds.includes(id))}
                       onPin={() => {
                         const otherId = chat.participants.find(id => id !== currentUser.uid);
@@ -221,7 +222,7 @@ export default function ChatList({
   );
 }
 
-function SwipeableChat({ chat, isActive, onClick, currentUser, isPinned, onPin, onDelete, isMobile, isOpen, onSwipeOpen }: any) {
+function SwipeableChat({ chat, isActive, onClick, currentUser, allUsers, isPinned, onPin, onDelete, isMobile, isOpen, onSwipeOpen }: any) {
   const controls = useAnimation();
   
   useEffect(() => {
@@ -231,7 +232,7 @@ function SwipeableChat({ chat, isActive, onClick, currentUser, isPinned, onPin, 
   }, [isOpen, controls]);
 
   if (!isMobile) {
-    return <ChatItem chat={chat} isActive={isActive} onClick={onClick} currentUser={currentUser} isPinned={isPinned} onPin={onPin} onDelete={onDelete} />;
+    return <ChatItem chat={chat} isActive={isActive} onClick={onClick} currentUser={currentUser} allUsers={allUsers} isPinned={isPinned} onPin={onPin} onDelete={onDelete} />;
   }
 
   return (
@@ -282,31 +283,29 @@ function SwipeableChat({ chat, isActive, onClick, currentUser, isPinned, onPin, 
         }}
         className="relative z-10 bg-[#f4f4f9]"
       >
-        <ChatItem chat={chat} isActive={isActive} onClick={onClick} currentUser={currentUser} isPinned={isPinned} onPin={onPin} />
+        <ChatItem chat={chat} isActive={isActive} onClick={onClick} currentUser={currentUser} allUsers={allUsers} isPinned={isPinned} onPin={onPin} />
       </motion.div>
     </div>
   );
 }
 
-function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDelete }: { chat: Chat, isActive: boolean, onClick: () => void, currentUser: UserProfile, isPinned: boolean, onPin: () => void, onDelete?: () => void }) {
-  const [otherUser, setOtherUser] = useState<UserProfile | null>(null);
+function ChatItem({ chat, isActive, onClick, currentUser, allUsers, isPinned, onPin, onDelete }: { chat: Chat, isActive: boolean, onClick: () => void, currentUser: UserProfile, allUsers: UserProfile[], isPinned: boolean, onPin: () => void, onDelete?: () => void }) {
+  const otherId = chat.participants.find(id => id !== currentUser.uid);
+  const cachedUser = otherId ? allUsers.find(u => u.uid === otherId) : null;
+  const [otherUser, setOtherUser] = useState<UserProfile | null>(cachedUser);
   const unreadCount = chat.unreadCount[currentUser.uid] || 0;
   const isMobile = useMediaQuery('(max-width: 1024px)');
   const { t } = useI18n();
 
   useEffect(() => {
-    const otherId = chat.participants.find(id => id !== currentUser.uid);
     if (!otherId) return;
-
     getDoc(doc(db, 'users', otherId)).then(snap => {
       if (snap.exists()) setOtherUser(snap.data() as UserProfile);
-    });
+    }).catch(err => console.warn('getDoc(otherUser) failed, using cached', err));
   }, [chat, currentUser.uid]);
 
-  if (!otherUser) return null;
-
-  const isBlocked = currentUser.blockedUsers?.includes(otherUser.uid);
-  const isBlockedByOther = otherUser.blockedUsers?.includes(currentUser.uid);
+  const isBlocked = otherUser && currentUser.blockedUsers?.includes(otherUser.uid);
+  const isBlockedByOther = otherUser && otherUser.blockedUsers?.includes(currentUser.uid);
 
   const renderLastMessage = (message: string) => {
     if (!message) return t('chat.newConversation');
@@ -346,7 +345,7 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
           isBlocked ? "border-red-500" : "border-transparent"
         )}>
           <img 
-              src={getAvatarUrl(otherUser.photoURL, otherUser.role, otherUser.displayName || '')} 
+              src={getAvatarUrl(otherUser?.photoURL, otherUser?.role, otherUser?.displayName || '')} 
               alt="" 
               className={cn(
                 "h-full w-full rounded-[14px] object-cover",
@@ -355,7 +354,7 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
               referrerPolicy="no-referrer"
             />
         </div>
-        {otherUser.isOnline && !isBlocked && (
+        {otherUser?.isOnline && !isBlocked && (
           <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-green-500" />
         )}
       </div>
@@ -367,7 +366,7 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
               "font-bold truncate text-sm transition-colors",
               isBlocked ? "text-red-500" : isBlockedByOther ? "text-gray-400" : (isActive ? "text-white" : "text-[#1a1d21]"),
               "group-hover:text-white"
-            )}>{otherUser.displayName}</span>
+            )}>{otherUser?.displayName || chat.id?.slice(0, 8)}</span>
             {chat.quoteNumber && (
               <span className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[8px] font-black text-[#10b981] uppercase tracking-wider">
                 #{chat.quoteNumber}
@@ -391,7 +390,7 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
             unreadCount > 0 ? "text-blue-500 font-semibold" : (isActive ? "text-white/60" : "text-gray-500"),
             "group-hover:text-white/80"
           )}>
-            {otherUser.isTyping ? t('chat.typing') : renderLastMessage(chat.lastMessage)}
+            {otherUser?.isTyping ? t('chat.typing') : renderLastMessage(chat.lastMessage)}
           </div>
           <div className="flex items-center gap-1.5">
             {unreadCount > 0 && (

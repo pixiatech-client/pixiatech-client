@@ -342,7 +342,13 @@ export default function ContactList({
         )}
       >
         <AnimatePresence>
-          {roleOrder.map(role => {
+          {users.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-gray-400 px-8 text-center">
+              <User size={48} className="mb-4 opacity-30" />
+              <p className="text-sm font-medium mb-1">{t('chat.noContacts') || 'Aucun contact trouvé'}</p>
+              <p className="text-xs opacity-60">Vérifiez les règles Firestore et votre connexion</p>
+            </div>
+          ) : roleOrder.map(role => {
             const usersInRole = groupedUsers[role];
             if (!usersInRole || usersInRole.length === 0) return null;
             const roleColor = getRoleColor(role);

@@ -142,6 +142,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
       return {
         id: q.estimationNumber || q.id?.slice(0, 8) || 'N/A',
         client: q.clientName || q.clientEmail || q.userName || 'Client',
+        commercial: q.treatedByName || '',
         statusLabel: locale === 'fr' ? meta.labelFr : meta.labelEn,
         statusColor: meta.color,
         statusBg: meta.bg,
@@ -334,6 +335,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                 <tr className={`text-left text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                   <th className="pb-4 font-semibold">{t('admin.number')}</th>
                   <th className="pb-4 font-semibold">{t('admin.client')}</th>
+                  <th className="pb-4 font-semibold">{t('admin.commercial') || 'Commercial'}</th>
                   <th className="pb-4 font-semibold">{t('admin.status')}</th>
                   <th className="pb-4 font-semibold">{t('admin.amount')}</th>
                   <th className="pb-4 font-semibold">{t('admin.date')}</th>
@@ -343,13 +345,13 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-gray-400">
+                    <td colSpan={7} className="py-12 text-center text-gray-400">
                       <RefreshCw className="w-5 h-5 animate-spin mx-auto" />
                     </td>
                   </tr>
                 ) : filteredEstimations.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-gray-400 italic">
+                    <td colSpan={7} className="py-12 text-center text-gray-400 italic">
                       {searchQuery ? t('admin.noSearchResults') || 'Aucun résultat pour cette recherche' : t('admin.noEstimations') || 'Aucune estimation pour le moment'}
                     </td>
                   </tr>
@@ -361,6 +363,11 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                     <td className="py-4">
                       <span className={`text-sm ${isDark ? 'text-gray-400 group-hover:text-zinc-300' : 'text-gray-500 group-hover:text-zinc-400'} transition-colors`}>
                         {quote.client}
+                      </span>
+                    </td>
+                    <td className="py-4">
+                      <span className={`text-sm ${isDark ? 'text-gray-400 group-hover:text-zinc-300' : 'text-gray-500 group-hover:text-zinc-400'} transition-colors`}>
+                        {quote.commercial || '—'}
                       </span>
                     </td>
                     <td className="py-4">

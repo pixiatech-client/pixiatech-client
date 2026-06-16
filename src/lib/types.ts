@@ -540,6 +540,7 @@ export interface Message {
   fileUrl?: string;
   status: MessageStatus;
   createdAt: any; 
+  duration?: number; // seconds, for audio messages
   reactions?: Record<string, string[]>; 
   options?: MessageOption[]; // Interactive rich buttons for the wizard bot
   summaryData?: Record<string, string>; // Data for the wizard bot summary card

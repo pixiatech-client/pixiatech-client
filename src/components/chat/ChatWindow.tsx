@@ -39,13 +39,22 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
   const [isUploading, setIsUploading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [recordingPreview, setRecordingPreview] = useState<{blob: Blob; url: string; duration: number; mimeType: string} | null>(null);
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const [audioLevels, setAudioLevels] = useState<number[]>(Array(20).fill(0));
   const [unsubOtherUser, setUnsubOtherUser] = useState<(() => void) | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const isDeletingRef = useRef(false);
+  const recordingStartRef = useRef<number>(0);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const isRecordingRef = useRef(false);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const levelAnimRef = useRef<number>(0);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
@@ -80,46 +89,62 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // Better mime type detection for cross-platform support (iOS/Android/PC)
-      const types = ['audio/mp4', 'audio/aac', 'audio/mpeg', 'audio/webm;codecs=opus', 'audio/webm'];
-      const mimeType = types.find(type => MediaRecorder.isTypeSupported(type)) || '';
-      
-      if (!mimeType) {
-        alert(t('chat.audioFormatNotSupported'));
-        return;
-      }
+      const audioTrack = stream.getAudioTracks()[0];
+      console.log('[audio] Microphone track:', { label: audioTrack?.label, enabled: audioTrack?.enabled, muted: audioTrack?.muted });
 
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      const mediaRecorder = new MediaRecorder(stream);
+      const mimeType = mediaRecorder.mimeType || 'audio/webm';
+      console.log('[audio] MediaRecorder created:', { mimeType, state: mediaRecorder.state });
       mediaRecorderRef.current = mediaRecorder;
       const chunks: Blob[] = [];
+      recordingStartRef.current = Date.now();
+
+      // Audio level meter
+      isRecordingRef.current = true;
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        audioContext.resume();
+        audioContextRef.current = audioContext;
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 64;
+        source.connect(analyser);
+        analyserRef.current = analyser;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const updateLevels = () => {
+          if (!isRecordingRef.current) return;
+          analyser.getByteFrequencyData(dataArray);
+          const normalized = Array.from(dataArray).map(v => v / 255);
+          setAudioLevels(normalized.slice(0, 20));
+          levelAnimRef.current = requestAnimationFrame(updateLevels);
+        };
+        updateLevels();
+      } catch (e) {
+        console.warn('Level meter unavailable:', e);
+      }
 
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.push(e.data);
       };
 
-      mediaRecorder.onstop = async () => {
-        const extension = mimeType.includes('mp4') ? 'mp4' : 
-                         mimeType.includes('aac') ? 'aac' : 
-                         mimeType.includes('mpeg') ? 'mp3' : 'webm';
-                         
+      mediaRecorder.onstop = () => {
+        isRecordingRef.current = false;
+        cancelAnimationFrame(levelAnimRef.current);
+        audioContextRef.current?.close();
+        audioContextRef.current = null;
+        analyserRef.current = null;
+
+        const duration = Math.round((Date.now() - recordingStartRef.current) / 1000);
         const blob = new Blob(chunks, { type: mimeType });
-        
-        try {
-          const storageRef = ref(storage, `chats/${chatId}/audio_${Date.now()}.${extension}`);
-          await uploadBytes(storageRef, blob);
-          const downloadURL = await getDownloadURL(storageRef);
-          await sendVoiceMessage(downloadURL);
-        } catch (uploadError) {
-          console.error('Error uploading audio:', uploadError);
-          alert(t('chat.errorSendingAudio'));
-        } finally {
-          // Stop all tracks to release the microphone
-          stream.getTracks().forEach(track => track.stop());
-        }
+        console.log('[audio] Recording stopped:', { mimeType, chunks: chunks.length, totalSize: blob.size, duration });
+        const url = URL.createObjectURL(blob);
+        setRecordingPreview({ blob, url, duration, mimeType });
+        setIsPreviewPlaying(false);
+        setAudioLevels(Array(20).fill(0));
+        stream.getTracks().forEach(track => track.stop());
       };
 
-      mediaRecorder.start(1000); // Collect data every second for safety
+      mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
       if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
@@ -128,8 +153,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
       }, 1000);
     } catch (err) {
       console.error("Error accessing microphone:", err);
-      const errorMsg = err instanceof Error ? err.message : t('chat.unknownError');
-      alert(t('chat.microphoneError', { error: errorMsg }));
+      alert(t('chat.microphoneError'));
     }
   };
 
@@ -147,7 +171,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const sendVoiceMessage = async (url: string) => {
+  const sendVoiceMessage = async (url: string, duration?: number) => {
     if (currentUser.permissions?.canChat === false && currentUser.role !== 'admin') return;
     
     const msgData: Partial<Message> = {
@@ -158,6 +182,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
       content: t('chat.voiceMessage'),
       type: 'audio',
       fileUrl: url,
+      duration: duration || undefined,
       status: 'sent',
       createdAt: serverTimestamp()
     };
@@ -191,6 +216,34 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
         }
       });
     }
+  };
+
+  const confirmSendAudio = async () => {
+    if (!recordingPreview) return;
+    const { blob, duration, mimeType } = recordingPreview;
+    const extension = mimeType.includes('mp4') ? 'mp4' : 
+                     mimeType.includes('aac') ? 'aac' : 
+                     mimeType.includes('mpeg') ? 'mp3' : 'webm';
+    try {
+      const storageRef = ref(storage, `chats/${chatId}/audio_${Date.now()}.${extension}`);
+      await uploadBytes(storageRef, blob);
+      const downloadURL = await getDownloadURL(storageRef);
+      await sendVoiceMessage(downloadURL, duration);
+      cancelSendAudio();
+    } catch (err) {
+      console.error('Error uploading audio:', err);
+      alert(t('chat.errorSendingAudio'));
+    }
+  };
+
+  const cancelSendAudio = () => {
+    if (recordingPreview) {
+      URL.revokeObjectURL(recordingPreview.url);
+    }
+    setRecordingPreview(null);
+    setIsPreviewPlaying(false);
+    previewAudioRef.current?.pause();
+    previewAudioRef.current = null;
   };
 
   const scrollToBottom = () => {
@@ -1109,94 +1162,171 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
               onChange={handleFileUpload}
               accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
             />
-            <>
-              {/* External Glass Container (Wizard Style) */}
-              <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-2 md:p-3 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-2 md:gap-4">
-                
-                {/* Microphone Button (Squared Style) */}
-                <button 
-                  type="button"
-                  onClick={isRecording ? stopRecording : startRecording}
-                  className={cn(
-                    "rounded-[22px] flex items-center justify-center transition-all flex-shrink-0 bg-[#0f1113] border border-white/5 shadow-xl",
-                    isMobile ? "h-12 w-12" : "h-14 w-14",
-                    isRecording 
-                      ? "bg-red-500 text-white animate-pulse" 
-                      : "text-[#a2ff00] hover:bg-black hover:scale-105 active:scale-95"
-                  )}
-                >
-                  {isRecording ? <StopCircle size={24} /> : <Mic size={24} />}
-                </button>
-
-                {/* Main Input Bar (Squared Style) */}
-                <div className={cn(
-                  "flex-1 bg-[#0f1113] rounded-[22px] border border-white/5 p-1.5 flex items-center gap-3 transition-all relative overflow-hidden h-12 md:h-14",
-                  isRecording && "border-red-500/50"
-                )}>
-                  {/* Paperclip / Attachment */}
+            {recordingPreview ? (
+              <>
+                <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-2 md:p-3 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-2 md:gap-4">
+                  {/* Cancel button */}
                   <button 
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading || isRecording}
-                    className="h-10 w-10 flex items-center justify-center text-[#a2ff00] hover:bg-white/5 rounded-xl transition-all flex-shrink-0 ml-1"
-                  >
-                    {isUploading ? (
-                      <div className="h-5 w-5 border-2 border-[#a2ff00] border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Paperclip size={20} />
+                    onClick={cancelSendAudio}
+                    className={cn(
+                      "rounded-[22px] flex items-center justify-center transition-all flex-shrink-0 bg-[#0f1113] border border-white/5 shadow-xl",
+                      isMobile ? "h-12 w-12" : "h-14 w-14",
+                      "text-white/60 hover:text-white hover:bg-black hover:scale-105 active:scale-95"
                     )}
+                  >
+                    <X size={24} />
                   </button>
 
-                  {/* Vertical Separator */}
-                  <div className="w-[1.5px] h-6 bg-[#a2ff00]/20 rounded-full flex-shrink-0" />
-
-                  {isRecording ? (
-                    <div className="flex-1 flex items-center gap-3 px-2">
-                      <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse" />
-                      <span className="text-[#a2ff00] font-black text-xs tracking-widest font-mono uppercase">{formatTime(recordingTime)}</span>
-                      <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                        <motion.div 
-                          animate={{ x: ['-100%', '100%'] }}
-                          transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                          className="w-1/2 h-full bg-[#a2ff00]/20"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <textarea
-                      rows={1}
-                      placeholder={t('chat.messagePlaceholder')}
-                      className={cn(
-                        "flex-1 bg-transparent border-none outline-none text-[#a2ff00] resize-none max-h-32 no-scrollbar placeholder:text-[#a2ff00]/20 font-black tracking-[0.1em] font-mono",
-                        isMobile ? "py-2 px-1 text-[13px]" : "py-2 px-1 text-[15px]"
-                      )}
-                      value={inputText}
-                      onChange={(e) => setInputText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          sendMessage();
+                  {/* Preview bar */}
+                  <div className="flex-1 bg-[#0f1113] rounded-[22px] border border-white/5 p-1.5 flex items-center gap-3 h-12 md:h-14">
+                    {/* Play/Pause button */}
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        if (isPreviewPlaying) {
+                          previewAudioRef.current?.pause();
+                          setIsPreviewPlaying(false);
+                        } else {
+                          if (!previewAudioRef.current) {
+                            previewAudioRef.current = new Audio(recordingPreview.url);
+                            previewAudioRef.current.onended = () => {
+                              setIsPreviewPlaying(false);
+                              previewAudioRef.current = null;
+                            };
+                          }
+                          previewAudioRef.current.play().then(() => {
+                            setIsPreviewPlaying(true);
+                          }).catch(() => setIsPreviewPlaying(false));
                         }
                       }}
-                    />
-                  )}
+                      className="h-10 w-10 flex items-center justify-center text-[#a2ff00] hover:bg-white/5 rounded-xl transition-all flex-shrink-0 ml-1"
+                    >
+                      {isPreviewPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />}
+                    </button>
 
-                  {/* Send Button (Wizard Style - Squared) */}
+                    {/* Visualizer */}
+                    <div className="flex-1 flex items-center gap-[3px] h-8">
+                      {[...Array(20)].map((_, i) => (
+                        <div 
+                          key={i}
+                          className="flex-1 rounded-full bg-[#a2ff00]/40"
+                          style={{ height: `${30 + Math.random() * 70}%` }}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Duration */}
+                    <span className="text-[#a2ff00]/60 font-black text-xs tracking-widest font-mono mr-2">
+                      {formatTime(recordingPreview.duration)}
+                    </span>
+
+                    {/* Send button */}
+                    <button 
+                      type="button"
+                      onClick={confirmSendAudio}
+                      className="h-10 w-10 md:h-11 md:w-11 rounded-[18px] flex items-center justify-center transition-all shadow-lg active:scale-90 flex-shrink-0 mr-1 bg-[#a2ff00] text-black shadow-[#a2ff00]/30"
+                    >
+                      <ChevronDown size={24} className="-rotate-90 stroke-[3px]" />
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* External Glass Container (Wizard Style) */}
+                <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-2 md:p-3 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-2 md:gap-4">
+                  
+                  {/* Microphone Button (Squared Style) */}
                   <button 
-                    onClick={() => sendMessage()}
-                    disabled={(!inputText.trim() && !isRecording) || isUploading}
+                    type="button"
+                    onClick={isRecording ? stopRecording : startRecording}
                     className={cn(
-                      "h-10 w-10 md:h-11 md:w-11 rounded-[18px] flex items-center justify-center transition-all shadow-lg active:scale-90 flex-shrink-0 mr-1",
-                      (inputText.trim() || isRecording) 
-                        ? "bg-[#a2ff00] text-black shadow-[#a2ff00]/30" 
-                        : "bg-white/5 text-[#a2ff00]/20"
+                      "rounded-[22px] flex items-center justify-center transition-all flex-shrink-0 bg-[#0f1113] border border-white/5 shadow-xl",
+                      isMobile ? "h-12 w-12" : "h-14 w-14",
+                      isRecording 
+                        ? "bg-red-500 text-white animate-pulse" 
+                        : "text-[#a2ff00] hover:bg-black hover:scale-105 active:scale-95"
                     )}
                   >
-                    <ChevronDown size={24} className="-rotate-90 stroke-[3px]" />
+                    {isRecording ? <StopCircle size={24} /> : <Mic size={24} />}
                   </button>
+
+                  {/* Main Input Bar (Squared Style) */}
+                  <div className={cn(
+                    "flex-1 bg-[#0f1113] rounded-[22px] border border-white/5 p-1.5 flex items-center gap-3 transition-all relative overflow-hidden h-12 md:h-14",
+                    isRecording && "border-red-500/50"
+                  )}>
+                    {/* Paperclip / Attachment */}
+                    <button 
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading || isRecording}
+                      className="h-10 w-10 flex items-center justify-center text-[#a2ff00] hover:bg-white/5 rounded-xl transition-all flex-shrink-0 ml-1"
+                    >
+                      {isUploading ? (
+                        <div className="h-5 w-5 border-2 border-[#a2ff00] border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Paperclip size={20} />
+                      )}
+                    </button>
+
+                    {/* Vertical Separator */}
+                    <div className="w-[1.5px] h-6 bg-[#a2ff00]/20 rounded-full flex-shrink-0" />
+
+                    {isRecording ? (
+                      <div className="flex-1 flex items-center gap-2 px-2">
+                        <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse flex-shrink-0" />
+                        <span className="text-[#a2ff00]/60 font-black text-[10px] tracking-widest font-mono flex-shrink-0">{formatTime(recordingTime)}</span>
+                        <div className="flex-1 h-8 flex items-center gap-[2px]">
+                          {audioLevels.map((level, i) => (
+                            <div 
+                              key={i}
+                              className="flex-1 rounded-full transition-all duration-75"
+                              style={{ 
+                                height: `${10 + level * 80}%`,
+                                backgroundColor: level > 0.3 ? '#a2ff00' : level > 0.1 ? '#a2ff0080' : '#a2ff0020'
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <textarea
+                        rows={1}
+                        placeholder={t('chat.messagePlaceholder')}
+                        className={cn(
+                          "flex-1 bg-transparent border-none outline-none text-[#a2ff00] resize-none max-h-32 no-scrollbar placeholder:text-[#a2ff00]/20 font-black tracking-[0.1em] font-mono",
+                          isMobile ? "py-2 px-1 text-[13px]" : "py-2 px-1 text-[15px]"
+                        )}
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                          }
+                        }}
+                      />
+                    )}
+
+                    {/* Send Button (Wizard Style - Squared) */}
+                    <button 
+                      onClick={() => sendMessage()}
+                      disabled={(!inputText.trim() && !isRecording) || isUploading}
+                      className={cn(
+                        "h-10 w-10 md:h-11 md:w-11 rounded-[18px] flex items-center justify-center transition-all shadow-lg active:scale-90 flex-shrink-0 mr-1",
+                        (inputText.trim() || isRecording) 
+                          ? "bg-[#a2ff00] text-black shadow-[#a2ff00]/30" 
+                          : "bg-white/5 text-[#a2ff00]/20"
+                      )}
+                    >
+                      <ChevronDown size={24} className="-rotate-90 stroke-[3px]" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </>
+              </>
+            )}
           </>
         )}
       </div>

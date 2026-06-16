@@ -1794,7 +1794,7 @@
         "unknownUser": "Utilisateur",
         "unknownClient": "Client inconnu",
         "unknownError": "Inconnue",
-        "microphoneError": "Impossible d'accéder au micro : {error}. Vérifiez les réglages de votre navigateur.",
+        "microphoneError": "Le micro n'est pas disponible depuis notre système. Vérifiez les réglages de votre navigateur ou autorisez l'accès au micro dans les paramètres du site.",
         "audioNotSupported": "Votre navigateur ne supporte pas l'enregistrement audio.",
         "audioFormatNotSupported": "Aucun format audio supporté trouvé sur cet appareil.",
         "errorSendingAudio": "Erreur lors de l'envoi du message vocal",

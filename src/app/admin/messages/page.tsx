@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import MiniChat from '@/components/chat/MiniChat';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { getAllUsers } from '@/app/admin/actions';
 
 export default function MessagesPage() {
   const { userProfile: basicProfile } = useUser();
@@ -44,15 +45,29 @@ export default function MessagesPage() {
     });
   }, [basicProfile?.uid]);
 
-  // 2. Real-time All Users
+  // 2. All Users — admin uses real-time; others fetch via server action (bypasses rules)
   useEffect(() => {
     if (!user) return;
-    return onSnapshot(collection(db, 'users'), (snap) => {
-      const u = snap.docs.map(d => ({ uid: d.id, ...d.data() }) as UserProfileChat);
-      setAllUsers(u);
-    }, (error) => {
-      console.error('Users listener error:', error);
-    });
+
+    if (user.role === 'admin') {
+      return onSnapshot(collection(db, 'users'), (snap) => {
+        const u = snap.docs.map(d => ({ uid: d.id, ...d.data() }) as UserProfileChat);
+        setAllUsers(u);
+      }, (error) => {
+        console.error('Users listener error:', error);
+      });
+    } else {
+      getAllUsers().then(u => {
+        if (u.length > 0) setAllUsers(u as UserProfileChat[]);
+      });
+      // Refresh every 30s since real-time is blocked
+      const interval = setInterval(() => {
+        getAllUsers().then(u => {
+          if (u.length > 0) setAllUsers(u as UserProfileChat[]);
+        });
+      }, 30000);
+      return () => clearInterval(interval);
+    }
   }, [user]);
 
   // 3. Real-time Chats

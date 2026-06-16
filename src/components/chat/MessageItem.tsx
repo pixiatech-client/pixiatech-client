@@ -86,13 +86,20 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
   }, [isOpen, controls]);
 
   const toggleAudio = () => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
+    if (!msg.fileUrl) return;
+    if (audioRef.current && isPlaying) {
       audioRef.current.pause();
-    } else {
-      audioRef.current.play();
+      audioRef.current = null;
+      setIsPlaying(false);
+      return;
     }
-    setIsPlaying(!isPlaying);
+    const audio = new Audio(`/api/audio?url=${encodeURIComponent(msg.fileUrl)}`);
+    audio.onended = () => { setIsPlaying(false); audioRef.current = null; };
+    audio.onerror = () => { setIsPlaying(false); };
+    audio.play().then(() => {
+      setIsPlaying(true);
+      audioRef.current = audio;
+    }).catch(() => setIsPlaying(false));
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -223,14 +230,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
                 >
                   {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
                 </button>
-                <audio 
-                  ref={audioRef} 
-                  src={msg.fileUrl} 
-                  onEnded={() => setIsPlaying(false)}
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                  className="hidden" 
-                />
+
                 <div className="flex-1 h-10 flex items-center gap-1">
                   {[...Array(24)].map((_, i) => (
                     <div 
@@ -243,7 +243,9 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
                     />
                   ))}
                 </div>
-                <span className="text-[10px] font-black opacity-60 font-mono">0:15</span>
+                <span className="text-[10px] font-black opacity-60 font-mono">
+                  {msg.duration ? `${Math.floor(msg.duration / 60)}:${(msg.duration % 60).toString().padStart(2, '0')}` : '0:00'}
+                </span>
               </div>
             )}
 

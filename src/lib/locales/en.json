@@ -1798,7 +1798,7 @@
         "unknownUser": "User",
         "unknownClient": "Unknown client",
         "unknownError": "Unknown",
-        "microphoneError": "Cannot access microphone: {error}. Check your browser settings.",
+        "microphoneError": "Microphone is not available from our system. Check your browser settings or allow microphone access in site settings.",
         "audioNotSupported": "Your browser does not support audio recording.",
         "audioFormatNotSupported": "No supported audio format found on this device.",
         "errorSendingAudio": "Error sending voice message",

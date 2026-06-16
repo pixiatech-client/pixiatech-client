@@ -3455,6 +3455,21 @@ export async function impersonateUser(targetUserId: string) {
   }
 }
 
+export async function getAllUsers() {
+  const sessionCookie = (await cookies()).get('session')?.value;
+  if (!sessionCookie) return [];
+
+  try {
+    const { adminAuth, adminDb } = getFirebaseAdmin();
+    await adminAuth.verifySessionCookie(sessionCookie, false);
+    const snap = await adminDb.collection('users').get();
+    return JSON.parse(JSON.stringify(snap.docs.map(d => ({ uid: d.id, ...d.data() }))));
+  } catch (error) {
+    console.error('[getAllUsers] Error:', error);
+    return [];
+  }
+}
+
 
 
 
