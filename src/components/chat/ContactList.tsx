@@ -10,6 +10,7 @@ import { firestore as db } from '@/firebase/config';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useRoles } from '@/contexts/RoleContext';
 import { useI18n } from '@/lib/i18n';
+import { getAvatarUrl } from '@/lib/avatar';
 
 interface ContactListProps {
   users: UserProfile[];
@@ -612,9 +613,9 @@ export default function ContactList({
                             : "bg-white/5 border-white/10 hover:border-white/20"
                         )}
                       >
-                        <img src={supplier.photoURL} alt="" className="h-9 w-9 rounded-full object-cover" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-white text-sm truncate">{supplier.displayName}</p>
+<img src={getAvatarUrl(supplier.photoURL, supplier.role, supplier.displayName || '')} alt="" className="h-9 w-9 rounded-full object-cover" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-white text-sm truncate">{supplier.displayName}</p>
                           <p className="text-[10px] text-white/40 truncate">{supplier.email}</p>
                         </div>
                         {assigned && <Check size={18} className="text-emerald-400 shrink-0" />}
@@ -747,9 +748,9 @@ function ContactItem({ user, currentUser, isMiniChat, isCollapsed, selectedUsers
           boxShadow: `0 0 10px ${currentUser.blockedUsers?.includes(user.uid) ? "rgba(239,68,68,0.4)" : 
                        user.blockedUsers?.includes(currentUser.uid) ? "rgba(156,163,175,0.4)" : roleColor + "66"}`
         }}>
-          {user.photoURL ? (
+          {user.photoURL || getAvatarUrl(undefined, user.role, user.displayName || '') ? (
             <img 
-              src={user.photoURL} 
+              src={getAvatarUrl(user.photoURL, user.role, user.displayName || '')} 
               alt="" 
               className={cn(
                 "h-full w-full rounded-full object-cover",
@@ -757,11 +758,7 @@ function ContactItem({ user, currentUser, isMiniChat, isCollapsed, selectedUsers
               )} 
               referrerPolicy="no-referrer" 
             />
-          ) : (
-            <div className="h-full w-full rounded-full bg-gray-700 flex items-center justify-center text-white font-bold text-sm">
-              {user.displayName?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-          )}
+          ) : null}
         </div>
         {user.isOnline && !currentUser.blockedUsers?.includes(user.uid) && !user.blockedUsers?.includes(currentUser.uid) && (
           <div 

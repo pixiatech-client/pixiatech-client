@@ -10,89 +10,84 @@ interface SignaturePadProps {
 export default function SignaturePad({ onSave, onClear, isValidated }: SignaturePadProps) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
-  const pointsRef = useRef<{ x: number; y: number }[]>([]);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const lastRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const updateSize = () => {
+    const resize = () => {
       const rect = canvas.getBoundingClientRect();
       const ratio = window.devicePixelRatio || 1;
-      canvas.width = rect.width * ratio;
-      canvas.height = rect.height * ratio;
-      canvas.style.width = `${rect.width}px`;
-      canvas.style.height = `${rect.height}px`;
-
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.scale(ratio, ratio);
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 3;
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctxRef.current = ctx;
+      const w = Math.round(rect.width * ratio);
+      const h = Math.round(rect.height * ratio);
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.scale(ratio, ratio);
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.strokeStyle = '#1e293b';
+          ctx.lineWidth = 3;
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+        }
       }
     };
 
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
   }, []);
 
   const getPos = useCallback((e: any) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
-    if (e.touches && e.touches.length > 0) {
-      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
-    }
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return { x, y };
   }, []);
 
   const startDrawing = useCallback((e: any) => {
     e.preventDefault();
-    const pos = getPos(e);
-    if (!pos) return;
+    const p = getPos(e);
+    if (!p) return;
     setIsDrawing(true);
-    pointsRef.current = [pos];
+    lastRef.current = p;
     setHasDrawn(true);
+
+    const ctx = canvasRef.current?.getContext('2d');
+    if (ctx) {
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+    }
   }, [getPos]);
 
   const draw = useCallback((e: any) => {
     if (!isDrawing) return;
     e.preventDefault();
-    const canvas = canvasRef.current;
-    let ctx = ctxRef.current;
-    if (!ctx) ctx = canvas?.getContext('2d') as CanvasRenderingContext2D;
     const p = getPos(e);
-    if (ctx && p) {
-      const pts = [...pointsRef.current, p];
-      if (pts.length === 2) {
-        ctx.beginPath();
-        ctx.moveTo(pts[0].x, pts[0].y);
-        ctx.lineTo(pts[1].x, pts[1].y);
-        ctx.stroke();
-      } else if (pts.length >= 3) {
-        const prev = pts[pts.length - 3];
-        const curr = pts[pts.length - 2];
-        const next = pts[pts.length - 1];
-        ctx.beginPath();
-        ctx.moveTo((prev.x + curr.x) / 2, (prev.y + curr.y) / 2);
-        ctx.quadraticCurveTo(curr.x, curr.y, (curr.x + next.x) / 2, (curr.y + next.y) / 2);
-        ctx.stroke();
-      }
-      pointsRef.current = pts.slice(-3);
-    }
+    if (!p || !lastRef.current) return;
+
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+
+    const mid = { x: (lastRef.current.x + p.x) / 2, y: (lastRef.current.y + p.y) / 2 };
+    ctx.quadraticCurveTo(lastRef.current.x, lastRef.current.y, mid.x, mid.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(mid.x, mid.y);
+
+    lastRef.current = p;
   }, [isDrawing, getPos]);
 
   const stopDrawing = useCallback(() => {
     setIsDrawing(false);
-    pointsRef.current = [];
+    lastRef.current = null;
   }, []);
 
   const clearCanvas = useCallback(() => {
@@ -129,9 +124,8 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
         <canvas
           id="signature-canvas"
           ref={canvasRef}
-          className={`w-full h-44 block touch-none cursor-crosshair bg-white transition-colors ${
-            isValidated ? 'opacity-80 pointer-events-none bg-blue-50/20' : ''
-          }`}
+          className="w-full h-44 block touch-none cursor-crosshair bg-white transition-colors"
+          style={{ cursor: isValidated ? 'default' : 'crosshair', opacity: isValidated ? 0.8 : 1, pointerEvents: isValidated ? 'none' : 'auto' }}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
@@ -152,11 +146,10 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
           id="btn-clear-sig"
           type="button"
           onClick={clearCanvas}
-          disabled={isValidated}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium border border-zinc-200 bg-white hover:bg-zinc-50 rounded-xl transition-all cursor-pointer text-zinc-650 hover:text-zinc-900 disabled:opacity-30 disabled:hover:bg-white disabled:cursor-not-allowed"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium border border-zinc-200 bg-white hover:bg-zinc-50 rounded-xl transition-all cursor-pointer text-zinc-650 hover:text-zinc-900"
         >
           <Eraser size={16} />
-          <span>{isValidated ? 'Effacer / Recommencer' : 'Effacer'}</span>
+          <span>Effacer</span>
         </button>
         <button
           id="btn-validate-sig"
@@ -172,7 +165,7 @@ export default function SignaturePad({ onSave, onClear, isValidated }: Signature
           }`}
         >
           <Check size={16} />
-          <span>{isValidated ? 'Signé ✓' : 'Signer & accepter'}</span>
+          <span>{isValidated ? 'Signé' : 'Signer & accepter'}</span>
         </button>
       </div>
     </div>

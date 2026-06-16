@@ -12,6 +12,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { useRoles } from '@/contexts/RoleContext';
 import ConfirmModal from './ConfirmModal';
 import { useI18n } from '@/lib/i18n';
+import { getAvatarUrl } from '@/lib/avatar';
 
 interface ChatListProps {
   chats: Chat[];
@@ -344,9 +345,8 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
           "h-12 w-12 rounded-2xl p-0.5 border-2 transition-all",
           isBlocked ? "border-red-500" : "border-transparent"
         )}>
-          {otherUser.photoURL ? (
-            <img 
-              src={otherUser.photoURL} 
+          <img 
+              src={getAvatarUrl(otherUser.photoURL, otherUser.role, otherUser.displayName || '')} 
               alt="" 
               className={cn(
                 "h-full w-full rounded-[14px] object-cover",
@@ -354,11 +354,6 @@ function ChatItem({ chat, isActive, onClick, currentUser, isPinned, onPin, onDel
               )} 
               referrerPolicy="no-referrer"
             />
-          ) : (
-            <div className="h-full w-full rounded-[14px] bg-gray-700 flex items-center justify-center text-white font-bold text-sm">
-              {otherUser.displayName?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-          )}
         </div>
         {otherUser.isOnline && !isBlocked && (
           <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-green-500" />

@@ -8,6 +8,7 @@ import { Message, MessageOption } from '@/lib/types';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useRoles } from '@/contexts/RoleContext';
 import { useI18n } from '@/lib/i18n';
+import { getAvatarUrl } from '@/lib/avatar';
 
 const translateOption = (option: MessageOption | string, translateFn: (key: string, params?: Record<string, string | number>) => string): string => {
   if (typeof option === 'string') return option;
@@ -119,7 +120,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
               className="w-16 h-16 flex-shrink-0 drop-shadow-md z-10"
             >
               <img 
-                src={msg.botImage || otherUserPhotoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}`} 
+                src={msg.botImage || otherUserPhotoURL} 
                 alt={t('chat.botAvatar')} 
                 className="w-full h-full object-contain scale-[1.3] origin-bottom" 
               />
@@ -127,7 +128,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
           ) : (
             <div className="h-12 w-12 rounded-full overflow-hidden flex-shrink-0 shadow-xl border-2 border-white/20">
               <img 
-                src={isMine ? (currentUserPhotoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}`) : (otherUserPhotoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.senderId}`)} 
+                src={isMine ? currentUserPhotoURL : otherUserPhotoURL} 
                 alt="" 
                 className="h-full w-full object-cover" 
               />

@@ -7,6 +7,7 @@ import { doc, updateDoc, onSnapshot, collection, setDoc, getDoc, getDocs } from 
 import { firestore as db } from '@/firebase/config';
 import { UserProfileChat as UserProfile, AdminSettings } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { getAvatarUrl } from '@/lib/avatar';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAW6cWb29qnlIS8Hb8RAWlv4KDxgqw-bM8",
@@ -457,7 +458,7 @@ export default function AdminPanel({ onClose, onBack, currentUser }: AdminPanelP
           <div className="space-y-3">
             {users.filter(u => u.role !== 'admin').map(user => (
               <div key={user.uid} className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl">
-                <img src={user.photoURL} alt="" className="h-10 w-10 rounded-full object-cover" />
+                <img src={getAvatarUrl(user.photoURL, user.role, user.displayName || '')} alt="" className="h-10 w-10 rounded-full object-cover" />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white text-sm truncate">{user.displayName}</p>
                   <p className="text-xs text-white/40 truncate">{user.email}</p>
@@ -534,7 +535,7 @@ export default function AdminPanel({ onClose, onBack, currentUser }: AdminPanelP
                                 : "bg-white/5 border-white/10 hover:border-white/20"
                             )}
                           >
-                            <img src={supplier.photoURL} alt="" className="h-9 w-9 rounded-full object-cover" />
+                            <img src={getAvatarUrl(supplier.photoURL, supplier.role, supplier.displayName || '')} alt="" className="h-9 w-9 rounded-full object-cover" />
                             <div className="flex-1 min-w-0">
                               <p className="font-bold text-white text-sm truncate">{supplier.displayName}</p>
                               <p className="text-[10px] text-white/40 truncate">{supplier.email}</p>

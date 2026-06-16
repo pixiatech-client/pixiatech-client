@@ -39,6 +39,8 @@ export default function MessagesPage() {
       if (snap.exists()) {
         setUser({ uid: snap.id, ...snap.data() } as UserProfileChat);
       }
+    }, (error) => {
+      console.error('User doc listener error:', error);
     });
   }, [basicProfile?.uid]);
 
@@ -48,6 +50,8 @@ export default function MessagesPage() {
     return onSnapshot(collection(db, 'users'), (snap) => {
       const u = snap.docs.map(d => ({ uid: d.id, ...d.data() }) as UserProfileChat);
       setAllUsers(u);
+    }, (error) => {
+      console.error('Users listener error:', error);
     });
   }, [user]);
 
@@ -67,6 +71,8 @@ export default function MessagesPage() {
         return timeB - timeA;
       });
       setChats(sorted);
+    }, (error) => {
+      console.error('Chats listener error:', error);
     });
   }, [user?.uid]);
 

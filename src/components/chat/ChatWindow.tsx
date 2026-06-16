@@ -12,6 +12,7 @@ import ConfirmModal from './ConfirmModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useI18n } from '@/lib/i18n';
+import { getAvatarUrl } from '@/lib/avatar';
 
 interface ChatWindowProps {
   chatId: string;
@@ -28,6 +29,7 @@ interface ChatWindowProps {
 
 export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, onShowInfo, isMiniChat, pinnedUserIds = [], onPinUser, selectedUserIds = [], onForward }: ChatWindowProps) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
   const [otherUser, setOtherUser] = useState<UserProfile | null>(null);
   const [chat, setChat] = useState<Chat | null>(null);
@@ -336,6 +338,9 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
           updateDoc(doc(db, 'chats', chatId), { [`unreadCount.${currentUser.uid}`]: 0 });
         }
       }).catch(err => console.log("Chat probably deleted", err));
+    }, (error) => {
+      console.error('Messages listener error:', error);
+      setMessagesError(error instanceof Error ? error.message : 'Erreur de chargement des messages');
     });
 
     return () => {
@@ -817,7 +822,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
               "border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]"
             )}>
               <img 
-                src={otherUser?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chatId}`} 
+                src={getAvatarUrl(otherUser?.photoURL, otherUser?.role || '', otherUser?.displayName || '')} 
                 alt="" 
                 className={cn(
                   "h-full w-full rounded-full object-cover",
@@ -951,7 +956,16 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
           isMiniChat ? "bg-[#0f1113]" : "bg-[#f4f1de] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-repeat opacity-90"
         )}
       >
-        {messages.length === 0 && (
+        {messagesError && (
+          <div className="flex flex-col items-center justify-center h-full text-center px-8">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4">
+              <Shield size={40} className="text-red-400" />
+            </div>
+            <p className="text-sm font-medium text-red-500 mb-2">{t('common.errorLoading')}</p>
+            <p className="text-xs text-gray-400">{messagesError}</p>
+          </div>
+        )}
+        {!messagesError && messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center opacity-20">
             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-4">
               <MessageSquare size={40} />
@@ -967,8 +981,8 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
             isMine={msg.senderId === currentUser.uid} 
             isMiniChat={isMiniChat}
             onMediaClick={(url, type) => setSelectedMedia({ url, type })}
-            otherUserPhotoURL={otherUser?.photoURL}
-            currentUserPhotoURL={currentUser.photoURL}
+            otherUserPhotoURL={getAvatarUrl(otherUser?.photoURL, otherUser?.role || '', otherUser?.displayName || '')}
+            currentUserPhotoURL={getAvatarUrl(currentUser.photoURL, currentUser.role, currentUser.displayName || '')}
             onReact={handleReact}
             onForward={onForward}
             selectedUserCount={selectedUserIds.length}
@@ -1012,7 +1026,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
             className="flex items-start gap-4"
           >
             <div className="h-10 w-10 rounded-full overflow-hidden border border-white/10 shadow-lg">
-              <img src={otherUser.photoURL} alt="" className="h-full w-full object-cover" />
+              <img src={getAvatarUrl(otherUser.photoURL, otherUser.role, otherUser.displayName || '')} alt="" className="h-full w-full object-cover" />
             </div>
             <div className="bg-[#1a1d21] p-4 rounded-3xl rounded-tl-none border border-white/5 flex gap-1.5 shadow-xl">
               <div className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -1152,7 +1166,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
                       rows={1}
                       placeholder={t('chat.messagePlaceholder')}
                       className={cn(
-                        "flex-1 bg-transparent border-none outline-none text-[#a2ff00] resize-none max-h-32 no-scrollbar placeholder:text-[#a2ff00]/20 font-black uppercase tracking-[0.1em] font-mono",
+                        "flex-1 bg-transparent border-none outline-none text-[#a2ff00] resize-none max-h-32 no-scrollbar placeholder:text-[#a2ff00]/20 font-black tracking-[0.1em] font-mono",
                         isMobile ? "py-2 px-1 text-[13px]" : "py-2 px-1 text-[15px]"
                       )}
                       value={inputText}

@@ -5,6 +5,7 @@ import { User, LogOut, Shield, Bell, Settings, ChevronRight, Mail } from 'lucide
 import { UserProfileChat as UserProfile } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useRoles } from '@/contexts/RoleContext';
+import { getAvatarUrl } from '@/lib/avatar';
 
 interface ProfileViewProps {
   user: UserProfile;
@@ -41,7 +42,7 @@ export default function ProfileView({ user, onLogout }: ProfileViewProps) {
         <div className="relative z-10">
           <div className="w-24 h-24 mx-auto rounded-[32px] border-4 border-white/10 p-1 mb-4 shadow-2xl">
             <img 
-              src={user.photoURL} 
+              src={getAvatarUrl(user.photoURL, user.role, user.displayName || '')} 
               alt={user.displayName} 
               className="w-full h-full rounded-[24px] object-cover"
               referrerPolicy="no-referrer"

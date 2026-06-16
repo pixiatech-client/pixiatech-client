@@ -10,6 +10,7 @@ import ContactList from './ContactList';
 import { motion, AnimatePresence } from 'framer-motion';
 import { doc, updateDoc } from 'firebase/firestore';
 import { firestore as db } from '@/firebase/config';
+import { getAvatarUrl } from '@/lib/avatar';
 
 interface MiniChatProps {
   isOpen: boolean;
@@ -400,7 +401,7 @@ export default function MiniChat({
                             )}>
                               <div className="w-full h-full rounded-full overflow-hidden bg-gray-900 relative">
                                 <img 
-                                  src={contact.photoURL} 
+                                  src={getAvatarUrl(contact.photoURL, contact.role, contact.displayName || '')} 
                                   alt={contact.displayName}
                                   className={cn(
                                     "w-full h-full rounded-full object-cover",
