@@ -1,13 +1,17 @@
 const admin = require('firebase-admin');
+const { getFirestore } = require('firebase-admin/firestore');
+const { getStorage } = require('firebase-admin/storage');
+const { getAuth } = require('firebase-admin/auth');
 const serviceAccount = require('./serviceAccountKey.json');
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
+  credential: admin.cert(serviceAccount),
   storageBucket: 'studio-9205859220-a6440.firebasestorage.app',
 });
 
-const db = admin.firestore();
-const bucket = admin.storage().bucket();
+const db = getFirestore();
+const bucket = getStorage().bucket();
+const auth = getAuth();
 
 async function deleteAnonymousUsers() {
   let nextPageToken;
@@ -16,7 +20,7 @@ async function deleteAnonymousUsers() {
   let totalStorage = 0;
 
   do {
-    const result = await admin.auth().listUsers(1000, nextPageToken);
+    const result = await auth.listUsers(1000, nextPageToken);
 
     for (const user of result.users) {
       const isAnonymous =
@@ -105,7 +109,7 @@ async function deleteAnonymousUsers() {
         }
 
         // 5. Delete the Auth account (last, after all data cleanup)
-        await admin.auth().deleteUser(uid);
+        await auth.deleteUser(uid);
         totalDeleted++;
         console.log(`  -> Auth compte supprimé ✓`);
       } catch (error) {

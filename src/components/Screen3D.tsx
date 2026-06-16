@@ -634,55 +634,43 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
   const [controlsEnabled, setControlsEnabled] = React.useState(true);
   const [isHovering, setIsHovering] = React.useState(false);
 
-  const lastModeRef = React.useRef<string>("");
   const propsRef = React.useRef({ diameter, width: props.width, height: props.height, cabinetAngle });
   
   React.useEffect(() => {
     propsRef.current = { diameter, width: props.width, height: props.height, cabinetAngle };
   });
 
+  // Reposition camera whenever dimensions or mode change
   React.useEffect(() => {
-    const currentMode = `${is360 ? "360" : isCurved ? "curved" : "flat"}`;
-    const modeChanged = lastModeRef.current !== currentMode;
-    
-    if (modeChanged) {
-      lastModeRef.current = currentMode;
-    }
-
     const updateCamera = () => {
-      if (controlsRef.current && (modeChanged || lastModeRef.current === currentMode)) {
-        const currentProps = propsRef.current;
-        let actualDiameter = currentProps.diameter;
-        if (is360 && currentProps.cabinetAngle !== 0) {
-          const absAngle = Math.abs(currentProps.cabinetAngle);
-          const theta = (absAngle * Math.PI) / 180;
-          const R = 0.5 / (2 * Math.sin(theta / 2));
-          actualDiameter = R * 2;
-        }
-        
-        const maxDim = is360 
-          ? Math.max(actualDiameter, currentProps.height) 
-          : Math.max(currentProps.width, currentProps.height);
-          
-        const zoomFactor = is360 ? 2.5 : 1.25; // Standard flat zoom is 1.25, 360 cylindrical gets 2.5 for wide view
-        const zoomBase = maxDim * zoomFactor;
-        const heightOffset = currentProps.height / 2;
-
-        // Position camera to view the model from a nice angle
-        controlsRef.current.object.position.set(-zoomBase * 0.6, zoomBase * 0.4, zoomBase * 1.2);
-        controlsRef.current.target.set(0, heightOffset, 0);
-        
-        controlsRef.current.update();
+      if (!controlsRef.current) return;
+      const currentProps = propsRef.current;
+      let actualDiameter = currentProps.diameter;
+      if (is360 && currentProps.cabinetAngle !== 0) {
+        const absAngle = Math.abs(currentProps.cabinetAngle);
+        const theta = (absAngle * Math.PI) / 180;
+        const R = 0.5 / (2 * Math.sin(theta / 2));
+        actualDiameter = R * 2;
       }
+      
+      const maxDim = is360 
+        ? Math.max(actualDiameter, currentProps.height) 
+        : Math.max(currentProps.width, currentProps.height);
+        
+      const zoomFactor = is360 ? 2.5 : 1.25;
+      const zoomBase = maxDim * zoomFactor;
+      const heightOffset = currentProps.height / 2;
+
+      controlsRef.current.object.position.set(-zoomBase * 0.6, zoomBase * 0.4, zoomBase * 1.2);
+      controlsRef.current.target.set(0, heightOffset, 0);
+      controlsRef.current.update();
     };
 
-    // Only run if the mode changed or it is the initial mount
-    if (modeChanged) {
-      updateCamera();
-      const timer = setTimeout(updateCamera, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [is360, isCurved]);
+    updateCamera();
+    // Retry after mount to ensure controls ref is available
+    const timer = setTimeout(updateCamera, 100);
+    return () => clearTimeout(timer);
+  }, [is360, isCurved, props.width, props.height, diameter, cabinetAngle]);
   
   const currentEnv = isDarkMode ? "#020617" : envColor;
   const currentGrid = isDarkMode ? "#1e293b" : gridColor;

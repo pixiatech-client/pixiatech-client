@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
-import { getSettings, cleanupAnonymousUsers } from '@/app/admin/actions';
+import { getSettings } from '@/app/admin/actions';
 import type { Settings as AppSettings } from '@/lib/types';
-import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap, Trash2 } from 'lucide-react';
+import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { useAdminT } from '@/hooks/useAdminT';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content' | 'danger-zone';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -54,7 +54,6 @@ const tabsConfigDefs = [
     { id: 'software' as SettingsSection, labelKey: 'Software', icon: Settings },
     { id: 'email-verification' as SettingsSection, labelKey: 'Email Verification', icon: ShieldCheck },
     { id: 'flow' as SettingsSection, labelKey: 'Parcours client', icon: Zap },
-    { id: 'danger-zone' as SettingsSection, labelKey: 'Danger Zone', icon: Trash2 },
 ];
 
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
@@ -129,8 +128,6 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <SoftwareContent />;
             case 'flow':
                 return <FlowContent />;
-            case 'danger-zone':
-                return <DangerZoneContent />;
             default:
                 return <GeneralContent />;
         }
@@ -173,7 +170,6 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                         tab.id === 'messaging' ? "bg-blue-100/80 text-blue-600" :
                                         tab.id === 'appearance' ? "bg-fuchsia-100/80 text-fuchsia-600" :
                                         tab.id === 'email-verification' ? "bg-indigo-100/80 text-indigo-600" :
-                                        tab.id === 'danger-zone' ? "bg-red-100/80 text-red-600" :
                                         "bg-orange-100/80 text-orange-600"
                                     )}>
                                         <tab.icon className={cn(
@@ -202,69 +198,6 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                     <Suspense fallback={<LoadingFallback />}>
                         {renderSection()}
                     </Suspense>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function DangerZoneContent() {
-    const { t } = useAdminT();
-    const [isCleaning, setIsCleaning] = useState(false);
-    const [result, setResult] = useState<{ deleted?: number; firestoreDeletes?: number; storageDeletes?: number; message?: string; error?: string } | null>(null);
-    const [confirmed, setConfirmed] = useState(false);
-
-    const handleCleanup = async () => {
-        setIsCleaning(true);
-        setResult(null);
-        try {
-            const res = await cleanupAnonymousUsers();
-            setResult(res);
-        } catch (err: any) {
-            setResult({ error: err.message || 'Erreur inconnue' });
-        } finally {
-            setIsCleaning(false);
-            setConfirmed(false);
-        }
-    };
-
-    return (
-        <div className="space-y-6 p-4">
-            <div className="border-2 border-red-400/30 bg-red-50 rounded-3xl p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-                        <Trash2 className="h-5 w-5 text-red-600" />
-                    </div>
-                    <h3 className="text-lg font-black text-red-900 uppercase tracking-wider">Nettoyage des comptes anonymes</h3>
-                </div>
-                <p className="text-sm text-red-700 font-medium leading-relaxed">
-                    Supprime tous les comptes utilisateurs anonymes (Firebase Auth), leurs documents Firestore,
-                    leurs conversations (chats + messages), leurs notifications et leurs fichiers Storage.
-                </p>
-                {result && (
-                    <div className={result.error ? "bg-red-100 text-red-800 p-3 rounded-xl text-sm font-medium" : "bg-green-100 text-green-800 p-3 rounded-xl text-sm font-medium"}>
-                        {result.error || result.message}
-                        {result.deleted !== undefined && (
-                            <ul className="mt-2 list-disc list-inside text-xs opacity-80">
-                                <li>{result.deleted} compte(s) Auth supprimé(s)</li>
-                                <li>{result.firestoreDeletes} document(s) Firestore supprimé(s)</li>
-                                <li>{result.storageDeletes} fichier(s) Storage supprimé(s)</li>
-                            </ul>
-                        )}
-                    </div>
-                )}
-                <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} className="rounded border-red-300 text-red-600 focus:ring-red-500" />
-                        <span className="text-xs font-bold text-red-800 uppercase">Je confirme la suppression</span>
-                    </label>
-                    <button
-                        onClick={handleCleanup}
-                        disabled={!confirmed || isCleaning}
-                        className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all active:scale-95"
-                    >
-                        {isCleaning ? 'Suppression...' : 'Tout nettoyer'}
-                    </button>
                 </div>
             </div>
         </div>

@@ -88,7 +88,11 @@ export default function ChatList({
   const groupedChats = sortedChats.reduce((acc, chat) => {
     const otherId = chat.participants.find(id => id !== currentUser.uid);
     const otherUser = allUsers.find(u => u.uid === otherId);
-    const roleId = otherUser?.role || 'autre';
+    const rawRole = otherUser?.role;
+    const roleId =
+      rawRole === 'prestataire' ? 'fournisseur' :
+      rawRole && roles.find(r => r.id === rawRole) ? rawRole :
+      otherUser?.roleTemplate || rawRole || 'autre';
     if (!acc[roleId]) acc[roleId] = [];
     acc[roleId].push(chat);
     return acc;

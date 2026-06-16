@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, MoreVertical, Ban, Paperclip, Video, Mic, Send, Mail, Image as ImageIcon, Trash2, StopCircle, Play, Pause, Search, Shield, Users, ChevronLeft, Phone, MessageSquare, Settings, UserX, Bell, BellOff, Eye, EyeOff, ShieldOff, ChevronDown, FileText } from 'lucide-react';
 import { doc, updateDoc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp, getDoc, getDocs, deleteDoc, increment, arrayUnion, writeBatch } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage';
 import { firestore as db, storage } from '@/firebase/config';
 import { UserProfileChat as UserProfile, Message, MessageType, Chat } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -598,6 +598,17 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
           batch.delete(doc(db, 'chats', chatId));
           
           await batch.commit();
+          
+          // Delete Storage files (audio, images, videos, documents)
+          try {
+            const chatStorageRef = ref(storage, `chats/${chatId}`);
+            const filesResult = await listAll(chatStorageRef);
+            if (filesResult.items.length > 0) {
+              await Promise.all(filesResult.items.map(file => deleteObject(file)));
+            }
+          } catch (e) {
+            console.warn('Error deleting chat storage files:', e);
+          }
           
           // On ne ferme le modal et on ne revient en arrière QU'APRÈS la réussite
           setModalConfig(prev => ({ ...prev, isOpen: false }));

@@ -146,7 +146,11 @@ export default function ContactList({
   });
 
   const groupedUsers = filteredUsers.reduce((acc, user) => {
-    const roleId = user.role || 'autre';
+    const rawRole = user.role;
+    const roleId =
+      rawRole === 'prestataire' ? 'fournisseur' :
+      rawRole && roles.find(r => r.id === rawRole) ? rawRole :
+      user.roleTemplate || rawRole || 'autre';
     if (!acc[roleId]) acc[roleId] = [];
     acc[roleId].push(user);
     return acc;

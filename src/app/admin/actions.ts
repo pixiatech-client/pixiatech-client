@@ -2194,7 +2194,7 @@ export async function restoreQuotes(quoteIds: string[]) {
 }
 
 export async function permanentDeleteQuotes(quoteIds: string[]) {
-  const { adminDb } = getFirebaseAdmin();
+  const { adminDb, app } = getFirebaseAdmin();
   if (!adminDb) throw new Error("Firestore not initialized");
 
   const adminUser = await getCurrentAdminUser();
@@ -2221,6 +2221,21 @@ export async function permanentDeleteQuotes(quoteIds: string[]) {
     }
   }
   await batch.commit();
+
+  // Delete Storage files (PDFs, contracts)
+  try {
+    const bucket = getStorage(app).bucket();
+    const deletePromises: Promise<any>[] = [];
+    for (const id of quoteIds) {
+      deletePromises.push(
+        bucket.file(`quotes/pdfs/${id}.pdf`).delete().catch(() => {}),
+        bucket.file(`quotes/contracts/${id}.pdf`).delete().catch(() => {})
+      );
+    }
+    await Promise.all(deletePromises);
+  } catch (e) {
+    console.warn('Error deleting quote storage files:', e);
+  }
 
   // Phase 3 hook
   if (statsUpdates.length > 0) {
