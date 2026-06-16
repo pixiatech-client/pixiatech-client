@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
-import { getSettings } from '@/app/admin/actions';
+import { getSettings, cleanupAnonymousUsers } from '@/app/admin/actions';
 import type { Settings as AppSettings } from '@/lib/types';
 import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap, Trash2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -218,11 +218,10 @@ function DangerZoneContent() {
         setIsCleaning(true);
         setResult(null);
         try {
-            const { cleanupAnonymousUsers } = await import('@/app/admin/actions');
             const res = await cleanupAnonymousUsers();
             setResult(res);
         } catch (err: any) {
-            setResult({ error: err.message });
+            setResult({ error: err.message || 'Erreur inconnue' });
         } finally {
             setIsCleaning(false);
             setConfirmed(false);
