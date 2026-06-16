@@ -270,6 +270,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
 
   useEffect(() => {
     if (!chatId || !currentUser.uid) return;
+    setMessagesError(null);
 
     // Ensure user is in participants list
     const ensurePart = async () => {

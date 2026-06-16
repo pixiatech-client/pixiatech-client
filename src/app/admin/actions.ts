@@ -2814,7 +2814,7 @@ export async function getSettings(): Promise<Settings> {
     isPriceHidden: false,
     isSingleSessionEnabled: false,
     zoomMaxDistance: 50,
-    zoomMinDistance: 50,
+    zoomMinDistance: 0.5,
     isWizardBotEnabled: true,
     hintBubble: {
       enabled: true,
