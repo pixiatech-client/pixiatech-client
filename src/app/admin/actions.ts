@@ -782,6 +782,89 @@ export async function deleteAllUsersAndData() {
   }
 }
 
+export async function cleanupAnonymousUsers() {
+  const { adminAuth, adminDb, app } = getFirebaseAdmin();
+  if (!adminAuth || !adminDb) {
+    return { success: false, error: "Admin SDK not initialized" };
+  }
+
+  const adminUser = await getCurrentAdminUser();
+  if (!adminUser || 'error' in adminUser || adminUser.role !== 'admin') {
+    return { success: false, error: 'Unauthorized.' };
+  }
+
+  try {
+    const listResult = await adminAuth.listUsers(1000);
+    const anonymousUids = listResult.users
+      .filter(u => u.providerData.length === 0 || u.providerData.some(p => p.providerId === 'anonymous'))
+      .map(u => u.uid);
+
+    if (anonymousUids.length === 0) {
+      return { success: true, deleted: 0, message: 'Aucun compte anonyme trouvé.' };
+    }
+
+    let firestoreDeletes = 0;
+    let storageDeletes = 0;
+    const bucket = getStorage(app).bucket();
+
+    for (const uid of anonymousUids) {
+      const userRef = adminDb.collection('users').doc(uid);
+      const userSnap = await userRef.get();
+      if (userSnap.exists) {
+        await userRef.delete();
+        firestoreDeletes++;
+      }
+
+      const notifsSnap = await adminDb.collection('notifications').where('userId', '==', uid).get();
+      if (!notifsSnap.empty) {
+        const batch = adminDb.batch();
+        notifsSnap.docs.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+        firestoreDeletes += notifsSnap.size;
+      }
+
+      const chatsSnap = await adminDb.collection('chats').where('participants', 'array-contains', uid).get();
+      for (const chatDoc of chatsSnap.docs) {
+        const chatId = chatDoc.id;
+
+        const messagesSnap = await adminDb.collection('chats').doc(chatId).collection('messages').get();
+        if (!messagesSnap.empty) {
+          const batch = adminDb.batch();
+          messagesSnap.docs.forEach(m => batch.delete(m.ref));
+          await batch.commit();
+          firestoreDeletes += messagesSnap.size;
+        }
+
+        try {
+          const [files] = await bucket.getFiles({ prefix: `chats/${chatId}/` });
+          if (files.length > 0) {
+            await Promise.all(files.map(f => f.delete()));
+            storageDeletes += files.length;
+          }
+        } catch (e) {
+          console.warn(`[cleanup] Storage error for chat ${chatId}:`, e);
+        }
+
+        await chatDoc.ref.delete();
+        firestoreDeletes++;
+      }
+    }
+
+    await adminAuth.deleteUsers(anonymousUids);
+
+    return {
+      success: true,
+      deleted: anonymousUids.length,
+      firestoreDeletes,
+      storageDeletes,
+      message: `${anonymousUids.length} compte(s) anonyme(s) supprimé(s).`
+    };
+  } catch (error: any) {
+    console.error('Error cleaning up anonymous users:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 
 export async function getUsers({
   limit = 6,
