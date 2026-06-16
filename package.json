@@ -87,6 +87,10 @@
     "tailwindcss": "^3.4.18",
     "typescript": "~5.4.5"
   },
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom"
+  },
   "description": "This is a NextJS starter in Firebase Studio.",
   "main": "postcss.config.js",
   "directories": {

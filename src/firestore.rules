@@ -32,9 +32,11 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isLoggedIn() && (isOwner(userId) || isAdmin());
-      allow write: if isLoggedIn() && (isOwner(userId) || isAdmin());
+      allow get: if isLoggedIn();
       allow list: if isLoggedIn();
+      allow create: if isLoggedIn();
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /roles/{roleId} {
