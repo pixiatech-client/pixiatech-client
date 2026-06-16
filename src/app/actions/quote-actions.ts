@@ -225,6 +225,19 @@ export async function testSmtpConnection(
   }
 }
 
+async function getNextEstimationNumber(): Promise<string> {
+  const { adminDb } = getFirebaseAdmin();
+  const counterRef = adminDb.collection('counters').doc('quoteNumber');
+  const result = await adminDb.runTransaction(async (transaction) => {
+    const doc = await transaction.get(counterRef);
+    const current = doc.data()?.current ?? 0;
+    const next = current + 1;
+    transaction.set(counterRef, { current: next }, { merge: true });
+    return next;
+  });
+  return `EST-${String(result).padStart(8, '0')}`;
+}
+
 async function createQuoteDocument(
   userId: string,
   formData: FormValues,
@@ -284,6 +297,7 @@ async function createQuoteDocument(
   }
 
   try {
+    documentData.number = await getNextEstimationNumber();
     const docRef = await adminDb.collection('quotes').add(documentData);
 
     // Phase 3: Increment stats on create
@@ -573,6 +587,7 @@ export async function createQuoteWithContract(
       docData.otpExpires = Timestamp.fromDate(expirationDate);
     }
 
+    docData.number = await getNextEstimationNumber();
     const docRef = await adminDb.collection('quotes').add(docData);
 
     // Increment stats on create
@@ -876,6 +891,7 @@ export async function createEstimationFromPending(
       pdfSettings,
     };
 
+    docData.number = await getNextEstimationNumber();
     const docRef = await adminDb.collection('quotes').add(docData);
 
     try {

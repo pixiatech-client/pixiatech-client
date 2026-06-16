@@ -253,7 +253,7 @@ export default function MessagesPage() {
         </div>
         
         <div className={cn(
-          "flex-1 flex flex-col bg-white",
+          "flex-1 flex flex-col bg-white min-h-0 h-full overflow-hidden",
           isMobile && activeMobileTab !== 'chat' && "hidden"
         )}>
           {activeChatId ? (

@@ -20,7 +20,10 @@ import {
   Calendar,
   ShoppingBag,
   AlertTriangle,
-  Search
+  Search,
+  Send,
+  Truck,
+  Undo2
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -85,7 +88,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [typeFilter, setTypeFilter] = useState<'all' | 'sale' | 'rental'>('all');
   const [statsTypeFilter, setStatsTypeFilter] = useState<'all' | 'sale' | 'rental'>('all');
-  const [statusFilter, setStatusFilter] = useState<QuoteStatus | 'ALL'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<QuoteStatus | 'ALL' | 'FOURNISSEUR'>('ALL');
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -175,7 +178,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const firestore = useFirestore();
 
   // Fetch real data from Firestore
-  const quotesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'quotes'), limit(50)) : null, [firestore]);
+  const quotesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'quotes')) : null, [firestore]);
   const { data: allQuotesRaw } = useCollection<any>(quotesQuery, { suppressPermissionError: true });
 
   const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), limit(200)) : null, [firestore]);
@@ -187,21 +190,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
 
-  // Stats calculation
+  // Stats calculation — all possible quote statuses
+  const statuses = ['pending','processed','trashed','archived','in_progress','sent','delivered','returned','rented'] as const;
+  const statusLabels: Record<string, string> = {
+    pending: 'En attente', processed: 'Traitée', trashed: 'Corbeille',
+    archived: 'Archivée', in_progress: 'En cours', sent: 'Envoyée',
+    delivered: 'Livrée', returned: 'Retournée', rented: 'Louée',
+  };
   const stats = useMemo(() => {
-    if (!allQuotesRaw) return { pending: 0, processed: 0, trashed: 0, archive: 0 };
+    if (!allQuotesRaw) {
+      const empty: Record<string, number> = {};
+      statuses.forEach(s => { empty[s] = 0; });
+      return { ...empty, total: 0 } as Record<string, number>;
+    }
     const filtered = statsTypeFilter === 'all'
       ? allQuotesRaw
       : allQuotesRaw.filter(q => {
           const type = q.transactionType === 'rental' ? 'rental' : 'sale';
           return type === statsTypeFilter;
         });
-    return {
-      pending: filtered.filter(q => q.status === 'pending').length,
-      processed: filtered.filter(q => q.status === 'processed').length,
-      trashed: filtered.filter(q => q.status === 'trashed').length,
-      archive: filtered.filter(q => q.status === 'archive').length,
-    };
+    const result: Record<string, number> = {};
+    statuses.forEach(s => { result[s] = 0; });
+    filtered.forEach((q: any) => {
+      const st = q.status as string;
+      if (result[st] !== undefined) result[st]++;
+    });
+    result.total = filtered.length;
+    return result;
   }, [allQuotesRaw, statsTypeFilter]);
 
   const configuratorStats = useMemo(() => {
@@ -288,7 +303,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
       return bTime.getTime() - aTime.getTime();
     });
     
-    if (statusFilter !== 'ALL') {
+    if (statusFilter === 'FOURNISSEUR') {
+      const fournisseurIds = new Set(allUsers?.filter(u => u.role === 'fournisseur').map(u => u.id));
+      quotes = quotes.filter(q => fournisseurIds.has(q.clientId) || fournisseurIds.has(q.userId));
+    } else if (statusFilter !== 'ALL') {
       quotes = quotes.filter(q => q.status === statusFilter);
     }
 
@@ -813,15 +831,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
               <CustomSelect
                 options={[
                   { value: 'ALL', label: t('admin.allStatuses') },
-                  { value: 'processed', label: t('admin.processed'), color: 'text-emerald-500' },
                   { value: 'pending', label: t('admin.pending'), color: 'text-yellow-500' },
+                  { value: 'processed', label: t('admin.processed'), color: 'text-emerald-500' },
                   { value: 'returned', label: t('admin.returned', { defaultValue: 'Retourné' }), color: 'text-orange-500' },
-                  { value: 'in_progress', label: t('admin.inProgress', { defaultValue: 'En cours' }), color: 'text-blue-500' },
+                  ...(typeFilter !== 'rental' ? [{ value: 'FOURNISSEUR', label: 'Fournisseur', color: 'text-blue-400' }] : []),
+                  ...(typeFilter !== 'sale' ? [{ value: 'rented', label: 'Loué', color: 'text-violet-500' }] : []),
+                  ...(typeFilter !== 'rental' ? [{ value: 'delivered', label: 'Livré', color: 'text-teal-500' }] : []),
+                  { value: 'archived', label: t('admin.archived'), color: 'text-indigo-500' },
                   { value: 'trashed', label: t('admin.trashed'), color: 'text-rose-500' },
-                  { value: 'archive', label: t('admin.archived'), color: 'text-gray-500' },
                 ]}
                 value={statusFilter}
-                onChange={(val) => setStatusFilter(val as QuoteStatus | 'ALL')}
+                onChange={(val) => setStatusFilter(val as QuoteStatus | 'ALL' | 'FOURNISSEUR')}
                 isDark={isDark}
                 placeholder={t('admin.status')}
                 className="w-full sm:min-w-[160px]"
@@ -1322,7 +1342,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
         </div>
       </div>
 
-      <div className="w-full lg:w-[320px] space-y-8 lg:pt-[88px]">
+      <div className="w-full lg:w-[440px] space-y-8 lg:pt-[88px]">
         <div className={`hidden md:block p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
@@ -1393,32 +1413,36 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                   {label}
                 </button>
               ))}
+              <span className="ml-auto text-[10px] font-medium text-white/30" title="Total des estimations">
+                {stats.total || 0}
+              </span>
             </div>
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar -mx-1 px-1">
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
-              <Clock className="w-5 h-5 text-yellow-500 group-hover:drop-shadow-[0_0_8px_rgba(234,179,8,0.8)] transition-all" />
-              <span className="text-lg font-bold text-white">{stats.pending}</span>
-            </div>
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
-              <CheckCircle2 className="w-5 h-5 text-emerald-500 group-hover:drop-shadow-[0_0_8_rgba(34,197,94,0.8)] transition-all" />
-              <span className="text-lg font-bold text-white">{stats.processed}</span>
-            </div>
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
-              <Trash2 className="w-5 h-5 text-rose-500 group-hover:drop-shadow-[0_0_8px_rgba(244,63,94,0.8)] transition-all" />
-              <span className="text-lg font-bold text-white">{stats.trashed}</span>
-            </div>
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
-              <Users className="w-5 h-5 text-blue-400 group-hover:drop-shadow-[0_0_8px_rgba(96,165,250,0.8)] transition-all" />
-              <span className="text-lg font-bold text-white">{allUsers?.length || 0}</span>
-            </div>
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
-              <Package className="w-5 h-5 text-purple-400 group-hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] transition-all" />
-              <span className="text-lg font-bold text-white">{allProducts?.length || 0}</span>
-            </div>
-            <div className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]">
-              <Archive className="w-5 h-5 text-indigo-400 group-hover:drop-shadow-[0_0_8px_rgba(129,140,248,0.8)] transition-all" />
-              <span className="text-lg font-bold text-white">{stats.archive}</span>
-            </div>
+          <div className="flex items-center gap-1 no-scrollbar -mx-1 px-1 flex-wrap">
+            {([
+              { key: 'pending',   icon: Clock,       color: 'text-yellow-500',  glow: 'rgba(234,179,8,0.8)' },
+              { key: 'processed', icon: CheckCircle2, color: 'text-emerald-500', glow: 'rgba(34,197,94,0.8)' },
+              { key: 'returned',  icon: Undo2,        color: 'text-orange-400',  glow: 'rgba(251,146,60,0.8)' },
+              ...(statsTypeFilter !== 'rental' ? [{ key: 'fournisseur', icon: Users as any, color: 'text-blue-400', glow: 'rgba(96,165,250,0.8)' }] : []),
+              ...(statsTypeFilter !== 'sale' ? [{ key: 'rented', icon: Calendar as any, color: 'text-violet-400', glow: 'rgba(167,139,250,0.8)' }] : []),
+              ...(statsTypeFilter !== 'rental' ? [{ key: 'delivered', icon: Truck as any, color: 'text-teal-400', glow: 'rgba(45,212,191,0.8)' }] : []),
+              { key: 'archived',  icon: Archive,      color: 'text-indigo-400',  glow: 'rgba(129,140,248,0.8)' },
+              { key: 'trashed',   icon: Trash2,       color: 'text-rose-500',    glow: 'rgba(244,63,94,0.8)' },
+            ] as const).map(({ key, icon: Icon, color, glow }: any) => {
+              const val = key === 'fournisseur'
+                ? (allUsers?.filter((u: any) => u.role === 'fournisseur').length || 0)
+                : (stats[key] || 0);
+              const label = key === 'fournisseur' ? 'Fournisseur' : key === 'delivered' ? 'Livré' : key === 'rented' ? 'Loué' : (statusLabels[key] || key);
+              return (
+                <div
+                  key={key}
+                  title={`${label}: ${val}`}
+                  className="group relative flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-white/10 transition-all cursor-default min-w-[52px]"
+                >
+                  <Icon className={`w-5 h-5 ${color} group-hover:drop-shadow-[0_0_8px_${glow}] transition-all`} />
+                  <span className="text-lg font-bold text-white">{val}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 

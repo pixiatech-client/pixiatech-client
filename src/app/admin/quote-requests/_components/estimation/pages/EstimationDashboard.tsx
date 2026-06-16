@@ -73,8 +73,7 @@ function quoteToEstimation(q: QuoteRequest): Estimation {
   const isValidDate = rawDate && !isNaN(rawDate.getTime());
   const estStatus = statusToEstimation[q.status] || 'En attente';
 
-  // Use pre-calculated totalQuote if available, otherwise recalculate
-  const totalClient = q.totalQuote || (q.products?.reduce((sum, p) => sum + (p.lineTotal || 0), 0) || 0) + (q.deliveryCost || 0) + (q.installationCost || 0);
+  const totalClient = (q.products?.reduce((sum, p) => sum + (p.lineTotal || 0), 0) || 0) + (q.deliveryCost || 0) + (q.installationCost || 0);
   const idShort = q.id.slice(0, 8).toUpperCase();
 
   // Parse rental period from string ISO dates (from getPaginatedQuotes projection)
@@ -96,7 +95,7 @@ function quoteToEstimation(q: QuoteRequest): Estimation {
      time: isValidDate ? rawDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '--:--',
      date: isValidDate ? rawDate.toLocaleDateString('fr-FR') : '--/--/----',
      totalPurchase: (q as any).totalPurchase || 0,
-     totalClient: (q as any).totalClient || q.totalQuote || 0,
+      totalClient: totalClient,
      reference: idShort,
       trackingNumber: (q as any).trackingNumber,
       trackingInfo: (q as any).trackingInfo,
@@ -172,8 +171,8 @@ const isFournisseur = userRole === 'fournisseur';
    const defaultTab = isFournisseur ? 'Fournisseur' : 'En attente';
    const [activeTab, setActiveTab] = useState<EstimationStatus>(defaultTab as EstimationStatus);
    const [estimationMode, setEstimationMode] = useState<'vente' | 'location'>('vente');
-   const [sortField, setSortField] = useState<'price' | 'date' | 'time'>('price');
-   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortField, setSortField] = useState<'price' | 'date' | 'time'>('date');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
    const handleSortChange = useCallback((field: 'price' | 'date' | 'time') => {
      setSortField(prevField => {

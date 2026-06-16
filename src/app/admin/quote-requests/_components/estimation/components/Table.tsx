@@ -58,7 +58,7 @@ interface SearchHeaderProps {
   onSortChange?: (field: 'price' | 'date' | 'time') => void;
 }
 
-export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearchChange, total, selectedCount, activeTab, onOpenMobileDrawer, isFournisseur = false, isAdmin = false, onEmptyTrash, onResync, onSelectAll, isAllSelected, sortField = 'price', sortDirection = 'asc', onSortChange }) => {
+export const SearchHeader: React.FC<SearchHeaderProps> = ({ searchTerm, onSearchChange, total, selectedCount, activeTab, onOpenMobileDrawer, isFournisseur = false, isAdmin = false, onEmptyTrash, onResync, onSelectAll, isAllSelected, sortField = 'date', sortDirection = 'desc', onSortChange }) => {
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const { t } = useI18n();
 
@@ -1081,8 +1081,8 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
    exitingIds = new Set(),
    bulkProgress = null,
    estimationMode = 'vente',
-   sortField = 'price',
-   sortDirection = 'asc',
+   sortField = 'date',
+   sortDirection = 'desc',
    onSortChange,
   }) => {
 

@@ -443,10 +443,10 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         </header>
 
         <main className={cn(
-          "flex-1 min-h-0 bg-theme-app",
+          "min-h-0 bg-theme-app",
           pathname === '/admin/messages'
             ? "h-[calc(100vh-88px)] overflow-hidden p-4 md:p-6 w-full"
-            : "px-4 py-4 md:px-6 md:py-6"
+            : "flex-1 px-4 py-4 md:px-6 md:py-6"
         )}>
           {children}
         </main>

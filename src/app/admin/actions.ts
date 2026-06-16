@@ -1161,6 +1161,7 @@ async function processQuoteSnapshot(docSnap: DocumentSnapshot): Promise<QuoteReq
 
   const structuredQuote: QuoteRequest = {
     id: docSnap.id,
+    number: data.number || `EST-${docSnap.id.substring(0,6).toUpperCase()}`,
     client: {
       companyName: data.client?.companyName || data.companyName || '',
       email: data.client?.email || data.email || '',

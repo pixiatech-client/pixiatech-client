@@ -675,6 +675,14 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
   const currentEnv = isDarkMode ? "#020617" : envColor;
   const currentGrid = isDarkMode ? "#1e293b" : gridColor;
 
+  // Compute dynamic zoom limits based on screen size (world units = cm)
+  const maxDim = is360 
+    ? Math.max(diameter || 1, props.height) 
+    : Math.max(props.width, props.height);
+  // Camera distance ≈ maxDim * 1.75 for flat, ≈ maxDim * 3.5 for 360
+  const effectiveMinDistance = 0.5; // Always allow close inspection
+  const effectiveMaxDistance = Math.max(maxDim * 3, props.maxDistance ?? 500);
+
   return (
     <div 
       className="w-full h-full rounded-[2.5rem] overflow-hidden relative shadow-inner group" 
@@ -684,15 +692,15 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
     >
       <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ background: currentEnv, position: 'relative', zIndex: 0 }}>
         <PerspectiveCamera makeDefault position={[22, 12, 32]} fov={35} />
-        <OrbitControls 
-          ref={controlsRef}
-          enabled={controlsEnabled}
-          enablePan={true} 
-          enableZoom={true} 
-          minDistance={props.minDistance ?? 1} 
-          maxDistance={props.maxDistance ?? 500} 
-          maxPolarAngle={Math.PI / 1.5}
-        />
+          <OrbitControls 
+            ref={controlsRef}
+            enabled={controlsEnabled}
+            enablePan={true} 
+            enableZoom={true} 
+            minDistance={effectiveMinDistance} 
+            maxDistance={effectiveMaxDistance} 
+            maxPolarAngle={Math.PI / 1.5}
+          />
         
         <ambientLight intensity={isDarkMode ? 0.4 : 1.2} />
         <directionalLight position={[10, 20, 10]} intensity={isDarkMode ? 0.8 : 1.5} castShadow shadow-mapSize={[1024, 1024]} />
