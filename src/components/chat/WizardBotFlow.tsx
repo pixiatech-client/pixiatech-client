@@ -1749,6 +1749,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                                 rentalStartTime={configState.rentalStartTime}
                                 rentalEndTime={configState.rentalEndTime}
                                 productImage={selectedProduct?.imageUrl || selectedProduct?.image}
+                                companySignatureDataUrl={settings.estimationFlow?.companySignatureDataUrl}
                                 saleContractTemplate={settings.estimationFlow?.saleContractTemplate}
                                 rentalContractTemplate={settings.estimationFlow?.rentalContractTemplate}
                                 isPdfMode={true}

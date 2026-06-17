@@ -2824,6 +2824,7 @@ const settingsSchema = z.object({
     enableRentalPeriod: z.boolean(),
     enableDigitalSignature: z.boolean(),
     enableContractEditing: z.boolean(),
+    companySignatureDataUrl: z.string().optional(),
     saleContractTemplate: z.string().optional(),
     rentalContractTemplate: z.string().optional(),
     taxEnabled: z.boolean(),
@@ -2930,6 +2931,7 @@ export async function getSettings(): Promise<Settings> {
       enableRentalPeriod: true,
       enableDigitalSignature: true,
       enableContractEditing: false,
+      companySignatureDataUrl: '',
       taxEnabled: false,
       taxRate: 19,
       taxMode: 'ht',
@@ -3569,19 +3571,20 @@ export async function getAllUsers() {
   }
 }
 
+export async function resetEstimationCounter(newNumber: number): Promise<{ success: boolean; error?: string }> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Database service unavailable' };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  try {
+    const counterRef = adminDb.collection('counters').doc('quoteNumber');
+    await adminDb.runTransaction(async (transaction) => {
+      const doc = await transaction.get(counterRef);
+      const current = doc.data()?.current ?? 0;
+      transaction.set(counterRef, { current: newNumber - 1 }, { merge: true });
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error resetting estimation counter:', error);
+    return { success: false, error: 'Failed to reset counter' };
+  }
+}

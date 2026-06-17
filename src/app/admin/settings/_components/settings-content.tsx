@@ -3,13 +3,13 @@
 import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { getSettings } from '@/app/admin/actions';
 import type { Settings as AppSettings } from '@/lib/types';
-import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap } from 'lucide-react';
+import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap, PenTool } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { useAdminT } from '@/hooks/useAdminT';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content' | 'signature';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -27,6 +27,7 @@ const SoftwareContent = lazy(() => import('../software/page'));
 const EmailVerificationContent = lazy(() => import('../email-verification/page'));
 const FlowContent = lazy(() => import('../flow/page'));
 const ThemesContent = lazy(() => import('../themes/page'));
+const SignatureContent = lazy(() => import('../signature/page'));
 
 function LoadingFallback() {
     return (
@@ -54,6 +55,7 @@ const tabsConfigDefs = [
     { id: 'software' as SettingsSection, labelKey: 'Software', icon: Settings },
     { id: 'email-verification' as SettingsSection, labelKey: 'Email Verification', icon: ShieldCheck },
     { id: 'flow' as SettingsSection, labelKey: 'Parcours client', icon: Zap },
+    { id: 'signature' as SettingsSection, labelKey: 'Signature & Compteur', icon: PenTool },
 ];
 
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
@@ -128,6 +130,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <SoftwareContent />;
             case 'flow':
                 return <FlowContent />;
+            case 'signature':
+                return <SignatureContent />;
             default:
                 return <GeneralContent />;
         }
@@ -170,6 +174,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                         tab.id === 'messaging' ? "bg-blue-100/80 text-blue-600" :
                                         tab.id === 'appearance' ? "bg-fuchsia-100/80 text-fuchsia-600" :
                                         tab.id === 'email-verification' ? "bg-indigo-100/80 text-indigo-600" :
+                                        tab.id === 'signature' ? "bg-rose-100/80 text-rose-600" :
                                         "bg-orange-100/80 text-orange-600"
                                     )}>
                                         <tab.icon className={cn(

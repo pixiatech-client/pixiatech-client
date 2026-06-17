@@ -1765,6 +1765,7 @@ export default function SignatureFlow({
                   productImage={productPhoto}
                   saleContractTemplate={flowSettings.saleContractTemplate}
                   rentalContractTemplate={flowSettings.rentalContractTemplate}
+                  companySignatureDataUrl={flowSettings.companySignatureDataUrl}
                 />
 
                 {/* Scroll checkbox verification with custom error styling */}
@@ -2760,6 +2761,7 @@ export default function SignatureFlow({
             productImage={productPhoto}
             saleContractTemplate={flowSettings.saleContractTemplate}
             rentalContractTemplate={flowSettings.rentalContractTemplate}
+            companySignatureDataUrl={flowSettings.companySignatureDataUrl}
             isPdfMode={true}
           />
         </div>

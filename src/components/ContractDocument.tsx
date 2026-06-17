@@ -13,6 +13,7 @@ interface ContractDocumentProps {
   renter: RenterDetails;
   signatureDataUrl: string | null;
   isValidated: boolean;
+  companySignatureDataUrl?: string | null;
   projectMode?: 'vente' | 'location';
   rentalPeriod?: { from: Date | string; to: Date | string };
   rentalStartTime?: string | null;
@@ -29,6 +30,7 @@ export default function ContractDocument({
   renter,
   signatureDataUrl,
   isValidated,
+  companySignatureDataUrl,
   projectMode = 'location',
   rentalPeriod,
   rentalStartTime,
@@ -122,15 +124,26 @@ export default function ContractDocument({
 
                   <div className="relative w-32 h-24 my-2 flex items-center justify-center bg-zinc-50 rounded-lg border border-zinc-200 overflow-hidden">
 
-                    <svg className="absolute w-24 h-12 text-blue-600 opacity-95 stroke-current fill-none stroke-[1.5]" viewBox="0 0 100 50">
-                      <path d="M10,25 C20,10 25,45 35,28 C45,10 50,42 62,30 C75,15 80,40 90,25" />
-                    </svg>
+                    {companySignatureDataUrl ? (
+                      <img
+                        src={companySignatureDataUrl}
+                        alt="Signature PIXIATECH"
+                        className="max-w-full max-h-full object-contain mix-blend-multiply transition-all duration-300"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <>
+                        <svg className="absolute w-24 h-12 text-blue-600 opacity-95 stroke-current fill-none stroke-[1.5]" viewBox="0 0 100 50">
+                          <path d="M10,25 C20,10 25,45 35,28 C45,10 50,42 62,30 C75,15 80,40 90,25" />
+                        </svg>
 
-                    <div className="absolute w-18 h-18 border-2 border-double border-blue-600/50 rounded-full flex flex-col items-center justify-center text-blue-600/75 rotate-12 scale-90 pointer-events-none">
-                      <span className="text-[5px] font-bold font-mono tracking-widest uppercase">PIXIATECH</span>
-                      <span className="text-[6px] font-extrabold font-sans">ST-OUEN</span>
-                      <span className="text-[4px] font-mono">93400 - FRANCE</span>
-                    </div>
+                        <div className="absolute w-18 h-18 border-2 border-double border-blue-600/50 rounded-full flex flex-col items-center justify-center text-blue-600/75 rotate-12 scale-90 pointer-events-none">
+                          <span className="text-[5px] font-bold font-mono tracking-widest uppercase">PIXIATECH</span>
+                          <span className="text-[6px] font-extrabold font-sans">ST-OUEN</span>
+                          <span className="text-[4px] font-mono">93400 - FRANCE</span>
+                        </div>
+                      </>
+                    )}
 
                   </div>
 

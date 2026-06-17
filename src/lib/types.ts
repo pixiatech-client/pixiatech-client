@@ -207,6 +207,7 @@ export type Settings = {
     enableRentalPeriod: boolean;
     enableDigitalSignature: boolean;
     enableContractEditing: boolean;
+    companySignatureDataUrl?: string;
     saleContractTemplate?: string;
     rentalContractTemplate?: string;
     taxEnabled: boolean;
