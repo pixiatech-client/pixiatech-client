@@ -23,14 +23,20 @@ import {
   Search,
   Send,
   Truck,
-  Undo2
+  Undo2,
+  Building2,
+  Phone,
+  Mail,
+  MapPin,
+  FileText,
+  StickyNote
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, where, onSnapshot, limit } from 'firebase/firestore';
 import { QuoteStatus } from './types';
-import { moveQuotesToTrash, resetPerformancePoints, resetConfiguratorStats, getSettings } from '@/app/admin/actions';
+import { moveQuotesToTrash, updateQuoteStatus, resetPerformancePoints, resetConfiguratorStats, getSettings, getQuoteCounts, getPaginatedQuotes } from '@/app/admin/actions';
 import { useToast } from '@/hooks/use-toast';
 import { X, Check } from 'lucide-react';
 import { translateStatus } from '../../../../lib/utils';
@@ -95,8 +101,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const [searchQuery, setSearchQuery] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
 
+  const tableLastIdsRef = useRef<Record<number, string | null>>({});
+
   React.useEffect(() => {
     setCurrentPage(1);
+    tableLastIdsRef.current = {};
   }, [statusFilter, typeFilter, selectedDate, dateRange]);
 
   useEffect(() => {
@@ -110,8 +119,56 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const [isPerformanceMenuOpen, setIsPerformanceMenuOpen] = useState(false);
   const [performancePeriod, setPerformancePeriod] = useState<'1-month' | '2-months' | '3-months' | 'year'>('1-month');
   const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const [detailQuote, setDetailQuote] = useState<any>(null);
   const [performanceSettings, setPerformanceSettings] = useState<any>(null);
   const { toast } = useToast();
+
+  const [statsCounts, setStatsCounts] = useState<Record<string, number>>({});
+  const [statsSums, setStatsSums] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    getQuoteCounts(undefined, statsTypeFilter === 'all' ? undefined : statsTypeFilter).then(r => {
+      setStatsCounts(r.counts);
+      setStatsSums(r.sums);
+    });
+  }, [statsTypeFilter]);
+
+  // Server-paginated table data — only page 1 loaded on mount
+  const itemsPerPage = 5;
+  const [tableQuotes, setTableQuotes] = useState<any[]>([]);
+  const [tableLoading, setTableLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchTablePage = async () => {
+      setTableLoading(true);
+      try {
+        const startAfterId = currentPage === 1 ? null : (tableLastIdsRef.current[currentPage - 1] ?? null);
+        if (currentPage > 1 && !startAfterId) return;
+
+        const statusKey = statusFilter === 'ALL' || statusFilter === 'FOURNISSEUR' ? undefined : statusFilter;
+        const txType = typeFilter === 'all' ? undefined : typeFilter;
+
+        const result = await getPaginatedQuotes({
+          status: statusKey,
+          limit: itemsPerPage,
+          startAfterId,
+          transactionType: txType,
+        });
+
+        if (!cancelled) {
+          setTableQuotes(result.requests);
+          tableLastIdsRef.current[currentPage] = result.lastId;
+        }
+      } catch (e) {
+        console.error('Failed to fetch table page:', e);
+      } finally {
+        if (!cancelled) setTableLoading(false);
+      }
+    };
+    fetchTablePage();
+    return () => { cancelled = true; };
+  }, [currentPage, statusFilter, typeFilter]);
 
   React.useEffect(() => {
     getSettings().then(setPerformanceSettings);
@@ -173,12 +230,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
       setIsDeleting(null);
     }
   };
+
+  const handleRevertToPending = async (quoteId: string) => {
+    try {
+      await updateQuoteStatus(quoteId, { status: 'pending' });
+      toast({
+        title: 'Statut modifié',
+        description: 'L\'estimation est repassée en « En attente ».',
+      });
+      setDetailQuote(null);
+      router.refresh();
+    } catch {
+      toast({
+        title: t('common.error'),
+        variant: 'destructive',
+      });
+    }
+  };
   const isDark = theme === 'dark';
 
   const firestore = useFirestore();
 
   // Fetch real data from Firestore
-  const quotesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'quotes'), orderBy('createdAt', 'desc'), limit(100)) : null, [firestore]);
+  const quotesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'quotes'), orderBy('createdAt', 'desc'), limit(12)) : null, [firestore]);
   const { data: allQuotesRaw } = useCollection<any>(quotesQuery, { suppressPermissionError: true });
 
   const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), limit(200)) : null, [firestore]);
@@ -190,34 +264,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
 
-  // Stats calculation — all possible quote statuses
-  const statuses = ['pending','processed','trashed','archived','in_progress','sent','delivered','returned','rented'] as const;
   const statusLabels: Record<string, string> = {
     pending: 'En attente', processed: 'Traitée', trashed: 'Corbeille',
     archived: 'Archivée', in_progress: 'En cours', sent: 'Envoyée',
     delivered: 'Livrée', returned: 'Retournée', rented: 'Louée',
   };
-  const stats = useMemo(() => {
-    if (!allQuotesRaw) {
-      const empty: Record<string, number> = {};
-      statuses.forEach(s => { empty[s] = 0; });
-      return { ...empty, total: 0 } as Record<string, number>;
-    }
-    const filtered = statsTypeFilter === 'all'
-      ? allQuotesRaw
-      : allQuotesRaw.filter(q => {
-          const type = q.transactionType === 'rental' ? 'rental' : 'sale';
-          return type === statsTypeFilter;
-        });
-    const result: Record<string, number> = {};
-    statuses.forEach(s => { result[s] = 0; });
-    filtered.forEach((q: any) => {
-      const st = q.status as string;
-      if (result[st] !== undefined) result[st]++;
-    });
-    result.total = filtered.length;
-    return result;
-  }, [allQuotesRaw, statsTypeFilter]);
 
   const configuratorStats = useMemo(() => {
     if (!allQuotesRaw) return { guided: 0, lumi: 0 };
@@ -295,69 +346,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
     }));
   }, [allUsers, allQuotesRaw, performancePeriod, performanceSettings]);
 
-  const filteredQuotes = useMemo(() => {
-    if (!allQuotesRaw) return [];
-    let quotes = [...allQuotesRaw].sort((a, b) => {
-      const aTime = a.createdAt?.toDate?.() ?? new Date(0);
-      const bTime = b.createdAt?.toDate?.() ?? new Date(0);
-      return bTime.getTime() - aTime.getTime();
-    });
-    
-    if (statusFilter === 'FOURNISSEUR') {
-      const fournisseurIds = new Set(allUsers?.filter(u => u.role === 'fournisseur').map(u => u.id));
-      quotes = quotes.filter(q => fournisseurIds.has(q.clientId) || fournisseurIds.has(q.userId));
-    } else if (statusFilter !== 'ALL') {
-      quotes = quotes.filter(q => q.status === statusFilter);
-    }
-
-    if (dateRange.start) {
-      const startStr = dateRange.start.toISOString().split('T')[0];
-      if (dateRange.end) {
-        const endStr = dateRange.end.toISOString().split('T')[0];
-        quotes = quotes.filter(q => {
-          const qDate = q.createdAt?.toDate ? q.createdAt.toDate().toISOString().split('T')[0] : '';
-          return qDate >= startStr && qDate <= endStr;
-        });
-      } else {
-        quotes = quotes.filter(q => {
-          const qDate = q.createdAt?.toDate ? q.createdAt.toDate().toISOString().split('T')[0] : '';
-          return qDate === startStr;
-        });
-      }
-    } else if (selectedDate) {
-      const selectedStr = selectedDate.toISOString().split('T')[0];
-      quotes = quotes.filter(q => {
-        const qDate = q.createdAt?.toDate ? q.createdAt.toDate().toISOString().split('T')[0] : '';
-        return qDate === selectedStr;
-      });
-    }
-
-    if (typeFilter !== 'all') {
-      quotes = quotes.filter(q => {
-        const type = q.transactionType === 'rental' ? 'rental' : 'sale';
-        return type === typeFilter;
-      });
-    }
-
-    return quotes;
-  }, [allQuotesRaw, statusFilter, selectedDate, dateRange, typeFilter]);
-
-  const searchFilteredQuotes = useMemo(() => {
-    if (!searchQuery.trim()) return filteredQuotes;
+  // Client-side search on server-paginated data
+  const searchedQuotes = useMemo(() => {
+    if (!searchQuery.trim()) return tableQuotes;
     const q = searchQuery.toLowerCase();
-    return filteredQuotes.filter(e =>
-      e.id.toLowerCase().includes(q) ||
+    return tableQuotes.filter(e =>
+      e.id?.toLowerCase().includes(q) ||
       (e.client?.companyName?.toLowerCase() || '').includes(q) ||
       (e.status || '').toLowerCase().includes(q)
     );
-  }, [filteredQuotes, searchQuery]);
+  }, [tableQuotes, searchQuery]);
 
-  const itemsPerPage = 5;
-  const totalPages = Math.ceil(searchFilteredQuotes.length / itemsPerPage);
-  const paginatedQuotes = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return searchFilteredQuotes.slice(start, start + itemsPerPage);
-  }, [searchFilteredQuotes, currentPage, itemsPerPage]);
+  // Total from persistent stats doc (accurate, not from loaded page)
+  const filteredTotal = useMemo(() => {
+    if (statusFilter === 'FOURNISSEUR') {
+      return Math.max(tableQuotes.length, searchedQuotes.length + 1);
+    }
+    if (statusFilter === 'ALL') {
+      return Object.values(statsCounts).reduce((a, b) => a + b, 0);
+    }
+    return statsCounts[statusFilter] || 0;
+  }, [statusFilter, statsCounts, tableQuotes, searchedQuotes]);
+
+  const totalPages = Math.ceil(filteredTotal / itemsPerPage);
 
   const counts = useMemo(() => {
     if (!allQuotesRaw) return { all: 0, sale: 0, rental: 0 };
@@ -786,7 +797,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                     </div>
                     {searchQuery && (
                       <p className={`text-xs mt-1 px-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                        {searchFilteredQuotes.length} résultat{searchFilteredQuotes.length !== 1 ? 's' : ''}
+                        {searchedQuotes.length} résultat{searchedQuotes.length !== 1 ? 's' : ''}
                       </p>
                     )}
                   </div>
@@ -888,7 +899,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                {paginatedQuotes.length > 0 ? paginatedQuotes.map((quote) => {
+                {searchedQuotes.length > 0 ? searchedQuotes.map((quote) => {
                   const isRental = quote.transactionType === 'rental';
                   const amountVal = quote.totalClient || quote.totalQuote || 0;
                   return (
@@ -952,12 +963,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                       </td>
                       <td className="py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Link 
-                            href={`/admin/quote-requests`}
-                            className="p-2 rounded-lg text-gray-400 hover:bg-zinc-800 hover:text-white transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Link>
+                          {quote.status === 'in_progress' ? (
+                            <button
+                              onClick={() => setDetailQuote(quote)}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              + de détails
+                            </button>
+                          ) : (
+                            <Link 
+                              href={`/admin/quote-requests`}
+                              className="p-2 rounded-lg text-gray-400 hover:bg-zinc-800 hover:text-white transition-colors"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Link>
+                          )}
                           {(rawRole === 'admin' || userRole === 'Administrateur') ? (
                             <button 
                               onClick={() => setConfirmDialog({ message: t('admin.deleteQuoteConfirm'), onConfirm: () => { setConfirmDialog(null); handleDelete(quote.id); } })}
@@ -988,7 +1009,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
 
           {/* Mobile View - Card based accordion layout */}
           <div className="md:hidden space-y-3">
-            {paginatedQuotes.length > 0 ? paginatedQuotes.map((quote) => {
+            {searchedQuotes.length > 0 ? searchedQuotes.map((quote) => {
               const isExpanded = expandedId === quote.id;
               const isRental = quote.transactionType === 'rental';
               const amountVal = quote.totalClient || quote.totalQuote || 0;
@@ -1077,13 +1098,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                           </div>
                           
                           <div className="flex items-center gap-2 pt-2">
-                            <Link 
-                              href={`/admin/quote-requests`}
-                              className="flex-1 py-3 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all dark:bg-white dark:text-black"
-                            >
-                              <Eye className="w-4 h-4" />
-                              <span>{t('admin.detailsButton')}</span>
-                            </Link>
+                            {quote.status === 'in_progress' ? (
+                              <button
+                                onClick={() => setDetailQuote(quote)}
+                                className="flex-1 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                              >
+                                <Eye className="w-4 h-4" />
+                                + de détails
+                              </button>
+                            ) : (
+                              <Link 
+                                href={`/admin/quote-requests`}
+                                className="flex-1 py-3 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all dark:bg-white dark:text-black"
+                              >
+                                <Eye className="w-4 h-4" />
+                                <span>{t('admin.detailsButton')}</span>
+                              </Link>
+                            )}
                             {(rawRole === 'admin' || userRole === 'Administrateur') ? (
                               <button 
                               onClick={() => setConfirmDialog({ message: t('admin.deleteQuoteConfirm'), onConfirm: () => { setConfirmDialog(null); handleDelete(quote.id); } })}
@@ -1119,17 +1150,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                   <>
                     Showing <span className="font-bold text-gray-900 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
                     <span className="font-bold text-gray-900 dark:text-white">
-                      {Math.min(currentPage * itemsPerPage, filteredQuotes.length)}
+                      {Math.min(currentPage * itemsPerPage, filteredTotal)}
                     </span>{" "}
-                    of <span className="font-bold text-gray-900 dark:text-white">{filteredQuotes.length}</span> estimates
+                    of <span className="font-bold text-gray-900 dark:text-white">{filteredTotal}</span> estimates
                   </>
                 ) : (
                   <>
                     Affichage de <span className="font-bold text-gray-900 dark:text-white">{(currentPage - 1) * itemsPerPage + 1}</span> à{" "}
                     <span className="font-bold text-gray-900 dark:text-white">
-                      {Math.min(currentPage * itemsPerPage, filteredQuotes.length)}
+                      {Math.min(currentPage * itemsPerPage, filteredTotal)}
                     </span>{" "}
-                    sur <span className="font-bold text-gray-900 dark:text-white">{filteredQuotes.length}</span> estimations
+                    sur <span className="font-bold text-gray-900 dark:text-white">{filteredTotal}</span> estimations
                   </>
                 )}
               </span>
@@ -1425,7 +1456,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 </button>
               ))}
               <span className="ml-auto text-[10px] font-medium text-white/30" title="Total des estimations">
-                {stats.total || 0}
+                {Object.values(statsCounts).reduce((a, b) => a + b, 0) || 0}
               </span>
             </div>
           <div className="grid grid-cols-4 gap-1">
@@ -1441,7 +1472,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
             ] as const).map(({ key, icon: Icon, color, glow }: any) => {
               const val = key === 'fournisseur'
                 ? (allUsers?.filter((u: any) => u.role === 'fournisseur').length || 0)
-                : (stats[key] || 0);
+                : (statsCounts[key] || 0);
               const label = key === 'fournisseur' ? 'Fournisseur' : key === 'delivered' ? 'Livré' : key === 'rented' ? 'Loué' : (statusLabels[key] || key);
               return (
                 <div
@@ -1598,6 +1629,179 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                   className="px-5 py-2.5 text-sm font-bold bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
                 >
                   {t('admin.productManagement.delete')}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Detail Modal for En cours */}
+      <AnimatePresence>
+        {detailQuote && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setDetailQuote(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="sticky top-0 z-10 bg-white rounded-t-3xl border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
+                    <Eye className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-slate-900 leading-tight">Détails de l'estimation</h3>
+                    <p className="text-[10px] font-medium text-slate-400 font-mono tracking-tight">#{detailQuote.id.substring(0, 8)}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDetailQuote(null)}
+                  className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4 text-slate-400" />
+                </button>
+              </div>
+
+              <div className="px-6 py-5 space-y-6">
+                {/* Client Section */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Building2 className="w-4 h-4 text-slate-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Client</span>
+                  </div>
+                  <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
+                        <Building2 className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Société</p>
+                        <p className="text-sm font-bold text-slate-800 truncate">{detailQuote.client?.companyName || 'Non renseigné'}</p>
+                      </div>
+                    </div>
+                    <div className="h-px bg-slate-200/60" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
+                          <Mail className="w-3.5 h-3.5 text-slate-500" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Email</p>
+                          <p className="text-xs font-semibold text-slate-700 truncate">{detailQuote.client?.email || 'Non renseigné'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
+                          <Phone className="w-3.5 h-3.5 text-slate-500" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Téléphone</p>
+                          <p className="text-xs font-semibold text-slate-700 truncate">{detailQuote.client?.phone || 'Non renseigné'}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
+                        <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Adresse</p>
+                        <p className="text-xs font-semibold text-slate-700 truncate">{detailQuote.client?.address || 'Non renseigné'}</p>
+                      </div>
+                    </div>
+                    {detailQuote.client?.notes && (
+                      <>
+                        <div className="h-px bg-slate-200/60" />
+                        <div className="flex items-start gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-white shadow-sm border border-slate-200 flex items-center justify-center shrink-0 mt-0.5">
+                            <StickyNote className="w-3.5 h-3.5 text-slate-500" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Notes</p>
+                            <p className="text-xs text-slate-600 leading-relaxed">{detailQuote.client.notes}</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Estimation Section */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="w-4 h-4 text-slate-400" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Estimation</span>
+                  </div>
+                  <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white rounded-xl p-3 border border-slate-200/60">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1">Type</p>
+                        <div className="flex items-center gap-1.5">
+                          {detailQuote.transactionType === 'rental' ? (
+                            <>
+                              <Calendar className="w-3.5 h-3.5 text-violet-500" />
+                              <span className="text-xs font-extrabold text-violet-600">Location</span>
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingBag className="w-3.5 h-3.5 text-emerald-500" />
+                              <span className="text-xs font-extrabold text-emerald-600">Vente</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="bg-white rounded-xl p-3 border border-slate-200/60">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1">Montant</p>
+                        <p className="text-xs font-extrabold text-blue-600">
+                          {detailQuote.totalClient || detailQuote.totalQuote
+                            ? (detailQuote.totalClient || detailQuote.totalQuote).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })
+                            : '—'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-white rounded-xl p-3 border border-slate-200/60">
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400 mb-1">Date de soumission</p>
+                      <p className="text-xs font-bold text-slate-700">
+                        {detailQuote.createdAt?.toDate
+                          ? detailQuote.createdAt.toDate().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                          : 'Non renseigné'}
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-xl p-3 border border-amber-200/60 bg-amber-50/50">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-amber-500 mb-1">Statut actuel</p>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                            <span className="text-xs font-extrabold text-blue-600">En cours</span>
+                          </div>
+                        </div>
+                        <Clock className="w-5 h-5 text-amber-400" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action */}
+              <div className="px-6 pb-6">
+                <button
+                  onClick={() => handleRevertToPending(detailQuote.id)}
+                  className="w-full py-3.5 text-sm font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg shadow-amber-200 flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.98]"
+                >
+                  <Undo2 className="w-4 h-4" />
+                  Repasser en « En attente »
                 </button>
               </div>
             </motion.div>

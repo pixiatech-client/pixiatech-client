@@ -368,7 +368,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         payments: initialEstimation.payments || {
           totalPaid: initialEstimation.paidAmount || 0,
           steps: [
-            { id: 'p1', label: 'Single Payment', amount: initialEstimation.totalClient || initialEstimation.totalQuote || 0, status: 'pending' }
+            { id: 'p1', label: 'Paiement unique', amount: initialEstimation.totalClient || initialEstimation.totalQuote || 0, status: 'pending' }
           ]
         },
         status: initialEstimation.status,
@@ -488,7 +488,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ...prev,
       products: prev.products.filter(p => p.id !== id)
     }));
-    addHistory(`Deleted product ID: ${id}`);
+    addHistory(`Produit supprimé : ${id}`);
   };
 
   const addProduct = () => {
@@ -515,7 +515,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ...prev,
       products: [...prev.products, newProduct]
     }));
-    addHistory('Added new product (Dimensions inherited)');
+    addHistory('Nouveau produit ajouté (dimensions héritées)');
   };
 
   const formatCurrency = (val: number) => {
@@ -525,7 +525,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
   const handleTranslate = async () => {
     setIsAiLoading(true);
-    addHistory('Chinese translation requested');
+    addHistory('Traduction chinoise demandée');
     const result = await geminiService.translateToChinese(estimation);
     setAiResult({ title: 'Technical Translation (Chinese)', content: result });
     setIsAiLoading(false);
@@ -533,7 +533,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
   const handleSummary = async () => {
     setIsAiLoading(true);
-    addHistory('Generating dossier summary');
+    addHistory('Génération du résumé du dossier');
     const result = await geminiService.generateSummary(estimation);
     setAiResult({ title: 'Case Summary', content: result });
     setIsAiLoading(false);
@@ -557,7 +557,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         steps: [newStep]
       }
     }));
-    addHistory('Payment step added');
+    addHistory('Échéance de paiement ajoutée');
   };
 
   const updatePaymentStep = (id: string, field: keyof PaymentStep, value: any) => {
@@ -596,7 +596,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         }
       };
     });
-    addHistory('Payment step removed');
+    addHistory('Échéance de paiement supprimée');
   };
 
   const togglePaymentStatus = (id: string) => {
@@ -618,7 +618,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         }
       };
     });
-    addHistory('Payment status updated');
+    addHistory('Statut du paiement mis à jour');
   };
 
   const shareTranslatedText = (platform: 'whatsapp' | 'telegram', text: string) => {
@@ -627,7 +627,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ? `https://wa.me/${estimation.client.phone.replace(/\s+/g, '')}?text=${encoded}`
       : `https://t.me/share/url?url=${window.location.href}&text=${encoded}`;
     window.open(url, '_blank');
-    addHistory(`Shared result on ${platform}`);
+    addHistory(`Résultat partagé sur ${platform}`);
   };
 
   const shareEstimation = (platform: 'whatsapp' | 'telegram') => {
@@ -660,7 +660,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       : `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodedMessage}`;
 
     window.open(url, '_blank');
-    addHistory(`Shared estimation on ${platform} (${profile})`);
+    addHistory(`Devis partagé sur ${platform} (${profile})`);
   };
 
   return (
@@ -703,13 +703,13 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   estimation.status === 'archived' ? 'bg-slate-100 border-slate-200 text-slate-400' :
                                     'bg-amber-500/20 border-amber-500/30 text-amber-400'
                           }`}>
-                          {estimation.status === 'returned' ? 'Returned' :
-                            estimation.status === 'processed' ? 'Approved' :
-                              estimation.status === 'in_progress' ? 'Sent to supplier' :
-                                estimation.status === 'sent' ? 'Sent' :
-                                  estimation.status === 'archived' ? 'Archived' :
-                                    estimation.status === 'trashed' ? 'Trash' :
-                                      estimation.status === 'pending' ? 'Pending' : estimation.status}
+                          {estimation.status === 'returned' ? 'Retourné' :
+                            estimation.status === 'processed' ? 'Traité' :
+                              estimation.status === 'in_progress' ? 'Fournisseur' :
+                                estimation.status === 'sent' ? 'Livraison' :
+                                  estimation.status === 'archived' ? 'Archivé' :
+                                    estimation.status === 'trashed' ? 'Corbeille' :
+                                      estimation.status === 'pending' ? 'En attente' : estimation.status}
                         </div>
                       )}
                     </div>
@@ -758,7 +758,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             if (!initialEstimation?.id) return;
                             await updateQuoteStatus(initialEstimation.id, { status: 'processed' });
                             setEstimation(prev => ({ ...prev, status: 'processed' }));
-                                  addHistory('Dossier restored');
+                                  addHistory('Dossier restauré');
                             if (onStatusChange) onStatusChange('processed');
                           }}
                           className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-blue-500/20 transition-all text-blue-500 flex items-center gap-1.5 md:gap-2"
@@ -787,7 +787,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               if (confirm('Warning: This action is irreversible. Permanently delete this case?')) {
                                 // Deleting permanent is best done from the dashboard where we have delete access,
                                 // but we can simulate it or alert for safety here.
-                                alert("Please use the main dashboard (Trash tab) to perform a permanent deletion.");
+                                alert("Veuillez utiliser le tableau de bord principal (onglet Corbeille) pour effectuer une suppression définitive.");
                                 handleClose();
                               }
                             }}
@@ -806,7 +806,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           disabled={estimation.status === 'archived' || estimation.status === 'trashed'}
                           className={`h-9 md:h-11 px-3 md:px-4 rounded-xl border text-[9px] md:text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-1.5 md:gap-2 ${isEditMode ? 'bg-amber-500/10 border-amber-500/30 text-amber-600' : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-900'} ${(estimation.status === 'archived' || estimation.status === 'trashed') ? 'opacity-30 cursor-not-allowed' : ''}`}
                         >
-                          <Pencil size={14} /> <span className="hidden sm:inline">{isEditMode ? 'Exit' : 'Edit'}</span>
+                          <Pencil size={14} /> <span className="hidden sm:inline">{isEditMode ? 'Quitter' : 'Modifier'}</span>
                         </button>
 
                         <button
@@ -854,14 +854,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     <div className="flex p-1 bg-slate-100 border border-slate-200 rounded-xl shadow-sm w-full sm:w-auto">
                       {userProfile?.role !== 'supplier' && (
                         <button
-                          onClick={() => { setProfile('client'); addHistory('Switched to: Client Profile'); }}
+                          onClick={() => { setProfile('client'); addHistory('Profil client activé'); }}
                           className={`flex-1 sm:flex-none px-2 sm:px-8 py-2 md:py-2.5 rounded-lg text-[9px] md:text-xs font-bold uppercase transition-all tracking-widest flex justify-center items-center gap-1.5 md:gap-2 ${profile === 'client' ? 'bg-white text-slate-900 shadow-md border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                           <User size={14} className={profile === 'client' ? "text-aura-accent" : ""} /> <span className="truncate">Client Profile</span>
                         </button>
                       )}
                       <button
-                        onClick={() => { setProfile('supplier'); addHistory('Switched to: Supplier Profile (Verification)'); }}
+                        onClick={() => { setProfile('supplier'); addHistory('Profil fournisseur activé (Vérification)'); }}
                         className={`flex-1 sm:flex-none px-2 sm:px-8 py-2 md:py-2.5 rounded-lg text-[9px] md:text-xs font-bold uppercase transition-all tracking-widest flex justify-center items-center gap-1.5 md:gap-2 ${profile === 'supplier' ? 'bg-white text-slate-900 shadow-md border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
                       >
                         <Truck size={14} className={profile === 'supplier' ? "text-aura-accent" : ""} /> <span className="truncate">Supplier Profile</span>
@@ -999,7 +999,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   <button
                                     onClick={() => {
                                       setEstimation({ ...estimation, client: { ...estimation.client, sitePhoto: undefined } });
-                                      addHistory("Site photo deleted");
+                                      addHistory("Photo du site supprimée");
                                     }}
                                     className="w-10 h-10 flex items-center justify-center bg-red-500/10 backdrop-blur rounded-xl text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition-all hover:scale-110 shadow-xl"
                                   >
@@ -1140,7 +1140,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         specs: enrichedSpecs,
                                       } : prod);
                                       setEstimation({ ...estimation, products: newProducts });
-                                      addHistory(`Product changed: ${selectedProd.name}`);
+                                      addHistory(`Produit changé : ${selectedProd.name}`);
                                     }
                                   }}
                                   renderOption={(opt) => (
@@ -1557,7 +1557,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Info size={20} /></div>
                         <div>
-                          <div className="text-xs font-bold uppercase tracking-wider">Supplier Technical Mode Active</div>
+                          <div className="text-xs font-bold uppercase tracking-wider">Mode Technique Fournisseur Actif</div>
                           <div className="text-[10px] text-aura-text-dim mt-1 font-mono uppercase tracking-[0.2em]">Priced data hidden per commercial policy.</div>
                         </div>
                       </div>
@@ -1832,7 +1832,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               onClick={async () => {
                                 setIsAiLoading(true);
                                 try {
-                                  addHistory('Validated modifications and saved');
+                                  addHistory('Modifications validées et enregistrées');
                                   const isRentalPending =
                                     initialEstimation?.transactionType === 'rental' &&
                                     (initialEstimation?.status === 'pending' || initialEstimation?.status === 'En attente');
@@ -1922,7 +1922,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                 </div>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => { if (aiResult) { navigator.clipboard.writeText(aiResult.content);     addHistory('Copied AI result'); } }}
+                    onClick={() => { if (aiResult) { navigator.clipboard.writeText(aiResult.content);     addHistory('Résultat IA copié'); } }}
                     className="px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
                   >
                     Copy
@@ -1971,7 +1971,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
               // Get the raw ID from the initialEstimation object (not the formatted display ID)
               const rawId = initialEstimation?.id;
               if (!rawId) {
-                alert('Error: quote ID not found.');
+                alert('Erreur : ID du devis introuvable.');
                 return;
               }
               try {
@@ -1989,20 +1989,20 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   supplierNotes: notes,
                   status: 'in_progress'
                 } as any));
-                addHistory(`Transmitted to supplier ${supplierName} successfully`);
+                addHistory(`Transmis au fournisseur ${supplierName}`);
                 setIsTransmitModalOpen(false);
                 setProfile('supplier');
                 if (onStatusChange) onStatusChange('in_progress');
                 // Success toast
                 const toast = document.createElement('div');
-                toast.innerHTML = `✅ Quote transmitted to <strong>${supplierName}</strong> successfully!`;
+                toast.innerHTML = `✅ Devis transmis à <strong>${supplierName}</strong> avec succès !`;
                 toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:14px 28px;border-radius:16px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 8px 32px rgba(16,185,129,0.4);animation:fadeIn 0.3s ease';
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 4000);
               } catch (err: any) {
                 console.error('[TransmitModal] Error saving transmission:', err);
                 const toast = document.createElement('div');
-                toast.textContent = `❌ Transfer error: ${err?.message || 'Please try again'}`;
+                toast.textContent = `❌ Erreur de transfert : ${err?.message || 'Veuillez réessayer'}`;
                 toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#ef4444;color:white;padding:14px 28px;border-radius:16px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 8px 32px rgba(239,68,68,0.4)';
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 5000);

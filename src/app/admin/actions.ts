@@ -1414,7 +1414,7 @@ export async function getPaginatedQuotes({
   supplierId: clientSupplierId,
   transactionType,
 }: {
-  status: string;
+  status?: string;
   limit?: number;
   startAfterId?: string | null;
   supplierId?: string;
@@ -1517,7 +1517,10 @@ export async function getPaginatedQuotes({
       q = q.where('transactionType', '==', transactionType);
     }
 
-    q = applyProjection(q.where('status', '==', status).orderBy('createdAt', 'desc').limit(limit));
+    if (status) {
+      q = q.where('status', '==', status);
+    }
+    q = applyProjection(q.orderBy('createdAt', 'desc').limit(limit));
 
     if (startAfterId) {
       const lastDoc = await adminDb.collection('quotes').doc(startAfterId).get();
@@ -1556,10 +1559,12 @@ export async function getPaginatedQuotes({
           if (effectiveSupplierId) {
             legacyQ = legacyQ.where('supplierId', '==', effectiveSupplierId);
           }
+        if (status) {
+          legacyQ = legacyQ.where('status', '==', status);
+        }
         legacyQ = applyProjection(
           legacyQ
             .where('transactionType', 'not-in', ['sale', 'rental'])
-            .where('status', '==', status)
             .orderBy('transactionType')
             .orderBy('createdAt', 'desc')
             .limit(limit)

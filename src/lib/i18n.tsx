@@ -50,13 +50,7 @@ const getStoredLocale = (): Locale => {
 };
 
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
-  const [locale, setLocaleState] = useState<Locale>('fr');
-
-  // Initialize from localStorage on mount
-  useEffect(() => {
-    const stored = getStoredLocale();
-    setLocaleState(stored);
-  }, []);
+  const [locale, setLocaleState] = useState<Locale>(getStoredLocale);
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
