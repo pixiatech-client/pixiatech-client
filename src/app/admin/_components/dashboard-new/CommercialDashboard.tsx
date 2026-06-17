@@ -435,7 +435,7 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
                     <td className="py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          href={`/admin/quote-requests?id=${quote.raw?.id}`}
+                          href={`/admin/quote-requests`}
                           className="p-2 rounded-lg text-gray-400 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text transition-colors"
                         >
                           <Eye className="w-4 h-4" />

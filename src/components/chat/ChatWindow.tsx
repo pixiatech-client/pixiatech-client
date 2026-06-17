@@ -1362,24 +1362,29 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="max-w-full max-h-full flex items-center justify-center"
+              className="max-w-full max-h-full flex items-center justify-center relative"
               onClick={(e) => e.stopPropagation()}
+              onContextMenu={(e) => e.preventDefault()}
             >
               {selectedMedia.type === 'image' ? (
                 <img 
                   src={selectedMedia.url} 
                   alt={t('chat.fullScreen')} 
-                  className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+                  className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl pointer-events-none select-none"
                   referrerPolicy="no-referrer"
+                  draggable={false}
                 />
               ) : (
                 <video 
                   src={selectedMedia.url} 
                   controls 
                   autoPlay
-                  className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl"
+                  controlsList="nodownload"
+                  className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl pointer-events-none"
+                  onContextMenu={(e) => e.preventDefault()}
                 />
               )}
+              <div className="absolute inset-0 z-10" onContextMenu={(e) => e.preventDefault()} />
             </motion.div>
           </motion.div>
         )}

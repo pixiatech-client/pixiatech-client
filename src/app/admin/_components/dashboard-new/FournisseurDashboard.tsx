@@ -388,7 +388,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                     <td className="py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link
-                          href={`/admin/quote-requests?id=${quote.raw?.id}`}
+                          href={`/admin/quote-requests`}
                           className="p-2 rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
                         >
                           <Eye className="w-4 h-4" />

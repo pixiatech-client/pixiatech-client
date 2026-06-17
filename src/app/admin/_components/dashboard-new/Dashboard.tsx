@@ -428,13 +428,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   }, [allQuotesRaw]);
 
   const ACTIVITY_TRANSLATIONS: Record<string, { fr: string; en: string }> = {
+    // French keys → English
     'Mise à jour du statut': { fr: 'Mise à jour du statut', en: 'Status update' },
     'Statut changé vers': { fr: 'Statut changé vers', en: 'Status changed to' },
     'Statut changé pour': { fr: 'Statut changé pour', en: 'Status changed for' },
     'traité': { fr: 'traité', en: 'processed' },
     'traitée': { fr: 'traitée', en: 'processed' },
     'en attente': { fr: 'en attente', en: 'pending' },
-    'corbeille': { fr: 'corbeille', en: 'trashed' },
+    'corbeille': { fr: 'corbeille', en: 'trash' },
     'archivé': { fr: 'archivé', en: 'archived' },
     'livré': { fr: 'livré', en: 'delivered' },
     'envoyé': { fr: 'envoyé', en: 'sent' },
@@ -446,23 +447,41 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
     'expiré': { fr: 'expiré', en: 'expired' },
     'révisé': { fr: 'révisé', en: 'revised' },
     'accepté': { fr: 'accepté', en: 'accepted' },
+    // English keys → French (bidirectional)
+    'Status update': { fr: 'Mise à jour du statut', en: 'Status update' },
+    'Status changed to': { fr: 'Statut changé vers', en: 'Status changed to' },
+    'Status changed for': { fr: 'Statut changé pour', en: 'Status changed for' },
+    'Moved to trash': { fr: 'Déplacé vers la corbeille', en: 'Moved to trash' },
+    'moved to trash': { fr: 'déplacé vers la corbeille', en: 'moved to trash' },
+    'Submitted to supplier': { fr: 'Soumis au fournisseur', en: 'Submitted to supplier' },
+    'processed': { fr: 'traité', en: 'processed' },
+    'pending': { fr: 'en attente', en: 'pending' },
+    'trash': { fr: 'corbeille', en: 'trash' },
+    'trashed': { fr: 'corbeille', en: 'trashed' },
+    'archived': { fr: 'archivé', en: 'archived' },
+    'delivered': { fr: 'livré', en: 'delivered' },
+    'sent': { fr: 'envoyé', en: 'sent' },
+    'returned': { fr: 'retourné', en: 'returned' },
+    'rented': { fr: 'loué', en: 'rented' },
+    'paid': { fr: 'payé', en: 'paid' },
+    'cancelled': { fr: 'annulé', en: 'cancelled' },
+    'confirmed': { fr: 'confirmé', en: 'confirmed' },
+    'expired': { fr: 'expiré', en: 'expired' },
+    'revised': { fr: 'révisé', en: 'revised' },
+    'accepted': { fr: 'accepté', en: 'accepted' },
   };
 
   function translateActivityText(text: string, targetLocale: string): string {
-    if (targetLocale !== 'en') return text;
+    if (!text) return text;
     let translated = text;
-    const phrases = Object.entries(ACTIVITY_TRANSLATIONS)
-      .filter(([key]) => key.length > 3)
+    const entries = Object.entries(ACTIVITY_TRANSLATIONS)
       .sort((a, b) => b[0].length - a[0].length);
-    for (const [phrase, translations] of phrases) {
+    for (const [phrase, translations] of entries) {
       if (translated.includes(phrase)) {
-        translated = translated.replace(phrase, translations[targetLocale as 'fr' | 'en'] || phrase);
-      }
-    }
-    const words = text.split(' ').filter(w => w.length > 3);
-    for (const word of words) {
-      if (ACTIVITY_TRANSLATIONS[word]) {
-        translated = translated.replace(word, ACTIVITY_TRANSLATIONS[word][targetLocale as 'fr' | 'en'] || word);
+        const replacement = targetLocale === 'en' ? translations.en : translations.fr;
+        if (replacement && replacement !== phrase) {
+          translated = translated.replace(phrase, replacement);
+        }
       }
     }
     return translated;
@@ -876,11 +895,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                     <tr key={quote.id} className="group hover:bg-theme-sidebar-active-bg/5 transition-colors">
                       <td className="py-4">
                         <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] ${
-                            isDark ? 'bg-white/5 text-white border border-white/5' : 'bg-gray-100 text-gray-900 shadow-sm'
-                          } transition-colors group-hover:bg-blue-500 group-hover:text-white`}>
-                            {quote.id.substring(0,3).toUpperCase()}
-                          </div>
+                          <img src="/bot-avatars/estimation.png" alt="" className="w-8 h-8 rounded-lg object-cover" />
                           <div className="flex flex-col">
                             <span className="text-sm font-bold group-hover:text-blue-500 transition-colors">
                               {quote.client?.companyName || t('admin.noNameClient')}
@@ -938,7 +953,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                       <td className="py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link 
-                            href={`/admin/quotes/${quote.id}`}
+                            href={`/admin/quote-requests`}
                             className="p-2 rounded-lg text-gray-400 hover:bg-zinc-800 hover:text-white transition-colors"
                           >
                             <Eye className="w-4 h-4" />
@@ -992,11 +1007,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${
-                          isDark ? 'bg-white/10 text-white' : 'bg-white text-gray-900 shadow-sm'
-                        }`}>
-                          {quote.id.substring(0,3).toUpperCase()}
-                        </div>
+                        <img src="/bot-avatars/estimation.png" alt="" className="w-10 h-10 rounded-xl object-cover" />
                         <div className="flex flex-col">
                           <span className="text-sm font-bold truncate max-w-[150px]">{quote.client?.companyName || t('admin.noNameClient')}</span>
                           <span className="text-[10px] text-gray-400 uppercase font-medium">
@@ -1067,7 +1078,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                           
                           <div className="flex items-center gap-2 pt-2">
                             <Link 
-                              href={`/admin/quotes/${quote.id}`}
+                              href={`/admin/quote-requests`}
                               className="flex-1 py-3 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all dark:bg-white dark:text-black"
                             >
                               <Eye className="w-4 h-4" />
@@ -1342,7 +1353,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
         </div>
       </div>
 
-      <div className="w-full lg:w-[440px] space-y-8 lg:pt-[88px]">
+      <div className="w-full lg:w-[360px] space-y-8 lg:pt-[88px]">
         <div className={`hidden md:block p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
@@ -1417,7 +1428,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 {stats.total || 0}
               </span>
             </div>
-          <div className="flex items-center gap-1 no-scrollbar -mx-1 px-1 flex-wrap">
+          <div className="grid grid-cols-4 gap-1">
             {([
               { key: 'pending',   icon: Clock,       color: 'text-yellow-500',  glow: 'rgba(234,179,8,0.8)' },
               { key: 'processed', icon: CheckCircle2, color: 'text-emerald-500', glow: 'rgba(34,197,94,0.8)' },

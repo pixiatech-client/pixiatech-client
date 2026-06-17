@@ -176,25 +176,29 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
                   e.stopPropagation();
                   onMediaClick?.(msg.fileUrl!, 'video');
                 }}
+                onContextMenu={(e) => e.preventDefault()}
               >
-                <video src={msg.fileUrl} className="max-h-60 w-full object-cover" />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-all">
+                <video src={msg.fileUrl} className="max-h-60 w-full object-cover pointer-events-none" controlsList="nodownload" onContextMenu={(e) => e.preventDefault()} />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-all pointer-events-none">
                   <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30">
                     <Video size={24} className="text-white fill-white" />
                   </div>
                 </div>
+                <div className="absolute inset-0 z-10" onContextMenu={(e) => e.preventDefault()} />
               </div>
             )}
             
             {msg.type === 'image' && msg.fileUrl && !msg.fileUrl.startsWith('blob:') && (
               <div 
-                className="mb-2 overflow-hidden rounded-2xl bg-black/40 cursor-pointer hover:opacity-90 transition-all"
+                className="mb-2 overflow-hidden rounded-2xl bg-black/40 cursor-pointer hover:opacity-90 transition-all relative"
                 onClick={(e) => {
                   e.stopPropagation();
                   onMediaClick?.(msg.fileUrl!, 'image');
                 }}
+                onContextMenu={(e) => e.preventDefault()}
               >
-                <img src={msg.fileUrl} alt="" className="max-h-60 w-full object-cover hover:scale-105 transition-transform" referrerPolicy="no-referrer" />
+                <img src={msg.fileUrl} alt="" className="max-h-60 w-full object-cover hover:scale-105 transition-transform pointer-events-none select-none" referrerPolicy="no-referrer" draggable={false} />
+                <div className="absolute inset-0 z-10" onContextMenu={(e) => e.preventDefault()} />
               </div>
             )}
 

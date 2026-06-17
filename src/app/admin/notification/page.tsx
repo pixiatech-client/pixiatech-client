@@ -11,6 +11,7 @@ import { NotificationFirestore } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
 import { useAdminT } from '@/hooks/useAdminT';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { translateNotificationDesc } from '@/lib/utils';
 
 type NotificationCategory = 'all' | 'unread' | 'messages' | 'system';
 
@@ -66,7 +67,7 @@ function NotificationPage() {
         id: n.id,
         type: n.type,
         title: n.title,
-        description: n.description,
+        description: translateNotificationDesc(n.type, n.description),
         time: createdAt ? getRelativeTime(createdAt) : '',
         href: n.href,
         read: n.read,

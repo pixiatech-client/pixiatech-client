@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, LayoutGroup } from 'framer-motion';
 import { EstimationStatus } from '../types';
 import { Clock, CheckCircle2, Truck, Archive, Trash2, Calculator, Users, Hourglass, RotateCcw, Key, LucideIcon } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
@@ -94,97 +94,57 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
   const getStatusLabel = useStatusLabel();
   const allTabs = estimationMode === 'location' ? locationTabs : venteTabs;
   const tabs = allTabs.filter(t => t.roles.includes(userRole));
-  const activeIndex = tabs.findIndex(t => t.label === activeTab);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [indicatorStyle, setIndicatorStyle] = React.useState({ left: 0, width: 0 });
-
-  React.useEffect(() => {
-    const updateIndicator = () => {
-      if (containerRef.current) {
-        const activeButton = containerRef.current.querySelector(`button[data-tab="${activeTab}"]`) as HTMLElement;
-        if (activeButton) {
-          const containerRect = containerRef.current.getBoundingClientRect();
-          const buttonRect = activeButton.getBoundingClientRect();
-          setIndicatorStyle({
-            left: buttonRect.left - containerRect.left,
-            width: buttonRect.width,
-          });
-        }
-      }
-    };
-
-    updateIndicator();
-    window.addEventListener('resize', updateIndicator);
-    
-    const timeoutId = setTimeout(updateIndicator, 100);
-    
-    return () => {
-      window.removeEventListener('resize', updateIndicator);
-      clearTimeout(timeoutId);
-    };
-  }, [activeTab, tabCounts]);
 
   return (
     <div className="hidden 2xl:flex justify-center mb-6">
-      <div 
-        ref={containerRef}
-        className="relative flex items-center gap-3 bg-theme-card p-2 rounded-2xl border border-theme-card-border shadow-sm w-fit"
-      >
-        <motion.div
-          className="absolute top-2 bottom-2 rounded-xl bg-[#18181B] shadow-lg z-0"
-          animate={{
-            left: indicatorStyle.left,
-            width: indicatorStyle.width,
-          }}
-          transition={{
-            type: 'spring',
-            damping: 25,
-            stiffness: 300,
-          }}
-          style={{
-            left: indicatorStyle.left,
-            width: indicatorStyle.width,
-          }}
-        />
-        
-        {tabs.map(({ label, icon: Icon, color, hoverColor, hoverBg }) => {
-          const isActive = activeTab === label;
-          const count = tabCounts[label] || 0;
-          
-          return (
-            <button
-              key={label}
-              data-tab={label}
-              onClick={() => onTabChange(label)}
-              className={`
-                relative flex items-center gap-2.5 px-6 py-3 text-xs font-bold uppercase tracking-[0.05em]
-                transition-all duration-300 rounded-xl z-10 group whitespace-nowrap
-                  ${isActive 
-                    ? 'text-white cursor-default' 
-                    : 'text-zinc-500 hover:text-black hover:bg-[#A7E40C] hover:shadow-md'
-                  }
-              `}
-            >
-              <Icon 
-                className="w-5 h-5 transition-colors"
-                style={{ color: isActive ? color : color }}
-              />
-              <span className="relative">{getStatusLabel(label)}</span>
-              {count > 0 && (
-                <span className={`
-                  px-2 py-0.5 rounded-lg text-[10px] font-black transition-all duration-300
-                  ${isActive 
-                    ? 'bg-[#A7E40C]/20 text-[#A7E40C]' 
-                    : 'bg-zinc-100 text-zinc-600 group-hover:bg-black/10 group-hover:text-black'
-                  }
-                `}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <LayoutGroup id="estimation-tabs">
+        <div className="relative flex items-center gap-3 bg-theme-card p-2 rounded-2xl border border-theme-card-border shadow-sm w-fit">
+          {tabs.map(({ label, icon: Icon, color }) => {
+            const isActive = activeTab === label;
+            const count = tabCounts[label] || 0;
+
+            return (
+              <button
+                key={label}
+                data-tab={label}
+                onClick={() => onTabChange(label)}
+                className={`
+                  relative flex items-center gap-2.5 px-6 py-3 text-xs font-bold uppercase tracking-[0.05em]
+                  transition-all duration-300 rounded-xl group whitespace-nowrap
+                    ${isActive
+                      ? 'text-white cursor-default'
+                      : 'text-zinc-500 hover:text-black hover:bg-[#A7E40C] hover:shadow-md'
+                    }
+                `}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="tab-indicator"
+                    className="absolute inset-0 rounded-xl bg-[#18181B] shadow-lg"
+                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                  />
+                )}
+                <Icon
+                  className="w-5 h-5 transition-colors relative z-10"
+                  style={{ color }}
+                />
+                <span className="relative z-10">{getStatusLabel(label)}</span>
+                {count > 0 && (
+                  <span className={`
+                    px-2 py-0.5 rounded-lg text-[10px] font-black transition-all duration-300 relative z-10
+                    ${isActive
+                      ? 'bg-[#A7E40C]/20 text-[#A7E40C]'
+                      : 'bg-zinc-100 text-zinc-600 group-hover:bg-black/10 group-hover:text-black'
+                    }
+                  `}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </LayoutGroup>
     </div>
   );
 };

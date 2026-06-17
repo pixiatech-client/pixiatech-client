@@ -12,6 +12,19 @@ import { useEffect } from 'react';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { RoleProvider } from '@/contexts/RoleContext';
 
+function useProtectMedia() {
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG' || target.tagName === 'VIDEO') {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('contextmenu', handler, true);
+    return () => document.removeEventListener('contextmenu', handler, true);
+  }, []);
+}
+
 import { DynamicThemeProvider } from '@/contexts/DynamicThemeContext';
 
 export function LayoutProvider({
@@ -23,6 +36,8 @@ export function LayoutProvider({
   const isAdminPage = pathname.startsWith('/admin');
   const isEmbedPage = pathname.startsWith('/embed') || pathname.startsWith('/chat-widget');
   const isQuotePage = pathname.startsWith('/quote');
+
+  useProtectMedia();
 
   return (
     <FirebaseClientProvider>

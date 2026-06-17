@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation';
 import { NotificationFirestore } from '@/lib/types';
 import { useAdminT } from '@/hooks/useAdminT';
 import { useI18n } from '@/lib/i18n';
+import { translateNotificationDesc } from '@/lib/utils';
 
 interface Notification {
   id: string;
@@ -69,7 +70,7 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
         id: n.id,
         type: n.type,
         title: n.title,
-        description: n.description,
+        description: translateNotificationDesc(n.type, n.description),
         time: timeAgo,
         href: n.href,
         read: n.read,

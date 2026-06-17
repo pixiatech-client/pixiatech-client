@@ -693,7 +693,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     </h2>
                     <div className="flex items-center gap-3 mt-0.5">
                       <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">
-                        TECHNICAL FILE
+                        FICHIER TECHNIQUE
                       </span>
                       {estimation.status && (
                         <div className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${estimation.status === 'returned' ? 'bg-orange-500/20 border-orange-500/30 text-orange-400' :
@@ -721,7 +721,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   {initialEstimation?.transactionType === 'sale' ? (
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 shadow-sm">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.25em]">Sale Mode</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em]">Mode Vente</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-50 border border-violet-100 text-violet-700 shadow-sm">
@@ -945,7 +945,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 />
                                 <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-aura-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 transition-all duration-300"></div>
                               </div>
-                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Hide notes from supplier</span>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Masquer les notes du fournisseur</span>
                             </label>
 
                             <label className="flex items-center gap-3 cursor-pointer group">
@@ -958,7 +958,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 />
                                 <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-aura-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 transition-all duration-300"></div>
                               </div>
-                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Hide photo from supplier</span>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Masquer la photo du fournisseur</span>
                             </label>
                           </div>
                         </div>
@@ -1030,7 +1030,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       className="p-6 bg-slate-50 border border-slate-200 rounded-[2rem]"
                     >
                       <h4 className="text-[10px] font-bold text-aura-accent uppercase mb-2 flex items-center gap-2">
-                        <StickyNote size={12} /> CLIENT NOTES
+                        <StickyNote size={12} /> NOTES DU CLIENT
                       </h4>
                       {estimation.client.notes && (
                         <p className="text-xs text-slate-700 italic leading-relaxed whitespace-pre-wrap mb-4">{estimation.client.notes}</p>
@@ -1054,7 +1054,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2">
-                        <Box size={14} /> {profile === 'supplier' ? 'Product Technical File' : 'Product Lines'}
+                        <Box size={14} /> {profile === 'supplier' ? 'Fiche Technique Produit' : 'Lignes de Produits'}
                       </h3>
                       {estimation.products.length > 0 && (
                         <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[9px] font-black text-slate-400 uppercase tracking-widest">
@@ -1439,9 +1439,9 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             </div>
                             <div className="p-8 pt-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-x-12 gap-y-8">
                               {(() => {
-                                const getSpecValue = (searchKeys: string[], fallback: string) => {
-                                  let val = null;
-                                  const isValid = (v: any) => v && v !== 'N/A' && v !== 'n/a' && v !== 'null' && v !== 'undefined';
+                                  const getSpecValue = (searchKeys: string[], fallback: string) => {
+                                    let val = null;
+                                    const isValid = (v: any) => v && v !== 'N/A' && v !== 'n/a' && v !== 'null' && v !== 'undefined' && typeof v !== 'object';
 
                                   if (p.specs) {
                                     const keys = Object.keys(p.specs);
@@ -1502,16 +1502,16 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 const amps = Math.ceil((powerMax * 1000) / 230 / 3);
 
                                 const baseSpecs = [
-                                  { label: "TOTAL SURFACE", value: `${area.toFixed(2)} m²`, icon: <Maximize2 size={16} />, color: "text-blue-400", bgColor: "bg-blue-400/10" },
-                                  { label: "RESOLUTION", value: `${resX} x ${resY} pixels`, icon: <Monitor size={16} />, color: "text-violet-400", bgColor: "bg-violet-400/10" },
-                                  { label: "NUMBER OF LED MODULES", value: modules.toString(), icon: <Cpu size={16} />, color: "text-fuchsia-400", bgColor: "bg-fuchsia-400/10" },
-                                  { label: "MAX POWER", value: `${powerMax.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-emerald-400", bgColor: "bg-emerald-400/10" },
-                                  { label: "AVG POWER", value: `${powerAvg.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-sky-400", bgColor: "bg-sky-400/10" },
-                                  { label: "RECOMMENDED BREAKER", value: `${amps}A 3-Pole`, icon: <Zap size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
-                                  { label: "PROJECT TYPE", value: projectType, icon: <Truck size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
-                                  { label: "ENVIRONMENT", value: environment, icon: <Sun size={16} />, color: "text-teal-400", bgColor: "bg-teal-400/10" },
-                                  { label: "VIEWING DISTANCE", value: visionDistance, icon: <Eye size={16} />, color: "text-cyan-400", bgColor: "bg-cyan-400/10" },
-                                  { label: "PIXEL PITCH", value: pixelPitchStr, icon: <LayoutGrid size={16} />, color: "text-red-400", bgColor: "bg-red-400/10" },
+                                  { label: "SURFACE TOTALE", value: `${area.toFixed(2)} m²`, icon: <Maximize2 size={16} />, color: "text-blue-400", bgColor: "bg-blue-400/10" },
+                                  { label: "RÉSOLUTION", value: `${resX} x ${resY} pixels`, icon: <Monitor size={16} />, color: "text-violet-400", bgColor: "bg-violet-400/10" },
+                                  { label: "NOMBRE DE MODULES LED", value: modules.toString(), icon: <Cpu size={16} />, color: "text-fuchsia-400", bgColor: "bg-fuchsia-400/10" },
+                                  { label: "PUISSANCE MAX", value: `${powerMax.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-emerald-400", bgColor: "bg-emerald-400/10" },
+                                  { label: "PUISSANCE MOY", value: `${powerAvg.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-sky-400", bgColor: "bg-sky-400/10" },
+                                  { label: "DISJONCTEUR RECOMMANDÉ", value: `${amps}A 3-Pole`, icon: <Zap size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
+                                  { label: "TYPE DE PROJET", value: projectType, icon: <Truck size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
+                                  { label: "ENVIRONNEMENT", value: environment, icon: <Sun size={16} />, color: "text-teal-400", bgColor: "bg-teal-400/10" },
+                                  { label: "DISTANCE DE VISUALISATION", value: visionDistance, icon: <Eye size={16} />, color: "text-cyan-400", bgColor: "bg-cyan-400/10" },
+                                  { label: "PAS DE PIXEL", value: pixelPitchStr, icon: <LayoutGrid size={16} />, color: "text-red-400", bgColor: "bg-red-400/10" },
                                 ];
 
                                 const globalProduct = allProducts?.find(prod => prod.id === (p.productId || p.id));
@@ -1573,7 +1573,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       className="space-y-4"
                     >
                       <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2 uppercase">
-                        <Truck size={14} /> LOGISTICS & SERVICES
+                        <Truck size={14} /> LOGISTIQUE & SERVICES
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="bg-slate-50 border border-slate-200 p-6 rounded-[2rem] space-y-4">
@@ -1581,8 +1581,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Truck size={20} /></div>
                               <div>
-                              <div className="text-xs font-bold uppercase text-slate-900">DELIVERY</div>
-                              <div className="text-[10px] text-slate-400 uppercase">City: <b className="text-slate-900">{estimation.deliveryCity || 'Not specified'}</b></div>
+                              <div className="text-xs font-bold uppercase text-slate-900">LIVRAISON</div>
+                              <div className="text-[10px] text-slate-400 uppercase">Ville : <b className="text-slate-900">{estimation.deliveryCity || 'Non spécifiée'}</b></div>
                               </div>
                             </div>
                             <span className="text-lg font-bold font-mono text-aura-accent">{formatCurrency(calculations.deliveryTotal)}</span>
@@ -1590,9 +1590,9 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           {isEditMode && (
                             <div className="space-y-6 pt-6 border-t border-slate-200">
                               <div className="space-y-1.5 flex-1 min-w-0">
-                                <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Destination City</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">Ville de destination</span>
                                 <CustomSelect
-                                  placeholder="Choose a city..."
+                                  placeholder="Choisir une ville..."
                                   value={estimation.deliveryCity || ''}
                                   onChange={(val) => setEstimation({ ...estimation, deliveryCity: val })}
                                   options={villes}
@@ -1600,16 +1600,16 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </div>
 
                               <div className="grid grid-cols-2 gap-4">
-                                <NumericControl
-                                  label="Price (€)"
-                                  unit="€"
-                                  value={estimation.deliveryCost}
-                                  onChange={(val) => setEstimation({ ...estimation, deliveryCost: val })}
-                                />
-                                <NumericControl
-                                  label="Discount (%)"
-                                  unit="%"
-                                  value={estimation.deliveryDiscount}
+<NumericControl
+                                    label="Prix (€)"
+                                    unit="€"
+                                    value={estimation.deliveryCost}
+                                    onChange={(val) => setEstimation({ ...estimation, deliveryCost: val })}
+                                  />
+                                  <NumericControl
+                                    label="Remise (%)"
+                                    unit="%"
+                                    value={estimation.deliveryDiscount}
                                   onChange={(val) => setEstimation({ ...estimation, deliveryDiscount: val })}
                                 />
                               </div>
@@ -1622,8 +1622,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Wrench size={20} /></div>
                               <div>
-                              <div className="text-xs font-bold uppercase text-slate-900">Labor</div>
-                              <div className="text-slate-400 uppercase">Expert installation</div>
+                              <div className="text-xs font-bold uppercase text-slate-900">Main d'œuvre</div>
+                              <div className="text-slate-400 uppercase">Installation experte</div>
                               </div>
                             </div>
                             <span className="text-lg font-bold font-mono text-aura-accent">{formatCurrency(calculations.laborTotal)}</span>
@@ -1640,13 +1640,13 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </div>
                               <div className="grid grid-cols-2 gap-3">
                                 <NumericControl
-                                  label="Price (€)"
+                                  label="Prix (€)"
                                   unit="€"
                                   value={estimation.laborCost}
                                   onChange={(val) => setEstimation({ ...estimation, laborCost: val })}
                                 />
                                 <NumericControl
-                                  label="Discount (%)"
+                                  label="Remise (%)"
                                   unit="%"
                                   value={estimation.laborDiscount}
                                   onChange={(val) => setEstimation({ ...estimation, laborDiscount: val })}
@@ -1665,8 +1665,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <Calendar size={20} className="text-violet-600" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold uppercase text-slate-900">Rental Period</div>
-                              <div className="text-[10px] text-slate-400 uppercase">Dates &amp; Times</div>
+                              <div className="text-xs font-bold uppercase text-slate-900">Période de Location</div>
+                              <div className="text-[10px] text-slate-400 uppercase">Dates &amp; Horaires</div>
                             </div>
                           </div>
 
@@ -1776,7 +1776,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           <ChevronDown size={14} className="text-slate-900" />
                         </motion.div>
                         <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-900">
-                          Financial Summary
+                          Résumé Financier
                         </span>
                         <div className="w-px h-3 bg-slate-200" />
                         <span className="text-[10px] font-black font-mono text-slate-700 tracking-tight group-hover:text-slate-900 transition-colors">
@@ -1801,28 +1801,28 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <div className="space-y-4">
                                 <div className="flex flex-col sm:flex-row justify-between sm:items-end border-b border-slate-200 pb-4 gap-4 sm:gap-0">
                                   <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] font-display">Subtotal excl. tax</span>
+                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] font-display">Sous-total HT</span>
                                     <span className="text-2xl font-display font-black text-slate-900 tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
                                   </div>
                                   <div className="text-left sm:text-right flex flex-col sm:items-end gap-1">
-                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] font-display">VAT ({estimation.taxRate}%)</span>
+                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] font-display">TVA ({estimation.taxRate}%)</span>
                                     <span className="font-mono text-base text-aura-accent font-bold">+{formatCurrency(calculations.tva)}</span>
                                   </div>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                  <NumericControl label="VAT (%)" unit="%" value={estimation.taxRate} onChange={(val) => setEstimation({ ...estimation, taxRate: val })} />
-                                  <NumericControl label="GLOBAL DISCOUNT (%)" unit="%" value={estimation.globalDiscount} onChange={(val) => setEstimation({ ...estimation, globalDiscount: val })} />
+                                  <NumericControl label="TVA (%)" unit="%" value={estimation.taxRate} onChange={(val) => setEstimation({ ...estimation, taxRate: val })} />
+                                  <NumericControl label="REMISE GLOBALE (%)" unit="%" value={estimation.globalDiscount} onChange={(val) => setEstimation({ ...estimation, globalDiscount: val })} />
                                 </div>
                               </div>
                             </div>
                             <div className="text-left md:text-right flex flex-col justify-end min-w-0 md:min-w-[220px] flex-shrink-0 relative">
-                              <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">To Pay (incl. tax)</div>
+                              <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">À Payer (TTC)</div>
                               <div className="text-4xl sm:text-5xl md:text-6xl font-display font-black tracking-tighter neon-text-emerald relative z-10 truncate">
                                 {formatCurrency(calculations.finalTotal)}
                               </div>
                               {estimation.globalDiscount > 0 && (
                                 <div className="text-[10px] text-emerald-400/80 font-bold mt-2 uppercase tracking-[0.2em] font-display relative z-10">
-                                  Exceptional discount applied
+                                  Remise exceptionnelle appliquée
                                 </div>
                               )}
                             </div>

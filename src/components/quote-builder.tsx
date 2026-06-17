@@ -65,17 +65,20 @@ const MediaPreview = ({ url, type }: { url: string, type: 'video' | 'image' }) =
 
     if (isDirectVideo) {
         return (
-            <div className="w-full h-full bg-black flex items-center justify-center">
+            <div className="w-full h-full bg-black flex items-center justify-center relative">
                 <video
                     src={url}
                     autoPlay
                     loop
                     muted
                     playsInline
-                    className="w-full h-full object-cover"
+                    controlsList="nodownload"
+                    className="w-full h-full object-cover pointer-events-none"
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                     {t('common.videoNotSupported')}
                 </video>
+                <div className="absolute inset-0 z-10" onContextMenu={(e) => e.preventDefault()} />
             </div>
         );
     }
@@ -97,14 +100,16 @@ const MediaPreview = ({ url, type }: { url: string, type: 'video' | 'image' }) =
 
     if (isImage) {
         return (
-            <div className="w-full h-full bg-black flex items-center justify-center">
+            <div className="w-full h-full bg-black flex items-center justify-center relative" onContextMenu={(e) => e.preventDefault()}>
                 <Image
                     src={url}
                     alt={t('common.productPreview')}
                     fill
                     sizes="50vw"
-                    className="object-cover"
+                    className="object-cover pointer-events-none select-none"
+                    draggable={false}
                 />
+                <div className="absolute inset-0 z-10" />
             </div>
         );
     }
@@ -927,7 +932,7 @@ export function QuoteBuilder({
                     </div>
                 )}
 
-                <div className={cn("relative w-full h-full lg:flex items-stretch justify-center", isMobile ? "hidden" : "flex")}>
+                <div className="relative w-full h-full lg:flex hidden items-stretch justify-center">
                     <HintBubble
                         visible={isHintBubbleVisible}
                         onHide={() => setIsHintBubbleVisible(false)}

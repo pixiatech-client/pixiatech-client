@@ -926,3 +926,18 @@ body.light-theme aside.glass-ui {
     border-color: var(--theme-card-border) !important;
   }
 }
+
+/* Media protection: prevent context menu, drag, and selection on media elements */
+img, video {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+}
+
+.media-protection-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  cursor: default;
+}

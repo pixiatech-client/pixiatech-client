@@ -70,15 +70,19 @@ export default function Preview({
   if (screenImageUrl) {
     if (isVideo) {
       screenElement = (
-        <video
-          src={screenImageUrl}
-          autoPlay
-          loop
-          muted
-          playsInline
-          style={{ width: `${screenWidthPx}px`, height: `${screenHeightPx}px`, objectFit: "cover" }}
-          className="flex-shrink-0 shadow-lg relative overflow-hidden border rounded bg-black"
-        />
+        <div className="relative">
+          <video
+            src={screenImageUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            controlsList="nodownload"
+            style={{ width: `${screenWidthPx}px`, height: `${screenHeightPx}px`, objectFit: "cover" }}
+            className="flex-shrink-0 shadow-lg relative overflow-hidden border rounded bg-black pointer-events-none select-none"
+          />
+          <div className="absolute inset-0 z-10" />
+        </div>
       );
     } else {
       screenElement = (
@@ -86,7 +90,8 @@ export default function Preview({
           style={{ width: `${screenWidthPx}px`, height: `${screenHeightPx}px`, position: "relative" }}
           className="flex-shrink-0 shadow-lg overflow-hidden border rounded bg-black"
         >
-          <Image src={screenImageUrl} alt={t('common.screenContent')} fill className="object-cover" />
+          <Image src={screenImageUrl} alt={t('common.screenContent')} fill className="object-cover pointer-events-none select-none" draggable={false} />
+          <div className="absolute inset-0 z-10" />
         </div>
       );
     }
