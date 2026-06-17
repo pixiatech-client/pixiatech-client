@@ -726,7 +726,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   ) : (
                     <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-50 border border-violet-100 text-violet-700 shadow-sm">
                       <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.25em]">Rental Mode</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.25em]">Mode Location</span>
                     </div>
                   )}
                 </div>
@@ -1192,7 +1192,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                       }}
                                       className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.transactionType !== 'rental' ? 'bg-black text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
-                                      Sale
+                                      Vente
                                     </button>
                                     <button
                                       onClick={() => {
@@ -1205,7 +1205,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                       }}
                                       className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.transactionType === 'rental' ? 'bg-black text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
-                                      Rental
+                                      Location
                                     </button>
                                   </div>
                                 </div>
@@ -1283,7 +1283,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                        }}
                                        className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit !== 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
                                      >
-                                        Period (Days)
+                                        Période (Jours)
                                       </button>
                                       <button
                                         onClick={() => {
@@ -1292,7 +1292,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         }}
                                         className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit === 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
                                       >
-                                        Specific Day (Hours)
+                                        Jour spécifique (Heures)
                                      </button>
                                    </div>
                                 </div>
@@ -1301,7 +1301,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   {p.rentalUnit !== 'hour' ? (
                                     <>
                                       <div className="space-y-1">
-                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">From</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Du</span>
                                         <input 
                                           type="date"
                                           className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1321,7 +1321,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         />
                                       </div>
                                       <div className="space-y-1">
-                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">To</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Au</span>
                                         <input 
                                           type="date"
                                           className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1341,7 +1341,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         />
                                       </div>
                                       <NumericControl
-                                        label="Duration (Days)"
+                                        label="Durée (Jours)"
                                         value={p.rentalDuration || 1}
                                         onChange={(val) => {
                                           const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalDuration: Math.max(1, val) } : prod);
@@ -1352,7 +1352,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   ) : (
                                     <>
                                       <div className="space-y-1">
-                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">On</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Le</span>
                                         <input 
                                           type="date"
                                           className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1367,7 +1367,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                       </div>
                                       <div className="flex gap-2">
                                         <div className="space-y-1 flex-1">
-                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Start</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Début</span>
                                           <input 
                                             type="time"
                                             className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1379,7 +1379,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                           />
                                         </div>
                                         <div className="space-y-1 flex-1">
-                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">End</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Fin</span>
                                           <input 
                                             type="time"
                                             className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1392,7 +1392,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         </div>
                                       </div>
                                       <NumericControl
-                                        label="Duration (Hours)"
+                                        label="Durée (Heures)"
                                         value={p.rentalDuration || 1}
                                         onChange={(val) => {
                                           const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalDuration: Math.max(1, val) } : prod);
@@ -1673,7 +1673,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           {!isEditMode ? (
                             <div className="grid grid-cols-2 gap-3">
                               <div className="bg-white border border-violet-100 rounded-2xl p-3 space-y-0.5">
-                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Start</div>
+                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Début</div>
                                 <div className="text-sm font-bold text-slate-900">
                                   {estimation.rentalPeriod?.from
                                     ? new Date(estimation.rentalPeriod.from).toLocaleDateString('fr-FR')
@@ -1682,7 +1682,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 <div className="text-[10px] text-slate-500">{estimation.rentalStartTime || '—'}</div>
                               </div>
                               <div className="bg-white border border-violet-100 rounded-2xl p-3 space-y-0.5">
-                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">End</div>
+                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Fin</div>
                                 <div className="text-sm font-bold text-slate-900">
                                   {estimation.rentalPeriod?.to
                                     ? new Date(estimation.rentalPeriod.to).toLocaleDateString('fr-FR')
@@ -1695,7 +1695,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="space-y-4 pt-2 border-t border-violet-200">
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Start date</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de début</label>
                                   <input
                                     type="date"
                                     min={new Date().toISOString().split('T')[0]}
@@ -1709,7 +1709,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   />
                                 </div>
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">End date</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de fin</label>
                                   <input
                                     type="date"
                                     min={new Date().toISOString().split('T')[0]}
@@ -1725,7 +1725,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Start time</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Heure de début</label>
                                   <input
                                     type="time"
                                     value={estimation.rentalStartTime || '08:00'}
@@ -1734,7 +1734,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   />
                                 </div>
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">End time</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Heure de fin</label>
                                   <input
                                     type="time"
                                     value={estimation.rentalEndTime || '18:00'}

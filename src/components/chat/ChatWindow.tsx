@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, MoreVertical, Ban, Paperclip, Video, Mic, Send, Mail, Image as ImageIcon, Trash2, StopCircle, Play, Pause, Search, Shield, Users, ChevronLeft, Phone, MessageSquare, Settings, UserX, Bell, BellOff, Eye, EyeOff, ShieldOff, ChevronDown, FileText } from 'lucide-react';
+import { X, MoreVertical, Ban, Paperclip, Video, Mic, Send, Mail, Image as ImageIcon, Trash2, StopCircle, Play, Pause, Search, Shield, Users, ChevronLeft, Phone, MessageSquare, Settings, UserX, Bell, BellOff, Eye, EyeOff, ShieldOff, ChevronDown, FileText, Download } from 'lucide-react';
 import { doc, updateDoc, onSnapshot, collection, query, orderBy, limit, addDoc, serverTimestamp, getDoc, getDocs, deleteDoc, increment, arrayUnion, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from 'firebase/storage';
 import { firestore as db, storage } from '@/firebase/config';
@@ -1357,6 +1357,32 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
             >
               <X size={24} />
             </button>
+            
+            {selectedMedia.url && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const type = selectedMedia.type === 'image' ? 'image' : 'video';
+                    fetch(`/api/download?url=${encodeURIComponent(selectedMedia.url)}&filename=${type}`)
+                      .then(r => r.blob())
+                      .then(blob => {
+                        const blobUrl = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.download = type;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(blobUrl);
+                      })
+                      .catch(() => window.open(selectedMedia.url, '_blank'));
+                  }}
+                  className="absolute top-6 right-24 h-12 w-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all z-[210]"
+                  title={t('chat.download')}
+                >
+                  <Download size={22} />
+                </button>
+            )}
             
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}

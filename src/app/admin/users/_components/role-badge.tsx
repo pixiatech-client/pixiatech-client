@@ -10,10 +10,10 @@ interface RoleBadgeProps {
 export const RoleBadge: React.FC<RoleBadgeProps> = ({ roleName, roleColor }) => {
   const getRoleStyles = () => {
     const name = roleName.toLowerCase();
-    if (name.includes('admin')) return 'bg-[#f5f3ff] text-[#a855f7] border-[#ede9fe]';
-    if (name.includes('fournisseur')) return 'bg-[#eff6ff] text-[#3b82f6] border-[#dbeafe]';
-    if (name.includes('commercial')) return 'bg-[#fffbeb] text-[#f59e0b] border-[#fef3c7]';
-    return 'bg-gray-50 text-gray-400 border-gray-100';
+    if (name.includes('admin')) return 'bg-[#fef2f2] text-[#ef4444] border-[#fecaca]';
+    if (name.includes('fournisseur')) return 'bg-[#ecfdf5] text-[#22c55e] border-[#d1fae5]';
+    if (name.includes('commercial')) return 'bg-[#fff7ed] text-[#f97316] border-[#ffedd5]';
+    return 'bg-[#eff6ff] text-[#3b82f6] border-[#dbeafe]';
   };
 
   return (

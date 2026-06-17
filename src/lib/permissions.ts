@@ -133,9 +133,9 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export const ROLE_COLORS: Record<UserRole, string> = {
-  admin: 'bg-purple-500',
-  fournisseur: 'bg-blue-500',
-  commercial: 'bg-amber-500',
+  admin: 'bg-red-500',
+  fournisseur: 'bg-green-500',
+  commercial: 'bg-orange-500',
 };
 
 export function hasPermission(role: UserRole | undefined, permission: Permission): boolean {

@@ -178,7 +178,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
   const firestore = useFirestore();
 
   // Fetch real data from Firestore
-  const quotesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'quotes')) : null, [firestore]);
+  const quotesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'quotes'), orderBy('createdAt', 'desc'), limit(100)) : null, [firestore]);
   const { data: allQuotesRaw } = useCollection<any>(quotesQuery, { suppressPermissionError: true });
 
   const usersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'users'), limit(200)) : null, [firestore]);

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { format } from 'date-fns';
-import { Check, CheckCheck, Video, Paperclip, Mic, Play, Pause, Share2, Trash2 } from 'lucide-react';
+import { Check, CheckCheck, Video, Paperclip, Mic, Play, Pause, Share2, Trash2, Download } from 'lucide-react';
 import { cn, formatTimestamp } from '@/lib/utils';
 import { Message, MessageOption } from '@/lib/types';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
@@ -67,6 +67,23 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
   const [isPlaying, setIsPlaying] = useState(false);
   const [showForwardConfirm, setShowForwardConfirm] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+
+  const handleDownload = async (url: string, filename?: string) => {
+    try {
+      const response = await fetch(`/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename || 'download')}`);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename || 'download';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(url, '_blank');
+    }
+  };
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const controls = useAnimation();
   const { getRoleColor, getRoleName } = useRoles();
@@ -190,7 +207,7 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
             
             {msg.type === 'image' && msg.fileUrl && !msg.fileUrl.startsWith('blob:') && (
               <div 
-                className="mb-2 overflow-hidden rounded-2xl bg-black/40 cursor-pointer hover:opacity-90 transition-all relative"
+                className="mb-2 overflow-hidden rounded-2xl bg-black/40 cursor-pointer hover:opacity-90 transition-all relative group/image"
                 onClick={(e) => {
                   e.stopPropagation();
                   onMediaClick?.(msg.fileUrl!, 'image');
@@ -198,29 +215,52 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
                 onContextMenu={(e) => e.preventDefault()}
               >
                 <img src={msg.fileUrl} alt="" className="max-h-60 w-full object-cover hover:scale-105 transition-transform pointer-events-none select-none" referrerPolicy="no-referrer" draggable={false} />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload(msg.fileUrl!, msg.content || 'image');
+                  }}
+                  className="absolute top-3 right-3 z-20 h-9 w-9 bg-black/50 hover:bg-black/70 backdrop-blur-md rounded-xl flex items-center justify-center text-white transition-all opacity-0 group-hover/image:opacity-100 active:scale-90"
+                  title={t('chat.download')}
+                >
+                  <Download size={16} />
+                </button>
                 <div className="absolute inset-0 z-10" onContextMenu={(e) => e.preventDefault()} />
               </div>
             )}
 
             {msg.type === 'file' && msg.fileUrl && !msg.fileUrl.startsWith('blob:') && (
-              <a 
-                href={msg.fileUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className={cn(
-                  "mb-2 flex items-center gap-3 p-3 rounded-2xl border transition-all",
-                  isMine ? "bg-white/10 border-white/10 hover:bg-white/20" : "bg-white/5 border-white/5 hover:bg-white/10"
-                )}
-              >
+              <div className={cn(
+                "mb-2 flex items-center gap-3 p-3 rounded-2xl border transition-all",
+                isMine ? "bg-white/10 border-white/10" : "bg-white/5 border-white/5"
+              )}>
                 <div className="h-10 w-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
                   <Paperclip size={20} />
                 </div>
-                <div className="flex-1 min-w-0">
+                <a 
+                  href={msg.fileUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex-1 min-w-0 hover:opacity-80 transition-opacity"
+                >
                   <p className="text-sm font-bold truncate">{msg.content || t('chat.document')}</p>
                   <p className="text-[10px] opacity-60 font-bold uppercase tracking-wider">PDF • 1.2 MB</p>
-                </div>
-              </a>
+                </a>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownload(msg.fileUrl!, msg.content || 'document');
+                  }}
+                  className={cn(
+                    "h-9 w-9 rounded-xl flex items-center justify-center transition-all active:scale-90",
+                    isMine ? "bg-white/10 hover:bg-white/20 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                  )}
+                  title={t('chat.download')}
+                >
+                  <Download size={16} />
+                </button>
+              </div>
             )}
 
             {msg.type === 'audio' && msg.fileUrl && !msg.fileUrl.startsWith('blob:') && (

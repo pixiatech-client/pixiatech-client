@@ -34,17 +34,17 @@ export const UserCard: React.FC<UserCardProps> = ({
   return (
     <motion.div
       layout
-      whileHover={!isDeleting && !isConfirmingDelete ? { y: -5 } : {}}
+      whileHover={!isDeleting && !isConfirmingDelete ? { y: -5, backgroundColor: '#141414' } : {}}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={isDeleting
-        ? { x: -100, opacity: 0, scale: 0.8 }
-        : { x: 0, opacity: 1, scale: 1 }
+        ? { x: -100, opacity: 0, scale: 0.8, backgroundColor: '#ff2d55' }
+        : { x: 0, opacity: 1, scale: 1, backgroundColor: '#ffffff' }
       }
       transition={{ duration: 0.4, ease: "easeInOut" }}
-      className={`group relative w-full max-w-sm rounded-[32px] p-5 transition-all duration-500 shadow-sm overflow-hidden border ${
+      className={`group relative w-full max-w-sm rounded-[32px] p-5 shadow-sm overflow-hidden border ${
         isDeleting || isConfirmingDelete
-          ? "bg-[#ff2d55] border-[#ff2d55] shadow-2xl shadow-rose-500/40"
-          : "bg-white hover:bg-theme-sidebar-active-bg border-gray-100 hover:border-white/10 hover:shadow-2xl"
+          ? "border-[#ff2d55] shadow-2xl shadow-rose-500/40"
+          : "border-gray-100 hover:border-white/10 hover:shadow-2xl"
       }`}
     >
       {/* Deleting Overlay */}
@@ -93,7 +93,7 @@ export const UserCard: React.FC<UserCardProps> = ({
                   onDelete(user.id);
                   setIsConfirmingDelete(false);
                 }}
-                className="flex-1 py-3.5 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-2xl font-bold text-sm transition-all shadow-xl active:scale-[0.98]"
+                className="flex-1 py-3.5 bg-[#141414] text-white rounded-2xl font-bold text-sm transition-all shadow-xl active:scale-[0.98]"
               >
                 {t('Delete')}
               </button>
@@ -147,13 +147,13 @@ export const UserCard: React.FC<UserCardProps> = ({
       </div>
 
       {/* Bookmark Icon */}
-      <button className="absolute top-[170px] right-8 p-2.5 bg-gray-50 group-hover:bg-white/5 group-hover:hover:bg-white/10 rounded-full text-gray-400 hover:text-gray-600 group-hover:hover:text-white transition-all">
+      <button className="absolute top-[170px] right-8 p-2.5 bg-gray-50 group-hover:bg-white/5 group-hover:hover:bg-white/10 rounded-full text-gray-400 group-hover:text-gray-300 hover:!text-white transition-all">
         <Bookmark className="w-5 h-5" />
       </button>
 
       {/* Content */}
       <div className="mt-2 mb-6 flex flex-col gap-1">
-        <h3 className={`text-xl font-bold transition-colors ${isDeleting ? "text-white" : "text-gray-900 group-hover:text-theme-sidebar-active-text"}`}>
+        <h3 className={`text-xl font-bold transition-colors ${isDeleting ? "text-white" : "text-gray-900 group-hover:text-white"}`}>
           {user.name}
         </h3>
         <div className="flex">
@@ -165,11 +165,11 @@ export const UserCard: React.FC<UserCardProps> = ({
       <div className="grid grid-cols-1 gap-3 mb-8">
         <div className="flex items-start gap-3">
           <div className={`p-2 rounded-xl transition-colors ${isDeleting ? "bg-white/10" : "bg-gray-50 group-hover:bg-white/5"}`}>
-            <MessageSquare className={`w-4 h-4 ${isDeleting ? "text-white" : "text-blue-500"}`} />
+            <MessageSquare className={`w-4 h-4 ${isDeleting ? "text-white" : "text-blue-500 group-hover:text-white"}`} />
           </div>
           <div className="flex flex-col">
-            <span className={`text-[10px] uppercase tracking-wider font-bold ${isDeleting ? "text-white/60" : "text-gray-400 group-hover:text-gray-500"}`}>{t('Description')}</span>
-            <p className={`text-xs line-clamp-1 ${isDeleting ? "text-white/80" : "text-gray-600 group-hover:text-theme-sidebar-active-text/70"}`}>
+            <span className={`text-[10px] uppercase tracking-wider font-bold ${isDeleting ? "text-white/60" : "text-gray-400 group-hover:text-gray-300"}`}>{t('Description')}</span>
+            <p className={`text-xs line-clamp-1 ${isDeleting ? "text-white/80" : "text-gray-600 group-hover:text-white/80"}`}>
               {user.description || t("No description provided.")}
             </p>
           </div>
@@ -180,12 +180,12 @@ export const UserCard: React.FC<UserCardProps> = ({
           onClick={(e) => e.stopPropagation()}
           className="flex items-start gap-3 group/item"
         >
-          <div className={`p-2 rounded-xl transition-colors ${isDeleting ? "bg-white/10" : "bg-gray-50 group-hover:bg-white/5 group-hover/item:bg-emerald-50"}`}>
-            <Phone className={`w-4 h-4 ${isDeleting ? "text-white" : "text-emerald-500"}`} />
+          <div className={`p-2 rounded-xl transition-colors ${isDeleting ? "bg-white/10" : "bg-gray-50 group-hover:bg-white/5 group-hover/item:bg-white/10"}`}>
+            <Phone className={`w-4 h-4 ${isDeleting ? "text-white" : "text-emerald-500 group-hover:text-white"}`} />
           </div>
           <div className="flex flex-col">
-            <span className={`text-[10px] uppercase tracking-wider font-bold ${isDeleting ? "text-white/60" : "text-gray-400 group-hover:text-gray-500"}`}>{t('Phone number')}</span>
-            <p className={`text-xs transition-colors ${isDeleting ? "text-white/80" : "text-gray-600 group-hover:text-theme-sidebar-active-text/70 group-hover/item:text-emerald-600"}`}>
+            <span className={`text-[10px] uppercase tracking-wider font-bold ${isDeleting ? "text-white/60" : "text-gray-400 group-hover:text-gray-300"}`}>{t('Phone number')}</span>
+            <p className={`text-xs transition-colors ${isDeleting ? "text-white/80" : "text-gray-600 group-hover:text-white/80 group-hover/item:text-emerald-400"}`}>
               {user.phone || t("Not provided")}
             </p>
           </div>
@@ -193,11 +193,11 @@ export const UserCard: React.FC<UserCardProps> = ({
 
         <div className="flex items-start gap-3">
           <div className={`p-2 rounded-xl transition-colors ${isDeleting ? "bg-white/10" : "bg-gray-50 group-hover:bg-white/5"}`}>
-            <Mail className={`w-4 h-4 ${isDeleting ? "text-white" : "text-purple-500"}`} />
+            <Mail className={`w-4 h-4 ${isDeleting ? "text-white" : "text-purple-500 group-hover:text-white"}`} />
           </div>
           <div className="flex flex-col">
-            <span className={`text-[10px] uppercase tracking-wider font-bold ${isDeleting ? "text-white/60" : "text-gray-400 group-hover:text-gray-500"}`}>{t('Email')}</span>
-            <p className={`text-xs line-clamp-1 ${isDeleting ? "text-white/80" : "text-gray-600 group-hover:text-theme-sidebar-active-text/70"}`}>
+            <span className={`text-[10px] uppercase tracking-wider font-bold ${isDeleting ? "text-white/60" : "text-gray-400 group-hover:text-gray-300"}`}>{t('Email')}</span>
+            <p className={`text-xs line-clamp-1 ${isDeleting ? "text-white/80" : "text-gray-600 group-hover:text-white/80"}`}>
               {user.email}
             </p>
           </div>
@@ -211,7 +211,7 @@ export const UserCard: React.FC<UserCardProps> = ({
         className={`w-full py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-3 group/btn relative overflow-hidden backdrop-blur-md ${
           isDeleting
             ? "bg-white/10 text-white cursor-not-allowed"
-            : "bg-theme-sidebar-active-bg text-theme-sidebar-active-text shadow-lg active:scale-[0.98] hover:opacity-90"
+            : "bg-[#141414] text-white shadow-lg active:scale-[0.98] hover:opacity-90"
         }`}
       >
         <Contact size={18} className={`transition-colors ${isDeleting ? "text-white" : "text-white group-hover/btn:text-blue-400"}`} />

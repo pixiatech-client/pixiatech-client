@@ -16,9 +16,9 @@ interface RoleContextValue {
 const RoleContext = createContext<RoleContextValue | undefined>(undefined);
 
 const DEFAULT_ROLES: UserRole[] = [
-  { id: 'admin', name: 'Administrateur', color: '#a855f7', isDefault: true, roleTemplate: 'admin' },
-  { id: 'fournisseur', name: 'Fournisseur', color: '#3b82f6', isDefault: true, roleTemplate: 'fournisseur' },
-  { id: 'commercial', name: 'Commercial', color: '#f59e0b', isDefault: true, roleTemplate: 'commercial' },
+  { id: 'admin', name: 'Administrateur', color: '#ef4444', isDefault: true, roleTemplate: 'admin' },
+  { id: 'fournisseur', name: 'Fournisseur', color: '#22c55e', isDefault: true, roleTemplate: 'fournisseur' },
+  { id: 'commercial', name: 'Commercial', color: '#f97316', isDefault: true, roleTemplate: 'commercial' },
 ];
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
@@ -62,7 +62,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
 
   const getRoleColor = (roleIdOrName: string) => {
     const r = roles.find(r => r.id === roleIdOrName || r.name.toLowerCase() === roleIdOrName.toLowerCase());
-    return r?.color || '#9ca3af'; // default gray
+    return r?.color || '#3b82f6'; // default blue
   };
 
   const getRoleName = (roleIdOrName: string) => {
