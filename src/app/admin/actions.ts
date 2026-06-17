@@ -16,7 +16,7 @@ import { createHash } from 'crypto';
 import nodemailer from 'nodemailer';
 import { buildSupplierEmailHtml } from '@/lib/email-templates';
 
-import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings } from '@/lib/types';
+import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry } from '@/lib/types';
 import { DEFAULT_PALETTES } from '@/lib/color-palettes';
 import { DocumentData, Timestamp, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import fr from '@/lib/locales/fr.json';
@@ -587,6 +587,13 @@ export async function updateUser(data: unknown) {
     revalidatePath('/admin/users');
     revalidatePath('/admin', 'layout');
 
+    logAdminActivity({
+      action: 'Mise à jour utilisateur',
+      category: 'user',
+      details: `Modification de l'utilisateur ${updateData.displayName || uid}`,
+      targetId: uid,
+      targetName: updateData.displayName || '',
+    });
     return { success: true, photoURL: updateData.photoURL };
   } catch (error: any) {
     console.error('Error updating user:', error);
@@ -719,6 +726,11 @@ export async function deleteUsers(uids: string[]) {
     });
     await batch.commit();
 
+    logAdminActivity({
+      action: 'Suppression utilisateurs',
+      category: 'user',
+      details: `Suppression de ${uids.length} utilisateur(s)`,
+    });
     return { success: true };
   } catch (error: any) {
     console.error('Error deleting users:', error);
@@ -1975,6 +1987,14 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
     }
   }
 
+  logAdminActivity({
+    action: 'Mise à jour du statut',
+    category: 'quote',
+    details: `Statut changé pour ${quoteData?.client?.companyName || quoteId} → ${data.status}`,
+    targetId: quoteId,
+    targetName: quoteData?.client?.companyName || '',
+  });
+
   // Revalidate cache - ignore errors to avoid breaking optimistic UI
   try {
     revalidatePath('/admin', 'layout');
@@ -2999,7 +3019,12 @@ export async function updateSettings(data: unknown) {
       });
     }
 
-    _settingsCache = null; // Invalidate cache so next read picks up fresh data
+    _settingsCache = null;
+    logAdminActivity({
+      action: 'Modification paramètres',
+      category: 'settings',
+      details: 'Mise à jour des paramètres généraux',
+    });
     revalidatePath('/admin/settings', 'layout');
     revalidatePath('/');
     return { success: true };
@@ -3049,6 +3074,11 @@ export async function saveSidebarConfig(data: unknown) {
   const { adminDb } = getFirebaseAdmin();
   try {
     await adminDb.collection('settings').doc(SETTINGS_DOC_ID).set(result.data, { merge: true });
+    logAdminActivity({
+      action: 'Modification sidebar',
+      category: 'settings',
+      details: 'Configuration de la barre latérale mise à jour',
+    });
     revalidatePath('/admin', 'layout');
     return { success: true };
   } catch (error) {
@@ -3571,6 +3601,86 @@ export async function getAllUsers() {
   }
 }
 
+export async function logAdminActivity(params: {
+  action: string;
+  category: ActivityLogEntry['category'];
+  details: string;
+  targetId?: string;
+  targetName?: string;
+}): Promise<void> {
+  try {
+    const { adminDb, FieldValue } = getFirebaseAdmin();
+    const auth = await getAuth();
+    if (!auth) return;
+    const cookie = await getAuthCookie();
+    const adminUser = await auth.verifyIdToken(cookie);
+    const entry = {
+      userId: adminUser.uid,
+      userName: adminUser.name || adminUser.email || 'Admin',
+      userPhotoUrl: adminUser.picture || '',
+      userRole: adminUser.role || 'admin',
+      action: params.action,
+      category: params.category,
+      details: params.details,
+      targetId: params.targetId || '',
+      targetName: params.targetName || '',
+      timestamp: FieldValue.serverTimestamp(),
+    };
+    await adminDb.collection('activityLogs').add(entry);
+  } catch (error) {
+    console.error('Failed to log activity:', error);
+  }
+}
+
+export async function getActivityLogs(options?: {
+  limit?: number;
+  category?: string;
+  userId?: string;
+}): Promise<ActivityLogEntry[]> {
+  try {
+    const { adminDb } = getFirebaseAdmin();
+    let query: FirebaseFirestore.Query = adminDb.collection('activityLogs').orderBy('timestamp', 'desc');
+    if (options?.category) query = query.where('category', '==', options.category);
+    if (options?.userId) query = query.where('userId', '==', options.userId);
+    if (options?.limit) query = query.limit(options.limit);
+    const snap = await query.get();
+    return snap.docs.map(doc => {
+      const d = doc.data();
+      return {
+        id: doc.id,
+        userId: d.userId || '',
+        userName: d.userName || '',
+        userPhotoUrl: d.userPhotoUrl || '',
+        userRole: d.userRole || '',
+        action: d.action || '',
+        category: d.category || 'other',
+        details: d.details || '',
+        targetId: d.targetId || '',
+        targetName: d.targetName || '',
+        timestamp: d.timestamp?.toDate?.() || new Date(),
+        createdAt: d.timestamp,
+      } as ActivityLogEntry;
+    });
+  } catch (error) {
+    console.error('Failed to fetch activity logs:', error);
+    return [];
+  }
+}
+
+async function getAuthCookie(): Promise<string> {
+  const cookieStore = await cookies();
+  return cookieStore.get('__session')?.value || '';
+}
+
+async function getAuth() {
+  try {
+    const { getAuth } = await import('firebase-admin/auth');
+    return getAuth();
+  } catch {
+    return null;
+  }
+}
+
 export async function resetEstimationCounter(newNumber: number): Promise<{ success: boolean; error?: string }> {
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return { success: false, error: 'Database service unavailable' };
@@ -3581,6 +3691,11 @@ export async function resetEstimationCounter(newNumber: number): Promise<{ succe
       const doc = await transaction.get(counterRef);
       const current = doc.data()?.current ?? 0;
       transaction.set(counterRef, { current: newNumber - 1 }, { merge: true });
+    });
+    logAdminActivity({
+      action: 'Réinitialisation compteur',
+      category: 'counter',
+      details: `Compteur d'estimations réinitialisé à ${newNumber}`,
     });
     return { success: true };
   } catch (error) {

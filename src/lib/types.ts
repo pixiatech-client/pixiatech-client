@@ -341,6 +341,21 @@ export type QuoteHistoryEntry = {
   details: string;
 };
 
+export type ActivityLogEntry = {
+  id: string;
+  userId: string;
+  userName: string;
+  userPhotoUrl?: string;
+  userRole?: string;
+  action: string;
+  category: 'user' | 'quote' | 'product' | 'settings' | 'auth' | 'signature' | 'counter' | 'other';
+  details: string;
+  targetId?: string;
+  targetName?: string;
+  timestamp: Date;
+  createdAt: any;
+};
+
 
 export type QuoteRequest = Omit<QuoteDetails, 'products' | 'rentalPeriod'> & {
   id: string;
