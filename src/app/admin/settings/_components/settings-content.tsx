@@ -3,10 +3,10 @@
 import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { getSettings } from '@/app/admin/actions';
 import type { Settings as AppSettings } from '@/lib/types';
+import { motion } from 'framer-motion';
 import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap, PenTool } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { useI18n } from '@/lib/i18n';
 import { useAdminT } from '@/hooks/useAdminT';
 
 export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content' | 'signature';
@@ -137,56 +137,89 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
         }
     };
 
+    const iconColor = (tabId: string, isSelected: boolean) => {
+        if (isSelected) return 'text-white';
+        const colors: Record<string, string> = {
+            general: 'text-blue-500',
+            images: 'text-purple-500',
+            emergency: 'text-red-500',
+            wizard: 'text-indigo-500',
+            livraison: 'text-cyan-500',
+            messaging: 'text-blue-500',
+            appearance: 'text-fuchsia-500',
+            'email-verification': 'text-indigo-500',
+            signature: 'text-rose-500',
+            flow: 'text-amber-500',
+            pdf: 'text-orange-500',
+            software: 'text-slate-500',
+            'main-doeuvre': 'text-emerald-500',
+        };
+        return colors[tabId] || 'text-slate-500';
+    };
+
+    const iconBg = (tabId: string, isSelected: boolean) => {
+        if (isSelected) return 'bg-white/15';
+        const colors: Record<string, string> = {
+            general: 'bg-blue-100/70',
+            images: 'bg-purple-100/70',
+            emergency: 'bg-red-100/70',
+            wizard: 'bg-indigo-100/70',
+            livraison: 'bg-cyan-100/70',
+            messaging: 'bg-blue-100/70',
+            appearance: 'bg-fuchsia-100/70',
+            'email-verification': 'bg-indigo-100/70',
+            signature: 'bg-rose-100/70',
+            flow: 'bg-amber-100/70',
+            pdf: 'bg-orange-100/70',
+            software: 'bg-slate-100/70',
+            'main-doeuvre': 'bg-emerald-100/70',
+        };
+        return colors[tabId] || 'bg-slate-100/70';
+    };
+
     return (
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 lg:items-start pt-2 lg:pt-4">
+        <div className="bg-[#f5f6f8] flex flex-col lg:flex-row gap-4 lg:gap-8 lg:items-start pt-2 lg:pt-4 min-h-screen">
             <div className={cn("w-full lg:w-72 flex-shrink-0 hidden lg:block")}>
                 <Tabs 
                     value={currentSection} 
                     onValueChange={(value) => handleSectionChange(value as SettingsSection)}
                     orientation="vertical"
                 >
-                    <TabsList 
-                        hideBubble
-                        className="flex flex-row lg:flex-col gap-2 md:gap-3 bg-transparent p-0 h-auto w-full items-stretch overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0 px-4 md:px-0"
-                    >
-                        {tabsConfig.map((tab) => {
+                    <div className="flex flex-col gap-2 p-3">
+                        {tabsConfig.map((tab, i) => {
                             const isSelected = currentSection === tab.id;
                             return (
-                                <TabsTrigger 
-                                    key={tab.id} 
-                                    value={tab.id}
+                                <motion.button
+                                    key={tab.id}
+                                    onClick={() => handleSectionChange(tab.id)}
+                                    whileHover={{ scale: 1.02, y: -1 }}
+                                    whileTap={{ scale: 0.98 }}
                                     className={cn(
-                                        "w-auto lg:w-full flex items-center justify-start gap-2 md:gap-2.5 px-2.5 md:px-3 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black uppercase tracking-wider transition-all duration-300 flex-shrink-0",
-                                        "border border-gray-100 shadow-sm",
-                                        "data-[state=active]:bg-theme-sidebar-active-bg data-[state=active]:text-theme-sidebar-active-text data-[state=active]:border-transparent data-[state=active]:shadow-xl",
-                                        "data-[state=inactive]:bg-white data-[state=inactive]:text-gray-500 hover:bg-gray-50 hover:scale-[1.02]"
+                                        "w-full flex items-center gap-3 px-4 rounded-2xl h-[60px] transition-all duration-300 text-left",
+                                        isSelected
+                                            ? "bg-gradient-to-r from-[#5B4FE8] to-[#6A5BFF] shadow-xl shadow-indigo-500/20"
+                                            : "bg-white shadow-lg hover:shadow-xl"
                                     )}
-                                    style={isSelected ? { backgroundColor: 'var(--theme-sidebar-active-bg)', color: 'var(--theme-sidebar-active-text)' } : {}}
                                 >
                                     <div className={cn(
-                                        "h-6 w-6 md:h-7 md:w-7 rounded-full flex items-center justify-center transition-all flex-shrink-0",
-                                        isSelected ? "bg-white/20" :
-                                        tab.id === 'general' ? "bg-blue-100/80 text-blue-600" :
-                                        tab.id === 'images' ? "bg-purple-100/80 text-purple-600" :
-                                        tab.id === 'emergency' ? "bg-red-100/80 text-red-600" :
-                                        tab.id === 'wizard' ? "bg-indigo-100/80 text-indigo-600" :
-                                        tab.id === 'livraison' ? "bg-cyan-100/80 text-cyan-600" :
-                                        tab.id === 'messaging' ? "bg-blue-100/80 text-blue-600" :
-                                        tab.id === 'appearance' ? "bg-fuchsia-100/80 text-fuchsia-600" :
-                                        tab.id === 'email-verification' ? "bg-indigo-100/80 text-indigo-600" :
-                                        tab.id === 'signature' ? "bg-rose-100/80 text-rose-600" :
-                                        "bg-orange-100/80 text-orange-600"
+                                        "w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors duration-300",
+                                        iconBg(tab.id, isSelected)
                                     )}>
                                         <tab.icon className={cn(
-                                            "w-3.5 h-3.5 md:w-4 md:h-4 transition-all duration-300",
-                                            isSelected ? "text-white scale-110" : ""
+                                            "w-4 h-4 transition-colors duration-300",
+                                            iconColor(tab.id, isSelected)
                                         )} />
                                     </div>
-                                    <span className="truncate">{tab.label}</span>
-                                </TabsTrigger>
+                                    <span className={cn(
+                                        "text-[10px] font-black uppercase tracking-[0.12em] truncate",
+                                        isSelected ? "text-white" : "text-slate-800"
+                                    )}>
+                                        {tab.label}
+                                    </span>
+                                </motion.button>
                             );
                         })}
-                    </TabsList>
+                    </div>
                 </Tabs>
             </div>
             
