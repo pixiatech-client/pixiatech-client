@@ -156,7 +156,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                     key={tab.id} 
                                     value={tab.id}
                                     className={cn(
-                                        "w-auto lg:w-full flex items-center justify-start gap-3 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-2xl text-[10px] md:text-sm font-black uppercase tracking-wider transition-all duration-300 flex-shrink-0",
+                                        "w-auto lg:w-full flex items-center justify-start gap-2 md:gap-2.5 px-2.5 md:px-3 py-1.5 md:py-2 rounded-xl text-[9px] md:text-xs font-black uppercase tracking-wider transition-all duration-300 flex-shrink-0",
                                         "border border-gray-100 shadow-sm",
                                         "data-[state=active]:bg-theme-sidebar-active-bg data-[state=active]:text-theme-sidebar-active-text data-[state=active]:border-transparent data-[state=active]:shadow-xl",
                                         "data-[state=inactive]:bg-white data-[state=inactive]:text-gray-500 hover:bg-gray-50 hover:scale-[1.02]"
@@ -164,7 +164,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                     style={isSelected ? { backgroundColor: 'var(--theme-sidebar-active-bg)', color: 'var(--theme-sidebar-active-text)' } : {}}
                                 >
                                     <div className={cn(
-                                        "h-8 w-8 md:h-10 md:w-10 rounded-full flex items-center justify-center transition-all flex-shrink-0",
+                                        "h-6 w-6 md:h-7 md:w-7 rounded-full flex items-center justify-center transition-all flex-shrink-0",
                                         isSelected ? "bg-white/20" :
                                         tab.id === 'general' ? "bg-blue-100/80 text-blue-600" :
                                         tab.id === 'images' ? "bg-purple-100/80 text-purple-600" :
@@ -178,11 +178,11 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                         "bg-orange-100/80 text-orange-600"
                                     )}>
                                         <tab.icon className={cn(
-                                            "w-5 h-5 transition-all duration-300",
+                                            "w-3.5 h-3.5 md:w-4 md:h-4 transition-all duration-300",
                                             isSelected ? "text-white scale-110" : ""
                                         )} />
                                     </div>
-                                    <span className="mt-0.5">{tab.label}</span>
+                                    <span className="truncate">{tab.label}</span>
                                 </TabsTrigger>
                             );
                         })}
