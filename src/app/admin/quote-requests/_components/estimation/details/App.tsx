@@ -661,11 +661,11 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
                   </button>
                   <div>
-                    <h2 className="text-lg md:text-xl font-display font-bold text-slate-900 tracking-tight uppercase truncate max-w-[120px] md:max-w-none">
+                    <h2 className={`text-lg md:text-xl font-display font-bold tracking-tight uppercase truncate max-w-[120px] md:max-w-none ${isFournisseur ? 'text-green-500' : 'text-slate-900'}`}>
                       Estimation
                     </h2>
                     <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">
+                      <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-widest truncate ${isFournisseur ? 'text-green-500' : 'text-slate-400'}`}>
                         FICHIER TECHNIQUE
                       </span>
                       {estimation.status && (
@@ -1175,6 +1175,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <NumericControl
                               label="Quantité"
                               value={p.quantity}
+                              disabled={isFournisseur}
                               onChange={(val) => {
                                 const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, quantity: val } : prod);
                                 setEstimation({ ...estimation, products: newProducts });
@@ -2114,17 +2115,18 @@ function CustomSelect({
   );
 }
 
-function NumericControl({ value, onChange, label, unit = "" }: { value: number, onChange: (val: number) => void, label: string, unit?: string }) {
+function NumericControl({ value, onChange, label, unit = "", disabled = false }: { value: number, onChange: (val: number) => void, label: string, unit?: string, disabled?: boolean }) {
   const len = (value || 0).toString().length;
   const fontSizeClass = len > 7 ? 'text-xs' : len > 4 ? 'text-sm' : 'text-base';
   
   return (
     <div className="space-y-1 flex-1 min-w-0">
       <span className="text-[9px] text-slate-400 uppercase font-bold tracking-widest">{label}</span>
-      <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-1 group focus-within:border-aura-accent shadow-sm transition-all">
+      <div className={`flex items-center bg-slate-50 border rounded-xl p-1 group shadow-sm transition-all ${disabled ? 'border-slate-100 opacity-50' : 'border-slate-200 focus-within:border-aura-accent'}`}>
         <button
-          onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-8 h-8 rounded-xl bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200 shrink-0"
+          onClick={() => !disabled && onChange(Math.max(0, value - 1))}
+          disabled={disabled}
+          className="w-8 h-8 rounded-xl bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200 shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <Minus size={12} />
         </button>
@@ -2132,14 +2134,16 @@ function NumericControl({ value, onChange, label, unit = "" }: { value: number, 
           <input
             type="number"
             value={isNaN(value) ? 0 : value}
-            onChange={(e) => onChange(Number(e.target.value))}
-            className={`bg-transparent border-none p-0 focus:ring-0 text-center font-display font-black w-full min-w-0 flex-1 text-slate-900 appearance-none no-arrows ${fontSizeClass}`}
+            onChange={(e) => !disabled && onChange(Number(e.target.value))}
+            disabled={disabled}
+            className={`bg-transparent border-none p-0 focus:ring-0 text-center font-display font-black w-full min-w-0 flex-1 text-slate-900 appearance-none no-arrows ${fontSizeClass} ${disabled ? 'cursor-not-allowed' : ''}`}
           />
           {unit && <span className="text-sm font-display font-black text-aura-accent shrink-0">{unit}</span>}
         </div>
         <button
-          onClick={() => onChange(value + 1)}
-          className="w-8 h-8 rounded-xl bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200 shrink-0"
+          onClick={() => !disabled && onChange(value + 1)}
+          disabled={disabled}
+          className="w-8 h-8 rounded-xl bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200 shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <Plus size={12} />
         </button>
