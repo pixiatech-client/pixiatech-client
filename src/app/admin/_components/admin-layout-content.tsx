@@ -71,11 +71,13 @@ const DEFAULT_LOGO_CONFIG = {
 };
 
 const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor, userProfile, roles, logout, mainNavItems, secondaryNavItems, activeSettingsSection, onSettingsSectionChange, isSettingsPage, role, onOpenAccountDrawer, initialSettings }: { children: React.ReactNode, pageTitle: string, pageSubtitle: string, headerColor: string, userProfile: any, roles: any[], logout: any, mainNavItems: any[], secondaryNavItems: any[], activeSettingsSection?: SettingsSection, onSettingsSectionChange?: (section: SettingsSection) => void, isSettingsPage?: boolean, role?: UserRoleEnum, onOpenAccountDrawer?: () => void, initialSettings?: AppSettings | null }) => {
-  const roleData = roles?.find(r => r.id === userProfile?.role);
+  const roleId = userProfile?.role as string;
+  const roleData = roles?.find(r => r.id === roleId);
+  const isBaseRole = ['admin', 'commercial', 'fournisseur'].includes(roleId);
   const defaultNames: Record<string, string> = { admin: 'Administrateur', commercial: 'Commercial', fournisseur: 'Fournisseur' };
-  const roleName = roleData?.name || defaultNames[userProfile?.role as string] || 'Administrateur';
   const defaultColors: Record<string, string> = { admin: '#ef4444', commercial: '#f97316', fournisseur: '#22c55e' };
-  const roleColor = roleData?.color || defaultColors[userProfile?.role as string] || (roleData?.roleTemplate === 'commercial' ? '#3b82b6' : '#8b5cf6');
+  const roleName = isBaseRole ? defaultNames[roleId] : (roleData?.name || 'Administrateur');
+  const roleColor = isBaseRole ? defaultColors[roleId] : (roleData?.color || (roleData?.roleTemplate === 'commercial' ? '#3b82b6' : '#8b5cf6'));
   const { t, locale, setLocale } = useI18n();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [settings, setSettings] = useState<any>(initialSettings);
