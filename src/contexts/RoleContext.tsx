@@ -44,8 +44,8 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     custom.forEach(cr => {
       const existingIndex = merged.findIndex(r => r.id === cr.id);
       if (existingIndex >= 0) {
-        // Always preserve isDefault from the hardcoded list so Firestore can't un-pin base roles
-        merged[existingIndex] = { ...cr, isDefault: merged[existingIndex].isDefault };
+        // Preserve isDefault and color from hardcoded defaults so Firestore can't override base role colors
+        merged[existingIndex] = { ...cr, isDefault: merged[existingIndex].isDefault, color: merged[existingIndex].color };
       } else {
         merged.push(cr);
       }

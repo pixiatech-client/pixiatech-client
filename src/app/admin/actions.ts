@@ -196,26 +196,18 @@ async function ensureDefaultRoles() {
   const rolesRef = adminDb.collection('roles');
   const rolesToEnsure = [
     { id: 'admin', name: 'Admin', color: '#ef4444', isDefault: true },
-    { id: 'commercial', name: 'Commercial', color: '#3b82f6', isDefault: true },
-    { id: 'fournisseur', name: 'Fournisseur', color: '#f97316', isDefault: true },
+    { id: 'commercial', name: 'Commercial', color: '#f97316', isDefault: true },
+    { id: 'fournisseur', name: 'Fournisseur', color: '#22c55e', isDefault: true },
   ];
 
   const batch = adminDb.batch();
-  const rolesSnapshot = await rolesRef.get();
-  const existingRoles = new Set(rolesSnapshot.docs.map(doc => doc.id));
 
-  let rolesCreated = false;
   rolesToEnsure.forEach(role => {
-    if (!existingRoles.has(role.id)) {
-      const roleRef = rolesRef.doc(role.id);
-      batch.set(roleRef, { name: role.name, color: role.color, isDefault: role.isDefault });
-      rolesCreated = true;
-    }
+    const roleRef = rolesRef.doc(role.id);
+    batch.set(roleRef, { name: role.name, color: role.color, isDefault: role.isDefault }, { merge: true });
   });
 
-  if (rolesCreated) {
-    await batch.commit();
-  }
+  await batch.commit();
 }
 
 const registerSchema = z.object({
@@ -1010,7 +1002,7 @@ async function getDefaultRole(): Promise<UserRole> {
   // This should ideally not be reached if the database is seeded correctly.
   // If it is, we create a default "Commercial" role.
   const commercialRoleRef = rolesRef.doc('commercial');
-  const commercialRole: Omit<UserRole, 'id'> = { name: 'Commercial', color: '#3b82f6', isDefault: true };
+  const commercialRole: Omit<UserRole, 'id'> = { name: 'Commercial', color: '#f97316', isDefault: true };
   await commercialRoleRef.set(commercialRole);
   return { id: 'commercial', ...commercialRole };
 }

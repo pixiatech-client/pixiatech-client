@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 /**
  * @license
@@ -132,6 +132,7 @@ interface DetailsAppProps {
 
 export default function DetailsApp({ initialEstimation, allProducts = [], allProductSpecs = {}, startOpen = false, autoEditMode = false, onClose, suppliers = [], onStatusChange, onSave }: DetailsAppProps) {
   const { userProfile } = useUser();
+  const isFournisseur = userProfile?.role === 'fournisseur';
 
   const firestore = useFirestore();
   const charsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'characteristics'), orderBy('name')) : null, [firestore]);
@@ -139,21 +140,21 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
-      case 'Ã©cran':
+      case 'écran':
         return Monitor;
       case 'distance':
         return Eye;
       case 'puissance':
         return Zap;
-      case 'luminositÃ©':
+      case 'luminosité':
         return Sun;
       case 'pixel':
         return LayoutGrid;
-      case 'rÃ©solution':
+      case 'résolution':
         return Maximize2;
-      case 'paramÃ¨tres':
+      case 'paramètres':
         return Settings;
-      case 'activitÃ©':
+      case 'activité':
         return Activity;
       case 'processeur':
         return Cpu;
@@ -161,7 +162,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         return Layers;
       case 'mobile':
         return Smartphone;
-      case 'tÃ©lÃ©vision':
+      case 'télévision':
         return Tv;
       default:
         return Settings;
@@ -267,7 +268,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       window.open(estimation.contractUrl, '_blank');
     } else {
       const toast = document.createElement('div');
-      toast.textContent = 'Le contrat signÃ© n\'est pas encore disponible.';
+      toast.textContent = 'Le contrat signé n\'est pas encore disponible.';
       toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#f59e0b;color:white;padding:14px 28px;border-radius:16px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 8px 32px rgba(245,158,11,0.4)';
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 4000);
@@ -330,7 +331,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
           specs: (allProductSpecs[p.productId] || allProductSpecs[p.id])
             ? Object.fromEntries((allProductSpecs[p.productId] || allProductSpecs[p.id]).map(s => [s.key, s.value]))
             : p.specs || {
-              surface: `${((p.width || 0) * (p.height || 0)).toFixed(2)} mÂ²`,
+              surface: `${((p.width || 0) * (p.height || 0)).toFixed(2)} m²`,
               resolution: `${Math.round((p.width || 0) * 400)} x ${Math.round((p.height || 0) * 400)} px`,
               ledModules: Math.round(((p.width || 0) * (p.height || 0)) * 4),
               avgPower: 'N/A',
@@ -384,7 +385,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
   // Auto-enable edit mode if launched from the "Process" button
   useEffect(() => {
-    if (autoEditMode) {
+    if (autoEditMode && !isFournisseur) {
       setIsEditMode(true);
     }
   }, [autoEditMode]);
@@ -482,7 +483,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ...prev,
       products: prev.products.filter(p => p.id !== id)
     }));
-    addHistory(`Produit supprimÃ© : ${id}`);
+    addHistory(`Produit supprimé : ${id}`);
   };
 
   const addProduct = () => {
@@ -509,17 +510,17 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ...prev,
       products: [...prev.products, newProduct]
     }));
-    addHistory('Nouveau produit ajoutÃ© (dimensions hÃ©ritÃ©es)');
+    addHistory('Nouveau produit ajouté (dimensions héritées)');
   };
 
   const formatCurrency = (val: number) => {
-    if (isNaN(val) || val === undefined || val === null) return "0,00 â‚¬";
+    if (isNaN(val) || val === undefined || val === null) return "0,00 €";
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
   };
 
   const handleTranslate = async () => {
     setIsAiLoading(true);
-    addHistory('Traduction chinoise demandÃ©e');
+    addHistory('Traduction chinoise demandée');
     const result = await geminiService.translateToChinese(estimation);
     setAiResult({ title: 'Technical Translation (Chinese)', content: result });
     setIsAiLoading(false);
@@ -527,7 +528,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
   const handleSummary = async () => {
     setIsAiLoading(true);
-    addHistory('GÃ©nÃ©ration du rÃ©sumÃ© du dossier');
+    addHistory('Génération du résumé du dossier');
     const result = await geminiService.generateSummary(estimation);
     setAiResult({ title: 'Case Summary', content: result });
     setIsAiLoading(false);
@@ -551,7 +552,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         steps: [newStep]
       }
     }));
-    addHistory('Ã‰chÃ©ance de paiement ajoutÃ©e');
+    addHistory('Échéance de paiement ajoutée');
   };
 
   const updatePaymentStep = (id: string, field: keyof PaymentStep, value: any) => {
@@ -590,7 +591,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         }
       };
     });
-    addHistory('Ã‰chÃ©ance de paiement supprimÃ©e');
+    addHistory('Échéance de paiement supprimée');
   };
 
   const togglePaymentStatus = (id: string) => {
@@ -612,7 +613,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         }
       };
     });
-    addHistory('Statut du paiement mis Ã  jour');
+    addHistory('Statut du paiement mis à jour');
   };
 
   const shareTranslatedText = (platform: 'whatsapp' | 'telegram', text: string) => {
@@ -621,7 +622,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ? `https://wa.me/${estimation.client.phone.replace(/\s+/g, '')}?text=${encoded}`
       : `https://t.me/share/url?url=${window.location.href}&text=${encoded}`;
     window.open(url, '_blank');
-    addHistory(`RÃ©sultat partagÃ© sur ${platform}`);
+    addHistory(`Résultat partagé sur ${platform}`);
   };
 
   const shareEstimation = (platform: 'whatsapp' | 'telegram') => {
@@ -632,7 +633,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       : `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodedMessage}`;
 
     window.open(url, '_blank');
-    addHistory(`Devis partagÃ© sur ${platform}`);
+    addHistory(`Devis partagé sur ${platform}`);
   };
 
   return (
@@ -675,11 +676,11 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   estimation.status === 'archived' ? 'bg-slate-100 border-slate-200 text-slate-400' :
                                     'bg-amber-500/20 border-amber-500/30 text-amber-400'
                           }`}>
-                          {estimation.status === 'returned' ? 'RetournÃ©' :
-                            estimation.status === 'processed' ? 'TraitÃ©' :
+                          {estimation.status === 'returned' ? 'Retourné' :
+                            estimation.status === 'processed' ? 'Traité' :
                               estimation.status === 'in_progress' ? 'Fournisseur' :
                                 estimation.status === 'sent' ? 'Livraison' :
-                                  estimation.status === 'archived' ? 'ArchivÃ©' :
+                                  estimation.status === 'archived' ? 'Archivé' :
                                     estimation.status === 'trashed' ? 'Corbeille' :
                                       estimation.status === 'pending' ? 'En attente' : estimation.status}
                         </div>
@@ -705,7 +706,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                 <div className="flex items-center gap-2 md:gap-4 shrink-0">
                   <div className="flex items-center gap-1 md:gap-2">
-                    {userProfile?.role !== 'supplier' && (
+                    {!isFournisseur && (
                       <button
                         onClick={() => setIsHistoryPanelOpen(true)}
                         className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-slate-100 border border-slate-200 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all text-slate-900 flex items-center gap-1.5 md:gap-2"
@@ -714,14 +715,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       </button>
                     )}
 
-                    {(estimation.status === 'archived' || estimation.status === 'trashed') && userProfile?.role !== 'supplier' && (
+                    {(estimation.status === 'archived' || estimation.status === 'trashed') && !isFournisseur && (
                       <div className="flex items-center gap-2 pr-2 border-r border-slate-200">
                         <button
                           onClick={async () => {
                             if (!initialEstimation?.id) return;
                             await updateQuoteStatus(initialEstimation.id, { status: 'processed' });
                             setEstimation(prev => ({ ...prev, status: 'processed' }));
-                                  addHistory('Dossier restaurÃ©');
+                                  addHistory('Dossier restauré');
                             if (onStatusChange) onStatusChange('processed');
                           }}
                           className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-blue-500/20 transition-all text-blue-500 flex items-center gap-1.5 md:gap-2"
@@ -750,7 +751,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               if (confirm('Attention : Cette action est irréversible. Supprimer définitivement ce dossier ?')) {
                                 // Deleting permanent is best done from the dashboard where we have delete access,
                                 // but we can simulate it or alert for safety here.
-                                alert("Veuillez utiliser le tableau de bord principal (onglet Corbeille) pour effectuer une suppression dÃ©finitive.");
+                                alert("Veuillez utiliser le tableau de bord principal (onglet Corbeille) pour effectuer une suppression définitive.");
                                 handleClose();
                               }
                             }}
@@ -762,7 +763,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                       </div>
                     )}
 
-                    {userProfile?.role !== 'supplier' && (
+                    {!isFournisseur && (
                       <div className="flex items-center gap-1 md:gap-2 border-l border-slate-200 pl-1 md:pl-2">
                         <button
                           onClick={() => setIsEditMode(!isEditMode)}
@@ -934,7 +935,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   <button
                                     onClick={() => {
                                       setEstimation({ ...estimation, client: { ...estimation.client, sitePhoto: undefined } });
-                                      addHistory("Photo du site supprimÃ©e");
+                                      addHistory("Photo du site supprimée");
                                     }}
                                     className="w-10 h-10 flex items-center justify-center bg-red-500/10 backdrop-blur rounded-xl text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition-all hover:scale-110 shadow-xl"
                                   >
@@ -957,7 +958,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   )}
                 </AnimatePresence>
 
-                {(userProfile?.role !== 'supplier' || !estimation.hideCommentsFromSupplier) && estimation.client.notes && (
+                {(!isFournisseur || !estimation.hideCommentsFromSupplier) && estimation.client.notes && (
                     <section className="p-6 bg-slate-50 border border-slate-200 rounded-[2rem]">
                       <h4 className="text-[10px] font-bold text-aura-accent uppercase mb-2 flex items-center gap-2">
                         <StickyNote size={12} /> NOTES DU CLIENT
@@ -1067,7 +1068,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         specs: enrichedSpecs,
                                       } : prod);
                                       setEstimation({ ...estimation, products: newProducts });
-                                      addHistory(`Produit changÃ© : ${selectedProd.name}`);
+                                      addHistory(`Produit changé : ${selectedProd.name}`);
                                     }
                                   }}
                                   renderOption={(opt) => (
@@ -1104,7 +1105,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 </div>
                               )}
                               
-                              {/* SALE / RENTAL TOGGLE â€” hidden in Sale mode, shown only in Rental mode */}
+                              {/* SALE / RENTAL TOGGLE — hidden in Sale mode, shown only in Rental mode */}
                               {isEditMode && initialEstimation?.transactionType === 'rental' && (
                                 <div className="mt-4 flex items-center gap-2">
                                   <div className="flex p-1 bg-slate-100/80 border border-slate-200/80 rounded-xl backdrop-blur-sm shadow-sm">
@@ -1179,10 +1180,10 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 setEstimation({ ...estimation, products: newProducts });
                               }}
                             />
-                            {userProfile?.role !== 'supplier' && (
+                            {!isFournisseur && (
                               <NumericControl
-                                label="Unit Price (â‚¬)"
-                                unit="â‚¬"
+                                label="Unit Price (€)"
+                                unit="€"
                                 value={p.unitPrice}
                                 onChange={(val) => {
                                   const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, unitPrice: val } : prod);
@@ -1192,7 +1193,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             )}
                           </div>
 
-                          {/* RENTAL OPTIONS â€” shown only in Rental mode */}
+                          {/* RENTAL OPTIONS — shown only in Rental mode */}
                           <AnimatePresence>
                             {isEditMode && initialEstimation?.transactionType === 'rental' && p.transactionType === 'rental' && (
                               <motion.div 
@@ -1219,7 +1220,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                       }}
                                       className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit === 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
                                       >
-                                        Jour spÃ©cifique (Heures)
+                                        Jour spécifique (Heures)
                                      </button>
                                    </div>
                                 </div>
@@ -1268,7 +1269,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         />
                                       </div>
                                       <NumericControl
-                                        label="DurÃ©e (Jours)"
+                                        label="Durée (Jours)"
                                         value={p.rentalDuration || 1}
                                         onChange={(val) => {
                                           const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalDuration: Math.max(1, val) } : prod);
@@ -1294,7 +1295,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                       </div>
                                       <div className="flex gap-2">
                                         <div className="space-y-1 flex-1">
-                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">DÃ©but</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Début</span>
                                           <input 
                                             type="time"
                                             className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1319,7 +1320,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         </div>
                                       </div>
                                       <NumericControl
-                                        label="DurÃ©e (Heures)"
+                                        label="Durée (Heures)"
                                         value={p.rentalDuration || 1}
                                         onChange={(val) => {
                                           const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalDuration: Math.max(1, val) } : prod);
@@ -1338,7 +1339,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <span className="text-[13px] text-slate-400 font-bold uppercase tracking-widest block">Référence Article</span>
                               <div className="text-sm font-display font-black text-slate-900 uppercase tracking-tight">{p.productId || 'N/A'}</div>
                             </div>
-                            {userProfile?.role !== 'supplier' && (
+                            {!isFournisseur && (
                               <div className="text-right">
                                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1">Total pour cette ligne</span>
                                 <div className="flex items-center gap-3 justify-end">
@@ -1409,7 +1410,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                                 // Retrieve base specs
                                 const projectType = getSpecValue(['projecttype', 'type'], "Vente");
-                                const environment = getSpecValue(['environment', 'environnement'], "IntÃ©rieur");
+                                const environment = getSpecValue(['environment', 'environnement'], "Intérieur");
                                 const visionDistance = getSpecValue(['vision', 'distance'], "N/A");
                                 const pixelPitchStr = getSpecValue(['pixelpitch', 'pitch'], "2.5");
 
@@ -1423,18 +1424,18 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 const resX = Math.round((w * 1000) / pitchValue);
                                 const resY = Math.round((h * 1000) / pitchValue);
                                 const modules = Math.ceil(w / 0.5) * Math.ceil(h / 0.5) * qty;
-                                const isOutdoor = environment.toLowerCase().includes('exterieur') || environment.toLowerCase().includes('extÃ©rieur');
+                                const isOutdoor = environment.toLowerCase().includes('exterieur') || environment.toLowerCase().includes('extérieur');
                                 const powerMax = area * (isOutdoor ? 0.8 : 0.6);
                                 const powerAvg = powerMax * 0.35;
                                 const amps = Math.ceil((powerMax * 1000) / 230 / 3);
 
                                 const baseSpecs = [
-                                  { label: "SURFACE TOTALE", value: `${area.toFixed(2)} mÂ²`, icon: <Maximize2 size={16} />, color: "text-blue-400", bgColor: "bg-blue-400/10" },
-                                  { label: "RÃ‰SOLUTION", value: `${resX} x ${resY} pixels`, icon: <Monitor size={16} />, color: "text-violet-400", bgColor: "bg-violet-400/10" },
+                                  { label: "SURFACE TOTALE", value: `${area.toFixed(2)} m²`, icon: <Maximize2 size={16} />, color: "text-blue-400", bgColor: "bg-blue-400/10" },
+                                  { label: "RÉSOLUTION", value: `${resX} x ${resY} pixels`, icon: <Monitor size={16} />, color: "text-violet-400", bgColor: "bg-violet-400/10" },
                                   { label: "NOMBRE DE MODULES LED", value: modules.toString(), icon: <Cpu size={16} />, color: "text-fuchsia-400", bgColor: "bg-fuchsia-400/10" },
                                   { label: "PUISSANCE MAX", value: `${powerMax.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-emerald-400", bgColor: "bg-emerald-400/10" },
                                   { label: "PUISSANCE MOY", value: `${powerAvg.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-sky-400", bgColor: "bg-sky-400/10" },
-                                  { label: "DISJONCTEUR RECOMMANDÃ‰", value: `${amps}A 3-Pole`, icon: <Zap size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
+                                  { label: "DISJONCTEUR RECOMMANDÉ", value: `${amps}A 3-Pole`, icon: <Zap size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
                                   { label: "TYPE DE PROJET", value: projectType, icon: <Truck size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
                                   { label: "ENVIRONNEMENT", value: environment, icon: <Sun size={16} />, color: "text-teal-400", bgColor: "bg-teal-400/10" },
                                   { label: "DISTANCE DE VISUALISATION", value: visionDistance, icon: <Eye size={16} />, color: "text-cyan-400", bgColor: "bg-cyan-400/10" },
@@ -1481,7 +1482,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                 </section>
 
                 <AnimatePresence>
-                  {userProfile?.role !== 'supplier' && (
+                  {!isFournisseur && (
                     <motion.section
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -1497,7 +1498,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Truck size={20} /></div>
                               <div>
                               <div className="text-xs font-bold uppercase text-slate-900">LIVRAISON</div>
-                              <div className="text-[10px] text-slate-400 uppercase">Ville : <b className="text-slate-900">{estimation.deliveryCity || 'Non spÃ©cifiÃ©e'}</b></div>
+                              <div className="text-[10px] text-slate-400 uppercase">Ville : <b className="text-slate-900">{estimation.deliveryCity || 'Non spécifiée'}</b></div>
                               </div>
                             </div>
                             <span className="text-lg font-bold font-mono text-aura-accent">{formatCurrency(calculations.deliveryTotal)}</span>
@@ -1516,8 +1517,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                               <div className="grid grid-cols-2 gap-4">
 <NumericControl
-                                    label="Prix (â‚¬)"
-                                    unit="â‚¬"
+                                    label="Prix (€)"
+                                    unit="€"
                                     value={estimation.deliveryCost}
                                     onChange={(val) => setEstimation({ ...estimation, deliveryCost: val })}
                                   />
@@ -1547,7 +1548,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="space-y-4 pt-4 border-t border-slate-200">
                               <div className="py-4 border-b border-slate-200 mb-2">
                                 <div className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] leading-relaxed">
-                                  Pour une surface totale de <span className="text-aura-accent">{calculations.totalArea.toFixed(2)} mÂ²</span>
+                                  Pour une surface totale de <span className="text-aura-accent">{calculations.totalArea.toFixed(2)} m²</span>
                                 </div>
                                 <div className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] leading-relaxed">
                                   votre projet nécessite <span className="text-aura-accent">{calculations.techniciansCount}</span> technicien(s).
@@ -1555,8 +1556,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </div>
                               <div className="grid grid-cols-2 gap-3">
                                 <NumericControl
-                                  label="Prix (â‚¬)"
-                                  unit="â‚¬"
+                                  label="Prix (€)"
+                                  unit="€"
                                   value={estimation.laborCost}
                                   onChange={(val) => setEstimation({ ...estimation, laborCost: val })}
                                 />
@@ -1580,7 +1581,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <Calendar size={20} className="text-violet-600" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold uppercase text-slate-900">PÃ©riode de Location</div>
+                              <div className="text-xs font-bold uppercase text-slate-900">Période de Location</div>
                               <div className="text-[10px] text-slate-400 uppercase">Dates &amp; Horaires</div>
                             </div>
                           </div>
@@ -1588,29 +1589,29 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           {!isEditMode ? (
                             <div className="grid grid-cols-2 gap-3">
                               <div className="bg-white border border-violet-100 rounded-2xl p-3 space-y-0.5">
-                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">DÃ©but</div>
+                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Début</div>
                                 <div className="text-sm font-bold text-slate-900">
                                   {estimation.rentalPeriod?.from
                                     ? new Date(estimation.rentalPeriod.from).toLocaleDateString('fr-FR')
-                                    : 'â€”'}
+                                    : '—'}
                                 </div>
-                                <div className="text-[10px] text-slate-500">{estimation.rentalStartTime || 'â€”'}</div>
+                                <div className="text-[10px] text-slate-500">{estimation.rentalStartTime || '—'}</div>
                               </div>
                               <div className="bg-white border border-violet-100 rounded-2xl p-3 space-y-0.5">
                                 <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Fin</div>
                                 <div className="text-sm font-bold text-slate-900">
                                   {estimation.rentalPeriod?.to
                                     ? new Date(estimation.rentalPeriod.to).toLocaleDateString('fr-FR')
-                                    : 'â€”'}
+                                    : '—'}
                                 </div>
-                                <div className="text-[10px] text-slate-500">{estimation.rentalEndTime || 'â€”'}</div>
+                                <div className="text-[10px] text-slate-500">{estimation.rentalEndTime || '—'}</div>
                               </div>
                             </div>
                           ) : (
                             <div className="space-y-4 pt-2 border-t border-violet-200">
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de dÃ©but</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de début</label>
                                   <input
                                     type="date"
                                     min={new Date().toISOString().split('T')[0]}
@@ -1640,7 +1641,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Heure de dÃ©but</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Heure de début</label>
                                   <input
                                     type="time"
                                     value={estimation.rentalStartTime || '08:00'}
@@ -1671,14 +1672,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
               {/* FIXED FOOTER (OUTSIDE SCROLL AREA) */}
               <AnimatePresence>
-                {userProfile?.role !== 'supplier' && (
+                {!isFournisseur && (
                   <motion.div
                     key="aura-footer"
                     initial={{ y: 80, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     className="aura-footer-fixed hidden md:block relative shrink-0"
                   >
-                    {/* Toggle Pill â€” floating on the border-top divider line, always visible */}
+                    {/* Toggle Pill — floating on the border-top divider line, always visible */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
                       <button
                         onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
@@ -1691,7 +1692,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           <ChevronDown size={14} className="text-slate-900" />
                         </motion.div>
                         <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-900">
-                          RÃ©sumÃ© Financier
+                          Résumé Financier
                         </span>
                         <div className="w-px h-3 bg-slate-200" />
                         <span className="text-[10px] font-black font-mono text-slate-700 tracking-tight group-hover:text-slate-900 transition-colors">
@@ -1731,13 +1732,13 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </div>
                             </div>
                             <div className="text-left md:text-right flex flex-col justify-end min-w-0 md:min-w-[220px] flex-shrink-0 relative">
-                              <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">Ã€ Payer (TTC)</div>
+                              <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">À Payer (TTC)</div>
                               <div className="text-4xl sm:text-5xl md:text-6xl font-display font-bold tracking-tighter neon-text-emerald relative z-10 truncate">
                                 {formatCurrency(calculations.finalTotal)}
                               </div>
                               {estimation.globalDiscount > 0 && (
                                 <div className="text-[10px] text-emerald-400/80 font-bold mt-2 uppercase tracking-[0.2em] font-display relative z-10">
-                                  Remise exceptionnelle appliquÃ©e
+                                  Remise exceptionnelle appliquée
                                 </div>
                               )}
                             </div>
@@ -1747,7 +1748,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               onClick={async () => {
                                 setIsAiLoading(true);
                                 try {
-                                  addHistory('Modifications validÃ©es et enregistrÃ©es');
+                                  addHistory('Modifications validées et enregistrées');
                                   const isRentalPending =
                                     initialEstimation?.transactionType === 'rental' &&
                                     (initialEstimation?.status === 'pending' || initialEstimation?.status === 'En attente');
@@ -1837,7 +1838,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                 </div>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => { if (aiResult) { navigator.clipboard.writeText(aiResult.content);     addHistory('RÃ©sultat IA copiÃ©'); } }}
+                    onClick={() => { if (aiResult) { navigator.clipboard.writeText(aiResult.content);     addHistory('Résultat IA copié'); } }}
                     className="px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
                   >
                     Copy
@@ -1909,14 +1910,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                 if (onStatusChange) onStatusChange('in_progress');
                 // Success toast
                 const toast = document.createElement('div');
-                toast.innerHTML = `âœ… Devis transmis Ã  <strong>${supplierName}</strong> avec succÃ¨s !`;
+                toast.innerHTML = `✅ Devis transmis à <strong>${supplierName}</strong> avec succès !`;
                 toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:14px 28px;border-radius:16px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 8px 32px rgba(16,185,129,0.4);animation:fadeIn 0.3s ease';
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 4000);
               } catch (err: any) {
                 console.error('[TransmitModal] Error saving transmission:', err);
                 const toast = document.createElement('div');
-                toast.textContent = `âŒ Erreur de transfert : ${err?.message || 'Veuillez rÃ©essayer'}`;
+                toast.textContent = `❌ Erreur de transfert : ${err?.message || 'Veuillez réessayer'}`;
                 toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#ef4444;color:white;padding:14px 28px;border-radius:16px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 8px 32px rgba(239,68,68,0.4)';
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 5000);
