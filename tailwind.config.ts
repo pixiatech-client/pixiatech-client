@@ -121,12 +121,18 @@ const config = {
         },
         'gradient': {
             to: { 'background-position': '200% center' },
+        },
+        'wiggle': {
+          '0%, 100%': { transform: 'rotate(0deg)' },
+          '25%': { transform: 'rotate(-8deg)' },
+          '75%': { transform: 'rotate(8deg)' },
         }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "gradient": "gradient 8s linear infinite",
+        "wiggle": "wiggle 0.5s ease-in-out infinite",
       },
       boxShadow: {
         sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',

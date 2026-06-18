@@ -111,9 +111,10 @@ export function NotificationBell({ isDark = false, userRole }: NotificationBellP
         onClick={() => setIsOpen(!isOpen)}
         className={`group relative p-2.5 rounded-xl transition-all outline-none focus:outline-none focus-visible:outline-none ${isDark ? 'bg-white/5 hover:bg-theme-sidebar-active-bg' : 'bg-white hover:bg-theme-sidebar-active-bg'} shadow-sm border border-transparent`}
       >
-        <Bell className={`w-5 h-5 transition-colors ${isDark ? 'text-gray-400 group-hover:text-rose-400' : 'text-gray-500 group-hover:text-rose-500'}`} />
+        <Bell className={`w-5 h-5 transition-colors ${isDark ? 'text-gray-400 group-hover:text-rose-400' : 'text-gray-500 group-hover:text-rose-500'} ${unreadCount > 0 ? 'animate-wiggle' : ''}`} />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-[#ff4d4d] text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-[#E8F3EB] dark:border-zinc-900 shadow-lg">
+            <span className="absolute inset-0 rounded-full animate-ping bg-[#ff4d4d] opacity-50" />
             {unreadCount}
           </span>
         )}
