@@ -417,15 +417,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     {est.supplier}
                   </span>
                 )}
-                {est.treatedByName && (
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 ${
-                    isSelected 
-                      ? 'bg-purple-100 text-purple-700' 
-                      : 'bg-purple-50 text-purple-600 group-hover:bg-purple-100'
-                  }`}>
-                    {est.treatedByName}
-                  </span>
-                )}
+
               </div>
             </div>
 
@@ -495,9 +487,9 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
             {/* Price Column Hidden for Supplier (Except in specific tabs if needed) */}
             {!isFournisseur && (
-              <div className="w-36 px-3 flex flex-col items-start justify-center">
+              <div className="w-44 px-3 flex flex-col items-start justify-center shrink-0 overflow-hidden">
                 <span className={`text-[8px] font-black uppercase tracking-[0.2em] mb-0.5 ${isSelected ? 'text-zinc-600' : 'group-hover:text-zinc-600 text-zinc-300'}`}>{t('estimation.totalAmount')}</span>
-                <span className={`font-black text-lg tracking-tighter whitespace-nowrap ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-white text-zinc-900 dark:text-zinc-100'}`}>
+                <span className={`font-black text-base tracking-tighter whitespace-nowrap ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-white text-zinc-900 dark:text-zinc-100'}`}>
                   {Math.max(est.totalClient, 0.01).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
               </div>
@@ -506,7 +498,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
 
             {/* Action Column - State Machine Logic */}
-            <div className="w-32 px-3 flex items-center justify-end gap-1 mr-2" onClick={(e) => e.stopPropagation()}>
+            <div className="w-32 px-3 flex items-center justify-end gap-1 mr-2 shrink-0" onClick={(e) => e.stopPropagation()}>
               {isFournisseur ? (
                 <>
                   {est.status === 'Fournisseur' && (
@@ -770,9 +762,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="font-black text-zinc-900 dark:text-zinc-100 text-base tracking-tighter truncate group-hover:text-white">{est.client}</span>
                       <Mail className={`w-3.5 h-3.5 shrink-0 ${est.emailVerified ? 'text-emerald-500' : 'text-red-500'}`} />
-                      {est.treatedByName && (
-                        <span className="text-[9px] font-bold bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded-full">{est.treatedByName}</span>
-                      )}
+
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-widest group-hover:text-white">{est.number}</span>
@@ -806,16 +796,16 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
 
               <div className="h-px bg-zinc-100/80 w-full my-4" />
 
-              <div className="flex items-center justify-between gap-4 w-full">
-                <div className="flex flex-col">
-                   <span className="text-[8px] text-zinc-400 font-black uppercase tracking-[0.2em] mb-0.5 group-hover:text-white">{t('estimation.totalAmount')}</span>
-                   <span className="font-black text-zinc-900 dark:text-zinc-100 text-lg tracking-tighter group-hover:text-white">
+              <div className="flex flex-wrap items-start gap-x-4 gap-y-2 w-full">
+                <div className="flex flex-col shrink-0">
+                   <span className="text-[8px] text-zinc-400 font-black uppercase tracking-[0.2em] mb-0.5 group-hover:text-white whitespace-nowrap">{t('estimation.totalAmount')}</span>
+                   <span className="font-black text-zinc-900 dark:text-zinc-100 text-lg tracking-tighter group-hover:text-white whitespace-nowrap">
                       {est.totalClient.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                     </span>
                  </div>
                  
-                 <div className="flex items-center gap-1 shrink-0">
-                   <div className="flex items-center gap-1 bg-zinc-50/50 rounded-xl p-1" onClick={(e) => e.stopPropagation()}>
+                   <div className="flex items-center gap-1 shrink-0 flex-wrap ml-auto">
+                     <div className="flex items-center gap-1 bg-zinc-50/50 rounded-xl p-1" onClick={(e) => e.stopPropagation()}>
                      {isFournisseur ? (
                        <>
                          {est.status === 'Fournisseur' && (

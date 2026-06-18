@@ -1175,7 +1175,7 @@ async function processQuoteSnapshot(docSnap: DocumentSnapshot): Promise<QuoteReq
     id: docSnap.id,
     number: data.number || `EST-${docSnap.id.substring(0,6).toUpperCase()}`,
     client: {
-      companyName: data.client?.companyName || data.companyName || '',
+      companyName: data.client?.companyName || data.client?.name || data.companyName || '',
       email: data.client?.email || data.email || '',
       phone: data.client?.phone || data.phone || '',
       address: data.client?.address || data.address || '',
@@ -1457,7 +1457,7 @@ export async function getPaginatedQuotes({
     return {
       id: doc.id,
       number: data.number || `EST-${doc.id.substring(0, 6).toUpperCase()}`,
-      client: data.client?.companyName || data.companyName || 'Unknown Client',
+      client: data.client?.companyName || (data.client as any)?.name || data.companyName || 'Unknown Client',
       email: data.client?.email || data.email || '',
       phone: data.client?.phone || data.phone || '',
       status: data.status || 'pending',
@@ -1709,7 +1709,7 @@ export async function getQuoteRequests({
       return {
         id: doc.id,
         client: {
-          companyName: data.client?.companyName || data.companyName || '',
+          companyName: data.client?.companyName || data.client?.name || data.companyName || '',
           email: data.client?.email || data.email || '',
           phone: data.client?.phone || data.phone || '',
           address: data.client?.address || data.address || '',
