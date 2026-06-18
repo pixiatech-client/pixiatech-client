@@ -179,6 +179,7 @@ export function SignatureForm({ initialSettings }: SignatureFormProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Signature Pad */}
             <div className="space-y-3">
+              <span className="block text-xs font-semibold text-transparent select-none">_</span>
               <div className="relative border border-zinc-200 rounded-xl bg-zinc-50/50 shadow-inner overflow-hidden">
                 {!hasDrawn && !savedSignature && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-zinc-400 text-xs sm:text-sm font-light select-none gap-2">
