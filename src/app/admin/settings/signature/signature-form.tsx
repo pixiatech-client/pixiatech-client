@@ -178,9 +178,9 @@ export function SignatureForm({ initialSettings }: SignatureFormProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Signature Pad */}
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               <span className="block text-xs font-semibold text-transparent select-none">_</span>
-              <div className="relative border border-zinc-200 rounded-xl bg-zinc-50/50 shadow-inner overflow-hidden">
+              <div className="relative flex-1 border border-zinc-200 rounded-xl bg-zinc-50/50 shadow-inner overflow-hidden min-h-[176px]">
                 {!hasDrawn && !savedSignature && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-zinc-400 text-xs sm:text-sm font-light select-none gap-2">
                     <PenTool size={16} className="text-rose-500" />
@@ -189,7 +189,7 @@ export function SignatureForm({ initialSettings }: SignatureFormProps) {
                 )}
                 <canvas
                   ref={canvasRef}
-                  className="w-full h-44 block touch-none cursor-crosshair bg-white transition-colors"
+                  className="w-full h-full block touch-none cursor-crosshair bg-white transition-colors"
                   style={{ cursor: 'crosshair' }}
                   onMouseDown={startDrawing}
                   onMouseMove={draw}
@@ -229,9 +229,9 @@ export function SignatureForm({ initialSettings }: SignatureFormProps) {
             </div>
 
             {/* Preview */}
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               <Label className="text-xs font-semibold text-slate-700">{t('Aperçu de la signature')}</Label>
-              <div className="border border-zinc-200 rounded-xl bg-zinc-50/40 p-6 flex items-center justify-center min-h-[200px]">
+              <div className="flex-1 border border-zinc-200 rounded-xl bg-zinc-50/40 p-6 flex items-center justify-center min-h-[176px]">
                 {savedSignature ? (
                   <img
                     src={savedSignature}
@@ -247,6 +247,8 @@ export function SignatureForm({ initialSettings }: SignatureFormProps) {
                   </div>
                 )}
               </div>
+              {/* Spacer to match buttons row height on the left */}
+              <div className="h-[44px]" />
             </div>
           </div>
         </CardContent>
