@@ -558,7 +558,7 @@
         "supplier": "Supplier",
         "commercial": "Commercial",
         "administrator": "Administrator",
-        "adminSpace": "Admin Space",
+        "adminSpace": "Admin",
         "resetPerformanceConfirm": "Are you sure you want to reset performance scores? This action is irreversible.",
         "resetPerformanceDesc": "Salesperson performance scores start from zero.",
         "resetConfiguratorConfirm": "Are you sure you want to reset all configurator method counters to zero?",

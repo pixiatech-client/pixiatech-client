@@ -554,7 +554,7 @@
         "supplier": "Fournisseur",
         "commercial": "Commercial",
         "administrator": "Administrateur",
-        "adminSpace": "Espace Administrateur",
+        "adminSpace": "Espace Admin",
         "resetPerformanceConfirm": "Voulez-vous vraiment réinitialiser les scores de performance ? Cette action est irréversible.",
         "resetPerformanceDesc": "Les performances des commerciaux repartent de zéro.",
         "resetConfiguratorConfirm": "Voulez-vous vraiment réinitialiser les compteurs des méthodes de configuration à zéro ?",
