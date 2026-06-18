@@ -266,22 +266,22 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-2 h-2 rounded-full bg-[#6dff1d] animate-pulse shadow-[0_0_10px_#6dff1d]" />
-                <h2 className="text-2xl font-['Space_Grotesk'] font-black text-white tracking-tight uppercase">
+                <h2 className="text-2xl  font-black text-white tracking-tight uppercase">
                   Détails Technique & Commercial
                 </h2>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-[#3b82f6] font-['JetBrains_Mono'] text-[11px] font-bold tracking-wider px-3 py-1 bg-[#3b82f6]/10 border border-[#3b82f6]/20 rounded-lg">{estimation.id}</span>
+                <span className="text-[#3b82f6]  text-[11px] font-bold tracking-wider px-3 py-1 bg-[#3b82f6]/10 border border-[#3b82f6]/20 rounded-lg">{estimation.id}</span>
                 <div className="w-1 h-1 rounded-full bg-white/20" />
                 {projectEstimation.isReturned ? (
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                    <span className="text-[9px] text-red-500 font-['JetBrains_Mono'] font-bold uppercase tracking-[0.4em]">
+                    <span className="text-[9px] text-red-500  font-bold uppercase tracking-[0.4em]">
                       RETOURNÉ
                     </span>
                   </div>
                 ) : (
-                  <span className="text-[9px] text-zinc-600 font-['JetBrains_Mono'] font-bold uppercase tracking-[0.4em]">
+                  <span className="text-[9px] text-zinc-600  font-bold uppercase tracking-[0.4em]">
                     STATUS: {projectEstimation.status?.toUpperCase() || 'EN ATTENTE'}
                   </span>
                 )}
@@ -369,12 +369,12 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                 <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-[#3b82f6]/30 rounded-tl-xl" />
                 <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-[#3b82f6]/30 rounded-br-xl" />
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-['Space_Grotesk'] font-bold uppercase tracking-[0.2em] text-[#3b82f6] flex items-center gap-3">
+                  <h3 className="text-xs  font-bold uppercase tracking-[0.2em] text-[#3b82f6] flex items-center gap-3">
                     <Sparkles size={16} className="animate-pulse" /> {aiResult.title}
                   </h3>
                   <button onClick={() => setAiResult(null)} className="w-8 h-8 flex items-center justify-center hover:bg-white/5 rounded-lg text-zinc-500 hover:text-white transition-all"><X size={14} /></button>
                 </div>
-                <div className="text-sm leading-relaxed text-white/80 whitespace-pre-wrap font-['JetBrains_Mono'] bg-black/30 p-4 rounded-xl border border-white/[0.05]">{aiResult.content}</div>
+                <div className="text-sm leading-relaxed text-white/80 whitespace-pre-wrap  bg-black/30 p-4 rounded-xl border border-white/[0.05]">{aiResult.content}</div>
               </motion.section>
             )}
           </AnimatePresence>
@@ -385,7 +385,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                 <div className="absolute inset-0 bg-gradient-to-r from-[#3b82f6]/5 via-transparent to-[#3b82f6]/5 rounded-2xl" />
                 <button 
                   onClick={() => { setProfile('client'); addHistory('Switch Profil: Client'); }} 
-                  className={`px-10 py-4 rounded-xl text-xs font-['Space_Grotesk'] font-bold uppercase transition-all duration-500 tracking-[0.15em] flex items-center gap-3 active:scale-95 relative ${
+                  className={`px-10 py-4 rounded-xl text-xs  font-bold uppercase transition-all duration-500 tracking-[0.15em] flex items-center gap-3 active:scale-95 relative ${
                     profile === 'client' 
                       ? 'bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white shadow-[0_0_30px_rgba(59,130,246,0.4)]' 
                       : 'text-zinc-500 hover:text-white'
@@ -395,7 +395,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                 </button>
                 <button 
                   onClick={() => { setProfile('supplier'); addHistory('Switch Profil: Fournisseur'); }} 
-                  className={`px-10 py-4 rounded-xl text-xs font-['Space_Grotesk'] font-bold uppercase transition-all duration-500 tracking-[0.15em] flex items-center gap-3 active:scale-95 relative ${
+                  className={`px-10 py-4 rounded-xl text-xs  font-bold uppercase transition-all duration-500 tracking-[0.15em] flex items-center gap-3 active:scale-95 relative ${
                     profile === 'supplier' 
                       ? 'bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white shadow-[0_0_30px_rgba(59,130,246,0.4)]' 
                       : 'text-zinc-500 hover:text-white'
@@ -418,8 +418,8 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                     {isAiLoading ? <Loader2 size={20} className="animate-spin" /> : <FileText size={22} />}
                   </div>
                   <div className="text-left relative">
-                    <h4 className="font-['Space_Grotesk'] font-bold text-white group-hover:text-[#3b82f6] transition-colors text-[11px] tracking-[0.15em] uppercase">GÉNÉRER SYNTHÈSE</h4>
-                    <p className="text-[9px] text-zinc-600 uppercase tracking-tight font-['JetBrains_Mono']">AI Intelligence Dossier</p>
+                    <h4 className=" font-bold text-white group-hover:text-[#3b82f6] transition-colors text-[11px] tracking-[0.15em] uppercase">GÉNÉRER SYNTHÈSE</h4>
+                    <p className="text-[9px] text-zinc-600 uppercase tracking-tight ">AI Intelligence Dossier</p>
                   </div>
                 </button>
                 <button 
@@ -432,8 +432,8 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                     {isAiLoading ? <Loader2 size={20} className="animate-spin" /> : <Languages size={22} />}
                   </div>
                   <div className="text-left relative">
-                    <h4 className="font-['Space_Grotesk'] font-bold text-white group-hover:text-[#3b82f6] transition-colors text-[11px] tracking-[0.15em] uppercase">TRADUIRE CHINOIS</h4>
-                    <p className="text-[9px] text-zinc-600 uppercase tracking-tight font-['JetBrains_Mono']">Factory Export Tool</p>
+                    <h4 className=" font-bold text-white group-hover:text-[#3b82f6] transition-colors text-[11px] tracking-[0.15em] uppercase">TRADUIRE CHINOIS</h4>
+                    <p className="text-[9px] text-zinc-600 uppercase tracking-tight ">Factory Export Tool</p>
                   </div>
                 </button>
               </div>
@@ -448,7 +448,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                 exit={{ opacity: 0, y: 30 }}
                 className="space-y-6"
               >
-                <h3 className="text-[10px] font-['Space_Grotesk'] font-bold uppercase tracking-[0.4em] text-[#3b82f6] flex items-center gap-4">
+                <h3 className="text-[10px]  font-bold uppercase tracking-[0.4em] text-[#3b82f6] flex items-center gap-4">
                   <span className="w-12 h-px bg-gradient-to-r from-[#3b82f6] to-transparent" />
                   <User size={14} />
                   <span>État Civil & Configuration</span>
@@ -463,7 +463,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                   <div className="absolute bottom-0 right-0 w-8 h-8 border-r border-b border-white/[0.1] rounded-br-2xl" />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-3">
-                      <span className="text-[9px] text-zinc-600 font-['JetBrains_Mono'] font-bold uppercase tracking-[0.3em] pl-2">Contact Principal</span>
+                      <span className="text-[9px] text-zinc-600  font-bold uppercase tracking-[0.3em] pl-2">Contact Principal</span>
                       <input 
                         type="text" 
                         disabled={!isEditMode}
@@ -477,7 +477,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                       />
                     </div>
                     <div className="space-y-3">
-                      <span className="text-[9px] text-zinc-600 font-['JetBrains_Mono'] font-bold uppercase tracking-[0.3em] pl-2">Entreprise</span>
+                      <span className="text-[9px] text-zinc-600  font-bold uppercase tracking-[0.3em] pl-2">Entreprise</span>
                       <input 
                         type="text" 
                         disabled={!isEditMode}
@@ -491,13 +491,13 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                       />
                     </div>
                     <div className="space-y-3">
-                      <span className="text-[9px] text-zinc-600 font-['JetBrains_Mono'] font-bold uppercase tracking-[0.3em] pl-2">Email</span>
+                      <span className="text-[9px] text-zinc-600  font-bold uppercase tracking-[0.3em] pl-2">Email</span>
                       <input 
                         type="text" 
                         disabled={!isEditMode}
                         value={estimation.client.email}
                         onChange={(e) => updateClient('email', e.target.value)}
-                        className={`w-full py-4 bg-black/50 border transition-all duration-300 focus:outline-none px-5 rounded-2xl text-sm font-bold font-['JetBrains_Mono'] shadow-inner ${
+                        className={`w-full py-4 bg-black/50 border transition-all duration-300 focus:outline-none px-5 rounded-2xl text-sm font-bold  shadow-inner ${
                           isEditMode 
                             ? 'border-[#f59e0b]/30 focus:border-[#f59e0b]/60 text-white placeholder:text-zinc-600' 
                             : 'border-white/[0.05] text-white'
@@ -505,13 +505,13 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                       />
                     </div>
                     <div className="space-y-3">
-                      <span className="text-[9px] text-zinc-600 font-['JetBrains_Mono'] font-bold uppercase tracking-[0.3em] pl-2">WhatsApp</span>
+                      <span className="text-[9px] text-zinc-600  font-bold uppercase tracking-[0.3em] pl-2">WhatsApp</span>
                       <input 
                         type="text" 
                         disabled={!isEditMode}
                         value={estimation.client.phone}
                         onChange={(e) => updateClient('phone', e.target.value)}
-                        className={`w-full py-4 bg-black/50 border transition-all duration-300 focus:outline-none px-5 rounded-2xl text-sm font-bold font-['JetBrains_Mono'] shadow-inner ${
+                        className={`w-full py-4 bg-black/50 border transition-all duration-300 focus:outline-none px-5 rounded-2xl text-sm font-bold  shadow-inner ${
                           isEditMode 
                             ? 'border-[#f59e0b]/30 focus:border-[#f59e0b]/60 text-white placeholder:text-zinc-600' 
                             : 'border-white/[0.05] text-white'
@@ -519,7 +519,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                       />
                     </div>
                     <div className="md:col-span-2 space-y-3">
-                      <span className="text-[9px] text-zinc-600 font-['JetBrains_Mono'] font-bold uppercase tracking-[0.3em] pl-2">Adresse de livraison</span>
+                      <span className="text-[9px] text-zinc-600  font-bold uppercase tracking-[0.3em] pl-2">Adresse de livraison</span>
                       <input 
                         type="text" 
                         disabled={!isEditMode}
@@ -546,7 +546,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                 exit={{ opacity: 0, y: 30 }}
                 className="space-y-6"
               >
-                <h3 className="text-[10px] font-['Space_Grotesk'] font-bold uppercase tracking-[0.4em] text-[#3b82f6] flex items-center gap-4">
+                <h3 className="text-[10px]  font-bold uppercase tracking-[0.4em] text-[#3b82f6] flex items-center gap-4">
                   <span className="w-12 h-px bg-gradient-to-r from-[#3b82f6] to-transparent" />
                   <ImageIcon size={14} />
                   <span>Photo du Lieu</span>
@@ -585,7 +585,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                           )}
                         </div>
                         <div className="absolute bottom-6 left-6 flex items-center gap-3">
-                          <div className="px-3 py-1.5 bg-black/60 backdrop-blur-xl rounded-lg border border-white/10 text-[9px] font-['JetBrains_Mono'] text-zinc-400 uppercase tracking-wider">
+                          <div className="px-3 py-1.5 bg-black/60 backdrop-blur-xl rounded-lg border border-white/10 text-[9px]  text-zinc-400 uppercase tracking-wider">
                             Site Visualization
                           </div>
                         </div>
@@ -596,7 +596,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                           <div className="absolute inset-4 rounded-full border border-white/[0.05]" />
                           <ImageIcon size={48} className="opacity-20" />
                         </div>
-                        <span className="font-['Space_Grotesk'] font-bold uppercase tracking-[0.5em] opacity-30 text-[10px]">Awaiting Site Visualization</span>
+                        <span className=" font-bold uppercase tracking-[0.5em] opacity-30 text-[10px]">Awaiting Site Visualization</span>
                       </div>
                     )}
                   </div>
@@ -607,13 +607,13 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
 
           <section className="space-y-8">
             <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-['Space_Grotesk'] font-bold uppercase tracking-[0.4em] text-[#3b82f6] flex items-center gap-4">
+              <h3 className="text-[10px]  font-bold uppercase tracking-[0.4em] text-[#3b82f6] flex items-center gap-4">
                 <span className="w-12 h-px bg-gradient-to-r from-[#3b82f6] to-transparent" />
                 <Box size={14} />
                 <span>{profile === 'supplier' ? 'Dossier Technique Produit' : 'Configuration Matérielle'}</span>
               </h3>
               {isEditMode && (
-                <button onClick={addProduct} className="px-5 py-3 bg-[#3b82f6]/10 border border-[#3b82f6]/30 rounded-xl text-[9px] font-['Space_Grotesk'] font-bold uppercase tracking-[0.2em] text-[#3b82f6] flex items-center gap-3 hover:bg-[#3b82f6] hover:text-white hover:border-[#3b82f6] transition-all duration-300 active:scale-95 shadow-lg">
+                <button onClick={addProduct} className="px-5 py-3 bg-[#3b82f6]/10 border border-[#3b82f6]/30 rounded-xl text-[9px]  font-bold uppercase tracking-[0.2em] text-[#3b82f6] flex items-center gap-3 hover:bg-[#3b82f6] hover:text-white hover:border-[#3b82f6] transition-all duration-300 active:scale-95 shadow-lg">
                   <Plus size={14} /> Ajouter Unité
                 </button>
               )}
@@ -639,7 +639,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-4 mb-4">
                           <div className="w-16 h-px bg-gradient-to-r from-[#3b82f6] to-transparent" />
-                          <span className="text-[9px] text-[#3b82f6] font-['JetBrains_Mono'] font-bold uppercase tracking-[0.5em] block">Module Hardware Specification</span>
+                          <span className="text-[9px] text-[#3b82f6]  font-bold uppercase tracking-[0.5em] block">Module Hardware Specification</span>
                         </div>
                         {isEditMode ? (
                           <input 
@@ -648,10 +648,10 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                               const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, name: e.target.value } : prod);
                               setEstimation({ ...estimation, products: newProducts });
                             }}
-                            className="w-full bg-black/50 border border-[#f59e0b]/30 rounded-2xl px-8 py-5 focus:border-[#f59e0b]/60 outline-none text-3xl font-['Space_Grotesk'] font-black text-white uppercase tracking-tight shadow-inner"
+                            className="w-full bg-black/50 border border-[#f59e0b]/30 rounded-2xl px-8 py-5 focus:border-[#f59e0b]/60 outline-none text-3xl  font-black text-white uppercase tracking-tight shadow-inner"
                           />
                         ) : (
-                          <div className="text-4xl font-['Space_Grotesk'] font-black text-white uppercase tracking-tighter leading-none">{p.name}</div>
+                          <div className="text-4xl  font-black text-white uppercase tracking-tighter leading-none">{p.name}</div>
                         )}
                       </div>
                       {isEditMode && (
@@ -695,18 +695,18 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
 
                     <div className="mt-14 pt-10 border-t border-white/[0.05] flex items-end justify-between">
                       <div className="space-y-3">
-                        <span className="text-[9px] text-zinc-700 font-['JetBrains_Mono'] font-bold uppercase tracking-[0.2em] block">Technical Tracking ID</span>
-                        <span className="text-xs font-['JetBrains_Mono'] text-zinc-500 bg-white/[0.03] px-4 py-2 rounded-lg border border-white/[0.05]">0x{p.id.slice(0,8).toUpperCase()}</span>
+                        <span className="text-[9px] text-zinc-700  font-bold uppercase tracking-[0.2em] block">Technical Tracking ID</span>
+                        <span className="text-xs  text-zinc-500 bg-white/[0.03] px-4 py-2 rounded-lg border border-white/[0.05]">0x{p.id.slice(0,8).toUpperCase()}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-[9px] text-zinc-600 font-['JetBrains_Mono'] font-bold uppercase tracking-[0.2em] block mb-3">Calculated Subtotal (HT)</span>
+                        <span className="text-[9px] text-zinc-600  font-bold uppercase tracking-[0.2em] block mb-3">Calculated Subtotal (HT)</span>
                         <div className="flex items-center gap-6 justify-end">
                           {p.discount > 0 && (
-                            <span className="text-lg text-red-500/30 line-through font-['JetBrains_Mono']">
+                            <span className="text-lg text-red-500/30 line-through ">
                               {formatCurrency(p.quantity * p.unitPrice)}
                             </span>
                           )}
-                          <span className="text-5xl font-['Space_Grotesk'] font-black text-white tracking-tighter">
+                          <span className="text-5xl  font-black text-white tracking-tighter">
                             {formatCurrency((p.quantity * p.unitPrice) * (1 - (p.discount || 0) / 100))}
                           </span>
                         </div>
@@ -738,7 +738,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                 exit={{ opacity: 0, y: 30 }}
                 className="space-y-6"
               >
-                <h3 className="text-[10px] font-['Space_Grotesk'] font-bold uppercase tracking-[0.4em] text-[#3b82f6] flex items-center gap-4">
+                <h3 className="text-[10px]  font-bold uppercase tracking-[0.4em] text-[#3b82f6] flex items-center gap-4">
                   <span className="w-12 h-px bg-gradient-to-r from-[#3b82f6] to-transparent" />
                   <Truck size={14} />
                   <span>Logistique & Services</span>
@@ -753,11 +753,11 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                           <Truck size={26} />
                         </div>
                         <div>
-                          <div className="text-[10px] font-['Space_Grotesk'] font-bold uppercase tracking-widest text-white mb-1">Logistique Livraison</div>
-                          <div className="text-[10px] text-zinc-600 font-['JetBrains_Mono']">CITY_CORE: <span className="text-white uppercase">{estimation.deliveryCity || 'NOT_FOUND'}</span></div>
+                          <div className="text-[10px]  font-bold uppercase tracking-widest text-white mb-1">Logistique Livraison</div>
+                          <div className="text-[10px] text-zinc-600 ">CITY_CORE: <span className="text-white uppercase">{estimation.deliveryCity || 'NOT_FOUND'}</span></div>
                         </div>
                       </div>
-                      <span className="text-3xl font-['Space_Grotesk'] font-black text-[#3b82f6]">{formatCurrency(calculations.deliveryTotal)}</span>
+                      <span className="text-3xl  font-black text-[#3b82f6]">{formatCurrency(calculations.deliveryTotal)}</span>
                     </div>
                     {isEditMode && (
                       <div className="grid grid-cols-2 gap-5 pt-6 border-t border-white/[0.05]">
@@ -788,11 +788,11 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                           <Wrench size={26} />
                         </div>
                         <div>
-                          <div className="text-[10px] font-['Space_Grotesk'] font-bold uppercase tracking-widest text-white mb-1">Installation Tech</div>
-                          <div className="text-[10px] text-zinc-600 font-['JetBrains_Mono']">OPERATIONAL_LABOR</div>
+                          <div className="text-[10px]  font-bold uppercase tracking-widest text-white mb-1">Installation Tech</div>
+                          <div className="text-[10px] text-zinc-600 ">OPERATIONAL_LABOR</div>
                         </div>
                       </div>
-                      <span className="text-3xl font-['Space_Grotesk'] font-black text-[#10b981]">{formatCurrency(calculations.laborTotal)}</span>
+                      <span className="text-3xl  font-black text-[#10b981]">{formatCurrency(calculations.laborTotal)}</span>
                     </div>
                     {isEditMode && (
                       <div className="grid grid-cols-2 gap-5 pt-6 border-t border-white/[0.05]">
@@ -865,12 +865,12 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                         <div className="space-y-8 relative">
                           <div className="flex justify-between items-end border-b border-white/[0.05] pb-8">
                             <div className="flex flex-col gap-2">
-                              <span className="text-[9px] text-zinc-700 uppercase font-['JetBrains_Mono'] font-bold tracking-[0.3em]">Sous-total Net HT</span>
-                              <span className="text-4xl font-['Space_Grotesk'] font-black text-white tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
+                              <span className="text-[9px] text-zinc-700 uppercase  font-bold tracking-[0.3em]">Sous-total Net HT</span>
+                              <span className="text-4xl  font-black text-white tracking-tighter">{formatCurrency(calculations.subtotalHT)}</span>
                             </div>
                             <div className="text-right flex flex-col items-end gap-2">
-                              <span className="text-[9px] text-zinc-700 uppercase font-['JetBrains_Mono'] font-bold tracking-[0.3em]">Hardware Tax (TVA)</span>
-                              <span className="font-['JetBrains_Mono'] text-2xl text-[#3b82f6] font-black">+{formatCurrency(calculations.tva)}</span>
+                              <span className="text-[9px] text-zinc-700 uppercase  font-bold tracking-[0.3em]">Hardware Tax (TVA)</span>
+                              <span className=" text-2xl text-[#3b82f6] font-black">+{formatCurrency(calculations.tva)}</span>
                             </div>
                           </div>
                           
@@ -896,17 +896,17 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                       <div className="text-right flex flex-col justify-end min-w-[350px] relative">
                         <div className="absolute -top-12 right-0 w-64 h-64 bg-[#6dff1d]/10 rounded-full blur-[100px] pointer-events-none" />
                         
-                        <div className="text-[#24c7ff] text-[11px] font-['Space_Grotesk'] font-bold uppercase mb-6 tracking-[0.8em] pr-4 relative">
+                        <div className="text-[#24c7ff] text-[11px]  font-bold uppercase mb-6 tracking-[0.8em] pr-4 relative">
                           <span className="absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#24c7ff] rounded-full shadow-[0_0_10px_#24c7ff]" />
                           À PAYER (TTC)
                         </div>
                         
-                        <div className="text-7xl font-['Space_Grotesk'] font-black tracking-tighter text-[#6dff1d] relative" style={{ textShadow: '0 0 40px rgba(109, 255, 29, 0.5), 0 0 80px rgba(109, 255, 29, 0.3), 0 0 120px rgba(109, 255, 29, 0.1)' }}>
+                        <div className="text-7xl  font-black tracking-tighter text-[#6dff1d] relative" style={{ textShadow: '0 0 40px rgba(109, 255, 29, 0.5), 0 0 80px rgba(109, 255, 29, 0.3), 0 0 120px rgba(109, 255, 29, 0.1)' }}>
                           {formatCurrency(calculations.finalTotal)}
                         </div>
                         
                         {estimation.globalDiscount > 0 && (
-                          <div className="text-[10px] text-[#6dff1d] font-['JetBrains_Mono'] font-bold mt-8 uppercase tracking-[0.3em] bg-[#6dff1d]/10 border border-[#6dff1d]/20 px-6 py-3 rounded-full w-fit ml-auto shadow-[0_0_30px_rgba(109,255,29,0.15)] relative">
+                          <div className="text-[10px] text-[#6dff1d]  font-bold mt-8 uppercase tracking-[0.3em] bg-[#6dff1d]/10 border border-[#6dff1d]/20 px-6 py-3 rounded-full w-fit ml-auto shadow-[0_0_30px_rgba(109,255,29,0.15)] relative">
                             SAVINGS: {formatCurrency(calculations.totalTTC - calculations.finalTotal)}
                           </div>
                         )}
@@ -956,8 +956,8 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                     <HistoryIcon size={20} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-['Space_Grotesk'] font-black uppercase tracking-tighter">Historique</h2>
-                    <div className="text-[10px] text-zinc-600 uppercase font-['JetBrains_Mono'] font-bold tracking-widest mt-0.5">{estimation.id}</div>
+                    <h2 className="text-xl  font-black uppercase tracking-tighter">Historique</h2>
+                    <div className="text-[10px] text-zinc-600 uppercase  font-bold tracking-widest mt-0.5">{estimation.id}</div>
                   </div>
                 </div>
                 <button onClick={() => setIsHistoryPanelOpen(false)} className="w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-xl transition-all text-zinc-500"><X size={20} /></button>
@@ -966,7 +966,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                 {estimation.history.map((entry) => (
                   <div key={entry.id} className="relative pl-10 border-l border-[#3b82f6]/20 pb-8 last:pb-0">
                     <div className="absolute left-[-5px] top-0 w-3 h-3 rounded-full bg-[#3b82f6] shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
-                    <div className="flex justify-between items-start mb-2 text-[9px] font-['JetBrains_Mono'] text-zinc-600">
+                    <div className="flex justify-between items-start mb-2 text-[9px]  text-zinc-600">
                       <span>{entry.timestamp}</span>
                       <span className="px-3 py-1 rounded-lg bg-white/[0.03] border border-white/[0.05] uppercase font-bold">{entry.user}</span>
                     </div>
@@ -984,15 +984,15 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
           <div className="fixed inset-0 bg-black/95 z-[900] flex items-center justify-center p-8">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-2xl bg-[#18181b] border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl flex flex-col">
               <div className="p-8 border-b border-white/[0.05] flex items-center justify-between bg-gradient-to-r from-[#3b82f6]/10 to-transparent">
-                <h2 className="text-xl font-['Space_Grotesk'] font-bold flex items-center gap-3"><Sparkles className="text-[#3b82f6]" /> {aiResult.title}</h2>
+                <h2 className="text-xl  font-bold flex items-center gap-3"><Sparkles className="text-[#3b82f6]" /> {aiResult.title}</h2>
                 <button onClick={() => setAiResult(null)} className="w-10 h-10 flex items-center justify-center hover:bg-white/5 rounded-xl transition-all"><X size={20} /></button>
               </div>
-              <div className="p-8 overflow-y-auto text-sm text-zinc-300 leading-relaxed font-['JetBrains_Mono'] bg-black/30 m-6 rounded-2xl border border-white/[0.05]">
+              <div className="p-8 overflow-y-auto text-sm text-zinc-300 leading-relaxed  bg-black/30 m-6 rounded-2xl border border-white/[0.05]">
                 {aiResult.content}
               </div>
               <div className="p-6 border-t border-white/[0.05] flex justify-end gap-4">
-                <button onClick={() => { navigator.clipboard.writeText(aiResult.content); addHistory('Copie résultat IA'); }} className="px-6 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs font-['Space_Grotesk'] font-bold uppercase transition-all hover:bg-white/[0.06]">Copier</button>
-                <button onClick={() => setAiResult(null)} className="px-6 py-3 bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white rounded-xl text-xs font-['Space_Grotesk'] font-bold uppercase shadow-[0_0_20px_rgba(59,130,246,0.3)]">Fermer</button>
+                <button onClick={() => { navigator.clipboard.writeText(aiResult.content); addHistory('Copie résultat IA'); }} className="px-6 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-xs  font-bold uppercase transition-all hover:bg-white/[0.06]">Copier</button>
+                <button onClick={() => setAiResult(null)} className="px-6 py-3 bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white rounded-xl text-xs  font-bold uppercase shadow-[0_0_20px_rgba(59,130,246,0.3)]">Fermer</button>
               </div>
             </motion.div>
           </div>
@@ -1014,7 +1014,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
 function NumericControl({ value, onChange, label, unit = "", isEditMode = false }: { value: number, onChange: (val: number) => void, label: string, unit?: string, isEditMode?: boolean }) {
   return (
     <div className="space-y-3 flex-1 min-w-0">
-      <span className="text-[9px] text-zinc-600 uppercase font-['JetBrains_Mono'] font-bold tracking-[0.25em] pl-2">{label}</span>
+      <span className="text-[9px] text-zinc-600 uppercase  font-bold tracking-[0.25em] pl-2">{label}</span>
       <div className={`flex items-center rounded-2xl p-1.5 transition-all duration-300 ${
         isEditMode 
           ? 'bg-black/60 border border-[#f59e0b]/20 shadow-[inset_0_0_20px_rgba(245,158,11,0.05)]' 
@@ -1035,9 +1035,9 @@ function NumericControl({ value, onChange, label, unit = "", isEditMode = false 
             type="number"
             value={value}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="bg-transparent border-none p-0 focus:ring-0 text-center font-['Space_Grotesk'] font-black text-2xl w-full text-white"
+            className="bg-transparent border-none p-0 focus:ring-0 text-center  font-black text-2xl w-full text-white"
           />
-          {unit && <span className={`text-sm font-['JetBrains_Mono'] font-bold ${isEditMode ? 'text-[#f59e0b]' : 'text-[#3b82f6]'}`}>{unit}</span>}
+          {unit && <span className={`text-sm  font-bold ${isEditMode ? 'text-[#f59e0b]' : 'text-[#3b82f6]'}`}>{unit}</span>}
         </div>
         <button 
           onClick={() => onChange(value + 1)}
@@ -1065,8 +1065,8 @@ function TechSpecCard({ icon, label, value, color = "#3b82f6" }: { icon: React.R
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-[9px] text-zinc-700 uppercase font-['JetBrains_Mono'] font-bold tracking-[0.2em] mb-1">{label}</div>
-        <div className="text-sm font-['JetBrains_Mono'] font-bold text-white/90 truncate">{value}</div>
+        <div className="text-[9px] text-zinc-700 uppercase  font-bold tracking-[0.2em] mb-1">{label}</div>
+        <div className="text-sm  font-bold text-white/90 truncate">{value}</div>
       </div>
     </div>
   );

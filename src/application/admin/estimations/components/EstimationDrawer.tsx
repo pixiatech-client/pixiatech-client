@@ -244,15 +244,15 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
                 <ChevronLeft size={20} />
               </button>
               <div>
-                <h2 className="text-xl font-['Space_Grotesk'] font-black text-white uppercase tracking-tight">
+                <h2 className="text-xl  font-black text-white uppercase tracking-tight">
                   Modifier Estimation
                 </h2>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[#3b82f6] font-['JetBrains_Mono'] text-xs font-bold uppercase tracking-wider">
+                  <span className="text-[#3b82f6]  text-xs font-bold uppercase tracking-wider">
                     {localData?.id || 'N/A'}
                   </span>
                   <span className="w-1 h-1 rounded-full bg-white/20" />
-                  <span className="text-[10px] font-['JetBrains_Mono'] text-zinc-500 uppercase tracking-widest">
+                  <span className="text-[10px]  text-zinc-500 uppercase tracking-widest">
                     STATUS: {localData?.status || 'En attente'}
                   </span>
                 </div>
@@ -358,7 +358,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
           <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
             {/* SECTION: INFOS CLIENT */}
             <section className="space-y-4">
-              <h3 className="text-xs font-['Space_Grotesk'] font-bold uppercase tracking-[0.3em] text-[#3b82f6] flex items-center gap-3">
+              <h3 className="text-xs  font-bold uppercase tracking-[0.3em] text-[#3b82f6] flex items-center gap-3">
                 <User size={14} />
                 <span className="w-8 h-px bg-gradient-to-r from-[#3b82f6] to-transparent" />
                 Informations Client
@@ -369,7 +369,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
               >
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest pl-1">
+                    <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-widest pl-1">
                       Contact
                     </label>
                     <input
@@ -385,7 +385,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest pl-1">
+                    <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-widest pl-1">
                       Entreprise
                     </label>
                     <input
@@ -401,7 +401,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest pl-1">
+                    <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-widest pl-1">
                       Email
                     </label>
                     <input
@@ -413,11 +413,11 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
                           client: { ...localData!.client, email: e.target.value },
                         })
                       }
-                      className="w-full py-3 bg-black/40 border border-[#27272a] rounded-xl px-4 text-sm font-bold text-white font-['JetBrains_Mono'] focus:border-[#3b82f6]/50 focus:outline-none transition-all"
+                      className="w-full py-3 bg-black/40 border border-[#27272a] rounded-xl px-4 text-sm font-bold text-white  focus:border-[#3b82f6]/50 focus:outline-none transition-all"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest pl-1">
+                    <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-widest pl-1">
                       Téléphone
                     </label>
                     <input
@@ -429,7 +429,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
                           client: { ...localData!.client, phone: e.target.value },
                         })
                       }
-                      className="w-full py-3 bg-black/40 border border-[#27272a] rounded-xl px-4 text-sm font-bold text-white font-['JetBrains_Mono'] focus:border-[#3b82f6]/50 focus:outline-none transition-all"
+                      className="w-full py-3 bg-black/40 border border-[#27272a] rounded-xl px-4 text-sm font-bold text-white  focus:border-[#3b82f6]/50 focus:outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -438,7 +438,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
 
             {/* SECTION: CONFIGURATION MATÉRIEL */}
             <section className="space-y-4">
-              <h3 className="text-xs font-['Space_Grotesk'] font-bold uppercase tracking-[0.3em] text-[#3b82f6] flex items-center gap-3">
+              <h3 className="text-xs  font-bold uppercase tracking-[0.3em] text-[#3b82f6] flex items-center gap-3">
                 <Package size={14} />
                 <span className="w-8 h-px bg-gradient-to-r from-[#3b82f6] to-transparent" />
                 Configuration Matériel
@@ -455,7 +455,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
                         type="text"
                         value={product.name}
                         onChange={(e) => updateProduct(product.id, 'name', e.target.value)}
-                        className="text-2xl font-['Space_Grotesk'] font-black text-white uppercase bg-transparent border-none focus:outline-none w-full"
+                        className="text-2xl  font-black text-white uppercase bg-transparent border-none focus:outline-none w-full"
                       />
                     </div>
 
@@ -480,14 +480,14 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
                     </div>
 
                     <div className="pt-4 border-t border-[#27272a] flex justify-between items-center">
-                      <span className="text-xs font-['JetBrains_Mono'] text-zinc-500">
+                      <span className="text-xs  text-zinc-500">
                         0x{product.id.slice(0, 8).toUpperCase()}
                       </span>
                       <div className="text-right">
                         <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider mr-3">
                           Total HT
                         </span>
-                        <span className="text-2xl font-['Space_Grotesk'] font-black text-white">
+                        <span className="text-2xl  font-black text-white">
                           {formatCurrency(
                             product.quantity * product.unitPrice * (1 - product.discount / 100)
                           )}
@@ -501,7 +501,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
 
             {/* SECTION: DOSSIER TECHNIQUE */}
             <section className="space-y-4">
-              <h3 className="text-xs font-['Space_Grotesk'] font-bold uppercase tracking-[0.3em] text-[#3b82f6] flex items-center gap-3">
+              <h3 className="text-xs  font-bold uppercase tracking-[0.3em] text-[#3b82f6] flex items-center gap-3">
                 <Settings size={14} />
                 <span className="w-8 h-px bg-gradient-to-r from-[#3b82f6] to-transparent" />
                 Dossier Technique
@@ -536,7 +536,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
 
             {/* SECTION: SUIVI DES PAIEMENTS */}
             <section className="space-y-4">
-              <h3 className="text-xs font-['Space_Grotesk'] font-bold uppercase tracking-[0.3em] text-[#3b82f6] flex items-center gap-3">
+              <h3 className="text-xs  font-bold uppercase tracking-[0.3em] text-[#3b82f6] flex items-center gap-3">
                 <CreditCard size={14} />
                 <span className="w-8 h-px bg-gradient-to-r from-[#3b82f6] to-transparent" />
                 Suivi des Paiements
@@ -552,7 +552,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
                       <div className="text-xs text-zinc-500">{step.date || 'En attente'}</div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="font-['Space_Grotesk'] font-bold text-white">
+                      <span className=" font-bold text-white">
                         {formatCurrency(step.amount)}
                       </span>
                       <button
@@ -598,7 +598,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
                     <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider">
                       Sous-total HT
                     </span>
-                    <span className="text-xl font-['Space_Grotesk'] font-black text-white">
+                    <span className="text-xl  font-black text-white">
                       {formatCurrency(calculations?.subtotalHT || 0)}
                     </span>
                   </div>
@@ -606,7 +606,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
                     <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider">
                       TVA ({localData?.taxRate || 20}%)
                     </span>
-                    <span className="text-lg font-['Space_Grotesk'] font-bold text-[#3b82f6]">
+                    <span className="text-lg  font-bold text-[#3b82f6]">
                       +{formatCurrency(calculations?.tva || 0)}
                     </span>
                   </div>
@@ -637,7 +637,7 @@ export default function EstimationDrawer({ isOpen, data, onClose }: EstimationDr
                   À PAYER (TTC)
                 </div>
                 <div
-                  className="text-5xl font-['Space_Grotesk'] font-black tracking-tighter"
+                  className="text-5xl  font-black tracking-tighter"
                   style={{
                     color: COLORS.neonGreen,
                     textShadow: '0 0 30px rgba(109, 255, 29, 0.5)',
@@ -691,7 +691,7 @@ function NumericInput({
             type="number"
             value={value}
             onChange={(e) => onChange(Number(e.target.value))}
-            className="w-16 bg-transparent border-none text-center font-['Space_Grotesk'] font-bold text-lg text-white focus:outline-none"
+            className="w-16 bg-transparent border-none text-center  font-bold text-lg text-white focus:outline-none"
           />
           {unit && (
             <span className="text-xs font-bold text-[#3b82f6]">{unit}</span>
@@ -730,7 +730,7 @@ function TechSpecCard({
       <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1">
         {label}
       </div>
-      <div className="font-['JetBrains_Mono'] font-bold text-white text-sm">
+      <div className=" font-bold text-white text-sm">
         {value}
       </div>
     </div>

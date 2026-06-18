@@ -193,7 +193,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
               {/* SECTION: CLIENT */}
               {activeTab === 'client' && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="grid grid-cols-2 gap-6 text-['Space_Grotesk']">
+                  <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">{t('estimation.drawer.companyName')}</label>
                       <input 
@@ -269,13 +269,13 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                         <div className="grid grid-cols-4 gap-4">
                            <div className="space-y-1">
                             <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{t('estimation.drawer.width')}</span>
-                            <div className="bg-black/20 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white border border-white/5 flex items-center justify-between">
+                            <div className="bg-black/20 rounded-xl px-3 py-2 text-xs  text-white border border-white/5 flex items-center justify-between">
                               {product.width}m
                             </div>
                           </div>
                           <div className="space-y-1">
                             <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{t('estimation.drawer.height')}</span>
-                            <div className="bg-black/20 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white border border-white/5 flex items-center justify-between">
+                            <div className="bg-black/20 rounded-xl px-3 py-2 text-xs  text-white border border-white/5 flex items-center justify-between">
                               {product.height}m
                             </div>
                           </div>
@@ -283,15 +283,15 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                             <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{t('estimation.drawer.quantity')}</span>
                              <input 
                                type="number"
-                               className="w-full bg-black/40 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white border border-white/10 focus:border-blue-500 focus:outline-none"
+                               className="w-full bg-black/40 rounded-xl px-3 py-2 text-xs  text-white border border-white/10 focus:border-blue-500 focus:outline-none"
                                value={product.quantity}
                                onChange={(e) => handleUpdateProduct(idx, 'quantity', parseInt(e.target.value))}
                              />
                            </div>
                            <div className="space-y-1">
                              <span className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{t('estimation.drawer.priceExclTax')}</span>
-                             <div className="bg-black/20 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-[#10b981] font-bold border border-[#10b981]/10">
-                               {product.lineTotal.toLocaleString('fr-FR')} €
+                             <div className="bg-black/20 rounded-xl px-3 py-2 text-xs  text-[#10b981] font-bold border border-[#10b981]/10">
+                               {product.lineTotal.toLocaleString('fr-FR')} â‚¬
                              </div>
                            </div>
                         </div>
@@ -309,7 +309,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                           <span className="text-[10px] font-bold text-white uppercase tracking-widest">{t('estimation.drawer.installation')}</span>
                        </div>
                        <input 
-                         className="w-24 bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white text-right focus:outline-none"
+                         className="w-24 bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-xs  text-white text-right focus:outline-none"
                          value={localData?.installationCost}
                          onChange={(e) => handleUpdateField('installationCost', parseFloat(e.target.value))}
                        />
@@ -322,7 +322,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                           <span className="text-[10px] font-bold text-white uppercase tracking-widest">{t('estimation.drawer.delivery')}</span>
                        </div>
                        <input 
-                         className="w-24 bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-xs font-['Space_Grotesk'] text-white text-right focus:outline-none"
+                         className="w-24 bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-xs  text-white text-right focus:outline-none"
                          value={localData?.deliveryCost}
                          onChange={(e) => handleUpdateField('deliveryCost', parseFloat(e.target.value))}
                        />
@@ -367,7 +367,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                   <div className="grid grid-cols-3 gap-4">
                      <div className="bg-[#18181b] border border-white/5 rounded-3xl p-5 space-y-2">
                          <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em]">{t('estimation.drawer.deposit')}</span>
-                         <p className="text-base font-['Space_Grotesk'] font-bold text-white">{(totals.total * 0.3).toLocaleString('fr-FR')} €</p>
+                         <p className="text-base  font-bold text-white">{(totals.total * 0.3).toLocaleString('fr-FR')} â‚¬</p>
                          <div className="flex items-center gap-1.5 text-emerald-500">
                             <CheckCircle2 size={12} />
                              <span className="text-[8px] font-black uppercase tracking-widest">{t('estimation.drawer.paid')}</span>
@@ -375,7 +375,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                       </div>
                       <div className="bg-[#18181b] border border-white/5 rounded-3xl p-5 space-y-2">
                           <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-[0.2em]">{t('estimation.drawer.pending')}</span>
-                         <p className="text-base font-['Space_Grotesk'] font-bold text-white">{(totals.total * 0.4).toLocaleString('fr-FR')} €</p>
+                         <p className="text-base  font-bold text-white">{(totals.total * 0.4).toLocaleString('fr-FR')} â‚¬</p>
                          <div className="flex items-center gap-1.5 text-zinc-600">
                             <Clock size={12} />
                             <span className="text-[8px] font-black uppercase tracking-widest">{t('estimation.drawer.waiting')}</span>
@@ -383,7 +383,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                       </div>
                       <div className="bg-[#18181b] border border-white/5 rounded-3xl p-5 space-y-2 border-emerald-500/20 bg-emerald-500/5">
                          <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-[0.2em]">{t('estimation.drawer.balance')}</span>
-                         <p className="text-base font-['Space_Grotesk'] font-bold text-white">{(totals.total * 0.3).toLocaleString('fr-FR')} €</p>
+                         <p className="text-base  font-bold text-white">{(totals.total * 0.3).toLocaleString('fr-FR')} â‚¬</p>
                          <div className="flex items-center gap-1.5 text-emerald-400">
                             <CheckCircle2 size={12} />
                              <span className="text-[8px] font-black uppercase tracking-widest">{t('estimation.drawer.generated')}</span>
@@ -405,11 +405,11 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                                </div>
                                <div>
                                   <p className="text-xs font-bold text-white">{t('estimation.drawer.sepaTransfer')} #TRX-9482{i}</p>
-                                 <p className="text-[9px] text-zinc-500 font-['JetBrains_Mono'] mt-0.5">20/04/2026 • 14:32</p>
+                                 <p className="text-[9px] text-zinc-500  mt-0.5">20/04/2026 â€¢ 14:32</p>
                                </div>
                              </div>
                              <div className="text-right">
-                               <p className="text-xs font-bold text-[#10b981] font-['Space_Grotesk']">+ 3 450,00 €</p>
+                               <p className="text-xs font-bold text-[#10b981] ">+ 3 450,00 â‚¬</p>
                                  <span className="text-[8px] font-black uppercase tracking-widest text-[#10b981]/60">{t('estimation.drawer.approved')}</span>
                              </div>
                           </div>
@@ -432,8 +432,8 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
                         <div className="w-1.5 h-1.5 bg-[#10b981] rounded-full animate-pulse" />
                          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em]">{t('estimation.drawer.toPay')}</span>
                      </div>
-                     <div className="text-4xl font-['Space_Grotesk'] font-black text-white tracking-tighter">
-                        {totals.total.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} <span className="text-lg text-zinc-600 ml-1">€</span>
+                     <div className="text-4xl  font-black text-white tracking-tighter">
+                        {totals.total.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} <span className="text-lg text-zinc-600 ml-1">â‚¬</span>
                      </div>
                   </div>
                   

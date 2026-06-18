@@ -72,10 +72,10 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
                   <Truck size={24} className="text-[#10b981]" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-['Space_Grotesk'] font-bold text-white uppercase">
+                  <h2 className="text-xl  font-bold text-white uppercase">
                     Send to Supplier
                   </h2>
-                  <p className="text-[10px] text-zinc-500 font-['JetBrains_Mono']">Select a supplier</p>
+                  <p className="text-[10px] text-zinc-500 ">Select a supplier</p>
                 </div>
               </div>
               <button
@@ -132,14 +132,14 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
               )}
 
               <div className="space-y-2">
-                <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-wider">
+                <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-wider">
                   Notes for the supplier (optional)
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Instructions techniques..."
-                  className="w-full h-28 p-4 bg-black/50 border border-[#27272a] rounded-2xl text-sm text-white font-['JetBrains_Mono'] placeholder:text-zinc-600 focus:border-[#3b82f6]/50 focus:outline-none resize-none"
+                  className="w-full h-28 p-4 bg-black/50 border border-[#27272a] rounded-2xl text-sm text-white  placeholder:text-zinc-600 focus:border-[#3b82f6]/50 focus:outline-none resize-none"
                 />
               </div>
             </div>

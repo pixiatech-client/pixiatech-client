@@ -1,5 +1,3 @@
-export type ProfileType = 'client' | 'supplier';
-
 export interface ClientInfo {
   name: string;
   email: string;

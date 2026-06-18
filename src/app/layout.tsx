@@ -1,7 +1,14 @@
 
 import type { Metadata } from 'next';
+import { Poppins } from 'next/font/google';
 import './globals.css';
 import { LayoutProvider } from '@/components/layout-provider';
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  variable: '--font-poppins',
+});
 
 export const metadata: Metadata = {
   title: 'PixiaTech | Estimation',
@@ -23,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
-      <body className="font-body antialiased min-h-[100dvh] bg-white" suppressHydrationWarning>
+      <body className={`${poppins.variable} font-body antialiased min-h-[100dvh] bg-white`} suppressHydrationWarning>
         <div className="flare cyan" aria-hidden="true" />
         <div className="flare magenta" aria-hidden="true" />
         <div className="directional-flare" aria-hidden="true" suppressHydrationWarning />

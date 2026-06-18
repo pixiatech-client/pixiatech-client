@@ -43,8 +43,9 @@ import {
   Building2,
   StickyNote,
   MessageCircle,
-  SendHorizontal,
+
   Share2,
+  SendHorizontal,
   Download,
   FileSpreadsheet,
   Printer,
@@ -81,7 +82,7 @@ import { updateQuoteStatus, getPdfSettings, updateQuotePdfUrl } from '@/app/admi
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import {
-  ProfileType,
+
   Estimation,
   Product as LocalProduct,
   HistoryEntry,
@@ -131,7 +132,6 @@ interface DetailsAppProps {
 
 export default function DetailsApp({ initialEstimation, allProducts = [], allProductSpecs = {}, startOpen = false, autoEditMode = false, onClose, suppliers = [], onStatusChange, onSave }: DetailsAppProps) {
   const { userProfile } = useUser();
-  const [profile, setProfile] = useState<ProfileType>('client');
 
   const firestore = useFirestore();
   const charsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'characteristics'), orderBy('name')) : null, [firestore]);
@@ -139,21 +139,21 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
   const getIconComponent = (iconName: string) => {
     switch (iconName) {
-      case 'écran':
+      case 'Ã©cran':
         return Monitor;
       case 'distance':
         return Eye;
       case 'puissance':
         return Zap;
-      case 'luminosité':
+      case 'luminositÃ©':
         return Sun;
       case 'pixel':
         return LayoutGrid;
-      case 'résolution':
+      case 'rÃ©solution':
         return Maximize2;
-      case 'paramètres':
+      case 'paramÃ¨tres':
         return Settings;
-      case 'activité':
+      case 'activitÃ©':
         return Activity;
       case 'processeur':
         return Cpu;
@@ -161,20 +161,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         return Layers;
       case 'mobile':
         return Smartphone;
-      case 'télévision':
+      case 'tÃ©lÃ©vision':
         return Tv;
       default:
         return Settings;
     }
   };
 
-  // Auto-switch to supplier profile if the user is a supplier
-  useEffect(() => {
-    if (userProfile?.role === 'supplier') {
-      setProfile('supplier');
-      setIsEditMode(false);
-    }
-  }, [userProfile]);
+
   const [estimation, setEstimation] = useState<Estimation>(FALLBACK_ESTIMATION);
   const [isDrawerOpen, setIsDrawerOpen] = useState(startOpen);
   const [isTransmitModalOpen, setIsTransmitModalOpen] = useState(false);
@@ -273,7 +267,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       window.open(estimation.contractUrl, '_blank');
     } else {
       const toast = document.createElement('div');
-      toast.textContent = 'Le contrat signé n\'est pas encore disponible.';
+      toast.textContent = 'Le contrat signÃ© n\'est pas encore disponible.';
       toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#f59e0b;color:white;padding:14px 28px;border-radius:16px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 8px 32px rgba(245,158,11,0.4)';
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 4000);
@@ -304,7 +298,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       const deliveryCost = initialEstimation.deliveryCost || 0;
       const laborCost = initialEstimation.laborCost || initialEstimation.installationCost || 0;
 
-      // If the displayed total (incl. tax) equals sum of lines + fees, the lines are already tax-inclusive
+      // If the displayed total (incl. tax) equals sum sur lines + fees, the lines are already tax-inclusive
       const isActuallyTTC = dbTotalClient > 0 && Math.abs(dbTotalClient - (sumProductsHT + deliveryCost + laborCost)) < 0.1;
       const divisor = isActuallyTTC ? (1 + taxRate / 100) : 1;
 
@@ -336,7 +330,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
           specs: (allProductSpecs[p.productId] || allProductSpecs[p.id])
             ? Object.fromEntries((allProductSpecs[p.productId] || allProductSpecs[p.id]).map(s => [s.key, s.value]))
             : p.specs || {
-              surface: `${((p.width || 0) * (p.height || 0)).toFixed(2)} m²`,
+              surface: `${((p.width || 0) * (p.height || 0)).toFixed(2)} mÂ²`,
               resolution: `${Math.round((p.width || 0) * 400)} x ${Math.round((p.height || 0) * 400)} px`,
               ledModules: Math.round(((p.width || 0) * (p.height || 0)) * 4),
               avgPower: 'N/A',
@@ -488,7 +482,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ...prev,
       products: prev.products.filter(p => p.id !== id)
     }));
-    addHistory(`Produit supprimé : ${id}`);
+    addHistory(`Produit supprimÃ© : ${id}`);
   };
 
   const addProduct = () => {
@@ -515,17 +509,17 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ...prev,
       products: [...prev.products, newProduct]
     }));
-    addHistory('Nouveau produit ajouté (dimensions héritées)');
+    addHistory('Nouveau produit ajoutÃ© (dimensions hÃ©ritÃ©es)');
   };
 
   const formatCurrency = (val: number) => {
-    if (isNaN(val) || val === undefined || val === null) return "0,00 €";
+    if (isNaN(val) || val === undefined || val === null) return "0,00 â‚¬";
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val);
   };
 
   const handleTranslate = async () => {
     setIsAiLoading(true);
-    addHistory('Traduction chinoise demandée');
+    addHistory('Traduction chinoise demandÃ©e');
     const result = await geminiService.translateToChinese(estimation);
     setAiResult({ title: 'Technical Translation (Chinese)', content: result });
     setIsAiLoading(false);
@@ -533,7 +527,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
   const handleSummary = async () => {
     setIsAiLoading(true);
-    addHistory('Génération du résumé du dossier');
+    addHistory('GÃ©nÃ©ration du rÃ©sumÃ© du dossier');
     const result = await geminiService.generateSummary(estimation);
     setAiResult({ title: 'Case Summary', content: result });
     setIsAiLoading(false);
@@ -557,7 +551,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         steps: [newStep]
       }
     }));
-    addHistory('Échéance de paiement ajoutée');
+    addHistory('Ã‰chÃ©ance de paiement ajoutÃ©e');
   };
 
   const updatePaymentStep = (id: string, field: keyof PaymentStep, value: any) => {
@@ -596,7 +590,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         }
       };
     });
-    addHistory('Échéance de paiement supprimée');
+    addHistory('Ã‰chÃ©ance de paiement supprimÃ©e');
   };
 
   const togglePaymentStatus = (id: string) => {
@@ -618,7 +612,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
         }
       };
     });
-    addHistory('Statut du paiement mis à jour');
+    addHistory('Statut du paiement mis Ã  jour');
   };
 
   const shareTranslatedText = (platform: 'whatsapp' | 'telegram', text: string) => {
@@ -627,40 +621,18 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       ? `https://wa.me/${estimation.client.phone.replace(/\s+/g, '')}?text=${encoded}`
       : `https://t.me/share/url?url=${window.location.href}&text=${encoded}`;
     window.open(url, '_blank');
-    addHistory(`Résultat partagé sur ${platform}`);
+    addHistory(`RÃ©sultat partagÃ© sur ${platform}`);
   };
 
   const shareEstimation = (platform: 'whatsapp' | 'telegram') => {
-    let message = '';
-
-    if (profile === 'client') {
-      message = `Hello ${estimation.client.name}, here is your estimate ${estimation.id} for ${formatCurrency(calculations.totalTTC)}. Ref: ${estimation.id}\n\nDate: ${new Date().toLocaleString('fr-FR')}`;
-    } else {
-      message = `TECHNICAL ORDER - Estimation #${estimation.id}\n`;
-      message += `Date sent: ${new Date().toLocaleString('fr-FR')}\n\n`;
-      message += `Product details:\n`;
-      estimation.products.forEach(p => {
-        message += `- ${p.quantity}x ${p.name}\n`;
-        message += `  Technical specifications:\n`;
-        if (p.specs) {
-          Object.entries(p.specs).forEach(([key, val]) => {
-            if (val) message += `  * ${key}: ${val}\n`;
-          });
-        }
-        message += `\n`;
-      });
-      if (estimation.supplierNotes) {
-        message += `Additional notes: ${estimation.supplierNotes}\n`;
-      }
-    }
-
+    const message = `Hello ${estimation.client.name}, here is your estimate ${estimation.id} for ${formatCurrency(calculations.totalTTC)}. Ref: ${estimation.id}\n\nDate: ${new Date().toLocaleString('fr-FR')}`;
     const encodedMessage = encodeURIComponent(message);
     const url = platform === 'whatsapp'
       ? `https://wa.me/${estimation.client.phone.replace(/\s+/g, '')}?text=${encodedMessage}`
       : `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodedMessage}`;
 
     window.open(url, '_blank');
-    addHistory(`Devis partagé sur ${platform} (${profile})`);
+    addHistory(`Devis partagÃ© sur ${platform}`);
   };
 
   return (
@@ -703,11 +675,11 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   estimation.status === 'archived' ? 'bg-slate-100 border-slate-200 text-slate-400' :
                                     'bg-amber-500/20 border-amber-500/30 text-amber-400'
                           }`}>
-                          {estimation.status === 'returned' ? 'Retourné' :
-                            estimation.status === 'processed' ? 'Traité' :
+                          {estimation.status === 'returned' ? 'RetournÃ©' :
+                            estimation.status === 'processed' ? 'TraitÃ©' :
                               estimation.status === 'in_progress' ? 'Fournisseur' :
                                 estimation.status === 'sent' ? 'Livraison' :
-                                  estimation.status === 'archived' ? 'Archivé' :
+                                  estimation.status === 'archived' ? 'ArchivÃ©' :
                                     estimation.status === 'trashed' ? 'Corbeille' :
                                       estimation.status === 'pending' ? 'En attente' : estimation.status}
                         </div>
@@ -733,21 +705,12 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                 <div className="flex items-center gap-2 md:gap-4 shrink-0">
                   <div className="flex items-center gap-1 md:gap-2">
-                    {profile === 'supplier' && userProfile?.role !== 'supplier' && (
-                      <button
-                        onClick={() => setIsTransmitModalOpen(true)}
-                        className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all text-emerald-500 flex items-center gap-1.5 md:gap-2"
-                      >
-                        <SendHorizontal size={14} /> <span className="hidden sm:inline">Send</span>
-                      </button>
-                    )}
-
                     {userProfile?.role !== 'supplier' && (
                       <button
                         onClick={() => setIsHistoryPanelOpen(true)}
                         className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-slate-100 border border-slate-200 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all text-slate-900 flex items-center gap-1.5 md:gap-2"
                       >
-                        <HistoryIcon size={14} className="text-aura-accent" /> <span className="hidden sm:inline">History</span>
+                        <HistoryIcon size={14} className="text-aura-accent" /> <span className="hidden sm:inline">Historique</span>
                       </button>
                     )}
 
@@ -758,19 +721,19 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             if (!initialEstimation?.id) return;
                             await updateQuoteStatus(initialEstimation.id, { status: 'processed' });
                             setEstimation(prev => ({ ...prev, status: 'processed' }));
-                                  addHistory('Dossier restauré');
+                                  addHistory('Dossier restaurÃ©');
                             if (onStatusChange) onStatusChange('processed');
                           }}
                           className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-blue-500/20 transition-all text-blue-500 flex items-center gap-1.5 md:gap-2"
                         >
-                          <Eraser size={14} /> <span className="hidden sm:inline">Unarchive</span>
+                          <Eraser size={14} /> <span className="hidden sm:inline">Désarchiver</span>
                         </button>
 
                         {estimation.status === 'archived' ? (
                           <button
                             onClick={async () => {
                               if (!initialEstimation?.id) return;
-                              if (confirm('Move this case to the trash?')) {
+                              if (confirm('Déplacer ce dossier vers la corbeille ?')) {
                                 await updateQuoteStatus(initialEstimation.id, { status: 'trashed' });
                                 handleClose();
                                 if (onStatusChange) onStatusChange('trashed');
@@ -778,29 +741,29 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             }}
                             className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-rose-500/20 transition-all text-rose-500 flex items-center gap-1.5 md:gap-2"
                           >
-                            <Trash2 size={14} /> <span className="hidden sm:inline">Trash</span>
+                            <Trash2 size={14} /> <span className="hidden sm:inline">Corbeille</span>
                           </button>
                         ) : (
                           <button
                             onClick={async () => {
                               if (!initialEstimation?.id) return;
-                              if (confirm('Warning: This action is irreversible. Permanently delete this case?')) {
+                              if (confirm('Attention : Cette action est irréversible. Supprimer définitivement ce dossier ?')) {
                                 // Deleting permanent is best done from the dashboard where we have delete access,
                                 // but we can simulate it or alert for safety here.
-                                alert("Veuillez utiliser le tableau de bord principal (onglet Corbeille) pour effectuer une suppression définitive.");
+                                alert("Veuillez utiliser le tableau de bord principal (onglet Corbeille) pour effectuer une suppression dÃ©finitive.");
                                 handleClose();
                               }
                             }}
                             className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-red-600/20 border border-red-500/50 text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-red-600/40 transition-all text-red-500 flex items-center gap-1.5 md:gap-2"
                           >
-                            <Trash2 size={14} /> <span className="hidden sm:inline">Delete Perm.</span>
+                            <Trash2 size={14} /> <span className="hidden sm:inline">Suppr. Déf.</span>
                           </button>
                         )}
                       </div>
                     )}
 
-                    {profile === 'client' && userProfile?.role !== 'supplier' && (
-                      <div className="flex items-center gap-1 md:gap-2 pl-1 md:pl-2 border-l border-slate-200">
+                    {userProfile?.role !== 'supplier' && (
+                      <div className="flex items-center gap-1 md:gap-2 border-l border-slate-200 pl-1 md:pl-2">
                         <button
                           onClick={() => setIsEditMode(!isEditMode)}
                           disabled={estimation.status === 'archived' || estimation.status === 'trashed'}
@@ -812,18 +775,20 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                         <button
                           onClick={handleDownloadPdf}
                           disabled={isPdfLoading}
-                          className="w-9 h-9 md:w-11 md:h-11 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all text-slate-900 flex items-center justify-center disabled:opacity-50"
+                          className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all text-slate-900 flex items-center justify-center disabled:opacity-50"
                         >
                           {isPdfLoading ? <Loader2 size={14} className="animate-spin text-aura-accent" /> : <Download size={14} className="text-aura-accent md:w-4 md:h-4" />}
                         </button>
 
-                        <button
-                          onClick={handleDownloadContract}
-                          className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all text-slate-900 flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] font-bold uppercase tracking-widest"
-                        >
-                          <Download size={14} className="md:w-4 md:h-4" />
-                          <span className="hidden sm:inline">Contrat</span>
-                        </button>
+                        {initialEstimation?.transactionType === 'rental' && (
+                          <button
+                            onClick={handleDownloadContract}
+                            className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all text-slate-900 flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] font-bold uppercase tracking-widest"
+                          >
+                            <Download size={14} className="md:w-4 md:h-4" />
+                            <span className="hidden sm:inline">Contrat</span>
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -849,41 +814,13 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   )}
                 </AnimatePresence>
 
-                <div className="space-y-4 md:space-y-6 w-full">
-                  <div className="flex justify-center w-full">
-                    <div className="flex p-1 bg-slate-100 border border-slate-200 rounded-xl shadow-sm w-full sm:w-auto">
-                      {userProfile?.role !== 'supplier' && (
-                        <button
-                          onClick={() => { setProfile('client'); addHistory('Profil client activé'); }}
-                          className={`flex-1 sm:flex-none px-2 sm:px-8 py-2 md:py-2.5 rounded-lg text-[9px] md:text-xs font-bold uppercase transition-all tracking-widest flex justify-center items-center gap-1.5 md:gap-2 ${profile === 'client' ? 'bg-white text-slate-900 shadow-md border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                          <User size={14} className={profile === 'client' ? "text-aura-accent" : ""} /> <span className="truncate">Client Profile</span>
-                        </button>
-                      )}
-                      <button
-                        onClick={() => { setProfile('supplier'); addHistory('Profil fournisseur activé (Vérification)'); }}
-                        className={`flex-1 sm:flex-none px-2 sm:px-8 py-2 md:py-2.5 rounded-lg text-[9px] md:text-xs font-bold uppercase transition-all tracking-widest flex justify-center items-center gap-1.5 md:gap-2 ${profile === 'supplier' ? 'bg-white text-slate-900 shadow-md border border-slate-200' : 'text-slate-400 hover:text-slate-600'}`}
-                      >
-                        <Truck size={14} className={profile === 'supplier' ? "text-aura-accent" : ""} /> <span className="truncate">Supplier Profile</span>
-                      </button>
-                    </div>
-                  </div>
-
-                </div>
-
-                <AnimatePresence>
-                  {profile === 'client' && (
-                    <motion.section
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="space-y-4"
-                    >
-                      <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2">
-                        <User size={14} /> CASE INFORMATION
-                      </h3>
+                <section className="space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2">
+                    <User size={14} /> CASE INFORMATION
+                  </h3>
                       <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-6 grid grid-cols-1 md:grid-cols-2 gap-6 relative">
                         <div className="space-y-1">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Client Name</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Nom du client</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
@@ -893,7 +830,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           />
                         </div>
                         <div className="space-y-1">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Estimation #</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Devis N°</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
@@ -913,7 +850,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           />
                         </div>
                         <div className="space-y-1">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Phone</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Téléphone</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
@@ -923,7 +860,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           />
                         </div>
                         <div className="md:col-span-2 space-y-1">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Delivery Address</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Adresse de livraison</span>
                           <input
                             type="text"
                             disabled={!isEditMode}
@@ -961,15 +898,13 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Masquer la photo du fournisseur</span>
                             </label>
                           </div>
-                        </div>
                       </div>
-                    </motion.section>
-                  )}
-                </AnimatePresence>
+                    </div>
+                  </section>
 
 
                 <AnimatePresence>
-                  {(profile === 'client' || (profile === 'supplier' && !estimation.hidePhotoFromSupplier)) && (
+                  {!estimation.hidePhotoFromSupplier && (
                     <motion.section
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
@@ -984,7 +919,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <>
                               <img
                                 src={estimation.client.sitePhoto}
-                                alt="Site"
+                                alt="Photo du site"
                                 className="w-full h-full object-cover transition-all group-hover/img:scale-105 cursor-pointer"
                                 onClick={() => setFullscreenPhoto(estimation.client.sitePhoto!)}
                               />
@@ -995,11 +930,11 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 >
                                   <Maximize2 size={18} />
                                 </button>
-                                {profile === 'client' && isEditMode && (
+                                {isEditMode && (
                                   <button
                                     onClick={() => {
                                       setEstimation({ ...estimation, client: { ...estimation.client, sitePhoto: undefined } });
-                                      addHistory("Photo du site supprimée");
+                                      addHistory("Photo du site supprimÃ©e");
                                     }}
                                     className="w-10 h-10 flex items-center justify-center bg-red-500/10 backdrop-blur rounded-xl text-red-600 border border-red-200 hover:bg-red-600 hover:text-white transition-all hover:scale-110 shadow-xl"
                                   >
@@ -1022,43 +957,35 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                   )}
                 </AnimatePresence>
 
-                <AnimatePresence>
-                  {(profile === 'client' || (profile === 'supplier' && !estimation.hideCommentsFromSupplier && estimation.client.notes)) && (
-                    <motion.section
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="p-6 bg-slate-50 border border-slate-200 rounded-[2rem]"
-                    >
+                {(userProfile?.role !== 'supplier' || !estimation.hideCommentsFromSupplier) && estimation.client.notes && (
+                    <section className="p-6 bg-slate-50 border border-slate-200 rounded-[2rem]">
                       <h4 className="text-[10px] font-bold text-aura-accent uppercase mb-2 flex items-center gap-2">
                         <StickyNote size={12} /> NOTES DU CLIENT
                       </h4>
-                      {estimation.client.notes && (
-                        <p className="text-xs text-slate-700 italic leading-relaxed whitespace-pre-wrap mb-4">{estimation.client.notes}</p>
-                      )}
-                      {profile === 'client' && isEditMode && (
+                      <p className="text-xs text-slate-700 italic leading-relaxed whitespace-pre-wrap mb-4">{estimation.client.notes}</p>
+                      {isEditMode && (
                         <div className={`${estimation.client.notes ? 'mt-4 pt-4 border-t border-slate-200' : ''}`}>
                           <textarea
                             value={estimation.client.notes || ''}
                             onChange={(e) => updateClient('notes', e.target.value)}
                             className="neon-input w-full bg-slate-100 p-4 text-xs resize-none text-slate-900"
                             rows={4}
-                            placeholder="Write your notes here..."
+                            placeholder="Écrivez vos notes ici..."
                           />
                         </div>
                       )}
-                    </motion.section>
+                    </section>
                   )}
-                </AnimatePresence>
 
                 <section className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <h3 className="text-xs font-bold uppercase tracking-widest text-aura-accent flex items-center gap-2">
-                        <Box size={14} /> {profile === 'supplier' ? 'Fiche Technique Produit' : 'Lignes de Produits'}
+                        <Box size={14} /> Lignes de Produits
                       </h3>
                       {estimation.products.length > 0 && (
                         <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                          {estimation.products.length} {estimation.products.length > 1 ? 'Products' : 'Product'}
+                          {estimation.products.length} {estimation.products.length > 1 ? 'Produits' : 'Produit'}
                         </span>
                       )}
                     </div>
@@ -1086,12 +1013,12 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 <span className="px-1.5 py-0.5 rounded bg-aura-accent text-white text-[8px] font-black uppercase tracking-widest">
                                   Item {(index + 1).toString().padStart(2, '0')}
                                 </span>
-                                <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.3em]">Product / Designation</span>
+                                <span className="text-[9px] text-slate-400 font-black uppercase tracking-[0.3em]">Produit / Désignation</span>
                               </div>
                               {isEditMode ? (
                                 <CustomSelect
                                   value={p.productId || ''}
-                                  placeholder="Select a product..."
+                                  placeholder="Sélectionner un produit..."
                                   options={allProducts
                                     .filter(prod => {
                                       if (prod.id === p.productId) return true;
@@ -1140,7 +1067,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         specs: enrichedSpecs,
                                       } : prod);
                                       setEstimation({ ...estimation, products: newProducts });
-                                      addHistory(`Produit changé : ${selectedProd.name}`);
+                                      addHistory(`Produit changÃ© : ${selectedProd.name}`);
                                     }
                                   }}
                                   renderOption={(opt) => (
@@ -1177,7 +1104,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 </div>
                               )}
                               
-                              {/* SALE / RENTAL TOGGLE — hidden in Sale mode, shown only in Rental mode */}
+                              {/* SALE / RENTAL TOGGLE â€” hidden in Sale mode, shown only in Rental mode */}
                               {isEditMode && initialEstimation?.transactionType === 'rental' && (
                                 <div className="mt-4 flex items-center gap-2">
                                   <div className="flex p-1 bg-slate-100/80 border border-slate-200/80 rounded-xl backdrop-blur-sm shadow-sm">
@@ -1190,7 +1117,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         } : prod);
                                         setEstimation({ ...estimation, products: newProducts as any });
                                       }}
-                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.transactionType !== 'rental' ? 'bg-black text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                                      className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.transactionType !== 'rental' ? 'bg-black text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
                                       Vente
                                     </button>
@@ -1203,7 +1130,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         } : prod);
                                         setEstimation({ ...estimation, products: newProducts as any });
                                       }}
-                                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.transactionType === 'rental' ? 'bg-black text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                                      className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.transactionType === 'rental' ? 'bg-black text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
                                     >
                                       Location
                                     </button>
@@ -1225,7 +1152,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             {isEditMode && (
                               <>
                                 <NumericControl
-                                  label="Width (m)"
+                                  label="Largeur (m)"
                                   value={p.width || 0}
                                   unit="m"
                                   onChange={(val) => {
@@ -1234,7 +1161,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                   }}
                                 />
                                 <NumericControl
-                                  label="Height (m)"
+                                  label="Hauteur (m)"
                                   value={p.height || 0}
                                   unit="m"
                                   onChange={(val) => {
@@ -1245,17 +1172,17 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </>
                             )}
                             <NumericControl
-                              label="Quantity"
+                              label="Quantité"
                               value={p.quantity}
                               onChange={(val) => {
                                 const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, quantity: val } : prod);
                                 setEstimation({ ...estimation, products: newProducts });
                               }}
                             />
-                            {profile === 'client' && (
+                            {userProfile?.role !== 'supplier' && (
                               <NumericControl
-                                label="Unit Price (€)"
-                                unit="€"
+                                label="Unit Price (â‚¬)"
+                                unit="â‚¬"
                                 value={p.unitPrice}
                                 onChange={(val) => {
                                   const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, unitPrice: val } : prod);
@@ -1265,7 +1192,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             )}
                           </div>
 
-                          {/* RENTAL OPTIONS — shown only in Rental mode */}
+                          {/* RENTAL OPTIONS â€” shown only in Rental mode */}
                           <AnimatePresence>
                             {isEditMode && initialEstimation?.transactionType === 'rental' && p.transactionType === 'rental' && (
                               <motion.div 
@@ -1281,18 +1208,18 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                          const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'day' } : prod);
                                          setEstimation({ ...estimation, products: newProducts as any });
                                        }}
-                                       className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit !== 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
-                                     >
-                                        Période (Jours)
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'hour' } : prod);
-                                          setEstimation({ ...estimation, products: newProducts as any });
-                                        }}
-                                        className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit === 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
+                                       className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit !== 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
+                                    >
+                                      Jour
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalUnit: 'hour' } : prod);
+                                        setEstimation({ ...estimation, products: newProducts as any });
+                                      }}
+                                      className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${p.rentalUnit === 'hour' ? 'bg-black text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
                                       >
-                                        Jour spécifique (Heures)
+                                        Jour spÃ©cifique (Heures)
                                      </button>
                                    </div>
                                 </div>
@@ -1341,7 +1268,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         />
                                       </div>
                                       <NumericControl
-                                        label="Durée (Jours)"
+                                        label="DurÃ©e (Jours)"
                                         value={p.rentalDuration || 1}
                                         onChange={(val) => {
                                           const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalDuration: Math.max(1, val) } : prod);
@@ -1367,7 +1294,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                       </div>
                                       <div className="flex gap-2">
                                         <div className="space-y-1 flex-1">
-                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">Début</span>
+                                          <span className="text-[9px] text-aura-text-dim uppercase font-bold tracking-widest">DÃ©but</span>
                                           <input 
                                             type="time"
                                             className="neon-input w-full py-2 bg-white font-mono text-xs text-slate-900"
@@ -1392,7 +1319,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         </div>
                                       </div>
                                       <NumericControl
-                                        label="Durée (Heures)"
+                                        label="DurÃ©e (Heures)"
                                         value={p.rentalDuration || 1}
                                         onChange={(val) => {
                                           const newProducts = estimation.products.map(prod => prod.id === p.id ? { ...prod, rentalDuration: Math.max(1, val) } : prod);
@@ -1408,12 +1335,12 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                           <div className="mt-8 pt-6 border-t border-slate-200 flex items-end justify-between">
                             <div className="space-y-1">
-                              <span className="text-[13px] text-slate-400 font-bold uppercase tracking-widest block">Article Reference</span>
+                              <span className="text-[13px] text-slate-400 font-bold uppercase tracking-widest block">Référence Article</span>
                               <div className="text-sm font-display font-black text-slate-900 uppercase tracking-tight">{p.productId || 'N/A'}</div>
                             </div>
-                            {profile === 'client' && (
+                            {userProfile?.role !== 'supplier' && (
                               <div className="text-right">
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1">Total for this line</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest block mb-1">Total pour cette ligne</span>
                                 <div className="flex items-center gap-3 justify-end">
                                   {(p.discount || 0) > 0 && (
                                     <span className="text-sm text-red-500/40 line-through font-mono">
@@ -1482,7 +1409,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                                 // Retrieve base specs
                                 const projectType = getSpecValue(['projecttype', 'type'], "Vente");
-                                const environment = getSpecValue(['environment', 'environnement'], "Intérieur");
+                                const environment = getSpecValue(['environment', 'environnement'], "IntÃ©rieur");
                                 const visionDistance = getSpecValue(['vision', 'distance'], "N/A");
                                 const pixelPitchStr = getSpecValue(['pixelpitch', 'pitch'], "2.5");
 
@@ -1496,18 +1423,18 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                 const resX = Math.round((w * 1000) / pitchValue);
                                 const resY = Math.round((h * 1000) / pitchValue);
                                 const modules = Math.ceil(w / 0.5) * Math.ceil(h / 0.5) * qty;
-                                const isOutdoor = environment.toLowerCase().includes('exterieur') || environment.toLowerCase().includes('extérieur');
+                                const isOutdoor = environment.toLowerCase().includes('exterieur') || environment.toLowerCase().includes('extÃ©rieur');
                                 const powerMax = area * (isOutdoor ? 0.8 : 0.6);
                                 const powerAvg = powerMax * 0.35;
                                 const amps = Math.ceil((powerMax * 1000) / 230 / 3);
 
                                 const baseSpecs = [
-                                  { label: "SURFACE TOTALE", value: `${area.toFixed(2)} m²`, icon: <Maximize2 size={16} />, color: "text-blue-400", bgColor: "bg-blue-400/10" },
-                                  { label: "RÉSOLUTION", value: `${resX} x ${resY} pixels`, icon: <Monitor size={16} />, color: "text-violet-400", bgColor: "bg-violet-400/10" },
+                                  { label: "SURFACE TOTALE", value: `${area.toFixed(2)} mÂ²`, icon: <Maximize2 size={16} />, color: "text-blue-400", bgColor: "bg-blue-400/10" },
+                                  { label: "RÃ‰SOLUTION", value: `${resX} x ${resY} pixels`, icon: <Monitor size={16} />, color: "text-violet-400", bgColor: "bg-violet-400/10" },
                                   { label: "NOMBRE DE MODULES LED", value: modules.toString(), icon: <Cpu size={16} />, color: "text-fuchsia-400", bgColor: "bg-fuchsia-400/10" },
                                   { label: "PUISSANCE MAX", value: `${powerMax.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-emerald-400", bgColor: "bg-emerald-400/10" },
                                   { label: "PUISSANCE MOY", value: `${powerAvg.toFixed(1)} kW`, icon: <Zap size={16} />, color: "text-sky-400", bgColor: "bg-sky-400/10" },
-                                  { label: "DISJONCTEUR RECOMMANDÉ", value: `${amps}A 3-Pole`, icon: <Zap size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
+                                  { label: "DISJONCTEUR RECOMMANDÃ‰", value: `${amps}A 3-Pole`, icon: <Zap size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
                                   { label: "TYPE DE PROJET", value: projectType, icon: <Truck size={16} />, color: "text-orange-400", bgColor: "bg-orange-400/10" },
                                   { label: "ENVIRONNEMENT", value: environment, icon: <Sun size={16} />, color: "text-teal-400", bgColor: "bg-teal-400/10" },
                                   { label: "DISTANCE DE VISUALISATION", value: visionDistance, icon: <Eye size={16} />, color: "text-cyan-400", bgColor: "bg-cyan-400/10" },
@@ -1551,22 +1478,10 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                     ))}
                   </div>
 
-
-                  {profile === 'supplier' && (
-                    <div className="p-6 glass-card bg-aura-accent/[0.03] border-aura-border">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Info size={20} /></div>
-                        <div>
-                          <div className="text-xs font-bold uppercase tracking-wider">Mode Technique Fournisseur Actif</div>
-                          <div className="text-[10px] text-aura-text-dim mt-1 font-mono uppercase tracking-[0.2em]">Priced data hidden per commercial policy.</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </section>
 
                 <AnimatePresence>
-                  {profile === 'client' && (
+                  {userProfile?.role !== 'supplier' && (
                     <motion.section
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -1582,7 +1497,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Truck size={20} /></div>
                               <div>
                               <div className="text-xs font-bold uppercase text-slate-900">LIVRAISON</div>
-                              <div className="text-[10px] text-slate-400 uppercase">Ville : <b className="text-slate-900">{estimation.deliveryCity || 'Non spécifiée'}</b></div>
+                              <div className="text-[10px] text-slate-400 uppercase">Ville : <b className="text-slate-900">{estimation.deliveryCity || 'Non spÃ©cifiÃ©e'}</b></div>
                               </div>
                             </div>
                             <span className="text-lg font-bold font-mono text-aura-accent">{formatCurrency(calculations.deliveryTotal)}</span>
@@ -1601,8 +1516,8 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
                               <div className="grid grid-cols-2 gap-4">
 <NumericControl
-                                    label="Prix (€)"
-                                    unit="€"
+                                    label="Prix (â‚¬)"
+                                    unit="â‚¬"
                                     value={estimation.deliveryCost}
                                     onChange={(val) => setEstimation({ ...estimation, deliveryCost: val })}
                                   />
@@ -1622,7 +1537,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-xl bg-aura-accent/10 flex items-center justify-center text-aura-accent"><Wrench size={20} /></div>
                               <div>
-                              <div className="text-xs font-bold uppercase text-slate-900">Main d'œuvre</div>
+                              <div className="text-xs font-bold uppercase text-slate-900">Main d'Å“uvre</div>
                               <div className="text-slate-400 uppercase">Installation experte</div>
                               </div>
                             </div>
@@ -1632,16 +1547,16 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                             <div className="space-y-4 pt-4 border-t border-slate-200">
                               <div className="py-4 border-b border-slate-200 mb-2">
                                 <div className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] leading-relaxed">
-                                  For a total area of <span className="text-aura-accent">{calculations.totalArea.toFixed(2)} m²</span>
+                                  Pour une surface totale de <span className="text-aura-accent">{calculations.totalArea.toFixed(2)} mÂ²</span>
                                 </div>
                                 <div className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] leading-relaxed">
-                                  your project requires <span className="text-aura-accent">{calculations.techniciansCount}</span> technician(s).
+                                  votre projet nécessite <span className="text-aura-accent">{calculations.techniciansCount}</span> technicien(s).
                                 </div>
                               </div>
                               <div className="grid grid-cols-2 gap-3">
                                 <NumericControl
-                                  label="Prix (€)"
-                                  unit="€"
+                                  label="Prix (â‚¬)"
+                                  unit="â‚¬"
                                   value={estimation.laborCost}
                                   onChange={(val) => setEstimation({ ...estimation, laborCost: val })}
                                 />
@@ -1665,7 +1580,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               <Calendar size={20} className="text-violet-600" />
                             </div>
                             <div>
-                              <div className="text-xs font-bold uppercase text-slate-900">Période de Location</div>
+                              <div className="text-xs font-bold uppercase text-slate-900">PÃ©riode de Location</div>
                               <div className="text-[10px] text-slate-400 uppercase">Dates &amp; Horaires</div>
                             </div>
                           </div>
@@ -1673,29 +1588,29 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           {!isEditMode ? (
                             <div className="grid grid-cols-2 gap-3">
                               <div className="bg-white border border-violet-100 rounded-2xl p-3 space-y-0.5">
-                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Début</div>
+                                <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">DÃ©but</div>
                                 <div className="text-sm font-bold text-slate-900">
                                   {estimation.rentalPeriod?.from
                                     ? new Date(estimation.rentalPeriod.from).toLocaleDateString('fr-FR')
-                                    : '—'}
+                                    : 'â€”'}
                                 </div>
-                                <div className="text-[10px] text-slate-500">{estimation.rentalStartTime || '—'}</div>
+                                <div className="text-[10px] text-slate-500">{estimation.rentalStartTime || 'â€”'}</div>
                               </div>
                               <div className="bg-white border border-violet-100 rounded-2xl p-3 space-y-0.5">
                                 <div className="text-[9px] text-violet-400 uppercase font-bold tracking-widest">Fin</div>
                                 <div className="text-sm font-bold text-slate-900">
                                   {estimation.rentalPeriod?.to
                                     ? new Date(estimation.rentalPeriod.to).toLocaleDateString('fr-FR')
-                                    : '—'}
+                                    : 'â€”'}
                                 </div>
-                                <div className="text-[10px] text-slate-500">{estimation.rentalEndTime || '—'}</div>
+                                <div className="text-[10px] text-slate-500">{estimation.rentalEndTime || 'â€”'}</div>
                               </div>
                             </div>
                           ) : (
                             <div className="space-y-4 pt-2 border-t border-violet-200">
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de début</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Date de dÃ©but</label>
                                   <input
                                     type="date"
                                     min={new Date().toISOString().split('T')[0]}
@@ -1725,7 +1640,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Heure de début</label>
+                                  <label className="text-[9px] text-violet-500 uppercase font-bold tracking-widest">Heure de dÃ©but</label>
                                   <input
                                     type="time"
                                     value={estimation.rentalStartTime || '08:00'}
@@ -1756,14 +1671,14 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
 
               {/* FIXED FOOTER (OUTSIDE SCROLL AREA) */}
               <AnimatePresence>
-                {profile === 'client' && (
+                {userProfile?.role !== 'supplier' && (
                   <motion.div
                     key="aura-footer"
                     initial={{ y: 80, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     className="aura-footer-fixed hidden md:block relative shrink-0"
                   >
-                    {/* Toggle Pill — floating on the border-top divider line, always visible */}
+                    {/* Toggle Pill â€” floating on the border-top divider line, always visible */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
                       <button
                         onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
@@ -1776,7 +1691,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           <ChevronDown size={14} className="text-slate-900" />
                         </motion.div>
                         <span className="text-[9px] font-black uppercase tracking-[0.25em] text-slate-900">
-                          Résumé Financier
+                          RÃ©sumÃ© Financier
                         </span>
                         <div className="w-px h-3 bg-slate-200" />
                         <span className="text-[10px] font-black font-mono text-slate-700 tracking-tight group-hover:text-slate-900 transition-colors">
@@ -1816,13 +1731,13 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               </div>
                             </div>
                             <div className="text-left md:text-right flex flex-col justify-end min-w-0 md:min-w-[220px] flex-shrink-0 relative">
-                              <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">À Payer (TTC)</div>
-                              <div className="text-4xl sm:text-5xl md:text-6xl font-display font-black tracking-tighter neon-text-emerald relative z-10 truncate">
+                              <div className="text-[11px] uppercase font-black mb-1 [letter-spacing:0.3em] text-aura-accent font-display relative z-10">Ã€ Payer (TTC)</div>
+                              <div className="text-4xl sm:text-5xl md:text-6xl font-display font-bold tracking-tighter neon-text-emerald relative z-10 truncate">
                                 {formatCurrency(calculations.finalTotal)}
                               </div>
                               {estimation.globalDiscount > 0 && (
                                 <div className="text-[10px] text-emerald-400/80 font-bold mt-2 uppercase tracking-[0.2em] font-display relative z-10">
-                                  Remise exceptionnelle appliquée
+                                  Remise exceptionnelle appliquÃ©e
                                 </div>
                               )}
                             </div>
@@ -1832,7 +1747,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               onClick={async () => {
                                 setIsAiLoading(true);
                                 try {
-                                  addHistory('Modifications validées et enregistrées');
+                                  addHistory('Modifications validÃ©es et enregistrÃ©es');
                                   const isRentalPending =
                                     initialEstimation?.transactionType === 'rental' &&
                                     (initialEstimation?.status === 'pending' || initialEstimation?.status === 'En attente');
@@ -1922,12 +1837,12 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                 </div>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => { if (aiResult) { navigator.clipboard.writeText(aiResult.content);     addHistory('Résultat IA copié'); } }}
+                    onClick={() => { if (aiResult) { navigator.clipboard.writeText(aiResult.content);     addHistory('RÃ©sultat IA copiÃ©'); } }}
                     className="px-6 py-3 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center gap-2"
                   >
                     Copy
                   </button>
-                  <button onClick={() => setAiResult(null)} className="px-6 py-3 rounded-xl bg-aura-accent text-white text-xs font-bold uppercase tracking-widest transition-all">Close</button>
+                  <button onClick={() => setAiResult(null)} className="px-6 py-3 rounded-xl bg-aura-accent text-white text-xs font-bold uppercase tracking-widest transition-all">Fermer</button>
                 </div>
               </div>
             </motion.div>
@@ -1991,18 +1906,17 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                 } as any));
                 addHistory(`Transmis au fournisseur ${supplierName}`);
                 setIsTransmitModalOpen(false);
-                setProfile('supplier');
                 if (onStatusChange) onStatusChange('in_progress');
                 // Success toast
                 const toast = document.createElement('div');
-                toast.innerHTML = `✅ Devis transmis à <strong>${supplierName}</strong> avec succès !`;
+                toast.innerHTML = `âœ… Devis transmis Ã  <strong>${supplierName}</strong> avec succÃ¨s !`;
                 toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10b981;color:white;padding:14px 28px;border-radius:16px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 8px 32px rgba(16,185,129,0.4);animation:fadeIn 0.3s ease';
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 4000);
               } catch (err: any) {
                 console.error('[TransmitModal] Error saving transmission:', err);
                 const toast = document.createElement('div');
-                toast.textContent = `❌ Erreur de transfert : ${err?.message || 'Veuillez réessayer'}`;
+                toast.textContent = `âŒ Erreur de transfert : ${err?.message || 'Veuillez rÃ©essayer'}`;
                 toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#ef4444;color:white;padding:14px 28px;border-radius:16px;font-weight:700;font-size:14px;z-index:9999;box-shadow:0 8px 32px rgba(239,68,68,0.4)';
                 document.body.appendChild(toast);
                 setTimeout(() => toast.remove(), 5000);
@@ -2025,7 +1939,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
               <div className="flex items-center gap-4">
                 <button onClick={() => setIsHistoryPanelOpen(false)} className="w-10 h-10 hover:bg-aura-accent hover:text-white rounded-xl flex items-center justify-center transition-all bg-aura-accent/10 text-aura-accent"><ChevronLeft size={24} /></button>
                 <div>
-                  <h2 className="text-2xl font-display font-black uppercase tracking-tighter text-slate-900">History</h2>
+                  <h2 className="text-2xl font-display font-black uppercase tracking-tighter text-slate-900">Historique</h2>
                   <div className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">Case: {estimation.id}</div>
                 </div>
               </div>
@@ -2061,7 +1975,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
             </div>
 
             <div className="p-8 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
-              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Page {historyPage} of {Math.ceil(estimation.history.length / itemsPerPage)}</div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">Page {historyPage} sur {Math.ceil(estimation.history.length / itemsPerPage)}</div>
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setHistoryPage(prev => Math.max(1, prev - 1))}
@@ -2185,7 +2099,7 @@ function CustomSelect({
                       onChange(optId);
                       setIsOpen(false);
                     }}
-                    className={`custom-select-option rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors ${value === optId ? 'bg-slate-50 border-slate-200 text-aura-accent' : 'border-transparent'}`}
+                    className={`custom-select-option rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors ${value === optId ? 'bg-slate-50 border-slate-200 text-aura-accent' : 'border-transparent'}`}
                   >
                     {renderOption ? renderOption(opt) : <span className="uppercase text-[10px] font-bold">{opt.label || opt.displayName || opt.name || opt}</span>}
                   </div>
@@ -2209,7 +2123,7 @@ function NumericControl({ value, onChange, label, unit = "" }: { value: number, 
       <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-1 group focus-within:border-aura-accent shadow-sm transition-all">
         <button
           onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-8 h-8 rounded-lg bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200 shrink-0"
+          className="w-8 h-8 rounded-xl bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200 shrink-0"
         >
           <Minus size={12} />
         </button>
@@ -2224,7 +2138,7 @@ function NumericControl({ value, onChange, label, unit = "" }: { value: number, 
         </div>
         <button
           onClick={() => onChange(value + 1)}
-          className="w-8 h-8 rounded-lg bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200 shrink-0"
+          className="w-8 h-8 rounded-xl bg-white hover:bg-aura-accent hover:text-white flex items-center justify-center transition-all text-slate-400 shadow-sm active:scale-95 border border-slate-200 shrink-0"
         >
           <Plus size={12} />
         </button>

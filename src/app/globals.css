@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+
 
 @tailwind base;
 @tailwind components;
@@ -107,7 +107,6 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
     transition: background-color 0.3s ease;
   }
 
@@ -261,7 +260,7 @@
     z-index: 1;
     font-weight: 300;
     font-size: 17px;
-    font-family: 'Roboto', 'Segoe UI', sans-serif;
+    font-family: inherit;
     text-transform: uppercase;
     color: var(--color);
     display: flex;
@@ -621,7 +620,6 @@
 /* --- FULL GLASSMORPHISM STYLES (Adopted from template) --- */
 
 body {
-   font-family: "Inter", sans-serif;
    overflow-x: hidden;
    background-color: #FAF8F5;
    color: #1e293b;
@@ -826,11 +824,9 @@ body.light-theme aside.glass-ui {
 
 /* Font classes for typography system */
 .font-display {
-  font-family: 'Space Grotesk', sans-serif;
 }
 
 .font-mono-tech {
-  font-family: 'JetBrains Mono', monospace;
 }
 
 /* DaisyUI-like join and button components for pagination */

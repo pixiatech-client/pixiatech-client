@@ -211,8 +211,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                         )} />
                                     </div>
                                     <span className={cn(
-                                        "text-[10px] font-black uppercase tracking-[0.12em] truncate",
-                                        isSelected ? "text-white" : "text-slate-800"
+                                        "text-sm font-semibold tracking-tight truncate",
+                                        isSelected ? "text-white" : "text-theme-sidebar-text opacity-70"
                                     )}>
                                         {tab.label}
                                     </span>

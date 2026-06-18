@@ -29,10 +29,10 @@ const config = {
         'dvh': '100dvh',
       },
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
-        mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
-        display: ["Space Grotesk", "sans-serif"],
+        body: ['var(--font-poppins)', 'sans-serif'],
+        headline: ['var(--font-poppins)', 'sans-serif'],
+        mono: ['var(--font-poppins)', 'sans-serif'],
+        display: ['var(--font-poppins)', 'sans-serif'],
       },
       colors: {
         bluish: "#7182ff",

@@ -862,6 +862,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 options={[
                   { value: 'ALL', label: t('admin.allStatuses') },
                   { value: 'pending', label: t('admin.pending'), color: 'text-yellow-500' },
+                  { value: 'in_progress', label: 'En cours', color: 'text-blue-500' },
                   { value: 'processed', label: t('admin.processed'), color: 'text-emerald-500' },
                   { value: 'returned', label: t('admin.returned', { defaultValue: 'Retourné' }), color: 'text-orange-500' },
                   ...(typeFilter !== 'rental' ? [{ value: 'FOURNISSEUR', label: 'Fournisseur', color: 'text-blue-400' }] : []),

@@ -98,10 +98,10 @@ export const TransmitModal: React.FC<TransmitModalProps> = ({ isOpen, onClose, o
                   <Truck size={24} className="text-[#10b981]" />
                 </div>
                 <div>
-                  <h2 className="text-lg md:text-2xl font-['Space_Grotesk'] font-bold text-white uppercase tracking-tight leading-tight">
+                  <h2 className="text-lg md:text-2xl  font-bold text-white uppercase tracking-tight leading-tight">
                     Transmettre au <span className="text-[#10b981]">Fournisseur</span>
                   </h2>
-                  <p className="text-[9px] md:text-[11px] text-zinc-500 font-['JetBrains_Mono'] uppercase tracking-[0.1em] md:tracking-[0.2em] mt-0.5">
+                  <p className="text-[9px] md:text-[11px] text-zinc-500  uppercase tracking-[0.1em] md:tracking-[0.2em] mt-0.5">
                     Sélectionner un prestataire
                   </p>
                 </div>
@@ -117,14 +117,14 @@ export const TransmitModal: React.FC<TransmitModalProps> = ({ isOpen, onClose, o
             <div className="space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar pr-2 flex-1">
               {/* Custom Searchable Dropdown (Liste déroulante) */}
               <div className="space-y-3 relative">
-                <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest flex items-center gap-2">
+                <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-widest flex items-center gap-2">
                   <Search size={12} className="text-[#10b981]" />
                   Choisir un fournisseur
                 </label>
                 
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className={`w-full flex items-center justify-between px-5 py-4 bg-black/40 border rounded-2xl transition-all font-['JetBrains_Mono'] text-sm ${
+                  className={`w-full flex items-center justify-between px-5 py-4 bg-black/40 border rounded-2xl transition-all  text-sm ${
                     isDropdownOpen ? 'border-[#10b981]/50 ring-2 ring-[#10b981]/10' : 'border-white/5'
                   }`}
                 >
@@ -152,13 +152,13 @@ export const TransmitModal: React.FC<TransmitModalProps> = ({ isOpen, onClose, o
                       className="absolute top-full left-0 right-0 mt-2 bg-[#09090b] border border-white/10 rounded-2xl shadow-2xl z-[300] overflow-hidden max-h-[250px] overflow-y-auto custom-scrollbar"
                     >
                 {isLoading ? (
-                        <div className="p-8 text-center text-zinc-500 text-xs font-['JetBrains_Mono']">Chargement...</div>
+                        <div className="p-8 text-center text-zinc-500 text-xs ">Chargement...</div>
                       ) : fetchError ? (
-                        <div className="p-8 text-center text-red-400 text-xs font-['JetBrains_Mono']">{fetchError}</div>
+                        <div className="p-8 text-center text-red-400 text-xs ">{fetchError}</div>
                       ) : suppliers.length === 0 ? (
                         <div className="p-8 text-center space-y-2">
-                          <p className="text-zinc-400 text-xs font-['JetBrains_Mono']">Aucun fournisseur approuvé</p>
-                          <p className="text-zinc-600 text-[10px] font-['JetBrains_Mono']">Vérifiez que des comptes fournisseurs ont le statut &quot;approuvé&quot; dans la gestion des utilisateurs.</p>
+                          <p className="text-zinc-400 text-xs ">Aucun fournisseur approuvé</p>
+                          <p className="text-zinc-600 text-[10px] ">Vérifiez que des comptes fournisseurs ont le statut &quot;approuvé&quot; dans la gestion des utilisateurs.</p>
                         </div>
                       ) : (
                         suppliers.map((s) => (
@@ -182,10 +182,10 @@ export const TransmitModal: React.FC<TransmitModalProps> = ({ isOpen, onClose, o
                               )}
                             </div>
                             <div className="flex-1">
-                              <div className={`font-bold font-['Space_Grotesk'] ${selectedSupplier === s.uid ? 'text-white' : 'text-zinc-200'}`}>
+                              <div className={`font-bold  ${selectedSupplier === s.uid ? 'text-white' : 'text-zinc-200'}`}>
                                 {s.displayName || s.email.split('@')[0]}
                               </div>
-                              <div className="text-[9px] font-['JetBrains_Mono'] text-zinc-500">{s.email}</div>
+                              <div className="text-[9px]  text-zinc-500">{s.email}</div>
                             </div>
                             {selectedSupplier === s.uid && <CheckCircle2 size={16} className="text-[#10b981]" />}
                           </button>
@@ -200,18 +200,18 @@ export const TransmitModal: React.FC<TransmitModalProps> = ({ isOpen, onClose, o
               {/* Technical Notes */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest flex items-center gap-2">
+                  <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-widest flex items-center gap-2">
                     <Cpu size={12} className="text-[#10b981]" />
                     Instructions Techniques
                   </label>
-                  <span className="text-[9px] text-zinc-600 font-['JetBrains_Mono'] uppercase">Optionnel</span>
+                  <span className="text-[9px] text-zinc-600  uppercase">Optionnel</span>
                 </div>
                 <div className="relative">
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Précisez les détails techniques, délais ou contraintes spécifiques..."
-                    className="w-full h-32 p-5 bg-black/60 border border-white/5 rounded-[24px] text-sm text-white font-['JetBrains_Mono'] placeholder:text-zinc-700 focus:border-[#10b981]/30 focus:outline-none resize-none transition-all focus:bg-black/80"
+                    className="w-full h-32 p-5 bg-black/60 border border-white/5 rounded-[24px] text-sm text-white  placeholder:text-zinc-700 focus:border-[#10b981]/30 focus:outline-none resize-none transition-all focus:bg-black/80"
                   />
                   <div className="absolute bottom-4 right-4 pointer-events-none opacity-20">
                     <Cpu size={40} className="text-[#10b981]" />
@@ -226,7 +226,7 @@ export const TransmitModal: React.FC<TransmitModalProps> = ({ isOpen, onClose, o
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-blue-200/90 font-medium">Information de confidentialité</p>
-                  <p className="text-[10px] text-blue-300/50 leading-relaxed font-['JetBrains_Mono']">
+                  <p className="text-[10px] text-blue-300/50 leading-relaxed ">
                     L'activation du mode fournisseur masquera toutes les informations de prix (client/marge). Seules les spécifications techniques seront transmises.
                   </p>
                 </div>
@@ -236,14 +236,14 @@ export const TransmitModal: React.FC<TransmitModalProps> = ({ isOpen, onClose, o
             <div className="flex gap-4 mt-8">
               <button
                 onClick={onClose}
-                className="flex-1 py-5 rounded-[20px] bg-white/[0.02] border border-white/5 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 hover:bg-white/5 hover:text-white transition-all font-['Space_Grotesk']"
+                className="flex-1 py-5 rounded-[20px] bg-white/[0.02] border border-white/5 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 hover:bg-white/5 hover:text-white transition-all "
               >
                 Annuler
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={!selectedSupplier || isLoading}
-                className="flex-[1.5] py-5 rounded-[20px] bg-gradient-to-r from-[#10b981] to-[#059669] text-white text-xs font-bold uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:shadow-[0_0_50px_rgba(16,185,129,0.4)] transition-all disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-3 font-['Space_Grotesk'] relative overflow-hidden group"
+                className="flex-[1.5] py-5 rounded-[20px] bg-gradient-to-r from-[#10b981] to-[#059669] text-white text-xs font-bold uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(16,185,129,0.2)] hover:shadow-[0_0_50px_rgba(16,185,129,0.4)] transition-all disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-3  relative overflow-hidden group"
               >
                 <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-[-20deg]" />
                 <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 
@@ -288,10 +288,10 @@ export const ReturnReasonPopup: React.FC<ReturnReasonPopupProps> = ({ isOpen, on
                   <AlertCircle size={24} className="text-red-500" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-['Space_Grotesk'] font-bold text-white uppercase">
+                  <h2 className="text-xl  font-bold text-white uppercase">
                     Motif du <span className="text-red-500">Retour</span>
                   </h2>
-                  <p className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] uppercase">Information fournisseur</p>
+                  <p className="text-[10px] text-zinc-500  uppercase">Information fournisseur</p>
                 </div>
               </div>
               <button
@@ -303,7 +303,7 @@ export const ReturnReasonPopup: React.FC<ReturnReasonPopupProps> = ({ isOpen, on
             </div>
 
             <div className="bg-black/40 border border-white/5 rounded-2xl p-6 min-h-[150px] max-h-[300px] overflow-y-auto custom-scrollbar">
-              <p className="text-sm text-zinc-300 font-['JetBrains_Mono'] whitespace-pre-wrap leading-relaxed">
+              <p className="text-sm text-zinc-300  whitespace-pre-wrap leading-relaxed">
                 {reason || "Aucun motif précisé."}
               </p>
             </div>
@@ -357,10 +357,10 @@ export const SimpleMessagePopup: React.FC<SimpleMessagePopupProps> = ({ isOpen, 
                   {variant === 'alert' ? <AlertCircle size={24} /> : <Mail size={24} />}
                 </div>
                 <div>
-                  <h2 className="text-xl font-['Space_Grotesk'] font-bold text-white uppercase tracking-tight">
+                  <h2 className="text-xl  font-bold text-white uppercase tracking-tight">
                     {title}
                   </h2>
-                  {subtitle && <p className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] uppercase tracking-widest">{subtitle}</p>}
+                  {subtitle && <p className="text-[10px] text-zinc-500  uppercase tracking-widest">{subtitle}</p>}
                 </div>
               </div>
               <button
@@ -372,7 +372,7 @@ export const SimpleMessagePopup: React.FC<SimpleMessagePopupProps> = ({ isOpen, 
             </div>
 
             <div className="bg-black/40 border border-white/5 rounded-2xl p-6 min-h-[150px] max-h-[400px] overflow-y-auto custom-scrollbar">
-              <p className="text-sm text-zinc-300 font-['JetBrains_Mono'] whitespace-pre-wrap leading-relaxed">
+              <p className="text-sm text-zinc-300  whitespace-pre-wrap leading-relaxed">
                 {message || "Aucun message."}
               </p>
             </div>
@@ -380,7 +380,7 @@ export const SimpleMessagePopup: React.FC<SimpleMessagePopupProps> = ({ isOpen, 
             <div className="mt-8">
               <button
                 onClick={onClose}
-                className={`w-full py-4 rounded-xl font-['Space_Grotesk'] font-bold text-xs uppercase tracking-widest transition-all ${
+                className={`w-full py-4 rounded-xl  font-bold text-xs uppercase tracking-widest transition-all ${
                   variant === 'alert' 
                     ? 'bg-red-500 hover:bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.2)]' 
                     : 'bg-white/5 hover:bg-white/10 text-white'
@@ -477,10 +477,10 @@ export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({
                   <CheckCircle2 size={24} className="text-[#a855f7]" />
                 </div>
                 <div>
-                  <h2 className="text-lg md:text-2xl font-['Space_Grotesk'] font-bold text-white uppercase tracking-tight leading-tight">
+                  <h2 className="text-lg md:text-2xl  font-bold text-white uppercase tracking-tight leading-tight">
                     Traiter la <span className="text-[#a855f7]">Location</span>
                   </h2>
-                  <p className="text-[9px] md:text-[11px] text-zinc-500 font-['JetBrains_Mono'] uppercase tracking-[0.1em] md:tracking-[0.2em] mt-0.5">
+                  <p className="text-[9px] md:text-[11px] text-zinc-500  uppercase tracking-[0.1em] md:tracking-[0.2em] mt-0.5">
                     Définir la période de location
                   </p>
                 </div>
@@ -495,7 +495,7 @@ export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({
 
             <div className="space-y-4 md:space-y-6 overflow-y-auto custom-scrollbar pr-2 flex-1">
               {error && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex gap-3 text-red-400 text-xs font-['JetBrains_Mono'] items-center">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex gap-3 text-red-400 text-xs  items-center">
                   <AlertCircle size={16} className="shrink-0" />
                   <span>{error}</span>
                 </div>
@@ -504,7 +504,7 @@ export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({
               {/* Date Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest">
+                  <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-widest">
                     Date de début
                   </label>
                   <input
@@ -512,11 +512,11 @@ export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({
                     value={startDate}
                     min={today}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm font-['JetBrains_Mono'] focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
+                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm  focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest">
+                  <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-widest">
                     Date de fin
                   </label>
                   <input
@@ -524,7 +524,7 @@ export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({
                     value={endDate}
                     min={startDate || today}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm font-['JetBrains_Mono'] focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
+                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm  focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
                   />
                 </div>
               </div>
@@ -532,25 +532,25 @@ export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({
               {/* Time Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest">
+                  <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-widest">
                     Heure de début
                   </label>
                   <input
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm font-['JetBrains_Mono'] focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
+                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm  focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] text-zinc-500 font-['JetBrains_Mono'] font-bold uppercase tracking-widest">
+                  <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-widest">
                     Heure de fin
                   </label>
                   <input
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm font-['JetBrains_Mono'] focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
+                    className="w-full px-5 py-4 bg-black/40 border border-white/5 rounded-2xl text-white text-sm  focus:border-[#a855f7]/30 focus:outline-none transition-all [color-scheme:dark]"
                   />
                 </div>
               </div>
@@ -561,7 +561,7 @@ export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-purple-200/90 font-medium">Création de la période bloquante</p>
-                  <p className="text-[10px] text-purple-300/50 leading-relaxed font-['JetBrains_Mono']">
+                  <p className="text-[10px] text-purple-300/50 leading-relaxed ">
                     En validant le traitement, ces dates seront bloquées dans le calendrier de réservation du configurateur pour éviter les doubles réservations.
                   </p>
                 </div>
@@ -571,13 +571,13 @@ export const RentalTreatmentModal: React.FC<RentalTreatmentModalProps> = ({
             <div className="flex gap-4 mt-8 shrink-0">
               <button
                 onClick={onClose}
-                className="flex-1 py-5 rounded-[20px] bg-white/[0.02] border border-white/5 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 hover:bg-white/5 hover:text-white transition-all font-['Space_Grotesk']"
+                className="flex-1 py-5 rounded-[20px] bg-white/[0.02] border border-white/5 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500 hover:bg-white/5 hover:text-white transition-all "
               >
                 Annuler
               </button>
               <button
                 onClick={handleConfirm}
-                className="flex-[1.5] py-5 rounded-[20px] bg-gradient-to-r from-[#a855f7] to-[#7c3aed] text-white text-xs font-bold uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(168,85,247,0.2)] hover:shadow-[0_0_50px_rgba(168,85,247,0.4)] transition-all flex items-center justify-center gap-3 font-['Space_Grotesk'] relative overflow-hidden group"
+                className="flex-[1.5] py-5 rounded-[20px] bg-gradient-to-r from-[#a855f7] to-[#7c3aed] text-white text-xs font-bold uppercase tracking-[0.2em] shadow-[0_0_30px_rgba(168,85,247,0.2)] hover:shadow-[0_0_50px_rgba(168,85,247,0.4)] transition-all flex items-center justify-center gap-3  relative overflow-hidden group"
               >
                 <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 skew-x-[-20deg]" />
                 <CheckCircle2 size={18} className="group-hover:scale-110 transition-transform" /> 
