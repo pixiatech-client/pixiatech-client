@@ -99,6 +99,8 @@ interface SidebarProps {
   userEmail?: string;
   userAvatar?: string;
   userId?: string;
+  userRoleName?: string;
+  userRoleColor?: string;
   onSettingsSectionSelect?: (section: SettingsSection) => void;
   selectedSettingsSection?: SettingsSection;
   onSaveOrder?: (newOrder: string[]) => void;
@@ -120,6 +122,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   userEmail,
   userAvatar,
   userId,
+  userRoleName,
+  userRoleColor,
   onSettingsSectionSelect,
   selectedSettingsSection,
   onSaveOrder,
@@ -402,11 +406,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 )}
                 <div className="flex flex-col">
                   <span className="font-bold text-xl tracking-tight group-hover/logowrapper:text-blue-600 transition-colors">{logoConfig.text}</span>
-                  {role === UserRole.ADMINISTRATEUR && (
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#ef4444] shadow-lg shadow-red-500/20 w-fit -mt-0.5">
+                  {userRoleName && (
+                    <div
+                      className="flex items-center gap-1.5 px-2 py-0.5 rounded-full w-fit -mt-0.5"
+                      style={{ backgroundColor: userRoleColor || '#3b82b6', boxShadow: `0 4px 6px -1px ${userRoleColor || '#3b82b6'}33` }}
+                    >
                       <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                       <span className="text-[8px] font-bold text-white uppercase tracking-[0.15em] whitespace-nowrap">
-                        {t('admin.adminSpace')}
+                        Espace {userRoleName}
                       </span>
                     </div>
                   )}

@@ -71,6 +71,10 @@ const DEFAULT_LOGO_CONFIG = {
 };
 
 const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor, userProfile, roles, logout, mainNavItems, secondaryNavItems, activeSettingsSection, onSettingsSectionChange, isSettingsPage, role, onOpenAccountDrawer, initialSettings }: { children: React.ReactNode, pageTitle: string, pageSubtitle: string, headerColor: string, userProfile: any, roles: any[], logout: any, mainNavItems: any[], secondaryNavItems: any[], activeSettingsSection?: SettingsSection, onSettingsSectionChange?: (section: SettingsSection) => void, isSettingsPage?: boolean, role?: UserRoleEnum, onOpenAccountDrawer?: () => void, initialSettings?: AppSettings | null }) => {
+  const roleData = roles?.find(r => r.id === userProfile?.role);
+  const roleName = roleData?.name;
+  const defaultColors: Record<string, string> = { admin: '#ef4444', commercial: '#f97316', fournisseur: '#22c55e' };
+  const roleColor = roleData?.color || defaultColors[userProfile?.role as string] || (roleData?.roleTemplate === 'commercial' ? '#3b82b6' : '#8b5cf6');
   const { t, locale, setLocale } = useI18n();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [settings, setSettings] = useState<any>(initialSettings);
@@ -80,7 +84,6 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   }, [isProfileOpen]);
   const pathname = usePathname();
   const router = useRouter();
-  const roleName = roles?.find(r => r.id === userProfile?.role)?.name;
 
   const [sidebarState, setSidebarState] = useState<SidebarState>(() => {
     if (typeof window !== 'undefined') {
@@ -279,6 +282,8 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         userEmail={userProfile?.email}
         userAvatar={userProfile?.photoURL}
         userId={userProfile?.uid}
+        userRoleName={roleData?.name}
+        userRoleColor={roleColor}
         onSettingsSectionSelect={onSettingsSectionChange}
         selectedSettingsSection={activeSettingsSection}
       />
