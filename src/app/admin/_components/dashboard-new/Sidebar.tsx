@@ -405,7 +405,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {role === UserRole.ADMINISTRATEUR && (
                     <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#ef4444] shadow-lg shadow-red-500/20 w-fit -mt-0.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                      <span className="text-[8px] font-bold text-white uppercase tracking-[0.15em]">
+                      <span className="text-[8px] font-bold text-white uppercase tracking-[0.15em] whitespace-nowrap">
                         {t('admin.adminSpace')}
                       </span>
                     </div>
