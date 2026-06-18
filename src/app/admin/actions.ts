@@ -195,7 +195,7 @@ async function ensureDefaultRoles() {
   const { adminDb } = getFirebaseAdmin();
   const rolesRef = adminDb.collection('roles');
   const rolesToEnsure = [
-    { id: 'admin', name: 'Admin', color: '#ef4444', isDefault: true },
+    { id: 'admin', name: 'Administrateur', color: '#ef4444', isDefault: true },
     { id: 'commercial', name: 'Commercial', color: '#f97316', isDefault: true },
     { id: 'fournisseur', name: 'Fournisseur', color: '#22c55e', isDefault: true },
   ];
