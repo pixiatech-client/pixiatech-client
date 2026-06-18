@@ -643,13 +643,6 @@ body.dark-theme {
   100% { background-position: 0% 50%; }
 }
 
-p,
-.text-slate-500,
-.text-slate-600,
-.text-sm {
-   font-family: "Manrope", sans-serif;
-}
-
 /* Remove all dark theme styles - light theme only */
 body.light-theme .glass-ui {
    background-color: rgba(255, 255, 255, 0.5);
