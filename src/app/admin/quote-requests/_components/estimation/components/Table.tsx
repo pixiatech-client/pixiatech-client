@@ -1313,9 +1313,9 @@ return (
                         setRefusalForm({ subject: '', message: '' });
                         setIsRefusalPanelOpen(true);
                       }}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-red-500 hover:bg-red-600 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all shrink-0"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all shrink-0"
                     >
-                      <Undo2 className="w-3.5 h-3.5" />
+                      <RotateCcw className="w-3.5 h-3.5" />
                       {t('estimation.refuse')}
                     </button>
                   )}
@@ -1567,7 +1567,7 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
         )}
       </AnimatePresence>
 
-      {/* Refusal Panel */}
+      {/* Retourné Panel */}
       <AnimatePresence>
         {isRefusalPanelOpen && (selectedEstimation || selectedIds.size > 0) && (
           <div className="fixed inset-0 z-[100] flex justify-end">
@@ -1576,56 +1576,56 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsRefusalPanelOpen(false)}
-              className="absolute inset-0 bg-theme-sidebar-active-bg/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-[400px] bg-theme-sidebar-active-bg h-full shadow-2xl flex flex-col border-l border-white/10"
+              className="relative w-[400px] bg-white h-full shadow-xl flex flex-col border-l border-gray-200"
             >
-              <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
-                    <XCircle className="w-4 h-4 text-theme-sidebar-active-text" />
+                  <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
+                    <RotateCcw className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-base font-bold text-theme-sidebar-active-text tracking-tight uppercase">{t('estimation.refuse')}</h2>
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide">
+                    <h2 className="text-base font-bold text-gray-900 tracking-tight uppercase">{t('estimation.refuse')}</h2>
+                    <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wide">
                       {selectedEstimation ? selectedEstimation.number : `${selectedIds.size} ${t('admin.estimations')}`}
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setIsRefusalPanelOpen(false)} className="p-2 hover:bg-white/10 rounded-lg transition-all">
-                  <X className="w-5 h-5 text-zinc-500" />
+                <button onClick={() => setIsRefusalPanelOpen(false)} className="p-2 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer">
+                  <X className="w-5 h-5 text-gray-400" />
                 </button>
               </div>
 
-              <div className="flex-1 p-4 space-y-6 bg-theme-sidebar-active-bg overflow-y-auto">
+              <div className="flex-1 p-6 space-y-5 bg-white overflow-y-auto">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide ml-3">{t('estimation.refusalReason')}</label>
+                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.refusalReason')}</label>
                     {refusalForm.message && !savedTemplates.includes(refusalForm.message) && (
-<button 
-                          onClick={async () => {
-                            if (!currentUser?.uid) return;
-                            try {
-                              await updateDoc(doc(db, 'users', currentUser.uid), {
-                                'settings.savedRefusalTemplates': arrayUnion(refusalForm.message)
-                              });
-                            } catch (err) {
-                              console.error('Failed to save template:', err);
-                            }
-                          }}
-                          className="text-[9px] text-[#3b82f6] hover:underline flex items-center gap-1 font-bold"
-                        >
-                          <PlusCircle size={10} />
-                          {t('estimation.saveTemplate')}
-                        </button>
+                      <button 
+                        onClick={async () => {
+                          if (!currentUser?.uid) return;
+                          try {
+                            await updateDoc(doc(db, 'users', currentUser.uid), {
+                              'settings.savedRefusalTemplates': arrayUnion(refusalForm.message)
+                            });
+                          } catch (err) {
+                            console.error('Failed to save template:', err);
+                          }
+                        }}
+                        className="text-[10px] text-blue-600 hover:underline flex items-center gap-1 font-semibold"
+                      >
+                        <PlusCircle size={12} />
+                        {t('estimation.saveTemplate')}
+                      </button>
                     )}
-
                   </div>
+
                   <div className="grid grid-cols-1 gap-2">
                     {[
                       { key: 'priceTooHigh', value: 'Price too high' },
@@ -1636,10 +1636,10 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                       <button
                         key={item.key}
                         onClick={() => setRefusalForm({ ...refusalForm, subject: item.value })}
-                        className={`p-3 rounded-lg border text-left transition-all font-bold uppercase tracking-wide text-[10px] ${
+                        className={`p-3 rounded-lg border text-left transition-all font-semibold text-[11px] ${
                           refusalForm.subject === item.value
-                            ? 'bg-red-500 border-red-500 text-theme-sidebar-active-text'
-                            : 'bg-zinc-900 border-white/10 text-zinc-400 hover:border-white/20'
+                            ? 'bg-amber-50 border-amber-400 text-amber-700'
+                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                         }`}
                       >
                         {t(`estimation.${item.key}`)}
@@ -1648,18 +1648,18 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                   </div>
                 </div>
 
-{savedTemplates.length > 0 && (
-                    <div className="space-y-2">
-                      <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide ml-3">{t('estimation.savedTemplates')}</label>
-                      <div className="flex flex-wrap gap-2">
-                        {savedTemplates.map((template: string, idx: number) => (
-                          <div key={idx} className="group/tpl relative">
-                            <button
-                              onClick={() => setRefusalForm({ subject: t('estimation.otherReason'), message: template })}
-                            className={`px-3 py-1.5 text-[9px] bg-zinc-900 border rounded-lg transition-all font-bold uppercase tracking-wide pr-8 ${
+                {savedTemplates.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.savedTemplates')}</label>
+                    <div className="flex flex-wrap gap-2">
+                      {savedTemplates.map((template: string, idx: number) => (
+                        <div key={idx} className="group/tpl relative">
+                          <button
+                            onClick={() => setRefusalForm({ subject: t('estimation.otherReason'), message: template })}
+                            className={`px-3 py-1.5 text-[10px] bg-white border rounded-lg transition-all font-semibold pr-8 ${
                               refusalForm.message === template 
-                                ? 'border-[#3b82f6] text-[#3b82f6] bg-blue-500/5' 
-                                : 'border-white/10 text-zinc-500 hover:border-white/20'
+                                ? 'border-blue-400 text-blue-600 bg-blue-50' 
+                                : 'border-gray-200 text-gray-500 hover:border-gray-300'
                             }`}
                           >
                             {template.substring(0, 25)}{template.length > 25 ? '...' : ''}
@@ -1676,30 +1676,29 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                                 console.error('Failed to delete template:', err);
                               }
                             }}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-red-500/50 hover:text-red-500 transition-colors"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-red-400 hover:text-red-500 transition-colors"
                           >
                             <Trash2 size={10} />
                           </button>
                         </div>
                       ))}
                     </div>
-
                   </div>
                 )}
 
-                <div className="space-y-3">
-                  <label className="text-[9px] font-bold text-zinc-500 uppercase tracking-wide ml-3">{t('estimation.clientMessage')}</label>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.clientMessage')}</label>
                   <textarea
                     value={refusalForm.message}
                     onChange={(e) => setRefusalForm({ ...refusalForm, message: e.target.value })}
                     placeholder={t('estimation.refusalPlaceholder')}
-                    className="w-full p-3 bg-zinc-900 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none h-28 text-xs font-medium text-theme-sidebar-active-text"
+                    className="w-full p-3 bg-white border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all resize-none h-28 text-sm font-medium text-gray-900 placeholder:text-gray-400"
                   />
                 </div>
               </div>
 
-              <div className="p-4 bg-zinc-900 border-t border-white/10 flex gap-3">
-                <button onClick={() => setIsRefusalPanelOpen(false)} className="flex-1 py-2.5 bg-theme-sidebar-active-bg border border-white/10 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-white/5 transition-all">
+              <div className="p-4 bg-gray-50 border-t border-gray-200 flex gap-3">
+                <button onClick={() => setIsRefusalPanelOpen(false)} className="flex-1 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-[11px] font-semibold uppercase tracking-wide hover:bg-gray-100 transition-colors cursor-pointer">
                   {t('estimation.cancel')}
                 </button>
                 <button
@@ -1714,7 +1713,7 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                     }
                   }}
                   disabled={!refusalForm.subject || (refusalForm.subject === 'Autre raison' && !refusalForm.message)}
-                  className="flex-1 py-2.5 bg-red-600 text-theme-sidebar-active-text rounded-lg text-[10px] font-bold uppercase tracking-wide hover:bg-red-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex-1 py-2.5 bg-gray-900 text-white rounded-lg text-[11px] font-semibold uppercase tracking-wide hover:bg-gray-800 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   {t('estimation.confirmRefusal')}
                 </button>
