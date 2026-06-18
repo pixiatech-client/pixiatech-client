@@ -899,9 +899,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                {searchedQuotes.length > 0 ? searchedQuotes.map((quote) => {
+                    {searchedQuotes.length > 0 ? searchedQuotes.map((quote) => {
                   const isRental = quote.transactionType === 'rental';
                   const amountVal = quote.totalClient || quote.totalQuote || 0;
+                  const clientName = typeof quote.client === 'object' ? (quote.client?.companyName || t('admin.noNameClient')) : (quote.client || t('admin.noNameClient'));
+                  const createdAtDate = quote.createdAt?.toDate ? quote.createdAt.toDate() : (quote.createdAt ? new Date(quote.createdAt) : null);
                   return (
                     <tr key={quote.id} className="group hover:bg-theme-sidebar-active-bg/5 transition-colors">
                       <td className="py-4">
@@ -909,7 +911,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                           <img src="/bot-avatars/estimation.png" alt="" className="w-8 h-8 rounded-lg object-cover" />
                           <div className="flex flex-col">
                             <span className="text-sm font-bold group-hover:text-blue-500 transition-colors">
-                              {quote.client?.companyName || t('admin.noNameClient')}
+                              {clientName}
                             </span>
                             <span className="text-[10px] text-gray-400 uppercase tracking-tighter">
                               ID: {quote.id.substring(0, 8)}
@@ -920,13 +922,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                       <td className="py-4">
                         <div className="flex flex-col">
                           <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500 group-hover:text-zinc-600'} transition-colors`}>
-                            {quote.createdAt?.toDate 
-                              ? IntlHelpers.formatDate(quote.createdAt.toDate(), locale, { day: 'numeric', month: 'long', year: 'numeric' }) 
+                            {createdAtDate
+                              ? IntlHelpers.formatDate(createdAtDate, locale, { day: 'numeric', month: 'long', year: 'numeric' })
                               : t('admin.unknownDate')}
                           </span>
-                          {quote.createdAt?.toDate && (
+                          {createdAtDate && (
                             <span className={`text-[10px] ${isDark ? 'text-gray-500' : 'text-gray-400'} mt-0.5`}>
-                              {IntlHelpers.formatDateTime(quote.createdAt.toDate(), locale)}
+                              {IntlHelpers.formatDateTime(createdAtDate, locale)}
                             </span>
                           )}
                         </div>
@@ -1013,7 +1015,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
               const isExpanded = expandedId === quote.id;
               const isRental = quote.transactionType === 'rental';
               const amountVal = quote.totalClient || quote.totalQuote || 0;
-              const dateStr = quote.createdAt?.toDate ? IntlHelpers.formatDate(quote.createdAt.toDate(), locale, { day: 'numeric', month: 'long' }) : t('admin.unknownDate');
+              const clientName = typeof quote.client === 'object' ? (quote.client?.companyName || t('admin.noNameClient')) : (quote.client || t('admin.noNameClient'));
+              const createdAtDate = quote.createdAt?.toDate ? quote.createdAt.toDate() : (quote.createdAt ? new Date(quote.createdAt) : null);
+              const dateStr = createdAtDate ? IntlHelpers.formatDate(createdAtDate, locale, { day: 'numeric', month: 'long' }) : t('admin.unknownDate');
               
               return (
                 <div 
@@ -1030,12 +1034,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                       <div className="flex items-center gap-3">
                         <img src="/bot-avatars/estimation.png" alt="" className="w-10 h-10 rounded-xl object-cover" />
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold truncate max-w-[150px]">{quote.client?.companyName || t('admin.noNameClient')}</span>
+                          <span className="text-sm font-bold truncate max-w-[150px]">{clientName}</span>
                           <span className="text-[10px] text-gray-400 uppercase font-medium">
                             {dateStr}
-                            {quote.createdAt?.toDate && (
+                            {createdAtDate && (
                               <span className="block text-[9px] font-normal normal-case mt-0.5">
-                                {IntlHelpers.formatDateTime(quote.createdAt.toDate(), locale)}
+                                {IntlHelpers.formatDateTime(createdAtDate, locale)}
                               </span>
                             )}
                           </span>
