@@ -102,7 +102,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   fournisseur: [
     'dashboard:view',
     'quotes:read',
-    'quotes:update',
     'quotes:view:supplier',
     'quotes:view:delivery',
     'notifications:read',
