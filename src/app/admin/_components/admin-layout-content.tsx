@@ -291,22 +291,19 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         )}>
           <div className="absolute inset-0 bg-white/10 -z-10" />
           {userProfile?.role === 'admin' && (
-            <div className="relative px-4 md:px-8 -mx-4 md:-mx-8">
-              <div className="border-t border-[#ef4444]" />
-              <motion.div
-                initial={{ opacity: 0, y: -2 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="flex justify-center -mt-4"
-              >
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#ef4444] shadow-lg shadow-red-500/20">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                  <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em]">
-                    {t('admin.adminSpace')}
-                  </span>
-                </div>
-              </motion.div>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: -2 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="flex justify-center -mt-4"
+            >
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#ef4444] shadow-lg shadow-red-500/20">
+                <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                <span className="text-[9px] font-bold text-white uppercase tracking-[0.2em]">
+                  {t('admin.adminSpace')}
+                </span>
+              </div>
+            </motion.div>
           )}
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 flex-grow">
