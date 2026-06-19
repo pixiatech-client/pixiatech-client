@@ -413,7 +413,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     >
                       <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                       <span className="text-[8px] font-bold text-white uppercase tracking-[0.15em] whitespace-nowrap">
-                        Espace {userRoleName}
+                        {userRoleName} Space
                       </span>
                     </div>
                   )}
