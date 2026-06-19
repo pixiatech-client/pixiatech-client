@@ -130,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSaveLogo,
   initialOrder
 }) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
@@ -413,7 +413,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     >
                       <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                       <span className="text-[8px] font-bold text-white uppercase tracking-[0.15em] whitespace-nowrap">
-                        {userRoleName} Space
+                        {locale === 'fr' ? `Espace ${userRoleName}` : `${userRoleName} Space`}
                       </span>
                     </div>
                   )}
