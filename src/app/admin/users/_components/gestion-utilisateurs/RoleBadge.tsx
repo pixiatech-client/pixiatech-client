@@ -5,11 +5,19 @@ interface RoleBadgeProps {
   role: string;
 }
 
+const roleNameMap: Record<string, string> = {
+  'administrateur': 'Administrator',
+  'admin': 'Administrator',
+  'fournisseur': 'Supplier',
+  'commercial': 'Sales Rep',
+};
+
 export const RoleBadge: React.FC<RoleBadgeProps> = ({ role }) => {
   const { getRoleName, getRoleColor } = useRoles();
   
   const name = getRoleName(role);
   const color = getRoleColor(role);
+  const displayName = roleNameMap[name.toLowerCase()] || name;
 
   return (
     <span 
@@ -20,7 +28,7 @@ export const RoleBadge: React.FC<RoleBadgeProps> = ({ role }) => {
         borderColor: `${color}40`, // 40% opacity
       }}
     >
-      {name}
+      {displayName}
     </span>
   );
 };
