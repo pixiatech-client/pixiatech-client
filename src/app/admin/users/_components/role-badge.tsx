@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useI18n } from '@/lib/i18n';
 
 interface RoleBadgeProps {
   roleName: string;
@@ -15,6 +16,7 @@ const roleNameMap: Record<string, string> = {
 };
 
 export const RoleBadge: React.FC<RoleBadgeProps> = ({ roleName, roleColor }) => {
+  const { locale } = useI18n();
   const getRoleStyles = () => {
     const name = roleName.toLowerCase();
     if (name.includes('admin')) return 'bg-[#fef2f2] text-[#ef4444] border-[#fecaca]';
@@ -23,7 +25,7 @@ export const RoleBadge: React.FC<RoleBadgeProps> = ({ roleName, roleColor }) => 
     return 'bg-[#eff6ff] text-[#3b82f6] border-[#dbeafe]';
   };
 
-  const displayName = roleNameMap[roleName.toLowerCase()] || roleName;
+  const displayName = locale === 'fr' ? roleName : (roleNameMap[roleName.toLowerCase()] || roleName);
 
   return (
     <span className={`px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase tracking-widest border ${getRoleStyles()}`}>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useRoles } from '@/contexts/RoleContext';
+import { useI18n } from '@/lib/i18n';
 
 interface RoleBadgeProps {
   role: string;
@@ -14,10 +15,11 @@ const roleNameMap: Record<string, string> = {
 
 export const RoleBadge: React.FC<RoleBadgeProps> = ({ role }) => {
   const { getRoleName, getRoleColor } = useRoles();
+  const { locale } = useI18n();
   
   const name = getRoleName(role);
   const color = getRoleColor(role);
-  const displayName = roleNameMap[name.toLowerCase()] || name;
+  const displayName = locale === 'fr' ? name : (roleNameMap[name.toLowerCase()] || name);
 
   return (
     <span 
