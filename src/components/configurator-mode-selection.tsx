@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Zap } from 'lucide-react';
+import { ArrowRight, Store } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { SparklesText } from '@/components/ui/sparkles-text';
 
@@ -46,29 +46,26 @@ export function ConfiguratorModeSelection({ onSelectMode, onOpenBot, settings }:
           </div>
 
           <div className="space-y-6 w-full">
-            {/* Configuration Guidée */}
-            {settings?.isGuidedConfigEnabled !== false && (
-              <motion.div
-                onClick={() => handleSelect('wizard')}
-                whileTap={{ scale: 0.98 }}
-                className="group cursor-pointer"
-              >
-                <div className="relative overflow-hidden rounded-[1.5rem] bg-black text-white p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-black/40">
-                  {/* Lime accent glow */}
-                  <div className="absolute -top-10 -right-10 w-48 h-48 bg-[#c6ff00]/20 rounded-full blur-3xl pointer-events-none" />
-                  <div className="relative z-10 flex justify-between items-start">
-                    <div>
-                      <h3 className="flex items-center gap-3 font-black text-xl text-white">
-                        <Zap className="w-6 h-6 text-[#c6ff00]" />
-                        {t('modeSelection.wizardTitle')}
-                      </h3>
-                      <p className="text-sm text-white/60 mt-1">{t('modeSelection.wizardDesc')}</p>
-                    </div>
-                    <ArrowRight className="w-6 h-6 text-[#c6ff00] transition-transform group-hover:translate-x-2 shrink-0" />
+            {/* Boutique */}
+            <motion.div
+              onClick={() => window.location.href = '/boutique'}
+              whileTap={{ scale: 0.98 }}
+              className="group cursor-pointer"
+            >
+              <div className="relative overflow-hidden rounded-[1.5rem] bg-black text-white p-8 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-black/40">
+                <div className="absolute -top-10 -right-10 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
+                <div className="relative z-10 flex justify-between items-start">
+                  <div>
+                    <h3 className="flex items-center gap-3 font-black text-xl text-white">
+                      <Store className="w-6 h-6 text-blue-400" />
+                      {t('modeSelection.boutiqueTitle')}
+                    </h3>
+                    <p className="text-sm text-white/60 mt-1">{t('modeSelection.boutiqueDesc')}</p>
                   </div>
+                  <ArrowRight className="w-6 h-6 text-blue-400 transition-transform group-hover:translate-x-2 shrink-0" />
                 </div>
-              </motion.div>
-            )}
+              </div>
+            </motion.div>
 
             {/* Configuration Manuelle → ouvre l'assistant Lumi */}
             <motion.div
