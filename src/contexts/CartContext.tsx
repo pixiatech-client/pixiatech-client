@@ -16,6 +16,8 @@ export interface CartItem {
   rentalStartTime?: string;
   rentalEndTime?: string;
   renterDetails?: RenterDetails;
+  additionalNotes?: string;
+  contractSignedAt?: string;
   rentalFlowCompleted?: boolean;
 }
 

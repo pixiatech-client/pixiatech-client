@@ -156,6 +156,8 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
       rentalStartTime,
       rentalEndTime,
       renterDetails: { company, representative, email, phone, address, city, postcode },
+      additionalNotes: additionalNotes || undefined,
+      contractSignedAt: isSignatureValidated ? new Date().toISOString() : undefined,
       rentalFlowCompleted: true,
     }, quantity);
   };

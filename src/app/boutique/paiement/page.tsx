@@ -83,6 +83,8 @@ function PayPalButtonGroup({ fundingSource, total, handlePay, items }: { funding
               rentalEndDate: i.rentalEndDate,
               rentalStartTime: i.rentalStartTime,
               rentalEndTime: i.rentalEndTime,
+              additionalNotes: i.additionalNotes || '',
+              contractSignedAt: i.contractSignedAt || null,
             }));
             const res = await fetch('/api/paypal/capture-order', {
               method: 'POST',
