@@ -125,6 +125,8 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState<{ image?: string; price?: number }>({});
+  const [multiSelections, setMultiSelections] = useState<Record<string, string>>({});
   const thumbScrollRef = useRef<HTMLDivElement>(null);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
@@ -143,6 +145,11 @@ export default function ProductDetailPage() {
   const images = galleryImages;
   const canRent = product?.availableFor?.includes('rental') ?? false;
   const canBuy = product?.availableFor?.includes('sale') ?? true;
+
+  const effectivePrice = selectedVariant.price ?? product?.price ?? 0;
+  const effectiveImage = selectedVariant.image || galleryImages[selectedImage];
+  const effectiveOldPrice = (selectedVariant.price && selectedVariant.price < (product?.oldPrice ?? Infinity)) ? product?.oldPrice : product?.oldPrice;
+  const displayVariants = (product?.variants || []).filter(v => v.active && v.name);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -244,9 +251,9 @@ export default function ProductDetailPage() {
           <div className="flex flex-col">
             <section>
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-                <div className="cursor-pointer overflow-hidden" onClick={() => openLightbox(selectedImage)}>
+                <div className="cursor-pointer overflow-hidden" onClick={() => { setSelectedVariant({}); openLightbox(selectedImage); }}>
                   <img
-                    src={images[selectedImage]}
+                    src={effectiveImage}
                     alt={product.name}
                     className="w-full h-auto object-cover aspect-[4/3] transition-transform duration-500 hover:scale-110"
                   />
@@ -278,7 +285,7 @@ export default function ProductDetailPage() {
                       {images.map((img, idx) => (
                         <button
                           key={idx}
-                          onClick={() => { setSelectedImage(idx); openLightbox(idx); }}
+                          onClick={() => { setSelectedImage(idx); setSelectedVariant({}); openLightbox(idx); }}
                           ref={idx === selectedImage ? activeThumbRef : null}
                           className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
                           onMouseEnter={() => setSelectedImage(idx)}
@@ -389,15 +396,75 @@ export default function ProductDetailPage() {
 
             <div className="mb-6">
               <div className="flex items-center gap-3">
-                <div className="text-3xl font-bold text-gray-900">{formatPrice(product.price)}</div>
-                {product.oldPrice && product.oldPrice > product.price && (
+                <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
+                {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                    -{Math.round((1 - product.price / product.oldPrice) * 100)}%
+                    -{Math.round((1 - effectivePrice / effectiveOldPrice) * 100)}%
                   </span>
                 )}
               </div>
               <div className="text-sm text-gray-400 mt-1 italic">TVA incluse. Frais de port calculés lors du paiement.</div>
             </div>
+
+            {/* Simple variants */}
+            {displayVariants.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {displayVariants.map((v) => (
+                  <button
+                    key={v.name}
+                    onClick={() => {
+                      setSelectedVariant({ image: v.image, price: v.price });
+                      const imgIdx = images.indexOf(v.image);
+                      if (imgIdx >= 0) setSelectedImage(imgIdx);
+                    }}
+                    className={`px-4 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedVariant.image === v.image ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-600 hover:border-gray-400'}`}
+                  >
+                    {v.name}
+                    {v.price > 0 && <span className="ml-1 opacity-70">{formatPrice(v.price)}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Multi-level variants */}
+            {(product?.variantLevels || []).length > 0 && (
+              <div className="space-y-3 mb-4">
+                {product!.variantLevels!.map((lv) => (
+                  <div key={lv.name}>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">{lv.name}</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {lv.options.map((opt) => {
+                        const active = multiSelections[lv.name] === opt;
+                        return (
+                          <button
+                            key={opt}
+                            onClick={() => {
+                              const next = { ...multiSelections, [lv.name]: active ? '' : opt };
+                              setMultiSelections(next);
+                              const combo = (product?.variantCombinations || []).find(c =>
+                                Object.entries(next).every(([k, v]) => v && c.selections[k] === v)
+                              );
+                              if (combo) {
+                                setSelectedVariant({ image: combo.image, price: combo.price });
+                                if (combo.image) {
+                                  const imgIdx = images.indexOf(combo.image);
+                                  if (imgIdx >= 0) setSelectedImage(imgIdx);
+                                }
+                              } else {
+                                setSelectedVariant({});
+                              }
+                            }}
+                            className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all ${active ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-500 hover:border-gray-400'}`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="flex border-b border-gray-200/40 mb-6">
               <button

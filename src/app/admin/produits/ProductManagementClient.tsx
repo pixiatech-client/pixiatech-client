@@ -29,6 +29,27 @@ import {
 } from './firebase';
 import TipTapEditor from '@/components/TipTapEditor';
 
+// --- Variant types ---
+interface ProductVariant {
+  name: string;
+  price: number;
+  image: string;
+  order: number;
+  active: boolean;
+}
+
+interface VariantLevelDef {
+  name: string;
+  options: string[];
+  order: number;
+}
+
+interface VariantCombination {
+  selections: Record<string, string>;
+  price: number;
+  image: string;
+}
+
 // --- Helper to identify if a URL is a video ---
 const isVideoUrl = (url: string | undefined | null): boolean => {
   if (!url) return false;
@@ -73,8 +94,8 @@ const getSafeImageUrl = (product: any) => {
   return null;
 };
 
-// --- Sortable image component for gallery drag & drop ---
-const SortableImage = ({ url, onRemove }: { url: string; onRemove: () => void }) => {
+// --- Sortable image component for gallery drag & drop with variant support ---
+const GalleryImage = ({ url, onRemove, variant, onVariantChange, idx }: { url: string; onRemove: () => void; variant?: ProductVariant; onVariantChange: (v: ProductVariant) => void; idx: number }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: url });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -82,6 +103,7 @@ const SortableImage = ({ url, onRemove }: { url: string; onRemove: () => void })
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 50 : 'auto' as any,
   };
+  const isVar = !!variant;
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative w-[calc(33.333%-6px)] aspect-square rounded-xl overflow-hidden border border-slate-200 cursor-grab active:cursor-grabbing select-none touch-none">
       <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
@@ -89,6 +111,18 @@ const SortableImage = ({ url, onRemove }: { url: string; onRemove: () => void })
       <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 hover:opacity-100 transition-opacity">
         <X className="w-3 h-3" />
       </button>
+      <label className="absolute bottom-1 left-1 flex items-center gap-1 bg-white/80 backdrop-blur-sm rounded-md px-1.5 py-0.5 cursor-pointer text-[8px] font-bold text-slate-600" onClick={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          checked={isVar}
+          onChange={() => {
+            if (isVar) { onVariantChange({ name: '', price: 0, image: url, order: idx, active: true }); }
+            else { onVariantChange({ name: `Variante ${idx + 1}`, price: 0, image: url, order: idx, active: true }); }
+          }}
+          className="w-2.5 h-2.5"
+        />
+        Variante
+      </label>
     </div>
   );
 };
@@ -2283,6 +2317,12 @@ const ProduitPage = ({
   ficheTab,
   setFicheTab,
   activeSpace,
+  variants,
+  setVariants,
+  variantLevels,
+  setVariantLevels,
+  variantCombinations,
+  setVariantCombinations,
   oldPrice,
   setOldPrice,
   isHidden,
@@ -2870,7 +2910,7 @@ const ProduitPage = ({
                   <SortableContext items={galleryUrls}>
                     <div className="flex flex-wrap gap-2">
                       {galleryUrls.map((url, idx) => (
-                        <SortableImage key={url} url={url} onRemove={() => removeGalleryImage(idx)} />
+                        <GalleryImage key={url} url={url} idx={idx} onRemove={() => removeGalleryImage(idx)} variant={variants.find(v => v.image === url)} onVariantChange={(v) => { setVariants(prev => { const i = prev.findIndex(x => x.image === v.image); if (i >= 0) { if (v.name) { const n = [...prev]; n[i] = v; return n; } else { return prev.filter((_, j) => j !== i); } } return v.name ? [...prev, v] : prev; }); }} />
                       ))}
                       <button onClick={triggerGalleryUpload} className="w-[calc(33.333%-6px)] aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
                         <Plus className="w-5 h-5 text-slate-300" />
@@ -2881,6 +2921,100 @@ const ProduitPage = ({
                 </DndContext>
               </div>
             )}
+
+            {/* Variant config panels */}
+            {activeSpace === 'boutique' && variants.filter(v => v.name).length > 0 && (
+              <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3 shadow-none md:shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
+                    <Tag className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Variantes</h4>
+                </div>
+                <div className="space-y-3">
+                  {variants.filter(v => v.name).map((v, i) => (
+                    <div key={v.image} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                      <img src={v.image} alt="" className="w-12 h-12 rounded-lg object-cover border border-slate-200" />
+                      <div className="flex-1 grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Nom</label>
+                          <input value={v.name} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], name: e.target.value }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
+                        </div>
+                        <div>
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Prix (€)</label>
+                          <input type="number" value={v.price || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], price: Number(e.target.value) }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
+                        </div>
+                        <div className="flex items-end pb-1">
+                          <button onClick={() => setVariants(prev => prev.filter((_, j) => j !== i))} className="h-8 px-3 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors">Supprimer</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Multi-level variant levels */}
+            {activeSpace === 'boutique' && (
+              <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3 shadow-none md:shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
+                      <Layers className="w-5 h-5 text-slate-400" />
+                    </div>
+                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Niveaux de variantes</h4>
+                  </div>
+                  <button onClick={() => setVariantLevels(prev => [...prev, { name: '', options: [''], order: prev.length }])} className="h-8 px-3 bg-black text-white rounded-lg text-[10px] font-bold hover:bg-slate-800 transition-colors">+ Ajouter niveau</button>
+                </div>
+                {variantLevels.length > 0 && (
+                  <div className="space-y-3">
+                    {variantLevels.map((lv, li) => (
+                      <div key={li} className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input value={lv.name} onChange={(e) => { const n = [...variantLevels]; n[li] = { ...n[li], name: e.target.value }; setVariantLevels(n); }} placeholder="Nom du niveau (ex: Taille)" className="flex-1 h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
+                          <button onClick={() => setVariantLevels(prev => prev.filter((_, j) => j !== li))} className="h-8 px-2 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold hover:bg-red-100">X</button>
+                        </div>
+                        <textarea value={lv.options.join('\n')} onChange={(e) => { const n = [...variantLevels]; n[li] = { ...n[li], options: e.target.value.split('\n').filter(Boolean) }; setVariantLevels(n); }} placeholder="Une option par ligne&#10;L&#10;XL&#10;XXL" className="w-full h-16 bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:border-slate-400 resize-none" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Multi-level variant combinations */}
+            {activeSpace === 'boutique' && variantLevels.some(l => l.name && l.options.length > 0) && (() => {
+              const genCombos: VariantCombination[] = [];
+              function build(idx: number, cur: Record<string, string>) {
+                if (idx >= variantLevels.length) { genCombos.push({ selections: { ...cur }, price: 0, image: '' }); return; }
+                const lv = variantLevels[idx];
+                if (!lv.name || lv.options.length === 0) { build(idx + 1, cur); return; }
+                lv.options.forEach(opt => { cur[lv.name] = opt; build(idx + 1, cur); });
+              }
+              build(0, {});
+              return (
+                <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3 shadow-none md:shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
+                      <Layers className="w-5 h-5 text-slate-400" />
+                    </div>
+                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Combinaisons ({genCombos.length})</h4>
+                  </div>
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
+                    {genCombos.map((combo, ci) => {
+                      const existing = variantCombinations.find(c => JSON.stringify(c.selections) === JSON.stringify(combo.selections));
+                      const label = Object.entries(combo.selections).map(([k, v]) => `${k}: ${v}`).join(' / ');
+                      return (
+                        <div key={ci} className="flex items-center gap-2 bg-slate-50 rounded-lg p-2 border border-slate-100">
+                          <span className="text-[10px] font-semibold text-slate-600 flex-1 truncate">{label}</span>
+                          <input type="number" placeholder="Prix" value={existing?.price ?? ''} onChange={(e) => { const n = [...variantCombinations]; const ei = n.findIndex(c => JSON.stringify(c.selections) === JSON.stringify(combo.selections)); if (ei >= 0) { n[ei] = { ...n[ei], price: Number(e.target.value) }; } else { n.push({ ...combo, price: Number(e.target.value) }); } setVariantCombinations(n); }} className="w-24 h-7 bg-white border border-slate-200 rounded-lg px-2 text-xs outline-none focus:border-slate-400" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Fiche Technique Card */}
             <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3 flex-1 flex flex-col shadow-none md:shadow-sm">
@@ -3188,7 +3322,7 @@ const ProduitPage = ({
                       <SortableContext items={galleryUrls}>
                         <div className="flex flex-wrap gap-2">
                           {galleryUrls.map((url, idx) => (
-                            <SortableImage key={url} url={url} onRemove={() => removeGalleryImage(idx)} />
+                            <GalleryImage key={url} url={url} idx={idx} onRemove={() => removeGalleryImage(idx)} variant={variants.find(v => v.image === url)} onVariantChange={(v) => { setVariants(prev => { const i = prev.findIndex(x => x.image === v.image); if (i >= 0) { if (v.name) { const n = [...prev]; n[i] = v; return n; } else { return prev.filter((_, j) => j !== i); } } return v.name ? [...prev, v] : prev; }); }} />
                           ))}
                           <button onClick={triggerGalleryUpload} className="w-[calc(33.333%-6px)] aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
                             <Plus className="w-5 h-5 text-slate-300" />
@@ -4118,6 +4252,9 @@ export default function ProductManagementClient() {
   const [descriptionDetaillee, setDescriptionDetaillee] = useState('');
   const [ficheTab, setFicheTab] = useState<'pdf' | 'description' | 'detail'>('pdf');
   const [surface, setSurface] = useState<number>(9.00);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [variantLevels, setVariantLevels] = useState<VariantLevelDef[]>([]);
+  const [variantCombinations, setVariantCombinations] = useState<VariantCombination[]>([]);
   const [mediaType, setMediaType] = useState<'photo' | 'video'>('photo');
   const [dimensionsEnabled, setDimensionsEnabled] = useState(false);
 
@@ -4338,6 +4475,9 @@ export default function ProductManagementClient() {
         galleryUrls: finalGalleryUrls,
         description: description,
         descriptionDetaillee: descriptionDetaillee,
+        variants: variants,
+        variantLevels: variantLevels,
+        variantCombinations: variantCombinations,
         date: new Date().toISOString(),
         uid: user?.uid || 'system',
         selectedChars: filteredSelectedChars
@@ -4782,6 +4922,9 @@ export default function ProductManagementClient() {
       setGalleryUrls(editingProduct.galleryUrls || []);
       setDescription(editingProduct.description || '');
       setDescriptionDetaillee(editingProduct.descriptionDetaillee || '');
+      setVariants(editingProduct.variants || []);
+      setVariantLevels(editingProduct.variantLevels || []);
+      setVariantCombinations(editingProduct.variantCombinations || []);
       setSurface(parseFloat(editingProduct.surfaceMinRequise || '0') || 9.00);
       setIsHidden(!!editingProduct.isHidden);
     } else {
@@ -4794,6 +4937,9 @@ export default function ProductManagementClient() {
       setGalleryUrls([]);
       setDescription('');
       setDescriptionDetaillee('');
+      setVariants([]);
+      setVariantLevels([]);
+      setVariantCombinations([]);
       setPrixVente('1250');
       setOldPrice('');
 
@@ -5432,13 +5578,19 @@ export default function ProductManagementClient() {
                    setDescription={setDescription}
                    descriptionDetaillee={descriptionDetaillee}
                    setDescriptionDetaillee={setDescriptionDetaillee}
-                   ficheTab={ficheTab}
-                   setFicheTab={setFicheTab}
-                   distancePitches={distancePitches}
-                   setDistancePitches={setDistancePitches}
-                    wizardSettings={wizardSettings}
-                    activeSpace={activeSpace}
-                 />
+                    ficheTab={ficheTab}
+                    setFicheTab={setFicheTab}
+                    variants={variants}
+                    setVariants={setVariants}
+                    variantLevels={variantLevels}
+                    setVariantLevels={setVariantLevels}
+                    variantCombinations={variantCombinations}
+                    setVariantCombinations={setVariantCombinations}
+                    distancePitches={distancePitches}
+                    setDistancePitches={setDistancePitches}
+                     wizardSettings={wizardSettings}
+                     activeSpace={activeSpace}
+                  />
               </motion.div>
             )}
           </AnimatePresence>

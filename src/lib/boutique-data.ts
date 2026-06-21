@@ -1,3 +1,23 @@
+export interface ProductVariant {
+  name: string;
+  price: number;
+  image: string;
+  order: number;
+  active: boolean;
+}
+
+export interface VariantLevelDef {
+  name: string;
+  options: string[];
+  order: number;
+}
+
+export interface VariantCombination {
+  selections: Record<string, string>;
+  price: number;
+  image: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -16,6 +36,9 @@ export interface Product {
   availableFor?: string[];
   specs: Record<string, string>;
   badges?: string[];
+  variants?: ProductVariant[];
+  variantLevels?: VariantLevelDef[];
+  variantCombinations?: VariantCombination[];
 }
 
 export interface RelatedProduct {
@@ -146,6 +169,9 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     availableFor: (data.availableFor || data.mode || ['sale']).map((m: string) => m.toLowerCase()),
     specs: buildSpecs(data, charNameMap),
     badges: data.badges || [],
+    variants: data.variants || [],
+    variantLevels: data.variantLevels || [],
+    variantCombinations: data.variantCombinations || [],
   };
 }
 
