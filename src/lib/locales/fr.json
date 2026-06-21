@@ -739,6 +739,8 @@
             "productUpdatedDesc": "{name} a été mis à jour avec succès.",
             "productAdded": "Produit ajouté",
             "productAddedDesc": "{name} a été ajouté au catalogue.",
+            "duplicateSuccessToast": "Produit dupliqué",
+            "duplicateSuccessDesc": "« {name} » a été dupliqué avec succès.",
             "saveErrorToast": "Erreur de sauvegarde",
             "saveErrorDesc": "Une erreur est survenue lors de la sauvegarde.",
             "databaseError": "Erreur de base de données",

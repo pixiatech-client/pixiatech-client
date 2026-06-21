@@ -4478,18 +4478,32 @@ export default function ProductManagementClient() {
   };
 
   const handleDuplicateProduct = async (product: any) => {
-    const { id, ...prodData } = product;
-    const newProduct = {
-      ...prodData,
-      name: `Copy — ${product.name}`,
-      date: new Date().toISOString(),
-    };
-    await addDoc(collection(db, "products"), newProduct);
+    try {
+      const { id, ...prodData } = product;
+      const newProduct = {
+        ...prodData,
+        name: `Copy — ${product.name}`,
+        date: new Date().toISOString(),
+      };
+      await addDoc(collection(db, prodCol), newProduct);
+      toast({
+        title: t('admin.productManagement.duplicateSuccessToast') || 'Produit dupliqué',
+        description: t('admin.productManagement.duplicateSuccessDesc', { name: product.name }) || `« ${product.name} » a été dupliqué avec succès.`,
+        variant: 'success',
+      });
+    } catch (error: any) {
+      console.error('Duplicate error:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible de dupliquer le produit.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleDeleteProduct = async (id: string) => {
     try {
-      await deleteDoc(doc(db, "products", id));
+      await deleteDoc(doc(db, prodCol, id));
     } catch (error) {
       console.error("Error deleting product", error);
     }
@@ -4497,7 +4511,7 @@ export default function ProductManagementClient() {
 
   const handleBulkDeleteProducts = async (ids: string[]) => {
     for (const id of ids) {
-      await deleteDoc(doc(db, "products", id));
+      await deleteDoc(doc(db, prodCol, id));
     }
   };
 

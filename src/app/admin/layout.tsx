@@ -149,10 +149,13 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     }
 
     const elapsed = Date.now() - mountedAt.current;
+    const GUARD_GRACE_MS = 30000;
 
-    // Session exists but Firebase hasn't resolved yet — wait during loading + 4s debounce
+    // Session exists but Firebase hasn't resolved yet — wait during loading + long debounce
     if (hasSession && !hasValidFirebaseUser) {
-      if (isUserLoading || sessionLoading || elapsed < 4000) return;
+      if (isUserLoading || sessionLoading || elapsed < GUARD_GRACE_MS) return;
+      // Firebase still null after 30s; rely on the 60s polling to detect real session death
+      return;
     }
 
     // Session exists and Firebase resolved — all good
@@ -161,8 +164,8 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     // No session and no Firebase user — genuinely logged out
     if (elapsed < 2000 && !hasSession) return;
 
-    // Stale session or no Firebase user: clear the stale cookie and redirect
-    if (!hasValidFirebaseUser) {
+    // Both session cookie AND Firebase user are gone — genuinely logged out
+    if (!hasSession && !hasValidFirebaseUser) {
       startLogout(async () => {
         await clearSession();
         router.push('/admin/login');

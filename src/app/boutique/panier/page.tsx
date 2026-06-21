@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ArrowLeft, ShoppingBag, Trash2, Minus, Plus, Heart, Truck, ArrowRight, Tag, ChevronDown, CreditCard, Shield, Landmark } from 'lucide-react';
+import { ShoppingBag, Trash2, Minus, Plus, Heart, Truck, ArrowRight, Tag, ChevronDown, CreditCard, Landmark, Shield, Home, Store, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { formatPrice, products } from '@/lib/boutique-data';
 import { toast } from 'sonner';
@@ -49,16 +49,32 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5F5F5' }}>
-      <header className="flex items-center justify-between px-6 md:px-12 lg:px-16 h-16 border-b border-gray-200/60">
-        <button onClick={() => router.push('/boutique')} className="flex items-center gap-2 text-sm font-semibold text-gray-400 hover:text-gray-900 transition-colors">
-          <ArrowLeft size={18} />
-          Retour à la boutique
-        </button>
-        <h1 className="font-bold text-lg text-gray-900 absolute left-1/2 -translate-x-1/2">Votre Panier</h1>
-        <div className="w-24" />
+      <header className="flex items-center justify-between px-6 md:px-10 lg:px-14 h-16 border-b border-gray-200/60">
+        <nav className="flex items-center gap-2">
+          <button onClick={() => router.back()} className="flex items-center justify-center w-8 h-8 rounded-xl bg-[#111827] text-blue-400 hover:bg-gray-800 transition-all duration-200">
+            <ArrowLeft size={14} />
+          </button>
+          <button onClick={() => router.push('/')} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200/70 hover:border-gray-300 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 shadow-sm hover:shadow transition-all duration-200">
+            <Home size={14} />
+            Accueil
+          </button>
+          <button onClick={() => router.push('/boutique')} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200/70 hover:border-gray-300 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 shadow-sm hover:shadow transition-all duration-200">
+            <Store size={14} />
+            Boutique
+          </button>
+        </nav>
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.push('/boutique/panier')} className="relative flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200/70 hover:border-gray-300 rounded-xl text-xs font-medium text-gray-500 hover:text-gray-800 shadow-sm hover:shadow transition-all duration-200">
+            <ShoppingBag size={14} />
+            {items.length > 0 && (
+              <span className="absolute -top-2 -right-2 bg-gray-900 text-white text-[9px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full">{items.length}</span>
+            )}
+            Panier
+          </button>
+        </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 md:px-12 lg:px-16 py-8">
+      <main className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 py-8">
         {items.length === 0 ? (
           <div className="text-center py-20">
             <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
@@ -164,10 +180,10 @@ export default function CartPage() {
                     <ChevronDown size={16} className={`transition-transform duration-200 ${promoOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {promoOpen && (
-                    <div className="px-4 pb-4">
-                      <div className="flex gap-2">
-                        <input type="text" placeholder="Code promo" className="flex-1 bg-gray-50 border border-gray-200/70 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 transition-colors" />
-                        <button className="bg-gray-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-colors">Appliquer</button>
+                    <div className="px-4 pb-4 overflow-hidden">
+                      <div className="flex gap-2 w-full">
+                        <input type="text" placeholder="Code promo" className="min-w-0 flex-1 bg-gray-50 border border-gray-200/70 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 transition-colors" />
+                        <button className="shrink-0 bg-gray-900 text-white px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-colors">Appliquer</button>
                       </div>
                     </div>
                   )}

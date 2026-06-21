@@ -806,6 +806,8 @@
             "productUpdatedDesc": "{name} has been successfully updated.",
             "productAdded": "Product added",
             "productAddedDesc": "{name} has been added to the catalog.",
+            "duplicateSuccessToast": "Product duplicated",
+            "duplicateSuccessDesc": "« {name} » has been successfully duplicated.",
             "saveErrorToast": "Save error",
             "saveErrorDesc": "An error occurred while saving.",
             "databaseError": "Database error",

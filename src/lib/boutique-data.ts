@@ -97,7 +97,7 @@ export function getProduct(id: string) {
 }
 
 import { firestore } from '@/firebase/config';
-import { collection, getDocs, doc, getDoc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
 async function fetchCharacteristicsMap(): Promise<Record<string, string>> {
   const snap = await getDocs(collection(firestore, 'boutique_characteristics'));
@@ -164,12 +164,13 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
 export async function fetchBoutiqueProducts(): Promise<Product[]> {
   try {
     const charNameMap = await fetchCharacteristicsMap();
-    const q = query(collection(firestore, 'boutique_products'), orderBy('name', 'asc'));
+    const q = collection(firestore, 'boutique_products');
     const snapshot = await getDocs(q);
-    if (snapshot.empty) return products;
-    return snapshot.docs.map((d) => mapFirestoreDoc(d, charNameMap));
-  } catch {
-    return products;
+    if (snapshot.empty) return [];
+    return snapshot.docs.map((d) => mapFirestoreDoc(d, charNameMap)).sort((a, b) => a.name.localeCompare(b.name));
+  } catch (e) {
+    console.warn('fetchBoutiqueProducts failed:', e);
+    return [];
   }
 }
 
@@ -179,7 +180,8 @@ export async function fetchBoutiqueProduct(id: string): Promise<Product | null> 
     const docSnap = await getDoc(doc(firestore, 'boutique_products', id));
     if (!docSnap.exists()) return null;
     return mapFirestoreDoc(docSnap, charNameMap);
-  } catch {
-    return products.find(p => p.id === id) || null;
+  } catch (e) {
+    console.warn('fetchBoutiqueProduct failed:', e);
+    return null;
   }
 }

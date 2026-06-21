@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ArrowLeft, Store, ShoppingBag, SlidersHorizontal, ChevronDown, Star, Sparkles, Tag, Home, X, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -9,10 +9,11 @@ import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProducts } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
 
-function FilterDrawer({ open, onClose, categories, selectedCategories, onCategoriesChange, minRating, onMinRatingChange, onReset, activeCount }: {
+function FilterDrawer({ open, onClose, categories, selectedCategories, onCategoriesChange, minRating, onMinRatingChange, transactionType, onTransactionTypeChange, onReset, activeCount }: {
   open: boolean; onClose: () => void;
   categories: string[]; selectedCategories: string[]; onCategoriesChange: (c: string[]) => void;
   minRating: number; onMinRatingChange: (r: number) => void;
+  transactionType: 'all' | 'sale' | 'rental'; onTransactionTypeChange: (t: 'all' | 'sale' | 'rental') => void;
   onReset: () => void; activeCount: number;
 }) {
   return (
@@ -56,6 +57,29 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                         />
                         <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{cat}</span>
                       </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Type</h3>
+                  <div className="flex gap-2">
+                    {[
+                      { value: 'all' as const, label: 'Toutes' },
+                      { value: 'sale' as const, label: 'Vente' },
+                      { value: 'rental' as const, label: 'Location' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => onTransactionTypeChange(opt.value)}
+                        className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                          transactionType === opt.value
+                            ? 'bg-gray-900 text-white shadow-sm'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -112,7 +136,20 @@ export default function BoutiquePage() {
   const [activeTab, setActiveTab] = useState<'all' | 'populaires' | 'nouveautes'>('all');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
+  const [transactionType, setTransactionType] = useState<'all' | 'sale' | 'rental'>('all');
   const [sortBy, setSortBy] = useState<'recent' | 'price-asc' | 'price-desc'>('recent');
+  const [displayCount, setDisplayCount] = useState(12);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const sentinelRef = useCallback((node: HTMLDivElement | null) => {
+    if (observerRef.current) observerRef.current.disconnect();
+    if (!node) return;
+    observerRef.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setDisplayCount((prev) => prev + 12);
+      }
+    }, { rootMargin: '200px' });
+    observerRef.current.observe(node);
+  }, []);
 
   useEffect(() => {
     fetchBoutiqueProducts().then(setProducts).finally(() => setLoading(false));
@@ -130,6 +167,10 @@ export default function BoutiquePage() {
       result = result.filter(p => p.badges?.includes('populaire'));
     } else if (activeTab === 'nouveautes') {
       result = result.filter(p => p.badges?.includes('nouveaute'));
+    }
+
+    if (transactionType !== 'all') {
+      result = result.filter(p => p.availableFor?.includes(transactionType));
     }
 
     if (selectedCategories.length > 0) {
@@ -151,7 +192,7 @@ export default function BoutiquePage() {
     return result;
   }, [products, activeTab, selectedCategories, minRating, sortBy]);
 
-  const activeFilterCount = selectedCategories.length + (minRating > 0 ? 1 : 0);
+  const activeFilterCount = selectedCategories.length + (minRating > 0 ? 1 : 0) + (transactionType !== 'all' ? 1 : 0);
 
   const handleQuickAdd = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
@@ -162,6 +203,7 @@ export default function BoutiquePage() {
   const resetFilters = () => {
     setSelectedCategories([]);
     setMinRating(0);
+    setTransactionType('all');
   };
 
   return (
@@ -174,12 +216,20 @@ export default function BoutiquePage() {
         onCategoriesChange={setSelectedCategories}
         minRating={minRating}
         onMinRatingChange={setMinRating}
+        transactionType={transactionType}
+        onTransactionTypeChange={setTransactionType}
         onReset={resetFilters}
         activeCount={activeFilterCount}
       />
 
       <header className="flex items-center justify-between px-6 md:px-10 lg:px-14 h-16 border-b border-gray-200/60">
         <nav className="flex items-center gap-2">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center justify-center w-8 h-8 rounded-xl bg-[#111827] text-blue-400 hover:bg-gray-800 transition-all duration-200"
+          >
+            <ArrowLeft size={14} />
+          </button>
           <button
             onClick={() => router.push('/')}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200/70 hover:border-gray-300 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 shadow-sm hover:shadow transition-all duration-200"
@@ -273,8 +323,9 @@ export default function BoutiquePage() {
             )}
           </div>
         ) : (
+          <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredProducts.map((product, idx) => (
+            {filteredProducts.slice(0, displayCount).map((product, idx) => (
               <article
                 key={product.id}
                 onClick={() => router.push(`/boutique/produit/${product.id}`)}
@@ -355,6 +406,10 @@ export default function BoutiquePage() {
               </article>
             ))}
           </div>
+          {filteredProducts.length > displayCount && (
+            <div ref={sentinelRef} className="h-10" />
+          )}
+          </>
         )}
       </main>
 

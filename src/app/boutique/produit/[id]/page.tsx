@@ -415,7 +415,10 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="mb-6">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
+                  <span className="text-lg text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
+                )}
                 <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
