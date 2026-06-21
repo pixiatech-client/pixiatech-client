@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ArrowLeft, Store, ShoppingBag, SlidersHorizontal, ChevronDown, Star, Home, X, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Store, ShoppingBag, SlidersHorizontal, ChevronDown, Star, Sparkles, Tag, Home, X, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
@@ -295,17 +295,15 @@ export default function BoutiquePage() {
                           {product.badges.map((badge) => (
                             <span
                               key={badge}
-                              className={`group flex items-center gap-1.5 text-[9px] font-bold px-1 py-1 rounded-lg backdrop-blur-xl bg-white/20 border border-white/30 hover:px-2.5 transition-all duration-200 ${
+                              className={`group flex items-center gap-1.5 text-[9px] font-bold rounded-lg backdrop-blur-xl bg-white/20 border border-white/30 hover:bg-white/25 hover:px-2.5 py-1 transition-all duration-200 ${
                                 badge === 'populaire' ? 'text-emerald-600 shadow-lg shadow-emerald-500/10' :
                                 badge === 'nouveaute' ? 'text-blue-600 shadow-lg shadow-blue-500/10' :
                                 'text-red-600 shadow-lg shadow-red-500/10'
                               }`}
                             >
-                              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                                badge === 'populaire' ? 'bg-emerald-500' :
-                                badge === 'nouveaute' ? 'bg-blue-500' :
-                                'bg-red-500'
-                              }`} />
+                              {badge === 'populaire' ? <Star size={12} className="text-emerald-500 flex-shrink-0" fill="currentColor" /> :
+                               badge === 'nouveaute' ? <Sparkles size={12} className="text-blue-500 flex-shrink-0" /> :
+                               <Tag size={12} className="text-red-500 flex-shrink-0" />}
                               <span className="max-w-0 group-hover:max-w-[80px] overflow-hidden transition-all duration-200 whitespace-nowrap">
                                 {badge === 'populaire' ? 'Populaire' : badge === 'nouveaute' ? 'Nouveauté' : 'Promotion'}
                               </span>
