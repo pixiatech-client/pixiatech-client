@@ -127,9 +127,9 @@ export default function BoutiquePage() {
     let result = [...products];
 
     if (activeTab === 'populaires') {
-      result = result.filter(p => p.rating >= 4);
+      result = result.filter(p => p.badges?.includes('populaire'));
     } else if (activeTab === 'nouveautes') {
-      result = result.filter(p => p.rating >= 4.5);
+      result = result.filter(p => p.badges?.includes('nouveaute'));
     }
 
     if (selectedCategories.length > 0) {
@@ -284,13 +284,29 @@ export default function BoutiquePage() {
                 className="product-card-entry bg-white rounded-2xl border border-gray-200/70 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
               >
                 <div className="p-3 pb-0">
-                  <div className="relative aspect-[3/2] bg-gray-50 rounded-xl overflow-hidden">
-                    <img
-                      alt={product.name}
-                      src={product.image}
-                      className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 bg-gray-100"
-                    />
-                    <div className={`absolute inset-0 bg-black/5 transition-opacity duration-200 ${hoveredId === product.id ? 'opacity-100' : 'opacity-0'}`} />
+                    <div className="relative aspect-[3/2] bg-gray-50 rounded-xl overflow-hidden">
+                      <img
+                        alt={product.name}
+                        src={product.image}
+                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 bg-gray-100"
+                      />
+                      {product.badges && product.badges.length > 0 && (
+                        <div className="absolute top-2 left-2 flex flex-col gap-1">
+                          {product.badges.map((badge) => (
+                            <span
+                              key={badge}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm ${
+                                badge === 'populaire' ? 'bg-orange-500 text-white' :
+                                badge === 'nouveaute' ? 'bg-blue-500 text-white' :
+                                'bg-red-500 text-white'
+                              }`}
+                            >
+                              {badge === 'populaire' ? 'Populaire' : badge === 'nouveaute' ? 'Nouveauté' : 'Promotion'}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className={`absolute inset-0 bg-black/5 transition-opacity duration-200 ${hoveredId === product.id ? 'opacity-100' : 'opacity-0'}`} />
                     <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3 transition-all duration-200 ${hoveredId === product.id ? 'opacity-100 translate-y-[-50%]' : 'opacity-0 translate-y-[-40%]'}`}>
                       <span className="flex items-center justify-center size-9 bg-white rounded-full shadow-md text-gray-700 hover:text-gray-900 transition-colors -rotate-45">
                         <ArrowLeft size={16} className="rotate-45" />
