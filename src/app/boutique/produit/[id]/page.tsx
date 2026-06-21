@@ -125,6 +125,7 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const thumbScrollRef = useRef<HTMLDivElement>(null);
   const { addItem, itemCount } = useCart();
 
   useEffect(() => {
@@ -138,7 +139,7 @@ export default function ProductDetailPage() {
   const galleryImages = product?.gallery && product.gallery.length > 0
     ? [product.image, ...product.gallery]
     : [product?.image || ''];
-  const images = galleryImages.slice(0, 4);
+  const images = galleryImages;
   const canRent = product?.availableFor?.includes('rental') ?? false;
   const canBuy = product?.availableFor?.includes('sale') ?? true;
 
@@ -262,21 +263,33 @@ export default function ProductDetailPage() {
                 )}
               </div>
               {images.length > 1 && (
-                <div className="grid grid-cols-4 gap-4 mt-4">
-                  {images.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => openLightbox(idx)}
-                      className={`aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
-                      onMouseEnter={() => setSelectedImage(idx)}
-                    >
-                      <img
-                        src={img}
-                        alt={`${product.name} - Vue ${idx + 1}`}
-                        className={`w-full h-full object-cover ${selectedImage !== idx ? 'opacity-50' : ''}`}
-                      />
-                    </button>
-                  ))}
+                <div className="relative mt-4">
+                  <div ref={thumbScrollRef} className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-1">
+                    {images.map((img, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => { setSelectedImage(idx); openLightbox(idx); }}
+                        className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
+                        onMouseEnter={() => setSelectedImage(idx)}
+                      >
+                        <img
+                          src={img}
+                          alt={`${product.name} - Vue ${idx + 1}`}
+                          className={`w-full h-full object-cover ${selectedImage !== idx ? 'opacity-50' : ''}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  {images.length > 4 && (
+                    <>
+                      <button onClick={() => thumbScrollRef.current?.scrollBy({ left: -140, behavior: 'smooth' })} className="absolute left-0 top-0 bottom-0 w-8 flex items-center justify-center bg-gradient-to-r from-white to-transparent">
+                        <ChevronLeft size={14} className="text-gray-500" />
+                      </button>
+                      <button onClick={() => thumbScrollRef.current?.scrollBy({ left: 140, behavior: 'smooth' })} className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center bg-gradient-to-l from-white to-transparent">
+                        <ChevronRight size={14} className="text-gray-500" />
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </section>
