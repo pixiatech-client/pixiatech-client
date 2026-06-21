@@ -139,14 +139,6 @@ export default function ProductDetailPage() {
     });
   }, [params.id]);
 
-  useEffect(() => {
-    if (!product) return;
-    const activeVariants = (product.variants || []).filter(v => v.active && v.name);
-    if (activeVariants.length > 0) {
-      setSelectedVariant(activeVariants[0]);
-    }
-  }, [product]);
-
   const galleryImages = product?.gallery && product.gallery.length > 0
     ? [product.image, ...product.gallery]
     : [product?.image || ''];
@@ -263,7 +255,7 @@ export default function ProductDetailPage() {
                   <img
                     src={effectiveImage}
                     alt={product.name}
-                    className="w-full h-auto object-cover aspect-[4/3] transition-transform duration-500 hover:scale-110"
+                    className="w-full h-auto max-h-[450px] object-cover bg-slate-50 transition-transform duration-500 hover:scale-110"
                   />
                 </div>
               </div>
@@ -417,7 +409,8 @@ export default function ProductDetailPage() {
             {/* Simple variants */}
             {displayVariants.length > 0 && (
               <div className="mb-4">
-                <div className="flex flex-wrap gap-2">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Taille</div>
+                <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide">
                   {displayVariants.map((v) => (
                     <button
                       key={v.name}
@@ -426,7 +419,7 @@ export default function ProductDetailPage() {
                         const imgIdx = images.indexOf(v.image);
                         if (imgIdx >= 0) setSelectedImage(imgIdx);
                       }}
-                      className={`px-4 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-600 hover:border-gray-400'}`}
+                      className={`shrink-0 px-3 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-600 hover:border-gray-400'}`}
                     >
                       {v.name}
                     </button>
@@ -444,7 +437,7 @@ export default function ProductDetailPage() {
                 {product!.variantLevels!.map((lv) => (
                   <div key={lv.name}>
                     <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">{lv.name}</div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-nowrap gap-1.5 overflow-x-auto scrollbar-hide">
                       {lv.options.map((opt) => {
                         const active = multiSelections[lv.name] === opt;
                         return (
@@ -466,7 +459,7 @@ export default function ProductDetailPage() {
                                 setSelectedVariant(null);
                               }
                             }}
-                            className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all ${active ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-500 hover:border-gray-400'}`}
+                            className={`shrink-0 px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all ${active ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-500 hover:border-gray-400'}`}
                           >
                             {opt}
                           </button>
