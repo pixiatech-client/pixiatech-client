@@ -5192,13 +5192,14 @@ export default function ProductManagementClient() {
                 { id: 'configuration', label: 'Configuration guidée', icon: Settings2 },
               ].map((space) => {
                 const isActive = activeSpace === space.id;
+                const locked = !!editingProduct;
                 return (
                   <button
                     key={space.id}
-                    onClick={() => setActiveSpace(space.id as any)}
+                    onClick={() => { if (!locked) setActiveSpace(space.id as any); }}
                     className={cn(
                       "relative flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-5 h-8 text-[9px] md:text-[10px] font-black transition-all z-20 uppercase tracking-widest",
-                      isActive ? "text-white" : "text-slate-400 hover:text-slate-700"
+                      isActive ? "text-white" : locked ? "text-slate-300 cursor-not-allowed" : "text-slate-400 hover:text-slate-700"
                     )}
                   >
                     {isActive && (
