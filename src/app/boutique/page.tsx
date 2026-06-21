@@ -284,42 +284,52 @@ export default function BoutiquePage() {
                 className="product-card-entry bg-white rounded-2xl border border-gray-200/70 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
               >
                 <div className="p-3 pb-0">
-                    <div className="relative aspect-[3/2] bg-gray-50 rounded-xl overflow-hidden">
-                      <img
-                        alt={product.name}
-                        src={product.image}
-                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 bg-gray-100"
-                      />
+                    <div className="relative">
+                      <div className="aspect-[3/2] bg-gray-50 rounded-xl overflow-hidden">
+                        <img
+                          alt={product.name}
+                          src={product.image}
+                          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 bg-gray-100"
+                        />
+                        <div className={`absolute inset-0 bg-black/5 pointer-events-none transition-opacity duration-200 ${hoveredId === product.id ? 'opacity-100' : 'opacity-0'}`} />
+                      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3 transition-all duration-200 ${hoveredId === product.id ? 'opacity-100 translate-y-[-50%]' : 'opacity-0 translate-y-[-40%]'}`}>
+                        <span className="flex items-center justify-center size-9 bg-white rounded-full shadow-md text-gray-700 hover:text-gray-900 transition-colors -rotate-45">
+                          <ArrowLeft size={16} className="rotate-45" />
+                        </span>
+                        <span onClick={(e) => handleQuickAdd(e, product)} className="flex items-center justify-center size-9 bg-white rounded-full shadow-md text-gray-700 hover:text-gray-900 transition-colors">
+                          <ShoppingBag size={16} />
+                        </span>
+                      </div>
+                    </div>
                       {product.badges && product.badges.length > 0 && (
-                        <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+                        <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
                           {product.badges.map((badge) => (
-                            <span
-                              key={badge}
-                              className={`group flex items-center text-[9px] font-bold rounded-full backdrop-blur-xl bg-white/20 border border-white/30 hover:bg-white/25 transition-all duration-200 w-6 h-6 hover:w-auto hover:rounded-lg hover:px-2.5 justify-center hover:justify-start ${
-                                badge === 'populaire' ? 'text-emerald-600 shadow-lg shadow-emerald-500/10' :
-                                badge === 'nouveaute' ? 'text-blue-600 shadow-lg shadow-blue-500/10' :
-                                'text-red-600 shadow-lg shadow-red-500/10'
-                              }`}
-                            >
-                              {badge === 'populaire' ? <Star size={10} className="text-emerald-500 flex-shrink-0" fill="currentColor" /> :
-                               badge === 'nouveaute' ? <Sparkles size={10} className="text-blue-500 flex-shrink-0" /> :
-                               <Tag size={10} className="text-red-500 flex-shrink-0" />}
-                              <span className="max-w-0 group-hover:max-w-[80px] overflow-hidden transition-all duration-200 whitespace-nowrap ml-0 group-hover:ml-1.5">
+                            <span key={badge} className={`morphing-badge ${
+                              badge === 'populaire' ? 'emerald' :
+                              badge === 'nouveaute' ? 'blue' : 'red'
+                            }`}>
+                              <span className="morphing-frame" />
+                              <span className={`morphing-point top left ${badge === 'populaire' ? 'bg-emerald-400' : badge === 'nouveaute' ? 'bg-blue-400' : 'bg-red-400'}`} />
+                              <span className={`morphing-point top right ${badge === 'populaire' ? 'bg-emerald-400' : badge === 'nouveaute' ? 'bg-blue-400' : 'bg-red-400'}`} />
+                              <span className={`morphing-point bottom left ${badge === 'populaire' ? 'bg-emerald-400' : badge === 'nouveaute' ? 'bg-blue-400' : 'bg-red-400'}`} />
+                              <span className={`morphing-point bottom right ${badge === 'populaire' ? 'bg-emerald-400' : badge === 'nouveaute' ? 'bg-blue-400' : 'bg-red-400'}`} />
+                              <span className="morphing-overlay" />
+                              <span className="morphing-icon">
+                                {badge === 'populaire' ? <Star size={10} className="text-emerald-400" fill="currentColor" /> :
+                                 badge === 'nouveaute' ? <Sparkles size={10} className="text-blue-400" /> :
+                                 <Tag size={10} className="text-red-400" />}
+                              </span>
+                              <span className={`morphing-text ${
+                                badge === 'populaire' ? 'text-emerald-500' :
+                                badge === 'nouveaute' ? 'text-blue-500' :
+                                'text-red-500'
+                              }`}>
                                 {badge === 'populaire' ? 'Populaire' : badge === 'nouveaute' ? 'Nouveauté' : 'Promotion'}
                               </span>
                             </span>
                           ))}
                         </div>
                       )}
-                      <div className={`absolute inset-0 bg-black/5 transition-opacity duration-200 ${hoveredId === product.id ? 'opacity-100' : 'opacity-0'}`} />
-                    <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3 transition-all duration-200 ${hoveredId === product.id ? 'opacity-100 translate-y-[-50%]' : 'opacity-0 translate-y-[-40%]'}`}>
-                      <span className="flex items-center justify-center size-9 bg-white rounded-full shadow-md text-gray-700 hover:text-gray-900 transition-colors -rotate-45">
-                        <ArrowLeft size={16} className="rotate-45" />
-                      </span>
-                      <span onClick={(e) => handleQuickAdd(e, product)} className="flex items-center justify-center size-9 bg-white rounded-full shadow-md text-gray-700 hover:text-gray-900 transition-colors">
-                        <ShoppingBag size={16} />
-                      </span>
-                    </div>
                   </div>
                 </div>
                 <div className="p-4">
