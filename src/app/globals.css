@@ -939,7 +939,7 @@ body.light-theme aside.glass-ui {
   font-size: 9px;
   padding: 7px;
   padding-right: 14px;
-  transition: all 0.7s ease;
+  transition: all 0.35s ease;
 }
 
 .badge-etoile:hover {
@@ -957,7 +957,7 @@ body.light-theme aside.glass-ui {
   left: 14px;
   background: #111827;
   rotate: 45deg;
-  transition: left 0.7s ease;
+  transition: left 0.35s ease;
   border-radius: 1.5px;
 }
 
@@ -984,7 +984,7 @@ body.light-theme aside.glass-ui {
   opacity: 0;
   transform: scaleX(0);
   transform-origin: left;
-  transition: opacity 0.1s ease, transform 0.1s ease;
+  transition: opacity 0.08s ease, transform 0.08s ease;
   border-left: 2px solid rgba(255, 255, 255, 0.2);
   padding-left: 4px;
   position: relative;
@@ -994,8 +994,8 @@ body.light-theme aside.glass-ui {
 .badge-etoile:hover .etoile-text {
   opacity: 1;
   transform: scaleX(1);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  transition-delay: 0.35s;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition-delay: 0.1s;
 }
 
 /* ── Color variants ── */
