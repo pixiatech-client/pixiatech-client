@@ -126,7 +126,6 @@ export default function ProductDetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  const [multiSelections, setMultiSelections] = useState<Record<string, string>>({});
   const thumbScrollRef = useRef<HTMLDivElement>(null);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
@@ -434,46 +433,6 @@ export default function ProductDetailPage() {
                 {selectedVariant?.description && (
                   <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{selectedVariant.description}</div>
                 )}
-              </div>
-            )}
-
-            {/* Multi-level variants */}
-            {(product?.variantLevels || []).length > 0 && (
-              <div className="space-y-3 mb-4">
-                {product!.variantLevels!.map((lv) => (
-                  <div key={lv.name}>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">{lv.name}</div>
-                    <div className="flex flex-nowrap gap-1.5 overflow-x-auto scrollbar-hide">
-                      {lv.options.map((opt) => {
-                        const active = multiSelections[lv.name] === opt;
-                        return (
-                          <button
-                            key={opt}
-                            onClick={() => {
-                              const next = { ...multiSelections, [lv.name]: active ? '' : opt };
-                              setMultiSelections(next);
-                              const combo = (product?.variantCombinations || []).find(c =>
-                                Object.entries(next).every(([k, v]) => v && c.selections[k] === v)
-                              );
-                              if (combo) {
-                                setSelectedVariant({ name: '', description: '', price: combo.price, image: combo.image || '', order: 0, active: true });
-                                if (combo.image) {
-                                  const imgIdx = images.indexOf(combo.image);
-                                  if (imgIdx >= 0) setSelectedImage(imgIdx);
-                                }
-                              } else {
-                                setSelectedVariant(null);
-                              }
-                            }}
-                            className={`shrink-0 px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all ${active ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-500 hover:border-gray-400'}`}
-                          >
-                            {opt}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
               </div>
             )}
 
