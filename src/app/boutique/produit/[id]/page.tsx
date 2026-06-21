@@ -426,7 +426,7 @@ export default function ProductDetailPage() {
                   ))}
                 </div>
                 {selectedVariant?.description && (
-                  <div className="mt-3 text-sm text-gray-500 font-medium">{selectedVariant.description}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-2">{selectedVariant.description}</div>
                 )}
               </div>
             )}
