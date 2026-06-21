@@ -129,6 +129,7 @@ export default function ProductDetailPage() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [taxRate, setTaxRate] = useState(20);
+  const [showInfo, setShowInfo] = useState(false);
   const thumbScrollRef = useRef<HTMLDivElement>(null);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
@@ -425,9 +426,20 @@ export default function ProductDetailPage() {
                 <span className="text-sm text-gray-500 font-medium">HT : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice / (1 + taxRate / 100))}</span></span>
                 <span className="text-sm text-gray-500 font-medium">TTC : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice)}</span></span>
               </div>
-              <div className="text-xs text-gray-400 mt-2 leading-relaxed border-l-2 border-gray-200 pl-3">
-                Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs.<br />
-                Les particuliers peuvent également commander directement depuis notre boutique.
+              <div className="relative mt-1">
+                <button onClick={() => setShowInfo(!showInfo)} className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-700 transition-colors font-medium">
+                  <Info size={13} />
+                  Informations
+                </button>
+                {showInfo && (
+                  <div className="absolute z-20 left-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-xs text-gray-500 leading-relaxed">
+                    Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs.<br /><br />
+                    Les particuliers peuvent également commander directement depuis notre boutique.
+                    <button onClick={() => setShowInfo(false)} className="absolute top-2 right-2 text-gray-300 hover:text-gray-500 transition-colors">
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
