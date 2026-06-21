@@ -42,7 +42,7 @@ export interface RentalOrder {
 
 const COLLECTION = 'rental_orders';
 
-export async function createRentalOrder(data: Omit<RentalOrder, 'id'>): Promise<string> {
+export async function createRentalOrder(data: Omit<RentalOrder, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const ref = await addDoc(collection(firestore, COLLECTION), {
     ...data,
     createdAt: new Date().toISOString(),
@@ -51,7 +51,7 @@ export async function createRentalOrder(data: Omit<RentalOrder, 'id'>): Promise<
   return ref.id;
 }
 
-export async function updateRentalOrder(id: string, data: Partial<RentalOrder>) {
+export async function updateRentalOrder(id: string, data: Omit<Partial<RentalOrder>, 'updatedAt' | 'createdAt'>) {
   await updateDoc(doc(firestore, COLLECTION, id), {
     ...data,
     updatedAt: new Date().toISOString(),
@@ -77,8 +77,3 @@ export async function getRentalOrders(options?: {
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as RentalOrder));
 }
 
-export async function getAllRentalOrders(): Promise<RentalOrder[]> {
-  const q = query(collection(firestore, COLLECTION), orderBy('createdAt', 'desc'));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as RentalOrder));
-}
