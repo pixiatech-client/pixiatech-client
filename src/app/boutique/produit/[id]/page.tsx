@@ -448,10 +448,16 @@ export default function ProductDetailPage() {
             {displayVariants.length > 0 && (
               <div className="space-y-3 mb-4">
                 {selectedVariant?.description && (
-                  <div className="flex items-center gap-2">
-                    <span className="bg-gray-900 text-white px-2.5 py-1 rounded-lg text-xs font-bold tracking-tight shadow-sm">{selectedVariant.description}</span>
+                  <div className="flex items-end justify-between gap-3">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-gray-400 mb-0.5">Format</span>
+                      <span className="text-sm font-bold text-gray-900">{selectedVariant.description}</span>
+                    </div>
                     {selectedVariant?.reference && (
-                      <span className="text-[11px] text-gray-400 font-mono font-medium bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200/50">{selectedVariant.reference}</span>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-gray-400 mb-0.5">Réf.</span>
+                        <span className="text-[11px] font-mono font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">{selectedVariant.reference}</span>
+                      </div>
                     )}
                   </div>
                 )}
