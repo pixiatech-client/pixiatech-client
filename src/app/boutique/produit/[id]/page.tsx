@@ -247,20 +247,38 @@ export default function ProductDetailPage() {
                 </div>
                 {images.length > 1 && (
                   <>
-                    <button onClick={() => setSelectedImage((i) => Math.max(0, i - 1))} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-white/70 hover:bg-white backdrop-blur-sm rounded-full shadow transition-all">
-                      <ChevronLeft size={18} className="text-gray-700" />
+                    <button onClick={() => setSelectedImage((i) => Math.max(0, i - 1))} className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-gradient-to-r from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ChevronLeft size={16} className="text-white drop-shadow-lg" />
                     </button>
-                    <button onClick={() => setSelectedImage((i) => Math.min(images.length - 1, i + 1))} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-white/70 hover:bg-white backdrop-blur-sm rounded-full shadow transition-all">
-                      <ChevronRight size={18} className="text-gray-700" />
+                    <button onClick={() => setSelectedImage((i) => Math.min(images.length - 1, i + 1))} className="absolute right-0 top-0 bottom-0 w-12 flex items-center justify-center bg-gradient-to-l from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ChevronRight size={16} className="text-white drop-shadow-lg" />
                     </button>
                     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
                       {images.map((_, idx) => (
-                        <button key={idx} onClick={() => setSelectedImage(idx)} className={`w-2 h-2 rounded-full transition-all ${selectedImage === idx ? 'bg-white w-4' : 'bg-white/50 hover:bg-white/70'}`} />
+                        <button key={idx} onClick={() => setSelectedImage(idx)} className={`w-1.5 h-1.5 rounded-full transition-all ${selectedImage === idx ? 'bg-white w-3' : 'bg-white/50 hover:bg-white/70'}`} />
                       ))}
                     </div>
                   </>
                 )}
               </div>
+              {images.length > 1 && (
+                <div className="grid grid-cols-4 gap-4 mt-4">
+                  {images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => openLightbox(idx)}
+                      className={`aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
+                      onMouseEnter={() => setSelectedImage(idx)}
+                    >
+                      <img
+                        src={img}
+                        alt={`${product.name} - Vue ${idx + 1}`}
+                        className={`w-full h-full object-cover ${selectedImage !== idx ? 'opacity-50' : ''}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </section>
 
             <div className="mt-20 border-t border-gray-200/40 pt-12 space-y-16">
@@ -321,10 +339,10 @@ export default function ProductDetailPage() {
             </nav>
 
             <span className="text-xs font-bold uppercase tracking-widest text-blue-500 mb-3">{product.category}</span>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{product.name}</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">{product.name}</h1>
 
             {product.description && (
-              <p className="text-gray-600 leading-relaxed mb-4">{product.description}</p>
+              <p className="text-gray-500 text-sm leading-relaxed mb-4">{product.description}</p>
             )}
 
             <div className="flex items-center gap-2 mb-6">
