@@ -267,8 +267,8 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto px-6 md:px-12 lg:px-16 pt-24 pb-16">
-        <div className="lg:mr-[400px]">
+      <main className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pt-24 pb-16">
+        <div className="lg:mr-[410px]">
           <div className="flex flex-col">
             <section>
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
@@ -379,7 +379,7 @@ export default function ProductDetailPage() {
 
         </div>
 
-        <aside className="hidden lg:flex flex-col fixed top-36 z-10 w-[380px] max-h-[calc(100vh-9rem)] overflow-y-auto" style={{ right: 'max(16px, calc((100vw - 1152px) / 2 + 64px))' }}>
+        <aside className="hidden lg:flex flex-col fixed top-36 z-10 w-[380px] max-h-[calc(100vh-9rem)] overflow-y-auto" style={{ right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))' }}>
             <nav className="text-sm text-gray-400 mb-4">
               <ol className="flex list-none p-0">
                 <li className="flex items-center">
