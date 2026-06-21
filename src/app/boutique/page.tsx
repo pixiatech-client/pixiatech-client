@@ -295,13 +295,20 @@ export default function BoutiquePage() {
                           {product.badges.map((badge) => (
                             <span
                               key={badge}
-                              className={`text-[9px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-xl bg-white/20 border ${
-                                badge === 'populaire' ? 'text-orange-600 border-white/30 shadow-lg shadow-orange-500/10' :
-                                badge === 'nouveaute' ? 'text-blue-600 border-white/30 shadow-lg shadow-blue-500/10' :
-                                'text-red-600 border-white/30 shadow-lg shadow-red-500/10'
+                              className={`group flex items-center gap-1.5 text-[9px] font-bold px-1 py-1 rounded-lg backdrop-blur-xl bg-white/20 border border-white/30 hover:px-2.5 transition-all duration-200 ${
+                                badge === 'populaire' ? 'text-emerald-600 shadow-lg shadow-emerald-500/10' :
+                                badge === 'nouveaute' ? 'text-blue-600 shadow-lg shadow-blue-500/10' :
+                                'text-red-600 shadow-lg shadow-red-500/10'
                               }`}
                             >
-                              {badge === 'populaire' ? 'Populaire' : badge === 'nouveaute' ? 'Nouveauté' : 'Promotion'}
+                              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                badge === 'populaire' ? 'bg-emerald-500' :
+                                badge === 'nouveaute' ? 'bg-blue-500' :
+                                'bg-red-500'
+                              }`} />
+                              <span className="max-w-0 group-hover:max-w-[80px] overflow-hidden transition-all duration-200 whitespace-nowrap">
+                                {badge === 'populaire' ? 'Populaire' : badge === 'nouveaute' ? 'Nouveauté' : 'Promotion'}
+                              </span>
                             </span>
                           ))}
                         </div>
