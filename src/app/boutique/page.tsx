@@ -295,16 +295,16 @@ export default function BoutiquePage() {
                           {product.badges.map((badge) => (
                             <span
                               key={badge}
-                              className={`group flex items-center gap-1.5 text-[9px] font-bold rounded-lg backdrop-blur-xl bg-white/20 border border-white/30 hover:bg-white/25 hover:px-2.5 py-1 transition-all duration-200 ${
+                              className={`group flex items-center text-[9px] font-bold rounded-full backdrop-blur-xl bg-white/20 border border-white/30 hover:bg-white/25 transition-all duration-200 w-6 h-6 hover:w-auto hover:rounded-lg hover:px-2.5 justify-center hover:justify-start ${
                                 badge === 'populaire' ? 'text-emerald-600 shadow-lg shadow-emerald-500/10' :
                                 badge === 'nouveaute' ? 'text-blue-600 shadow-lg shadow-blue-500/10' :
                                 'text-red-600 shadow-lg shadow-red-500/10'
                               }`}
                             >
-                              {badge === 'populaire' ? <Star size={12} className="text-emerald-500 flex-shrink-0" fill="currentColor" /> :
-                               badge === 'nouveaute' ? <Sparkles size={12} className="text-blue-500 flex-shrink-0" /> :
-                               <Tag size={12} className="text-red-500 flex-shrink-0" />}
-                              <span className="max-w-0 group-hover:max-w-[80px] overflow-hidden transition-all duration-200 whitespace-nowrap">
+                              {badge === 'populaire' ? <Star size={10} className="text-emerald-500 flex-shrink-0" fill="currentColor" /> :
+                               badge === 'nouveaute' ? <Sparkles size={10} className="text-blue-500 flex-shrink-0" /> :
+                               <Tag size={10} className="text-red-500 flex-shrink-0" />}
+                              <span className="max-w-0 group-hover:max-w-[80px] overflow-hidden transition-all duration-200 whitespace-nowrap ml-0 group-hover:ml-1.5">
                                 {badge === 'populaire' ? 'Populaire' : badge === 'nouveaute' ? 'Nouveauté' : 'Promotion'}
                               </span>
                             </span>
