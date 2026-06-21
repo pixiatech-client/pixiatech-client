@@ -918,93 +918,52 @@ body.light-theme aside.glass-ui {
 
 /* ═══════════════════════════════════════════════════════════════
  *  BADGE ÉTOILE — Style « étoile » (sauvegardé)
- *  Cercle foncé avec icône, déploiement au hover type GitHub
+ *  Style exact du bouton GitHub : fond sombre, chevron, scaleX
  *  Appelé par la classe .badge-etoile
  * ═══════════════════════════════════════════════════════════════ */
 
 .badge-etoile {
-  --chevron-size: 8px;
-
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  gap: 4px;
   width: 24px;
   height: 24px;
   border-radius: 6px;
   cursor: default;
   flex-shrink: 0;
-  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  overflow: visible;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: #111827;
+  color: #f9fafb;
+  font-weight: 700;
+  font-size: 9px;
+  padding: 7px;
+  padding-right: 14px;
+  transition: all 0.7s ease;
 }
 
 .badge-etoile:hover {
   width: auto;
-  padding: 0 10px;
-  gap: 6px;
-  justify-content: flex-start;
-  background: rgba(255, 255, 255, 0.5);
+  background: #1f2937;
 }
 
-/* ── Color variants - tinted glass ── */
-.badge-etoile.emerald {
-  border-color: rgba(16, 185, 129, 0.4);
-}
-.badge-etoile.emerald:hover {
-  background: rgba(16, 185, 129, 0.2);
-}
-.badge-etoile.blue {
-  border-color: rgba(59, 130, 246, 0.4);
-}
-.badge-etoile.blue:hover {
-  background: rgba(59, 130, 246, 0.2);
-}
-.badge-etoile.red {
-  border-color: rgba(239, 68, 68, 0.4);
-}
-.badge-etoile.red:hover {
-  background: rgba(239, 68, 68, 0.2);
-}
-
-/* ── Chevron indicateur de déploiement (côté droit) ── */
+/* ── Chevron (diamant) ── */
 .badge-etoile::before {
   content: '';
   position: absolute;
-  z-index: 1;
-  right: -3px;
-  top: 50%;
-  translate: 0 -50%;
-  width: var(--chevron-size);
+  z-index: -1;
+  width: 8px;
   aspect-ratio: 1;
-  background: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  left: 14px;
+  background: #111827;
   rotate: 45deg;
-  transition: right 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
-              background 0.5s ease;
+  transition: left 0.7s ease;
   border-radius: 1.5px;
-  opacity: 0.8;
 }
 
 .badge-etoile:hover::before {
-  right: auto;
-  left: 22px;
-}
-
-.badge-etoile.emerald::before {
-  border-color: rgba(16, 185, 129, 0.5);
-}
-.badge-etoile.blue::before {
-  border-color: rgba(59, 130, 246, 0.5);
-}
-.badge-etoile.red::before {
-  border-color: rgba(239, 68, 68, 0.5);
-}
-.badge-etoile:hover::before {
-  left: calc(100% - var(--chevron-size) - 4px);
+  left: calc(100% - 24px);
+  background: #1f2937;
 }
 
 /* ── Icon ── */
@@ -1014,12 +973,10 @@ body.light-theme aside.glass-ui {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.3s ease;
 }
 
-/* ── Text avec border separator ── */
+/* ── Text (scaleX + opacity + delay) ── */
 .badge-etoile .etoile-text {
-  max-width: 0;
   overflow: hidden;
   white-space: nowrap;
   font-size: 9px;
@@ -1027,23 +984,27 @@ body.light-theme aside.glass-ui {
   opacity: 0;
   transform: scaleX(0);
   transform-origin: left;
-  transition: opacity 0.1s ease, transform 0.1s ease, max-width 0.1s ease, padding 0.1s ease, border 0.1s ease;
+  transition: opacity 0.1s ease, transform 0.1s ease;
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  padding-left: 4px;
   position: relative;
   z-index: 2;
-  border: 0;
-  padding: 0;
 }
 
 .badge-etoile:hover .etoile-text {
-  max-width: 80px;
-  overflow: visible;
   opacity: 1;
   transform: scaleX(1);
-  transition: opacity 0.3s ease, transform 0.3s ease, max-width 0.3s ease, padding 0.3s ease, border 0.3s ease;
-  transition-delay: 0.25s;
-  border-left: 2px solid rgba(255, 255, 255, 0.2);
-  padding-left: 6px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition-delay: 0.35s;
 }
+
+/* ── Color variants ── */
+.badge-etoile.emerald .etoile-icon { color: #34d399; }
+.badge-etoile.emerald .etoile-text { color: #34d399; }
+.badge-etoile.blue .etoile-icon { color: #60a5fa; }
+.badge-etoile.blue .etoile-text { color: #60a5fa; }
+.badge-etoile.red .etoile-icon { color: #f87171; }
+.badge-etoile.red .etoile-text { color: #f87171; }
 
 /* ═══════════════════════════════════════════════════════════════
  *  MORPHING BADGE — Style « morphing » (sauvegardé)
