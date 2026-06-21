@@ -130,12 +130,15 @@ export default function ProductDetailPage() {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [taxRate, setTaxRate] = useState(20);
   const [showInfo, setShowInfo] = useState(false);
-  const thumbScrollRef = useRef<HTMLDivElement>(null);
+  const [thumbPage, setThumbPage] = useState(0);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
 
   useEffect(() => {
     if (!params.id) return;
+    setSelectedImage(0);
+    setThumbPage(0);
+    setShowInfo(false);
     fetchBoutiqueProduct(params.id as string).then((p) => {
       setProduct(p);
       setLoading(false);
@@ -162,6 +165,9 @@ export default function ProductDetailPage() {
     ? [product.image, ...product.gallery]
     : [product?.image || ''];
   const images = galleryImages;
+  const thumbsPerPage = 4;
+  const totalThumbPages = Math.ceil(images.length / thumbsPerPage);
+  const visibleThumbs = images.slice(thumbPage * thumbsPerPage, (thumbPage + 1) * thumbsPerPage);
   const canRent = product?.availableFor?.includes('rental') ?? false;
   const canBuy = product?.availableFor?.includes('sale') ?? true;
 
@@ -300,32 +306,36 @@ export default function ProductDetailPage() {
                     </button>
                   </div>
                   <div className="relative mt-3">
-                    <div ref={thumbScrollRef} className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-1">
-                      {images.map((img, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => { setSelectedImage(idx); setSelectedVariant(null); openLightbox(idx); }}
-                          ref={idx === selectedImage ? activeThumbRef : null}
-                          className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
-                          onMouseEnter={() => setSelectedImage(idx)}
-                        >
-                          <img
-                            src={img}
-                            alt={`${product.name} - Vue ${idx + 1}`}
-                            className={`w-full h-full object-cover ${selectedImage !== idx ? 'opacity-50' : ''}`}
-                          />
-                        </button>
-                      ))}
+                    <div className="flex gap-3 overflow-hidden pb-1">
+                      {visibleThumbs.map((img, idx) => {
+                        const realIdx = thumbPage * thumbsPerPage + idx;
+                        return (
+                          <button
+                            key={realIdx}
+                            onClick={() => { setSelectedImage(realIdx); setSelectedVariant(null); openLightbox(realIdx); }}
+                            ref={realIdx === selectedImage ? activeThumbRef : null}
+                            className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${realIdx === selectedImage ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
+                            onMouseEnter={() => setSelectedImage(realIdx)}
+                          >
+                            <img
+                              src={img}
+                              alt={`${product.name} - Vue ${realIdx + 1}`}
+                              className={`w-full h-full object-cover ${realIdx !== selectedImage ? 'opacity-50' : ''}`}
+                            />
+                          </button>
+                        );
+                      })}
                     </div>
-                    {images.length > 4 && (
-                      <>
-                        <button onClick={() => thumbScrollRef.current?.scrollBy({ left: -140, behavior: 'smooth' })} className="absolute left-0 top-0 bottom-0 w-8 flex items-center justify-center bg-gradient-to-r from-white to-transparent">
-                          <ChevronLeft size={14} className="text-gray-500" />
+                    {totalThumbPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-2">
+                        <button onClick={() => setThumbPage(p => Math.max(0, p - 1))} disabled={thumbPage === 0} className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-200 hover:border-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                          <ChevronLeft size={12} className="text-gray-500" />
                         </button>
-                        <button onClick={() => thumbScrollRef.current?.scrollBy({ left: 140, behavior: 'smooth' })} className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center bg-gradient-to-l from-white to-transparent">
-                          <ChevronRight size={14} className="text-gray-500" />
+                        <span className="text-[10px] font-semibold text-gray-400">{thumbPage + 1} / {totalThumbPages}</span>
+                        <button onClick={() => setThumbPage(p => Math.min(totalThumbPages - 1, p + 1))} disabled={thumbPage === totalThumbPages - 1} className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-200 hover:border-gray-400 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                          <ChevronRight size={12} className="text-gray-500" />
                         </button>
-                      </>
+                      </div>
                     )}
                   </div>
                 </>
