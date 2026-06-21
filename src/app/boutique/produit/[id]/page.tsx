@@ -2,10 +2,12 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ArrowLeft, Star, ShoppingBag, Store, Minus, Plus, Copy, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, Home } from 'lucide-react';
+import { ArrowLeft, Star, ShoppingBag, Store, Minus, Plus, Copy, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, Home, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, formatPrice } from '@/lib/boutique-data';
+import { firestore } from '@/firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 import type { Product, ProductVariant } from '@/lib/boutique-data';
 
 const specIcons: Record<string, { icon: typeof Maximize2; color: string }> = {
@@ -126,6 +128,7 @@ export default function ProductDetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [taxRate, setTaxRate] = useState(20);
   const thumbScrollRef = useRef<HTMLDivElement>(null);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
@@ -137,6 +140,16 @@ export default function ProductDetailPage() {
       setLoading(false);
     });
   }, [params.id]);
+
+  useEffect(() => {
+    getDoc(doc(firestore, 'settings', 'wizard')).then((snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as any;
+        const rate = data?.estimationFlow?.taxRate;
+        if (typeof rate === 'number' && rate > 0) setTaxRate(rate);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!product) return;
@@ -408,7 +421,14 @@ export default function ProductDetailPage() {
                   </span>
                 )}
               </div>
-              <div className="text-sm text-gray-400 mt-1 italic">TVA incluse. Frais de port calculés lors du paiement.</div>
+              <div className="flex items-center gap-4 mt-2">
+                <span className="text-sm text-gray-500 font-medium">HT : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice / (1 + taxRate / 100))}</span></span>
+                <span className="text-sm text-gray-500 font-medium">TTC : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice)}</span></span>
+              </div>
+              <div className="text-xs text-gray-400 mt-2 leading-relaxed border-l-2 border-gray-200 pl-3">
+                Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs.<br />
+                Les particuliers peuvent également commander directement depuis notre boutique.
+              </div>
             </div>
 
             {/* Variants */}
