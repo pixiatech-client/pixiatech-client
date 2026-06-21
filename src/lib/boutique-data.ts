@@ -163,7 +163,7 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     longDescription: data.longDescription || '',
     descriptionDetaillee: data.descriptionDetaillee || '',
     image,
-    gallery: data.gallery || [],
+    gallery: data.galleryUrls || data.gallery || [],
     videoUrl: data.videoUrl || '',
     pdfUrl: data.pdfUrl || '',
     availableFor: (data.availableFor || data.mode || ['sale']).map((m: string) => m.toLowerCase()),
