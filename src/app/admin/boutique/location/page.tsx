@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,24 @@ const allStatuses: RentalStatus[] = [
   'cancelled',
 ];
 
+function StatCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: React.ComponentType<{ className?: string }> }) {
+  return (
+    <Card className="rounded-xl border border-slate-200/60 shadow-sm bg-white">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-500">{label}</p>
+            <p className="text-3xl font-black text-slate-900 mt-1">{value}</p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
+            <Icon className="w-6 h-6" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function LocationPage() {
   const { toast } = useToast();
   const [orders, setOrders] = useState<RentalOrder[]>([]);
@@ -57,16 +75,18 @@ export default function LocationPage() {
   const [statusFilter, setStatusFilter] = useState<RentalStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [error, setError] = useState(false);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getRentalOrders(
         statusFilter === 'all' ? undefined : { status: statusFilter }
       );
       setOrders(data);
-    } catch (error) {
-      console.error('Failed to fetch rental orders:', error);
+    } catch (err) {
+      console.error('Failed to fetch rental orders:', err);
+      setError(true);
       toast({
         variant: 'destructive',
         title: 'Erreur',
@@ -75,11 +95,11 @@ export default function LocationPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
     fetchOrders();
-  }, [statusFilter]);
+  }, [fetchOrders]);
 
   const stats = useMemo(() => {
     const total = orders.length;
@@ -109,18 +129,22 @@ export default function LocationPage() {
     newStatus: RentalStatus
   ) => {
     if (!order.id) return;
+    const prevStatus = order.status;
     setLoadingId(order.id);
+    setOrders((prev) =>
+      prev.map((o) => (o.id === order.id ? { ...o, status: newStatus } : o))
+    );
     try {
       await updateRentalOrder(order.id, { status: newStatus });
-      setOrders((prev) =>
-        prev.map((o) => (o.id === order.id ? { ...o, status: newStatus } : o))
-      );
       toast({
         title: 'Statut mis à jour',
         description: `La location est maintenant "${statusLabels[newStatus]}".`,
       });
-    } catch (error) {
-      console.error('Failed to update status:', error);
+    } catch (err) {
+      console.error('Failed to update status:', err);
+      setOrders((prev) =>
+        prev.map((o) => (o.id === order.id ? { ...o, status: prevStatus } : o))
+      );
       toast({
         variant: 'destructive',
         title: 'Erreur',
@@ -133,36 +157,18 @@ export default function LocationPage() {
 
   const formatDate = (date: string) => {
     if (!date) return '—';
-    return new Date(date).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+    } catch {
+      return '—';
+    }
   };
-
-  const StatCard = ({
-    label,
-    value,
-    icon: Icon,
-  }: {
-    label: string;
-    value: string | number;
-    icon: React.ComponentType<{ className?: string }>;
-  }) => (
-    <Card className="rounded-xl border border-slate-200/60 shadow-sm bg-white">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-500">{label}</p>
-            <p className="text-3xl font-black text-slate-900 mt-1">{value}</p>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
-            <Icon className="w-6 h-6" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="space-y-8">
@@ -181,6 +187,20 @@ export default function LocationPage() {
           icon={CheckCircle2}
         />
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
+          <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+          <div>
+            <p className="font-semibold text-red-800 text-sm">Erreur de chargement</p>
+            <p className="text-xs text-red-600">Impossible de charger les locations. Réessayez plus tard.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => { setError(false); fetchOrders(); }} className="ml-auto rounded-lg text-xs">
+            Réessayer
+          </Button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
