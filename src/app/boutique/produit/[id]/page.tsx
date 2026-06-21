@@ -6,7 +6,7 @@ import { ArrowLeft, Star, ShoppingBag, Store, Minus, Plus, Copy, FileText, Downl
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, formatPrice } from '@/lib/boutique-data';
-import type { Product } from '@/lib/boutique-data';
+import type { Product, ProductVariant } from '@/lib/boutique-data';
 
 const specIcons: Record<string, { icon: typeof Maximize2; color: string }> = {
   'surface': { icon: Maximize2, color: 'blue' },
@@ -125,7 +125,7 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState<{ image?: string; price?: number }>({});
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [multiSelections, setMultiSelections] = useState<Record<string, string>>({});
   const thumbScrollRef = useRef<HTMLDivElement>(null);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
@@ -139,6 +139,14 @@ export default function ProductDetailPage() {
     });
   }, [params.id]);
 
+  useEffect(() => {
+    if (!product) return;
+    const activeVariants = (product.variants || []).filter(v => v.active && v.name);
+    if (activeVariants.length > 0) {
+      setSelectedVariant(activeVariants[0]);
+    }
+  }, [product]);
+
   const galleryImages = product?.gallery && product.gallery.length > 0
     ? [product.image, ...product.gallery]
     : [product?.image || ''];
@@ -146,9 +154,9 @@ export default function ProductDetailPage() {
   const canRent = product?.availableFor?.includes('rental') ?? false;
   const canBuy = product?.availableFor?.includes('sale') ?? true;
 
-  const effectivePrice = selectedVariant.price ?? product?.price ?? 0;
-  const effectiveImage = selectedVariant.image || galleryImages[selectedImage];
-  const effectiveOldPrice = (selectedVariant.price && selectedVariant.price < (product?.oldPrice ?? Infinity)) ? product?.oldPrice : product?.oldPrice;
+  const effectivePrice = selectedVariant?.price ?? product?.price ?? 0;
+  const effectiveImage = selectedVariant?.image || galleryImages[selectedImage];
+  const effectiveOldPrice = product?.oldPrice && (!selectedVariant || selectedVariant.price < product.oldPrice) ? product.oldPrice : undefined;
   const displayVariants = (product?.variants || []).filter(v => v.active && v.name);
 
   useEffect(() => {
@@ -251,7 +259,7 @@ export default function ProductDetailPage() {
           <div className="flex flex-col">
             <section>
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-                <div className="cursor-pointer overflow-hidden" onClick={() => { setSelectedVariant({}); openLightbox(selectedImage); }}>
+                <div className="cursor-pointer overflow-hidden" onClick={() => { setSelectedVariant(null); openLightbox(selectedImage); }}>
                   <img
                     src={effectiveImage}
                     alt={product.name}
@@ -285,7 +293,7 @@ export default function ProductDetailPage() {
                       {images.map((img, idx) => (
                         <button
                           key={idx}
-                          onClick={() => { setSelectedImage(idx); setSelectedVariant({}); openLightbox(idx); }}
+                          onClick={() => { setSelectedImage(idx); setSelectedVariant(null); openLightbox(idx); }}
                           ref={idx === selectedImage ? activeThumbRef : null}
                           className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
                           onMouseEnter={() => setSelectedImage(idx)}
@@ -408,21 +416,25 @@ export default function ProductDetailPage() {
 
             {/* Simple variants */}
             {displayVariants.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                {displayVariants.map((v) => (
-                  <button
-                    key={v.name}
-                    onClick={() => {
-                      setSelectedVariant({ image: v.image, price: v.price });
-                      const imgIdx = images.indexOf(v.image);
-                      if (imgIdx >= 0) setSelectedImage(imgIdx);
-                    }}
-                    className={`px-4 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedVariant.image === v.image ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-600 hover:border-gray-400'}`}
-                  >
-                    {v.name}
-                    {v.price > 0 && <span className="ml-1 opacity-70">{formatPrice(v.price)}</span>}
-                  </button>
-                ))}
+              <div className="mb-4">
+                <div className="flex flex-wrap gap-2">
+                  {displayVariants.map((v) => (
+                    <button
+                      key={v.name}
+                      onClick={() => {
+                        setSelectedVariant(v);
+                        const imgIdx = images.indexOf(v.image);
+                        if (imgIdx >= 0) setSelectedImage(imgIdx);
+                      }}
+                      className={`px-4 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-600 hover:border-gray-400'}`}
+                    >
+                      {v.name}
+                    </button>
+                  ))}
+                </div>
+                {selectedVariant?.description && (
+                  <div className="mt-3 text-sm text-gray-500 font-medium">{selectedVariant.description}</div>
+                )}
               </div>
             )}
 
@@ -445,13 +457,13 @@ export default function ProductDetailPage() {
                                 Object.entries(next).every(([k, v]) => v && c.selections[k] === v)
                               );
                               if (combo) {
-                                setSelectedVariant({ image: combo.image, price: combo.price });
+                                setSelectedVariant({ name: '', description: '', price: combo.price, image: combo.image || '', order: 0, active: true });
                                 if (combo.image) {
                                   const imgIdx = images.indexOf(combo.image);
                                   if (imgIdx >= 0) setSelectedImage(imgIdx);
                                 }
                               } else {
-                                setSelectedVariant({});
+                                setSelectedVariant(null);
                               }
                             }}
                             className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all ${active ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-500 hover:border-gray-400'}`}

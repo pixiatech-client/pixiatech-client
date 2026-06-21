@@ -32,6 +32,7 @@ import TipTapEditor from '@/components/TipTapEditor';
 // --- Variant types ---
 interface ProductVariant {
   name: string;
+  description?: string;
   price: number;
   image: string;
   order: number;
@@ -2933,19 +2934,25 @@ const ProduitPage = ({
                 </div>
                 <div className="space-y-3">
                   {variants.filter(v => v.name).map((v, i) => (
-                    <div key={v.image} className="flex items-center gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
-                      <img src={v.image} alt="" className="w-12 h-12 rounded-lg object-cover border border-slate-200" />
-                      <div className="flex-1 grid grid-cols-3 gap-2">
-                        <div>
-                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Nom</label>
-                          <input value={v.name} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], name: e.target.value }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
+                    <div key={v.image} className="flex items-start gap-3 bg-slate-50 rounded-xl p-3 border border-slate-100">
+                      <img src={v.image} alt="" className="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Nom</label>
+                            <input value={v.name} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], name: e.target.value }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
+                          </div>
+                          <div>
+                            <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Prix (€)</label>
+                            <input type="number" value={v.price || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], price: Number(e.target.value) }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
+                          </div>
+                          <div className="flex items-end pb-1">
+                            <button onClick={() => setVariants(prev => prev.filter((_, j) => j !== i))} className="h-8 px-3 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors">Supprimer</button>
+                          </div>
                         </div>
                         <div>
-                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Prix (€)</label>
-                          <input type="number" value={v.price || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], price: Number(e.target.value) }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
-                        </div>
-                        <div className="flex items-end pb-1">
-                          <button onClick={() => setVariants(prev => prev.filter((_, j) => j !== i))} className="h-8 px-3 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors">Supprimer</button>
+                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Description (dimensions)</label>
+                          <input value={v.description || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], description: e.target.value }; setVariants(n); }} placeholder="ex: 80x100 cm" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
                         </div>
                       </div>
                     </div>
