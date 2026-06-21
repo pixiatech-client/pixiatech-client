@@ -414,7 +414,9 @@ export default function ProductDetailPage() {
             {/* Variants */}
             {displayVariants.length > 0 && (
               <div className="space-y-3 mb-4">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Taille</div>
+                {selectedVariant?.description && (
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{selectedVariant.description}</div>
+                )}
                 <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide">
                   {displayVariants.map((v) => (
                     <button
@@ -430,8 +432,8 @@ export default function ProductDetailPage() {
                     </button>
                   ))}
                 </div>
-                {selectedVariant?.description && (
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{selectedVariant.description}</div>
+                {selectedVariant?.reference && (
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{selectedVariant.reference}</div>
                 )}
               </div>
             )}
