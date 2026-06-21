@@ -97,8 +97,8 @@ const GalleryImage = ({ url, onRemove, idx }: { url: string; onRemove: () => voi
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative w-[calc(33.333%-6px)] aspect-square rounded-xl overflow-hidden border border-slate-200 cursor-grab active:cursor-grabbing select-none touch-none">
       <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
       <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors pointer-events-none" />
-      <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-70 hover:opacity-100 active:opacity-100 transition-opacity">
-        <X className="w-3 h-3" />
+      <button onPointerDown={(e) => { e.stopPropagation(); }} onClick={(e) => { e.stopPropagation(); onRemove(); }} className="absolute top-1 right-1 p-2 bg-red-500 text-white rounded-xl opacity-90 hover:opacity-100 active:opacity-100 transition-opacity shadow-lg shadow-red-500/30 z-10">
+        <X className="w-4 h-4" />
       </button>
     </div>
   );
@@ -2310,6 +2310,7 @@ const ProduitPage = ({
   const [specPage, setSpecPage] = useState(1);
   const [prevSpecPage, setPrevSpecPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [openVariantIdx, setOpenVariantIdx] = useState<number | null>(0);
   const specItemsPerPage = 6;
 
   // Use wizard settings as the authoritative source for distance/pitch options.
@@ -2905,41 +2906,66 @@ const ProduitPage = ({
                   <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Variantes</h4>
                 </div>
                 {variants.length > 0 && (
-                  <div className="space-y-3">
-                    {variants.map((v, i) => (
-                      <div key={i} className="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-2">
-                        <div className="grid grid-cols-[1fr_80px_80px] gap-2 items-end">
-                          <div>
-                            <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Nom du bouton</label>
-                            <input value={v.name} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], name: e.target.value }; setVariants(n); }} placeholder="ex: L, XL, XXL" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
-                          </div>
-                          <div>
-                            <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Prix (€)</label>
-                            <input type="number" value={v.price || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], price: Number(e.target.value) }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
-                          </div>
-                          <button onClick={() => setVariants(prev => prev.filter((_, j) => j !== i))} className="h-8 px-3 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors">Supprimer</button>
+                  <div className="space-y-2">
+                    {variants.map((v, i) => {
+                      const isOpen = openVariantIdx === i;
+                      return (
+                        <div key={i} className="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden">
+                          <button onClick={() => setOpenVariantIdx(isOpen ? null : i)} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-100/50 transition-colors">
+                            <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-200 bg-white flex-shrink-0">
+                              {v.image ? (
+                                <img src={v.image} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                  <ImageIcon className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 text-left min-w-0">
+                              <div className="text-xs font-bold text-slate-800 truncate">{v.name || '(sans nom)'}</div>
+                              {v.price > 0 && <div className="text-[10px] font-semibold text-slate-400">{v.price.toFixed(2)} €</div>}
+                            </div>
+                            {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+                          </button>
+                          {isOpen && (
+                            <div className="px-3 pb-3 space-y-2 border-t border-slate-100 pt-2">
+                              <div className="grid grid-cols-[1fr_80px] gap-2 items-end">
+                                <div>
+                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Nom du bouton</label>
+                                  <input value={v.name} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], name: e.target.value }; setVariants(n); }} placeholder="ex: L, XL, XXL" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
+                                </div>
+                                <div>
+                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Prix (€)</label>
+                                  <input type="number" value={v.price || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], price: Number(e.target.value) }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Valeur affichée</label>
+                                  <input value={v.description || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], description: e.target.value }; setVariants(n); }} placeholder="ex: 80x100 cm" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
+                                </div>
+                                <div>
+                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Référence</label>
+                                  <input value={v.reference || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], reference: e.target.value }; setVariants(n); }} placeholder="ex: REF-L" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Photo associée</label>
+                                <select value={v.image} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], image: e.target.value }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400">
+                                  <option value="">Aucune</option>
+                                  {galleryUrls.map((u, gi) => (
+                                    <option key={u} value={u}>Photo {gi + 1}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <button onClick={() => setVariants(prev => prev.filter((_, j) => j !== i))} className="w-full h-8 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors flex items-center justify-center gap-1">
+                                <Trash2 className="w-3 h-3" /> Supprimer cette variante
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Valeur affichée</label>
-                            <input value={v.description || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], description: e.target.value }; setVariants(n); }} placeholder="ex: 80x100 cm" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
-                          </div>
-                          <div>
-                            <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Référence</label>
-                            <input value={v.reference || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], reference: e.target.value }; setVariants(n); }} placeholder="ex: REF-L" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Photo associée</label>
-                          <select value={v.image} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], image: e.target.value }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400">
-                            <option value="">Aucune</option>
-                            {galleryUrls.map((u, gi) => (
-                              <option key={u} value={u}>Photo {gi + 1}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
                 <button onClick={() => setVariants(prev => [...prev, { name: '', description: '', price: 0, reference: '', image: '', order: prev.length, active: true }])} className="w-full h-10 bg-white border border-slate-200 border-dashed rounded-xl text-slate-600 font-black text-[10px] uppercase tracking-widest hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
