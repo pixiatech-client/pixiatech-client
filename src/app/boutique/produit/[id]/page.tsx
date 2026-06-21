@@ -270,7 +270,7 @@ export default function ProductDetailPage() {
       <main className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pt-24 pb-16">
         <div className="lg:mr-[410px]">
           <div className="flex flex-col">
-            <section>
+            <section className="max-w-xl mx-auto">
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
                 <div className="cursor-pointer overflow-hidden" onClick={() => { setSelectedVariant(null); openLightbox(selectedImage); }}>
                   <img
