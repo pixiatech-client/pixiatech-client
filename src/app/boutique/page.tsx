@@ -196,7 +196,7 @@ export default function BoutiquePage() {
 
   const handleQuickAdd = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
-    addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category });
+    addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' });
     toast.success(`${product.name} ajouté au panier`);
   };
 

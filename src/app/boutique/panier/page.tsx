@@ -89,7 +89,7 @@ export default function CartPage() {
             <div className="grid grid-cols-12 gap-8 items-start">
               <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
                 {items.map((item) => (
-                  <div key={item.productId} className="bg-white rounded-2xl border border-gray-200/70 p-5 flex gap-6 transition-all duration-300 hover:shadow-md group">
+                  <div key={item.productId + '-' + item.type} className="bg-white rounded-2xl border border-gray-200/70 p-5 flex gap-6 transition-all duration-300 hover:shadow-md group">
                     <div className="w-44 h-44 rounded-xl overflow-hidden bg-gray-100 shrink-0 relative">
                       <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                       <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-xl" />
@@ -98,7 +98,19 @@ export default function CartPage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <h2 className="font-bold text-gray-900 text-base mb-1">{item.name}</h2>
-                          <p className="text-sm text-gray-400">{item.category}</p>
+                          <p className="text-sm text-gray-400">{item.category}
+                            {item.type === 'rental' && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 ml-2">
+                                Location
+                              </span>
+                            )}
+                          </p>
+                          {item.type === 'rental' && item.rentalStartDate && (
+                            <div className="mt-2 text-xs text-gray-500 space-y-0.5">
+                              <p>Du {item.rentalStartDate} au {item.rentalEndDate}</p>
+                              <p>De {item.rentalStartTime} à {item.rentalEndTime}</p>
+                            </div>
+                          )}
                         </div>
                         <span className="font-bold text-gray-900 text-base whitespace-nowrap ml-2">{formatPrice(item.price * item.quantity)}</span>
                       </div>
@@ -107,8 +119,8 @@ export default function CartPage() {
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Quantité</label>
                           <QtySelector
                             value={item.quantity}
-                            onMinus={() => updateQuantity(item.productId, item.quantity - 1)}
-                            onPlus={() => updateQuantity(item.productId, item.quantity + 1)}
+                            onMinus={() => updateQuantity(item.productId, item.quantity - 1, item.type === 'rental' ? 'rental' : item.type)}
+                            onPlus={() => updateQuantity(item.productId, item.quantity + 1, item.type === 'rental' ? 'rental' : item.type)}
                           />
                         </div>
                         <div className="flex gap-3">
@@ -116,7 +128,7 @@ export default function CartPage() {
                             <Heart size={15} />
                             Sauvegarder
                           </button>
-                          <button onClick={() => removeItem(item.productId)} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors">
+                          <button onClick={() => removeItem(item.productId, item.type === 'rental' ? 'rental' : item.type)} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors">
                             <Trash2 size={15} />
                             Supprimer
                           </button>
@@ -201,7 +213,7 @@ export default function CartPage() {
                     </div>
                     <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.name}</h3>
                     <p className="text-sm font-bold text-gray-900 mb-3">{formatPrice(p.price)}</p>
-                    <button onClick={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category }); toast.success(`${p.name} ajouté au panier`); }} className="w-full border border-gray-200/70 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all">
+                    <button onClick={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(`${p.name} ajouté au panier`); }} className="w-full border border-gray-200/70 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all">
                       Ajouter
                     </button>
                   </div>
