@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import type { RenterDetails } from '@/lib/signature-types';
 
 export interface CartItem {
   productId: string;
@@ -9,13 +10,20 @@ export interface CartItem {
   image: string;
   quantity: number;
   category: string;
+  type: 'purchase' | 'rental';
+  rentalStartDate?: string;
+  rentalEndDate?: string;
+  rentalStartTime?: string;
+  rentalEndTime?: string;
+  renterDetails?: RenterDetails;
+  rentalFlowCompleted?: boolean;
 }
 
 interface CartContextType {
   items: CartItem[];
   addItem: (item: Omit<CartItem, 'quantity'>, qty?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, qty: number) => void;
+  removeItem: (productId: string, type?: 'purchase' | 'rental') => void;
+  updateQuantity: (productId: string, qty: number, type?: 'purchase' | 'rental') => void;
   clearCart: () => void;
   itemCount: number;
   subtotal: number;
@@ -43,23 +51,35 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((product: Omit<CartItem, 'quantity'>, qty = 1) => {
     setItems(prev => {
-      const existing = prev.find(i => i.productId === product.productId);
+      const existing = prev.find(i => i.productId === product.productId && i.type === product.type);
       if (existing) {
         return prev.map(i =>
-          i.productId === product.productId ? { ...i, quantity: i.quantity + qty } : i
+          i.productId === product.productId && i.type === product.type
+            ? { ...i, quantity: i.quantity + qty }
+            : i
         );
       }
       return [...prev, { ...product, quantity: qty }];
     });
   }, []);
 
-  const removeItem = useCallback((productId: string) => {
-    setItems(prev => prev.filter(i => i.productId !== productId));
+  const removeItem = useCallback((productId: string, type?: 'purchase' | 'rental') => {
+    setItems(prev =>
+      type !== undefined
+        ? prev.filter(i => !(i.productId === productId && i.type === type))
+        : prev.filter(i => i.productId !== productId)
+    );
   }, []);
 
-  const updateQuantity = useCallback((productId: string, qty: number) => {
+  const updateQuantity = useCallback((productId: string, qty: number, type?: 'purchase' | 'rental') => {
     if (qty < 1) return;
-    setItems(prev => prev.map(i => i.productId === productId ? { ...i, quantity: qty } : i));
+    setItems(prev =>
+      prev.map(i =>
+        type !== undefined
+          ? i.productId === productId && i.type === type ? { ...i, quantity: qty } : i
+          : i.productId === productId ? { ...i, quantity: qty } : i
+      )
+    );
   }, []);
 
   const clearCart = useCallback(() => {
