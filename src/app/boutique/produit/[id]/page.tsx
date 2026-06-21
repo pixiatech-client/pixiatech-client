@@ -268,7 +268,7 @@ export default function ProductDetailPage() {
       </div>
 
       <main className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pt-24 pb-16">
-        <div className="lg:mr-[450px]">
+        <div className="lg:mr-[430px]">
           <div className="flex flex-col">
             <section className="max-w-xl mx-auto">
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
@@ -448,7 +448,12 @@ export default function ProductDetailPage() {
             {displayVariants.length > 0 && (
               <div className="space-y-3 mb-4">
                 {selectedVariant?.description && (
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{selectedVariant.description}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-gray-900 text-white px-2.5 py-1 rounded-lg text-xs font-bold tracking-tight shadow-sm">{selectedVariant.description}</span>
+                    {selectedVariant?.reference && (
+                      <span className="text-[11px] text-gray-400 font-mono font-medium bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200/50">{selectedVariant.reference}</span>
+                    )}
+                  </div>
                 )}
                 <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide">
                   {displayVariants.map((v) => (
@@ -465,9 +470,6 @@ export default function ProductDetailPage() {
                     </button>
                   ))}
                 </div>
-                {selectedVariant?.reference && (
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{selectedVariant.reference}</div>
-                )}
               </div>
             )}
 
