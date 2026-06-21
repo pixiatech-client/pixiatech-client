@@ -97,7 +97,7 @@ const GalleryImage = ({ url, onRemove, idx }: { url: string; onRemove: () => voi
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative w-[calc(33.333%-6px)] aspect-square rounded-xl overflow-hidden border border-slate-200 cursor-grab active:cursor-grabbing select-none touch-none">
       <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
       <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors pointer-events-none" />
-      <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 hover:opacity-100 transition-opacity">
+      <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-70 hover:opacity-100 active:opacity-100 transition-opacity">
         <X className="w-3 h-3" />
       </button>
     </div>
