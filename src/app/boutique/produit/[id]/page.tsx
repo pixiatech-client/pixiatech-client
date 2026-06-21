@@ -9,6 +9,7 @@ import { fetchBoutiqueProduct, formatPrice } from '@/lib/boutique-data';
 import { firestore } from '@/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Product, ProductVariant } from '@/lib/boutique-data';
+import BoutiqueRentalFlow from '@/components/BoutiqueRentalFlow';
 
 const specIcons: Record<string, { icon: typeof Maximize2; color: string }> = {
   'surface': { icon: Maximize2, color: 'blue' },
@@ -130,6 +131,7 @@ export default function ProductDetailPage() {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [taxRate, setTaxRate] = useState(20);
   const [showInfo, setShowInfo] = useState(false);
+  const [locationCompleted, setLocationCompleted] = useState(false);
   const thumbScrollRef = useRef<HTMLDivElement>(null);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
@@ -193,13 +195,13 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!product) return;
-    addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category }, quantity);
+    addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' }, quantity);
     toast.success(`${product.name} ajouté au panier`);
   };
 
   const handleBuyNow = () => {
     if (!product) return;
-    addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category }, quantity);
+    addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' }, quantity);
     router.push('/boutique/paiement');
   };
 
@@ -494,13 +496,24 @@ export default function ProductDetailPage() {
 
             <div className="flex flex-col gap-3 mb-6">
               {purchaseType === 'location' ? (
-                <div className="flex flex-col gap-3">
-                  <button onClick={() => router.push(`/boutique/louer/${product.id}`)} className="w-full bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
-                    <FileText size={16} />
-                    Louer ce produit
-                  </button>
-                  <p className="text-[11px] text-gray-400 text-center">Contrat & signature · Vérification de sécurité</p>
-                </div>
+                !locationCompleted ? (
+                  <BoutiqueRentalFlow product={product} onComplete={() => setLocationCompleted(true)} />
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                      <p className="text-sm font-semibold text-emerald-800">Prêt pour la location</p>
+                      <p className="text-xs text-emerald-600 mt-1">Les informations de location ont été ajoutées à votre panier.</p>
+                    </div>
+                    <button onClick={() => router.push('/boutique/panier')} className="w-full bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
+                      <ShoppingBag size={16} />
+                      Voir le panier
+                    </button>
+                    <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all flex items-center justify-center gap-2">
+                      <Store size={16} />
+                      Continuer mes achats
+                    </button>
+                  </div>
+                )
               ) : (
                 <>
                   <div className="flex items-center gap-4">
