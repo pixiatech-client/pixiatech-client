@@ -291,14 +291,14 @@ export default function BoutiquePage() {
                         className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 bg-gray-100"
                       />
                       {product.badges && product.badges.length > 0 && (
-                        <div className="absolute top-2 left-2 flex flex-col gap-1">
+                        <div className="absolute top-2 left-2 flex flex-col gap-1.5">
                           {product.badges.map((badge) => (
                             <span
                               key={badge}
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm ${
-                                badge === 'populaire' ? 'bg-orange-500 text-white' :
-                                badge === 'nouveaute' ? 'bg-blue-500 text-white' :
-                                'bg-red-500 text-white'
+                              className={`text-[9px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-xl bg-white/20 border ${
+                                badge === 'populaire' ? 'text-orange-600 border-white/30 shadow-lg shadow-orange-500/10' :
+                                badge === 'nouveaute' ? 'text-blue-600 border-white/30 shadow-lg shadow-blue-500/10' :
+                                'text-red-600 border-white/30 shadow-lg shadow-red-500/10'
                               }`}
                             >
                               {badge === 'populaire' ? 'Populaire' : badge === 'nouveaute' ? 'Nouveauté' : 'Promotion'}
