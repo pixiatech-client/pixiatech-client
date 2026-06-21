@@ -139,6 +139,12 @@ export default function ProductDetailPage() {
     });
   }, [params.id]);
 
+  useEffect(() => {
+    if (!product) return;
+    const active = (product.variants || []).filter(v => v.active && v.name);
+    if (active.length > 0) setSelectedVariant(active[0]);
+  }, [product]);
+
   const galleryImages = product?.gallery && product.gallery.length > 0
     ? [product.image, ...product.gallery]
     : [product?.image || ''];
@@ -406,10 +412,10 @@ export default function ProductDetailPage() {
               <div className="text-sm text-gray-400 mt-1 italic">TVA incluse. Frais de port calculés lors du paiement.</div>
             </div>
 
-            {/* Simple variants */}
+            {/* Variants */}
             {displayVariants.length > 0 && (
-              <div className="mb-4">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Taille</div>
+              <div className="space-y-3 mb-4">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Taille</div>
                 <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide">
                   {displayVariants.map((v) => (
                     <button
@@ -426,7 +432,7 @@ export default function ProductDetailPage() {
                   ))}
                 </div>
                 {selectedVariant?.description && (
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-2">{selectedVariant.description}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{selectedVariant.description}</div>
                 )}
               </div>
             )}
