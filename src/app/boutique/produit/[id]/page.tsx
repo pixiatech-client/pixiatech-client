@@ -126,6 +126,7 @@ export default function ProductDetailPage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const thumbScrollRef = useRef<HTMLDivElement>(null);
+  const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
 
   useEffect(() => {
@@ -157,6 +158,10 @@ export default function ProductDetailPage() {
       document.body.style.overflow = '';
     };
   }, [lightboxOpen, images.length]);
+
+  useEffect(() => {
+    activeThumbRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [selectedImage]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -238,66 +243,77 @@ export default function ProductDetailPage() {
         <div className="lg:grid lg:grid-cols-[1fr_420px] lg:gap-12 items-start">
           <div className="flex flex-col">
             <section>
-              <div className="relative bg-white rounded-2xl overflow-hidden shadow-sm group">
+              <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
                 <div className="cursor-pointer overflow-hidden" onClick={() => openLightbox(selectedImage)}>
                   <img
                     src={images[selectedImage]}
                     alt={product.name}
-                    className="w-full h-auto object-cover aspect-[4/3] transition-transform duration-500 group-hover:scale-110"
+                    className="w-full h-auto object-cover aspect-[4/3] transition-transform duration-500 hover:scale-110"
                   />
                 </div>
-                {images.length > 1 && (
-                  <>
-                    <button onClick={() => setSelectedImage((i) => Math.max(0, i - 1))} className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-gradient-to-r from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ChevronLeft size={16} className="text-white drop-shadow-lg" />
-                    </button>
-                    <button onClick={() => setSelectedImage((i) => Math.min(images.length - 1, i + 1))} className="absolute right-0 top-0 bottom-0 w-12 flex items-center justify-center bg-gradient-to-l from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ChevronRight size={16} className="text-white drop-shadow-lg" />
-                    </button>
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
-                      {images.map((_, idx) => (
-                        <button key={idx} onClick={() => setSelectedImage(idx)} className={`w-1.5 h-1.5 rounded-full transition-all ${selectedImage === idx ? 'bg-white w-3' : 'bg-white/50 hover:bg-white/70'}`} />
-                      ))}
-                    </div>
-                  </>
-                )}
               </div>
               {images.length > 1 && (
-                <div className="relative mt-4">
-                  <div ref={thumbScrollRef} className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-1">
-                    {images.map((img, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => { setSelectedImage(idx); openLightbox(idx); }}
-                        className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
-                        onMouseEnter={() => setSelectedImage(idx)}
-                      >
-                        <img
-                          src={img}
-                          alt={`${product.name} - Vue ${idx + 1}`}
-                          className={`w-full h-full object-cover ${selectedImage !== idx ? 'opacity-50' : ''}`}
-                        />
-                      </button>
-                    ))}
+                <>
+                  <div className="flex items-center justify-between mt-4">
+                    <button
+                      onClick={() => setSelectedImage((i) => Math.max(0, i - 1))}
+                      disabled={selectedImage === 0}
+                      className="w-9 h-9 flex items-center justify-center bg-white border border-gray-200/70 hover:border-gray-400 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft size={16} className="text-gray-600" />
+                    </button>
+                    <span className="text-xs font-semibold text-gray-500">
+                      {selectedImage + 1} / {images.length}
+                    </span>
+                    <button
+                      onClick={() => setSelectedImage((i) => Math.min(images.length - 1, i + 1))}
+                      disabled={selectedImage === images.length - 1}
+                      className="w-9 h-9 flex items-center justify-center bg-white border border-gray-200/70 hover:border-gray-400 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight size={16} className="text-gray-600" />
+                    </button>
                   </div>
-                  {images.length > 4 && (
-                    <>
-                      <button onClick={() => thumbScrollRef.current?.scrollBy({ left: -140, behavior: 'smooth' })} className="absolute left-0 top-0 bottom-0 w-8 flex items-center justify-center bg-gradient-to-r from-white to-transparent">
-                        <ChevronLeft size={14} className="text-gray-500" />
-                      </button>
-                      <button onClick={() => thumbScrollRef.current?.scrollBy({ left: 140, behavior: 'smooth' })} className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center bg-gradient-to-l from-white to-transparent">
-                        <ChevronRight size={14} className="text-gray-500" />
-                      </button>
-                    </>
-                  )}
-                </div>
+                  <div className="relative mt-3">
+                    <div ref={thumbScrollRef} className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-1">
+                      {images.map((img, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => { setSelectedImage(idx); openLightbox(idx); }}
+                          ref={idx === selectedImage ? activeThumbRef : null}
+                          className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
+                          onMouseEnter={() => setSelectedImage(idx)}
+                        >
+                          <img
+                            src={img}
+                            alt={`${product.name} - Vue ${idx + 1}`}
+                            className={`w-full h-full object-cover ${selectedImage !== idx ? 'opacity-50' : ''}`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    {images.length > 4 && (
+                      <>
+                        <button onClick={() => thumbScrollRef.current?.scrollBy({ left: -140, behavior: 'smooth' })} className="absolute left-0 top-0 bottom-0 w-8 flex items-center justify-center bg-gradient-to-r from-white to-transparent">
+                          <ChevronLeft size={14} className="text-gray-500" />
+                        </button>
+                        <button onClick={() => thumbScrollRef.current?.scrollBy({ left: 140, behavior: 'smooth' })} className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center bg-gradient-to-l from-white to-transparent">
+                          <ChevronRight size={14} className="text-gray-500" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </>
               )}
             </section>
 
             <div className="mt-20 border-t border-gray-200/40 pt-12 space-y-16">
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Description D&eacute;taill&eacute;e</h2>
-                <p className="text-gray-600 leading-relaxed">{product.descriptionDetaillee || product.longDescription}</p>
+                {product.descriptionDetaillee?.includes('<') ? (
+                  <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: product.descriptionDetaillee }} />
+                ) : (
+                  <p className="text-gray-600 leading-relaxed">{product.descriptionDetaillee || product.longDescription}</p>
+                )}
               </section>
 
               <section>

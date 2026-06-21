@@ -27,6 +27,7 @@ import {
   collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, query, where, orderBy, addDoc, updateDoc,
   ref, uploadBytes, getDownloadURL, deleteObject
 } from './firebase';
+import TipTapEditor from '@/components/TipTapEditor';
 
 // --- Helper to identify if a URL is a video ---
 const isVideoUrl = (url: string | undefined | null): boolean => {
@@ -2978,12 +2979,7 @@ const ProduitPage = ({
 
               {ficheTab === 'detail' && (
                 <div className="flex-1">
-                  <textarea
-                    value={descriptionDetaillee}
-                    onChange={(e) => setDescriptionDetaillee(e.target.value)}
-                    placeholder="Description détaillée du produit..."
-                    className="w-full min-h-[120px] bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-300 transition-colors resize-y"
-                  />
+                  <TipTapEditor value={descriptionDetaillee} onChange={setDescriptionDetaillee} placeholder="Description détaillée du produit..." />
                 </div>
               )}
 
