@@ -8,6 +8,7 @@ export interface Product {
   category: string;
   description: string;
   longDescription: string;
+  descriptionDetaillee?: string;
   image: string;
   gallery?: string[];
   videoUrl?: string;
@@ -137,6 +138,7 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     category: data.category || TYPE_LABELS[data.type?.[0]] || 'Général',
     description: data.description || '',
     longDescription: data.longDescription || '',
+    descriptionDetaillee: data.descriptionDetaillee || '',
     image,
     gallery: data.gallery || [],
     videoUrl: data.videoUrl || '',
