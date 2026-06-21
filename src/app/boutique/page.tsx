@@ -304,25 +304,19 @@ export default function BoutiquePage() {
                       {product.badges && product.badges.length > 0 && (
                         <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
                           {product.badges.map((badge) => (
-                            <span key={badge} className={`morphing-badge ${
+                            <span key={badge} className={`badge-etoile ${
                               badge === 'populaire' ? 'emerald' :
                               badge === 'nouveaute' ? 'blue' : 'red'
                             }`}>
-                              <span className="morphing-frame" />
-                              <span className={`morphing-point top left ${badge === 'populaire' ? 'bg-emerald-400' : badge === 'nouveaute' ? 'bg-blue-400' : 'bg-red-400'}`} />
-                              <span className={`morphing-point top right ${badge === 'populaire' ? 'bg-emerald-400' : badge === 'nouveaute' ? 'bg-blue-400' : 'bg-red-400'}`} />
-                              <span className={`morphing-point bottom left ${badge === 'populaire' ? 'bg-emerald-400' : badge === 'nouveaute' ? 'bg-blue-400' : 'bg-red-400'}`} />
-                              <span className={`morphing-point bottom right ${badge === 'populaire' ? 'bg-emerald-400' : badge === 'nouveaute' ? 'bg-blue-400' : 'bg-red-400'}`} />
-                              <span className="morphing-overlay" />
-                              <span className="morphing-icon">
+                              <span className="etoile-icon">
                                 {badge === 'populaire' ? <Star size={10} className="text-emerald-400" fill="currentColor" /> :
                                  badge === 'nouveaute' ? <Sparkles size={10} className="text-blue-400" /> :
                                  <Tag size={10} className="text-red-400" />}
                               </span>
-                              <span className={`morphing-text ${
-                                badge === 'populaire' ? 'text-emerald-500' :
-                                badge === 'nouveaute' ? 'text-blue-500' :
-                                'text-red-500'
+                              <span className={`etoile-text ${
+                                badge === 'populaire' ? 'text-emerald-400' :
+                                badge === 'nouveaute' ? 'text-blue-400' :
+                                'text-red-400'
                               }`}>
                                 {badge === 'populaire' ? 'Populaire' : badge === 'nouveaute' ? 'Nouveauté' : 'Promotion'}
                               </span>

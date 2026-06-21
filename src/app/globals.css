@@ -917,6 +917,96 @@ body.light-theme aside.glass-ui {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+ *  BADGE ÉTOILE — Style « étoile » (sauvegardé)
+ *  Cercle foncé avec icône, déploiement au hover type GitHub
+ *  Appelé par la classe .badge-etoile
+ * ═══════════════════════════════════════════════════════════════ */
+
+.badge-etoile {
+  --chevron-size: 10px;
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: default;
+  flex-shrink: 0;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: visible;
+}
+
+.badge-etoile:hover {
+  width: auto;
+  padding: 0 10px;
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+/* ── Color variants - dark backgrounds ── */
+.badge-etoile.emerald,
+.badge-etoile.blue,
+.badge-etoile.red {
+  background: #111827;
+}
+.badge-etoile.emerald:hover,
+.badge-etoile.blue:hover,
+.badge-etoile.red:hover {
+  background: #1f2937;
+}
+
+/* ── Pseudo-element chevron ── */
+.badge-etoile::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 14px;
+  width: var(--chevron-size);
+  aspect-ratio: 1;
+  background: inherit;
+  rotate: 45deg;
+  transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 2px;
+}
+.badge-etoile:hover::before {
+  left: calc(100% - var(--chevron-size) - 4px);
+}
+
+/* ── Icon ── */
+.badge-etoile .etoile-icon {
+  flex-shrink: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+/* ── Text avec border separator ── */
+.badge-etoile .etoile-text {
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 700;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: opacity 0.1s ease, transform 0.1s ease;
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  padding-left: 6px;
+  position: relative;
+  z-index: 2;
+}
+
+.badge-etoile:hover .etoile-text {
+  opacity: 1;
+  transform: scaleX(1);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition-delay: 0.25s;
+}
+
+/* ═══════════════════════════════════════════════════════════════
  *  MORPHING BADGE — Style « morphing » (sauvegardé)
  *  Points de coin + frame split + multi-drop-shadow + glassmorphism
  *  Appelé par la classe .morphing-badge
