@@ -3,6 +3,9 @@ import { GoogleGenAI } from "@google/genai";
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useToast } from '@/hooks/use-toast';
 import {
   Activity, Cpu, Layers, Smartphone, Tv,
@@ -67,6 +70,26 @@ const getSafeImageUrl = (product: any) => {
   }
 
   return null;
+};
+
+// --- Sortable image component for gallery drag & drop ---
+const SortableImage = ({ url, onRemove }: { url: string; onRemove: () => void }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: url });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : 'auto' as any,
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative w-[calc(33.333%-6px)] aspect-square rounded-xl overflow-hidden border border-slate-200 cursor-grab active:cursor-grabbing select-none touch-none">
+      <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
+      <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors pointer-events-none" />
+      <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 hover:opacity-100 transition-opacity">
+        <X className="w-3 h-3" />
+      </button>
+    </div>
+  );
 };
 
 // --- Distance and Pitch columns for ProductListItem ---
@@ -472,22 +495,21 @@ const ProductListItem = ({
   deletingId
 }: any) => {
   const { t } = useI18n();
-  const dragControls = useDragControls();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: product.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 100 : 'auto' as any,
+  };
 
   return (
-    <Reorder.Item
-      key={product.id}
-      value={product}
-      dragListener={false}
-      dragControls={dragControls}
-      whileDrag={{
-        scale: 1.02,
-        backgroundColor: "rgb(255, 255, 255)",
-        zIndex: 100,
-        boxShadow: "0 25px 50px -12px rgb(0 0 0 / 0.15)"
-      }}
+    <div
+      ref={setNodeRef}
+      style={style}
       className={cn(
-        "bg-theme-card rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden hover:bg-[#131E3F] dark:bg-theme-card/5 dark:border-theme-card-border",
+        "bg-theme-card rounded-2xl p-4 flex items-center gap-4 shadow-sm transition-all group/product relative overflow-hidden",
+        isDragging ? "shadow-2xl scale-[1.02] ring-1 ring-black/10" : "hover:bg-[#131E3F] dark:bg-theme-card/5 dark:border-theme-card-border",
         selectedIds.includes(product.id) ? "ring-1 ring-theme-sidebar-active-bg" : ""
       )}
     >
@@ -507,8 +529,9 @@ const ProductListItem = ({
           {selectedIds.includes(product.id) && <Check className="w-3 h-3" />}
         </button>
         <div
-          className="text-slate-300 transition-colors cursor-grab active:cursor-grabbing p-1"
-          onPointerDown={(e) => dragControls.start(e)}
+          className="text-slate-300 transition-colors cursor-grab active:cursor-grabbing p-1 touch-none"
+          {...attributes}
+          {...listeners}
         >
           <GripVertical className="w-5 h-5" />
         </div>
@@ -670,7 +693,7 @@ const ProductListItem = ({
           </motion.div>
         )}
       </AnimatePresence>
-    </Reorder.Item>
+    </div>
   );
 };
 
@@ -2821,6 +2844,37 @@ const ProduitPage = ({
               </div>
             </div>
 
+            {/* Galerie photos (Boutique only) */}
+            {activeSpace === 'boutique' && (
+              <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3 shadow-none md:shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
+                      <ImageIcon className="w-5 h-5 text-slate-400" />
+                    </div>
+                    <div className="flex flex-col">
+                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Galerie photos</h4>
+                      <span className="text-[9px] text-slate-400 font-medium">Photos suppl\u00E9mentaires</span>
+                    </div>
+                  </div>
+                </div>
+                <input type="file" ref={galleryFileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" multiple />
+                <DndContext collisionDetection={closestCenter} onDragEnd={(e) => { if (e.active && e.over && e.active.id !== e.over.id) { setGalleryUrls((items) => { const oldIdx = items.indexOf(String(e.active.id)); const newIdx = items.indexOf(String(e.over.id)); return arrayMove(items, oldIdx, newIdx); }); } }}>
+                  <SortableContext items={galleryUrls}>
+                    <div className="flex flex-wrap gap-2">
+                      {galleryUrls.map((url, idx) => (
+                        <SortableImage key={url} url={url} onRemove={() => removeGalleryImage(idx)} />
+                      ))}
+                      <button onClick={triggerGalleryUpload} className="w-[calc(33.333%-6px)] aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
+                        <Plus className="w-5 h-5 text-slate-300" />
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Ajouter</span>
+                      </button>
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </div>
+            )}
+
             {/* Fiche Technique Card */}
             <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3 flex-1 flex flex-col shadow-none md:shadow-sm">
               <div className="flex items-center justify-between">
@@ -2893,38 +2947,6 @@ const ProduitPage = ({
                   )}
                 </div>
               </div>
-
-              {/* Galerie photos (Boutique only) */}
-              {activeSpace === 'boutique' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
-                        <ImageIcon className="w-5 h-5 text-slate-400" />
-                      </div>
-                      <div className="flex flex-col">
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Galerie photos</h4>
-                        <span className="text-[9px] text-slate-400 font-medium">Photos suppl\u00E9mentaires</span>
-                      </div>
-                    </div>
-                  </div>
-                  <input type="file" ref={galleryFileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" multiple />
-                  <div className="grid grid-cols-3 gap-2">
-                    {galleryUrls.map((url, idx) => (
-                      <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200">
-                        <img src={url} alt="" className="w-full h-full object-cover" />
-                        <button onClick={() => removeGalleryImage(idx)} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                    <button onClick={triggerGalleryUpload} className="aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
-                      <Plus className="w-5 h-5 text-slate-300" />
-                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Ajouter</span>
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {/* Action Buttons */}
               <div className="pt-6 space-y-3 mt-auto">
@@ -3127,20 +3149,19 @@ const ProduitPage = ({
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Galerie photos</label>
                     <input type="file" ref={galleryFileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" multiple />
-                    <div className="grid grid-cols-3 gap-2">
-                      {galleryUrls.map((url, idx) => (
-                        <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200">
-                          <img src={url} alt="" className="w-full h-full object-cover" />
-                          <button onClick={() => removeGalleryImage(idx)} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                            <X className="w-3 h-3" />
+                    <DndContext collisionDetection={closestCenter} onDragEnd={(e) => { if (e.active && e.over && e.active.id !== e.over.id) { setGalleryUrls((items) => { const oldIdx = items.indexOf(String(e.active.id)); const newIdx = items.indexOf(String(e.over.id)); return arrayMove(items, oldIdx, newIdx); }); } }}>
+                      <SortableContext items={galleryUrls}>
+                        <div className="flex flex-wrap gap-2">
+                          {galleryUrls.map((url, idx) => (
+                            <SortableImage key={url} url={url} onRemove={() => removeGalleryImage(idx)} />
+                          ))}
+                          <button onClick={triggerGalleryUpload} className="w-[calc(33.333%-6px)] aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
+                            <Plus className="w-5 h-5 text-slate-300" />
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Ajouter</span>
                           </button>
                         </div>
-                      ))}
-                      <button onClick={triggerGalleryUpload} className="aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
-                        <Plus className="w-5 h-5 text-slate-300" />
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Ajouter</span>
-                      </button>
-                    </div>
+                      </SortableContext>
+                    </DndContext>
                   </div>
                 )}
 
@@ -3583,11 +3604,15 @@ const GestionProduits = ({
       <div className="hidden md:block relative overflow-hidden min-h-[400px]">
         <AnimatePresence mode="popLayout">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <Reorder.Group axis="y" values={paginatedProducts} onReorder={setProducts} className="space-y-4">
-              {paginatedProducts.map((product) => (
-                <ProductListItem key={product.id} product={product} selectedIds={selectedIds} toggleSelect={toggleSelect} onEditProduct={onEditProduct} onDuplicateProduct={onDuplicateProduct} onDeleteProduct={onDeleteProduct} setDeletingId={setDeletingId} deletingId={deletingId} />
-              ))}
-            </Reorder.Group>
+            <DndContext collisionDetection={closestCenter} onDragEnd={(e) => { if (e.active && e.over && e.active.id !== e.over.id && typeof setProducts === 'function') { const items = [...paginatedProducts]; const oldIdx = items.findIndex((p) => p.id === e.active.id); const newIdx = items.findIndex((p) => p.id === e.over.id); if (oldIdx !== -1 && newIdx !== -1) setProducts(arrayMove(items, oldIdx, newIdx)); } }}>
+              <SortableContext items={paginatedProducts.map(p => p.id)}>
+                <div className="space-y-4">
+                  {paginatedProducts.map((product) => (
+                    <ProductListItem key={product.id} product={product} selectedIds={selectedIds} toggleSelect={toggleSelect} onEditProduct={onEditProduct} onDuplicateProduct={onDuplicateProduct} onDeleteProduct={onDeleteProduct} setDeletingId={setDeletingId} deletingId={deletingId} />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           </motion.div>
         </AnimatePresence>
 
@@ -4191,6 +4216,19 @@ export default function ProductManagementClient() {
         finalPdfUrl = await getDownloadURL(uploadResult.ref);
       }
 
+      // Handle Gallery Photos Upload
+      const finalGalleryUrls: string[] = [];
+      for (const url of galleryUrls) {
+        if (url.startsWith('data:')) {
+          const blob = await (await fetch(url)).blob();
+          const galleryRef = ref(storage, `products/gallery/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`);
+          const uploadResult = await uploadBytes(galleryRef, blob);
+          finalGalleryUrls.push(await getDownloadURL(uploadResult.ref));
+        } else {
+          finalGalleryUrls.push(url);
+        }
+      }
+
       // Compute flat compatible values for backward compatibility
       const distVal = Object.keys(distancePitches || {}).filter(k => (distancePitches || {})[k]?.length > 0).join(', ');
       const pitchVal = Array.from(new Set(Object.values(distancePitches || {}).flat())).join(', ');
@@ -4259,7 +4297,7 @@ export default function ProductManagementClient() {
         rentalStock: Number(rentalStock || '0'),
         rentalQuantity: Number(rentalQuantity || '1'),
         isHidden: !!isHidden,
-        galleryUrls: galleryUrls,
+        galleryUrls: finalGalleryUrls,
         date: new Date().toISOString(),
         uid: user?.uid || 'system',
         selectedChars: filteredSelectedChars
@@ -5240,7 +5278,6 @@ export default function ProductManagementClient() {
                   characteristics={characteristics}
                   setCharacteristics={setCharacteristics}
                   user={user}
-                  activeSpace={activeSpace}
                 />
               </motion.div>
             )}
