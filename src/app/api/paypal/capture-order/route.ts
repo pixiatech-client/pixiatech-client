@@ -6,35 +6,41 @@ export async function POST(req: NextRequest) {
   try {
     const { orderId, rentalItems } = await req.json();
     const capture = await capturePayPalOrder(orderId);
+    const paypalCaptureId = capture?.purchase_units?.[0]?.payments?.captures?.[0]?.id || capture?.id || '';
 
     const rentalOrderIds: string[] = [];
     if (rentalItems && rentalItems.length > 0) {
       for (const item of rentalItems) {
         try {
+          const rd = item.renterDetails;
+          if (!rd) {
+            console.error('Missing renterDetails for item:', item.productId);
+            continue;
+          }
           const id = await createRentalOrder({
             productId: item.productId,
             productName: item.productName,
             productImage: item.productImage,
             productPrice: item.productPrice,
             quantity: item.quantity,
-            renterCompany: item.renterDetails.company,
-            renterRepresentative: item.renterDetails.representative,
-            renterEmail: item.renterDetails.email,
-            renterPhone: item.renterDetails.phone,
-            renterAddress: item.renterDetails.address,
-            renterCity: item.renterDetails.city,
-            renterPostcode: item.renterDetails.postcode,
-            rentalStartDate: item.rentalStartDate,
-            rentalEndDate: item.rentalEndDate,
-            rentalStartTime: item.rentalStartTime,
-            rentalEndTime: item.rentalEndTime,
+            renterCompany: rd.company || '',
+            renterRepresentative: rd.representative || '',
+            renterEmail: rd.email || '',
+            renterPhone: rd.phone || '',
+            renterAddress: rd.address || '',
+            renterCity: rd.city || '',
+            renterPostcode: rd.postcode || '',
+            rentalStartDate: item.rentalStartDate || '',
+            rentalEndDate: item.rentalEndDate || '',
+            rentalStartTime: item.rentalStartTime || '',
+            rentalEndTime: item.rentalEndTime || '',
             additionalNotes: '',
             contractSignedAt: null,
             contractPdfUrl: null,
             emailVerified: true,
             emailVerifiedAt: new Date().toISOString(),
             paypalOrderId: orderId,
-            paypalCaptureId: capture.id,
+            paypalCaptureId,
             amountPaid: item.productPrice * item.quantity,
             status: 'pending_validation',
             userId: null,

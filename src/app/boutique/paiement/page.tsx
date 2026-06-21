@@ -332,7 +332,7 @@ export default function CheckoutPage() {
 
                 <div className="space-y-4 mb-6 max-h-[320px] overflow-y-auto">
                   {items.map((item) => (
-                    <div key={item.productId} className="flex gap-3">
+                    <div key={item.productId + '-' + item.type} className="flex gap-3">
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       </div>
