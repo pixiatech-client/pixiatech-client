@@ -30,7 +30,6 @@ import { ConfiguratorWizard } from './configurator-wizard';
 import { ConfiguratorModeSelection } from './configurator-mode-selection';
 import { preloadImages } from '@/lib/image-preload';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
-import { WizardBotFlow } from '@/components/chat/WizardBotFlow';
 import SignatureFlow from './SignatureFlow';
 
 
@@ -172,8 +171,6 @@ export function QuoteBuilder({
     const [mediaType, setMediaType] = useState<'video' | 'image' | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
     const [isSignatureFlowActive, setIsSignatureFlowActive] = useState(false);
-    const [isManualBotOpen, setIsManualBotOpen] = useState(false);
-
     console.log("DEBUG: QuoteBuilder Rendered", { isSuccess, currentStep });
 
     const [successQuoteId, setSuccessQuoteId] = useState<string | null>(null);
@@ -264,6 +261,9 @@ export function QuoteBuilder({
             setIncludeDelivery(saved.includeDelivery);
             setActiveMode(saved.activeMode);
             setIsSubmitting(saved.isSubmitting);
+            if (saved.isSignatureFlowActive && saved.configuredProducts?.length > 0) {
+                setIsSignatureFlowActive(true);
+            }
         }
 
         if (step && step >= 5) {
@@ -706,17 +706,6 @@ export function QuoteBuilder({
     };
 
 
-    const handleModeSelect = (mode: 'wizard' | 'manual') => {
-        clearQuoteState();
-        setConfiguredProducts([]);
-        setActiveConfigProductId(null);
-        setBaseQuote(0);
-        setActiveMode(mode);
-        setCurrentStep(1);
-        setIsSubmitting(false);
-        setIsSignatureFlowActive(false);
-    };
-
     const handleWizardComplete = (product: ConfiguredProduct | ConfiguredProduct[]) => {
         const products = Array.isArray(product) ? product : [product];
         setConfiguredProducts(products);
@@ -749,7 +738,7 @@ export function QuoteBuilder({
 
         if (originalStep === 1) {
             if (activeMode === 'selection') {
-                return <ConfiguratorModeSelection onSelectMode={handleModeSelect} onOpenBot={() => setIsManualBotOpen(true)} settings={initialSettings} />;
+                return <ConfiguratorModeSelection onSelectGuide={() => setActiveMode('wizard')} />;
             }
             if (activeMode === 'wizard') {
                 return <ConfiguratorWizard onComplete={handleWizardComplete} onBack={handleGoToModeSelection} allProducts={allProducts} settings={initialSettings} wizardSettings={wizardSettings} initialStep={initialWizardStep} />;
@@ -872,91 +861,87 @@ export function QuoteBuilder({
 
     return (
         <>
-            <div className={cn(
-                "grid items-stretch w-full mx-auto max-w-[1400px] lg:px-4 transition-filter duration-300 gap-12",
-                (isSuccess || (activeMode === 'wizard' && getOriginalStep(currentStep) === 1) || !showPreview)
-                    ? "grid-cols-1" 
-                    : "lg:grid-cols-2",
-                showMediaPreviewMobile && "lg:blur-none blur-md pointer-events-none"
-            )}>
-                <div className="flex flex-col gap-8 w-full lg:hidden relative">
-                    <HintBubble
-                        visible={isHintBubbleVisible}
-                        onHide={() => setIsHintBubbleVisible(false)}
-                    />
-                    {!(getOriginalStep(currentStep) === 1 && activeMode === 'wizard') && (
+            {activeMode === 'wizard' && getOriginalStep(currentStep) === 1 ? (
+                <ConfiguratorWizard onComplete={handleWizardComplete} onBack={handleGoToModeSelection} allProducts={allProducts} settings={initialSettings} wizardSettings={wizardSettings} initialStep={initialWizardStep} />
+            ) : (
+                <div className={cn(
+                    "grid items-stretch w-full mx-auto max-w-[1400px] lg:px-4 transition-filter duration-300 gap-12",
+                    isSuccess || !showPreview
+                        ? "grid-cols-1" 
+                        : "lg:grid-cols-2",
+                    showMediaPreviewMobile && "lg:blur-none blur-md pointer-events-none"
+                )}>
+                    <div className="flex flex-col gap-8 w-full lg:hidden relative">
+                        <HintBubble
+                            visible={isHintBubbleVisible}
+                            onHide={() => setIsHintBubbleVisible(false)}
+                        />
                         <div className="flex justify-center w-full">
                             <Stepper currentStep={currentStep} onStepClick={handleStepClick} steps={visibleSteps} />
                         </div>
-                    )}
-                    <div className="w-full">
-                        {renderStepContent()}
+                        <div className="w-full">
+                            {renderStepContent()}
+                        </div>
                     </div>
-                </div>
 
-                {showPreview && (
-                    <div className="hidden lg:flex lg:flex-col lg:items-stretch lg:gap-8 w-full max-w-2xl ml-auto">
-                        <div className="lg:sticky lg:top-28 flex flex-col gap-8 h-full">
-                            {!(getOriginalStep(currentStep) === 1 && activeMode === 'wizard') && (
+                    {showPreview && (
+                        <div className="hidden lg:flex lg:flex-col lg:items-stretch lg:gap-8 w-full max-w-2xl ml-auto">
+                            <div className="lg:sticky lg:top-28 flex flex-col gap-8 h-full">
                                 <div className="flex justify-center w-full">
                                     <Stepper currentStep={currentStep} onStepClick={handleStepClick} steps={visibleSteps} />
                                 </div>
-                            )}
-                            <Card className="w-full flex-1 flex flex-col rounded-xl overflow-hidden">
-                                <CardContent className="p-0 relative h-full flex items-center justify-center bg-slate-100 rounded-xl overflow-hidden">
-                                    <AnimatePresence mode="wait">
-                                        <motion.div
-                                            key={getOriginalStep(currentStep) === 1 ? `${activeConfiguredProduct?.id}-${mediaUrl}-${activeMode}` : getOriginalStep(currentStep)}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.5 }}
-                                            className="w-full h-full"
-                                        >
-                                            {renderPreviewContent()}
-                                        </motion.div>
-                                    </AnimatePresence>
-                                    {previewMode !== 'dimension' && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={handleCloseMediaPreview}
-                                            className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full z-20"
-                                        >
-                                            <X className="h-5 w-5" />
-                                        </Button>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
-                )}
-
-                <div className="relative w-full h-full lg:flex hidden items-stretch justify-center">
-                    <HintBubble
-                        visible={isHintBubbleVisible}
-                        onHide={() => setIsHintBubbleVisible(false)}
-                    />
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={`${currentStep}-${activeMode}`}
-                            initial={{ opacity: 0, x: direction >= 0 ? 80 : -80 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: direction >= 0 ? -80 : 80 }}
-                            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                            className="w-full flex h-full justify-center"
-                        >
-                            {/* Contrainte de largeur conditionnelle : le wizard gère sa propre largeur */}
-                            <div className={cn(
-                                "w-full",
-                                activeMode === 'wizard' ? "w-full" : "max-w-[900px] h-full flex flex-col justify-end"
-                            )}>
-                                {renderStepContent()}
+                                <Card className="w-full flex-1 flex flex-col rounded-xl overflow-hidden">
+                                    <CardContent className="p-0 relative h-full flex items-center justify-center bg-slate-100 rounded-xl overflow-hidden">
+                                        <AnimatePresence mode="wait">
+                                            <motion.div
+                                                key={getOriginalStep(currentStep) === 1 ? `${activeConfiguredProduct?.id}-${mediaUrl}-${activeMode}` : getOriginalStep(currentStep)}
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.5 }}
+                                                className="w-full h-full"
+                                            >
+                                                {renderPreviewContent()}
+                                            </motion.div>
+                                        </AnimatePresence>
+                                        {previewMode !== 'dimension' && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={handleCloseMediaPreview}
+                                                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full z-20"
+                                            >
+                                                <X className="h-5 w-5" />
+                                            </Button>
+                                        )}
+                                    </CardContent>
+                                </Card>
                             </div>
-                        </motion.div>
-                    </AnimatePresence>
+                        </div>
+                    )}
+
+                    <div className="relative w-full h-full lg:flex hidden items-stretch justify-center">
+                        <HintBubble
+                            visible={isHintBubbleVisible}
+                            onHide={() => setIsHintBubbleVisible(false)}
+                        />
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={`${currentStep}-${activeMode}`}
+                                initial={{ opacity: 0, x: direction >= 0 ? 80 : -80 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: direction >= 0 ? -80 : 80 }}
+                                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                                className="w-full flex h-full justify-center"
+                            >
+                                <div className="w-full max-w-[900px] h-full flex flex-col justify-end">
+                                    {renderStepContent()}
+                                </div>
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
                 </div>
-            </div>
+            )}
 
             <AnimatePresence>
                 {showMediaPreviewMobile && <MobileImageModal />}
@@ -971,19 +956,7 @@ export function QuoteBuilder({
                     onHome={handleGoToModeSelection}
                 />
             )}
-            <AnimatePresence>
-                {isManualBotOpen && (
-                    <WizardBotFlow
-                        onClose={() => setIsManualBotOpen(false)}
-                        onHome={() => { setIsManualBotOpen(false); handleGoToModeSelection(); }}
-                        allProducts={allProducts}
-                        settings={initialSettings}
-                        laborSettings={laborSettings}
-                        deliverySettings={deliverySettings}
-                        locations={locations}
-                    />
-                )}
-            </AnimatePresence>
+
         </>
     );
 }

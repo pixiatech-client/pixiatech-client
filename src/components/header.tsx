@@ -7,8 +7,9 @@ import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LogIn, LucideIcon } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
-export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; pageIcon?: LucideIcon } = {}) {
+export function Header({ pageTitle, pageIcon: PageIcon, fixed: isFixed }: { pageTitle?: string; pageIcon?: LucideIcon; fixed?: boolean } = {}) {
   const { user, isUserLoading } = useUser();
   const [isClient, setIsClient] = useState(false);
   const { locale, setLocale, t } = useI18n();
@@ -46,7 +47,7 @@ export function Header({ pageTitle, pageIcon: PageIcon }: { pageTitle?: string; 
   const logoUrl = "";
 
   return (
-    <header className="bg-white/95 border-b border-zinc-200 backdrop-blur-sm px-4 py-2 h-[56px] flex items-center select-none">
+    <header className={cn("bg-white/95 border-b border-zinc-200 backdrop-blur-sm px-4 py-2 h-[56px] flex items-center select-none", isFixed && "fixed top-0 z-30 w-full")}>
       <div className="container mx-auto flex justify-between items-center">
          {/* Left column: Logo & Title */}
          <div className="w-1/2 flex items-center gap-3">

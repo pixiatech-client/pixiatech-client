@@ -26,6 +26,7 @@ function useProtectMedia() {
 }
 
 import { DynamicThemeProvider } from '@/contexts/DynamicThemeContext';
+import { CartProvider } from '@/contexts/CartContext';
 
 export function LayoutProvider({
   children,
@@ -36,6 +37,7 @@ export function LayoutProvider({
   const isAdminPage = pathname.startsWith('/admin');
   const isEmbedPage = pathname.startsWith('/embed') || pathname.startsWith('/chat-widget');
   const isQuotePage = pathname.startsWith('/quote');
+  const isBoutiqueProductPage = pathname.startsWith('/boutique/produit/');
 
   useProtectMedia();
 
@@ -44,18 +46,21 @@ export function LayoutProvider({
       <RoleProvider>
         <I18nProvider>
         <DynamicThemeProvider>
+          <CartProvider>
           <div className="flex flex-col bg-background min-h-dvh">
-            {!isAdminPage && !isEmbedPage && <Header />}
+            {!isAdminPage && !isEmbedPage && <Header fixed={isBoutiqueProductPage} />}
             <main
               className={cn(
                 'flex-1 flex items-start justify-center w-full',
-                !isAdminPage && !isQuotePage && !isEmbedPage && 'px-4 pb-4 pt-1 md:px-6 md:pb-6 md:pt-2'
+                !isAdminPage && !isQuotePage && !isBoutiqueProductPage && !isEmbedPage && 'px-4 pb-4 pt-1 md:px-6 md:pb-6 md:pt-2',
+                isBoutiqueProductPage && 'pt-[56px]'
               )}
             >
               {children}
             </main>
             {/* FloatingChatButton removed from here to be moved to the landing page specifically */}
           </div>
+          </CartProvider>
         </DynamicThemeProvider>
         <ShadcnToaster />
         <SonnerToaster 

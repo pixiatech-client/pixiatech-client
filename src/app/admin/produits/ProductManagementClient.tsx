@@ -1,6 +1,6 @@
 "use client";
 import { GoogleGenAI } from "@google/genai";
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +9,7 @@ import {
   Package, FileText, Search, Plus, ShoppingCart, Calendar,
   Monitor, Sun, Store, Eye, Grid, ChevronLeft, ChevronDown, ChevronUp,
   ChevronRight, Zap, Maximize, SunMedium, PlusCircle, Camera, Image as ImageIcon,
-  Video, Play, Upload, Trash2, ArrowLeft, ArrowRight, Link as LinkIcon, Tag, ChevronsUpDown, AlertTriangle,
+  Video, Play, Upload, Trash2, ArrowLeft, ArrowRight, Link as LinkIcon, Tag, ChevronsUpDown, AlertTriangle, TrendingUp,
   Settings2, Info, Save, Check, X, MoreVertical, Edit2, Copy, GripVertical, Filter, ArrowUpDown, Sparkles, Brain, Globe, ShieldCheck, Zap as ZapIcon, LogOut, LogIn, RefreshCw,
   Mail, Lock, Unlock, Phone, UserPlus, EyeOff, Users, Truck, Wrench, History, User as UserIcon, List, Settings, Hammer, Pin
 } from 'lucide-react';
@@ -348,16 +348,16 @@ const MobileProductCard = React.memo(({
               );
             })}
 
-            {/* Screen Type Badge */}
-            {product.screenType && (
-              <div className={cn(
+            {/* Badges */}
+            {product.badges?.map((badge: string) => (
+              <div key={badge} className={cn(
                 "px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest",
-                product.screenType === '360' ? "bg-purple-50 text-purple-700 border-purple-100" :
-                product.screenType === 'curved' ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-slate-50 text-slate-500 border-slate-100"
+                badge === 'populaire' ? "bg-orange-50 text-orange-700 border-orange-100" :
+                badge === 'nouveaute' ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-red-50 text-red-700 border-red-100"
               )}>
-                {product.screenType === '360' ? '360°' : product.screenType === 'curved' ? 'Curved' : 'Flat'}
+                {badge === 'populaire' ? 'Populaire' : badge === 'nouveaute' ? 'Nouveauté' : 'Promotion'}
               </div>
-            )}
+            ))}
           </div>
 
           <div className="flex flex-wrap justify-center gap-1.5">
@@ -383,17 +383,19 @@ const MobileProductCard = React.memo(({
         <div className="flex items-baseline gap-2 mt-2">
           {product.oldPrice && (
             <span className="text-sm font-semibold text-orange-500 line-through">
-              {product.oldPrice} €
+              {product.oldPrice} {'\u20AC'}
             </span>
           )}
           <span className="text-3xl font-black text-slate-900 tracking-tighter">
-            {product.salePricePerSqM || product.price || '—'}
+            {product.salePricePerSqM || String(product.price || '').replace(/[^\d]/g, '') || '—'} {'\u20AC'}
           </span>
         </div>
       </div>
     </div>
   );
 });
+
+
 
 
 const ProductActionsDrawer = ({ isOpen, onClose, product, onEdit, onDuplicate, onDelete, children, title }: any) => {
@@ -579,16 +581,16 @@ const ProductListItem = ({
               );
             })}
 
-            {/* Screen Type Badge */}
-            {product.screenType && (
-              <span className={cn(
+            {/* Badges */}
+            {product.badges?.map((badge: string) => (
+              <span key={badge} className={cn(
                 "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors",
-                product.screenType === '360' ? "bg-purple-100 text-purple-700 border-purple-200" :
-                product.screenType === 'curved' ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-slate-100 text-slate-500 border-slate-200"
+                badge === 'populaire' ? "bg-orange-100 text-orange-700 border-orange-200" :
+                badge === 'nouveaute' ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-red-100 text-red-700 border-red-200"
               )}>
-                {product.screenType === '360' ? '360°' : product.screenType === 'curved' ? t('admin.productManagement.curved') : t('admin.productManagement.flat')}
+                {badge === 'populaire' ? 'Populaire' : badge === 'nouveaute' ? 'Nouveauté' : 'Promotion'}
               </span>
-            )}
+            ))}
           </div>
         </div>
 
@@ -599,9 +601,9 @@ const ProductListItem = ({
           <span className="text-[10px] font-bold text-slate-400 uppercase group-hover/product:text-white/60">{t('admin.productManagement.salePerM2')}</span>
           <span className="text-sm font-bold text-slate-900 dark:text-zinc-100 group-hover/product:text-white transition-colors duration-300">
             {product.oldPrice && (
-              <span className="text-xs font-semibold text-orange-500 line-through mr-1.5">{product.oldPrice} €</span>
+              <span className="text-xs font-semibold text-orange-500 line-through mr-1.5">{product.oldPrice} {'\u20AC'}</span>
             )}
-            {product.salePricePerSqM || product.price || '—'}
+            {product.salePricePerSqM || String(product.price || '').replace(/[^\d]/g, '') || '—'} {'\u20AC'}
           </span>
         </div>
       </div>
@@ -2224,6 +2226,12 @@ const ProduitPage = ({
   handleFileChange,
   handleUrlChange,
   triggerUpload,
+  handleGalleryUpload,
+  removeGalleryImage,
+  triggerGalleryUpload,
+  galleryUrls,
+  setGalleryUrls,
+  galleryFileInputRef,
   handlePdfChange,
   triggerPdfUpload,
   handleSurfaceChange,
@@ -2242,6 +2250,9 @@ const ProduitPage = ({
   setIsAISettingsOpen,
   screenType,
   setScreenType,
+  badges,
+  setBadges,
+  activeSpace,
   oldPrice,
   setOldPrice,
   isHidden,
@@ -2396,47 +2407,50 @@ const ProduitPage = ({
               </div>
             </div>
 
-            {/* Desktop Only: Screen type */}
+            {/* Desktop Only: Screen type / Badges */}
             <div className="hidden md:block space-y-1.5">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.screenType')}</label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => setScreenType('flat')}
-                  className={cn(
-                    "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                    screenType === 'flat' ? "bg-[#18181B] text-white border-[#18181B] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
-                  )}
-                >
-                  <Monitor className={cn("w-4 h-4", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-300")} />
-                  <span>{t('admin.productManagement.flat')}</span>
-                </button>
-                <button
-                  onClick={() => setScreenType('curved')}
-                  className={cn(
-                    "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                    screenType === 'curved' ? "bg-[#18181B] text-white border-[#18181B] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
-                  )}
-                >
-                  <svg className={cn("w-4 h-4", screenType === 'curved' ? "text-blue-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 17C2 17 4 15 12 15C20 15 22 17 22 17V7C22 7 20 5 12 5C4 5 2 7 2 7V17Z" />
-                    <path d="M12 15V19M10 19H14" />
-                  </svg>
-                  <span>{t('admin.productManagement.curved')}</span>
-                </button>
-                <button
-                  onClick={() => setScreenType('360')}
-                  className={cn(
-                    "h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border",
-                    screenType === '360' ? "bg-[#18181B] text-white border-[#18181B] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300"
-                  )}
-                >
-                  <svg className={cn("w-4 h-4", screenType === '360' ? "text-purple-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <ellipse cx="12" cy="5" rx="9" ry="3" />
-                    <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" />
-                  </svg>
-                  <span>360°</span>
-                </button>
-              </div>
+              {activeSpace === 'configuration' ? (
+                <>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.screenType')}</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button onClick={() => setScreenType('flat')} className={cn("h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border", screenType === 'flat' ? "bg-[#18181B] text-white border-[#18181B] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300")}>
+                      <Monitor className={cn("w-4 h-4", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-300")} />
+                      <span>{t('admin.productManagement.flat')}</span>
+                    </button>
+                    <button onClick={() => setScreenType('curved')} className={cn("h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border", screenType === 'curved' ? "bg-[#18181B] text-white border-[#18181B] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300")}>
+                      <svg className={cn("w-4 h-4", screenType === 'curved' ? "text-blue-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 17C2 17 4 15 12 15C20 15 22 17 22 17V7C22 7 20 5 12 5C4 5 2 7 2 7V17Z" /><path d="M12 15V19M10 19H14" /></svg>
+                      <span>{t('admin.productManagement.curved')}</span>
+                    </button>
+                    <button onClick={() => setScreenType('360')} className={cn("h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border", screenType === '360' ? "bg-[#18181B] text-white border-[#18181B] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300")}>
+                      <svg className={cn("w-4 h-4", screenType === '360' ? "text-purple-400" : "text-slate-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" /></svg>
+                      <span>360{'\u00B0'}</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Badges</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'populaire', label: 'Populaires', icon: TrendingUp, activeColor: 'text-orange-400' },
+                      { id: 'nouveaute', label: 'Nouveautés', icon: Sparkles, activeColor: 'text-blue-400' },
+                      { id: 'promotion', label: 'Promotion', icon: Tag, activeColor: 'text-red-400' },
+                    ].map((badge) => {
+                      const isActive = badges.includes(badge.id);
+                      return (
+                        <button
+                          key={badge.id}
+                          onClick={() => setBadges((prev: string[]) => isActive ? prev.filter((b: string) => b !== badge.id) : [...prev, badge.id])}
+                          className={cn("h-10 rounded-xl flex items-center justify-center gap-2 text-[11px] font-bold transition-all border", isActive ? "bg-[#18181B] text-white border-[#18181B] shadow-lg" : "bg-white text-slate-400 border-slate-200 hover:border-slate-300")}
+                        >
+                          <badge.icon className={cn("w-4 h-4", isActive ? badge.activeColor : "text-slate-300")} />
+                          <span>{badge.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Desktop Only: Environnement */}
@@ -2880,6 +2894,38 @@ const ProduitPage = ({
                 </div>
               </div>
 
+              {/* Galerie photos (Boutique only) */}
+              {activeSpace === 'boutique' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
+                        <ImageIcon className="w-5 h-5 text-slate-400" />
+                      </div>
+                      <div className="flex flex-col">
+                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Galerie photos</h4>
+                        <span className="text-[9px] text-slate-400 font-medium">Photos suppl\u00E9mentaires</span>
+                      </div>
+                    </div>
+                  </div>
+                  <input type="file" ref={galleryFileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" multiple />
+                  <div className="grid grid-cols-3 gap-2">
+                    {galleryUrls.map((url, idx) => (
+                      <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200">
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <button onClick={() => removeGalleryImage(idx)} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <button onClick={triggerGalleryUpload} className="aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
+                      <Plus className="w-5 h-5 text-slate-300" />
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Ajouter</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="pt-6 space-y-3 mt-auto">
                 <button
@@ -2989,53 +3035,58 @@ const ProduitPage = ({
                       </div>
                     </div>
 
-                  {/* Screen Type (Mobile) */}
+                  {/* Screen Type / Badges (Mobile) */}
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.screenType')}</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        onClick={() => setScreenType('flat')}
-                        className={cn(
-                          "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
-                          screenType === 'flat' ? "bg-[#18181B] text-white" : "bg-slate-100 text-slate-400"
-                        )}
-                      >
-                        <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'flat' ? "bg-white/10" : "bg-slate-200")}>
-                          <Monitor className={cn("w-3.5 h-3.5", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-400")} />
+                    {activeSpace === 'configuration' ? (
+                      <>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.screenType')}</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button onClick={() => setScreenType('flat')} className={cn("w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group", screenType === 'flat' ? "bg-[#18181B] text-white" : "bg-slate-100 text-slate-400")}>
+                            <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'flat' ? "bg-white/10" : "bg-slate-200")}>
+                              <Monitor className={cn("w-3.5 h-3.5", screenType === 'flat' ? "text-[#c6ff00]" : "text-slate-400")} />
+                            </div>
+                            <span className="text-[9px] font-black uppercase tracking-widest truncate">{t('admin.productManagement.flat')}</span>
+                          </button>
+                          <button onClick={() => setScreenType('curved')} className={cn("w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group", screenType === 'curved' ? "bg-[#18181B] text-white" : "bg-slate-100 text-slate-400")}>
+                            <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'curved' ? "bg-white/10" : "bg-slate-200")}>
+                              <svg className={cn("w-3.5 h-3.5", screenType === 'curved' ? "text-blue-400" : "text-slate-400")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 17C2 17 4 15 12 15C20 15 22 17 22 17V7C22 7 20 5 12 5C4 5 2 7 2 7V17Z" /><path d="M12 15V19M10 19H14" /></svg>
+                            </div>
+                            <span className="text-[9px] font-black uppercase tracking-widest truncate">{t('admin.productManagement.curved')}</span>
+                          </button>
+                          <button onClick={() => setScreenType('360')} className={cn("w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group", screenType === '360' ? "bg-[#18181B] text-white" : "bg-slate-100 text-slate-400")}>
+                            <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === '360' ? "bg-white/10" : "bg-slate-200")}>
+                              <svg className={cn("w-3.5 h-3.5", screenType === '360' ? "text-purple-400" : "text-slate-400")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" /></svg>
+                            </div>
+                            <span className="text-[9px] font-black uppercase tracking-widest truncate">360{'\u00B0'}</span>
+                          </button>
                         </div>
-                        <span className="text-[9px] font-black uppercase tracking-widest truncate">{t('admin.productManagement.flat')}</span>
-                      </button>
-                      <button
-                        onClick={() => setScreenType('curved')}
-                        className={cn(
-                          "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
-                          screenType === 'curved' ? "bg-[#18181B] text-white" : "bg-slate-100 text-slate-400"
-                        )}
-                      >
-                        <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === 'curved' ? "bg-white/10" : "bg-slate-200")}>
-                          <svg className={cn("w-3.5 h-3.5", screenType === 'curved' ? "text-blue-400" : "text-slate-400")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M2 17C2 17 4 15 12 15C20 15 22 17 22 17V7C22 7 20 5 12 5C4 5 2 7 2 7V17Z" />
-                            <path d="M12 15V19M10 19H14" />
-                          </svg>
+                      </>
+                    ) : (
+                      <>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Badges</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { id: 'populaire', label: 'Populaires', icon: TrendingUp, activeColor: 'text-orange-400' },
+                            { id: 'nouveaute', label: 'Nouveautés', icon: Sparkles, activeColor: 'text-blue-400' },
+                            { id: 'promotion', label: 'Promotion', icon: Tag, activeColor: 'text-red-400' },
+                          ].map((badge) => {
+                            const isActive = badges.includes(badge.id);
+                            return (
+                              <button
+                                key={badge.id}
+                                onClick={() => setBadges((prev: string[]) => isActive ? prev.filter((b: string) => b !== badge.id) : [...prev, badge.id])}
+                                className={cn("w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group", isActive ? "bg-[#18181B] text-white" : "bg-slate-100 text-slate-400")}
+                              >
+                                <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", isActive ? "bg-white/10" : "bg-slate-200")}>
+                                  <badge.icon className={cn("w-3.5 h-3.5", isActive ? badge.activeColor : "text-slate-400")} />
+                                </div>
+                                <span className="text-[9px] font-black uppercase tracking-widest truncate">{badge.label}</span>
+                              </button>
+                            );
+                          })}
                         </div>
-                        <span className="text-[9px] font-black uppercase tracking-widest truncate">{t('admin.productManagement.curved')}</span>
-                      </button>
-                      <button
-                        onClick={() => setScreenType('360')}
-                        className={cn(
-                          "w-full h-12 rounded-xl flex items-center px-2 gap-2 transition-all duration-300 relative overflow-hidden group",
-                          screenType === '360' ? "bg-[#18181B] text-white" : "bg-slate-100 text-slate-400"
-                        )}
-                      >
-                        <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shrink-0", screenType === '360' ? "bg-white/10" : "bg-slate-200")}>
-                          <svg className={cn("w-3.5 h-3.5", screenType === '360' ? "text-purple-400" : "text-slate-400")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <ellipse cx="12" cy="5" rx="9" ry="3" />
-                            <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" />
-                          </svg>
-                        </div>
-                        <span className="text-[9px] font-black uppercase tracking-widest truncate">360°</span>
-                      </button>
-                    </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Environnement */}
@@ -3070,6 +3121,28 @@ const ProduitPage = ({
                     </div>
                   </div>
                 </div>
+
+                {/* Galerie photos (Mobile, Boutique only) */}
+                {activeSpace === 'boutique' && (
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Galerie photos</label>
+                    <input type="file" ref={galleryFileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" multiple />
+                    <div className="grid grid-cols-3 gap-2">
+                      {galleryUrls.map((url, idx) => (
+                        <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200">
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <button onClick={() => removeGalleryImage(idx)} className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                      <button onClick={triggerGalleryUpload} className="aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
+                        <Plus className="w-5 h-5 text-slate-300" />
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Ajouter</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="shrink-0 p-4 bg-white border-t border-slate-100">
                   <button onClick={() => setIsPricingMediaOpen(false)} className="w-full h-12 bg-black text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-black/20">{t('admin.productManagement.confirmClose')}</button>
@@ -3185,8 +3258,8 @@ const GestionProduits = ({
   }).sort((a, b) => {
     if (sortBy === 'name') return a.name.localeCompare(b.name);
     if (sortBy === 'date') return new Date(b.date).getTime() - new Date(a.date).getTime();
-    const priceA = parseFloat((a.price || '0').toString().replace(/ /g, '').replace('€', '')) || 0;
-    const priceB = parseFloat((b.price || '0').toString().replace(/ /g, '').replace('€', '')) || 0;
+    const priceA = parseFloat((a.price || '0').toString().replace(/[^\d]/g, '')) || 0;
+    const priceB = parseFloat((b.price || '0').toString().replace(/[^\d]/g, '')) || 0;
     if (sortBy === 'price') return priceB - priceA;
     return 0;
   });
@@ -3673,7 +3746,7 @@ const MOCK_PRODUCTS = [
     name: 'Écran LED Intérieur P1.2 High-End',
     type: ['interieur'],
     mode: ['vente'],
-    price: '4 500 €',
+    price: '4 500 \u20AC',
     pitch: 'P1.2',
     distance: '1.2m',
     power: '600W/m²',
@@ -3691,7 +3764,7 @@ const MOCK_PRODUCTS = [
     name: 'Totem LED Extérieur P2.5 Publicitaire',
     type: ['exterieur'],
     mode: ['location'],
-    price: '150 €',
+    price: '150 \u20AC',
     pitch: 'P2.5',
     distance: '2.5m',
     power: '800W/m²',
@@ -3709,7 +3782,7 @@ const MOCK_PRODUCTS = [
     name: 'Écran LED Transparent P3.9 Vitrine',
     type: ['interieur'],
     mode: ['vente'],
-    price: '3 200 €',
+    price: '3 200 \u20AC',
     pitch: 'P3.9',
     distance: '4m',
     power: '400W/m²',
@@ -3726,7 +3799,7 @@ const MOCK_PRODUCTS = [
     name: 'Dalle LED Sol Interactive P4.8',
     type: ['interieur'],
     mode: ['location'],
-    price: '200 €',
+    price: '200 \u20AC',
     pitch: 'P4.8',
     distance: '5m',
     power: '900W/m²',
@@ -3743,7 +3816,7 @@ const MOCK_PRODUCTS = [
     name: 'Bannière LED Sportive P10',
     type: ['exterieur'],
     mode: ['vente'],
-    price: '1 800 €',
+    price: '1 800 \u20AC',
     pitch: 'P10',
     distance: '10m',
     power: '700W/m²',
@@ -3761,7 +3834,7 @@ const MOCK_PRODUCTS = [
     name: 'Écran LED Flexible P2.5 Design',
     type: ['interieur'],
     mode: ['vente'],
-    price: '5 500 €',
+    price: '5 500 \u20AC',
     pitch: 'P2.5',
     distance: '2.5m',
     power: '500W/m²',
@@ -3818,6 +3891,9 @@ export default function ProductManagementClient() {
   const [productName, setProductName] = useState('');
   const [characteristics, setCharacteristics] = useState<any[]>([]);
   const [wizardSettings, setWizardSettings] = useState<{ viewingDistances: string[], pixelPitches: string[] }>({ viewingDistances: [], pixelPitches: [] });
+  const [activeSpace, setActiveSpace] = useState<'boutique' | 'configuration'>('configuration');
+  const prodCol = useMemo(() => activeSpace === 'boutique' ? 'boutique_products' : 'products', [activeSpace]);
+  const charCol = useMemo(() => activeSpace === 'boutique' ? 'boutique_characteristics' : 'characteristics', [activeSpace]);
 
   const handleFirestoreError = (error: any, action: string, collection: string) => {
     console.error(`Firestore error ${action} ${collection}:`, error);
@@ -3850,7 +3926,7 @@ export default function ProductManagementClient() {
   // Data Sync (Real-time Firestore)
   useEffect(() => {
     // Listen to products
-    const qProducts = query(collection(db, "products"), orderBy("name", "asc"));
+    const qProducts = query(collection(db, prodCol), orderBy("name", "asc"));
     const unsubProducts = onSnapshot(qProducts, (snapshot) => {
       const prods = snapshot.docs.map(doc => {
         const data = doc.data() as any;
@@ -3885,7 +3961,7 @@ export default function ProductManagementClient() {
     }, (error) => handleFirestoreError(error, 'fetching', 'products'));
 
     // Listen to characteristics
-    const qChars = query(collection(db, "characteristics"), orderBy("name", "asc"));
+    const qChars = query(collection(db, charCol), orderBy("name", "asc"));
     const unsubChars = onSnapshot(qChars, async (snapshot) => {
       const chars = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
@@ -3903,7 +3979,7 @@ export default function ProductManagementClient() {
               const { id: charId, ...data } = defaultChar;
               try {
                 // Use setDoc with fixed ID for core characteristics
-                await setDoc(doc(db, "characteristics", charId || `char-${name.replace(/\s+/g, '-').toLowerCase()}`), {
+                await setDoc(doc(db, charCol, charId || `char-${name.replace(/\s+/g, '-').toLowerCase()}`), {
                   ...data,
                   uid: user?.uid || 'system',
                   locked: true,
@@ -3941,7 +4017,31 @@ export default function ProductManagementClient() {
       unsubChars();
       unsubWizard();
     };
-  }, [user]); // Re-run if user changes to ensure UID is correct for seeding
+  }, [user, prodCol, charCol]); // Re-run if user or space changes
+
+  // Auto-duplicate products to boutique_products when first switching to boutique
+  const [hasDuplicatedBoutique, setHasDuplicatedBoutique] = useState(false);
+  useEffect(() => {
+    if (!user || activeSpace !== 'boutique' || hasDuplicatedBoutique) return;
+    (async () => {
+      try {
+        const existing = await getDocs(collection(db, 'boutique_products'));
+        if (existing.empty) {
+          const configSnap = await getDocs(collection(db, 'products'));
+          for (const d of configSnap.docs) {
+            const data = d.data();
+            await addDoc(collection(db, 'boutique_products'), {
+              ...data,
+              price: typeof data.price === 'number' ? data.price : parseFloat(String(data.salePricePerSqM || data.price || 0).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0,
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Boutique duplication error:', e);
+      }
+      setHasDuplicatedBoutique(true);
+    })();
+  }, [user, activeSpace, hasDuplicatedBoutique]);
 
   const [selectedChars, setSelectedChars] = useState<any[]>([]);
   const [showCharPanel, setShowCharPanel] = useState(false);
@@ -3953,6 +4053,7 @@ export default function ProductManagementClient() {
   const [mode, setMode] = useState<('vente' | 'location')[]>(['vente']);
   const [environment, setEnvironment] = useState<('interieur' | 'exterieur' | 'semi-exterieur')[]>(['exterieur']);
   const [screenType, setScreenType] = useState<'flat' | 'curved'>('flat');
+  const [badges, setBadges] = useState<string[]>([]);
   const [surface, setSurface] = useState<number>(9.00);
   const [mediaType, setMediaType] = useState<'photo' | 'video'>('photo');
   const [dimensionsEnabled, setDimensionsEnabled] = useState(false);
@@ -3963,6 +4064,8 @@ export default function ProductManagementClient() {
   const [videoUrl, setVideoUrl] = useState('');
   const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryFileInputRef = useRef<HTMLInputElement>(null);
+  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
 
   const [aiSettings, setAiSettings] = useState<AISettings>(DEFAULT_AI_SETTINGS);
   const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
@@ -4129,7 +4232,7 @@ export default function ProductManagementClient() {
           if (e === 'semi-exterieur' || e === 'vitrine') return 'showcase';
           return e;
         }),
-        price: (prixVente || '0') + ' €',
+        price: (prixVente || '0').replace(/[^\d]/g, ''),
         oldPrice: oldPrice ? parseFloat(oldPrice) : null,
         image: finalPhotoUrl || '',
         videoUrl: finalVideoUrl || '',
@@ -4148,6 +4251,7 @@ export default function ProductManagementClient() {
         pricePerTile: Number(prixDalle || '0'),
         dimensionsEnabled: !!dimensionsEnabled,
         screenType: screenType || 'flat',
+        badges: badges,
         updatedAt: new Date().toISOString(),
         hasDimensions: !!dimensionsEnabled,
         prixLocationHeure: String(prixLocationHeure || '0'),
@@ -4155,6 +4259,7 @@ export default function ProductManagementClient() {
         rentalStock: Number(rentalStock || '0'),
         rentalQuantity: Number(rentalQuantity || '1'),
         isHidden: !!isHidden,
+        galleryUrls: galleryUrls,
         date: new Date().toISOString(),
         uid: user?.uid || 'system',
         selectedChars: filteredSelectedChars
@@ -4167,14 +4272,14 @@ export default function ProductManagementClient() {
 
       if (editingProduct) {
         console.log("Updating product:", editingProduct.id, productData);
-        await updateDoc(doc(db, "products", editingProduct.id), productData);
+        await updateDoc(doc(db, prodCol, editingProduct.id), productData);
         toast({
           title: t('admin.productManagement.productUpdated'),
           description: t('admin.productManagement.productUpdatedDesc', { name: productName }),
           variant: "success"
         });
       } else {
-        await addDoc(collection(db, "products"), productData);
+        await addDoc(collection(db, prodCol), productData);
         toast({
           title: t('admin.productManagement.productAdded'),
           description: t('admin.productManagement.productAddedDesc', { name: productName }),
@@ -4418,6 +4523,26 @@ export default function ProductManagementClient() {
     fileInputRef.current?.click();
   };
 
+  const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      Array.from(e.target.files).forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setGalleryUrls((prev) => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeGalleryImage = (index: number) => {
+    setGalleryUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const triggerGalleryUpload = () => {
+    galleryFileInputRef.current?.click();
+  };
+
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -4504,7 +4629,7 @@ export default function ProductManagementClient() {
         return e;
       }));
 
-      setPrixVente((editingProduct.price || '').toString().replace(/ /g, '').replace('€', ''));
+      setPrixVente((editingProduct.price || '').toString().replace(/[^\d]/g, ''));
       setOldPrice(editingProduct.oldPrice ? editingProduct.oldPrice.toString() : '');
 
       // Handle selected characteristics
@@ -4575,6 +4700,8 @@ export default function ProductManagementClient() {
       setPrixDalle(editingProduct.pricePerTile?.toString() || editingProduct.prixDalle || '20');
       setDimensionsEnabled(!!(editingProduct.dimensionsEnabled || editingProduct.hasDimensions));
       setScreenType(editingProduct.screenType || 'flat');
+      setBadges(editingProduct.badges || []);
+      setGalleryUrls(editingProduct.galleryUrls || []);
       setSurface(parseFloat(editingProduct.surfaceMinRequise || '0') || 9.00);
       setIsHidden(!!editingProduct.isHidden);
     } else {
@@ -4583,6 +4710,8 @@ export default function ProductManagementClient() {
       setMode(['vente']);
       setEnvironment(['exterieur']);
       setScreenType('flat');
+      setBadges([]);
+      setGalleryUrls([]);
       setPrixVente('1250');
       setOldPrice('');
 
@@ -4973,6 +5102,38 @@ export default function ProductManagementClient() {
     <div className="min-h-screen bg-transparent font-sans text-slate-900">
       <main className="min-h-screen transition-all duration-300">
         <div className="max-w-[1400px] mx-auto p-0 md:p-8">
+          {/* Switch espace : Boutique / Configuration guidée */}
+          <div className="flex items-center justify-center md:justify-start mb-3">
+            <div className="relative flex bg-slate-100/80 p-0.5 rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+              {[
+                { id: 'boutique', label: 'Boutique', icon: ShoppingCart },
+                { id: 'configuration', label: 'Configuration guidée', icon: Settings2 },
+              ].map((space) => {
+                const isActive = activeSpace === space.id;
+                return (
+                  <button
+                    key={space.id}
+                    onClick={() => setActiveSpace(space.id as any)}
+                    className={cn(
+                      "relative flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-5 h-8 text-[9px] md:text-[10px] font-black transition-all z-20 uppercase tracking-widest",
+                      isActive ? "text-white" : "text-slate-400 hover:text-slate-700"
+                    )}
+                  >
+                    {isActive && (
+                      <motion.span
+                        layoutId="space-bubble"
+                        className="absolute inset-0 z-10 bg-theme-sidebar-active-bg rounded-lg shadow-md border border-theme-sidebar-active-bg"
+                        transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                      />
+                    )}
+                    <space.icon className={cn("w-3 h-3 z-20 transition-colors", isActive ? "text-white" : "text-slate-400")} />
+                    <span className="z-20 whitespace-nowrap">{space.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="flex items-center justify-between mb-8">
             <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full md:w-auto overflow-hidden shadow-sm">
               {[
@@ -5079,13 +5240,14 @@ export default function ProductManagementClient() {
                   characteristics={characteristics}
                   setCharacteristics={setCharacteristics}
                   user={user}
+                  activeSpace={activeSpace}
                 />
               </motion.div>
             )}
 
             {activePage === 'produit' && (
               <motion.div
-                key="produit"
+                key={`produit-${activeSpace}`}
                 custom={pageDirection}
                 variants={slideVariants}
                 initial="enter"
@@ -5155,10 +5317,16 @@ export default function ProductManagementClient() {
                   isSaving={isSaving}
                   aiSettings={aiSettings}
                   setAiSettings={setAiSettings}
-                  handleFileChange={handleFileChange}
-                  handleUrlChange={handleUrlChange}
-                  triggerUpload={triggerUpload}
-                  handlePdfChange={handlePdfChange}
+                   handleFileChange={handleFileChange}
+                   handleUrlChange={handleUrlChange}
+                   triggerUpload={triggerUpload}
+                   handleGalleryUpload={handleGalleryUpload}
+                   removeGalleryImage={removeGalleryImage}
+                   triggerGalleryUpload={triggerGalleryUpload}
+                   galleryUrls={galleryUrls}
+                   setGalleryUrls={setGalleryUrls}
+                   galleryFileInputRef={galleryFileInputRef}
+                   handlePdfChange={handlePdfChange}
                   triggerPdfUpload={triggerPdfUpload}
                   handleSurfaceChange={handleSurfaceChange}
                   adjustSurface={adjustSurface}
@@ -5174,11 +5342,14 @@ export default function ProductManagementClient() {
                   analysisProgress={analysisProgress}
                   pdfError={pdfError}
                   setIsAISettingsOpen={setIsAISettingsOpen}
-                  screenType={screenType}
-                  setScreenType={setScreenType}
-                  distancePitches={distancePitches}
+                   screenType={screenType}
+                   setScreenType={setScreenType}
+                   badges={badges}
+                   setBadges={setBadges}
+                   distancePitches={distancePitches}
                   setDistancePitches={setDistancePitches}
-                  wizardSettings={wizardSettings}
+                   wizardSettings={wizardSettings}
+                   activeSpace={activeSpace}
                 />
               </motion.div>
             )}

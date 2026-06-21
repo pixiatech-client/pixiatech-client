@@ -42,8 +42,10 @@
     "modeSelection": {
         "title": "Choisissez votre mode",
         "description": "La méthode qui vous convient le mieux.",
-        "boutiqueTitle": "Boutique",
-        "boutiqueDesc": "Parcourez notre catalogue de produits — simple, rapide, sans configuration.",
+        "boutiqueTitle": "Configuration Guidée",
+        "boutiqueDesc": "Recommandé — Rapide, simple et sans prise de tête.",
+        "boutiqueShopTitle": "Boutique",
+        "boutiqueShopDesc": "Parcourir notre catalogue de produits — simples, rapides, sans configuration.",
         "wizardTitle": "Configuration Guidée",
         "wizardDesc": "Recommandé — Rapide, simple et sans prise de tête.",
         "manualTitle": "Assistance guidée",

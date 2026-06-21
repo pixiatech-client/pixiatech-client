@@ -1,13 +1,13 @@
 
 import type { Metadata } from 'next';
-import { Poppins } from 'next/font/google';
+import { Inter } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 import { LayoutProvider } from '@/components/layout-provider';
 
-const poppins = Poppins({
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
-  variable: '--font-poppins',
+  variable: '--font-inter',
 });
 
 export const metadata: Metadata = {
@@ -30,15 +30,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
-      <body className={`${poppins.variable} font-body antialiased min-h-[100dvh] bg-white`} suppressHydrationWarning>
+      <body className={`${inter.variable} font-body antialiased min-h-[100dvh] bg-[#F5F5F5]`} suppressHydrationWarning>
         <div className="flare cyan" aria-hidden="true" />
         <div className="flare magenta" aria-hidden="true" />
         <div className="directional-flare" aria-hidden="true" suppressHydrationWarning />
         <LayoutProvider>{children}</LayoutProvider>
-        <script
+        <Script id="directional-flare" strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              // Mouse move listener for the interactive directional flare
               window.addEventListener("mousemove", (e) => {
                 const directionalFlare = document.querySelector(".directional-flare");
                 if (!directionalFlare) return;

@@ -32,11 +32,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isLoggedIn();
-      allow list: if isLoggedIn();
-      allow create: if isLoggedIn();
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
+      allow read: if isLoggedIn() && (isOwner(userId) || isAdmin());
+      allow write: if isLoggedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
     }
 
     match /roles/{roleId} {
@@ -56,8 +54,18 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isLoggedIn();
     }
-    
+
     match /characteristics/{charId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    match /boutique_products/{productId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    match /boutique_characteristics/{charId} {
       allow read: if true;
       allow write: if isLoggedIn();
     }
@@ -95,23 +103,23 @@ service cloud.firestore {
       allow update, delete: if isLoggedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-match /chats {
-       allow list: if true;
-}
+    match /chats {
+      allow list: if true;
+    }
 
-match /chats/{chatId} {
-         allow read: if true;
-         allow create: if true;
-         allow update: if true;
-         allow delete: if true;
- 
-         match /messages/{messageId} {
-           allow read: if true;
-           allow list: if true;
-           allow create: if true;
-           allow update: if true;
-           allow delete: if true;
-         }
-       }
-   }
+    match /chats/{chatId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if true;
+
+      match /messages/{messageId} {
+        allow read: if true;
+        allow list: if true;
+        allow create: if true;
+        allow update: if true;
+        allow delete: if true;
+      }
+    }
+  }
 }

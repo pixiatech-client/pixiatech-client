@@ -1,0 +1,78 @@
+<h2>Nouveau layout — page Produits</h2>
+<p class="subtitle">Switch Boutique ↔ Configuration guidée + déplacement Synchronisation</p>
+
+<div class="section">
+  <div class="label">Aperçu du layout (page /admin/produits)</div>
+  
+  <div class="mockup">
+    <div class="mockup-header">⬅ Retour &nbsp;|&nbsp; 📦 Produits &nbsp;|&nbsp; [🧮] [🔔] [💬] [FR] [👤]</div>
+    <div class="mockup-body" style="padding:0">
+      
+      <!-- Ligne du switch principal -->
+      <div style="display:flex; align-items:center; gap:12px; padding:16px 16px 0 16px">
+        <div style="display:flex; background:#e2e8f0; border-radius:16px; padding:4px; border:1px solid #cbd5e1; flex:1">
+          <div style="flex:1; padding:8px 24px; background:#2563eb; color:white; border-radius:12px; font-size:12px; font-weight:800; text-align:center; text-transform:uppercase; letter-spacing:1px">
+            🛒 Boutique
+          </div>
+          <div style="flex:1; padding:8px 24px; color:#64748b; border-radius:12px; font-size:12px; font-weight:800; text-align:center; text-transform:uppercase; letter-spacing:1px">
+            ⚙️ Configuration guidée
+          </div>
+        </div>
+      </div>
+      
+      <!-- Ligne des 3 onglets internes -->
+      <div style="display:flex; align-items:center; gap:12px; padding:12px 16px">
+        <div style="display:flex; background:#f1f5f9; border-radius:16px; padding:4px; border:1px solid #e2e8f0">
+          <div style="padding:8px 20px; background:#2563eb; color:white; border-radius:12px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px">📋 Gestion des produits</div>
+          <div style="padding:8px 20px; color:#94a3b8; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px">📄 Fiche produit</div>
+          <div style="padding:8px 20px; color:#94a3b8; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px">⚙️ Caractéristiques</div>
+        </div>
+        <div style="flex:1"></div>
+      </div>
+      
+      <!-- Contenu -->
+      <div style="padding:16px; border-top:1px solid #e2e8f0; min-height:200px">
+        <div style="background:#f8fafc; border:2px dashed #cbd5e1; border-radius:12px; padding:32px; text-align:center; color:#94a3b8; font-size:14px">
+          Contenu de l'onglet actif (Gestion des produits / Fiche produit / Caractéristiques)<br>
+          <span style="font-size:12px; color:#94a3b8">← les données affichées dépendent de l'espace sélectionné</span>
+        </div>
+      </div>
+      
+      <!-- Barre flottante Ajouter un produit + Sync -->
+      <div style="border-top:1px solid #e2e8f0; padding:12px 16px; display:flex; justify-content:center">
+        <div style="display:flex; align-items:center; gap:8px; background:#1e293b; color:white; border-radius:18px; padding:4px 6px 4px 20px">
+          <span style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:2px">+ Ajouter un produit</span>
+          <div style="margin-left:12px; border-left:1px solid rgba(255,255,255,0.2); padding-left:8px">
+            <span style="display:inline-flex; align-items:center; gap:4px; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:6px 12px; font-size:10px; font-weight:700; text-transform:uppercase">
+              🔄 Synchronisation
+            </span>
+          </div>
+          <div style="width:32px; height:32px; background:rgba(255,255,255,0.15); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:16px">⋮</div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Changements clés</h3>
+  <div style="display:flex; flex-direction:column; gap:8px; font-size:14px">
+    <div style="display:flex; align-items:flex-start; gap:8px; background:var(--bg-secondary); padding:8px 12px; border-radius:8px">
+      <span style="background:var(--accent); color:white; border-radius:4px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0">1</span>
+      <span><strong>Switch Boutique / Configuration guidée</strong> placé en haut, à l'emplacement du bouton Synchronisation actuel</span>
+    </div>
+    <div style="display:flex; align-items:flex-start; gap:8px; background:var(--bg-secondary); padding:8px 12px; border-radius:8px">
+      <span style="background:var(--accent); color:white; border-radius:4px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0">2</span>
+      <span><strong>Bouton Synchronisation déplacé</strong> dans la barre flottante, à côté du bouton Ajouter un produit</span>
+    </div>
+    <div style="display:flex; align-items:flex-start; gap:8px; background:var(--bg-secondary); padding:8px 12px; border-radius:8px">
+      <span style="background:var(--accent); color:white; border-radius:4px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0">3</span>
+      <span><strong>Collections Firestore séparées :</strong> <code>boutique_products</code> / <code>boutique_characteristics</code> pour Boutique, <code>products</code> / <code>characteristics</code> pour Configuration guidée</span>
+    </div>
+    <div style="display:flex; align-items:flex-start; gap:8px; background:var(--bg-secondary); padding:8px 12px; border-radius:8px">
+      <span style="background:var(--accent); color:white; border-radius:4px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0">4</span>
+      <span><strong>Duplication initiale</strong> des produits et caractéristiques au premier lancement de l'espace Boutique</span>
+    </div>
+  </div>
+</div>
