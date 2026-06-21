@@ -1,5 +1,5 @@
 import { firestore } from '@/firebase/config';
-import { collection, addDoc, updateDoc, doc, getDoc, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 
 export type RentalStatus = 'pending_validation' | 'validated' | 'shipped' | 'completed' | 'cancelled';
 
@@ -71,6 +71,7 @@ export async function getRentalOrders(options?: {
   const constraints: any[] = [];
   if (options?.status) constraints.push(where('status', '==', options.status));
   constraints.push(orderBy('createdAt', 'desc'));
+  if (options?.limit) constraints.push(limit(options.limit));
   const q = query(collection(firestore, COLLECTION), ...constraints);
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as RentalOrder));
