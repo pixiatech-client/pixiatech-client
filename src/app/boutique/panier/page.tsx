@@ -119,8 +119,8 @@ export default function CartPage() {
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Quantité</label>
                           <QtySelector
                             value={item.quantity}
-                            onMinus={() => updateQuantity(item.productId, item.quantity - 1, item.type === 'rental' ? 'rental' : item.type)}
-                            onPlus={() => updateQuantity(item.productId, item.quantity + 1, item.type === 'rental' ? 'rental' : item.type)}
+                            onMinus={() => updateQuantity(item.productId, item.quantity - 1, item.type)}
+                            onPlus={() => updateQuantity(item.productId, item.quantity + 1, item.type)}
                           />
                         </div>
                         <div className="flex gap-3">
@@ -128,7 +128,7 @@ export default function CartPage() {
                             <Heart size={15} />
                             Sauvegarder
                           </button>
-                          <button onClick={() => removeItem(item.productId, item.type === 'rental' ? 'rental' : item.type)} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors">
+                          <button onClick={() => removeItem(item.productId, item.type)} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors">
                             <Trash2 size={15} />
                             Supprimer
                           </button>
