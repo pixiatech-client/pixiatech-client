@@ -1,20 +1,39 @@
 'use server';
 
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 import { buildSecureEmailHtml } from '@/lib/email-templates';
 import { getSmtpTransport } from '@/lib/smtpService';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function sendBoutiqueOtp(
   email: string
 ): Promise<{ success: boolean; pendingId?: string; otpCode?: string; error?: string }> {
-  const { adminDb } = getFirebaseAdmin();
+  const { adminDb, FieldValue } = getFirebaseAdmin();
   if (!adminDb) return { success: false, error: 'Database service unavailable' };
 
+  if (!EMAIL_REGEX.test(email)) {
+    return { success: false, error: 'Format d\'email invalide.' };
+  }
+
   try {
+    let validityMinutes = 10;
+    try {
+      const settingsSnap = await adminDb.collection('settings').doc('wizard').get();
+      if (settingsSnap.exists) {
+        const ev = settingsSnap.data()?.estimationFlow;
+        if (ev?.validityMinutes && typeof ev.validityMinutes === 'number') {
+          validityMinutes = ev.validityMinutes;
+        }
+      }
+    } catch {
+      // use default
+    }
+
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expirationDate = new Date();
-    expirationDate.setMinutes(expirationDate.getMinutes() + 10);
+    expirationDate.setMinutes(expirationDate.getMinutes() + validityMinutes);
 
     const docRef = await adminDb.collection('pendingVerifications').add({
       email,
@@ -31,7 +50,7 @@ export async function sendBoutiqueOtp(
         companyName: 'PIXIATECH',
         companySlogan: 'TECHNOLOGY PRO',
         documentLabel: 'location boutique',
-        validityMinutes: 10,
+        validityMinutes,
         messageStyle: 'collaborative_trust',
         theme: 'light_premium',
         lang: 'fr',
@@ -68,8 +87,8 @@ export async function sendBoutiqueOtpWithResend(
         await existingRef.delete();
       }
     }
-  } catch {
-    // ignore cleanup errors
+  } catch (cleanupErr) {
+    console.error('sendBoutiqueOtpWithResend cleanup error:', cleanupErr);
   }
 
   return sendBoutiqueOtp(email);
