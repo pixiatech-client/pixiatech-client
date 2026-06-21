@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PayPalScriptProvider, usePayPalScriptReducer, PayPalButtons, FUNDING } from '@paypal/react-paypal-js';
 import { ArrowLeft, Store, ShoppingBag, Lock, Shield, Check, Home, CreditCard, Wallet } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { useCart, type CartItem } from '@/contexts/CartContext';
 import { formatPrice } from '@/lib/boutique-data';
 
 function ConfettiEffect() {
@@ -33,7 +33,7 @@ function ConfettiEffect() {
   return null;
 }
 
-function PayPalButtonGroup({ fundingSource, total, handlePay }: { fundingSource: typeof FUNDING.PAYPAL | typeof FUNDING.CARD; total: number; handlePay: () => void }) {
+function PayPalButtonGroup({ fundingSource, total, handlePay, items }: { fundingSource: typeof FUNDING.PAYPAL | typeof FUNDING.CARD; total: number; handlePay: () => void; items: CartItem[] }) {
   const [{ isResolved, isRejected }] = usePayPalScriptReducer();
 
   if (isRejected) {
@@ -72,10 +72,22 @@ function PayPalButtonGroup({ fundingSource, total, handlePay }: { fundingSource:
         onApprove={async (data) => {
           try {
             console.log('PayPal onApprove data:', data);
+            const rentalItems = items.filter(i => i.type === 'rental').map(i => ({
+              productId: i.productId,
+              productName: i.name,
+              productImage: i.image,
+              productPrice: i.price,
+              quantity: i.quantity,
+              renterDetails: i.renterDetails,
+              rentalStartDate: i.rentalStartDate,
+              rentalEndDate: i.rentalEndDate,
+              rentalStartTime: i.rentalStartTime,
+              rentalEndTime: i.rentalEndTime,
+            }));
             const res = await fetch('/api/paypal/capture-order', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderId: data.orderID }),
+              body: JSON.stringify({ orderId: data.orderID, rentalItems }),
             });
             const capture = await res.json();
             if (!res.ok) throw new Error(capture.error);
@@ -297,9 +309,9 @@ export default function CheckoutPage() {
                 </div>
 
                 {paymentMethod === 'card' ? (
-                  <PayPalButtonGroup fundingSource={FUNDING.CARD} total={total} handlePay={handlePay} />
+                  <PayPalButtonGroup fundingSource={FUNDING.CARD} total={total} handlePay={handlePay} items={items} />
                 ) : (
-                  <PayPalButtonGroup fundingSource={FUNDING.PAYPAL} total={total} handlePay={handlePay} />
+                  <PayPalButtonGroup fundingSource={FUNDING.PAYPAL} total={total} handlePay={handlePay} items={items} />
                 )}
               </div>
 
