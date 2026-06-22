@@ -70,6 +70,16 @@ service cloud.firestore {
       allow write: if isLoggedIn();
     }
 
+    match /sale_orders/{orderId} {
+      allow read, list: if isAdmin() || isCommercial();
+      allow write: if isAdmin();
+    }
+
+    match /rental_orders/{orderId} {
+      allow read, list: if isAdmin() || isCommercial();
+      allow write: if isAdmin();
+    }
+
     match /product_specs/{productId} {
       allow read: if true;
       allow write: if isLoggedIn();

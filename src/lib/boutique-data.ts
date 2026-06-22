@@ -129,9 +129,11 @@ function buildSpecs(data: any, charNameMap: Record<string, string>): Record<stri
 const TYPE_LABELS: Record<string, string> = {
   indoor: 'Intérieur',
   outdoor: 'Extérieur',
-  showcase: 'Vitrine',
+  showcase: 'Semi-extérieur',
   interieur: 'Intérieur',
   exterieur: 'Extérieur',
+  'semi-exterieur': 'Semi-extérieur',
+  vitrine: 'Semi-extérieur',
 };
 
 function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {}): Product {
@@ -154,7 +156,7 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     gallery: data.galleryUrls || data.gallery || [],
     videoUrl: data.videoUrl || '',
     pdfUrl: data.pdfUrl || '',
-    availableFor: (data.availableFor || data.mode || ['sale']).map((m: string) => m.toLowerCase()),
+    availableFor: (data.availableFor || data.mode || ['sale', 'rental']).map((m: string) => m.toLowerCase()),
     specs: buildSpecs(data, charNameMap),
     badges: data.badges || [],
     variants: data.variants || [],

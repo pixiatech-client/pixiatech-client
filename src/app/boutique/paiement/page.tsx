@@ -86,10 +86,17 @@ function PayPalButtonGroup({ fundingSource, total, handlePay, items }: { funding
               additionalNotes: i.additionalNotes || '',
               contractSignedAt: i.contractSignedAt || null,
             }));
+            const purchaseItems = items.filter(i => i.type === 'purchase').map(i => ({
+              productId: i.productId,
+              productName: i.name,
+              productImage: i.image,
+              productPrice: i.price,
+              quantity: i.quantity,
+            }));
             const res = await fetch('/api/paypal/capture-order', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderId: data.orderID, rentalItems }),
+              body: JSON.stringify({ orderId: data.orderID, rentalItems, purchaseItems }),
             });
             const capture = await res.json();
             if (!res.ok) throw new Error(capture.error);

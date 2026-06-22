@@ -21,7 +21,8 @@ import {
   Clock,
   EyeOff,
   Box,
-  Bell
+  Bell,
+  Store
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
@@ -49,6 +50,7 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   pdfSub: '/admin/settings/pdf',
   emergencySub: '/admin/settings/emergency',
   produit: '/admin/produits',
+  boutique: '/admin/boutique',
   messages: '/admin/messages',
   notifications: '/admin/notification',
 };
@@ -58,6 +60,7 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/users': 'users',
   '/admin/quote-requests': 'estimations',
   '/admin/produits': 'produit',
+  '/admin/boutique': 'boutique',
   '/admin/history': 'history',
   '/admin/settings': 'settings',
   '/admin/settings/general': 'settingsMain',
@@ -213,6 +216,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'estimations', label: t('admin.estimations'), icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'history', label: t('admin.history'), icon: Clock, color: 'text-cyan-400', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'produit', label: t('admin.products'), icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'boutique', label: 'Boutique', icon: Store, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'messages', label: t('admin.messages'), icon: MessageSquare, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'notifications', label: t('admin.notifications'), icon: Bell, color: 'text-amber-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'profile', label: t('admin.myProfile'), icon: UserIcon, color: 'text-purple-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },

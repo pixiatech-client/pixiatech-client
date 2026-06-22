@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ArrowLeft, Star, ShoppingBag, Store, Minus, Plus, Copy, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, Home, Info } from 'lucide-react';
+import { ArrowLeft, Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, Home, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, formatPrice } from '@/lib/boutique-data';
@@ -271,6 +271,9 @@ export default function ProductDetailPage() {
 
       <main className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pt-24 pb-16">
         <div className="lg:mr-[430px]">
+          {purchaseType === 'location' && !locationCompleted ? (
+            <BoutiqueRentalFlow product={product} onComplete={() => setLocationCompleted(true)} />
+          ) : (
           <div className="flex flex-col">
             <section className="max-w-xl mx-auto">
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
@@ -378,7 +381,7 @@ export default function ProductDetailPage() {
               </section>
             </div>
           </div>
-
+          )}
         </div>
 
         <aside className="hidden lg:flex flex-col fixed top-36 z-10 w-[420px] max-h-[calc(100vh-9rem)] overflow-y-auto" style={{ right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))' }}>
@@ -496,9 +499,7 @@ export default function ProductDetailPage() {
 
             <div className="flex flex-col gap-3 mb-6">
               {purchaseType === 'location' ? (
-                !locationCompleted ? (
-                  <BoutiqueRentalFlow product={product} onComplete={() => setLocationCompleted(true)} />
-                ) : (
+                locationCompleted ? (
                   <div className="flex flex-col gap-3">
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
                       <p className="text-sm font-semibold text-emerald-800">Prêt pour la location</p>
@@ -512,6 +513,11 @@ export default function ProductDetailPage() {
                       <Store size={16} />
                       Continuer mes achats
                     </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3 py-6 px-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                    <CalendarDays size={24} className="text-gray-400" />
+                    <p className="text-sm text-gray-500 text-center">Remplissez le formulaire de location ci-contre pour continuer</p>
                   </div>
                 )
               ) : (

@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, ArrowRight, ArrowLeft, Search, ChevronDown, Clock, Copy, Lock, AlertTriangle, CheckCircle, ShoppingBag, Store, FileText } from 'lucide-react';
+import { Check, ArrowRight, ArrowLeft, ChevronDown, Clock, Copy, Lock, AlertTriangle, CheckCircle, ShoppingBag, Store, FileText, CalendarDays } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import type { RenterDetails, Pack } from '@/lib/signature-types';
 import ContractDocument from './ContractDocument';
 import SignaturePad from './SignaturePad';
-import { CITIES } from '@/lib/cities';
+import CityInput from './CityInput';
 import { validatePhone } from '@/lib/phone-validation';
 import { sendBoutiqueOtp, sendBoutiqueOtpWithResend, verifyBoutiqueOtp } from '@/app/actions/boutique-actions';
+import { getSettings } from '@/app/admin/actions';
 
 interface BoutiqueRentalFlowProps {
   product: {
@@ -51,9 +52,6 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [quantity, setQuantity] = useState(1);
 
-  const [citySearchQuery, setCitySearchQuery] = useState('');
-  const [selectedCityId, setSelectedCityId] = useState('');
-  const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
 
   const [acceptedCgl, setAcceptedCgl] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
@@ -70,8 +68,17 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
   const [otpResent, setOtpResent] = useState(false);
   const hiddenInputRef = useRef<HTMLInputElement>(null);
 
+  const [companySignature, setCompanySignature] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSettings().then(s => {
+      if (s?.estimationFlow?.companySignatureDataUrl) {
+        setCompanySignature(s.estimationFlow.companySignatureDataUrl);
+      }
+    });
+  }, []);
 
   const validateEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
 
@@ -221,24 +228,47 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
   return (
     <div className="w-full bg-white rounded-2xl border border-gray-200/70 shadow-sm overflow-hidden">
       {step < 4 && (
-        <div className="flex items-center gap-2 px-6 pt-6 pb-4 border-b border-gray-100">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex items-center gap-2">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${
-                s === step ? 'bg-gray-900 text-white' :
-                s < step ? 'bg-emerald-100 text-emerald-700' :
-                'bg-gray-100 text-gray-400'
-              }`}>
-                {s < step ? <Check size={14} /> : s}
-              </div>
-              <span className={`text-[11px] font-semibold hidden sm:inline ${
-                s === step ? 'text-gray-900' : 'text-gray-400'
-              }`}>
-                {s === 1 ? 'Informations' : s === 2 ? 'Contrat' : 'Vérification'}
-              </span>
-              {s < 3 && <ChevronDown size={12} className="text-gray-300 -rotate-90 mx-0.5" />}
-            </div>
-          ))}
+        <div className="flex justify-center px-6 pt-6 pb-5 border-b border-gray-100">
+          <nav aria-label="Progress">
+            <ol role="list" className="flex items-center">
+              {[
+                { num: 1, label: 'Informations' },
+                { num: 2, label: 'Contrat' },
+                { num: 3, label: 'Vérification' },
+              ].map((s, idx) => {
+                const completed = s.num < step;
+                const current = s.num === step;
+                const last = idx === 2;
+                return (
+                  <li key={s.num} className={`relative ${!last ? 'pr-8 sm:pr-16' : ''}`}>
+                    {!last && (
+                      <div aria-hidden="true" className="absolute inset-0 flex items-center">
+                        <div className={`h-[2px] w-full ${completed ? 'bg-gray-900' : 'bg-gray-200'}`} />
+                      </div>
+                    )}
+                    {completed ? (
+                      <a href="#" className="relative flex size-8 items-center justify-center rounded-full bg-gray-900 hover:bg-gray-800">
+                        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" className="size-5 text-white">
+                          <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                        </svg>
+                        <span className="sr-only">{s.label}</span>
+                      </a>
+                    ) : current ? (
+                      <a href="#" aria-current="step" className="relative flex size-8 items-center justify-center rounded-full border-2 border-gray-900 bg-white">
+                        <span aria-hidden="true" className="size-2.5 rounded-full bg-gray-900" />
+                        <span className="sr-only">{s.label}</span>
+                      </a>
+                    ) : (
+                      <a href="#" className="relative flex size-8 items-center justify-center rounded-full border-2 border-gray-200 bg-white hover:border-gray-300">
+                        <span aria-hidden="true" className="size-2.5 rounded-full bg-transparent" />
+                        <span className="sr-only">{s.label}</span>
+                      </a>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
         </div>
       )}
 
@@ -285,51 +315,16 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
                 : null}
             </div>
 
-            <div className="space-y-1.5 relative md:col-span-2">
-              <div className="flex items-center gap-2">
-                <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Ville *</label>
-                <span className="text-[9px] bg-orange-100 text-orange-700 border border-orange-200/60 px-2 py-0.5 rounded-md font-extrabold uppercase tracking-wider">Important</span>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <Search size={14} />
-                </div>
-                <input type="text" placeholder="Rechercher une ville"
-                  value={citySearchQuery}
-                  onChange={(e) => { setCitySearchQuery(e.target.value); setIsCityDropdownOpen(true); }}
-                  onFocus={() => setIsCityDropdownOpen(true)}
-                  className={`w-full rounded-xl pl-10 pr-10 py-3 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-gray-900/10 ${
-                    attemptedSubmit && !citySearchQuery.trim() ? 'border-red-300 bg-red-50/30' : 'border-gray-200/70 bg-gray-50/30'
-                  }`} />
-                <button type="button" onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600">
-                  <ChevronDown size={16} className={`transition-transform ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
-                </button>
-              </div>
-              {attemptedSubmit && !citySearchQuery.trim() && (
-                <p className="text-red-500 text-[10px] font-bold">▲ Requis</p>
-              )}
-              {isCityDropdownOpen && (
-                <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto divide-y divide-gray-50">
-                  {CITIES.filter(c => c.name.toLowerCase().includes(citySearchQuery.toLowerCase()) || c.postalCode.includes(citySearchQuery)).length > 0
-                    ? CITIES.filter(c => c.name.toLowerCase().includes(citySearchQuery.toLowerCase()) || c.postalCode.includes(citySearchQuery)).map(c => (
-                        <button key={c.id} type="button"
-                          onClick={() => {
-                            setSelectedCityId(c.id);
-                            setCitySearchQuery(`${c.name} (${c.postalCode})`);
-                            setCity(c.name);
-                            setPostcode(c.postalCode);
-                            setIsCityDropdownOpen(false);
-                          }}
-                          className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center justify-between transition-colors">
-                          <span>{c.name} ({c.postalCode})</span>
-                          {selectedCityId === c.id && <Check size={14} className="text-gray-900" />}
-                        </button>
-                      ))
-                    : <div className="text-center p-4 text-sm text-gray-400">Aucune ville trouvée</div>
-                  }
-                </div>
-              )}
+            <div className="md:col-span-2">
+              <CityInput
+                value={city && postcode ? `${city} (${postcode})` : ''}
+                onChange={(cityName, postcode) => {
+                  setCity(cityName);
+                  setPostcode(postcode);
+                }}
+                error={attemptedSubmit && !city.trim()}
+                errorMessage="Requis"
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -347,40 +342,47 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
                 className="w-full rounded-xl px-4 py-3 text-sm font-medium border border-gray-200/70 bg-gray-100/50 text-gray-500 cursor-not-allowed" />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Date début *</label>
-              <input type="date" value={rentalStartDate} onChange={(e) => setRentalStartDate(e.target.value)}
-                className={`w-full rounded-xl px-4 py-3 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-gray-900/10 ${
-                  attemptedSubmit && !rentalStartDate ? 'border-red-300 bg-red-50/30' : 'border-gray-200/70 bg-gray-50/30'
-                }`} />
-              {attemptedSubmit && !rentalStartDate && <p className="text-red-500 text-[10px] font-bold">▲ Requis</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Date fin *</label>
-              <input type="date" value={rentalEndDate} onChange={(e) => setRentalEndDate(e.target.value)}
-                className={`w-full rounded-xl px-4 py-3 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-gray-900/10 ${
-                  attemptedSubmit && !rentalEndDate ? 'border-red-300 bg-red-50/30' : 'border-gray-200/70 bg-gray-50/30'
-                }`} />
-              {attemptedSubmit && !rentalEndDate && <p className="text-red-500 text-[10px] font-bold">▲ Requis</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Heure début *</label>
-              <input type="time" value={rentalStartTime} onChange={(e) => setRentalStartTime(e.target.value)}
-                className={`w-full rounded-xl px-4 py-3 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-gray-900/10 ${
-                  attemptedSubmit && !rentalStartTime ? 'border-red-300 bg-red-50/30' : 'border-gray-200/70 bg-gray-50/30'
-                }`} />
-              {attemptedSubmit && !rentalStartTime && <p className="text-red-500 text-[10px] font-bold">▲ Requis</p>}
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Heure fin *</label>
-              <input type="time" value={rentalEndTime} onChange={(e) => setRentalEndTime(e.target.value)}
-                className={`w-full rounded-xl px-4 py-3 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-gray-900/10 ${
-                  attemptedSubmit && !rentalEndTime ? 'border-red-300 bg-red-50/30' : 'border-gray-200/70 bg-gray-50/30'
-                }`} />
-              {attemptedSubmit && !rentalEndTime && <p className="text-red-500 text-[10px] font-bold">▲ Requis</p>}
+            <div className="md:col-span-2 bg-gray-900 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <CalendarDays size={14} className="text-gray-400" />
+                <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.15em]">Période de location</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Date début *</label>
+                  <input type="date" value={rentalStartDate} onChange={(e) => setRentalStartDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
+                      attemptedSubmit && !rentalStartDate ? 'border-red-400 bg-red-900/20 text-red-200' : 'border-gray-700 bg-gray-800 text-white'
+                    }`} />
+                  {attemptedSubmit && !rentalStartDate && <p className="text-red-400 text-[10px] font-bold">▲ Requis</p>}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Date fin *</label>
+                  <input type="date" value={rentalEndDate} onChange={(e) => setRentalEndDate(e.target.value)}
+                    min={rentalStartDate || new Date().toISOString().split('T')[0]}
+                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
+                      attemptedSubmit && !rentalEndDate ? 'border-red-400 bg-red-900/20 text-red-200' : 'border-gray-700 bg-gray-800 text-white'
+                    }`} />
+                  {attemptedSubmit && !rentalEndDate && <p className="text-red-400 text-[10px] font-bold">▲ Requis</p>}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Heure début *</label>
+                  <input type="time" value={rentalStartTime} onChange={(e) => setRentalStartTime(e.target.value)}
+                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
+                      attemptedSubmit && !rentalStartTime ? 'border-red-400 bg-red-900/20 text-red-200' : 'border-gray-700 bg-gray-800 text-white'
+                    }`} />
+                  {attemptedSubmit && !rentalStartTime && <p className="text-red-400 text-[10px] font-bold">▲ Requis</p>}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Heure fin *</label>
+                  <input type="time" value={rentalEndTime} onChange={(e) => setRentalEndTime(e.target.value)}
+                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
+                      attemptedSubmit && !rentalEndTime ? 'border-red-400 bg-red-900/20 text-red-200' : 'border-gray-700 bg-gray-800 text-white'
+                    }`} />
+                  {attemptedSubmit && !rentalEndTime && <p className="text-red-400 text-[10px] font-bold">▲ Requis</p>}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-1.5 md:col-span-2">
@@ -422,6 +424,7 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
             rentalPeriod={{ from: rentalStartDate, to: rentalEndDate }}
             rentalStartTime={rentalStartTime}
             rentalEndTime={rentalEndTime}
+            companySignatureDataUrl={companySignature}
           />
 
           <div className="mt-6 space-y-4">
@@ -459,7 +462,7 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
       )}
 
       {step === 3 && (
-        <div className="p-6 flex flex-col items-center text-center max-w-sm mx-auto">
+        <div className="p-6 max-h-[600px] overflow-y-auto custom-scrollbar flex flex-col items-center text-center">
           <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center mb-4">
             <FileText size={24} className="text-blue-600" />
           </div>
@@ -608,8 +611,8 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
           )}
 
           <button onClick={() => setStep(2)}
-            className="flex items-center gap-2 mt-6 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors">
-            <ArrowLeft size={16} /> Précédent
+            className="flex items-center gap-2 px-4 py-2 mt-6 bg-white border border-gray-200/70 hover:border-gray-300 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 shadow-sm hover:shadow transition-all duration-200">
+            <ArrowLeft size={14} /> Précédent
           </button>
         </div>
       )}
