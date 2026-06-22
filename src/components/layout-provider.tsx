@@ -6,6 +6,7 @@ import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
 import { I18nProvider } from '@/lib/i18n';
 import { Header } from '@/components/header';
+import { BoutiqueHeader } from '@/components/boutique-header';
 import { FirebaseClientProvider } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
@@ -38,6 +39,7 @@ export function LayoutProvider({
   const isEmbedPage = pathname.startsWith('/embed') || pathname.startsWith('/chat-widget');
   const isQuotePage = pathname.startsWith('/quote');
   const isBoutiqueProductPage = pathname.startsWith('/boutique/produit/');
+  const isBoutiqueMainPage = pathname.startsWith('/boutique') && !pathname.startsWith('/boutique/mon-compte') && !pathname.startsWith('/boutique/louer');
 
   useProtectMedia();
 
@@ -48,12 +50,18 @@ export function LayoutProvider({
         <DynamicThemeProvider>
           <CartProvider>
           <div className="flex flex-col bg-background min-h-dvh">
-            {!isAdminPage && !isEmbedPage && <Header fixed={isBoutiqueProductPage} />}
+            {!isAdminPage && !isEmbedPage && (
+              isBoutiqueMainPage ? (
+                <BoutiqueHeader />
+              ) : (
+                <Header fixed={isBoutiqueProductPage} />
+              )
+            )}
             <main
               className={cn(
                 'flex-1 flex items-start justify-center w-full',
-                !isAdminPage && !isQuotePage && !isBoutiqueProductPage && !isEmbedPage && 'px-4 pb-4 pt-1 md:px-6 md:pb-6 md:pt-2',
-                isBoutiqueProductPage && 'pt-[56px]'
+                !isAdminPage && !isQuotePage && !isEmbedPage && !isBoutiqueMainPage && 'px-4 pb-4 pt-1 md:px-6 md:pb-6 md:pt-2',
+                isBoutiqueMainPage && 'pt-14',
               )}
             >
               {children}
