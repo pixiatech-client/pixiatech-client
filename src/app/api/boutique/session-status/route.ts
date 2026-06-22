@@ -4,7 +4,7 @@ import { decrypt } from '@/lib/auth';
 export async function GET(req: NextRequest) {
   const sessionCookie = req.cookies.get('client_session')?.value;
   if (!sessionCookie) {
-    return NextResponse.json({ loggedIn: false });
+    return NextResponse.json({ loggedIn: false, email: '' });
   }
 
   try {
@@ -14,6 +14,6 @@ export async function GET(req: NextRequest) {
       email: payload.email || '',
     });
   } catch {
-    return NextResponse.json({ loggedIn: false });
+    return NextResponse.json({ loggedIn: false, email: '' });
   }
 }

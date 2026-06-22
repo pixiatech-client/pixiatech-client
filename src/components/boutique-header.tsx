@@ -61,7 +61,7 @@ export function BoutiqueHeader() {
 
   const isBoutiquePage = pathname.startsWith('/boutique') && !pathname.startsWith('/boutique/mon-compte');
 
-  const truncatedEmail = session.email.length > 20 ? session.email.slice(0, 18) + '...' : session.email;
+  const truncatedEmail = (session.email || '').length > 20 ? (session.email || '').slice(0, 18) + '...' : (session.email || '');
 
   return (
     <header className="fixed top-0 z-30 w-full h-14 bg-white/80 backdrop-blur-xl border-b border-gray-100/80 shadow-sm">
