@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ArrowLeft, Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, Home, Info } from 'lucide-react';
+import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, formatPrice } from '@/lib/boutique-data';
@@ -240,34 +240,6 @@ export default function ProductDetailPage() {
           onNext={() => setLightboxIndex((i) => Math.min(images.length - 1, i + 1))}
         />
       )}
-
-      <div className="fixed top-[56px] z-30 left-0 right-0 flex items-center justify-center gap-x-[732px] px-6 md:px-10 lg:px-14 h-16 border-b border-gray-200/60" style={{ backgroundColor: '#F5F5F5' }}>
-        <nav className="flex items-center gap-2">
-          <button
-            onClick={() => router.push('/')}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200/70 hover:border-gray-300 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 shadow-sm hover:shadow transition-all duration-200"
-          >
-            <Home size={14} />
-            Accueil
-          </button>
-          <button
-            onClick={() => router.push('/boutique')}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200/70 hover:border-gray-300 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 shadow-sm hover:shadow transition-all duration-200"
-          >
-            <ArrowLeft size={14} />
-            Boutique
-          </button>
-        </nav>
-        <div className="flex items-center">
-          <button onClick={() => router.push('/boutique/panier')} className="relative flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200/70 hover:border-gray-300 rounded-xl text-xs font-medium text-gray-500 hover:text-gray-800 shadow-sm hover:shadow transition-all duration-200">
-            <ShoppingBag size={14} />
-            {itemCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-gray-900 text-white text-[9px] font-bold min-w-[16px] h-[16px] flex items-center justify-center rounded-full">{itemCount}</span>
-            )}
-            Panier
-          </button>
-        </div>
-      </div>
 
       <main className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pt-24 pb-16">
         <div className="lg:mr-[430px]">
