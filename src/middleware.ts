@@ -12,6 +12,22 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Client espace routes: check client_session cookie
+  const clientLoginUrl = new URL('/boutique/mon-compte/connexion', request.url);
+  const isClientAuthPage = pathname === '/boutique/mon-compte/connexion' || pathname.startsWith('/boutique/mon-compte/valider');
+  const isClientRoute = pathname.startsWith('/boutique/mon-compte/');
+
+  if (isClientRoute && !isClientAuthPage) {
+    const clientSession = request.cookies.get('client_session')?.value;
+    if (!clientSession) {
+      return NextResponse.redirect(clientLoginUrl);
+    }
+  }
+
+  if (isClientAuthPage && request.cookies.get('client_session')?.value) {
+    return NextResponse.redirect(new URL('/boutique/mon-compte/commandes', request.url));
+  }
+
   // Admin routes: session check
   const sessionCookie = request.cookies.get('session')?.value;
   const loginUrl = new URL('/admin/login', request.url);
@@ -19,8 +35,7 @@ export async function middleware(request: NextRequest) {
   const isAuthPage = pathname.startsWith('/admin/login') || pathname.startsWith('/admin/register');
   const isApiRoute = pathname.startsWith('/api/');
 
-  // Don't redirect API routes — they handle auth themselves via JSON
-  if (!sessionCookie && !isAuthPage && !isApiRoute) {
+  if (!sessionCookie && !isAuthPage && !isApiRoute && pathname.startsWith('/admin')) {
     return NextResponse.redirect(loginUrl);
   }
 
@@ -28,8 +43,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(adminUrl);
   }
 
-  // For authenticated admin pages, check sessionToken mismatch via internal API
-  if (sessionCookie && !isAuthPage && pathname.startsWith('/admin')) {
+  if (sessionCookie && pathname.startsWith('/admin')) {
     try {
       const verifyUrl = new URL('/api/verify-session', request.url);
       const verifyRes = await fetch(verifyUrl, {
@@ -45,7 +59,6 @@ export async function middleware(request: NextRequest) {
       }
     } catch (err) {
       console.error('[Middleware] verify-session error:', err);
-      // Fail open: let the request through, client polling will catch it
     }
   }
 
@@ -58,5 +71,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify', '/admin', '/admin/:path*', '/api/:path*'],
+  matcher: ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify', '/admin', '/admin/:path*', '/boutique/mon-compte', '/boutique/mon-compte/:path*', '/api/:path*'],
 };
