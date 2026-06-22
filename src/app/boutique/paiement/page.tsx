@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PayPalScriptProvider, usePayPalScriptReducer, PayPalButtons, FUNDING } from '@paypal/react-paypal-js';
-import { ArrowLeft, Store, ShoppingBag, Lock, Shield, Check, Home, CreditCard, Wallet } from 'lucide-react';
+import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet } from 'lucide-react';
 import { useCart, type CartItem } from '@/contexts/CartContext';
 import { formatPrice } from '@/lib/boutique-data';
 
@@ -259,22 +259,7 @@ export default function CheckoutPage() {
   return (
     <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'EUR', components: 'buttons' }}>
     <div className="min-h-screen" style={{ backgroundColor: '#F5F5F5' }}>
-      <header className="flex items-center justify-between px-6 md:px-10 lg:px-14 h-16 border-b border-gray-200/60">
-        <nav className="flex items-center gap-2">
-          <button onClick={() => router.back()} className="flex items-center justify-center w-8 h-8 rounded-xl bg-[#111827] text-white hover:bg-gray-800 transition-all duration-200">
-            <ArrowLeft size={14} />
-          </button>
-          <button onClick={() => router.push('/')} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200/70 hover:border-gray-300 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 shadow-sm hover:shadow transition-all duration-200">
-            <Home size={14} />
-            Accueil
-          </button>
-          <button onClick={() => router.push('/boutique')} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200/70 hover:border-gray-300 rounded-xl text-xs font-semibold text-gray-600 hover:text-gray-900 shadow-sm hover:shadow transition-all duration-200">
-            <Store size={14} />
-            Boutique
-          </button>
-        </nav>
-        <div className="w-[104px] hidden sm:block" />
-      </header>
+
 
       <main className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 pb-16">
         {!paypalClientId || paypalClientId === 'votre_client_id_ici' ? (
