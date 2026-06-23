@@ -60,7 +60,7 @@ const TabsList = React.forwardRef<
                 <motion.div
                   layoutId="tabs-bubble"
                   className={cn("absolute inset-0 z-10 rounded-md bg-black", bubbleClassName)}
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
                 />
               )}
             {React.cloneElement(tabChild, {

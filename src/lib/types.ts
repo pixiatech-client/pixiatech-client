@@ -584,3 +584,22 @@ export interface AdminSettings {
   allowNotifications: boolean;
   contactListWidth: number;
 }
+
+export interface DisputeMessage {
+  sender: 'customer' | 'admin';
+  text: string;
+  createdAt: string;
+}
+
+export interface Dispute {
+  id: string;
+  customerId: string;
+  customerEmail: string;
+  reason: string;
+  description: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  createdAt: string;
+  updatedAt: string;
+  messages?: DisputeMessage[];
+  unreadByClient?: boolean;
+}

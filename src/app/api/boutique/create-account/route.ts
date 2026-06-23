@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Create magic link with customerId
-    const { url } = await createMagicLink(normalizedEmail, id);
+    const origin = req.nextUrl.origin;
+    const { url } = await createMagicLink(normalizedEmail, id, origin);
 
     const isSandbox = isSandboxEmail(normalizedEmail);
     const toEmail = isSandbox ? 'ayanhil@gmail.com' : normalizedEmail;

@@ -4,7 +4,6 @@
 import { usePathname } from 'next/navigation';
 import { Toaster as ShadcnToaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from 'sonner';
-import { I18nProvider } from '@/lib/i18n';
 import { BoutiqueHeader } from '@/components/boutique-header';
 import { FirebaseClientProvider } from '@/firebase';
 import { cn } from '@/lib/utils';
@@ -39,21 +38,22 @@ export function LayoutProvider({
   const isQuotePage = pathname.startsWith('/quote');
   const isFrontendPage = !isAdminPage && !isEmbedPage;
   const isBoutiquePage = pathname.startsWith('/boutique');
+  const isHomePage = pathname === '/';
+  const isMonComptePage = pathname.startsWith('/mon-compte');
 
   useProtectMedia();
 
   return (
     <FirebaseClientProvider>
       <RoleProvider>
-        <I18nProvider>
         <DynamicThemeProvider>
           <CartProvider>
           <div className="flex flex-col bg-background min-h-dvh">
-            {isFrontendPage && <BoutiqueHeader />}
+            {isFrontendPage && !isMonComptePage && <BoutiqueHeader />}
             <main
               className={cn(
                 'flex-1 flex items-start justify-center w-full',
-                isFrontendPage && !isQuotePage && !isBoutiquePage && 'px-4 pb-4 pt-14 md:px-6 md:pb-6 md:pt-14',
+                isFrontendPage && !isQuotePage && !isBoutiquePage && !isMonComptePage && `px-4 pb-4 ${isHomePage ? 'pt-[106px]' : 'pt-14'} md:px-6 md:pb-6 ${isHomePage ? 'md:pt-[106px]' : 'md:pt-14'}`,
                 isBoutiquePage && 'pt-14',
               )}
             >
@@ -77,7 +77,6 @@ export function LayoutProvider({
             }
           }}
         />
-      </I18nProvider>
       </RoleProvider>
     </FirebaseClientProvider>
   );

@@ -17,12 +17,13 @@ export function generateToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
-export function buildMagicLinkUrl(token: string, email: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  return `${baseUrl}/boutique/mon-compte/valider?token=${token}&email=${encodeURIComponent(email)}`;
+export function buildMagicLinkUrl(token: string, email: string, baseUrl?: string): string {
+  let url = baseUrl || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  url = url.replace('://0.0.0.0', '://localhost');
+  return `${url}/mon-compte/valider?token=${token}&email=${encodeURIComponent(email)}`;
 }
 
-export async function createMagicLink(email: string, customerId: string): Promise<{ token: string; url: string }> {
+export async function createMagicLink(email: string, customerId: string, baseUrl?: string): Promise<{ token: string; url: string }> {
   const { adminDb } = getFirebaseAdmin();
   const token = generateToken();
   const now = new Date();
@@ -36,7 +37,7 @@ export async function createMagicLink(email: string, customerId: string): Promis
     createdAt: now.toISOString(),
   });
 
-  return { token, url: buildMagicLinkUrl(token, email) };
+  return { token, url: buildMagicLinkUrl(token, email, baseUrl) };
 }
 
 export async function validateMagicLink(token: string, email: string): Promise<{ valid: boolean; customerId?: string; reason?: string }> {

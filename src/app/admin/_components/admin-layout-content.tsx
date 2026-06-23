@@ -29,7 +29,8 @@ import {
   Calculator,
   ShieldCheck,
   Zap,
-  Mail
+  Mail,
+  Store
 } from 'lucide-react';
 import Link from 'next/link';
 import { logout, getThemes, getSettings, saveSidebarConfig } from '@/app/admin/actions';
@@ -45,7 +46,7 @@ import { collection, orderBy, query, doc, onSnapshot } from 'firebase/firestore'
 import { Sidebar, type SidebarState, type SidebarTheme, type SettingsSection } from './dashboard-new/Sidebar';
 import { UserRole as UserRoleEnum } from './dashboard-new/dashboard-new-types';
 import { NotificationBell } from './NotificationBell';
-import { ChatPanel } from './ChatPanel';
+
 import { SettingsContent } from '../settings/_components/settings-content';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FloatingCalculator } from './FloatingCalculator';
@@ -229,23 +230,9 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
-  const [isChatPanelOpen, setIsChatPanelOpen] = useState(false);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
-  useEffect(() => {
-    const handleOpenChat = (e: any) => {
-      const { chatId } = e.detail;
-      if (chatId) {
-        setActiveChatId(chatId);
-        setIsChatPanelOpen(true);
-      } else {
-        setIsChatPanelOpen(true);
-      }
-    };
-    window.addEventListener('open-chat', handleOpenChat);
-    return () => window.removeEventListener('open-chat', handleOpenChat);
-  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -384,19 +371,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               {/* ── 2. Notifications ── */}
               <NotificationBell userRole={userProfile?.role} />
 
-              {/* ── 3. Messagerie ── */}
-              {userProfile && canShowMessaging && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsChatPanelOpen(true)}
-                  className={cn("group h-11 w-11 rounded-xl shadow-sm transition-all duration-200", "bg-white hover:bg-theme-sidebar-active-bg")}
-                >
-                  <MessageSquare className={cn("h-5 w-5 transition-colors", "text-gray-400 group-hover:text-blue-500")} />
-                </Button>
-              )}
-
-              {/* ── 4. Access the front-end site (Globe icon) ── */}
+              {/* ── 3. Access the front-end site (Globe icon) ── */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -464,15 +439,6 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
       <FloatingCalculator
         isOpen={isCalculatorOpen}
         onClose={() => setIsCalculatorOpen(false)}
-      />
-
-      <ChatPanel
-        isOpen={isChatPanelOpen}
-        onClose={() => {
-          setIsChatPanelOpen(false);
-          setActiveChatId(null);
-        }}
-        initialChatId={activeChatId}
       />
 
       <AnimatePresence>
@@ -794,6 +760,7 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
       { href: '/admin', label: t('admin.dashboard'), icon: LayoutGrid, exact: true, color: 'text-blue-500', subtitle: t('admin.dashboardSubtitle') },
       { href: '/admin/quote-requests', label: t('admin.estimations'), icon: ListTodo, exact: false, color: 'text-orange-500', subtitle: t('admin.estimationsSubtitle') },
       { href: '/admin/produits', label: t('admin.products'), icon: Package, exact: false, color: 'text-yellow-500', subtitle: t('admin.productsSubtitle') },
+      { href: '/admin/membres', label: 'Espace membre', icon: Users, exact: true, color: 'text-violet-500', subtitle: 'Gestion des clients et fournisseurs' },
       { href: '/admin/users', label: t('admin.users'), icon: Users, exact: true, color: 'text-emerald-500', subtitle: '' },
       { href: '/admin/settings', label: t('admin.settings'), icon: Settings, exact: true, color: 'text-fuchsia-500', subtitle: t('admin.settingsSubtitle') },
       { href: '/admin/history', label: t('admin.history'), icon: History, exact: true, color: 'text-blue-400', subtitle: t('admin.historySubtitle') },

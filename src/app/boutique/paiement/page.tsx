@@ -125,6 +125,10 @@ export default function CheckoutPage() {
   const [step, setStep] = useState<'payment' | 'confirmation'>('payment');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
 
+  const hasMissingAddress = items.some(item =>
+    item.type === 'rental' && (!item.renterDetails?.address || !item.renterDetails?.postcode || !item.renterDetails?.city)
+  );
+
   if (items.length === 0 && step === 'payment') {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F5F5' }}>
@@ -276,7 +280,17 @@ export default function CheckoutPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <section className="lg:col-span-7">
-              <div className="bg-white rounded-2xl border border-gray-200/70 p-6 md:p-8">
+              <div className="bg-white rounded-2xl border border-gray-200/70 p-6 md:p-8 relative">
+                {hasMissingAddress && (
+                  <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-[1px] rounded-2xl flex flex-col items-center justify-center p-6 text-center">
+                    <ShoppingBag size={28} className="text-gray-300 mb-3" />
+                    <p className="text-sm font-bold text-gray-900 mb-1">Adresse de livraison requise</p>
+                    <p className="text-xs text-gray-500 max-w-xs">Veuillez renseigner l'adresse de livraison dans votre panier avant de procéder au paiement.</p>
+                    <button onClick={() => router.push('/boutique/panier')} className="mt-4 bg-gray-900 text-white text-xs font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-colors">
+                      Compléter l'adresse
+                    </button>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2 mb-6">
                   <button
                     onClick={() => setPaymentMethod('card')}

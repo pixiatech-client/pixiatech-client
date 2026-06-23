@@ -22,7 +22,7 @@ import {
   EyeOff,
   Box,
   Bell,
-  Store
+  Store,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
@@ -51,8 +51,10 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   emergencySub: '/admin/settings/emergency',
   produit: '/admin/produits',
   boutique: '/admin/boutique',
+  membres: '/admin/membres',
   messages: '/admin/messages',
   notifications: '/admin/notification',
+  'litiges-sub': '/admin/litiges',
 };
 
 const ROUTE_TO_VIEW: Record<string, string> = {
@@ -61,6 +63,7 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/quote-requests': 'estimations',
   '/admin/produits': 'produit',
   '/admin/boutique': 'boutique',
+  '/admin/membres': 'membres',
   '/admin/history': 'history',
   '/admin/settings': 'settings',
   '/admin/settings/general': 'settingsMain',
@@ -74,6 +77,7 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/settings/software': 'software',
   '/admin/messages': 'messages',
   '/admin/notification': 'notifications',
+  '/admin/litiges': 'litiges-sub',
 };
 
 export type SettingsSection = 'general' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
@@ -217,6 +221,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'history', label: t('admin.history'), icon: Clock, color: 'text-cyan-400', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'produit', label: t('admin.products'), icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'boutique', label: 'Boutique', icon: Store, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'membres', label: 'Espace membre', icon: Users, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'messages', label: t('admin.messages'), icon: MessageSquare, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'notifications', label: t('admin.notifications'), icon: Bell, color: 'text-amber-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'profile', label: t('admin.myProfile'), icon: UserIcon, color: 'text-purple-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
@@ -297,11 +302,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     border-r
   `;
 
-  const itemClasses = (isActive: boolean) => `
-    w-full relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group
+  const itemClasses = (isActive: boolean, hasSubItems?: boolean, isExpanded?: boolean) => `
+    w-full relative flex items-center gap-3 px-4 py-3 rounded-xl group
     ${isActive
       ? 'bg-theme-sidebar-active-bg text-theme-sidebar-active-text shadow-lg'
-      : 'text-theme-sidebar-text opacity-70 hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
+      : isExpanded
+        ? 'bg-theme-sidebar-active-bg/30 text-theme-sidebar-text font-semibold'
+        : 'text-theme-sidebar-text opacity-70 hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
     }
   `;
 
@@ -632,15 +639,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="relative"
                 >
                   <button
-                    className={`${itemClasses(isActive)} ${isEditingOrder ? 'cursor-grab active:cursor-grabbing' : ''} ${hasSubItems ? 'w-full' : ''}`}
+                    className={`${itemClasses(isActive, hasSubItems, isExpanded)} ${isEditingOrder ? 'cursor-grab active:cursor-grabbing' : ''} ${hasSubItems ? 'w-full' : ''}`}
                     onClick={() => {
                       if (isEditingOrder) return;
                       if (hasSubItems) {
-                        if (item.id === 'settings') {
-                          setActiveView('settings');
-                        } else {
-                          setExpandedSubmenu(isExpanded ? null : item.id);
-                        }
+                        setActiveView(item.id);
+                        setExpandedSubmenu(isExpanded ? null : item.id);
                       } else {
                         setActiveView(item.id);
                       }
@@ -667,16 +671,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     {/* Tooltip for compact mode */}
                     {isCompact && hoveredItem === item.id && !isEditingOrder && (
-                      <motion.div
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 20 }}
-                        className={`absolute left-full ml-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap z-[100] shadow-xl ${isDark ? 'bg-white text-black' : 'bg-black text-white'
-                          }`}
-                      >
+                      <div className={`absolute left-full ml-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap z-[100] shadow-xl ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>
                         {item.label}
-                        <div className={`absolute left-[-4px] top-1/2 -translate-y-1/2 border-y-[6px] border-y-transparent border-r-[6px] ${isDark ? 'border-r-white' : 'border-r-black'
-                          }`} />
-                      </motion.div>
+                        <div className={`absolute left-[-4px] top-1/2 -translate-y-1/2 border-y-[6px] border-y-transparent border-r-[6px] ${isDark ? 'border-r-white' : 'border-r-black'}`} />
+                      </div>
                     )}
                   </button>
 

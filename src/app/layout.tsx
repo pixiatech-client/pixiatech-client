@@ -2,8 +2,10 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
+import { cookies } from 'next/headers';
 import './globals.css';
 import { LayoutProvider } from '@/components/layout-provider';
+import { I18nProvider } from '@/lib/i18n';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -23,18 +25,23 @@ export const viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const locale = cookieStore.get('admin-locale')?.value === 'en' ? 'en' : 'fr';
+
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body className={`${inter.variable} font-body antialiased min-h-[100dvh] bg-[#F5F5F5]`} suppressHydrationWarning>
         <div className="flare cyan" aria-hidden="true" />
         <div className="flare magenta" aria-hidden="true" />
         <div className="directional-flare" aria-hidden="true" suppressHydrationWarning />
-        <LayoutProvider>{children}</LayoutProvider>
+        <I18nProvider initialLocale={locale}>
+          <LayoutProvider>{children}</LayoutProvider>
+        </I18nProvider>
         <Script id="directional-flare" strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `

@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import fr from './locales/fr.json';
 import en from './locales/en.json';
+import { setLocaleCookie } from './locale-actions';
 
 type Locale = 'fr' | 'en';
 type Translations = typeof fr;
@@ -49,15 +50,15 @@ const getStoredLocale = (): Locale => {
   return 'fr';
 };
 
-export const I18nProvider = ({ children }: { children: ReactNode }) => {
-  const [locale, setLocaleState] = useState<Locale>(getStoredLocale);
+export const I18nProvider = ({ children, initialLocale }: { children: ReactNode; initialLocale?: Locale }) => {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? getStoredLocale);
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    // Persist to localStorage
     if (typeof window !== 'undefined') {
       localStorage.setItem('admin-locale', newLocale);
     }
+    setLocaleCookie(newLocale).catch(() => {});
   }, []);
 
   const t = useCallback((key: string, options?: Record<string, string | number>): string => {

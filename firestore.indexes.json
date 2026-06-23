@@ -1,73 +1,18 @@
 {
   "indexes": [
     {
-      "collectionGroup": "notifications",
+      "collectionGroup": "sale_orders",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "customerId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "chats",
+      "collectionGroup": "rental_orders",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "participants", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "lastMessageAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quotes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quotes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "supplierId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quotes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "transactionType", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quotes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "supplierId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "transactionType", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quotes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "transactionType", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "quotes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "supplierId", "order": "ASCENDING" },
-        { "fieldPath": "transactionType", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "customerId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }

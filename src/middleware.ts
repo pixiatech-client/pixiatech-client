@@ -13,19 +13,15 @@ export async function middleware(request: NextRequest) {
   }
 
   // Client espace routes: check client_session cookie
-  const clientLoginUrl = new URL('/boutique/mon-compte/connexion', request.url);
-  const isClientAuthPage = pathname === '/boutique/mon-compte/connexion' || pathname.startsWith('/boutique/mon-compte/valider');
-  const isClientRoute = pathname.startsWith('/boutique/mon-compte/');
+  const clientLoginUrl = new URL('/mon-compte/connexion', request.url);
+  const isClientAuthPage = pathname === '/mon-compte/connexion' || pathname.startsWith('/mon-compte/valider');
+  const isClientRoute = pathname.startsWith('/mon-compte/');
 
   if (isClientRoute && !isClientAuthPage) {
     const clientSession = request.cookies.get('client_session')?.value;
     if (!clientSession) {
       return NextResponse.redirect(clientLoginUrl);
     }
-  }
-
-  if (isClientAuthPage && request.cookies.get('client_session')?.value) {
-    return NextResponse.redirect(new URL('/boutique/mon-compte/commandes', request.url));
   }
 
   // Admin routes: session check
@@ -71,5 +67,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify', '/admin', '/admin/:path*', '/boutique/mon-compte', '/boutique/mon-compte/:path*', '/api/:path*'],
+  matcher: ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify', '/admin', '/admin/:path*', '/mon-compte', '/mon-compte/:path*', '/api/:path*'],
 };

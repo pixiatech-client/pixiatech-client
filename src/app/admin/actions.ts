@@ -16,7 +16,59 @@ import { createHash } from 'crypto';
 import nodemailer from 'nodemailer';
 import { buildSupplierEmailHtml } from '@/lib/email-templates';
 
-import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry } from '@/lib/types';
+import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry, Dispute } from '@/lib/types';
+
+export interface ResellerLead {
+  id: string;
+  email: string;
+  createdAt: string;
+  notified: boolean;
+}
+
+export async function getResellerLeads(): Promise<ResellerLead[]> {
+  const { adminDb } = getFirebaseAdmin();
+  const snap = await adminDb.collection('reseller_leads').orderBy('createdAt', 'desc').get();
+  return snap.docs.map(d => ({
+    id: d.id,
+    email: d.data().email as string,
+    createdAt: d.data().createdAt as string,
+    notified: d.data().notified as boolean,
+  }));
+}
+
+export async function markResellerLeadNotified(id: string): Promise<void> {
+  const { adminDb } = getFirebaseAdmin();
+  await adminDb.collection('reseller_leads').doc(id).update({ notified: true });
+}
+
+export async function deleteResellerLead(id: string): Promise<void> {
+  const { adminDb } = getFirebaseAdmin();
+  await adminDb.collection('reseller_leads').doc(id).delete();
+}
+
+export interface Member {
+  id: string;
+  email: string;
+  displayName: string;
+  phone: string;
+  createdAt: string;
+  lastLoginAt: string;
+  status: string;
+}
+
+export async function getMembers(): Promise<Member[]> {
+  const { adminDb } = getFirebaseAdmin();
+  const snap = await adminDb.collection('customers').orderBy('createdAt', 'desc').get();
+  return snap.docs.map(d => ({
+    id: d.id,
+    email: d.data().email as string,
+    displayName: d.data().displayName as string,
+    phone: d.data().phone as string,
+    createdAt: d.data().createdAt as string,
+    lastLoginAt: d.data().lastLoginAt as string,
+    status: d.data().status as string,
+  }));
+}
 import { DEFAULT_PALETTES } from '@/lib/color-palettes';
 import { DocumentData, Timestamp, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import fr from '@/lib/locales/fr.json';
@@ -171,6 +223,22 @@ export async function revertImpersonation() {
     console.error("Revert impersonation error:", error);
     return { success: false, error: error.message };
   }
+}
+
+export async function connectAsClient(customerId: string, customerEmail: string) {
+  const { encrypt } = await import('@/lib/auth');
+  const sessionToken = await encrypt(
+    { customerId, email: customerEmail, type: 'client' },
+    '12h'
+  );
+  (await cookies()).set('client_session', sessionToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 12,
+  });
+  redirect('/mon-compte/tableau-de-bord');
 }
 
 
@@ -3698,5 +3766,76 @@ export async function resetEstimationCounter(newNumber: number): Promise<{ succe
   } catch (error) {
     console.error('Error resetting estimation counter:', error);
     return { success: false, error: 'Failed to reset counter' };
+  }
+}
+
+export async function getDisputes(): Promise<Dispute[]> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return [];
+  const snap = await adminDb.collection('disputes').orderBy('createdAt', 'desc').get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() as Omit<Dispute, 'id'> }));
+}
+
+export async function updateDisputeStatus(id: string, status: Dispute['status']): Promise<void> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) throw new Error('Database service unavailable');
+  await adminDb.collection('disputes').doc(id).update({ status, updatedAt: new Date().toISOString() });
+}
+
+export async function getDisputeById(id: string): Promise<Dispute | null> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return null;
+  const snap = await adminDb.collection('disputes').doc(id).get();
+  if (!snap.exists) return null;
+  return { id: snap.id, ...snap.data() as Omit<Dispute, 'id'> };
+}
+
+export async function replyToDispute(id: string, text: string): Promise<void> {
+  const { adminDb, FieldValue } = getFirebaseAdmin();
+  if (!adminDb) throw new Error('Database service unavailable');
+
+  const disputeDoc = await adminDb.collection('disputes').doc(id).get();
+  if (!disputeDoc.exists) throw new Error('Dispute not found');
+  const disputeData = disputeDoc.data()!;
+
+  await adminDb.collection('disputes').doc(id).update({
+    messages: FieldValue.arrayUnion({
+      sender: 'admin',
+      text,
+      createdAt: new Date().toISOString(),
+    }),
+    unreadByClient: true,
+    status: 'in_progress',
+    updatedAt: new Date().toISOString(),
+  });
+
+  // Notify other admins of the reply
+  let currentAdminUid = '';
+  try {
+    const auth = await getAuth();
+    if (auth) {
+      const cookie = await getAuthCookie();
+      const adminUser = await auth.verifyIdToken(cookie);
+      currentAdminUid = adminUser.uid;
+    }
+  } catch {}
+
+  const adminsSnap = await adminDb.collection('users').get();
+  if (!adminsSnap.empty) {
+    const notifBatch = adminDb.batch();
+    adminsSnap.forEach(adminDoc => {
+      if (adminDoc.id === currentAdminUid) return;
+      const notifRef = adminDb.collection('notifications').doc();
+      notifBatch.set(notifRef, {
+        userId: adminDoc.id,
+        type: 'message',
+        title: 'Réponse admin sur un litige',
+        description: `Un administrateur a répondu au litige de ${disputeData.customerEmail || 'un client'} : ${disputeData.reason}`,
+        href: '/admin/litiges',
+        read: false,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    });
+    await notifBatch.commit();
   }
 }
