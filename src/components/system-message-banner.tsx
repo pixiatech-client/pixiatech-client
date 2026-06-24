@@ -4,10 +4,13 @@ import { useState, useEffect } from 'react';
 import { X, Info, CheckCircle, AlertTriangle, AlertOctagon } from 'lucide-react';
 import type { SystemMessage } from '@/lib/types';
 
-const ICON_MAP: Record<string, React.ElementType> = {
-  Info, CheckCircle, AlertTriangle, AlertOctagon,
-  info: Info, success: CheckCircle, warning: AlertTriangle, alert: AlertOctagon,
-};
+function getIcon(name: string) {
+  const icons: Record<string, typeof Info> = {
+    Info, CheckCircle, AlertTriangle, AlertOctagon,
+    info: Info, success: CheckCircle, warning: AlertTriangle, alert: AlertOctagon,
+  };
+  return icons[name] || Info;
+}
 
 const TYPE_COLORS: Record<string, { bg: string; border: string; icon: string; text: string }> = {
   info: { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-600', text: 'text-blue-800' },
@@ -38,7 +41,7 @@ export function SystemMessageBanner({ location }: { location: 'homepage' | 'bout
       {messages.map(msg => {
         if (dismissed.has(msg.id)) return null;
         const colors = TYPE_COLORS[msg.type] || TYPE_COLORS.info;
-        const Icon = ICON_MAP[msg.icon] || ICON_MAP[msg.type] || Info;
+        const Icon = getIcon(msg.icon);
 
         return (
           <div
@@ -46,10 +49,10 @@ export function SystemMessageBanner({ location }: { location: 'homepage' | 'bout
             className={`flex items-start gap-3 p-3 md:p-4 rounded-xl border ${colors.bg} ${colors.border}`}
             style={msg.color ? { borderLeftColor: msg.color, borderLeftWidth: 4 } : undefined}
           >
-            <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${colors.icon}`} style={msg.color ? { color: msg.color } : undefined} />
+            <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${colors.icon}`} style={msg.color ? { color: msg.color } as React.CSSProperties : undefined} />
             <div className="flex-1 min-w-0">
               {msg.title && (
-                <p className={`text-sm font-bold ${colors.text}`} style={msg.color ? { color: msg.color } : undefined}>
+                <p className={`text-sm font-bold ${colors.text}`} style={msg.color ? { color: msg.color } as React.CSSProperties : undefined}>
                   {msg.title}
                 </p>
               )}

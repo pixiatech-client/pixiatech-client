@@ -8,19 +8,24 @@ import { useI18n } from '@/lib/i18n';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import type { SystemMessage, SystemMessageType } from '@/lib/types';
 
-const TYPE_OPTIONS: { value: SystemMessageType; label: string; icon: React.ElementType; color: string }[] = [
-  { value: 'info', label: 'Information', icon: Info, color: 'bg-blue-100 text-blue-700 border-blue-300' },
-  { value: 'success', label: 'Succès', icon: CheckCircle, color: 'bg-green-100 text-green-700 border-green-300' },
-  { value: 'warning', label: 'Avertissement', icon: AlertTriangle, color: 'bg-orange-100 text-orange-700 border-orange-300' },
-  { value: 'alert', label: 'Alerte', icon: AlertOctagon, color: 'bg-red-100 text-red-700 border-red-300' },
+function getTypeIcon(type: string) {
+  const icons: Record<string, typeof Info> = { info: Info, success: CheckCircle, warning: AlertTriangle, alert: AlertOctagon };
+  return icons[type] || Info;
+}
+
+const TYPE_OPTIONS = [
+  { value: 'info' as SystemMessageType, label: 'Information', icon: Info, color: 'bg-blue-100 text-blue-700 border-blue-300' },
+  { value: 'success' as SystemMessageType, label: 'Succès', icon: CheckCircle, color: 'bg-green-100 text-green-700 border-green-300' },
+  { value: 'warning' as SystemMessageType, label: 'Avertissement', icon: AlertTriangle, color: 'bg-orange-100 text-orange-700 border-orange-300' },
+  { value: 'alert' as SystemMessageType, label: 'Alerte', icon: AlertOctagon, color: 'bg-red-100 text-red-700 border-red-300' },
 ];
 
 const ICON_OPTIONS = [
-  { value: 'Info', label: 'Info', icon: Info },
-  { value: 'CheckCircle', label: 'Succès', icon: CheckCircle },
-  { value: 'AlertTriangle', label: 'Attention', icon: AlertTriangle },
-  { value: 'AlertOctagon', label: 'Danger', icon: AlertOctagon },
-  { value: 'Bell', label: 'Cloche', icon: Bell },
+  { value: 'Info', label: 'Info' },
+  { value: 'CheckCircle', label: 'Succès' },
+  { value: 'AlertTriangle', label: 'Attention' },
+  { value: 'AlertOctagon', label: 'Danger' },
+  { value: 'Bell', label: 'Cloche' },
 ];
 
 const defaultForm: Omit<SystemMessage, 'id' | 'createdAt' | 'updatedAt'> = {
@@ -160,6 +165,7 @@ export default function AlertesSystemePage() {
   };
 
   const typeInfo = (type: string) => TYPE_OPTIONS.find(o => o.value === type) || TYPE_OPTIONS[0];
+  const getInfoIcon = (type: string) => getTypeIcon(type);
 
   if (loading) {
     return (
@@ -199,7 +205,7 @@ export default function AlertesSystemePage() {
 
           {messages.map(msg => {
             const info = typeInfo(msg.type);
-            const Icon = info.icon;
+            const Icon = getInfoIcon(msg.type);
             const isPermanent = msg.permanent;
 
             return (
@@ -301,7 +307,6 @@ export default function AlertesSystemePage() {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Type</label>
                     <div className="grid grid-cols-2 gap-2">
                       {TYPE_OPTIONS.map(opt => {
-                        const Icon = opt.icon;
                         const isActive = form.type === opt.value;
                         return (
                           <button
@@ -313,7 +318,7 @@ export default function AlertesSystemePage() {
                                 : 'border-gray-200 text-gray-500 hover:border-gray-300'
                             }`}
                           >
-                            <Icon className="w-4 h-4" />
+                            {getTypeIcon(opt.value)({ className: 'w-4 h-4' })}
                             {opt.label}
                           </button>
                         );
@@ -325,7 +330,7 @@ export default function AlertesSystemePage() {
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Icône</label>
                     <div className="flex flex-wrap gap-2">
                       {ICON_OPTIONS.map(opt => {
-                        const Icon = opt.icon;
+                        const Icon = getTypeIcon(opt.value);
                         const isActive = form.icon === opt.value;
                         return (
                           <button
@@ -487,8 +492,8 @@ export default function AlertesSystemePage() {
                 }}>
                   <div className="flex items-start gap-3">
                     {(() => {
-                      const Icon = ICON_OPTIONS.find(o => o.value === previewMsg.icon)?.icon || Info;
-                      return <Icon className="w-5 h-5 mt-0.5 shrink-0" style={{ color: previewMsg.color || undefined }} />;
+                      const Icon = getTypeIcon(previewMsg.icon);
+                      return <Icon className="w-5 h-5 mt-0.5 shrink-0" style={{ color: previewMsg.color || undefined } as React.CSSProperties} />;
                     })()}
                     <div>
                       <p className="text-sm font-bold text-gray-900">{previewMsg.title}</p>

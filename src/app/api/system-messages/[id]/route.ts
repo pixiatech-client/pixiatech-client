@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const body = await req.json();
     const { adminDb, FieldValue } = getFirebaseAdmin();
-    const { id } = params;
+    const { id } = await params;
 
     const update: Record<string, any> = { ...body, updatedAt: FieldValue.serverTimestamp() };
     delete update.id;
@@ -19,10 +19,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { adminDb } = getFirebaseAdmin();
-    const { id } = params;
+    const { id } = await params;
 
     const doc = await adminDb.collection('system_messages').doc(id).get();
     if (!doc.exists) {
