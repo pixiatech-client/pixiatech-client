@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { RoleProvider } from '@/contexts/RoleContext';
+import { SiteBanners } from './SiteBanners';
 
 function useProtectMedia() {
   useEffect(() => {
@@ -26,6 +27,7 @@ function useProtectMedia() {
 
 import { DynamicThemeProvider } from '@/contexts/DynamicThemeContext';
 import { CartProvider } from '@/contexts/CartContext';
+import { ProfileProvider } from '@/contexts/ProfileContext';
 
 export function LayoutProvider({
   children,
@@ -47,9 +49,11 @@ export function LayoutProvider({
     <FirebaseClientProvider>
       <RoleProvider>
         <DynamicThemeProvider>
+          <ProfileProvider>
           <CartProvider>
           <div className="flex flex-col bg-background min-h-dvh">
             {isFrontendPage && !isMonComptePage && <BoutiqueHeader />}
+            {isFrontendPage && <SiteBanners />}
             <main
               className={cn(
                 'flex-1 flex items-start justify-center w-full',
@@ -62,6 +66,7 @@ export function LayoutProvider({
             {/* FloatingChatButton removed from here to be moved to the landing page specifically */}
           </div>
           </CartProvider>
+          </ProfileProvider>
         </DynamicThemeProvider>
         <ShadcnToaster />
         <SonnerToaster 

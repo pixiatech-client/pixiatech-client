@@ -488,6 +488,24 @@ export type PixelPitchOption = {
   imageUrl?: string;
 };
 
+export type SystemMessageType = 'info' | 'success' | 'warning' | 'alert';
+
+export type SystemMessage = {
+  id: string;
+  type: SystemMessageType;
+  title: string;
+  content: string;
+  color: string;
+  icon: string;
+  active: boolean;
+  showHomepage: boolean;
+  showBoutique: boolean;
+  showClientArea: boolean;
+  permanent: boolean;
+  createdAt: any;
+  updatedAt: any;
+};
+
 export type WizardSettings = {
     projectTypes: {
         location: WizardProjectTypeSetting;

@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProducts } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
+import { useProfile } from '@/contexts/ProfileContext';
+import { PriceLabel } from '@/components/B2BProfileSelector';
 
 function FilterDrawer({ open, onClose, categories, selectedCategories, onCategoriesChange, minRating, onMinRatingChange, transactionType, onTransactionTypeChange, onReset, activeCount }: {
   open: boolean; onClose: () => void;
@@ -131,6 +133,7 @@ export default function BoutiquePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
+  const { showHT, showTTC } = useProfile();
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'populaires' | 'nouveautes'>('all');
@@ -353,7 +356,10 @@ export default function BoutiquePage() {
                   <h3 className="text-sm font-semibold text-gray-900 leading-tight mb-3">{product.name}</h3>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">{product.price}{'\u20AC'}</span>
+                      <div>
+                        <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">{product.price}{'\u20AC'}</span>
+                        <PriceLabel />
+                      </div>
                       {product.oldPrice && product.oldPrice > product.price && (
                         <>
                           <span className="text-xs text-gray-400 line-through">{product.oldPrice}{'\u20AC'}</span>

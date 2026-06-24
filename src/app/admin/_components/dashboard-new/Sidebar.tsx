@@ -24,6 +24,7 @@ import {
   Bell,
   Store,
   Tag,
+  AlertTriangle,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
@@ -56,6 +57,7 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   membres: '/admin/membres',
   messages: '/admin/messages',
   notifications: '/admin/notification',
+  'alertes-systeme': '/admin/alertes-systeme',
   'litiges-sub': '/admin/litiges',
 };
 
@@ -80,6 +82,7 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/settings/software': 'software',
   '/admin/messages': 'messages',
   '/admin/notification': 'notifications',
+  '/admin/alertes-systeme': 'alertes-systeme',
   '/admin/litiges': 'litiges-sub',
 };
 
@@ -228,6 +231,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'membres', label: 'Espace membre', icon: Users, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'messages', label: t('admin.messages'), icon: MessageSquare, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'notifications', label: t('admin.notifications'), icon: Bell, color: 'text-amber-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'alertes-systeme', label: 'Alertes système', icon: AlertTriangle, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'profile', label: t('admin.myProfile'), icon: UserIcon, color: 'text-purple-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'settings', label: t('admin.settings'), icon: Settings, color: 'text-fuchsia-500', roles: [UserRole.ADMINISTRATEUR] },
   ], [t]);

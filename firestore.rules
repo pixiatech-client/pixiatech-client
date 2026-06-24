@@ -113,6 +113,11 @@ match /promo_codes/{codeId} {
   allow create, update, delete: if isAdmin();
 }
 
+match /system_messages/{messageId} {
+  allow read, list: if true;
+  allow create, update, delete: if isAdmin();
+}
+
 match /chats {
        allow list: if isLoggedIn();
 }

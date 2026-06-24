@@ -10,6 +10,8 @@ import { firestore } from '@/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Product, ProductVariant } from '@/lib/boutique-data';
 import BoutiqueRentalFlow from '@/components/BoutiqueRentalFlow';
+import { useProfile } from '@/contexts/ProfileContext';
+import { PriceLabel } from '@/components/B2BProfileSelector';
 
 const specIcons: Record<string, { icon: typeof Maximize2; color: string }> = {
   'surface': { icon: Maximize2, color: 'blue' },
@@ -141,6 +143,7 @@ export default function ProductDetailPage() {
   const thumbScrollRef = useRef<HTMLDivElement>(null);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
+  const { showHT, showTTC } = useProfile();
 
   useEffect(() => {
     if (!params.id) return;
@@ -422,8 +425,18 @@ export default function ProductDetailPage() {
                 )}
               </div>
               <div className="flex items-center gap-4 mt-2">
-                <span className="text-sm text-gray-500 font-medium">HT : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice / (1 + taxRate / 100))}</span></span>
-                <span className="text-sm text-gray-500 font-medium">TTC : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice)}</span></span>
+                {(!showHT && !showTTC) && (
+                  <>
+                    <span className="text-sm text-gray-500 font-medium">HT : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice / (1 + taxRate / 100))}</span></span>
+                    <span className="text-sm text-gray-500 font-medium">TTC : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice)}</span></span>
+                  </>
+                )}
+                {showHT && (
+                  <span className="text-sm text-gray-500 font-medium">Prix hors taxes : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice / (1 + taxRate / 100))}</span></span>
+                )}
+                {showTTC && (
+                  <span className="text-sm text-gray-500 font-medium">TVA incluse : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice)}</span></span>
+                )}
               </div>
               <div className="relative mt-1">
                 <button onClick={() => setShowInfo(!showInfo)} className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-700 transition-colors font-medium">

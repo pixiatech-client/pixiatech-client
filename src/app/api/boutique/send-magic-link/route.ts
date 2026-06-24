@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create magic link
-    const origin = req.nextUrl.origin;
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin;
     const { url } = await createMagicLink(normalizedEmail, customer.id!, origin);
 
     // Determine recipient
