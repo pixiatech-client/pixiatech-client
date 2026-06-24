@@ -18,7 +18,7 @@ export function generateToken(): string {
 }
 
 export function buildMagicLinkUrl(token: string, email: string, baseUrl?: string): string {
-  let url = baseUrl || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  let url = baseUrl || process.env.NEXT_PUBLIC_SITE_URL || 'https://app.pixiatech.com';
   url = url.replace('://0.0.0.0', '://localhost');
   return `${url}/mon-compte/valider?token=${token}&email=${encodeURIComponent(email)}`;
 }
