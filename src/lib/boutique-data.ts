@@ -19,7 +19,7 @@ export interface Product {
   description: string;
   longDescription: string;
   descriptionDetaillee?: string;
-  image: string;
+  image: string | null;
   gallery?: string[];
   videoUrl?: string;
   pdfUrl?: string;
@@ -139,7 +139,7 @@ const TYPE_LABELS: Record<string, string> = {
 function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {}): Product {
   const data = docSnap.data();
   const name = data.name || docSnap.id;
-  const image = data.image || data.imageUrl || '';
+  const image = data.image || data.imageUrl || null;
   const price = typeof data.price === 'number' ? data.price : parseFloat(String(data.salePricePerSqM || data.price || 0));
   return {
     id: docSnap.id,

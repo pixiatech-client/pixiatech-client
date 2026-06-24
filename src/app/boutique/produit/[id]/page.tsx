@@ -107,13 +107,19 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: { images: string[]
         </button>
       )}
 
-      <img
-        src={images[index]}
-        alt=""
-        className="max-w-[90vw] max-h-[85vh] object-contain rounded-2xl select-none"
-        onClick={(e) => e.stopPropagation()}
-        draggable={false}
-      />
+      {images[index] ? (
+        <img
+          src={images[index]}
+          alt=""
+          className="max-w-[90vw] max-h-[85vh] object-contain rounded-2xl select-none"
+          onClick={(e) => e.stopPropagation()}
+          draggable={false}
+        />
+      ) : (
+        <div className="max-w-[90vw] max-h-[85vh] flex items-center justify-center text-white/50">
+          <ShoppingBag size={64} />
+        </div>
+      )}
     </div>
   );
 }
@@ -163,8 +169,8 @@ export default function ProductDetailPage() {
   }, [product]);
 
   const galleryImages = product?.gallery && product.gallery.length > 0
-    ? [product.image, ...product.gallery]
-    : [product?.image || ''];
+    ? [product.image, ...product.gallery].filter(Boolean)
+    : product?.image ? [product.image] : [];
   const images = galleryImages;
   const canRent = product?.availableFor?.includes('rental') ?? false;
   const canBuy = product?.availableFor?.includes('sale') ?? true;
@@ -250,11 +256,17 @@ export default function ProductDetailPage() {
             <section className="max-w-xl mx-auto">
               <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
                 <div className="cursor-pointer overflow-hidden" onClick={() => { setSelectedVariant(null); openLightbox(selectedImage); }}>
-                  <img
-                    src={effectiveImage}
-                    alt={product.name}
-                    className="w-full h-auto max-h-[450px] object-cover bg-slate-50 transition-transform duration-500 hover:scale-110"
-                  />
+                  {effectiveImage ? (
+                    <img
+                      src={effectiveImage}
+                      alt={product.name}
+                      className="w-full h-auto max-h-[450px] object-cover bg-slate-50 transition-transform duration-500 hover:scale-110"
+                    />
+                  ) : (
+                    <div className="w-full h-[450px] flex items-center justify-center bg-slate-50 text-slate-300">
+                      <ShoppingBag size={48} />
+                    </div>
+                  )}
                 </div>
               </div>
               {images.length > 1 && (
@@ -288,11 +300,17 @@ export default function ProductDetailPage() {
                           className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
                           onMouseEnter={() => setSelectedImage(idx)}
                         >
-                          <img
-                            src={img}
-                            alt={`${product.name} - Vue ${idx + 1}`}
-                            className={`w-full h-full object-cover ${selectedImage !== idx ? 'opacity-50' : ''}`}
-                          />
+                          {img ? (
+                            <img
+                              src={img}
+                              alt={`${product.name} - Vue ${idx + 1}`}
+                              className={`w-full h-full object-cover ${selectedImage !== idx ? 'opacity-50' : ''}`}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-200">
+                              <ShoppingBag size={16} />
+                            </div>
+                          )}
                         </button>
                       ))}
                     </div>

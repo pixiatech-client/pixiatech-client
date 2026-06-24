@@ -62,14 +62,12 @@ service cloud.firestore {
     }
 
     match /boutique_products/{productId} {
-      allow read: if true;
-      allow list: if isLoggedIn();
+      allow read, list: if true;
       allow write: if isAdmin();
     }
     
     match /boutique_characteristics/{charId} {
-      allow read: if true;
-      allow list: if isLoggedIn();
+      allow read, list: if true;
       allow write: if isAdmin();
     }
 
@@ -109,6 +107,11 @@ service cloud.firestore {
       allow create: if isLoggedIn();
       allow update, delete: if isLoggedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
+
+match /promo_codes/{codeId} {
+  allow read, list: if true;
+  allow create, update, delete: if isAdmin();
+}
 
 match /chats {
        allow list: if isLoggedIn();

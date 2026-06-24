@@ -303,11 +303,17 @@ export default function BoutiquePage() {
                 <div className="p-3 pb-0">
                     <div className="relative">
                       <div className="aspect-[3/2] bg-gray-50 rounded-xl overflow-hidden">
-                        <img
-                          alt={product.name}
-                          src={product.image}
-                          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 bg-gray-100"
-                        />
+                        {product.image ? (
+                          <img
+                            alt={product.name}
+                            src={product.image}
+                            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 bg-gray-100"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
+                            <ShoppingBag size={32} />
+                          </div>
+                        )}
                         <div className={`absolute inset-0 bg-black/5 pointer-events-none transition-opacity duration-200 ${hoveredId === product.id ? 'opacity-100' : 'opacity-0'}`} />
                       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3 transition-all duration-200 ${hoveredId === product.id ? 'opacity-100 translate-y-[-50%]' : 'opacity-0 translate-y-[-40%]'}`}>
                         <span className="flex items-center justify-center size-9 bg-white rounded-full shadow-md text-gray-700 hover:text-gray-900 transition-colors -rotate-45">

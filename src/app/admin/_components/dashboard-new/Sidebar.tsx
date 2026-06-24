@@ -23,6 +23,7 @@ import {
   Box,
   Bell,
   Store,
+  Tag,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
@@ -51,6 +52,7 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   emergencySub: '/admin/settings/emergency',
   produit: '/admin/produits',
   boutique: '/admin/boutique',
+  'codes-promo': '/admin/codes-promo',
   membres: '/admin/membres',
   messages: '/admin/messages',
   notifications: '/admin/notification',
@@ -63,6 +65,7 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/quote-requests': 'estimations',
   '/admin/produits': 'produit',
   '/admin/boutique': 'boutique',
+  '/admin/codes-promo': 'codes-promo',
   '/admin/membres': 'membres',
   '/admin/history': 'history',
   '/admin/settings': 'settings',
@@ -221,6 +224,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'history', label: t('admin.history'), icon: Clock, color: 'text-cyan-400', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'produit', label: t('admin.products'), icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'boutique', label: 'Boutique', icon: Store, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'codes-promo', label: 'Codes Promo', icon: Tag, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'membres', label: 'Espace membre', icon: Users, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'messages', label: t('admin.messages'), icon: MessageSquare, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'notifications', label: t('admin.notifications'), icon: Bell, color: 'text-amber-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },

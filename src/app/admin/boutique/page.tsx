@@ -14,6 +14,7 @@ import { getRentalOrders, updateRentalOrder, type RentalOrder, type RentalStatus
 import { formatPrice } from '@/lib/boutique-data';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { Pagination } from '@/components/pagination';
 
 type Mode = 'vente' | 'location';
 
@@ -89,7 +90,13 @@ function DetailModal({ open, onClose, order, mode }: {
         </div>
         <div className="p-6 space-y-6">
           <div className="flex items-center gap-4">
-            <img src={order.productImage} alt={order.productName} className="w-16 h-16 rounded-xl object-cover bg-gray-100" />
+            {order.productImage ? (
+              <img src={order.productImage} alt={order.productName} className="w-16 h-16 rounded-xl object-cover bg-gray-100" />
+            ) : (
+              <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-300">
+                <ShoppingBag size={20} />
+              </div>
+            )}
             <div>
               <p className="font-semibold text-gray-900">{order.productName}</p>
               <p className="text-sm text-gray-500">Quantité : {order.quantity}</p>
@@ -150,6 +157,8 @@ export default function BoutiquePage() {
   const [rentalStatus, setRentalStatus] = useState<RentalStatus | 'all'>('all');
   const [updating, setUpdating] = useState<string | null>(null);
   const [detailOrder, setDetailOrder] = useState<SaleOrder | RentalOrder | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -167,6 +176,7 @@ export default function BoutiquePage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { setPage(1); }, [saleStatus, rentalStatus, search, mode]);
 
   const saleStats = useMemo(() => {
     const commandes = saleOrders.filter(o => o.status === 'commande');
@@ -207,6 +217,10 @@ export default function BoutiquePage() {
     return result;
   }, [rentalOrders, rentalStatus, search]);
 
+  const salePage = (page - 1) * PAGE_SIZE;
+  const paginatedSales = filteredSaleOrders.slice(salePage, salePage + PAGE_SIZE);
+  const paginatedRentals = filteredRentalOrders.slice(salePage, salePage + PAGE_SIZE);
+
   const handleSaleAction = async (id: string, status: SaleStatus) => {
     setUpdating(id);
     try {
@@ -232,7 +246,7 @@ export default function BoutiquePage() {
   };
 
   return (
-    <div className="space-y-6">
+      <div className="space-y-6">
       <DetailModal open={!!detailOrder} onClose={() => setDetailOrder(null)} order={detailOrder} mode={mode} />
 
       <div className="relative flex w-full max-w-md rounded-xl bg-white border border-slate-200 h-11 p-1 shadow-sm">
@@ -291,11 +305,17 @@ export default function BoutiquePage() {
                     <TableRow><TableCell colSpan={6} className="text-center py-12"><Loader2 className="w-5 h-5 animate-spin mx-auto text-slate-400" /></TableCell></TableRow>
                   ) : filteredSaleOrders.length === 0 ? (
                     <TableRow><TableCell colSpan={6} className="text-center py-12 text-sm text-slate-400">Aucune commande trouvée</TableCell></TableRow>
-                  ) : filteredSaleOrders.map((o) => (
+                  ) : paginatedSales.map((o) => (
                     <TableRow key={o.id} className="hover:bg-slate-50/50 transition-colors group">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <img src={o.productImage} alt={o.productName} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
+                          {o.productImage ? (
+                            <img src={o.productImage} alt={o.productName} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300">
+                              <ShoppingBag size={16} />
+                            </div>
+                          )}
                           <span className="font-medium text-sm text-slate-900 truncate max-w-[160px]">{o.productName}</span>
                         </div>
                       </TableCell>
@@ -329,6 +349,7 @@ export default function BoutiquePage() {
               </Table>
             </div>
           </Card>
+          <Pagination current={page} total={filteredSaleOrders.length} pageSize={PAGE_SIZE} onChange={setPage} />
         </>
       ) : (
         <>
@@ -378,11 +399,17 @@ export default function BoutiquePage() {
                     <TableRow><TableCell colSpan={6} className="text-center py-12"><Loader2 className="w-5 h-5 animate-spin mx-auto text-slate-400" /></TableCell></TableRow>
                   ) : filteredRentalOrders.length === 0 ? (
                     <TableRow><TableCell colSpan={6} className="text-center py-12 text-sm text-slate-400">Aucune location trouvée</TableCell></TableRow>
-                  ) : filteredRentalOrders.map((o) => (
+                  ) : paginatedRentals.map((o) => (
                     <TableRow key={o.id} className="hover:bg-slate-50/50 transition-colors group">
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <img src={o.productImage} alt={o.productName} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
+                          {o.productImage ? (
+                            <img src={o.productImage} alt={o.productName} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-300">
+                              <ShoppingBag size={16} />
+                            </div>
+                          )}
                           <span className="font-medium text-sm text-slate-900 truncate max-w-[160px]">{o.productName}</span>
                         </div>
                       </TableCell>
@@ -425,6 +452,7 @@ export default function BoutiquePage() {
               </Table>
             </div>
           </Card>
+          <Pagination current={page} total={filteredRentalOrders.length} pageSize={PAGE_SIZE} onChange={setPage} />
         </>
       )}
     </div>

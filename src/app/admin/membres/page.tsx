@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { Pagination } from '@/components/pagination';
 import { getMembers, getResellerLeads, markResellerLeadNotified, deleteResellerLead, getDisputes, connectAsClient, type Member, type ResellerLead } from '../actions';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -30,6 +31,8 @@ function MembresPage() {
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('email') || '');
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const openDisputeEmails = new Set(
     disputes.filter(d => d.status === 'open' || d.status === 'in_progress').map(d => d.customerEmail)
@@ -49,6 +52,7 @@ function MembresPage() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { setPage(1); }, [search, tab]);
 
   const handleMarkNotified = async (id: string) => {
     await markResellerLeadNotified(id);
@@ -70,6 +74,10 @@ function MembresPage() {
   const filteredLeads = leads.filter(l =>
     l.email.toLowerCase().includes(search.toLowerCase())
   );
+
+  const offset = (page - 1) * PAGE_SIZE;
+  const paginatedMembers = filteredMembers.slice(offset, offset + PAGE_SIZE);
+  const paginatedLeads = filteredLeads.slice(offset, offset + PAGE_SIZE);
 
   return (
     <div className="p-6 space-y-6">
@@ -156,7 +164,7 @@ function MembresPage() {
                   <TableRow><TableCell colSpan={6} className="text-center py-12 text-xs text-slate-400">Chargement...</TableCell></TableRow>
                 ) : filteredMembers.length === 0 ? (
                   <TableRow><TableCell colSpan={6} className="text-center py-12 text-xs text-slate-400">Aucun membre trouvé</TableCell></TableRow>
-                ) : filteredMembers.map((m, i) => (
+                ) : paginatedMembers.map((m, i) => (
                   <motion.tr
                     key={m.id}
                     initial={{ opacity: 0, y: 4 }}
@@ -206,6 +214,7 @@ function MembresPage() {
           </CardContent>
         </Card>
       )}
+      {tab === 'membres' && <Pagination current={page} total={filteredMembers.length} pageSize={PAGE_SIZE} onChange={setPage} />}
 
       {/* Fournisseurs tab */}
       {tab === 'fournisseurs' && (
@@ -225,7 +234,7 @@ function MembresPage() {
                   <TableRow><TableCell colSpan={4} className="text-center py-12 text-xs text-slate-400">Chargement...</TableCell></TableRow>
                 ) : filteredLeads.length === 0 ? (
                   <TableRow><TableCell colSpan={4} className="text-center py-12 text-xs text-slate-400">Aucune inscription</TableCell></TableRow>
-                ) : filteredLeads.map((l, i) => (
+                ) : paginatedLeads.map((l, i) => (
                   <motion.tr
                     key={l.id}
                     initial={{ opacity: 0, y: 4 }}
@@ -267,6 +276,7 @@ function MembresPage() {
           </CardContent>
         </Card>
       )}
+      {tab === 'fournisseurs' && <Pagination current={page} total={filteredLeads.length} pageSize={PAGE_SIZE} onChange={setPage} />}
     </div>
   );
 }

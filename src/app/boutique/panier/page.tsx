@@ -41,11 +41,13 @@ function QtySelector({ value, onMinus, onPlus }: { value: number; onMinus: () =>
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, addItem, removeItem, updateQuantity, itemCount, subtotal } = useCart();
+  const { items, addItem, removeItem, updateQuantity, itemCount, subtotal, promo, promoError, applyPromo, removePromo, totalAfterDiscount, clearCart } = useCart();
   const [promoOpen, setPromoOpen] = useState(false);
+  const [promoInput, setPromoInput] = useState('');
 
   const total = subtotal;
   const tva = Math.round(total * 0.2);
+  const discount = promo ? subtotal - totalAfterDiscount : 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F5F5F5' }}>
@@ -65,10 +67,26 @@ export default function CartPage() {
           <>
             <div className="grid grid-cols-12 gap-8 items-start">
               <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-500">{itemCount} article{itemCount > 1 ? 's' : ''}</p>
+                  <button
+                    onClick={() => { if (confirm('Vider le panier ?')) clearCart(); }}
+                    className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    Vider le panier
+                  </button>
+                </div>
                 {items.map((item) => (
                   <div key={item.productId + '-' + item.type} className="bg-white rounded-2xl border border-gray-200/70 p-5 flex gap-6 transition-all duration-300 hover:shadow-md group">
                     <div className="w-44 h-44 rounded-xl overflow-hidden bg-gray-100 shrink-0 relative">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      {item.image ? (
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                          <ShoppingBag size={24} />
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-xl" />
                     </div>
                     <div className="flex flex-col flex-1 py-1">
@@ -128,24 +146,30 @@ export default function CartPage() {
               <div className="col-span-12 lg:col-span-4 lg:sticky lg:top-8">
                 <div className="bg-white rounded-2xl border border-gray-200/70 p-6">
                   <h3 className="font-bold text-gray-900 text-base mb-5">Récapitulatif</h3>
-                  <div className="space-y-3 pb-5 border-b border-gray-200/40">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Sous-total</span>
-                      <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
+                    <div className="space-y-3 pb-5 border-b border-gray-200/40">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Sous-total</span>
+                        <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
+                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-emerald-600">Code promo ({promo?.code})</span>
+                          <span className="font-semibold text-emerald-600">-{formatPrice(discount)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Livraison Express</span>
+                        <span className="font-semibold text-emerald-600 text-xs uppercase tracking-wider">Offert</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">TVA (20%)</span>
+                        <span className="font-semibold text-gray-900">{formatPrice(tva)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Livraison Express</span>
-                      <span className="font-semibold text-emerald-600 text-xs uppercase tracking-wider">Offert</span>
+                    <div className="flex justify-between items-center pt-5 mb-6">
+                      <span className="font-bold text-gray-900 text-base">Total à payer</span>
+                      <span className="font-bold text-gray-900 text-lg">{formatPrice(totalAfterDiscount)}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">TVA (20%)</span>
-                      <span className="font-semibold text-gray-900">{formatPrice(tva)}</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center pt-5 mb-6">
-                    <span className="font-bold text-gray-900 text-base">Total à payer</span>
-                    <span className="font-bold text-gray-900 text-lg">{formatPrice(total)}</span>
-                  </div>
                   <button
                     onClick={() => router.push('/boutique/paiement')}
                     className="w-full bg-gray-900 text-white py-3.5 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
@@ -161,20 +185,41 @@ export default function CartPage() {
                 </div>
 
                 <div className="mt-4 bg-white rounded-2xl border border-gray-200/70 overflow-hidden">
-                  <button onClick={() => setPromoOpen(!promoOpen)} className="w-full flex items-center justify-between p-4 text-sm text-gray-500 hover:text-gray-900 transition-colors">
-                    <span className="flex items-center gap-2">
-                      <Tag size={15} />
-                      Ajouter un code promotionnel
-                    </span>
-                    <ChevronDown size={16} className={`transition-transform duration-200 ${promoOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {promoOpen && (
-                    <div className="px-4 pb-4 overflow-hidden">
-                      <div className="flex gap-2 w-full">
-                        <input type="text" placeholder="Code promo" className="min-w-0 flex-1 bg-gray-50 border border-gray-200/70 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 transition-colors" />
-                        <button className="shrink-0 bg-gray-900 text-white px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-colors">Appliquer</button>
+                  {promo ? (
+                    <div className="p-4 flex items-center justify-between bg-emerald-50">
+                      <div className="flex items-center gap-2">
+                        <Tag size={15} className="text-emerald-600" />
+                        <span className="text-sm font-semibold text-emerald-700">{promo.code}</span>
+                        <span className="text-xs text-emerald-500">(-{formatPrice(discount)})</span>
                       </div>
+                      <button onClick={removePromo} className="text-xs text-red-500 hover:text-red-700 font-semibold">Retirer</button>
                     </div>
+                  ) : (
+                    <>
+                      <button onClick={() => setPromoOpen(!promoOpen)} className="w-full flex items-center justify-between p-4 text-sm text-gray-500 hover:text-gray-900 transition-colors">
+                        <span className="flex items-center gap-2">
+                          <Tag size={15} />
+                          Ajouter un code promotionnel
+                        </span>
+                        <ChevronDown size={16} className={`transition-transform duration-200 ${promoOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {promoOpen && (
+                        <div className="px-4 pb-4 overflow-hidden">
+                          <div className="flex gap-2 w-full">
+                            <input
+                              type="text"
+                              placeholder="Code promo"
+                              value={promoInput}
+                              onChange={e => setPromoInput(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') applyPromo(promoInput); }}
+                              className="min-w-0 flex-1 bg-gray-50 border border-gray-200/70 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gray-400 transition-colors"
+                            />
+                            <button onClick={() => applyPromo(promoInput)} className="shrink-0 bg-gray-900 text-white px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-colors">Appliquer</button>
+                          </div>
+                          {promoError && <p className="text-xs text-red-500 mt-2">{promoError}</p>}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

@@ -5,22 +5,28 @@ import { upsertCustomer } from '@/lib/customers';
 
 export async function POST(req: NextRequest) {
   try {
-    const { orderId, rentalItems, purchaseItems } = await req.json();
+    const { orderId, rentalItems, purchaseItems, delivery } = await req.json();
     const capture = await capturePayPalOrder(orderId);
     const paypalCaptureId = capture?.purchase_units?.[0]?.payments?.captures?.[0]?.id || capture?.id || '';
     const { adminDb } = getFirebaseAdmin();
     const now = new Date().toISOString();
 
-    // Extract payer info from PayPal
+    // Use delivery data from frontend if provided, fall back to PayPal payer/shipping info
     const payer = capture?.payer;
     const shipping = capture?.purchase_units?.[0]?.shipping;
     const payerName = payer?.name ? `${payer.name.given_name || ''} ${payer.name.surname || ''}`.trim() : '';
-    const customerName = shipping?.name?.full_name || payerName || '';
-    const customerEmail = payer?.email_address || '';
+    const shippingName = shipping?.name?.full_name || '';
     const shippingAddress = shipping?.address || {};
-    const customerAddress = shippingAddress?.address_line_1 || '';
-    const customerCity = shippingAddress?.admin_area_2 || '';
-    const customerPostcode = shippingAddress?.postal_code || '';
+
+    const customerName = delivery?.firstName
+      ? `${delivery.firstName} ${delivery.lastName}`.trim()
+      : shippingName || payerName || '';
+    const customerEmail = delivery?.email || payer?.email_address || '';
+    const customerPhone = delivery?.phone || '';
+    const customerAddress = delivery?.addressLine1 || shippingAddress?.address_line_1 || '';
+    const customerAddress2 = delivery?.addressLine2 || '';
+    const customerCity = delivery?.city || shippingAddress?.admin_area_2 || '';
+    const customerPostcode = delivery?.postcode || shippingAddress?.postal_code || '';
 
     // Upsert customer
     let customerId = '';
@@ -88,8 +94,10 @@ export async function POST(req: NextRequest) {
             quantity: item.quantity,
             customerName,
             customerEmail,
-            customerPhone: '',
-            customerAddress,
+            customerPhone,
+            customerAddress: customerAddress2
+              ? `${customerAddress}, ${customerAddress2}`
+              : customerAddress,
             customerCity,
             customerPostcode,
             customerId,
