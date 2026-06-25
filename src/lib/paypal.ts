@@ -1,11 +1,19 @@
-const PAYPAL_API = 'https://api-m.sandbox.paypal.com';
+import { getPayPalSettings } from './paypal-settings-service';
+
+const SANDBOX_API = 'https://api-m.sandbox.paypal.com';
+const LIVE_API = 'https://api-m.paypal.com';
+
+async function getPayPalConfig() {
+  const settings = await getPayPalSettings();
+  const apiUrl = settings.environment === 'live' ? LIVE_API : SANDBOX_API;
+  return { ...settings, apiUrl };
+}
 
 async function getAccessToken(): Promise<string> {
-  const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!;
-  const secret = process.env.PAYPAL_CLIENT_SECRET!;
-  const basic = Buffer.from(`${clientId}:${secret}`).toString('base64');
+  const config = await getPayPalConfig();
+  const basic = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
 
-  const res = await fetch(`${PAYPAL_API}/v1/oauth2/token`, {
+  const res = await fetch(`${config.apiUrl}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
       Authorization: `Basic ${basic}`,
@@ -24,9 +32,10 @@ async function getAccessToken(): Promise<string> {
 }
 
 export async function createPayPalOrder(amount: number) {
+  const config = await getPayPalConfig();
   const token = await getAccessToken();
 
-  const res = await fetch(`${PAYPAL_API}/v2/checkout/orders`, {
+  const res = await fetch(`${config.apiUrl}/v2/checkout/orders`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -52,9 +61,10 @@ export async function createPayPalOrder(amount: number) {
 }
 
 export async function capturePayPalOrder(orderId: string) {
+  const config = await getPayPalConfig();
   const token = await getAccessToken();
 
-  const res = await fetch(`${PAYPAL_API}/v2/checkout/orders/${orderId}/capture`, {
+  const res = await fetch(`${config.apiUrl}/v2/checkout/orders/${orderId}/capture`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,

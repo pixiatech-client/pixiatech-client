@@ -59,6 +59,7 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   notifications: '/admin/notification',
   'alertes-systeme': '/admin/alertes-systeme',
   'litiges-sub': '/admin/litiges',
+  paypal: '/admin/settings/paypal',
 };
 
 const ROUTE_TO_VIEW: Record<string, string> = {

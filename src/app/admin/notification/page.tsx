@@ -296,9 +296,9 @@ function NotificationPage() {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 overflow-hidden rounded-[2rem] border border-white bg-white/60 backdrop-blur-xl shadow-xl shadow-black/5">
+          <div className="flex-1 overflow-hidden rounded-[2rem] border border-theme-card-border bg-theme-card/60 backdrop-blur-xl shadow-xl shadow-black/5">
             {filteredNotifications.length > 0 ? (
-              <div className="divide-y divide-gray-100/50">
+              <div className="divide-y divide-theme-card-border/50">
                 {filteredNotifications.map((notif) => {
                   const { icon: Icon, color } = getIcon(notif.type);
                   return (
@@ -306,7 +306,7 @@ function NotificationPage() {
                       key={notif.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`group relative flex gap-4 p-5 transition-all hover:bg-white/80 ${!notif.read ? 'bg-blue-50/40' : ''}`}
+                      className={`group relative flex gap-4 p-5 transition-all hover:bg-theme-hover/80 ${!notif.read ? 'bg-blue-50/40' : ''}`}
                     >
                       <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ${color}`}>
                         <Icon className="h-6 w-6" />
@@ -314,7 +314,7 @@ function NotificationPage() {
 
                       <div className="flex flex-1 flex-col gap-1.5 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                          <h4 className={`text-base font-bold text-gray-900 ${!notif.read ? 'text-blue-900' : ''} truncate`}>
+                          <h4 className={`text-base font-bold text-theme-text ${!notif.read ? 'text-blue-600' : ''} truncate`}>
                             {nt(notif.title)}
                           </h4>
                           <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 whitespace-nowrap">
@@ -361,11 +361,11 @@ function NotificationPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-24 text-center px-6">
-                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white text-gray-200 shadow-inner">
+                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-theme-card text-theme-text-secondary shadow-inner">
                   <Bell className="h-10 w-10" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">{t('notification.noNotifications')}</h3>
-                <p className="mt-2 text-sm text-gray-500 max-w-xs">
+                <h3 className="text-xl font-bold text-theme-text">{t('notification.noNotifications')}</h3>
+                <p className="mt-2 text-sm text-theme-text-secondary max-w-xs">
                   {activeCategory === 'unread' 
                     ? t('notification.allRead')
                     : t('notification.inboxEmpty')}

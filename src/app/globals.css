@@ -82,9 +82,29 @@
    }
    #admin-root .border-gray-100,
    #admin-root .border-gray-200,
+   #admin-root .border-slate-100,
    #admin-root .border-slate-200,
    #admin-root .border-zinc-200 {
      border-color: var(--theme-card-border) !important;
+   }
+   #admin-root .text-slate-900,
+   #admin-root .text-slate-800,
+   #admin-root .text-slate-700,
+   #admin-root .text-gray-900,
+   #admin-root .text-gray-800,
+   #admin-root .text-gray-700 {
+     color: var(--theme-text-primary) !important;
+   }
+   #admin-root .text-slate-600,
+   #admin-root .text-slate-500,
+   #admin-root .text-gray-600,
+   #admin-root .text-gray-500 {
+     color: var(--theme-text-secondary) !important;
+   }
+   #admin-root .text-slate-400,
+   #admin-root .text-gray-400 {
+     color: var(--theme-text-secondary) !important;
+     opacity: 0.8;
    }
   }
 

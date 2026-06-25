@@ -75,6 +75,7 @@ import fr from '@/lib/locales/fr.json';
 import en from '@/lib/locales/en.json';
 import { getQuoteStats, updateStatsOnStatusChange, updateStatsOnDelete, resyncStats } from '@/lib/statsService';
 import { getSmtpSettings as getSmtpSettingsDb, updateSmtpSettings as updateSmtpSettingsDb, getSmtpTransport } from '@/lib/smtpService';
+import { getPayPalSettings as getPayPalSettingsDb, updatePayPalSettings as updatePayPalSettingsDb } from '@/lib/paypal-settings-service';
 
 type Locale = 'fr' | 'en';
 const translations = { fr, en };
@@ -3111,6 +3112,18 @@ export async function updateSmtpSettings(data: any) {
   return res;
 }
 
+
+export async function getPayPalSettings() {
+  return await getPayPalSettingsDb();
+}
+
+export async function updatePayPalSettings(data: any) {
+  const res = await updatePayPalSettingsDb(data);
+  if (res.success) {
+    revalidatePath('/admin/settings', 'layout');
+  }
+  return res;
+}
 
 // --- Dedicated Sidebar Config Action (for partial updates: order + logo) ---
 

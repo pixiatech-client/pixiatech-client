@@ -4,12 +4,12 @@ import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { getSettings } from '@/app/admin/actions';
 import type { Settings as AppSettings } from '@/lib/types';
 import { motion } from 'framer-motion';
-import { Loader2, Settings, Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap, PenTool } from 'lucide-react';
+import { Loader2, Settings,   Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap, PenTool, CreditCard } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useAdminT } from '@/hooks/useAdminT';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content' | 'signature';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content' | 'signature' | 'paypal';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -28,6 +28,7 @@ const EmailVerificationContent = lazy(() => import('../email-verification/page')
 const FlowContent = lazy(() => import('../flow/page'));
 const ThemesContent = lazy(() => import('../themes/page'));
 const SignatureContent = lazy(() => import('../signature/page'));
+const PayPalContent = lazy(() => import('../paypal/page'));
 
 function LoadingFallback() {
     return (
@@ -56,6 +57,7 @@ const tabsConfigDefs = [
     { id: 'email-verification' as SettingsSection, labelKey: 'Email Verification', icon: ShieldCheck },
     { id: 'flow' as SettingsSection, labelKey: 'Parcours client', icon: Zap },
     { id: 'signature' as SettingsSection, labelKey: 'Signature & Compteur', icon: PenTool },
+    { id: 'paypal' as SettingsSection, labelKey: 'PayPal', icon: CreditCard },
 ];
 
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
@@ -132,6 +134,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <FlowContent />;
             case 'signature':
                 return <SignatureContent />;
+            case 'paypal':
+                return <PayPalContent />;
             default:
                 return <GeneralContent />;
         }
@@ -150,6 +154,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
             'email-verification': 'text-indigo-500',
             signature: 'text-rose-500',
             flow: 'text-amber-500',
+            paypal: 'text-blue-600',
             pdf: 'text-orange-500',
             software: 'text-slate-500',
             'main-doeuvre': 'text-emerald-500',
@@ -170,6 +175,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
             'email-verification': 'bg-indigo-100/70',
             signature: 'bg-rose-100/70',
             flow: 'bg-amber-100/70',
+            paypal: 'bg-blue-100/70',
             pdf: 'bg-orange-100/70',
             software: 'bg-slate-100/70',
             'main-doeuvre': 'bg-emerald-100/70',
@@ -178,7 +184,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
     };
 
     return (
-        <div className="bg-[#f5f6f8] flex flex-col lg:flex-row gap-4 lg:gap-8 lg:items-start pt-2 lg:pt-4 min-h-screen">
+        <div className="bg-theme-app flex flex-col lg:flex-row gap-4 lg:gap-8 lg:items-start pt-2 lg:pt-4 min-h-screen">
             <div className={cn("w-full lg:w-72 flex-shrink-0 hidden lg:block")}>
                 <Tabs 
                     value={currentSection} 
@@ -198,7 +204,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                                         "w-full flex items-center gap-3 px-4 rounded-2xl h-[60px] transition-all duration-300 text-left",
                                         isSelected
                                             ? "bg-gradient-to-r from-[#5B4FE8] to-[#6A5BFF] shadow-xl shadow-indigo-500/20"
-                                            : "bg-white shadow-lg hover:shadow-xl"
+                                            : "bg-theme-card shadow-lg hover:shadow-xl"
                                     )}
                                 >
                                     <div className={cn(
@@ -226,7 +232,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
             <div className="flex-1 min-w-0 flex flex-col pt-2 lg:pt-0">
                 {!isMobile && (
                     <div className="mb-6 md:mb-8 px-4 lg:px-0">
-                        <h2 className="text-2xl md:text-3xl font-black text-[#1a1d21]">
+                        <h2 className="text-2xl md:text-3xl font-black text-theme-text">
                             {tabsConfig.find(tab => tab.id === currentSection)?.label || ''}
                         </h2>
                     </div>
