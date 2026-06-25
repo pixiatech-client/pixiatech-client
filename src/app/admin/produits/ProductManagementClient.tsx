@@ -4056,6 +4056,10 @@ export default function ProductManagementClient() {
     }
     setPrevActivePage(activePage);
     setActivePage(newPage);
+    // Clear editing product when navigating away from the form
+    if (newPage !== 'produit') {
+      setEditingProduct(null);
+    }
   };
 
   const [products, setProducts] = useState<any[]>([]);
@@ -5702,7 +5706,7 @@ export default function ProductManagementClient() {
                         type="text"
                         value={charPanelSearch}
                         onChange={e => setCharPanelSearch(e.target.value)}
-                        placeholder="Rechercher une caractéristique..."
+                        placeholder={t('admin.productManagement.searchCharacteristic')}
                         className="w-full pl-10 pr-10 py-3 text-sm border-2 border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white transition-all text-slate-800 placeholder:text-slate-400 font-bold"
                       />
                       <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -5718,7 +5722,7 @@ export default function ProductManagementClient() {
                         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
                           <Settings2 className="w-8 h-8 text-slate-200" />
                         </div>
-                        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">All characteristics already added</p>
+                        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">{t('admin.productManagement.allAlreadyAdded')}</p>
                       </div>
                     ) : (
                       <>
@@ -5726,7 +5730,7 @@ export default function ProductManagementClient() {
                         {filteredAvailableChars.length > 0 && (
                           <div className="flex items-center justify-between mb-4 px-1">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                              {filteredAvailableChars.length} available
+                              {t('admin.productManagement.nAvailable', { n: filteredAvailableChars.length })}
                             </p>
                             <button
                               onClick={() => {
@@ -5744,7 +5748,7 @@ export default function ProductManagementClient() {
                               }}
                               className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 transition-colors"
                             >
-                              {filteredAvailableChars.every(c => tempSelectedChars.includes(c.id)) ? 'Deselect all' : 'Select all'}
+                              {filteredAvailableChars.every(c => tempSelectedChars.includes(c.id)) ? t('admin.productManagement.deselectAll') : t('admin.productManagement.selectAll')}
                             </button>
                           </div>
                         )}
@@ -5780,7 +5784,7 @@ export default function ProductManagementClient() {
                                     {char.name}
                                   </div>
                                   <div className={cn("text-[10px] font-bold", isSelected ? "text-theme-sidebar-active-text/40" : "text-slate-400")}>
-                                    {char.options.length} options available
+                                    {t('admin.productManagement.optionsAvailable', { n: char.options.length })}
                                   </div>
                                 </div>
                                 {isSelected && (
@@ -5799,14 +5803,14 @@ export default function ProductManagementClient() {
                   {/* Footer */}
                   <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      {tempSelectedChars.length} selected
+                      {t('admin.productManagement.nSelected', { n: tempSelectedChars.length })}
                     </div>
                     <div className="flex gap-3">
                       <button
                         onClick={() => setShowCharPanel(false)}
                         className="px-6 h-12 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-900 transition-colors"
                       >
-                        Cancel
+                        {t('admin.productManagement.cancel')}
                       </button>
                       <button
                         disabled={tempSelectedChars.length === 0}
@@ -5821,7 +5825,7 @@ export default function ProductManagementClient() {
                         }}
                         className="px-8 h-12 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-black/20 hover:opacity-90 transition-all disabled:opacity-30 flex items-center gap-2"
                       >
-                        <Plus className="w-4 h-4 text-theme-sidebar-active-text" /> Add to sheet
+                        <Plus className="w-4 h-4 text-theme-sidebar-active-text" /> {t('admin.productManagement.addToSheet')}
                       </button>
                     </div>
                   </div>
