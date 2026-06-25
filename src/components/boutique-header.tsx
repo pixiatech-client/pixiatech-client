@@ -115,7 +115,7 @@ export function BoutiqueHeader() {
     <header className="fixed top-0 z-30 w-full h-14 bg-white/80 backdrop-blur-xl border-b border-gray-100/80 shadow-sm">
       <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-14 h-full flex items-center justify-between">
         {/* Left: navigation buttons */}
-        <nav className="flex items-center gap-1.5 -ml-[100px]">
+        <nav className="flex items-center gap-1.5">
           <Link
             href="/"
             className={cn(
@@ -124,7 +124,7 @@ export function BoutiqueHeader() {
             )}
           >
             <Home size={14} />
-            Accueil
+            {t('header.home')}
           </Link>
           <Link
             href="/boutique"
@@ -134,7 +134,7 @@ export function BoutiqueHeader() {
             )}
           >
             <Store size={14} />
-            Boutique
+            {t('header.shop')}
           </Link>
         </nav>
 
@@ -155,8 +155,8 @@ export function BoutiqueHeader() {
           <Link
             href="/admin/login"
             className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
-            aria-label="Administration"
-            title="Administration"
+            aria-label={t('header.admin')}
+            title={t('header.admin')}
           >
             <Shield size={14} />
           </Link>
@@ -180,7 +180,7 @@ export function BoutiqueHeader() {
                     className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <Package size={14} />
-                    Mes commandes
+                    {t('header.myOrders')}
                   </Link>
                   <form action="/api/boutique/logout" method="POST">
                     <button
@@ -188,7 +188,7 @@ export function BoutiqueHeader() {
                       className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
                     >
                       <LogOut size={14} />
-                      Déconnexion
+                      {t('header.logout')}
                     </button>
                   </form>
                 </div>
@@ -201,10 +201,10 @@ export function BoutiqueHeader() {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-all duration-200"
               >
                 <User size={14} />
-                Espace membre
+                {t('header.memberArea')}
               </button>
               {createOpen && (
-                <div className="absolute right-0 top-full mt-2 w-[480px] bg-white rounded-2xl shadow-2xl border border-gray-100/80 z-50 overflow-hidden" ref={dropdownRef}>
+                <div className="absolute right-0 top-full mt-2 w-[calc(100vw-32px)] sm:w-[480px] bg-white rounded-2xl shadow-2xl border border-gray-100/80 z-50 overflow-hidden" ref={dropdownRef}>
                   {/* Tabs */}
                   <div className="flex bg-gray-50/50 p-1.5 m-1.5 rounded-xl gap-1">
                     <button
@@ -216,7 +216,7 @@ export function BoutiqueHeader() {
                       }`}
                     >
                       <User size={14} className="inline mr-2 -mt-0.5" />
-                      Membre
+                      {t('header.member')}
                     </button>
                     <button
                       onClick={() => setEspaceTab('revendeur')}
@@ -227,7 +227,7 @@ export function BoutiqueHeader() {
                       }`}
                     >
                       <Store size={14} className="inline mr-2 -mt-0.5" />
-                      Revendeur
+                      {t('header.reseller')}
                     </button>
                   </div>
 
@@ -241,17 +241,17 @@ export function BoutiqueHeader() {
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
-                          <p className="text-base font-semibold text-gray-900 mb-1.5">Email envoyé !</p>
+                          <p className="text-base font-semibold text-gray-900 mb-1.5">{t('header.emailSent')}</p>
                           <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-                            Vérifiez votre boîte de réception. Le lien de connexion expire sous 15 minutes.
+                            {t('header.emailSentDesc')}
                           </p>
                         </div>
                       ) : (
                         <>
                           <div className="flex items-baseline justify-between mb-5">
                             <div>
-                              <p className="text-sm font-semibold text-gray-900">Connexion membre</p>
-                              <p className="text-[11px] text-gray-400 mt-0.5">Accédez à vos commandes et votre espace personnel</p>
+                              <p className="text-sm font-semibold text-gray-900">{t('header.memberLogin')}</p>
+                              <p className="text-[11px] text-gray-400 mt-0.5">{t('header.memberLoginDesc')}</p>
                             </div>
                           </div>
 
@@ -260,7 +260,7 @@ export function BoutiqueHeader() {
                             <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                             <input
                               type="email"
-                              placeholder="Votre adresse email"
+                                  placeholder={t('header.emailPlaceholder')}
                               value={memberEmail}
                               onChange={e => setMemberEmail(e.target.value)}
                               className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-gray-50/30 placeholder:text-gray-300"
@@ -284,11 +284,11 @@ export function BoutiqueHeader() {
                                   <div className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
                                     <Key size={13} className="text-gray-500" />
                                   </div>
-                                  <span className="text-xs font-semibold text-gray-800">Mot de passe</span>
+                                  <span className="text-xs font-semibold text-gray-800">{t('header.password')}</span>
                                 </div>
                                 <input
                                   type="password"
-                                  placeholder="Saisir votre mot de passe"
+                                  placeholder={t('header.passwordPlaceholder')}
                                   value={memberPassword}
                                   onChange={e => setMemberPassword(e.target.value)}
                                   className="w-full px-2.5 py-2 border border-gray-100 rounded-lg text-xs bg-gray-50/30 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-300 transition-all placeholder:text-gray-300 mb-3"
@@ -304,9 +304,9 @@ export function BoutiqueHeader() {
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                       </svg>
-                                      Connexion...
+                                      {t('header.connecting')}
                                     </span>
-                                  ) : 'Se connecter'}
+                                  ) : t('header.memberLogin')}
                                 </button>
                               </div>
                             </form>
@@ -320,10 +320,10 @@ export function BoutiqueHeader() {
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                                     </svg>
                                   </div>
-                                  <span className="text-xs font-semibold text-gray-800">Lien magique</span>
+                                  <span className="text-xs font-semibold text-gray-800">{t('header.magicLink')}</span>
                                 </div>
                                 <p className="text-[10.5px] text-gray-400 leading-relaxed flex-1 mb-3">
-                                  Recevez un lien par email. Pas de mot de passe requis.
+                                  {t('header.magicLinkDesc')}
                                 </p>
                                 <button
                                   type="submit"
@@ -336,9 +336,9 @@ export function BoutiqueHeader() {
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                       </svg>
-                                      Envoi...
+                                      {t('header.sending')}
                                     </span>
-                                  ) : 'Envoyer le lien'}
+                                  ) : t('header.sendLink')}
                                 </button>
                               </div>
                             </form>
@@ -355,16 +355,16 @@ export function BoutiqueHeader() {
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
-                          <p className="text-base font-semibold text-gray-900 mb-1.5">Merci de votre intérêt !</p>
+                          <p className="text-base font-semibold text-gray-900 mb-1.5">{t('header.thanksInterest')}</p>
                           <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-                            Nous vous tiendrons informé dès l&apos;ouverture de l&apos;espace revendeur.
+                            {t('header.resellerInterestDesc')}
                           </p>
                         </div>
                       ) : (
                         <div>
                           <div className="mb-5">
-                            <p className="text-sm font-semibold text-gray-900">Devenir revendeur</p>
-                            <p className="text-[11px] text-gray-400 mt-0.5">Programme de partenariat et revente de nos solutions</p>
+                            <p className="text-sm font-semibold text-gray-900">{t('header.becomeReseller')}</p>
+                            <p className="text-[11px] text-gray-400 mt-0.5">{t('header.resellerProgram')}</p>
                           </div>
 
                           <div className="bg-amber-50/50 border border-amber-100/60 rounded-xl p-4 mb-5">
@@ -375,9 +375,9 @@ export function BoutiqueHeader() {
                                 </svg>
                               </div>
                               <div>
-                                <p className="text-[11px] font-semibold text-amber-800 mb-0.5">Espace en cours de déploiement</p>
+                                <p className="text-[11px] font-semibold text-amber-800 mb-0.5">{t('header.resellerComingSoon')}</p>
                                 <p className="text-[10.5px] text-amber-600/80 leading-relaxed">
-                                  L&apos;inscription revendeur n&apos;est pas encore ouverte. Laissez-nous votre email, nous vous préviendrons dès le lancement.
+                                  {t('header.resellerNotOpen')}
                                 </p>
                               </div>
                             </div>
@@ -389,7 +389,7 @@ export function BoutiqueHeader() {
                                 <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                                 <input
                                   type="email"
-                                  placeholder="Votre adresse email"
+                              placeholder={t('header.emailPlaceholder')}
                                   value={resellerEmail}
                                   onChange={e => setResellerEmail(e.target.value)}
                                   required
@@ -407,9 +407,9 @@ export function BoutiqueHeader() {
                                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                     </svg>
-                                    Envoi...
+                                    {t('header.sending')}
                                   </span>
-                                ) : "M'informer"}
+                                ) : t('header.notifyMe')}
                               </button>
                             </div>
                             {resellerError && (
@@ -434,7 +434,7 @@ export function BoutiqueHeader() {
           <Link
             href="/boutique/panier"
             className="relative flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
-            aria-label="Panier"
+            aria-label={t('header.cart')}
           >
             <ShoppingBag size={16} />
             {itemCount > 0 && (

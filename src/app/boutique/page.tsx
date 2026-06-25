@@ -10,6 +10,7 @@ import { fetchBoutiqueProducts } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
 import { useProfile } from '@/contexts/ProfileContext';
 import { PriceLabel } from '@/components/B2BProfileSelector';
+import { useI18n } from '@/lib/i18n';
 
 function FilterDrawer({ open, onClose, categories, selectedCategories, onCategoriesChange, minRating, onMinRatingChange, transactionType, onTransactionTypeChange, onReset, activeCount }: {
   open: boolean; onClose: () => void;
@@ -18,6 +19,7 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
   transactionType: 'all' | 'sale' | 'rental'; onTransactionTypeChange: (t: 'all' | 'sale' | 'rental') => void;
   onReset: () => void; activeCount: number;
 }) {
+  const { t } = useI18n();
   return (
     <AnimatePresence>
       {open && (
@@ -31,9 +33,9 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className="fixed inset-0 z-50 flex items-center justify-end pointer-events-none"
           >
-            <div className="pointer-events-auto w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-gray-200/70 overflow-hidden flex flex-col h-[760px]" onClick={(e) => e.stopPropagation()}>
+            <div className="pointer-events-auto w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-gray-200/70 overflow-hidden flex flex-col max-h-[85dvh] h-auto" onClick={(e) => e.stopPropagation()}>
               <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
-                <h2 className="font-bold text-gray-900">Filtres</h2>
+                <h2 className="font-bold text-gray-900">{t('boutique.filters')}</h2>
                 <button onClick={onClose} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
                   <X size={16} className="text-gray-500" />
                 </button>
@@ -41,7 +43,7 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
 
               <div className="p-6 space-y-7 max-h-[60vh] overflow-y-auto">
                 <div>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Catégories</h3>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.categories')}</h3>
                   <div className="space-y-2">
                     {categories.map((cat) => (
                       <label key={cat} className="flex items-center gap-3 cursor-pointer group">
@@ -64,12 +66,12 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                 </div>
 
                 <div>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Type</h3>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.type')}</h3>
                   <div className="flex gap-2">
                     {[
-                      { value: 'all' as const, label: 'Toutes' },
-                      { value: 'sale' as const, label: 'Vente' },
-                      { value: 'rental' as const, label: 'Location' },
+                      { value: 'all' as const, label: t('boutique.all') },
+                      { value: 'sale' as const, label: t('boutique.sale') },
+                      { value: 'rental' as const, label: t('boutique.rental') },
                     ].map((opt) => (
                       <button
                         key={opt.value}
@@ -87,7 +89,7 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                 </div>
 
                 <div>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Note minimale</h3>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.minRating')}</h3>
                   <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -112,11 +114,11 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                 {activeCount > 0 && (
                   <button onClick={onReset} className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all">
                     <RotateCcw size={13} />
-                    Réinitialiser
+                    {t('boutique.reset')}
                   </button>
                 )}
                 <button onClick={onClose} className={`${activeCount > 0 ? 'flex-1' : 'w-full'} bg-gray-900 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-all`}>
-                  Voir les résultats
+                  {t('boutique.viewResults')}
                 </button>
               </div>
             </div>
@@ -134,6 +136,7 @@ export default function BoutiquePage() {
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
   const { showHT, showTTC } = useProfile();
+  const { t } = useI18n();
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'populaires' | 'nouveautes'>('all');
@@ -200,7 +203,7 @@ export default function BoutiquePage() {
   const handleQuickAdd = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
     addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' });
-    toast.success(`${product.name} ajouté au panier`);
+    toast.success(t('boutique.addedToCart', { name: product.name }));
   };
 
   const resetFilters = () => {
@@ -228,9 +231,9 @@ export default function BoutiquePage() {
       <div className="flex items-center justify-between px-6 md:px-10 lg:px-14 py-4 border-b border-gray-200/40">
         <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1.5 rounded-full">
           {[
-            { id: 'all', label: 'Produits' },
-            { id: 'populaires', label: 'Populaires' },
-            { id: 'nouveautes', label: 'Nouveautés' },
+            { id: 'all', label: t('boutique.products') },
+            { id: 'populaires', label: t('boutique.popular') },
+            { id: 'nouveautes', label: t('boutique.newArrivals') },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -257,9 +260,9 @@ export default function BoutiquePage() {
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
               className="appearance-none bg-white border border-transparent hover:border-gray-200 rounded-full px-4 py-2 pr-8 text-xs font-medium text-gray-700 shadow-sm focus:ring-4 focus:ring-gray-100 transition-all duration-300 cursor-pointer"
             >
-              <option value="recent">Populaires</option>
-              <option value="price-asc">Prix : croissant</option>
-              <option value="price-desc">Prix : décroissant</option>
+              <option value="recent">{t('boutique.sortPopular')}</option>
+              <option value="price-asc">{t('boutique.sortPriceAsc')}</option>
+              <option value="price-desc">{t('boutique.sortPriceDesc')}</option>
             </select>
             <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none group-hover:translate-y-0.5 transition-transform">
               <ChevronDown size={13} className="text-gray-400" />
@@ -284,10 +287,10 @@ export default function BoutiquePage() {
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-gray-400 text-sm font-medium mb-2">Aucun produit trouvé</p>
+            <p className="text-gray-400 text-sm font-medium mb-2">{t('boutique.noProductsFound')}</p>
             {activeFilterCount > 0 && (
               <button onClick={resetFilters} className="text-xs text-gray-500 underline hover:text-gray-900 transition-colors">
-                Réinitialiser les filtres
+                {t('boutique.resetFilters')}
               </button>
             )}
           </div>
@@ -344,7 +347,7 @@ export default function BoutiquePage() {
                                 badge === 'nouveaute' ? 'text-blue-400' :
                                 'text-red-400'
                               }`}>
-                                {badge === 'populaire' ? 'Populaire' : badge === 'nouveaute' ? 'Nouveauté' : 'Promotion'}
+                                {badge === 'populaire' ? t('boutique.badgePopular') : badge === 'nouveaute' ? t('boutique.badgeNew') : t('boutique.badgePromotion')}
                               </span>
                             </span>
                           ))}
@@ -357,7 +360,7 @@ export default function BoutiquePage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div>
-                        <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">{product.price}{'\u20AC'}</span>
+                        <span className="text-sm font-semibold text-gray-900 truncate max-w-[100px]">{product.price}{'\u20AC'}</span>
                         <PriceLabel />
                       </div>
                       {product.oldPrice && product.oldPrice > product.price && (

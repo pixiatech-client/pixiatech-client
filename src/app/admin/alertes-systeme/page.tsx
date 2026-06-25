@@ -58,7 +58,7 @@ export default function AlertesSystemePage() {
       const data = await res.json();
       setMessages(Array.isArray(data) ? data : []);
     } catch {
-      toast.error('Erreur de chargement');
+      toast.error(t('admin.systemAlerts.loadError'));
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ export default function AlertesSystemePage() {
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      toast.error('Le titre est requis');
+      toast.error(t('admin.systemAlerts.titleRequired'));
       return;
     }
 
@@ -106,7 +106,7 @@ export default function AlertesSystemePage() {
           const err = await res.json();
           throw new Error(err.error);
         }
-        toast.success('Message mis à jour');
+        toast.success(t('admin.systemAlerts.updated'));
       } else {
         const res = await fetch('/api/system-messages', {
           method: 'POST',
@@ -117,7 +117,7 @@ export default function AlertesSystemePage() {
           const err = await res.json();
           throw new Error(err.error);
         }
-        toast.success('Message créé');
+        toast.success(t('admin.systemAlerts.created'));
       }
       setShowForm(false);
       setEditingId(null);
@@ -135,7 +135,7 @@ export default function AlertesSystemePage() {
         const err = await res.json();
         throw new Error(err.error);
       }
-      toast.success('Message supprimé');
+      toast.success(t('admin.systemAlerts.deleted'));
       setDeleteId(null);
       loadMessages();
     } catch (err: any) {
@@ -152,16 +152,16 @@ export default function AlertesSystemePage() {
       });
       loadMessages();
     } catch {
-      toast.error('Erreur');
+      toast.error(t('common.error'));
     }
   };
 
   const locationLabel = (msg: SystemMessage) => {
     const labels: string[] = [];
-    if (msg.showHomepage) labels.push('Accueil');
-    if (msg.showBoutique) labels.push('Boutique');
-    if (msg.showClientArea) labels.push('Espace client');
-    return labels.join(', ') || 'Aucun';
+    if (msg.showHomepage) labels.push(t('admin.systemAlerts.locationHomepage'));
+    if (msg.showBoutique) labels.push(t('admin.systemAlerts.locationShop'));
+    if (msg.showClientArea) labels.push(t('admin.systemAlerts.locationClientArea'));
+    return labels.join(', ') || t('admin.systemAlerts.none');
   };
 
   const typeInfo = (type: string) => TYPE_OPTIONS.find(o => o.value === type) || TYPE_OPTIONS[0];
@@ -180,26 +180,26 @@ export default function AlertesSystemePage() {
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-10">
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Alertes système</h1>
-            <p className="mt-1 text-sm opacity-60">Gérez les messages d'information affichés sur la plateforme</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{t('admin.systemAlerts.title')}</h1>
+            <p className="mt-1 text-sm opacity-60">{t('admin.systemAlerts.subtitle')}</p>
           </div>
           <button
             onClick={openCreate}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20"
           >
             <Plus className="w-4 h-4" />
-            Nouveau message
+            {t('admin.systemAlerts.newMessage')}
           </button>
         </div>
-
+        
         <div className="space-y-3">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-24 text-center">
               <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[2rem] bg-white text-gray-200 shadow-inner">
                 <Bell className="h-10 w-10" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900">Aucune alerte système</h3>
-              <p className="mt-2 text-sm text-gray-500">Créez votre première alerte système</p>
+              <h3 className="text-xl font-bold text-gray-900">{t('admin.systemAlerts.noAlerts')}</h3>
+              <p className="mt-2 text-sm text-gray-500">{t('admin.systemAlerts.createFirst')}</p>
             </div>
           )}
 
@@ -221,7 +221,7 @@ export default function AlertesSystemePage() {
                       <h3 className="font-bold text-gray-900 text-sm">{msg.title}</h3>
                       {isPermanent && (
                         <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">
-                          Permanent
+                          {t('admin.systemAlerts.permanent')}
                         </span>
                       )}
                       {msg.permanent && (
@@ -234,15 +234,15 @@ export default function AlertesSystemePage() {
                     <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
                       <span className="flex items-center gap-1">
                         <Home className="w-3 h-3" />
-                        {msg.showHomepage ? 'Oui' : 'Non'}
+                        {msg.showHomepage ? t('common.yes') : t('common.no')}
                       </span>
                       <span className="flex items-center gap-1">
                         <Store className="w-3 h-3" />
-                        {msg.showBoutique ? 'Oui' : 'Non'}
+                        {msg.showBoutique ? t('common.yes') : t('common.no')}
                       </span>
                       <span className="flex items-center gap-1">
                         <User className="w-3 h-3" />
-                        {msg.showClientArea ? 'Oui' : 'Non'}
+                        {msg.showClientArea ? t('common.yes') : t('common.no')}
                       </span>
                     </div>
                   </div>
@@ -258,7 +258,7 @@ export default function AlertesSystemePage() {
                     <button
                       onClick={() => setPreviewMsg(msg)}
                       className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Aperçu"
+                      title={t('common.preview')}
                     >
                       <Eye className="w-4 h-4" />
                     </button>
@@ -266,7 +266,7 @@ export default function AlertesSystemePage() {
                     <button
                       onClick={() => openEdit(msg)}
                       className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-blue-600 transition-colors"
-                      title="Modifier"
+                      title={t('common.edit')}
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -275,7 +275,7 @@ export default function AlertesSystemePage() {
                       <button
                         onClick={() => setDeleteId(msg.id)}
                         className="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
-                        title="Supprimer"
+                        title={t('common.delete')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -295,7 +295,7 @@ export default function AlertesSystemePage() {
               <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 pointer-events-auto max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-lg font-bold text-gray-900">
-                    {editingId ? 'Modifier le message' : 'Nouveau message'}
+                    {editingId ? t('admin.systemAlerts.editMessage') : t('admin.systemAlerts.newMessage')}
                   </h2>
                   <button onClick={() => setShowForm(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
                     <X className="w-5 h-5" />
@@ -304,7 +304,7 @@ export default function AlertesSystemePage() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Type</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('admin.systemAlerts.type')}</label>
                     <div className="grid grid-cols-2 gap-2">
                       {TYPE_OPTIONS.map(opt => {
                         const isActive = form.type === opt.value;
@@ -327,7 +327,7 @@ export default function AlertesSystemePage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Icône</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('admin.systemAlerts.icon')}</label>
                     <div className="flex flex-wrap gap-2">
                       {ICON_OPTIONS.map(opt => {
                         const Icon = getTypeIcon(opt.value);
@@ -351,29 +351,29 @@ export default function AlertesSystemePage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Titre</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('admin.systemAlerts.title')}</label>
                     <input
                       type="text"
                       value={form.title}
                       onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500/50 outline-none"
-                      placeholder="Titre du message"
+                      placeholder={t('admin.systemAlerts.titlePlaceholder')}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Contenu</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('admin.systemAlerts.content')}</label>
                     <textarea
                       value={form.content}
                       onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500/50 outline-none resize-none min-h-[80px]"
-                      placeholder="Contenu du message"
+                      placeholder={t('admin.systemAlerts.contentPlaceholder')}
                       rows={3}
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Couleur personnalisée (optionnelle)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('admin.systemAlerts.customColor')}</label>
                     <div className="flex items-center gap-3">
                       <input
                         type="color"
@@ -400,7 +400,7 @@ export default function AlertesSystemePage() {
                   </div>
 
                   <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Emplacements d'affichage</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('admin.systemAlerts.displayLocations')}</label>
                     <div className="space-y-2">
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input
@@ -409,10 +409,10 @@ export default function AlertesSystemePage() {
                           onChange={e => setForm(f => ({ ...f, showHomepage: e.target.checked }))}
                           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="flex items-center gap-2 text-sm text-gray-700">
-                          <Home className="w-4 h-4 text-gray-400" />
-                          Page d'accueil
-                        </span>
+                          <span className="flex items-center gap-2 text-sm text-gray-700">
+                            <Home className="w-4 h-4 text-gray-400" />
+                            {t('admin.systemAlerts.homepage')}
+                          </span>
                       </label>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input
@@ -421,10 +421,10 @@ export default function AlertesSystemePage() {
                           onChange={e => setForm(f => ({ ...f, showBoutique: e.target.checked }))}
                           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="flex items-center gap-2 text-sm text-gray-700">
-                          <Store className="w-4 h-4 text-gray-400" />
-                          Boutique
-                        </span>
+                          <span className="flex items-center gap-2 text-sm text-gray-700">
+                            <Store className="w-4 h-4 text-gray-400" />
+                            {t('admin.systemAlerts.boutique')}
+                          </span>
                       </label>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input
@@ -433,10 +433,10 @@ export default function AlertesSystemePage() {
                           onChange={e => setForm(f => ({ ...f, showClientArea: e.target.checked }))}
                           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="flex items-center gap-2 text-sm text-gray-700">
-                          <User className="w-4 h-4 text-gray-400" />
-                          Espace client
-                        </span>
+                          <span className="flex items-center gap-2 text-sm text-gray-700">
+                            <User className="w-4 h-4 text-gray-400" />
+                            {t('admin.systemAlerts.clientArea')}
+                          </span>
                       </label>
                     </div>
                   </div>
@@ -449,7 +449,7 @@ export default function AlertesSystemePage() {
                         onChange={e => setForm(f => ({ ...f, active: e.target.checked }))}
                         className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
                       />
-                      <span className="text-sm font-medium text-gray-700">Actif</span>
+                      <span className="text-sm font-medium text-gray-700">{t('admin.systemAlerts.active')}</span>
                     </label>
                   </div>
 
@@ -458,14 +458,14 @@ export default function AlertesSystemePage() {
                       onClick={() => setShowForm(false)}
                       className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-all"
                     >
-                      Annuler
+                      {t('common.cancel')}
                     </button>
                     <button
                       onClick={handleSave}
                       className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all active:scale-[0.98] shadow-lg"
                     >
                       <Check className="w-4 h-4 inline mr-1.5" />
-                      {editingId ? 'Mettre à jour' : 'Créer'}
+                      {editingId ? t('admin.systemAlerts.update') : t('admin.systemAlerts.create')}
                     </button>
                   </div>
                 </div>
@@ -481,7 +481,7 @@ export default function AlertesSystemePage() {
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
               <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 pointer-events-auto">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-gray-900">Aperçu</h2>
+                  <h2 className="text-lg font-bold text-gray-900">{t('common.preview')}</h2>
                   <button onClick={() => setPreviewMsg(null)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
                     <X className="w-5 h-5" />
                   </button>
@@ -510,9 +510,9 @@ export default function AlertesSystemePage() {
         <ConfirmDialog
           open={!!deleteId}
           onOpenChange={(o) => { if (!o) setDeleteId(null); }}
-          title="Supprimer le message"
-          description="Êtes-vous sûr de vouloir supprimer ce message ? Cette action est irréversible."
-          confirmText="Supprimer"
+          title={t('admin.systemAlerts.deleteTitle')}
+          description={t('admin.systemAlerts.deleteConfirm')}
+          confirmText={t('common.delete')}
           headerColor="bg-red-600"
           confirmButtonClass="bg-red-600 hover:bg-red-700"
           icon={<Trash2 className="w-6 h-6 text-white" />}

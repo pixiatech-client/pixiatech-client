@@ -12,6 +12,7 @@ import type { Product, ProductVariant } from '@/lib/boutique-data';
 import BoutiqueRentalFlow from '@/components/BoutiqueRentalFlow';
 import { useProfile } from '@/contexts/ProfileContext';
 import { PriceLabel } from '@/components/B2BProfileSelector';
+import { useI18n } from '@/lib/i18n';
 
 const specIcons: Record<string, { icon: typeof Maximize2; color: string }> = {
   'surface': { icon: Maximize2, color: 'blue' },
@@ -144,6 +145,7 @@ export default function ProductDetailPage() {
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
   const { showHT, showTTC } = useProfile();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!params.id) return;
@@ -205,7 +207,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (!product) return;
     addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' }, quantity);
-    toast.success(`${product.name} ajouté au panier`);
+    toast.success(t('product.addedToCart', { name: product.name }));
   };
 
   const handleBuyNow = () => {
@@ -231,8 +233,8 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F5F5' }}>
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Produit non trouvé</h1>
-          <button onClick={() => router.push('/boutique')} className="text-blue-600 hover:underline">Retour à la boutique</button>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('product.notFound')}</h1>
+          <button onClick={() => router.push('/boutique')} className="text-blue-600 hover:underline">{t('product.backToShop')}</button>
         </div>
       </div>
     );
@@ -332,11 +334,64 @@ export default function ProductDetailPage() {
               )}
             </section>
 
+            {/* Mobile purchase info */}
+            <div className="lg:hidden flex flex-col mb-6 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <span className="text-xs font-bold uppercase tracking-widest text-blue-500 mb-2">{product.category}</span>
+              <h1 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h1>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} size={16} className={star <= Math.round(product.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-300'} />
+                  ))}
+                </div>
+                <span className="text-xs text-gray-400">({product.reviews})</span>
+              </div>
+              <div className="mb-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
+                    <span className="text-base text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
+                  )}
+                  <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
+                  {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">-{Math.round((1 - effectivePrice / effectiveOldPrice) * 100)}%</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                  {(!showHT && !showTTC) && (
+                    <><span>HT: {formatPrice(effectivePrice / (1 + taxRate / 100))}</span><span>TTC: {formatPrice(effectivePrice)}</span></>
+                  )}
+                  {showHT && <span>Prix HT: {formatPrice(effectivePrice / (1 + taxRate / 100))}</span>}
+                  {showTTC && <span>TTC: {formatPrice(effectivePrice)}</span>}
+                </div>
+              </div>
+              {displayVariants.length > 0 && (
+                <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide mb-4">
+                  {displayVariants.map((v) => (
+                    <button key={v.name} onClick={() => { setSelectedVariant(v); const imgIdx = images.indexOf(v.image); if (imgIdx >= 0) setSelectedImage(imgIdx); }}
+                      className={`shrink-0 px-3 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-600 hover:border-gray-400'}`}>
+                      {v.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center border border-gray-200/70 rounded-xl bg-white">
+                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3 py-2 hover:bg-gray-50 transition-colors rounded-xl"><Minus size={14} className="text-gray-500" /></button>
+                  <span className="w-10 text-center text-sm font-semibold text-gray-900">{quantity}</span>
+                  <button onClick={() => setQuantity(quantity + 1)} className="px-3 py-2 hover:bg-gray-50 transition-colors rounded-xl"><Plus size={14} className="text-gray-500" /></button>
+                </div>
+                <button onClick={handleAddToCart} className="flex-1 bg-gray-900 text-white py-2.5 px-4 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
+                  <ShoppingBag size={15} /> {t('product.addToCart')}
+                </button>
+              </div>
+              <button onClick={handleBuyNow} className="w-full mt-2 border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all">{t('product.buyNow')}</button>
+            </div>
+
             <div className="mt-20 border-t border-gray-200/40 pt-12 space-y-16">
               <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Description D&eacute;taill&eacute;e</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('product.description')}</h2>
                 {product.descriptionDetaillee?.includes('<') ? (
-                  <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: product.descriptionDetaillee }} />
+                  <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed overflow-x-auto" dangerouslySetInnerHTML={{ __html: product.descriptionDetaillee }} />
                 ) : (
                   <p className="text-gray-600 leading-relaxed">{product.descriptionDetaillee || product.longDescription}</p>
                 )}
@@ -347,7 +402,7 @@ export default function ProductDetailPage() {
                   <div className="p-8 pb-0 flex items-center justify-between mb-8">
                     <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
                       <Settings2 size={16} className="text-slate-400" />
-                      Sp&eacute;cifications Techniques
+                      {t('product.technicalSpecs')}
                     </h4>
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(34,197,94,0.6)]" />
                   </div>
@@ -381,11 +436,11 @@ export default function ProductDetailPage() {
             <nav className="text-sm text-gray-400 mb-4">
               <ol className="flex list-none p-0">
                 <li className="flex items-center">
-                  <button onClick={() => router.push('/')} className="hover:text-gray-700 transition-colors">Accueil</button>
+                  <button onClick={() => router.push('/')} className="hover:text-gray-700 transition-colors">{t('product.breadcrumbHome')}</button>
                   <span className="mx-2">/</span>
                 </li>
                 <li className="flex items-center">
-                  <button onClick={() => router.push('/boutique')} className="hover:text-gray-700 transition-colors">Produits</button>
+                  <button onClick={() => router.push('/boutique')} className="hover:text-gray-700 transition-colors">{t('product.breadcrumbProducts')}</button>
                   <span className="mx-2">/</span>
                 </li>
                 <li className="text-gray-900 font-medium truncate">{product.name}</li>
@@ -409,7 +464,7 @@ export default function ProductDetailPage() {
                   />
                 ))}
               </div>
-              <span className="text-sm text-gray-400">({product.reviews} avis clients)</span>
+              <span className="text-sm text-gray-400">{t('product.reviews', { count: product.reviews })}</span>
             </div>
 
             <div className="mb-6">
@@ -427,26 +482,25 @@ export default function ProductDetailPage() {
               <div className="flex items-center gap-4 mt-2">
                 {(!showHT && !showTTC) && (
                   <>
-                    <span className="text-sm text-gray-500 font-medium">HT : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice / (1 + taxRate / 100))}</span></span>
-                    <span className="text-sm text-gray-500 font-medium">TTC : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice)}</span></span>
+                    <span className="text-sm text-gray-500 font-medium">{t('product.priceHT')} : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice / (1 + taxRate / 100))}</span></span>
+                    <span className="text-sm text-gray-500 font-medium">{t('product.priceTTC')} : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice)}</span></span>
                   </>
                 )}
                 {showHT && (
-                  <span className="text-sm text-gray-500 font-medium">Prix hors taxes : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice / (1 + taxRate / 100))}</span></span>
+                  <span className="text-sm text-gray-500 font-medium">{t('product.priceExclTax')} : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice / (1 + taxRate / 100))}</span></span>
                 )}
                 {showTTC && (
-                  <span className="text-sm text-gray-500 font-medium">TVA incluse : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice)}</span></span>
+                  <span className="text-sm text-gray-500 font-medium">{t('product.inclTax')} : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice)}</span></span>
                 )}
               </div>
               <div className="relative mt-1">
                 <button onClick={() => setShowInfo(!showInfo)} className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-700 transition-colors font-medium">
                   <Info size={13} />
-                  Informations
+                  {t('product.info')}
                 </button>
                 {showInfo && (
                   <div className="absolute z-20 left-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-xs text-gray-500 leading-relaxed">
-                    Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs.<br /><br />
-                    Les particuliers peuvent également commander directement depuis notre boutique.
+                    {t('product.infoText')}
                     <button onClick={() => setShowInfo(false)} className="absolute top-2 right-2 text-gray-300 hover:text-gray-500 transition-colors">
                       <X size={12} />
                     </button>
@@ -489,14 +543,14 @@ export default function ProductDetailPage() {
                 onClick={() => setPurchaseType('achat')}
                 className={`px-6 py-3 text-sm font-semibold border-b-2 transition-colors ${purchaseType === 'achat' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
               >
-                Achat
+                {t('product.purchase')}
               </button>
               <button
                 onClick={() => canRent ? setPurchaseType('location') : undefined}
                 disabled={!canRent}
                 className={`px-6 py-3 text-sm font-semibold border-b-2 transition-colors ${purchaseType === 'location' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'} ${!canRent ? 'opacity-40 cursor-not-allowed line-through' : ''}`}
               >
-                Location
+                {t('product.rental')}
               </button>
             </div>
 
@@ -505,22 +559,22 @@ export default function ProductDetailPage() {
                 locationCompleted ? (
                   <div className="flex flex-col gap-3">
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-                      <p className="text-sm font-semibold text-emerald-800">Prêt pour la location</p>
-                      <p className="text-xs text-emerald-600 mt-1">Les informations de location ont été ajoutées à votre panier.</p>
+                      <p className="text-sm font-semibold text-emerald-800">{t('product.readyForRental')}</p>
+                      <p className="text-xs text-emerald-600 mt-1">{t('product.rentalInfoAdded')}</p>
                     </div>
                     <button onClick={() => router.push('/boutique/panier')} className="w-full bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
                       <ShoppingBag size={16} />
-                      Voir le panier
+                      {t('product.viewCart')}
                     </button>
                     <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all flex items-center justify-center gap-2">
                       <Store size={16} />
-                      Continuer mes achats
+                      {t('product.continueShopping')}
                     </button>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3 py-6 px-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                     <CalendarDays size={24} className="text-gray-400" />
-                    <p className="text-sm text-gray-500 text-center">Remplissez le formulaire de location ci-contre pour continuer</p>
+                    <p className="text-sm text-gray-500 text-center">{t('product.fillRentalForm')}</p>
                   </div>
                 )
               ) : (
@@ -543,11 +597,11 @@ export default function ProductDetailPage() {
                     </div>
                     <button onClick={handleAddToCart} className="flex-1 bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
                       <ShoppingBag size={16} />
-                      Ajouter au panier
+                      {t('product.addToCart')}
                     </button>
                   </div>
                   <button onClick={handleBuyNow} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all">
-                    Acheter maintenant
+                    {t('product.buyNow')}
                   </button>
                 </>
               )}
@@ -558,19 +612,19 @@ export default function ProductDetailPage() {
                 <div className="w-10 h-10 flex items-center justify-center bg-white rounded-full border border-gray-200/70 group-hover:border-gray-400 transition-colors">
                   <FileText size={16} className="text-gray-500" />
                 </div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Fiche technique</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{t('product.datasheet')}</span>
               </button>
               <button onClick={() => { const a = document.createElement('a'); a.href = product.image; a.download = product.name; a.click(); }} className="flex flex-col items-center gap-2 group">
                 <div className="w-10 h-10 flex items-center justify-center bg-white rounded-full border border-gray-200/70 group-hover:border-gray-400 transition-colors">
                   <Download size={16} className="text-gray-500" />
                 </div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Télécharger</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{t('product.download')}</span>
               </button>
               <button onClick={() => window.open(product.videoUrl || '', '_blank')} disabled={!product.videoUrl} className="flex flex-col items-center gap-2 group disabled:opacity-30 disabled:cursor-not-allowed">
                 <div className="w-10 h-10 flex items-center justify-center bg-white rounded-full border border-gray-200/70 group-hover:border-gray-400 transition-colors">
                   <Play size={16} className="text-gray-500" />
                 </div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Voir la vidéo</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{t('product.watchVideo')}</span>
               </button>
             </div>
           </aside>

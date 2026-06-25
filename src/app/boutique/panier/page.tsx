@@ -65,7 +65,7 @@ export default function CartPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-12 gap-8 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
               <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-500">{itemCount} article{itemCount > 1 ? 's' : ''}</p>
@@ -79,7 +79,7 @@ export default function CartPage() {
                 </div>
                 {items.map((item) => (
                   <div key={item.productId + '-' + item.type} className="bg-white rounded-2xl border border-gray-200/70 p-5 flex gap-6 transition-all duration-300 hover:shadow-md group">
-                    <div className="w-44 h-44 rounded-xl overflow-hidden bg-gray-100 shrink-0 relative">
+                    <div className="w-24 h-24 sm:w-44 sm:h-44 rounded-xl overflow-hidden bg-gray-100 shrink-0 relative">
                       {item.image ? (
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                       ) : (
@@ -107,9 +107,9 @@ export default function CartPage() {
                             </div>
                           )}
                         </div>
-                        <span className="font-bold text-gray-900 text-base whitespace-nowrap ml-2">{formatPrice(item.price * item.quantity)}</span>
+                        <span className="font-bold text-gray-900 text-base whitespace-nowrap ml-2 truncate max-w-[120px]">{formatPrice(item.price * item.quantity)}</span>
                       </div>
-                      <div className="mt-auto flex items-end justify-between">
+                      <div className="mt-auto flex flex-wrap items-end justify-between gap-3">
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Quantité</label>
                           <QtySelector
