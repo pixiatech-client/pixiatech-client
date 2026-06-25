@@ -19,3 +19,8 @@ env:
     availability:
       - BUILD
       - RUNTIME
+
+  - variable: SESSION_SECRET
+    secret: SESSION_SECRET
+    availability:
+      - RUNTIME
