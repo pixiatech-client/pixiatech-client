@@ -17,9 +17,31 @@ export async function GET(req: NextRequest) {
     const snap = await query.get();
     let messages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
+    const now = new Date();
+
+    // Filter by active + scheduling
+    messages = messages.filter((m: any) => {
+      // Must be active
+      if (activeOnly && !m.active) return false;
+
+      // Scheduling start date: skip if startDate is in the future
+      if (m.startDate) {
+        const start = new Date(m.startDate);
+        if (start > now) return false;
+      }
+
+      // Scheduling end date: skip if endDate is in the past
+      if (m.endDate) {
+        const end = new Date(m.endDate);
+        if (end < now) return false;
+      }
+
+      return true;
+    });
+
     if (location) {
       const locationField = `show${location.charAt(0).toUpperCase() + location.slice(1)}`;
-      messages = messages.filter((m: any) => m[locationField] === true);
+      messages = messages.filter((m: any) => m.showAllPages === true || m[locationField] === true);
     }
 
     return NextResponse.json(messages);
@@ -43,12 +65,30 @@ export async function POST(req: NextRequest) {
       showHomepage: body.showHomepage || false,
       showBoutique: body.showBoutique || false,
       showClientArea: body.showClientArea || false,
+      showAllPages: body.showAllPages || false,
+      startDate: body.startDate || null,
+      endDate: body.endDate || null,
       permanent: body.permanent || false,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     };
 
     const ref = await adminDb.collection('system_messages').add(doc);
+
+    // Auto-deactivate other non-permanent active messages (only one at a time)
+    if (doc.active && !doc.permanent) {
+      const activeSnap = await adminDb.collection('system_messages')
+        .where('active', '==', true)
+        .get();
+      const batch = adminDb.batch();
+      activeSnap.docs.forEach(d => {
+        const data = d.data();
+        if (d.id !== ref.id && !data.permanent) {
+          batch.update(d.ref, { active: false, updatedAt: FieldValue.serverTimestamp() });
+        }
+      });
+      await batch.commit();
+    }
 
     return NextResponse.json({ id: ref.id, ...doc });
   } catch (err: any) {

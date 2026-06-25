@@ -113,9 +113,9 @@ export function BoutiqueHeader() {
 
   return (
     <header className="fixed top-0 z-30 w-full h-14 bg-white/80 backdrop-blur-xl border-b border-gray-100/80 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-14 h-full flex items-center justify-between">
+      <div className="max-w-7xl mx-auto pl-6 md:pl-10 lg:pl-14 pr-[20px] h-full flex items-center">
         {/* Left: navigation buttons */}
-        <nav className="flex items-center gap-1.5">
+        <nav className="flex items-center gap-1.5 -ml-[30px]">
           <Link
             href="/"
             className={cn(
@@ -128,7 +128,7 @@ export function BoutiqueHeader() {
           </Link>
           <Link
             href="/boutique"
-            className={cn(
+            className={cn("ml-2.5",
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200",
               isBoutiquePage ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
             )}
@@ -138,15 +138,15 @@ export function BoutiqueHeader() {
           </Link>
         </nav>
 
-        {/* Center: Logo */}
-
+        {/* Spacer: pushes right buttons to the edge + 10px min gap */}
+        <div className="flex-1 min-w-[10px]" />
 
         {/* Right: Lang + Auth + Cart */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {/* Language toggle */}
           <button
             onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-[11px] font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
+            className="flex items-center justify-center w-8 h-8 rounded text-[11px] font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
           >
             {t('langName').toUpperCase()}
           </button>
@@ -154,7 +154,7 @@ export function BoutiqueHeader() {
           {/* Admin link */}
           <Link
             href="/admin/login"
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
+            className="flex items-center justify-center w-8 h-8 rounded text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
             aria-label={t('header.admin')}
             title={t('header.admin')}
           >
@@ -166,7 +166,7 @@ export function BoutiqueHeader() {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
               >
                 <User size={14} />
                 <span className="max-w-[100px] truncate">{truncatedEmail}</span>
@@ -198,7 +198,7 @@ export function BoutiqueHeader() {
             <div className="relative" ref={resellerRef}>
               <button
                 onClick={() => setCreateOpen(!createOpen)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-all duration-200"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-all duration-200"
               >
                 <User size={14} />
                 {t('header.memberArea')}
@@ -433,7 +433,7 @@ export function BoutiqueHeader() {
           {/* Cart */}
           <Link
             href="/boutique/panier"
-            className="relative flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
+            className="relative flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
             aria-label={t('header.cart')}
           >
             <ShoppingBag size={16} />

@@ -501,6 +501,9 @@ export type SystemMessage = {
   showHomepage: boolean;
   showBoutique: boolean;
   showClientArea: boolean;
+  showAllPages: boolean;
+  startDate: string | null;
+  endDate: string | null;
   permanent: boolean;
   createdAt: any;
   updatedAt: any;

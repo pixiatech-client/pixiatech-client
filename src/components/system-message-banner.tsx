@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Info, CheckCircle, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { Info, CheckCircle, AlertTriangle, AlertOctagon } from 'lucide-react';
 import type { SystemMessage } from '@/lib/types';
 
 function getIcon(name: string) {
@@ -21,7 +21,6 @@ const TYPE_COLORS: Record<string, { bg: string; border: string; icon: string; te
 
 export function SystemMessageBanner({ location }: { location: 'homepage' | 'boutique' | 'client-area' }) {
   const [messages, setMessages] = useState<SystemMessage[]>([]);
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,39 +35,28 @@ export function SystemMessageBanner({ location }: { location: 'homepage' | 'bout
 
   if (loading || messages.length === 0) return null;
 
+  const msg = messages[0];
+  const colors = TYPE_COLORS[msg.type] || TYPE_COLORS.info;
+  const Icon = getIcon(msg.icon);
+
   return (
     <div className="space-y-2 px-4 md:px-6 max-w-7xl mx-auto w-full">
-      {messages.map(msg => {
-        if (dismissed.has(msg.id)) return null;
-        const colors = TYPE_COLORS[msg.type] || TYPE_COLORS.info;
-        const Icon = getIcon(msg.icon);
-
-        return (
-          <div
-            key={msg.id}
-            className={`flex items-start gap-3 p-3 md:p-4 rounded-xl border ${colors.bg} ${colors.border}`}
-            style={msg.color ? { borderLeftColor: msg.color, borderLeftWidth: 4 } : undefined}
-          >
-            <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${colors.icon}`} style={msg.color ? { color: msg.color } as React.CSSProperties : undefined} />
-            <div className="flex-1 min-w-0">
-              {msg.title && (
-                <p className={`text-sm font-bold ${colors.text}`} style={msg.color ? { color: msg.color } as React.CSSProperties : undefined}>
-                  {msg.title}
-                </p>
-              )}
-              <p className={`text-sm ${colors.text} mt-0.5 whitespace-pre-line`}>
-                {msg.content}
-              </p>
-            </div>
-            <button
-              onClick={() => setDismissed(prev => new Set(prev).add(msg.id))}
-              className={`shrink-0 p-1 rounded-full hover:bg-black/5 transition-colors ${colors.text}`}
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        );
-      })}
+      <div
+        className={`flex items-start gap-3 p-3 md:p-4 rounded-xl border ${colors.bg} ${colors.border}`}
+        style={msg.color ? { borderLeftColor: msg.color, borderLeftWidth: 4 } : undefined}
+      >
+        <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${colors.icon}`} style={msg.color ? { color: msg.color } as React.CSSProperties : undefined} />
+        <div className="flex-1 min-w-0">
+          {msg.title && (
+            <p className={`text-sm font-bold ${colors.text}`} style={msg.color ? { color: msg.color } as React.CSSProperties : undefined}>
+              {msg.title}
+            </p>
+          )}
+          <p className={`text-sm ${colors.text} mt-0.5 whitespace-pre-line`}>
+            {msg.content}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -887,10 +887,10 @@ export function QuoteBuilder({
                     {showPreview && (
                         <div className="hidden lg:flex lg:flex-col lg:items-stretch lg:gap-8 w-full max-w-2xl ml-auto">
                             <div className="lg:sticky lg:top-28 flex flex-col gap-8 h-full">
-                                <div className="flex justify-center w-full">
+                                <div className="flex justify-center w-full ml-[75px]">
                                     <Stepper currentStep={currentStep} onStepClick={handleStepClick} steps={visibleSteps} />
                                 </div>
-                                <Card className="w-full flex-1 flex flex-col rounded-xl overflow-hidden">
+                                <Card className="w-full flex-1 flex flex-col rounded-xl overflow-hidden ml-10">
                                     <CardContent className="p-0 relative h-full flex items-center justify-center bg-slate-100 rounded-xl overflow-hidden">
                                         <AnimatePresence mode="wait">
                                             <motion.div

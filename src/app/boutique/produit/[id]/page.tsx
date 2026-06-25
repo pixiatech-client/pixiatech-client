@@ -135,6 +135,8 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [purchaseType, setPurchaseType] = useState<'achat' | 'location'>('achat');
   const [selectedImage, setSelectedImage] = useState(0);
+  const [thumbStart, setThumbStart] = useState(0);
+  const maxVisibleThumbs = 4;
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -258,17 +260,17 @@ export default function ProductDetailPage() {
             <BoutiqueRentalFlow product={product} onComplete={() => setLocationCompleted(true)} />
           ) : (
           <div className="flex flex-col">
-            <section className="max-w-xl mx-auto">
-              <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+            <section>
+              <div className="bg-white rounded-2xl overflow-hidden shadow-sm -mt-[60px]">
                 <div className="cursor-pointer overflow-hidden" onClick={() => { setSelectedVariant(null); openLightbox(selectedImage); }}>
                   {effectiveImage ? (
                     <img
                       src={effectiveImage}
                       alt={product.name}
-                      className="w-full h-auto max-h-[450px] object-cover bg-slate-50 transition-transform duration-500 hover:scale-110"
+                      className="w-full h-[360px] object-contain bg-slate-50 transition-transform duration-500 hover:scale-105 p-4"
                     />
                   ) : (
-                    <div className="w-full h-[450px] flex items-center justify-center bg-slate-50 text-slate-300">
+                    <div className="w-full h-[360px] flex items-center justify-center bg-slate-50 text-slate-300">
                       <ShoppingBag size={48} />
                     </div>
                   )}
@@ -296,39 +298,53 @@ export default function ProductDetailPage() {
                     </button>
                   </div>
                   <div className="relative mt-3">
-                    <div ref={thumbScrollRef} className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-1">
-                      {images.map((img, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => { setSelectedImage(idx); setSelectedVariant(null); openLightbox(idx); }}
-                          ref={idx === selectedImage ? activeThumbRef : null}
-                          className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
-                          onMouseEnter={() => setSelectedImage(idx)}
-                        >
-                          {img ? (
-                            <img
-                              src={img}
-                              alt={`${product.name} - Vue ${idx + 1}`}
-                              className={`w-full h-full object-cover ${selectedImage !== idx ? 'opacity-50' : ''}`}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-200">
-                              <ShoppingBag size={16} />
-                            </div>
-                          )}
-                        </button>
-                      ))}
+                    <div className="flex gap-3 justify-center">
+                      {images.slice(thumbStart, thumbStart + maxVisibleThumbs).map((img, idx) => {
+                        const realIdx = thumbStart + idx;
+                        return (
+                          <button
+                            key={realIdx}
+                            onClick={() => { setSelectedImage(realIdx); setSelectedVariant(null); openLightbox(realIdx); }}
+                            ref={realIdx === selectedImage ? activeThumbRef : null}
+                            className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === realIdx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
+                            onMouseEnter={() => setSelectedImage(realIdx)}
+                          >
+                            {img ? (
+                              <img
+                                src={img}
+                                alt={`${product.name} - Vue ${realIdx + 1}`}
+                                className={`w-full h-full object-cover ${selectedImage !== realIdx ? 'opacity-50' : ''}`}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-200">
+                                <ShoppingBag size={16} />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                      {images.length > maxVisibleThumbs && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setThumbStart(s => Math.max(0, s - 1))}
+                            disabled={thumbStart === 0}
+                            className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200/70 hover:border-gray-400 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <ChevronLeft size={14} className="text-gray-500" />
+                          </button>
+                          <span className="text-xs font-semibold text-gray-400 min-w-[40px] text-center">
+                            {thumbStart + 1}-{Math.min(thumbStart + maxVisibleThumbs, images.length)}/{images.length}
+                          </span>
+                          <button
+                            onClick={() => setThumbStart(s => Math.min(images.length - maxVisibleThumbs, s + 1))}
+                            disabled={thumbStart >= images.length - maxVisibleThumbs}
+                            className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200/70 hover:border-gray-400 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <ChevronRight size={14} className="text-gray-500" />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    {images.length > 4 && (
-                      <>
-                        <button onClick={() => thumbScrollRef.current?.scrollBy({ left: -160, behavior: 'smooth' })} className="absolute left-0 top-0 bottom-0 w-8 flex items-center justify-center bg-gradient-to-r from-white to-transparent">
-                          <ChevronLeft size={14} className="text-gray-500" />
-                        </button>
-                        <button onClick={() => thumbScrollRef.current?.scrollBy({ left: 160, behavior: 'smooth' })} className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center bg-gradient-to-l from-white to-transparent">
-                          <ChevronRight size={14} className="text-gray-500" />
-                        </button>
-                      </>
-                    )}
                   </div>
                 </>
               )}
@@ -388,6 +404,7 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="mt-20 border-t border-gray-200/40 pt-12 space-y-16">
+              {(product.descriptionDetaillee || product.longDescription) && (
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('product.description')}</h2>
                 {product.descriptionDetaillee?.includes('<') ? (
@@ -396,6 +413,7 @@ export default function ProductDetailPage() {
                   <p className="text-gray-600 leading-relaxed">{product.descriptionDetaillee || product.longDescription}</p>
                 )}
               </section>
+              )}
 
               <section>
                 <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
@@ -432,7 +450,7 @@ export default function ProductDetailPage() {
           )}
         </div>
 
-        <aside className="hidden lg:flex flex-col fixed top-36 z-10 w-[420px] max-h-[calc(100vh-9rem)] overflow-y-auto" style={{ right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))' }}>
+        <aside className="hidden lg:flex flex-col fixed top-[194px] z-10 w-[420px] max-h-[calc(100vh-9rem)] overflow-y-auto" style={{ right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))' }}>
             <nav className="text-sm text-gray-400 mb-4">
               <ol className="flex list-none p-0">
                 <li className="flex items-center">

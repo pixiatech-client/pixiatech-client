@@ -53,17 +53,24 @@ export function LayoutProvider({
           <CartProvider>
           <div className="flex flex-col bg-background min-h-dvh">
             {isFrontendPage && !isMonComptePage && <BoutiqueHeader />}
-            {isFrontendPage && <SiteBanners />}
-            <main
-              className={cn(
-                'flex-1 flex items-start justify-center w-full',
-                isFrontendPage && !isQuotePage && !isBoutiquePage && !isMonComptePage && `px-4 pb-4 ${isHomePage ? 'pt-[106px]' : 'pt-14'} md:px-6 md:pb-6 ${isHomePage ? 'md:pt-[106px]' : 'md:pt-14'}`,
-                isBoutiquePage && 'pt-14',
-              )}
-            >
-              {children}
-            </main>
-            {/* FloatingChatButton removed from here to be moved to the landing page specifically */}
+            {isFrontendPage ? (
+              <div className="flex flex-col flex-1 pt-[72px]">
+                <SiteBanners />
+                <main
+                  className={cn(
+                    'flex-1 flex items-start justify-center w-full',
+                    isHomePage && 'px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-8',
+                    !isHomePage && !isQuotePage && !isBoutiquePage && !isMonComptePage && 'px-4 pb-4 md:px-6 md:pb-6',
+                  )}
+                >
+                  {children}
+                </main>
+              </div>
+            ) : (
+              <main className="flex-1 flex items-start justify-center w-full">
+                {children}
+              </main>
+            )}
           </div>
           </CartProvider>
           </ProfileProvider>

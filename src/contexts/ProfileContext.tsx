@@ -11,6 +11,7 @@ interface ProfileContextValue {
   showTTC: boolean;
   priceLabel: string;
   isB2B: boolean;
+  hydrated: boolean;
 }
 
 const ProfileContext = createContext<ProfileContextValue>({
@@ -20,18 +21,26 @@ const ProfileContext = createContext<ProfileContextValue>({
   showTTC: false,
   priceLabel: '',
   isB2B: false,
+  hydrated: false,
 });
 
 const STORAGE_KEY = 'pixia_profile_type';
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const [profileType, setProfileTypeState] = useState<ProfileType>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  const [profileType, setProfileTypeState] = useState<ProfileType>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY) as ProfileType;
+        if (stored === 'entreprise' || stored === 'particulier') return stored;
+      } catch {}
+    }
+    return null;
+  });
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as ProfileType;
-    if (stored === 'entreprise' || stored === 'particulier') {
-      setProfileTypeState(stored);
-    }
+    setHydrated(true);
   }, []);
 
   const setProfileType = useCallback((type: ProfileType) => {
@@ -49,7 +58,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const priceLabel = isB2B ? 'Prix hors taxes' : 'TVA incluse';
 
   return (
-    <ProfileContext.Provider value={{ profileType, setProfileType, showHT, showTTC, priceLabel, isB2B }}>
+    <ProfileContext.Provider value={{ profileType, setProfileType, showHT, showTTC, priceLabel, isB2B, hydrated }}>
       {children}
     </ProfileContext.Provider>
   );

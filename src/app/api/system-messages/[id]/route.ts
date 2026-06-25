@@ -13,6 +13,25 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     await adminDb.collection('system_messages').doc(id).update(update);
 
+    // Auto-deactivate other non-permanent messages if this one was activated
+    if (body.active === true) {
+      const docSnap = await adminDb.collection('system_messages').doc(id).get();
+      const docData = docSnap.data();
+      if (docData && !docData.permanent) {
+        const activeSnap = await adminDb.collection('system_messages')
+          .where('active', '==', true)
+          .get();
+        const batch = adminDb.batch();
+        activeSnap.docs.forEach(d => {
+          const data = d.data();
+          if (d.id !== id && !data.permanent) {
+            batch.update(d.ref, { active: false, updatedAt: FieldValue.serverTimestamp() });
+          }
+        });
+        await batch.commit();
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

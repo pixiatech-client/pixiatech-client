@@ -1390,7 +1390,21 @@
             "update": "Update",
             "create": "Create",
             "deleteTitle": "Delete message",
-            "deleteConfirm": "Are you sure you want to delete this message?"
+            "deleteConfirm": "Are you sure you want to delete this message?",
+            "scheduling": "Scheduling",
+            "startDate": "Start date",
+            "endDate": "End date",
+            "noSchedule": "No scheduling",
+            "startDatePlaceholder": "MM/DD/YYYY",
+            "endDatePlaceholder": "MM/DD/YYYY",
+            "clearSchedule": "Clear",
+            "showAllPages": "All pages",
+            "homepageDesc": "Banner displayed on the homepage",
+            "boutiqueDesc": "Banner displayed in the shop",
+            "clientAreaDesc": "Banner displayed in the client area",
+            "preview": "Live preview",
+            "previewDesc": "Preview the message before publishing",
+            "editInDrawer": "Edit in panel"
         }
     },
     "estimationStatus": {

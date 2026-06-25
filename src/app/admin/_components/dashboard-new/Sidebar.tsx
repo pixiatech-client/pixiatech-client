@@ -22,7 +22,7 @@ import {
   EyeOff,
   Box,
   Bell,
-  Store,
+  ClipboardList,
   Tag,
   AlertTriangle,
 } from 'lucide-react';
@@ -226,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'estimations', label: t('admin.estimations'), icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'history', label: t('admin.history'), icon: Clock, color: 'text-cyan-400', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'produit', label: t('admin.products'), icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
-    { id: 'boutique', label: 'Boutique', icon: Store, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'boutique', label: 'Commandes', icon: ClipboardList, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'codes-promo', label: 'Codes Promo', icon: Tag, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'membres', label: 'Espace membre', icon: Users, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'messages', label: t('admin.messages'), icon: MessageSquare, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },

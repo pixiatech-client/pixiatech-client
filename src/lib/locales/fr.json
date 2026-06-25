@@ -1386,7 +1386,21 @@
             "update": "Mettre à jour",
             "create": "Créer",
             "deleteTitle": "Supprimer le message",
-            "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce message ?"
+            "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce message ?",
+            "scheduling": "Planification",
+            "startDate": "Date de début",
+            "endDate": "Date de fin",
+            "noSchedule": "Aucune planification",
+            "startDatePlaceholder": "jj/mm/aaaa",
+            "endDatePlaceholder": "jj/mm/aaaa",
+            "clearSchedule": "Effacer",
+            "showAllPages": "Toutes les pages",
+            "homepageDesc": "Bannière visible sur la page d'accueil",
+            "boutiqueDesc": "Bannière visible dans la boutique",
+            "clientAreaDesc": "Bannière visible dans l'espace client",
+            "preview": "Aperçu en direct",
+            "previewDesc": "Visualisez le rendu du message avant publication",
+            "editInDrawer": "Modifier dans le panneau"
         }
     },
     "estimationStatus": {

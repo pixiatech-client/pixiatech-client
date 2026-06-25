@@ -1,11 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { B2BProfileSelector } from './B2BProfileSelector';
 import { SystemMessageBanner } from './system-message-banner';
+import { useProfile } from '@/contexts/ProfileContext';
 
 export function SiteBanners() {
   const pathname = usePathname();
+  const { profileType, hydrated } = useProfile();
+  const [b2bDismissed, setB2bDismissed] = useState(false);
 
   const isHomepage = pathname === '/';
   const isBoutique = pathname.startsWith('/boutique');
@@ -14,24 +18,32 @@ export function SiteBanners() {
 
   if (isAdmin) return null;
 
+  const b2bActive = hydrated && !profileType && !b2bDismissed;
+
   return (
-    <div className="space-y-2 mb-4">
+    <div className="space-y-2">
       {isHomepage && (
         <>
-          <B2BProfileSelector />
-          <SystemMessageBanner location="homepage" />
+          <div className="min-h-[120px] md:min-h-[88px]">
+            <B2BProfileSelector onDismiss={() => setB2bDismissed(true)} />
+          </div>
+          {!b2bActive && <SystemMessageBanner location="homepage" />}
         </>
       )}
       {isBoutique && (
         <>
-          <B2BProfileSelector />
-          <SystemMessageBanner location="boutique" />
+          <div className="min-h-[120px] md:min-h-[88px]">
+            <B2BProfileSelector onDismiss={() => setB2bDismissed(true)} />
+          </div>
+          {!b2bActive && <SystemMessageBanner location="boutique" />}
         </>
       )}
       {isMonCompte && (
         <>
-          <B2BProfileSelector />
-          <SystemMessageBanner location="client-area" />
+          <div className="min-h-[120px] md:min-h-[88px]">
+            <B2BProfileSelector onDismiss={() => setB2bDismissed(true)} />
+          </div>
+          {!b2bActive && <SystemMessageBanner location="client-area" />}
         </>
       )}
     </div>
