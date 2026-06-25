@@ -14,6 +14,7 @@ import { getRentalOrders, updateRentalOrder, type RentalOrder, type RentalStatus
 import { formatPrice } from '@/lib/boutique-data';
 import { toast } from 'sonner';
 import { Pagination } from '@/components/pagination';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 
 type Mode = 'vente' | 'location';
 
@@ -53,7 +54,7 @@ function DetailModal({ open, onClose, order, mode }: {
   order: SaleOrder | RentalOrder | null;
   mode: Mode;
 }) {
-  if (!open || !order) return null;
+  if (!order) return null;
 
   const isSale = mode === 'vente';
   const s = order as SaleOrder;
@@ -71,15 +72,11 @@ function DetailModal({ open, onClose, order, mode }: {
   const orderIdShort = order.id ? `#${order.id.slice(0, 8)}` : '';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto"
-      >
+    <Sheet open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent className="sm:max-w-lg w-full overflow-y-auto p-0">
+        <SheetTitle className="sr-only">Détails de la commande</SheetTitle>
         {/* HEADER */}
-        <div className="sticky top-0 z-10 bg-white rounded-t-3xl border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
               <Eye className="w-5 h-5 text-white" />
@@ -89,9 +86,6 @@ function DetailModal({ open, onClose, order, mode }: {
               <p className="text-[10px] font-medium text-slate-400 font-mono tracking-tight">{orderIdShort}</p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl hover:bg-slate-100 flex items-center justify-center transition-colors">
-            <X className="w-4 h-4 text-slate-400" />
-          </button>
         </div>
 
         {/* BODY */}
@@ -302,8 +296,8 @@ function DetailModal({ open, onClose, order, mode }: {
             </div>
           )}
         </div>
-      </motion.div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
