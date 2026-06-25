@@ -23,28 +23,31 @@ export function SiteBanners() {
   return (
     <div className="space-y-2">
       {isHomepage && (
-        <>
-          <div className="min-h-[120px] md:min-h-[88px]">
+        <div className="min-h-[120px] md:min-h-[88px]">
+          {b2bActive ? (
             <B2BProfileSelector onDismiss={() => setB2bDismissed(true)} />
-          </div>
-          {!b2bActive && <SystemMessageBanner location="homepage" />}
-        </>
+          ) : (
+            <SystemMessageBanner location="homepage" />
+          )}
+        </div>
       )}
       {isBoutique && (
-        <>
-          <div className="min-h-[120px] md:min-h-[88px]">
+        <div className="min-h-[120px] md:min-h-[88px]">
+          {b2bActive ? (
             <B2BProfileSelector onDismiss={() => setB2bDismissed(true)} />
-          </div>
-          {!b2bActive && <SystemMessageBanner location="boutique" />}
-        </>
+          ) : (
+            <SystemMessageBanner location="boutique" />
+          )}
+        </div>
       )}
       {isMonCompte && (
-        <>
-          <div className="min-h-[120px] md:min-h-[88px]">
+        <div className="min-h-[120px] md:min-h-[88px]">
+          {b2bActive ? (
             <B2BProfileSelector onDismiss={() => setB2bDismissed(true)} />
-          </div>
-          {!b2bActive && <SystemMessageBanner location="client-area" />}
-        </>
+          ) : (
+            <SystemMessageBanner location="client-area" />
+          )}
+        </div>
       )}
     </div>
   );

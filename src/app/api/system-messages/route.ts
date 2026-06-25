@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     const location = searchParams.get('location');
     const { adminDb } = getFirebaseAdmin();
 
-    let query: FirebaseFirestore.Query = adminDb.collection('system_messages').orderBy('createdAt', 'desc');
+    let query: FirebaseFirestore.Query = adminDb.collection('system_messages');
 
     if (activeOnly) {
       query = query.where('active', '==', true);
@@ -16,6 +16,13 @@ export async function GET(req: NextRequest) {
 
     const snap = await query.get();
     let messages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Sort by createdAt descending (in-memory to avoid composite index requirement)
+    messages.sort((a: any, b: any) => {
+      const aTime = a.createdAt?.toMillis?.() ?? a.createdAt ?? 0;
+      const bTime = b.createdAt?.toMillis?.() ?? b.createdAt ?? 0;
+      return bTime - aTime;
+    });
 
     const now = new Date();
 
