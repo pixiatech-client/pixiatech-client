@@ -1129,12 +1129,14 @@ const CaracteristiquesPage = ({
   onBack,
   characteristics,
   setCharacteristics,
-  user
+  user,
+  collectionName = "characteristics"
 }: {
   onBack: () => void,
   characteristics: any[],
   setCharacteristics: React.Dispatch<React.SetStateAction<any[]>>,
   user: any
+  collectionName?: string;
 }) => {
   const { t } = useI18n();
   const { toast } = useToast();
@@ -1211,7 +1213,7 @@ const CaracteristiquesPage = ({
       alert(t('admin.productManagement.characteristicLockedRequired'));
       return;
     }
-    await deleteDoc(doc(db, "characteristics", id));
+    await deleteDoc(doc(db, collectionName, id));
     if (editingId === id) {
       handleReset();
     }
@@ -1288,9 +1290,9 @@ const CaracteristiquesPage = ({
 
       console.log("Debug: Saving with user", user?.email, user?.uid);
       if (editingId) {
-        await updateDoc(doc(db, "characteristics", editingId), charData);
+        await updateDoc(doc(db, collectionName, editingId), charData);
       } else {
-        await addDoc(collection(db, "characteristics"), charData);
+        await addDoc(collection(db, collectionName), charData);
       }
 
       // --- WIZARD SYNC BRIDGE ---
@@ -1333,7 +1335,7 @@ const CaracteristiquesPage = ({
     }
   };
 
-  const handleSeedExamples = () => {
+  const handleSeedExamples = async () => {
     setIsSaving(true);
 
     const examples = [
@@ -1418,6 +1420,23 @@ const CaracteristiquesPage = ({
         uid: user.uid
       }
     ];
+
+    // Save to Firestore
+    for (const ex of examples) {
+      if (!characteristics.some(c => c.name === ex.name)) {
+        try {
+          const { id: exId, ...data } = ex;
+          const finalId = exId || `char-${ex.name.replace(/\s+/g, '-').toLowerCase()}`;
+          await setDoc(doc(db, collectionName, finalId), {
+            ...data,
+            border: ex.color.replace('text-', 'focus:border-'),
+            uid: user?.uid || 'system'
+          });
+        } catch (e) {
+          console.error("Seed failed for", ex.name, e);
+        }
+      }
+    }
 
     setCharacteristics(prev => {
       let newList = [...prev];
@@ -1539,7 +1558,7 @@ const CaracteristiquesPage = ({
                           const finalId = charId || `char-${name.replace(/\s+/g, '-').toLowerCase()}`;
 
                           // Seed characteristic collection
-                          await setDoc(doc(db, "characteristics", finalId), {
+                          await setDoc(doc(db, collectionName, finalId), {
                             ...data,
                             uid: user?.uid || 'system',
                             locked: true,
@@ -2278,6 +2297,7 @@ const ProduitPage = ({
   tempSelectedChars,
   setTempSelectedChars,
   availableChars,
+  setCharPanelSearch,
   handleAIAnalysis,
   isAnalyzing,
   analysisProgress,
@@ -2625,7 +2645,7 @@ const ProduitPage = ({
 
               <div className="relative mt-3">
                 <button
-                  onClick={() => { setTempSelectedChars([]); setShowCharPanel(true); }}
+                  onClick={() => { setTempSelectedChars([]); setCharPanelSearch(''); setShowCharPanel(true); }}
                   className="w-full h-10 bg-white hover:bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all border border-slate-200 border-dashed hover:border-slate-400"
                 >
                   <PlusCircle className="w-4 h-4 text-[#a3e635]" />
@@ -4195,12 +4215,41 @@ export default function ProductManagementClient() {
     })();
   }, [user, activeSpace, hasDuplicatedBoutique]);
 
+  // Sync characteristics to boutique_characteristics when switching to boutique
+  const [hasSyncedBoutiqueChars, setHasSyncedBoutiqueChars] = useState(false);
+  useEffect(() => {
+    if (!user || activeSpace !== 'boutique' || hasSyncedBoutiqueChars) return;
+    (async () => {
+      try {
+        const boutiqueCharsSnap = await getDocs(collection(db, 'boutique_characteristics'));
+        const configCharsSnap = await getDocs(collection(db, 'characteristics'));
+        const boutiqueNames = new Set(boutiqueCharsSnap.docs.map(d => d.data().name));
+        for (const d of configCharsSnap.docs) {
+          const data = d.data();
+          if (!boutiqueNames.has(data.name)) {
+            await setDoc(doc(db, 'boutique_characteristics', d.id), {
+              ...data,
+              uid: user?.uid || 'system',
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Boutique characteristics sync error:', e);
+      }
+      setHasSyncedBoutiqueChars(true);
+    })();
+  }, [user, activeSpace, hasSyncedBoutiqueChars]);
+
   const [selectedChars, setSelectedChars] = useState<any[]>([]);
   const [showCharPanel, setShowCharPanel] = useState(false);
   const [tempSelectedChars, setTempSelectedChars] = useState<string[]>([]);
   const [distancePitches, setDistancePitches] = useState<Record<string, string[]>>({});
+  const [charPanelSearch, setCharPanelSearch] = useState('');
 
   const availableChars = characteristics.filter(c => !selectedChars.some(sc => sc.id === c.id));
+  const filteredAvailableChars = charPanelSearch.trim()
+    ? availableChars.filter(c => c.name.toLowerCase().includes(charPanelSearch.toLowerCase().trim()))
+    : availableChars;
 
   const [mode, setMode] = useState<('vente' | 'location')[]>(['vente']);
   const [environment, setEnvironment] = useState<('interieur' | 'exterieur' | 'semi-exterieur')[]>(['exterieur']);
@@ -5433,6 +5482,7 @@ export default function ProductManagementClient() {
                   characteristics={characteristics}
                   setCharacteristics={setCharacteristics}
                   user={user}
+                  collectionName={charCol}
                 />
               </motion.div>
             )}
@@ -5528,6 +5578,7 @@ export default function ProductManagementClient() {
                   setShowCharPanel={setShowCharPanel}
                   tempSelectedChars={tempSelectedChars}
                   setTempSelectedChars={setTempSelectedChars}
+                  setCharPanelSearch={setCharPanelSearch}
                   availableChars={availableChars}
                   handleAIAnalysis={handleAIAnalysis}
                   isAnalyzing={isAnalyzing}
@@ -5645,6 +5696,23 @@ export default function ProductManagementClient() {
 
                   {/* Content */}
                   <div className="flex-1 overflow-y-auto p-8">
+                    {/* Search bar */}
+                    <div className="relative mb-6">
+                      <input
+                        type="text"
+                        value={charPanelSearch}
+                        onChange={e => setCharPanelSearch(e.target.value)}
+                        placeholder="Rechercher une caractéristique..."
+                        className="w-full pl-10 pr-10 py-3 text-sm border-2 border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white transition-all text-slate-800 placeholder:text-slate-400 font-bold"
+                      />
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      {charPanelSearch && (
+                        <button onClick={() => setCharPanelSearch('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
                     {availableChars.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-12 text-center">
                         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
@@ -5653,50 +5721,78 @@ export default function ProductManagementClient() {
                         <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">All characteristics already added</p>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {availableChars.map((char: any) => {
-                          const isSelected = tempSelectedChars.includes(char.id);
-                          const Icon = getIcon(char.iconName);
-                          return (
+                      <>
+                        {/* Select All header */}
+                        {filteredAvailableChars.length > 0 && (
+                          <div className="flex items-center justify-between mb-4 px-1">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                              {filteredAvailableChars.length} available
+                            </p>
                             <button
-                              key={char.id}
                               onClick={() => {
-                                setTempSelectedChars(prev =>
-                                  prev.includes(char.id)
-                                    ? prev.filter(id => id !== char.id)
-                                    : [...prev, char.id]
-                                );
+                                const allFilteredIds = filteredAvailableChars.map(c => c.id);
+                                const allSelected = allFilteredIds.every(id => tempSelectedChars.includes(id));
+                                if (allSelected) {
+                                  setTempSelectedChars(prev => prev.filter(id => !allFilteredIds.includes(id)));
+                                } else {
+                                  setTempSelectedChars(prev => {
+                                    const existing = new Set(prev);
+                                    allFilteredIds.forEach(id => existing.add(id));
+                                    return Array.from(existing);
+                                  });
+                                }
                               }}
-                              className={cn(
-                                "flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left group",
-                                isSelected
-                                  ? "bg-theme-sidebar-active-bg border-theme-sidebar-active-bg shadow-xl"
-                                  : "bg-slate-50 border-slate-100 hover:border-slate-200 hover:bg-white"
-                              )}
+                              className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-800 transition-colors"
                             >
-                              <div className={cn(
-                                "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
-                                isSelected ? "bg-white/10" : "bg-white shadow-sm"
-                              )}>
-                                <Icon className={cn("w-6 h-6", isSelected ? "text-theme-sidebar-active-text" : "text-slate-400")} />
-                              </div>
-                              <div>
-                                <div className={cn("text-xs font-black uppercase tracking-widest mb-0.5", isSelected ? "text-theme-sidebar-active-text" : "text-slate-900")}>
-                                  {char.name}
-                                </div>
-                                <div className={cn("text-[10px] font-bold", isSelected ? "text-theme-sidebar-active-text/40" : "text-slate-400")}>
-                                  {char.options.length} options available
-                                </div>
-                              </div>
-                              {isSelected && (
-                                <div className="ml-auto w-6 h-6 bg-theme-sidebar-active-bg rounded-full flex items-center justify-center shadow-lg border border-white/20">
-                                  <Check className="w-4 h-4 text-theme-sidebar-active-text" />
-                                </div>
-                              )}
+                              {filteredAvailableChars.every(c => tempSelectedChars.includes(c.id)) ? 'Deselect all' : 'Select all'}
                             </button>
-                          );
-                        })}
-                      </div>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {filteredAvailableChars.map((char: any) => {
+                            const isSelected = tempSelectedChars.includes(char.id);
+                            const Icon = getIcon(char.iconName);
+                            return (
+                              <button
+                                key={char.id}
+                                onClick={() => {
+                                  setTempSelectedChars(prev =>
+                                    prev.includes(char.id)
+                                      ? prev.filter(id => id !== char.id)
+                                      : [...prev, char.id]
+                                  );
+                                }}
+                                className={cn(
+                                  "flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left group",
+                                  isSelected
+                                    ? "bg-theme-sidebar-active-bg border-theme-sidebar-active-bg shadow-xl"
+                                    : "bg-slate-50 border-slate-100 hover:border-slate-200 hover:bg-white"
+                                )}
+                              >
+                                <div className={cn(
+                                  "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
+                                  isSelected ? "bg-white/10" : "bg-white shadow-sm"
+                                )}>
+                                  <Icon className={cn("w-6 h-6", isSelected ? "text-theme-sidebar-active-text" : "text-slate-400")} />
+                                </div>
+                                <div>
+                                  <div className={cn("text-xs font-black uppercase tracking-widest mb-0.5", isSelected ? "text-theme-sidebar-active-text" : "text-slate-900")}>
+                                    {char.name}
+                                  </div>
+                                  <div className={cn("text-[10px] font-bold", isSelected ? "text-theme-sidebar-active-text/40" : "text-slate-400")}>
+                                    {char.options.length} options available
+                                  </div>
+                                </div>
+                                {isSelected && (
+                                  <div className="ml-auto w-6 h-6 bg-theme-sidebar-active-bg rounded-full flex items-center justify-center shadow-lg border border-white/20">
+                                    <Check className="w-4 h-4 text-theme-sidebar-active-text" />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
                     )}
                   </div>
 
