@@ -23,7 +23,7 @@ export function SiteBanners() {
   return (
     <div className="space-y-2">
       {isHomepage && (
-        <div className="min-h-[120px] md:min-h-[88px]">
+        <div>
           {b2bActive ? (
             <B2BProfileSelector onDismiss={() => setB2bDismissed(true)} />
           ) : (
@@ -32,7 +32,7 @@ export function SiteBanners() {
         </div>
       )}
       {isBoutique && (
-        <div className="min-h-[120px] md:min-h-[88px]">
+        <div>
           {b2bActive ? (
             <B2BProfileSelector onDismiss={() => setB2bDismissed(true)} />
           ) : (
@@ -41,7 +41,7 @@ export function SiteBanners() {
         </div>
       )}
       {isMonCompte && (
-        <div className="min-h-[120px] md:min-h-[88px]">
+        <div>
           {b2bActive ? (
             <B2BProfileSelector onDismiss={() => setB2bDismissed(true)} />
           ) : (
