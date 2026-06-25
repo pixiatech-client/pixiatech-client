@@ -1,5 +1,5 @@
 # https://firebase.google.com/docs/app-hosting/configure
-# Last updated: 2026-06-24T14:15:00Z
+# Last updated: 2026-06-25T16:55:00Z
 
 runConfig:
   minInstances: 1
