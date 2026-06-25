@@ -15,7 +15,7 @@ env:
       - RUNTIME
 
   - variable: NEXT_PUBLIC_SITE_URL
-    value: https://studio--studio-9205859220-a6440.us-central1.hosted.app
+    value: https://app.pixiatech.com
     availability:
       - BUILD
       - RUNTIME
