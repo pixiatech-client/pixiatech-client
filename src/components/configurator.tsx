@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import type { Product, ConfiguredProduct, Settings } from '@/lib/types';
+import { calculateTilesCount } from '@/lib/pricing-engine';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronRight,
@@ -142,14 +143,12 @@ export function Configurator({
   
   // Derived calculations for the dynamic card
   const area = useMemo(() => (activeConfig?.width ?? 0) * (activeConfig?.height ?? 0), [activeConfig]);
-  const tileArea = useMemo(() => {
-      if (!selectedProductDetails || !selectedProductDetails.tileWidth || !selectedProductDetails.tileHeight) return 0;
-      return (selectedProductDetails.tileWidth / 100) * (selectedProductDetails.tileHeight / 100);
-  }, [selectedProductDetails]);
   const tilesNeeded = useMemo(() => {
-      if (tileArea === 0) return 0;
-      return Math.ceil(area / tileArea);
-  }, [area, tileArea]);
+      if (!selectedProductDetails?.tileWidth || !selectedProductDetails?.tileHeight) return 0;
+      const w = activeConfig?.width ?? 0;
+      const h = activeConfig?.height ?? 0;
+      return calculateTilesCount(w, h, selectedProductDetails.tileWidth, selectedProductDetails.tileHeight);
+  }, [activeConfig?.width, activeConfig?.height, selectedProductDetails?.tileWidth, selectedProductDetails?.tileHeight]);
 
   const maxRentalArea = selectedProductDetails?.maxRentalArea;
   

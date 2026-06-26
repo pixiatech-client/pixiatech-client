@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, formatPrice } from '@/lib/boutique-data';
@@ -186,6 +186,8 @@ export default function ProductDetailPage() {
   const effectiveImage = selectedVariant?.image || galleryImages[selectedImage];
   const effectiveOldPrice = product?.oldPrice && (!selectedVariant || selectedVariant.price < product.oldPrice) ? product.oldPrice : undefined;
   const displayVariants = (product?.variants || []).filter(v => v.active && v.name);
+  const availableStock = product?.stock ?? 10;
+  const isOutOfStock = availableStock <= 0;
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -207,13 +209,13 @@ export default function ProductDetailPage() {
   }, [selectedImage]);
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || isOutOfStock) return;
     addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' }, quantity);
     toast.success(t('product.addedToCart', { name: product.name }));
   };
 
   const handleBuyNow = () => {
-    if (!product) return;
+    if (!product || isOutOfStock) return;
     addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' }, quantity);
     router.push('/boutique/paiement');
   };
@@ -390,17 +392,46 @@ export default function ProductDetailPage() {
                   ))}
                 </div>
               )}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center border border-gray-200/70 rounded-xl bg-white">
-                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3 py-2 hover:bg-gray-50 transition-colors rounded-xl"><Minus size={14} className="text-gray-500" /></button>
-                  <span className="w-10 text-center text-sm font-semibold text-gray-900">{quantity}</span>
-                  <button onClick={() => setQuantity(quantity + 1)} className="px-3 py-2 hover:bg-gray-50 transition-colors rounded-xl"><Plus size={14} className="text-gray-500" /></button>
+              <div className={`bg-violet-500/10 p-4 rounded-2xl border relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] ring-1 ${isOutOfStock ? 'border-red-400/40 ring-red-500/20' : 'border-violet-500/40 ring-violet-500/20'}`}>
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent"></div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]"></span>
+                    Quantité disponible
+                  </label>
+                  {isOutOfStock ? (
+                    <span className="text-[10px] font-black uppercase tracking-wider text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full">Rupture de stock</span>
+                  ) : availableStock <= 3 ? (
+                    <span className="text-[10px] font-semibold text-amber-500">Plus que {availableStock} en stock</span>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-emerald-500">{availableStock} en stock</span>
+                  )}
                 </div>
-                <button onClick={handleAddToCart} className="flex-1 bg-gray-900 text-white py-2.5 px-4 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
-                  <ShoppingBag size={15} /> {t('product.addToCart')}
-                </button>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.min(availableStock, Math.max(1, parseInt(e.target.value) || 1)))}
+                    placeholder="Ex : 10"
+                    disabled={isOutOfStock}
+                    className="w-full rounded-xl font-bold focus:outline-none transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none bg-[#1a1f2e] text-white border border-blue-500/30 focus:border-cyan-400 px-4 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  />
+                  {!isOutOfStock && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
+                    <button onClick={() => setQuantity(Math.min(availableStock, quantity + 1))} className="transition-colors text-slate-500 hover:text-slate-300">
+                      <ChevronUp size={12} />
+                    </button>
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="transition-colors text-slate-500 hover:text-slate-300">
+                      <ChevronDown size={12} />
+                    </button>
+                  </div>
+                  )}
+                </div>
               </div>
-              <button onClick={handleBuyNow} className="w-full mt-2 border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all">{t('product.buyNow')}</button>
+              <button onClick={handleAddToCart} disabled={isOutOfStock} className="w-full bg-gray-900 text-white py-2.5 px-4 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                  <ShoppingBag size={15} /> {isOutOfStock ? 'Indisponible' : t('product.addToCart')}
+                </button>
+              <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full mt-2 border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">{isOutOfStock ? 'Indisponible' : t('product.buyNow')}</button>
             </div>
 
             <div className="mt-20 border-t border-gray-200/40 pt-12 space-y-16">
@@ -597,29 +628,48 @@ export default function ProductDetailPage() {
                 )
               ) : (
                 <>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center border border-gray-200/70 rounded-xl bg-white">
-                      <button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="px-4 py-3 hover:bg-gray-50 transition-colors rounded-xl"
-                      >
-                        <Minus size={16} className="text-gray-500" />
-                      </button>
-                      <span className="w-12 text-center text-sm font-semibold text-gray-900">{quantity}</span>
-                      <button
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="px-4 py-3 hover:bg-gray-50 transition-colors rounded-xl"
-                      >
-                        <Plus size={16} className="text-gray-500" />
-                      </button>
+                  <div className={`bg-violet-500/10 p-4 rounded-2xl border relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] ring-1 ${isOutOfStock ? 'border-red-400/40 ring-red-500/20' : 'border-violet-500/40 ring-violet-500/20'}`}>
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent"></div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]"></span>
+                        Quantité disponible
+                      </label>
+                      {isOutOfStock ? (
+                        <span className="text-[10px] font-black uppercase tracking-wider text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full">Rupture de stock</span>
+                      ) : availableStock <= 3 ? (
+                        <span className="text-[10px] font-semibold text-amber-500">Plus que {availableStock} en stock</span>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-emerald-500">{availableStock} en stock</span>
+                      )}
                     </div>
-                    <button onClick={handleAddToCart} className="flex-1 bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
-                      <ShoppingBag size={16} />
-                      {t('product.addToCart')}
-                    </button>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={quantity}
+                        onChange={(e) => setQuantity(Math.min(availableStock, Math.max(1, parseInt(e.target.value) || 1)))}
+                        placeholder="Ex : 10"
+                        disabled={isOutOfStock}
+                        className="w-full rounded-xl font-bold focus:outline-none transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none bg-[#1a1f2e] text-white border border-blue-500/30 focus:border-cyan-400 px-4 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                      />
+                      {!isOutOfStock && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
+                        <button onClick={() => setQuantity(Math.min(availableStock, quantity + 1))} className="transition-colors text-slate-500 hover:text-slate-300">
+                          <ChevronUp size={12} />
+                        </button>
+                        <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="transition-colors text-slate-500 hover:text-slate-300">
+                          <ChevronDown size={12} />
+                        </button>
+                      </div>
+                      )}
+                    </div>
                   </div>
-                  <button onClick={handleBuyNow} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all">
-                    {t('product.buyNow')}
+                  <button onClick={handleAddToCart} disabled={isOutOfStock} className="w-full bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                      <ShoppingBag size={16} />
+                      {isOutOfStock ? 'Indisponible' : t('product.addToCart')}
+                    </button>
+                  <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                    {isOutOfStock ? 'Indisponible' : t('product.buyNow')}
                   </button>
                 </>
               )}

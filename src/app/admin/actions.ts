@@ -17,6 +17,7 @@ import nodemailer from 'nodemailer';
 import { buildSupplierEmailHtml } from '@/lib/email-templates';
 
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry, Dispute } from '@/lib/types';
+import { normalizePrice } from '@/lib/pricing-engine';
 
 export interface ResellerLead {
   id: string;
@@ -2656,7 +2657,7 @@ export async function getProducts(options: { page?: number; limit?: number } = {
           hasDimensions: data.dimensionsEnabled !== undefined ? data.dimensionsEnabled : data.hasDimensions,
           minArea: parseFloat(data.surfaceMinRequise || data.minArea || 0),
           oldPrice: data.oldPrice ? parseFloat(data.oldPrice) : undefined,
-          salePricePerSqM: parseFloat(typeof data.price === 'string' ? data.price.replace('€', '').replace(/ /g, '').trim() : data.price || data.salePricePerSqM || 0),
+          salePricePerSqM: normalizePrice(data.price ?? data.salePricePerSqM),
           rentalPricePerDay: parseFloat(data.prixLocationJour || data.rentalPricePerDay || 0),
           rentalPricePerHour: parseFloat(data.prixLocationHeure || data.rentalPricePerHour || 0),
           productUrl: data.pdfUrl || data.productUrl || '',

@@ -248,8 +248,27 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                     <User size={20} className="text-[#3b82f6]" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold">{currentEstimation?.client?.name || 'Client'}</h2>
-                    <p className="text-sm text-[#a1a1aa]">{currentEstimation?.client?.company || ''}</p>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={currentEstimation?.client?.name || ''}
+                        onChange={(e) => updateClient('name', e.target.value)}
+                        className="text-lg font-bold bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-1.5 w-full focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30"
+                      />
+                    ) : (
+                      <h2 className="text-lg font-bold">{currentEstimation?.client?.name || 'Client'}</h2>
+                    )}
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={currentEstimation?.client?.company || ''}
+                        onChange={(e) => updateClient('company', e.target.value)}
+                        className="text-sm text-[#a1a1aa] bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-1.5 w-full mt-1 focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30"
+                        placeholder="Company"
+                      />
+                    ) : (
+                      <p className="text-sm text-[#a1a1aa]">{currentEstimation?.client?.company || ''}</p>
+                    )}
                   </div>
                 </div>
                 {currentEstimation?.client?.sitePhoto && (
@@ -264,23 +283,60 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
               <div className="grid grid-cols-4 gap-4 text-sm">
                 <div>
                   <span className="text-[#a1a1aa]">Email</span>
-                  <p className="font-medium">{currentEstimation?.client?.email || '-'}</p>
+                  {isEditMode ? (
+                    <input
+                      type="email"
+                      value={currentEstimation?.client?.email || ''}
+                      onChange={(e) => updateClient('email', e.target.value)}
+                      className="font-medium bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-1.5 w-full focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30"
+                    />
+                  ) : (
+                    <p className="font-medium">{currentEstimation?.client?.email || '-'}</p>
+                  )}
                 </div>
                 <div>
                   <span className="text-[#a1a1aa]">Phone</span>
-                  <p className="font-medium">{currentEstimation?.client?.phone || '-'}</p>
+                  {isEditMode ? (
+                    <input
+                      type="text"
+                      value={currentEstimation?.client?.phone || ''}
+                      onChange={(e) => updateClient('phone', e.target.value)}
+                      className="font-medium bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-1.5 w-full focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30"
+                    />
+                  ) : (
+                    <p className="font-medium">{currentEstimation?.client?.phone || '-'}</p>
+                  )}
                 </div>
                 <div className="col-span-2">
                   <span className="text-[#a1a1aa]">Adresse</span>
-                  <p className="font-medium">{currentEstimation?.client?.address || '-'}</p>
+                  {isEditMode ? (
+                    <input
+                      type="text"
+                      value={currentEstimation?.client?.address || ''}
+                      onChange={(e) => updateClient('address', e.target.value)}
+                      className="font-medium bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-1.5 w-full focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30"
+                    />
+                  ) : (
+                    <p className="font-medium">{currentEstimation?.client?.address || '-'}</p>
+                  )}
                 </div>
               </div>
-              {currentEstimation?.client?.notes && (
-                <div className="mt-4 p-3 bg-[#09090b] rounded-lg">
-                  <span className="text-[#a1a1aa] text-xs">Notes</span>
-                  <p className="text-sm">{currentEstimation.client.notes}</p>
-                </div>
-              )}
+              <div className="mt-4">
+                <span className="text-[#a1a1aa] text-xs">Notes</span>
+                {isEditMode ? (
+                  <textarea
+                    value={currentEstimation?.client?.notes || ''}
+                    onChange={(e) => updateClient('notes', e.target.value)}
+                    className="mt-1 w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30"
+                    rows={3}
+                    placeholder="Notes..."
+                  />
+                ) : (
+                  currentEstimation?.client?.notes && (
+                    <p className="text-sm mt-1">{currentEstimation.client.notes}</p>
+                  )
+                )}
+              </div>
             </div>
 
             {/* Products Section */}

@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { Estimation, TrackingInfo } from '../types';
+import { Estimation, TrackingInfo, DeliveryHistoryEntry } from '../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/firebase';
 import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
@@ -28,6 +28,8 @@ const useStatusLabel = () => {
       'Retourné': t('estimationStatus.returned'),
       'Fournisseur': t('estimationStatus.supplier'),
       'Livraison': t('estimationStatus.delivery'),
+      'Livré': t('estimationStatus.delivered'),
+      'Réception confirmée': t('estimationStatus.receiptConfirmed'),
       'Archivé': t('estimationStatus.archived'),
       'Corbeille': t('estimationStatus.trash'),
       'Loué': t('estimationStatus.rented'),
@@ -199,6 +201,7 @@ interface EstimationTableProps {
   onSupplierClick: (id: string) => void;
   onSupplierAction: (ids: string[], action: 'approve' | 'refuse', data?: { trackingNumber?: string, reason?: string, subject?: string }) => void;
   onMarkAsDelivered: (id: string) => void;
+  onConfirmReceipt: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string, skipConfirm?: boolean) => void;
   onBulkDelete: (skipConfirm?: boolean) => void;
@@ -231,6 +234,8 @@ function getStatusConfig(status: EstimationStatus, isReturned?: boolean) {
   if (status === 'Loué') return { bg: '#f3e8ff', text: '#a855f7', hoverBg: '#2e1065', hoverText: '#d8b4fe', icon: Key };
   if (status === 'Fournisseur') return { bg: '#f5f3ff', text: '#a78bfa', hoverBg: '#2e1065', hoverText: '#ddd6fe', icon: Users };
   if (status === 'Livraison') return { bg: '#dcfce7', text: '#22c55e', hoverBg: '#052e16', hoverText: '#86efac', icon: Truck };
+  if (status === 'Livré') return { bg: '#d1fae5', text: '#059669', hoverBg: '#064e3b', hoverText: '#a7f3d0', icon: CheckCircle2 };
+  if (status === 'Réception confirmée') return { bg: '#dbeafe', text: '#2563eb', hoverBg: '#1e3a5f', hoverText: '#93c5fd', icon: ShieldCheck };
   if (status.startsWith('Archiv')) return { bg: '#e5e7eb', text: '#9ca3af', hoverBg: '#111827', hoverText: '#9ca3af', icon: Archive };
   if (status === 'Corbeille') {
     return { bg: '#fee2e2', text: '#ef4444', hoverBg: '#450a0a', hoverText: '#fca5a5', icon: Trash2 };
@@ -255,6 +260,7 @@ interface EstimationRowProps {
   onStatusClick: (id: string) => void;
   onViewMessage: (id: string) => void;
   onMarkAsDelivered: (id: string) => void;
+  onConfirmReceipt: (id: string) => void;
   onEdit: (id: string) => void;
   onToggleLock?: (id: string) => void;
   isFournisseur?: boolean;
@@ -283,6 +289,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
   onStatusClick,
   onViewMessage,
   onMarkAsDelivered,
+  onConfirmReceipt,
   onEdit,
   onToggleLock,
   isFournisseur,
@@ -327,6 +334,8 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                 ? (est.status === 'Corbeille' ? 'bg-red-600 border-red-600 text-white' : 'bg-theme-sidebar-active-bg border-theme-sidebar-active-bg text-theme-sidebar-active-text')
                 : est.isReturned 
           ? 'bg-red-50 border-red-200 text-red-900 hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white transition-colors duration-300'
+          : est.status === 'Livré' || est.status === 'Réception confirmée'
+          ? 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white transition-colors duration-300'
           : est.status === 'Corbeille'
             ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors duration-300'
           : est.status === 'Archivé'
@@ -452,6 +461,23 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                   {est.supplier}
                 </span>
               )}
+              {/* Delay indicator for in-transit deliveries */}
+              {est.status === 'Livraison' && est.trackingInfo?.deliveryDate && (() => {
+                const now = new Date(); now.setHours(0, 0, 0, 0);
+                const planned = new Date(est.trackingInfo.deliveryDate); planned.setHours(0, 0, 0, 0);
+                if (now > planned) {
+                  const days = Math.floor((now.getTime() - planned.getTime()) / (1000 * 60 * 60 * 24));
+                  return (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[8px] font-black uppercase tracking-wider animate-pulse">
+                      <AlertTriangle className="w-2.5 h-2.5" />
+                      {days === 1
+                        ? t('estimation.delayDays', { days })
+                        : t('estimation.delayDays_plural', { days })}
+                    </span>
+                  );
+                }
+                return null;
+              })()}
               {/* Rental remaining days indicator */}
               {estimationMode === 'location' && est.rentalPeriod && (est.status === 'Traité' || est.status === 'Loué') && (() => {
                 const days = getRemainingDays(est.rentalPeriod);
@@ -546,6 +572,23 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                               <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.viewTracking')}>
                                 <Package className="w-4 h-4" />
                               </button>
+                              <button onClick={() => onMarkAsDelivered(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title={t('estimation.markAsDelivered')}>
+                                <CheckCircle2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                          {est.status === 'Livré' && (
+                            <>
+                              <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.viewTracking')}>
+                                <Package className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                          {est.status === 'Réception confirmée' && (
+                            <>
+                              <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.viewTracking')}>
+                                <Package className="w-4 h-4" />
+                              </button>
                             </>
                           )}
                         </>
@@ -630,7 +673,33 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title={t('estimation.viewTracking')}>
                          <Package className="w-4 h-4" />
                       </button>
-<button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title={t('estimation.archive')}>
+                      <button onClick={() => onMarkAsDelivered(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title={t('estimation.markAsDelivered')}>
+                         <CheckCircle2 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title={t('estimation.archive')}>
+                          <Archive className="w-4 h-4" />
+                        </button>
+                    </>
+                  )}
+                  {est.status === 'Livré' && (
+                    <>
+                      <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title={t('estimation.viewTracking')}>
+                         <Package className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => onConfirmReceipt(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title={t('estimation.confirmReceipt')}>
+                         <ShieldCheck className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title={t('estimation.archive')}>
+                          <Archive className="w-4 h-4" />
+                        </button>
+                    </>
+                  )}
+                  {est.status === 'Réception confirmée' && (
+                    <>
+                      <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`} title={t('estimation.viewTracking')}>
+                         <Package className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => onStatusClick(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`} title={t('estimation.archive')}>
                           <Archive className="w-4 h-4" />
                         </button>
                     </>
@@ -660,7 +729,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                       </button>
                     </>
                   )}
-                  {est.status !== 'Archivé' && (est.status !== 'Livraison' || userRole === 'admin') && (
+                  {est.status !== 'Archivé' && (est.status !== 'Livraison' || userRole === 'admin') && (est.status !== 'Livré' || userRole === 'admin') && (est.status !== 'Réception confirmée' || userRole === 'admin') && (
                     <button onClick={() => setConfirmDeleteId(est.id)} className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-red-500/20 text-theme-sidebar-active-text/40 hover:text-red-500' : 'hover:bg-red-50 text-zinc-400 group-hover:hover:bg-red-500/20 group-hover:hover:text-red-500'}`} title={est.status === 'Corbeille' ? t('estimation.deletePermanently') : t('estimation.moveToTrash')}>
                        <Trash2 className="w-4 h-4" />
                     </button>
@@ -716,7 +785,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
           <motion.div
             layout
             className={`md:hidden group relative flex flex-col rounded-2xl border transition-all duration-300 overflow-hidden mb-3 shadow-sm hover:-translate-y-1 hover:shadow-2xl ${
-              est.isReturned ? 'bg-red-50 border-red-200 hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white transition-colors duration-300' : est.status === 'Corbeille' ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors duration-300' : activeTab === 'Archivé' && est.isLocked ? 'bg-theme-app/50 border-theme-card-border text-theme-card-text/40 opacity-60 grayscale' : 'bg-theme-card border-theme-card-border hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white'
+              est.isReturned ? 'bg-red-50 border-red-200 hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white transition-colors duration-300' : est.status === 'Livré' || est.status === 'Réception confirmée' ? 'bg-emerald-50 border-emerald-300 hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white transition-colors duration-300' : est.status === 'Corbeille' ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors duration-300' : activeTab === 'Archivé' && est.isLocked ? 'bg-theme-app/50 border-theme-card-border text-theme-card-text/40 opacity-60 grayscale' : 'bg-theme-card border-theme-card-border hover:bg-[#131E3F] hover:border-[#131E3F] hover:text-white'
             } ${
               isSelected ? (est.status === 'Corbeille' ? 'border-red-600 ring-2 ring-red-600 ring-offset-1' : 'border-theme-sidebar-active-bg ring-2 ring-theme-sidebar-active-bg ring-offset-1') : ''
             }`}
@@ -792,6 +861,23 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                     {est.supplier}
                   </span>
                 )}
+                {/* Delay indicator for in-transit deliveries (mobile) */}
+                {est.status === 'Livraison' && est.trackingInfo?.deliveryDate && (() => {
+                  const now = new Date(); now.setHours(0, 0, 0, 0);
+                  const planned = new Date(est.trackingInfo.deliveryDate); planned.setHours(0, 0, 0, 0);
+                  if (now > planned) {
+                    const days = Math.floor((now.getTime() - planned.getTime()) / (1000 * 60 * 60 * 24));
+                    return (
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[8px] font-black uppercase tracking-wider animate-pulse">
+                        <AlertTriangle className="w-2.5 h-2.5" />
+                        {days === 1
+                          ? t('estimation.delayDays', { days })
+                          : t('estimation.delayDays_plural', { days })}
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               <div className="h-px bg-zinc-100/80 w-full my-4" />
@@ -833,19 +919,48 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                      </>
                    )}
                    {est.status === 'Livraison' && (
-                     <>
-                       <button 
-                         onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }}
-                         className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
-                         title={t('estimation.viewTracking')}
-                       >
-                          <Package className="w-4 h-4" />
-                       </button>
-                     </>
-                   )}
-                </>
-              ) : (
-                <div className="flex items-center gap-0.5">
+                      <>
+                        <button 
+                          onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }}
+                          className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
+                          title={t('estimation.viewTracking')}
+                        >
+                           <Package className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => onMarkAsDelivered(est.id)}
+                          className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-emerald-500'}`}
+                          title={t('estimation.markAsDelivered')}
+                        >
+                           <CheckCircle2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                    {est.status === 'Livré' && (
+                      <>
+                        <button 
+                          onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }}
+                          className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
+                          title={t('estimation.viewTracking')}
+                        >
+                           <Package className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                    {est.status === 'Réception confirmée' && (
+                      <>
+                        <button 
+                          onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }}
+                          className={`p-2 rounded-xl transition-all ${isSelected ? 'hover:bg-white/10 text-theme-sidebar-active-text/60 hover:text-theme-sidebar-active-text' : 'hover:bg-zinc-100 text-zinc-400 group-hover:hover:bg-white/10 group-hover:hover:text-blue-500'}`}
+                          title={t('estimation.viewTracking')}
+                        >
+                           <Package className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                 </>
+               ) : (
+                 <div className="flex items-center gap-0.5">
                         {est.status === 'En attente' && (
                           <>
                             <button onClick={() => onEdit(est.id)} className="p-2 text-zinc-400 hover:text-theme-sidebar-active-text rounded-lg transition-colors" title={t('estimation.edit')}>
@@ -919,6 +1034,32 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
                             <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.viewTracking')}>
                               <Package className="w-4 h-4" />
                             </button>
+                            <button onClick={() => onMarkAsDelivered(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title={t('estimation.markAsDelivered')}>
+                              <CheckCircle2 className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title={t('estimation.archive')}>
+                              <Archive className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {est.status === 'Livré' && (
+                          <>
+                            <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.viewTracking')}>
+                              <Package className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onConfirmReceipt(est.id)} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.confirmReceipt')}>
+                              <ShieldCheck className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title={t('estimation.archive')}>
+                              <Archive className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {est.status === 'Réception confirmée' && (
+                          <>
+                            <button onClick={() => { setSelectedEstimation(est); setIsTrackingPanelOpen(true); }} className="p-2 text-zinc-400 hover:text-blue-500 rounded-lg transition-colors" title={t('estimation.viewTracking')}>
+                              <Package className="w-4 h-4" />
+                            </button>
                             <button onClick={() => onStatusClick(est.id)} className="p-2 text-zinc-400 hover:text-emerald-500 rounded-lg transition-colors" title={t('estimation.archive')}>
                               <Archive className="w-4 h-4" />
                             </button>
@@ -945,7 +1086,7 @@ title={est.isLocked ? t('estimation.unlock') : t('estimation.lock')}
                             </button>
                           </>
                         )}
-{est.status !== 'Archivé' && (est.status !== 'Livraison' || userRole === 'admin') && (
+{est.status !== 'Archivé' && (est.status !== 'Livraison' || userRole === 'admin') && (est.status !== 'Livré' || userRole === 'admin') && (est.status !== 'Réception confirmée' || userRole === 'admin') && (
                            <button onClick={() => setConfirmDeleteId(est.id)} className="p-2 text-zinc-400 hover:text-red-500 rounded-lg transition-colors" title={est.status === 'Corbeille' ? t('estimation.deletePermanently') : t('estimation.moveToTrash')}>
                              <Trash2 className="w-4 h-4" />
                            </button>
@@ -1053,6 +1194,7 @@ export const EstimationTable: React.FC<EstimationTableProps> = ({
    onSupplierClick,
    onSupplierAction,
    onMarkAsDelivered,
+   onConfirmReceipt,
    onEdit,
    onDelete,
    onBulkDelete,
@@ -1406,25 +1548,26 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                   onSelect={onSelect}
                   onStatusClick={onStatusClick}
                   onViewMessage={onViewMessage}
-                  onMarkAsDelivered={onMarkAsDelivered}
-                  onEdit={onEdit}
-                  onToggleLock={onToggleLock}
-                  isFournisseur={isFournisseur}
-                  userRole={userRole}
-                  confirmDeleteId={confirmDeleteId}
-                  setConfirmDeleteId={setConfirmDeleteId}
-                  onDelete={onDelete}
-                  onRestore={onRestore}
-                  isExiting={exitingIds.has(est.id)}
-                  activeTab={activeTab}
-                  expandedId={expandedId}
-                  setExpandedId={setExpandedId}
-                  handleCall={handleCall}
-                  setSelectedEstimation={setSelectedEstimation}
-                  setIsTrackingPanelOpen={setIsTrackingPanelOpen}
-                  setIsRefusalPanelOpen={setIsRefusalPanelOpen}
-                  setPreviewImageUrl={setPreviewImageUrl}
-                  estimationMode={estimationMode}
+                   onMarkAsDelivered={onMarkAsDelivered}
+                   onConfirmReceipt={onConfirmReceipt}
+                   onEdit={onEdit}
+                   onToggleLock={onToggleLock}
+                   isFournisseur={isFournisseur}
+                   userRole={userRole}
+                   confirmDeleteId={confirmDeleteId}
+                   setConfirmDeleteId={setConfirmDeleteId}
+                   onDelete={onDelete}
+                   onRestore={onRestore}
+                   isExiting={exitingIds.has(est.id)}
+                   activeTab={activeTab}
+                   expandedId={expandedId}
+                   setExpandedId={setExpandedId}
+                   handleCall={handleCall}
+                   setSelectedEstimation={setSelectedEstimation}
+                   setIsTrackingPanelOpen={setIsTrackingPanelOpen}
+                   setIsRefusalPanelOpen={setIsRefusalPanelOpen}
+                   setPreviewImageUrl={setPreviewImageUrl}
+                   estimationMode={estimationMode}
                 />
               ))}
             </AnimatePresence>
@@ -1468,99 +1611,268 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
                 </button>
               </div>
 
-              <div className="flex-1 p-6 space-y-5 bg-white">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.trackingNumber')}</label>
-                  <div className="relative">
-                    <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
-                    <input
-                      type="text"
-                      value={trackingForm.number}
-                      onChange={(e) => setTrackingForm({ ...trackingForm, number: e.target.value })}
-                      placeholder={t('estimation.trackingPlaceholder')}
-                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
-                    />
-                  </div>
-                </div>
+              {(() => {
+                const isViewMode = selectedEstimation.status === 'Livraison' || selectedEstimation.status === 'Livré' || selectedEstimation.status === 'Réception confirmée';
+                const isDeliveredOrConfirmed = selectedEstimation.status === 'Livré' || selectedEstimation.status === 'Réception confirmée';
+                const isConfirmed = selectedEstimation.status === 'Réception confirmée';
+                
+                // ── Delay calculation ──
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                let delayDays = 0;
+                let hasDelay = false;
+                if (trackingForm.deliveryDate && !isConfirmed) {
+                  const planned = new Date(trackingForm.deliveryDate);
+                  planned.setHours(0, 0, 0, 0);
+                  if (today > planned && !isDeliveredOrConfirmed) {
+                    delayDays = Math.floor((today.getTime() - planned.getTime()) / (1000 * 60 * 60 * 24));
+                    hasDelay = true;
+                  }
+                }
 
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.deliveryDate')}</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-white border border-sky-300 rounded-lg hover:border-sky-500 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm">
-                          <CalendarIcon className="w-4 h-4 text-sky-500 shrink-0" />
-                          <span className={trackingForm.deliveryDate ? 'text-gray-900 font-medium' : 'text-gray-400'}>
-                            {trackingForm.deliveryDate ? format(new Date(trackingForm.deliveryDate), 'dd MMM yyyy') : t('estimation.selectDate')}
-                          </span>
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="z-[200] w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={trackingForm.deliveryDate ? new Date(trackingForm.deliveryDate) : undefined}
-                          onSelect={(date) => {
-                            if (date) {
-                              const formatted = format(date, 'yyyy-MM-dd');
-                              setTrackingForm({ ...trackingForm, deliveryDate: formatted });
-                              if (trackingForm.receiptDate && date > new Date(trackingForm.receiptDate)) {
-                                setTrackingForm(prev => ({ ...prev, receiptDate: '' }));
-                              }
-                            }
-                          }}
-                          disabled={{ before: new Date() }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                // ── History ──
+                const history = selectedEstimation.deliveryHistory || [];
+
+                return isViewMode ? (
+                  /* ── VIEW MODE: read-only display with full delivery info ── */
+                  <div className="flex-1 p-6 space-y-6 bg-white overflow-y-auto">
+                    {/* Delay Penalty Banner */}
+                    {hasDelay && (
+                      <div className="bg-red-50 border-2 border-red-400 rounded-xl p-4 animate-pulse">
+                        <div className="flex items-center gap-3 mb-2">
+                          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+                          <span className="text-[13px] font-black text-red-800 uppercase tracking-tight">{t('estimation.delayTitle')}</span>
+                        </div>
+                        <p className="text-lg font-black text-red-900 ml-8">
+                          {delayDays === 1
+                            ? t('estimation.delayDays', { days: delayDays })
+                            : t('estimation.delayDays_plural', { days: delayDays })}
+                        </p>
+                      </div>
+                    )}
+                    {!hasDelay && trackingForm.deliveryDate && !isDeliveredOrConfirmed && (
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                          <span className="text-[13px] font-black text-emerald-800">{t('estimation.noDelay')}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Confirmed Banner */}
+                    {isConfirmed && selectedEstimation.confirmedByName && (
+                      <div className="bg-blue-50 border border-blue-300 rounded-xl p-4">
+                        <div className="flex items-center gap-3 mb-1">
+                          <ShieldCheck className="w-5 h-5 text-blue-600" />
+                          <span className="text-[12px] font-black text-blue-800 uppercase tracking-tight">{t('estimation.receiptConfirmedStatus')}</span>
+                        </div>
+                        <p className="text-sm font-bold text-blue-900 ml-8">
+                          {t('estimation.receiptConfirmedBy')} {selectedEstimation.confirmedByName}
+                          {selectedEstimation.confirmedAt && ` — ${format(new Date(selectedEstimation.confirmedAt), 'dd MMM yyyy HH:mm')}`}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Delivered Banner */}
+                    {isDeliveredOrConfirmed && !isConfirmed && selectedEstimation.deliveredByName && (
+                      <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4">
+                        <div className="flex items-center gap-3 mb-1">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                          <span className="text-[12px] font-black text-emerald-800 uppercase tracking-tight">{t('estimation.deliveredStatus')}</span>
+                        </div>
+                        <p className="text-sm font-bold text-emerald-900 ml-8">
+                          {t('estimation.byUser', { user: selectedEstimation.deliveredByName })}
+                          {selectedEstimation.deliveredAt && ` — ${format(new Date(selectedEstimation.deliveredAt), 'dd MMM yyyy HH:mm')}`}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Tracking Info */}
+                    {trackingForm.number && (
+                      <div className="bg-orange-50 border border-orange-200 rounded-xl p-5">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Package className="w-5 h-5 text-orange-600" />
+                          <span className="text-[11px] font-bold text-orange-700 uppercase tracking-wider">{t('estimation.trackingNumber')}</span>
+                        </div>
+                        <p className="text-lg font-black text-orange-900 tracking-tight ml-8">{trackingForm.number}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {trackingForm.deliveryDate && (
+                        <div className="bg-sky-50 border border-sky-200 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CalendarIcon className="w-4 h-4 text-sky-600" />
+                            <span className="text-[10px] font-bold text-sky-700 uppercase tracking-wider">{t('estimation.deliveryDate')}</span>
+                          </div>
+                          <p className="text-base font-bold text-sky-900">{format(new Date(trackingForm.deliveryDate), 'dd MMM yyyy')}</p>
+                        </div>
+                      )}
+
+                      {trackingForm.receiptDate ? (
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <History className="w-4 h-4 text-emerald-600" />
+                            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">{t('estimation.receiptDateLabel')}</span>
+                          </div>
+                          <p className="text-base font-bold text-emerald-900">{format(new Date(trackingForm.receiptDate), 'dd MMM yyyy')}</p>
+                        </div>
+                      ) : (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Clock className="w-4 h-4 text-amber-600" />
+                            <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">{t('estimation.receiptDateLabel')}</span>
+                          </div>
+                          <p className="text-sm font-semibold text-amber-700">{t('estimation.notReceivedYet')}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Delivery History */}
+                    {history.length > 0 && (
+                      <div className="border border-gray-200 rounded-xl overflow-hidden">
+                        <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                          <div className="flex items-center gap-2">
+                            <History className="w-4 h-4 text-gray-600" />
+                            <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">{t('estimation.deliveryHistory')}</span>
+                          </div>
+                        </div>
+                        <div className="divide-y divide-gray-100 max-h-[240px] overflow-y-auto">
+                          {history.map((entry: DeliveryHistoryEntry, idx: number) => {
+                            const entryDate = new Date(entry.timestamp);
+                            const actionKey = {
+                              'deliveryCreated': t('estimation.deliveryCreated'),
+                              'trackingAdded': t('estimation.trackingAdded'),
+                              'deliveryStarted': t('estimation.deliveryStarted'),
+                              'deliveryCompleted': t('estimation.deliveryCompleted'),
+                              'receiptConfirmed': t('estimation.receiptConfirmed'),
+                              'delayDetected': t('estimation.delayDetected'),
+                              'penaltyCalculated': t('estimation.penaltyCalculated'),
+                              'notificationSent': t('estimation.notificationSent'),
+                            }[entry.action] || entry.action;
+                            return (
+                              <div key={idx} className="flex items-start gap-3 px-4 py-3">
+                                <div className="w-2 h-2 mt-1.5 rounded-full bg-gray-300 shrink-0" />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-gray-900">{actionKey}</p>
+                                  <p className="text-[10px] text-gray-500 font-medium">
+                                    {entry.userName && `${t('estimation.byUser', { user: entry.userName })} `}
+                                    {t('estimation.atTime', { time: entryDate.toLocaleString('fr-FR') })}
+                                  </p>
+                                  {entry.details && (
+                                    <p className="text-[11px] text-gray-600 mt-0.5">{entry.details}</p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {history.length === 0 && (
+                      <div className="text-center py-4">
+                        <p className="text-xs text-gray-400 italic">{t('estimation.historyEmpty')}</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.receiptDateLabel')}</label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button
-                          disabled={!trackingForm.deliveryDate}
-                          className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-white border border-sky-300 rounded-lg hover:border-sky-500 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm ${!trackingForm.deliveryDate ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                          <History className="w-4 h-4 text-sky-500 shrink-0" />
-                          <span className={trackingForm.receiptDate ? 'text-gray-900 font-medium' : 'text-gray-400'}>
-                            {trackingForm.receiptDate ? format(new Date(trackingForm.receiptDate), 'dd MMM yyyy') : t('estimation.selectDate')}
-                          </span>
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="z-[200] w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={trackingForm.receiptDate ? new Date(trackingForm.receiptDate) : undefined}
-                          onSelect={(date) => {
-                            if (date) {
-                              setTrackingForm({ ...trackingForm, receiptDate: format(date, 'yyyy-MM-dd') });
-                            }
-                          }}
-                          disabled={{ before: new Date(trackingForm.deliveryDate) }}
-                          initialFocus
+                ) : (
+                  /* ── EDIT MODE: editable form for Fournisseur ── */
+                  <div className="flex-1 p-6 space-y-5 bg-white">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.trackingNumber')}</label>
+                      <div className="relative">
+                        <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
+                        <input
+                          type="text"
+                          value={trackingForm.number}
+                          onChange={(e) => setTrackingForm({ ...trackingForm, number: e.target.value })}
+                          placeholder={t('estimation.trackingPlaceholder')}
+                          className="w-full pl-10 pr-4 py-2.5 bg-white border border-orange-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all text-sm font-medium text-gray-900 placeholder:text-gray-400"
                         />
-                      </PopoverContent>
-                    </Popover>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.deliveryDate')}</label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-white border border-sky-300 rounded-lg hover:border-sky-500 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm">
+                              <CalendarIcon className="w-4 h-4 text-sky-500 shrink-0" />
+                              <span className={trackingForm.deliveryDate ? 'text-gray-900 font-medium' : 'text-gray-400'}>
+                                {trackingForm.deliveryDate ? format(new Date(trackingForm.deliveryDate), 'dd MMM yyyy') : t('estimation.selectDate')}
+                              </span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="z-[200] w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={trackingForm.deliveryDate ? new Date(trackingForm.deliveryDate) : undefined}
+                              onSelect={(date) => {
+                                if (date) {
+                                  const formatted = format(date, 'yyyy-MM-dd');
+                                  setTrackingForm({ ...trackingForm, deliveryDate: formatted });
+                                  if (trackingForm.receiptDate && date > new Date(trackingForm.receiptDate)) {
+                                    setTrackingForm(prev => ({ ...prev, receiptDate: '' }));
+                                  }
+                                }
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide ml-1">{t('estimation.receiptDateLabel')}</label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              disabled={!trackingForm.deliveryDate}
+                              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-white border border-sky-300 rounded-lg hover:border-sky-500 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-sm ${!trackingForm.deliveryDate ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              <History className="w-4 h-4 text-sky-500 shrink-0" />
+                              <span className={trackingForm.receiptDate ? 'text-gray-900 font-medium' : 'text-gray-400'}>
+                                {trackingForm.receiptDate ? format(new Date(trackingForm.receiptDate), 'dd MMM yyyy') : t('estimation.selectDate')}
+                              </span>
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="z-[200] w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={trackingForm.receiptDate ? new Date(trackingForm.receiptDate) : undefined}
+                              onSelect={(date) => {
+                                if (date) {
+                                  setTrackingForm({ ...trackingForm, receiptDate: format(date, 'yyyy-MM-dd') });
+                                }
+                              }}
+                              disabled={{ before: new Date(trackingForm.deliveryDate) }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
 
               <div className="p-4 bg-gray-50 border-t border-gray-200 flex gap-3">
                 <button onClick={() => setIsTrackingPanelOpen(false)} className="flex-1 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-[11px] font-semibold uppercase tracking-wide hover:bg-gray-100 transition-colors cursor-pointer">
-                  {t('estimation.cancel')}
+                  {t('estimation.close')}
                 </button>
-                <button
-                  onClick={() => {
-                    if (onUpdateTracking && selectedEstimation) {
-                      onUpdateTracking(selectedEstimation.id, trackingForm);
-                      setIsTrackingPanelOpen(false);
-                    }
-                  }}
-                  className="flex-1 py-2.5 bg-gray-900 text-white rounded-lg text-[11px] font-semibold uppercase tracking-wide hover:bg-gray-800 transition-colors cursor-pointer"
-                >
-                  {t('estimation.save')}
-                </button>
+                {selectedEstimation.status !== 'Livraison' && selectedEstimation.status !== 'Livré' && selectedEstimation.status !== 'Réception confirmée' && (
+                  <button
+                    onClick={() => {
+                      if (onUpdateTracking && selectedEstimation) {
+                        onUpdateTracking(selectedEstimation.id, trackingForm);
+                        setIsTrackingPanelOpen(false);
+                      }
+                    }}
+                    className="flex-1 py-2.5 bg-gray-900 text-white rounded-lg text-[11px] font-semibold uppercase tracking-wide hover:bg-gray-800 transition-colors cursor-pointer"
+                  >
+                    {t('estimation.save')}
+                  </button>
+                )}
               </div>
             </motion.div>
           </div>

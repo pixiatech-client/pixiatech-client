@@ -31,6 +31,7 @@ import { ConfiguratorModeSelection } from './configurator-mode-selection';
 import { preloadImages } from '@/lib/image-preload';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import SignatureFlow from './SignatureFlow';
+import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR } from '@/lib/pricing-engine';
 
 
 
@@ -331,14 +332,14 @@ export function QuoteBuilder({
         }
         else {
             if (config.transactionType === 'sale') {
-                const salePrice = product.salePricePerSqM && product.salePricePerSqM > 0 ? product.salePricePerSqM : 2000;
+                const salePrice = product.salePricePerSqM && product.salePricePerSqM > 0 ? product.salePricePerSqM : DEFAULT_SALE_PRICE_PER_SQM;
                 lineTotal = area * salePrice;
             } else if (config.transactionType === 'rental') {
                 if (config.rentalUnit === 'day') {
-                    const rentalPrice = product.rentalPricePerDay && product.rentalPricePerDay > 0 ? product.rentalPricePerDay : 12;
+                    const rentalPrice = product.rentalPricePerDay && product.rentalPricePerDay > 0 ? product.rentalPricePerDay : DEFAULT_RENTAL_PRICE_PER_DAY;
                     lineTotal = area * rentalPrice;
                 } else if (config.rentalUnit === 'hour') {
-                    const rentalPriceHour = product.rentalPricePerHour && product.rentalPricePerHour > 0 ? product.rentalPricePerHour : 1.5;
+                    const rentalPriceHour = product.rentalPricePerHour && product.rentalPricePerHour > 0 ? product.rentalPricePerHour : DEFAULT_RENTAL_PRICE_PER_HOUR;
                     lineTotal = area * rentalPriceHour;
                 }
             }
@@ -441,16 +442,16 @@ export function QuoteBuilder({
                     finalUnitPrice = product.pricePerTile;
                 } else if (product) {
                     if (cp.transactionType === 'sale') {
-                        const salePrice = product.salePricePerSqM && product.salePricePerSqM > 0 ? product.salePricePerSqM : 2000;
+                        const salePrice = product.salePricePerSqM && product.salePricePerSqM > 0 ? product.salePricePerSqM : DEFAULT_SALE_PRICE_PER_SQM;
                         finalQuantity = area * (cp.quantity || 1);
                         finalUnitPrice = salePrice;
                     } else if (cp.transactionType === 'rental') {
                         if (cp.rentalUnit === 'day') {
-                            const rentalPrice = product.rentalPricePerDay && product.rentalPricePerDay > 0 ? product.rentalPricePerDay : 12;
+                            const rentalPrice = product.rentalPricePerDay && product.rentalPricePerDay > 0 ? product.rentalPricePerDay : DEFAULT_RENTAL_PRICE_PER_DAY;
                             finalQuantity = area * (cp.quantity || 1);
                             finalUnitPrice = rentalPrice;
                         } else if (cp.rentalUnit === 'hour') {
-                            const rentalPriceHour = product.rentalPricePerHour && product.rentalPricePerHour > 0 ? product.rentalPricePerHour : 1.5;
+                    const rentalPriceHour = product.rentalPricePerHour && product.rentalPricePerHour > 0 ? product.rentalPricePerHour : DEFAULT_RENTAL_PRICE_PER_HOUR;
                             finalQuantity = area * (cp.quantity || 1);
                             finalUnitPrice = rentalPriceHour;
                         }

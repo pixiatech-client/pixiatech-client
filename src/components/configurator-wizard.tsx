@@ -66,6 +66,7 @@ import { preloadImages } from '@/lib/image-preload';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ProductNotFound, ProductNotFoundProps } from './ProductNotFound';
 import { ProductComparator } from './product-comparator';
+import { calculateTilesCount, calculatePromotionPercent, normalizePrice, DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY } from '@/lib/pricing-engine';
 
 // --- Wizard Component ---
 interface ConfiguratorWizardProps {
@@ -1438,7 +1439,9 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
       return (p.salePricePerSqM || 0) * area;
     } else {
       if (p.hasDimensions && p.tileWidth && p.tileHeight && p.pricePerTile && p.pricePerTile > 0) {
-        return (p.rentalPricePerDay || 0) * area;
+        const tilesW = Math.ceil((state.width * 100) / p.tileWidth);
+        const tilesH = Math.ceil((state.height * 100) / p.tileHeight);
+        return tilesW * tilesH * p.pricePerTile;
       }
       return (typeof p.rentalPricePerDay === 'number' && p.rentalPricePerDay > 0 ? p.rentalPricePerDay : 0) * area;
     }
@@ -1556,16 +1559,13 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
               const tilesPerHeight = Math.ceil((state.height * 100) / product.tileHeight);
               const totalTiles = tilesPerWidth * tilesPerHeight;
               unitPrice = totalTiles * product.pricePerTile;
-              if (isRentalMode && product.rentalPricePerDay && product.rentalPricePerDay > 0) {
-                unitPrice = product.rentalPricePerDay * area;
-              }
             } else {
               if (state.projectType === 'vente') {
-                unitPrice = (product.salePricePerSqM || 2000) * area;
+                unitPrice = (product.salePricePerSqM || DEFAULT_SALE_PRICE_PER_SQM) * area;
               } else {
                 const rentalRate = (typeof product.rentalPricePerDay === 'number' && product.rentalPricePerDay > 0)
                   ? product.rentalPricePerDay
-                  : 12;
+                  : DEFAULT_RENTAL_PRICE_PER_DAY;
                 unitPrice = rentalRate * area;
               }
             }
@@ -1618,7 +1618,7 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                   {product.oldPrice && product.salePricePerSqM && product.oldPrice > product.salePricePerSqM && (
                     <div className="absolute top-3 left-3 z-30">
                       <span className="px-2 py-1 text-[10px] font-black uppercase tracking-widest bg-red-500 text-white rounded-full">
-                        -{Math.round(((product.oldPrice - product.salePricePerSqM) / product.oldPrice) * 100)}%
+                        -{calculatePromotionPercent(product.oldPrice, product.salePricePerSqM)}%
                       </span>
                     </div>
                   )}

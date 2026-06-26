@@ -27,6 +27,7 @@ export interface Product {
   specs: Record<string, string>;
   badges?: string[];
   variants?: ProductVariant[];
+  stock?: number;
 }
 
 export interface RelatedProduct {
@@ -160,6 +161,7 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     specs: buildSpecs(data, charNameMap),
     badges: data.badges || [],
     variants: data.variants || [],
+    stock: data.stock ?? undefined,
   };
 }
 

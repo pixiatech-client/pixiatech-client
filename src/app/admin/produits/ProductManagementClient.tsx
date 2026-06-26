@@ -2322,6 +2322,8 @@ const ProduitPage = ({
   setIsHidden,
   rentalStock,
   setRentalStock,
+  stock,
+  setStock,
   distancePitches = {},
   setDistancePitches,
   wizardSettings
@@ -2702,11 +2704,27 @@ const ProduitPage = ({
                     <div className="text-[9px] text-orange-400 mt-1 font-medium italic tracking-tight">{t('admin.productManagement.oldSellingPriceHelp')}</div>
                   </div>
 
+                  {Array.isArray(mode) && mode.includes('vente') && (
+                    <div className="bg-white/[0.03] p-4 rounded-2xl border border-white/[0.06] relative group overflow-hidden shadow-sm">
+                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                      <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400" />
+                        {t('admin.productManagement.stock')}
+                      </label>
+                      <NumberInput
+                        value={stock}
+                        onChange={(val) => setStock(String(val ?? ''))}
+                        placeholder="Ex : 250"
+                        isDark
+                      />
+                    </div>
+                  )}
+
                   {Array.isArray(mode) && mode.includes('location') && (
-                    <div className="bg-violet-500/10 p-4 rounded-2xl border border-violet-500/40 relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] ring-1 ring-violet-500/20">
-                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
-                      <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]" />
+                    <div className="bg-white/[0.03] p-4 rounded-2xl border border-white/[0.06] relative group overflow-hidden shadow-sm">
+                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                      <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400" />
                         {t('admin.productManagement.availableQuantity')}
                       </label>
                       <NumberInput
@@ -4480,6 +4498,7 @@ export default function ProductManagementClient() {
         prixLocationJour: String(prixLocationJour || '0'),
         rentalStock: Number(rentalStock || '0'),
         rentalQuantity: Number(rentalQuantity || '1'),
+        stock: Number(stock || '0'),
         isHidden: !!isHidden,
         galleryUrls: finalGalleryUrls,
         description: description,
@@ -4819,6 +4838,7 @@ export default function ProductManagementClient() {
   const [surfaceMinRequise, setSurfaceMinRequise] = useState<string>('0');
   const [rentalStock, setRentalStock] = useState<string>('');
   const [rentalQuantity, setRentalQuantity] = useState<string>('1');
+  const [stock, setStock] = useState<string>('');
 
   // Ref to track which product ID has already been initialized, preventing
   // the form from re-resetting when characteristics load asynchronously (F5 race condition fix).
@@ -4934,6 +4954,7 @@ export default function ProductManagementClient() {
       setSurfaceMinRequise(editingProduct.surfaceMinRequise || '0');
       setRentalStock((editingProduct.rentalStock ?? editingProduct.surfaceMaxLocation ?? '').toString());
       setRentalQuantity((editingProduct.rentalQuantity ?? '1').toString());
+      setStock((editingProduct.stock ?? '').toString());
       setLargeurDalle(editingProduct.tileWidth?.toString() || editingProduct.largeurDalle || '50');
       setHauteurDalle(editingProduct.tileHeight?.toString() || editingProduct.hauteurDalle || '50');
       setPrixDalle(editingProduct.pricePerTile?.toString() || editingProduct.prixDalle || '20');
@@ -4966,6 +4987,7 @@ export default function ProductManagementClient() {
       setSurfaceMaxLocation('');
       setRentalStock('');
       setRentalQuantity('1');
+      setStock('');
       setSurfaceMinRequise('0');
       setLargeurDalle('50');
       setHauteurDalle('50');
@@ -5529,6 +5551,8 @@ export default function ProductManagementClient() {
                   setSurfaceMaxLocation={setSurfaceMaxLocation}
                   rentalStock={rentalStock}
                   setRentalStock={setRentalStock}
+                  stock={stock}
+                  setStock={setStock}
                   surfaceMinRequise={surfaceMinRequise}
                   setSurfaceMinRequise={setSurfaceMinRequise}
                   dimensionsEnabled={dimensionsEnabled}

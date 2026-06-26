@@ -871,35 +871,22 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           />
                         </div>
 
-                        <div className="md:col-span-2 pt-6 mt-4 border-t border-slate-200 space-y-4">
-                          <div className="flex flex-wrap gap-6 bg-slate-100 p-4 rounded-xl border border-slate-200">
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                              <div className="relative inline-flex items-center h-5 w-10">
-                                <input
-                                  type="checkbox"
-                                  className="sr-only peer"
-                                  checked={estimation.hideCommentsFromSupplier}
-                                  onChange={() => setEstimation({ ...estimation, hideCommentsFromSupplier: !estimation.hideCommentsFromSupplier })}
-                                />
-                                <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-aura-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 transition-all duration-300"></div>
-                              </div>
-                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Masquer les notes du fournisseur</span>
-                            </label>
-
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                              <div className="relative inline-flex items-center h-5 w-10">
-                                <input
-                                  type="checkbox"
-                                  className="sr-only peer"
-                                  checked={estimation.hidePhotoFromSupplier}
-                                  onChange={() => setEstimation({ ...estimation, hidePhotoFromSupplier: !estimation.hidePhotoFromSupplier })}
-                                />
-                                <div className="w-10 h-5 bg-slate-200 rounded-full peer peer-checked:bg-aura-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 transition-all duration-300"></div>
-                              </div>
-                              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-900 transition-colors uppercase">Masquer la photo du fournisseur</span>
-                            </label>
+                        <div className="md:col-span-2 pt-6 mt-4 border-t border-slate-200">
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Note du client</span>
+                            {isEditMode ? (
+                              <textarea
+                                value={estimation.client.notes || ''}
+                                onChange={(e) => updateClient('notes', e.target.value)}
+                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-aura-accent/30 focus:border-aura-accent"
+                                rows={3}
+                                placeholder="Note laissée par le client..."
+                              />
+                            ) : (
+                              <p className="text-sm text-slate-700">{estimation.client.notes || 'Aucune note'}</p>
+                            )}
                           </div>
-                      </div>
+                        </div>
                     </div>
                   </section>
 

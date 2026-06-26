@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, ArrowRight, ArrowLeft, ChevronDown, Clock, Copy, Lock, AlertTriangle, CheckCircle, ShoppingBag, Store, FileText, CalendarDays } from 'lucide-react';
+import { Check, ArrowRight, ArrowLeft, ChevronDown, ChevronUp, Clock, Copy, Lock, AlertTriangle, CheckCircle, ShoppingBag, Store, FileText, CalendarDays } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import type { RenterDetails, Pack } from '@/lib/signature-types';
 import ContractDocument from './ContractDocument';
@@ -391,14 +391,30 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
                 className="w-full rounded-xl px-4 py-3 text-sm font-medium border border-gray-200/70 bg-gray-50/30 focus:outline-none focus:ring-2 focus:ring-gray-900/10 transition-all resize-none" placeholder="Informations complémentaires..." />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Quantité *</label>
-              <div className="flex items-center border border-gray-200/70 rounded-xl w-fit bg-gray-50/30">
-                <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-4 py-3 hover:bg-gray-100 transition-colors rounded-xl text-gray-500">-</button>
-                <span className="w-12 text-center text-sm font-bold text-gray-900">{quantity}</span>
-                <button type="button" onClick={() => setQuantity(quantity + 1)}
-                  className="px-4 py-3 hover:bg-gray-100 transition-colors rounded-xl text-gray-500">+</button>
+            <div className="md:col-span-2">
+              <div className="bg-violet-500/10 p-4 rounded-2xl border border-violet-500/40 relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] ring-1 ring-violet-500/20">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent"></div>
+                <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]"></span>
+                  Quantité
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    placeholder="Ex : 1"
+                    className="w-full rounded-xl font-bold focus:outline-none transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none bg-[#1a1f2e] text-white border border-blue-500/30 focus:border-cyan-400 px-4 py-3 text-sm"
+                  />
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
+                    <button type="button" onClick={() => setQuantity(quantity + 1)} className="transition-colors text-slate-500 hover:text-slate-300">
+                      <ChevronUp size={12} />
+                    </button>
+                    <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="transition-colors text-slate-500 hover:text-slate-300">
+                      <ChevronDown size={12} />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

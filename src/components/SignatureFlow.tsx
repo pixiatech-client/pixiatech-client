@@ -69,6 +69,7 @@ import html2canvas from 'html2canvas';
 import confetti from 'canvas-confetti';
 import { QuotePDF } from '@/app/admin/quote-pdf';
 import { BlurredPrice } from '@/components/ui/blurred-price';
+import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR } from '@/lib/pricing-engine';
 
 // Available professional LED packs for template selection
 const SEED_PACKS: Pack[] = [
@@ -538,11 +539,11 @@ export default function SignatureFlow({
       unitPrice = totalTiles * prod.pricePerTile;
     } else {
       if (p.transactionType === 'sale') {
-        unitPrice = s * (prod?.salePricePerSqM && prod.salePricePerSqM > 0 ? prod.salePricePerSqM : 2000);
+        unitPrice = s * (prod?.salePricePerSqM && prod.salePricePerSqM > 0 ? prod.salePricePerSqM : DEFAULT_SALE_PRICE_PER_SQM);
       } else if (p.transactionType === 'rental') {
         const ratePerUnit = p.rentalUnit === 'hour'
-          ? (prod?.rentalPricePerHour && prod.rentalPricePerHour > 0 ? prod.rentalPricePerHour : 1.5)
-          : (prod?.rentalPricePerDay && prod.rentalPricePerDay > 0 ? prod.rentalPricePerDay : 12);
+          ? (prod?.rentalPricePerHour && prod.rentalPricePerHour > 0 ? prod.rentalPricePerHour : DEFAULT_RENTAL_PRICE_PER_HOUR)
+          : (prod?.rentalPricePerDay && prod.rentalPricePerDay > 0 ? prod.rentalPricePerDay : DEFAULT_RENTAL_PRICE_PER_DAY);
         unitPrice = s * ratePerUnit;
       }
     }

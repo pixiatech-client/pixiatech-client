@@ -4,15 +4,25 @@ export type EstimationStatus =
   | 'Traité'       // 2. Traité (processed) - REQUIS: supplier
   | 'Fournisseur' // 3. Fournisseur (supplier)
   | 'Livraison'   // 4. Livraison (delivery) - REQUIS: trackingNumber + deliveryDate
-  | 'Archivé'     // 5. Archivé (archived)
-  | 'Corbeille'   // 6. Corbeille (bin)
-  | 'Retourné'    // 7. Retourné (returned)
-  | 'Loué';       // 8. Loué (rented)
+  | 'Livré'       // 5. Livré (delivered - supplier marks as delivered)
+  | 'Réception confirmée' // 6. Réception confirmée (client confirms receipt)
+  | 'Archivé'     // 7. Archivé (archived)
+  | 'Corbeille'   // 8. Corbeille (bin)
+  | 'Retourné'    // 9. Retourné (returned)
+  | 'Loué';       // 10. Loué (rented)
 
 export interface TrackingInfo {
   number: string;
   deliveryDate: string;
   receiptDate: string;
+}
+
+export interface DeliveryHistoryEntry {
+  action: string;
+  userId: string;
+  userName: string;
+  timestamp: number;
+  details?: string;
 }
 
 export interface Estimation {
@@ -54,5 +64,17 @@ export interface Estimation {
   };
   rentalStartTime?: string;
   rentalEndTime?: string;
+  // Delivery tracking
+  deliveryHistory?: DeliveryHistoryEntry[];
+  isDelivered?: boolean;
+  deliveredAt?: string;
+  deliveredBy?: string;
+  deliveredByName?: string;
+  confirmedAt?: string;
+  confirmedBy?: string;
+  confirmedByName?: string;
+  delayDays?: number;
+  lastDelayNotificationDay?: number;
+  previousStatus?: string;
 }
 

@@ -50,6 +50,8 @@ const statusToEstimation: Record<string, EstimationStatus> = {
   'processed': 'Traité',
   'in_progress': 'Fournisseur',
   'sent': 'Livraison',
+  'delivered': 'Livré',
+  'confirmed': 'Réception confirmée',
   'archived': 'Archivé',
   'trashed': 'Corbeille',
   'returned': 'Retourné',
@@ -61,6 +63,8 @@ const estimationToStatus: Record<EstimationStatus, string> = {
   'Traité': 'processed',
   'Fournisseur': 'in_progress',
   'Livraison': 'sent',
+  'Livré': 'delivered',
+  'Réception confirmée': 'confirmed',
   'Archivé': 'archived',
   'Corbeille': 'trashed',
   'Retourné': 'returned',
@@ -114,6 +118,17 @@ function quoteToEstimation(q: QuoteRequest): Estimation {
      rentalPeriod,
      rentalStartTime: (q as any).rentalStartTime,
      rentalEndTime: (q as any).rentalEndTime,
+     deliveryHistory: (q as any).deliveryHistory || [],
+     isDelivered: (q as any).isDelivered || false,
+     deliveredAt: (q as any).deliveredAt,
+     deliveredBy: (q as any).deliveredBy,
+     deliveredByName: (q as any).deliveredByName,
+     confirmedAt: (q as any).confirmedAt,
+     confirmedBy: (q as any).confirmedBy,
+     confirmedByName: (q as any).confirmedByName,
+     delayDays: (q as any).delayDays,
+     lastDelayNotificationDay: (q as any).lastDelayNotificationDay,
+     previousStatus: (q as any).previousStatus,
    };
 }
 
@@ -241,29 +256,43 @@ const isFournisseur = userRole === 'fournisseur';
     // Clear current estimations to avoid showing old data from previous tab
     setEstimations([]);
     try {
-      const statusKey = estimationToStatus[currentTab as string];
+      const statusKeys = currentTab === 'Livraison'
+        ? ['sent', 'delivered', 'confirmed']
+        : [estimationToStatus[currentTab as string]];
       const txType = (mode || estimationMode) === 'location' ? 'rental' : 'sale';
-      const { requests, lastId } = await getPaginatedQuotes({
-        status: statusKey,
-        limit: itemsPerPage,
-        startAfterId: startId,
-        supplierId: isFournisseur ? (userId ?? null) : undefined,
-        transactionType: txType,
-      });
       
-      const newEstimations = requests.map((q: any) => quoteToEstimation(q));
+      // For multi-status tabs, fetch all statuses concurrently and merge
+      const results = await Promise.all(
+        statusKeys.map(sk =>
+          getPaginatedQuotes({
+            status: sk,
+            limit: itemsPerPage * 3,
+            startAfterId: null,
+            supplierId: isFournisseur ? (userId ?? null) : undefined,
+            transactionType: txType,
+          })
+        )
+      );
+      
+      let merged = results.flatMap(r => r.requests);
+      // Sort by createdAt descending (newest first)
+      merged.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const finalRequests = statusKeys.length > 1 ? merged.slice(0, itemsPerPage * 3) : merged;
+      
+      const newEstimations = finalRequests.map((q: any) => quoteToEstimation(q));
+      const mergedLastId = finalRequests.length > 0 ? finalRequests[finalRequests.length - 1].id : null;
       
       // Update cache
       setPageCache(prev => ({
         ...prev,
         [cacheKey]: {
           ...(prev[cacheKey] || {}),
-          [page]: { estimations: newEstimations, lastId }
+          [page]: { estimations: newEstimations, lastId: mergedLastId }
         }
       }));
 
       setEstimations(newEstimations);
-      setLastDocIds(prev => ({ ...prev, [page + 1]: lastId }));
+      setLastDocIds(prev => ({ ...prev, [page + 1]: mergedLastId }));
     } catch (error) {
       console.error('Failed to fetch estimations:', error);
     } finally {
@@ -344,7 +373,68 @@ const isFournisseur = userRole === 'fournisseur';
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
-   // Phase 4 perf: stabilized chat listener — only triggers re-render when unread counts actually change
+    // Auto-delay detection: check all delivery statuses for delays on page load
+    useEffect(() => {
+      const detectDelays = async () => {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        for (const est of estimations) {
+          if (est.status !== 'Livraison') continue;
+          if (!est.trackingInfo?.deliveryDate) continue;
+          const planned = new Date(est.trackingInfo.deliveryDate);
+          planned.setHours(0, 0, 0, 0);
+          if (now <= planned) continue;
+          const delayDays = Math.floor((now.getTime() - planned.getTime()) / (1000 * 60 * 60 * 24));
+          const lastNotif = est.lastDelayNotificationDay || 0;
+          if (delayDays > lastNotif) {
+            // Add delay detection history entry
+            const historyEntry = {
+              action: 'delayDetected',
+              userId: 'system',
+              userName: 'System',
+              timestamp: Date.now(),
+              details: `${delayDays} jour(s) de retard détecté(s) — date prévue: ${est.trackingInfo.deliveryDate}`,
+            };
+            const penaltyEntry = {
+              action: 'penaltyCalculated',
+              userId: 'system',
+              userName: 'System',
+              timestamp: Date.now(),
+              details: `Pénalité de retard: ${delayDays} jour(s)`,
+            };
+            const existingHistory = est.deliveryHistory || [];
+            const updatedHistory = [...existingHistory, historyEntry, penaltyEntry];
+            try {
+              await updateQuoteStatus(est.id, {
+                deliveryHistory: updatedHistory,
+                delayDays,
+                lastDelayNotificationDay: delayDays,
+              } as any);
+              setEstimations(prev => prev.map(e =>
+                e.id === est.id ? { ...e, deliveryHistory: updatedHistory, delayDays, lastDelayNotificationDay: delayDays } : e
+              ));
+              // Add delay notification to Firestore
+              const notifRef = doc(collection(db, 'delivery_notifications'));
+              await setDoc(notifRef, {
+                estimationId: est.id,
+                estimationNumber: est.number,
+                supplierName: est.supplier || 'N/A',
+                delayDays,
+                type: 'delay',
+                read: false,
+                createdAt: serverTimestamp(),
+                message: `Livraison en retard — ${delayDays} jour(s)`,
+              });
+            } catch (err) {
+              console.error('Failed to update delay detection:', err);
+            }
+          }
+        }
+      };
+      detectDelays();
+    }, [estimations, estimations.length]);
+    
+    // Phase 4 perf: stabilized chat listener — only triggers re-renders when unread counts actually change
    // Note: Firestore map fields (unreadCount.userId) cannot be filtered server-side,
    // so we filter client-side and guard setState with a JSON diff to block useless re-renders.
    const prevUnreadRef = React.useRef<string>('{}');
@@ -383,7 +473,10 @@ const isFournisseur = userRole === 'fournisseur';
 
 const filteredEstimations = useMemo(() => {
      let filtered = estimations.filter((est) => {
-       const matchesTab = est.status === activeTab;
+       // Livraison tab shows all delivery-related statuses
+       const matchesTab = activeTab === 'Livraison'
+         ? (est.status === 'Livraison' || est.status === 'Livré' || est.status === 'Réception confirmée')
+         : est.status === activeTab;
        const matchesSearch =
          est.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
          est.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -398,13 +491,15 @@ const filteredEstimations = useMemo(() => {
  return filtered;
      }, [estimations, activeTab, searchTerm, isFournisseur, userId]);
 
-     const tabCounts = useMemo(() => {
-       const counts: any = {};
-       Object.entries(estimationToStatus).forEach(([label, techKey]) => {
-         counts[label] = serverTabCounts[techKey] || 0;
-       });
-       return counts;
-     }, [serverTabCounts]);
+const tabCounts = useMemo(() => {
+        const counts: any = {};
+        Object.entries(estimationToStatus).forEach(([label, techKey]) => {
+          counts[label] = serverTabCounts[techKey] || 0;
+        });
+        // Aggregate Livraison tab count: Livraison + Livré + Réception confirmée
+        counts['Livraison'] = (serverTabCounts['sent'] || 0) + (serverTabCounts['delivered'] || 0) + (serverTabCounts['confirmed'] || 0);
+        return counts;
+      }, [serverTabCounts]);
 
    const totalPages = Math.max(1, Math.ceil((tabCounts[activeTab] || 0) / itemsPerPage));
   const paginatedEstimations = filteredEstimations;
@@ -498,6 +593,15 @@ const filteredEstimations = useMemo(() => {
         }
       }
 
+      // Rule #6: Cannot transition Livré -> Livraison (read-only after delivered)
+      if (currentStatus === 'Livré' && targetStatus === 'Livraison') {
+        return { valid: false, error: 'Impossible de revenir en arrière après avoir marqué la livraison comme terminée' };
+      }
+
+      // Rule #7: Cannot transition Réception confirmée -> Livré
+      if (currentStatus === 'Réception confirmée' && targetStatus === 'Livré') {
+        return { valid: false, error: 'La réception a déjà été confirmée par le client' };
+      }
       
       return { valid: true };
     };
@@ -599,7 +703,15 @@ const filteredEstimations = useMemo(() => {
         else if (est.status === 'Livraison') {
           nextStatus = 'Archivé';
         } 
-        // 5. ARCHIVÉ -> CORBEILLE
+        // 5. LIVRÉ -> ARCHIVÉ (Action: Archive icon)
+        else if (est.status === 'Livré') {
+          nextStatus = 'Archivé';
+        }
+        // 6. RÉCEPTION CONFIRMÉE -> ARCHIVÉ (Action: Archive icon)
+        else if (est.status === 'Réception confirmée') {
+          nextStatus = 'Archivé';
+        }
+        // 7. ARCHIVÉ -> CORBEILLE
         else if (est.status === 'Archivé') {
           nextStatus = 'Corbeille';
         } 
@@ -633,6 +745,19 @@ const filteredEstimations = useMemo(() => {
           updateData.treatedByName = currentUser.displayName;
           updateData.treatedByRole = currentUser.role;
           updateData.treatedAt = Date.now();
+        }
+        
+        // Add delivery history when starting delivery
+        if (est.status === 'Fournisseur' && nextStatus === 'Livraison') {
+          const historyEntry = {
+            action: 'deliveryStarted',
+            userId: currentUser.uid || 'system',
+            userName: currentUser.displayName || 'System',
+            timestamp: Date.now(),
+            details: `Livraison démarrée par ${currentUser.displayName || 'System'}`,
+          };
+          const existingHistory = est.deliveryHistory || [];
+          updateData.deliveryHistory = [...existingHistory, historyEntry];
         }
         
         await updateQuoteStatus(id, updateData);
@@ -678,6 +803,8 @@ const filteredEstimations = useMemo(() => {
         if (item.status === 'En attente') nextStatus = 'Traité';
         else if (item.status === 'Fournisseur') nextStatus = 'Livraison';
         else if (item.status === 'Livraison') nextStatus = 'Archivé';
+        else if (item.status === 'Livré') nextStatus = 'Archivé';
+        else if (item.status === 'Réception confirmée') nextStatus = 'Archivé';
         else if (item.status === 'Archivé') nextStatus = 'Corbeille';
         else if (item.status === 'Corbeille') nextStatus = 'En attente';
 
@@ -779,12 +906,29 @@ const filteredEstimations = useMemo(() => {
     }, [estimations, fullQuotes]);
 
     const handleUpdateTracking = useCallback((id: string, info: TrackingInfo) => {
-      updateQuoteStatus(id, { trackingNumber: info.number, trackingInfo: info }).then(() => {
-        setEstimations(prev => prev.map(est =>
-          est.id === id ? { ...est, trackingInfo: info, trackingNumber: info.number } : est
+      const est = estimations.find(e => e.id === id);
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('fr-FR');
+      const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const historyEntry = {
+        action: 'trackingAdded',
+        userId: currentUser.uid || 'system',
+        userName: currentUser.displayName || 'System',
+        timestamp: Date.now(),
+        details: `N° suivi: ${info.number}, livraison prévue: ${info.deliveryDate} (saisi par ${currentUser.displayName || 'System'} le ${dateStr} à ${timeStr})`,
+      };
+      const existingHistory = est?.deliveryHistory || [];
+      const updatedHistory = [...existingHistory, historyEntry];
+      updateQuoteStatus(id, {
+        trackingNumber: info.number,
+        trackingInfo: info,
+        deliveryHistory: updatedHistory,
+      } as any).then(() => {
+        setEstimations(prev => prev.map(e =>
+          e.id === id ? { ...e, trackingInfo: info, trackingNumber: info.number, deliveryHistory: updatedHistory } : e
         ));
       });
-    }, []);
+    }, [estimations, currentUser]);
 
 // Rule #3: Only ADMIN can restore from Trash
     const handleRestore = useCallback(async (id: string) => {
@@ -876,11 +1020,12 @@ const filteredEstimations = useMemo(() => {
      try {
        if (est.status === 'Archivé') {
           // Unarchive: restore the previous business status (without changing the workflow)
-         const prevStatus = (est as any).previousStatus || 'delivered';
-         const prevDisplayStatus = {
-           'pending': 'En attente', 'processed': 'Traité', 'in_progress': 'Fournisseur',
-           'delivered': 'Livraison', 'returned': 'Retourné'
-         }[prevStatus] || 'Livraison';
+          const prevStatus = (est as any).previousStatus || 'delivered';
+          const prevDisplayStatus = {
+            'pending': 'En attente', 'processed': 'Traité', 'in_progress': 'Fournisseur',
+            'delivered': 'Livraison', 'delivered_done': 'Livré', 'confirmed': 'Réception confirmée',
+            'returned': 'Retourné',
+          }[prevStatus] || 'Livraison';
          await updateQuoteStatus(id, { status: prevStatus, previousStatus: null });
          clearCache('Archivé');
          clearCache(prevDisplayStatus as any);
@@ -1026,13 +1171,23 @@ const filteredEstimations = useMemo(() => {
 
     const handleSupplierAction = useCallback(async (ids: string[], action: 'approve' | 'refuse', data?: { trackingNumber?: string, reason?: string, subject?: string }) => {
        try {
-         if (action === 'approve') {
-           for (const id of ids) {
-             await updateQuoteStatus(id, {
-               status: 'sent' as any,
-               trackingNumber: data?.trackingNumber,
-             });
-           }
+          if (action === 'approve') {
+            for (const id of ids) {
+              const est = estimations.find(e => e.id === id);
+              const historyEntry = {
+                action: 'deliveryCreated',
+                userId: currentUser.uid || 'system',
+                userName: currentUser.displayName || 'System',
+                timestamp: Date.now(),
+                details: `Livraison créée par ${currentUser.displayName || 'System'}`,
+              };
+              const existingHistory = est?.deliveryHistory || [];
+              await updateQuoteStatus(id, {
+                status: 'sent' as any,
+                trackingNumber: data?.trackingNumber,
+                deliveryHistory: [...existingHistory, historyEntry],
+              } as any);
+            }
          } else {
            // Refuser: send refusal message to chat first, then update status
            for (const id of ids) {
@@ -1105,17 +1260,104 @@ const filteredEstimations = useMemo(() => {
          }
        }, [estimations, isFournisseur, clearCache, updateCountsLocally, sendRefusalMessage]);
 
-    const handleMarkAsDelivered = useCallback(async (id: string) => {
+    const addDeliveryHistoryEntry = useCallback(async (id: string, action: string, details?: string) => {
+      const est = estimations.find(e => e.id === id);
+      if (!est) return;
+      const entry = {
+        action,
+        userId: currentUser.uid || 'system',
+        userName: currentUser.displayName || 'System',
+        timestamp: Date.now(),
+        details,
+      };
+      const existingHistory = est.deliveryHistory || [];
+      const updatedHistory = [...existingHistory, entry];
       try {
-        await updateQuoteStatus(id, { status: 'archived' as any });
-        setEstimations(prev => prev.map(est =>
-          est.id === id ? { ...est, status: 'Archivé' as EstimationStatus, isLocked: true } : est
+        await updateQuoteStatus(id, { deliveryHistory: updatedHistory } as any);
+        setEstimations(prev => prev.map(e =>
+          e.id === id ? { ...e, deliveryHistory: updatedHistory } : e
         ));
-        setActiveTab('Archivé');
+      } catch (error) {
+        console.error('Failed to add delivery history entry:', error);
+      }
+    }, [estimations, currentUser]);
+
+    const handleMarkAsDelivered = useCallback(async (id: string) => {
+      const est = estimations.find(e => e.id === id);
+      if (!est) return;
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('fr-FR');
+      const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const updateData: any = {
+        status: 'delivered',
+        isDelivered: true,
+        deliveredAt: now.toISOString(),
+        deliveredBy: currentUser.uid,
+        deliveredByName: currentUser.displayName,
+        isLocked: true,
+      };
+      try {
+        await updateQuoteStatus(id, updateData);
+        const oldStatus = est.status;
+        const value = est.totalClient || 0;
+        clearCache(oldStatus);
+        clearCache('Livré' as any);
+        clearCache('Réception confirmée' as any);
+        updateCountsLocally(oldStatus as EstimationStatus, 'Livré' as EstimationStatus, 1, value);
+        setEstimations(prev => prev.map(e =>
+          e.id === id ? {
+            ...e,
+            status: 'Livré' as EstimationStatus,
+            isDelivered: true,
+            deliveredAt: now.toISOString(),
+            deliveredBy: currentUser.uid,
+            deliveredByName: currentUser.displayName,
+            isLocked: true,
+          } : e
+        ));
+        await addDeliveryHistoryEntry(id, 'deliveryCompleted', `${currentUser.displayName} a marqué la livraison comme terminée le ${dateStr} à ${timeStr}`);
+        setActiveTab('Livraison' as EstimationStatus);
       } catch (error) {
         console.error('Failed to mark as delivered:', error);
       }
-    }, []);
+    }, [estimations, currentUser, clearCache, updateCountsLocally, addDeliveryHistoryEntry]);
+
+    const handleConfirmReceipt = useCallback(async (id: string) => {
+      const est = estimations.find(e => e.id === id);
+      if (!est) return;
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('fr-FR');
+      const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const updateData: any = {
+        status: 'confirmed',
+        confirmedAt: now.toISOString(),
+        confirmedBy: currentUser.uid,
+        confirmedByName: currentUser.displayName,
+        isLocked: true,
+      };
+      try {
+        await updateQuoteStatus(id, updateData);
+        const oldStatus = est.status;
+        const value = est.totalClient || 0;
+        clearCache(oldStatus);
+        clearCache('Réception confirmée' as any);
+        updateCountsLocally(oldStatus as EstimationStatus, 'Réception confirmée' as EstimationStatus, 1, value);
+        setEstimations(prev => prev.map(e =>
+          e.id === id ? {
+            ...e,
+            status: 'Réception confirmée' as EstimationStatus,
+            confirmedAt: now.toISOString(),
+            confirmedBy: currentUser.uid,
+            confirmedByName: currentUser.displayName,
+            isLocked: true,
+          } : e
+        ));
+        await addDeliveryHistoryEntry(id, 'receiptConfirmed', `Réception confirmée par ${currentUser.displayName} le ${dateStr} à ${timeStr}`);
+        setActiveTab('Livraison' as EstimationStatus);
+      } catch (error) {
+        console.error('Failed to confirm receipt:', error);
+      }
+    }, [estimations, currentUser, clearCache, updateCountsLocally, addDeliveryHistoryEntry]);
 
    const handleToggleLock = useCallback(async (id: string) => {
      const est = estimations.find(e => e.id === id);
@@ -1421,16 +1663,17 @@ const filteredEstimations = useMemo(() => {
                    onBulkStatusClick={handleBulkStatusTransition}
                    onSupplierClick={handleSupplierClick}
                    onSupplierAction={handleSupplierAction}
-                   onMarkAsDelivered={handleMarkAsDelivered}
-                   onEdit={handleEdit}
-                   onDelete={handleDelete}
-                   onBulkDelete={handleBulkDelete}
-                   onRestore={handleRestore}
-                   onBulkRestore={handleBulkRestore}
-                   onArchive={handleArchive}
-                   onToggleLock={handleToggleLock}
-                   onUpdateTracking={handleUpdateTracking}
-                   onViewMessage={handleViewMessage}
+                    onMarkAsDelivered={handleMarkAsDelivered}
+                    onConfirmReceipt={handleConfirmReceipt}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onBulkDelete={handleBulkDelete}
+                    onRestore={handleRestore}
+                    onBulkRestore={handleBulkRestore}
+                    onArchive={handleArchive}
+                    onToggleLock={handleToggleLock}
+                    onUpdateTracking={handleUpdateTracking}
+                    onViewMessage={handleViewMessage}
                    isFournisseur={isFournisseur}
                    userRole={userRole}
                    currentUser={currentUser}

@@ -16,6 +16,8 @@ const useStatusLabel = () => {
       'Retourné': t('estimationStatus.returned'),
       'Fournisseur': t('estimationStatus.supplier'),
       'Livraison': t('estimationStatus.delivery'),
+      'Livré': t('estimationStatus.delivered'),
+      'Réception confirmée': t('estimationStatus.receiptConfirmed'),
       'Archivé': t('estimationStatus.archived'),
       'Corbeille': t('estimationStatus.trash'),
       'Loué': t('estimationStatus.rented'),

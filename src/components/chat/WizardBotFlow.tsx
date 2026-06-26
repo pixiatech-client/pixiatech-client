@@ -37,6 +37,7 @@ import { useUser } from '@/firebase';
 import { useI18n } from '@/lib/i18n';
 import { QuotePDF } from '@/app/admin/quote-pdf';
 import confetti from 'canvas-confetti';
+import { calculatePromotionPercent } from '@/lib/pricing-engine';
 
 import type { QuoteDetails } from '@/lib/types';
 
@@ -1330,7 +1331,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             const oldPrice = currentProduct.oldPrice;
                             let promoPercent = null;
                             if (oldPrice && activePrice && oldPrice > activePrice) {
-                              promoPercent = Math.round((1 - activePrice / oldPrice) * 100);
+                              promoPercent = calculatePromotionPercent(oldPrice, activePrice);
                             }
 
                             // Environment i18n label

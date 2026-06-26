@@ -11,6 +11,7 @@ import type { Product } from '@/lib/boutique-data';
 import { useProfile } from '@/contexts/ProfileContext';
 import { PriceLabel } from '@/components/B2BProfileSelector';
 import { useI18n } from '@/lib/i18n';
+import { calculatePromotionPercent } from '@/lib/pricing-engine';
 
 function FilterDrawer({ open, onClose, categories, selectedCategories, onCategoriesChange, minRating, onMinRatingChange, transactionType, onTransactionTypeChange, onReset, activeCount }: {
   open: boolean; onClose: () => void;
@@ -367,7 +368,7 @@ export default function BoutiquePage() {
                         <>
                           <span className="text-xs text-gray-400 line-through">{product.oldPrice}{'\u20AC'}</span>
                           <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                            -{Math.round((1 - product.price / product.oldPrice) * 100)}%
+                            -{calculatePromotionPercent(product.oldPrice, product.price)}%
                           </span>
                         </>
                       )}

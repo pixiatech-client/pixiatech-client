@@ -569,7 +569,7 @@ export default function BoutiquePage() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
         {mode === 'vente' ? (
           filteredSaleOrders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -583,7 +583,7 @@ export default function BoutiquePage() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div>
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100">
@@ -723,7 +723,7 @@ export default function BoutiquePage() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div>
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100">
