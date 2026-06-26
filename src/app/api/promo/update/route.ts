@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getFirebaseAdmin, verifyAdminSession } from '@/lib/firebase-admin';
 
 export async function PATCH(req: NextRequest) {
   try {
+    const auth = await verifyAdminSession();
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const body = await req.json();
+
     const { id, ...data } = body;
     if (!id) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
 

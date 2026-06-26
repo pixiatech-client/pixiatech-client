@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { getSmtpSettings } from '@/lib/smtpService';
+import { verifyAdminSession } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
+  const auth = await verifyAdminSession();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const startTime = Date.now();
+
   const logs: string[] = [];
 
   try {
@@ -132,6 +139,11 @@ export async function POST(request: NextRequest) {
 
 // GET: quick health check
 export async function GET() {
+  const auth = await verifyAdminSession();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const envHost = process.env.SMTP_HOST || '';
   const envUser = process.env.SMTP_USER || '';
   const envPass = process.env.SMTP_PASS || '';

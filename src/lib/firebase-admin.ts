@@ -95,3 +95,25 @@ export function getFirebaseAdmin(): FirebaseAdminServices {
     }
     return services;
 }
+
+export async function verifyAdminSession(): Promise<{ ok: boolean; uid?: string; error?: string; status?: number }> {
+  try {
+    const { adminAuth, adminDb } = getFirebaseAdmin();
+    const sessionCookie = (await (await import('next/headers')).cookies()).get('session')?.value;
+    if (!sessionCookie) {
+      return { ok: false, error: 'Non authentifié', status: 401 };
+    }
+
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+    const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+    if (!userDoc.exists || userDoc.data()?.role !== 'admin') {
+      return { ok: false, error: 'Non autorisé', status: 403 };
+    }
+
+    return { ok: true, uid: decoded.uid };
+  } catch (err: any) {
+    console.error('[verifyAdminSession] Error:', err);
+    return { ok: false, error: err.message || 'Erreur d\'authentification', status: 401 };
+  }
+}
+

@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getFirebaseAdmin, verifyAdminSession } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await verifyAdminSession();
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const body = await req.json();
+
     const { adminDb } = getFirebaseAdmin();
 
     const code = (body.code || '').toUpperCase().trim();

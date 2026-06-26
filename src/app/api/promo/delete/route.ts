@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getFirebaseAdmin, verifyAdminSession } from '@/lib/firebase-admin';
 
 export async function DELETE(req: NextRequest) {
   try {
+    const auth = await verifyAdminSession();
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const { id } = await req.json();
+
     if (!id) return NextResponse.json({ error: 'ID requis' }, { status: 400 });
 
     const { adminDb } = getFirebaseAdmin();

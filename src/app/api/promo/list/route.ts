@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getFirebaseAdmin, verifyAdminSession } from '@/lib/firebase-admin';
 
 export async function GET() {
   try {
+    const auth = await verifyAdminSession();
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const { adminDb } = getFirebaseAdmin();
+
     const snap = await adminDb.collection('promo_codes')
       .orderBy('createdAt', 'desc')
       .get();

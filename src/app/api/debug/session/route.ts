@@ -1,11 +1,17 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getFirebaseAdmin, verifyAdminSession } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 
 export async function GET() {
+  const auth = await verifyAdminSession();
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
   const { adminAuth } = getFirebaseAdmin();
+
   if (!adminAuth) {
     return NextResponse.json({ ok: false, reason: 'admin_sdk_not_initialized' }, { status: 500 });
   }

@@ -17,6 +17,7 @@ import {
   Mail, Lock, Unlock, Phone, UserPlus, EyeOff, Users, Truck, Wrench, History, User as UserIcon, List, Settings, Hammer, Pin
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { normalizePrice } from '@/lib/pricing-engine';
 import { useI18n } from '@/lib/i18n';
 import { Pagination } from '@/components/ui/Pagination';
 import { CustomSelect } from '@/components/ui/custom-select';
@@ -737,18 +738,19 @@ const DEFAULT_AI_SETTINGS: AISettings = {
 // --- Custom NumberInput Component ---
 const NumberInput = ({ value, onChange, placeholder, className, isDark, compact, colorTheme = 'default' }: { value: string, onChange: (val: string) => void, placeholder?: string, className?: string, isDark?: boolean, compact?: boolean, colorTheme?: 'default' | 'orange' | 'cyan' }) => {
   const handleIncrement = () => {
-    const val = parseFloat(value) || 0;
-    onChange((val + 1).toString());
+    const val = normalizePrice(value);
+    onChange(String(val + 1));
   };
   const handleDecrement = () => {
-    const val = parseFloat(value) || 0;
-    onChange(Math.max(0, val - 1).toString());
+    const val = normalizePrice(value);
+    onChange(String(Math.max(0, val - 1)));
   };
 
   return (
     <div className="relative">
       <input
-        type="number"
+        type="text"
+        inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className={cn(
@@ -4472,7 +4474,7 @@ export default function ProductManagementClient() {
           if (e === 'semi-exterieur' || e === 'vitrine') return 'showcase';
           return e;
         }),
-        price: (prixVente || '0').replace(/[^\d]/g, ''),
+        price: String(normalizePrice(prixVente)),
         oldPrice: oldPrice ? parseFloat(oldPrice) : null,
         image: finalPhotoUrl || '',
         videoUrl: finalVideoUrl || '',

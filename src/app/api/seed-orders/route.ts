@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getFirebaseAdmin, verifyAdminSession } from '@/lib/firebase-admin';
 
 export async function GET() {
-  const { adminDb } = getFirebaseAdmin();
+  try {
+    const auth = await verifyAdminSession();
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const { adminDb } = getFirebaseAdmin();
+
 
   const email = 'ayanhil@gmail.com';
   const snap = await adminDb.collection('customers').where('email', '==', email).limit(1).get();
@@ -65,11 +72,15 @@ export async function GET() {
   batch.set(ref2, order2);
   await batch.commit();
 
-  return NextResponse.json({
-    message: '2 fake orders added',
-    orders: [
-      { id: ref1.id, ...order1 },
-      { id: ref2.id, ...order2 },
-    ],
-  });
+    return NextResponse.json({
+      message: '2 fake orders added',
+      orders: [
+        { id: ref1.id, ...order1 },
+        { id: ref2.id, ...order2 },
+      ],
+    });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }
+
