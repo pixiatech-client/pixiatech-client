@@ -21,7 +21,7 @@ export function SiteBanners() {
   const b2bActive = hydrated && !profileType && !b2bDismissed;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-banners="root">
       {isHomepage && (
         <div>
           {b2bActive ? (

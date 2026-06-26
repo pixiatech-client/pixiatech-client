@@ -55,10 +55,13 @@ const colorClasses: Record<string, { bg: string; text: string }> = {
 };
 const specColors = ['blue', 'violet', 'fuchsia', 'emerald', 'sky', 'orange', 'teal', 'cyan', 'red', 'green'];
 
-function Lightbox({ images, index, onClose, onPrev, onNext }: { images: string[]; index: number; onClose: () => void; onPrev: () => void; onNext: () => void }) {
+type MediaItem = { type: 'image'; url: string } | { type: 'video'; url: string };
+
+function Lightbox({ items, index, onClose, onPrev, onNext }: { items: MediaItem[]; index: number; onClose: () => void; onPrev: () => void; onNext: () => void }) {
   const dragStartX = useRef(0);
   const dragOffset = useRef(0);
   const [dragging, setDragging] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => { dragStartX.current = e.clientX; setDragging(true); };
   const handleMouseMove = (e: React.MouseEvent) => { if (dragging) dragOffset.current = e.clientX - dragStartX.current; };
@@ -79,6 +82,8 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: { images: string[]
     dragOffset.current = 0;
   };
 
+  const current = items[index];
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl"
@@ -96,7 +101,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: { images: string[]
       </button>
 
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-white text-xs font-semibold">
-        {index + 1} / {images.length}
+        {index + 1} / {items.length}
       </div>
 
       {index > 0 && (
@@ -104,20 +109,31 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: { images: string[]
           <ChevronLeft size={24} />
         </button>
       )}
-      {index < images.length - 1 && (
+      {index < items.length - 1 && (
         <button onClick={(e) => { e.stopPropagation(); onNext(); }} className="absolute right-4 md:right-8 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white transition-all z-10">
           <ChevronRight size={24} />
         </button>
       )}
 
-      {images[index] ? (
-        <img
-          src={images[index]}
-          alt=""
-          className="max-w-[90vw] max-h-[85vh] object-contain rounded-2xl select-none"
-          onClick={(e) => e.stopPropagation()}
-          draggable={false}
-        />
+      {current ? (
+        current.type === 'video' ? (
+          <video
+            ref={videoRef}
+            src={current.url}
+            controls
+            autoPlay
+            className="max-w-[90vw] max-h-[85vh] rounded-2xl select-none"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <img
+            src={current.url}
+            alt=""
+            className="max-w-[90vw] max-h-[85vh] object-contain rounded-2xl select-none"
+            onClick={(e) => e.stopPropagation()}
+            draggable={false}
+          />
+        )
       ) : (
         <div className="max-w-[90vw] max-h-[85vh] flex items-center justify-center text-white/50">
           <ShoppingBag size={64} />
@@ -134,7 +150,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [purchaseType, setPurchaseType] = useState<'achat' | 'location'>('achat');
-  const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedMedia, setSelectedMedia] = useState(0);
   const [thumbStart, setThumbStart] = useState(0);
   const maxVisibleThumbs = 4;
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -143,7 +159,7 @@ export default function ProductDetailPage() {
   const [taxRate, setTaxRate] = useState(20);
   const [showInfo, setShowInfo] = useState(false);
   const [locationCompleted, setLocationCompleted] = useState(false);
-  const thumbScrollRef = useRef<HTMLDivElement>(null);
+  const [stickyTop, setStickyTop] = useState(194);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
   const { showHT, showTTC } = useProfile();
@@ -151,7 +167,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     if (!params.id) return;
-    setSelectedImage(0);
+    setSelectedMedia(0);
     setShowInfo(false);
     fetchBoutiqueProduct(params.id as string).then((p) => {
       setProduct(p);
@@ -178,12 +194,19 @@ export default function ProductDetailPage() {
   const galleryImages = product?.gallery && product.gallery.length > 0
     ? [product.image, ...product.gallery].filter(Boolean)
     : product?.image ? [product.image] : [];
-  const images = galleryImages;
+
+  const mediaItems: MediaItem[] = [
+    ...galleryImages.map(url => ({ type: 'image' as const, url })),
+    ...(product?.videoUrl ? [{ type: 'video' as const, url: product.videoUrl }] : []),
+  ];
+
   const canRent = product?.availableFor?.includes('rental') ?? false;
   const canBuy = product?.availableFor?.includes('sale') ?? true;
 
   const effectivePrice = selectedVariant?.price ?? product?.price ?? 0;
-  const effectiveImage = selectedVariant?.image || galleryImages[selectedImage];
+  const effectiveMedia = selectedVariant?.image
+    ? { type: 'image' as const, url: selectedVariant.image }
+    : mediaItems[selectedMedia];
   const effectiveOldPrice = product?.oldPrice && (!selectedVariant || selectedVariant.price < product.oldPrice) ? product.oldPrice : undefined;
   const displayVariants = (product?.variants || []).filter(v => v.active && v.name);
   const availableStock = product?.stock ?? 10;
@@ -194,7 +217,7 @@ export default function ProductDetailPage() {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setLightboxOpen(false);
       if (e.key === 'ArrowLeft') setLightboxIndex((i) => Math.max(0, i - 1));
-      if (e.key === 'ArrowRight') setLightboxIndex((i) => Math.min(images.length - 1, i + 1));
+      if (e.key === 'ArrowRight') setLightboxIndex((i) => Math.min(mediaItems.length - 1, i + 1));
     };
     window.addEventListener('keydown', handler);
     document.body.style.overflow = 'hidden';
@@ -202,11 +225,30 @@ export default function ProductDetailPage() {
       window.removeEventListener('keydown', handler);
       document.body.style.overflow = '';
     };
-  }, [lightboxOpen, images.length]);
+  }, [lightboxOpen, mediaItems.length]);
 
   useEffect(() => {
     activeThumbRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, [selectedImage]);
+  }, [selectedMedia]);
+
+  useEffect(() => {
+    const bannerEl = document.querySelector<HTMLElement>('[data-banners="root"]');
+    if (!bannerEl) return;
+
+    const HEADER_PT = 72;
+    const CONTENT_OFFSET = 38;
+
+    const updateTop = () => {
+      const h = bannerEl.offsetHeight;
+      setStickyTop(HEADER_PT + h + CONTENT_OFFSET);
+    };
+
+    updateTop();
+    const observer = new ResizeObserver(updateTop);
+    observer.observe(bannerEl);
+
+    return () => observer.disconnect();
+  }, []);
 
   const handleAddToCart = () => {
     if (!product || isOutOfStock) return;
@@ -248,29 +290,37 @@ export default function ProductDetailPage() {
     <div className="min-h-screen" style={{ backgroundColor: '#F5F5F5' }}>
       {lightboxOpen && (
         <Lightbox
-          images={images}
+          items={mediaItems}
           index={lightboxIndex}
           onClose={() => setLightboxOpen(false)}
           onPrev={() => setLightboxIndex((i) => Math.max(0, i - 1))}
-          onNext={() => setLightboxIndex((i) => Math.min(images.length - 1, i + 1))}
+          onNext={() => setLightboxIndex((i) => Math.min(mediaItems.length - 1, i + 1))}
         />
       )}
 
       <main className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pt-24 pb-16">
-        <div className="lg:mr-[430px]">
+        <div className="lg:mr-[450px]">
           {purchaseType === 'location' && !locationCompleted ? (
             <BoutiqueRentalFlow product={product} onComplete={() => setLocationCompleted(true)} />
           ) : (
           <div className="flex flex-col">
             <section>
-              <div className="bg-white rounded-2xl overflow-hidden shadow-sm -mt-[60px]">
-                <div className="cursor-pointer overflow-hidden" onClick={() => { setSelectedVariant(null); openLightbox(selectedImage); }}>
-                  {effectiveImage ? (
-                    <img
-                      src={effectiveImage}
-                      alt={product.name}
-                      className="w-full h-[360px] object-contain bg-slate-50 transition-transform duration-500 hover:scale-105 p-4"
-                    />
+              <div className="bg-white rounded-2xl overflow-hidden shadow-sm -mt-[60px] w-full">
+                <div className="cursor-pointer overflow-hidden w-full" onClick={() => { setSelectedVariant(null); openLightbox(selectedMedia); }}>
+                  {effectiveMedia ? (
+                    effectiveMedia.type === 'video' ? (
+                      <video
+                        src={effectiveMedia.url}
+                        controls
+                        className="w-full h-[360px] object-contain bg-slate-50 p-4"
+                      />
+                    ) : (
+                      <img
+                        src={effectiveMedia.url}
+                        alt={product.name}
+                        className="w-full h-[360px] object-contain bg-slate-50 transition-transform duration-500 hover:scale-105 p-4 max-w-full max-h-full"
+                      />
+                    )
                   ) : (
                     <div className="w-full h-[360px] flex items-center justify-center bg-slate-50 text-slate-300">
                       <ShoppingBag size={48} />
@@ -278,22 +328,22 @@ export default function ProductDetailPage() {
                   )}
                 </div>
               </div>
-              {images.length > 1 && (
+              {mediaItems.length > 1 && (
                 <>
                   <div className="flex items-center justify-between mt-4">
                     <button
-                      onClick={() => setSelectedImage((i) => Math.max(0, i - 1))}
-                      disabled={selectedImage === 0}
+                      onClick={() => setSelectedMedia((i) => Math.max(0, i - 1))}
+                      disabled={selectedMedia === 0}
                       className="w-9 h-9 flex items-center justify-center bg-white border border-gray-200/70 hover:border-gray-400 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <ChevronLeft size={16} className="text-gray-600" />
                     </button>
                     <span className="text-xs font-semibold text-gray-500">
-                      {selectedImage + 1} / {images.length}
+                      {selectedMedia + 1} / {mediaItems.length}
                     </span>
                     <button
-                      onClick={() => setSelectedImage((i) => Math.min(images.length - 1, i + 1))}
-                      disabled={selectedImage === images.length - 1}
+                      onClick={() => setSelectedMedia((i) => Math.min(mediaItems.length - 1, i + 1))}
+                      disabled={selectedMedia === mediaItems.length - 1}
                       className="w-9 h-9 flex items-center justify-center bg-white border border-gray-200/70 hover:border-gray-400 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <ChevronRight size={16} className="text-gray-600" />
@@ -301,22 +351,40 @@ export default function ProductDetailPage() {
                   </div>
                   <div className="relative mt-3">
                     <div className="flex gap-3 justify-center">
-                      {images.slice(thumbStart, thumbStart + maxVisibleThumbs).map((img, idx) => {
+                      {mediaItems.slice(thumbStart, thumbStart + maxVisibleThumbs).map((item, idx) => {
                         const realIdx = thumbStart + idx;
+                        const isVideo = item.type === 'video';
                         return (
                           <button
-                            key={realIdx}
-                            onClick={() => { setSelectedImage(realIdx); setSelectedVariant(null); openLightbox(realIdx); }}
-                            ref={realIdx === selectedImage ? activeThumbRef : null}
-                            className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 ${selectedImage === realIdx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
-                            onMouseEnter={() => setSelectedImage(realIdx)}
+                            key={`${realIdx}-${item.type}`}
+                            onClick={() => { setSelectedMedia(realIdx); setSelectedVariant(null); openLightbox(realIdx); }}
+                            ref={realIdx === selectedMedia ? activeThumbRef : null}
+                            className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 relative ${selectedMedia === realIdx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
+                            onMouseEnter={() => setSelectedMedia(realIdx)}
                           >
-                            {img ? (
-                              <img
-                                src={img}
-                                alt={`${product.name} - Vue ${realIdx + 1}`}
-                                className={`w-full h-full object-cover ${selectedImage !== realIdx ? 'opacity-50' : ''}`}
-                              />
+                            {item.url ? (
+                              <>
+                                {isVideo ? (
+                                  <div className="relative w-full h-full">
+                                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-10">
+                                      <Play size={20} className="text-white fill-white" />
+                                    </div>
+                                    <video
+                                      src={item.url}
+                                      className={`w-full h-full object-cover ${selectedMedia !== realIdx ? 'opacity-50' : ''}`}
+                                      muted
+                                      playsInline
+                                      preload="metadata"
+                                    />
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={item.url}
+                                    alt={`${product.name} - Vue ${realIdx + 1}`}
+                                    className={`w-full h-full object-cover ${selectedMedia !== realIdx ? 'opacity-50' : ''}`}
+                                  />
+                                )}
+                              </>
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-200">
                                 <ShoppingBag size={16} />
@@ -325,7 +393,7 @@ export default function ProductDetailPage() {
                           </button>
                         );
                       })}
-                      {images.length > maxVisibleThumbs && (
+                      {mediaItems.length > maxVisibleThumbs && (
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => setThumbStart(s => Math.max(0, s - 1))}
@@ -335,11 +403,11 @@ export default function ProductDetailPage() {
                             <ChevronLeft size={14} className="text-gray-500" />
                           </button>
                           <span className="text-xs font-semibold text-gray-400 min-w-[40px] text-center">
-                            {thumbStart + 1}-{Math.min(thumbStart + maxVisibleThumbs, images.length)}/{images.length}
+                            {thumbStart + 1}-{Math.min(thumbStart + maxVisibleThumbs, mediaItems.length)}/{mediaItems.length}
                           </span>
                           <button
-                            onClick={() => setThumbStart(s => Math.min(images.length - maxVisibleThumbs, s + 1))}
-                            disabled={thumbStart >= images.length - maxVisibleThumbs}
+                            onClick={() => setThumbStart(s => Math.min(mediaItems.length - maxVisibleThumbs, s + 1))}
+                            disabled={thumbStart >= mediaItems.length - maxVisibleThumbs}
                             className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200/70 hover:border-gray-400 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             <ChevronRight size={14} className="text-gray-500" />
@@ -385,7 +453,7 @@ export default function ProductDetailPage() {
               {displayVariants.length > 0 && (
                 <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide mb-4">
                   {displayVariants.map((v) => (
-                    <button key={v.name} onClick={() => { setSelectedVariant(v); const imgIdx = images.indexOf(v.image); if (imgIdx >= 0) setSelectedImage(imgIdx); }}
+                    <button key={v.name} onClick={() => { setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
                       className={`shrink-0 px-3 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-600 hover:border-gray-400'}`}>
                       {v.name}
                     </button>
@@ -397,15 +465,24 @@ export default function ProductDetailPage() {
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]"></span>
-                    Quantité disponible
+                    Quantité
                   </label>
-                  {isOutOfStock ? (
-                    <span className="text-[10px] font-black uppercase tracking-wider text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full">Rupture de stock</span>
-                  ) : availableStock <= 3 ? (
-                    <span className="text-[10px] font-semibold text-amber-500">Plus que {availableStock} en stock</span>
-                  ) : (
-                    <span className="text-[10px] font-semibold text-emerald-500">{availableStock} en stock</span>
-                  )}
+                  <div className="flex items-center gap-1.5">
+                    {isOutOfStock ? (
+                      <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+                    ) : availableStock <= 3 ? (
+                      <span className="inline-block w-2 h-2 rounded-full bg-orange-500"></span>
+                    ) : (
+                      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                    )}
+                    {isOutOfStock ? (
+                      <span className="text-xs font-medium text-red-500">Rupture</span>
+                    ) : availableStock <= 3 ? (
+                      <span className="text-xs font-medium text-orange-500">Plus que {availableStock}</span>
+                    ) : (
+                      <span className="text-xs font-medium text-green-600">{availableStock} en stock</span>
+                    )}
+                  </div>
                 </div>
                 <div className="relative">
                   <input
@@ -481,7 +558,10 @@ export default function ProductDetailPage() {
           )}
         </div>
 
-        <aside className="hidden lg:flex flex-col fixed top-[194px] z-10 w-[420px] max-h-[calc(100vh-9rem)] overflow-y-auto" style={{ right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))' }}>
+        <aside
+          className="hidden lg:flex flex-col fixed z-10 w-[420px] max-h-[calc(100vh-9rem)] overflow-y-auto"
+          style={{ top: stickyTop, right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))', transition: 'top 0.35s ease' }}
+        >
             <nav className="text-sm text-gray-400 mb-4">
               <ol className="flex list-none p-0">
                 <li className="flex items-center">
@@ -575,8 +655,8 @@ export default function ProductDetailPage() {
                       key={v.name}
                       onClick={() => {
                         setSelectedVariant(v);
-                        const imgIdx = images.indexOf(v.image);
-                        if (imgIdx >= 0) setSelectedImage(imgIdx);
+                        const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image);
+                        if (imgIdx >= 0) setSelectedMedia(imgIdx);
                       }}
                       className={`shrink-0 px-3 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-600 hover:border-gray-400'}`}
                     >
@@ -628,46 +708,51 @@ export default function ProductDetailPage() {
                 )
               ) : (
                 <>
-                  <div className={`bg-violet-500/10 p-4 rounded-2xl border relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] ring-1 ${isOutOfStock ? 'border-red-400/40 ring-red-500/20' : 'border-violet-500/40 ring-violet-500/20'}`}>
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent"></div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]"></span>
-                        Quantité disponible
-                      </label>
-                      {isOutOfStock ? (
-                        <span className="text-[10px] font-black uppercase tracking-wider text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full">Rupture de stock</span>
-                      ) : availableStock <= 3 ? (
-                        <span className="text-[10px] font-semibold text-amber-500">Plus que {availableStock} en stock</span>
-                      ) : (
-                        <span className="text-[10px] font-semibold text-emerald-500">{availableStock} en stock</span>
-                      )}
-                    </div>
-                    <div className="relative">
+                  <div className="flex items-center gap-2">
+                    {isOutOfStock ? (
+                      <span className="inline-block w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                    ) : availableStock <= 3 ? (
+                      <span className="inline-block w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
+                    ) : (
+                      <span className="inline-block w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
+                    )}
+                    {isOutOfStock ? (
+                      <span className="text-xs font-medium text-red-500">Rupture de stock</span>
+                    ) : availableStock <= 3 ? (
+                      <span className="text-xs font-medium text-orange-500">Plus que {availableStock} en stock</span>
+                    ) : (
+                      <span className="text-xs font-medium text-green-600">En stock</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center shrink-0">
+                      <button
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        disabled={isOutOfStock || quantity <= 1}
+                        className="w-8 h-8 flex items-center justify-center bg-[#1a1f2e] rounded-l-lg border border-blue-500/30 border-r-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <Minus size={11} />
+                      </button>
                       <input
                         type="number"
                         value={quantity}
                         onChange={(e) => setQuantity(Math.min(availableStock, Math.max(1, parseInt(e.target.value) || 1)))}
-                        placeholder="Ex : 10"
                         disabled={isOutOfStock}
-                        className="w-full rounded-xl font-bold focus:outline-none transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none bg-[#1a1f2e] text-white border border-blue-500/30 focus:border-cyan-400 px-4 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-11 h-8 text-center text-xs font-bold bg-[#1a1f2e] text-white border border-blue-500/30 focus:outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none disabled:opacity-40 disabled:cursor-not-allowed"
                       />
-                      {!isOutOfStock && (
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
-                        <button onClick={() => setQuantity(Math.min(availableStock, quantity + 1))} className="transition-colors text-slate-500 hover:text-slate-300">
-                          <ChevronUp size={12} />
-                        </button>
-                        <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="transition-colors text-slate-500 hover:text-slate-300">
-                          <ChevronDown size={12} />
-                        </button>
-                      </div>
-                      )}
+                      <button
+                        onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
+                        disabled={isOutOfStock || quantity >= availableStock}
+                        className="w-8 h-8 flex items-center justify-center bg-[#1a1f2e] rounded-r-lg border border-blue-500/30 border-l-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <Plus size={11} />
+                      </button>
                     </div>
-                  </div>
-                  <button onClick={handleAddToCart} disabled={isOutOfStock} className="w-full bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <button onClick={handleAddToCart} disabled={isOutOfStock} className="flex-1 bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
                       <ShoppingBag size={16} />
                       {isOutOfStock ? 'Indisponible' : t('product.addToCart')}
                     </button>
+                  </div>
                   <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                     {isOutOfStock ? 'Indisponible' : t('product.buyNow')}
                   </button>
@@ -687,12 +772,6 @@ export default function ProductDetailPage() {
                   <Download size={16} className="text-gray-500" />
                 </div>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{t('product.download')}</span>
-              </button>
-              <button onClick={() => window.open(product.videoUrl || '', '_blank')} disabled={!product.videoUrl} className="flex flex-col items-center gap-2 group disabled:opacity-30 disabled:cursor-not-allowed">
-                <div className="w-10 h-10 flex items-center justify-center bg-white rounded-full border border-gray-200/70 group-hover:border-gray-400 transition-colors">
-                  <Play size={16} className="text-gray-500" />
-                </div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{t('product.watchVideo')}</span>
               </button>
             </div>
           </aside>

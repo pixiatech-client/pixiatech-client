@@ -31,7 +31,7 @@ import { ConfiguratorModeSelection } from './configurator-mode-selection';
 import { preloadImages } from '@/lib/image-preload';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import SignatureFlow from './SignatureFlow';
-import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR } from '@/lib/pricing-engine';
+import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR, computeProductLineTotal } from '@/lib/pricing-engine';
 
 
 
@@ -320,37 +320,7 @@ export function QuoteBuilder({
     const calculateLineTotal = useCallback((config: ConfiguredProduct) => {
         const product = allProducts.find(p => p.id === config.productId);
         if (!product) return 0;
-
-        const area = config.width * config.height;
-        let lineTotal = 0;
-
-        if (product.hasDimensions && product.tileWidth && product.tileHeight && product.pricePerTile && product.pricePerTile > 0) {
-            const tilesPerWidth = Math.ceil((config.width * 100) / product.tileWidth);
-            const tilesPerHeight = Math.ceil((config.height * 100) / product.tileHeight);
-            const totalTiles = tilesPerWidth * tilesPerHeight;
-            lineTotal = totalTiles * product.pricePerTile;
-        }
-        else {
-            if (config.transactionType === 'sale') {
-                const salePrice = product.salePricePerSqM && product.salePricePerSqM > 0 ? product.salePricePerSqM : DEFAULT_SALE_PRICE_PER_SQM;
-                lineTotal = area * salePrice;
-            } else if (config.transactionType === 'rental') {
-                if (config.rentalUnit === 'day') {
-                    const rentalPrice = product.rentalPricePerDay && product.rentalPricePerDay > 0 ? product.rentalPricePerDay : DEFAULT_RENTAL_PRICE_PER_DAY;
-                    lineTotal = area * rentalPrice;
-                } else if (config.rentalUnit === 'hour') {
-                    const rentalPriceHour = product.rentalPricePerHour && product.rentalPricePerHour > 0 ? product.rentalPricePerHour : DEFAULT_RENTAL_PRICE_PER_HOUR;
-                    lineTotal = area * rentalPriceHour;
-                }
-            }
-        }
-
-        if (config.transactionType === 'rental') {
-            const duration = config.rentalDuration > 0 ? config.rentalDuration : 1;
-            lineTotal *= duration;
-        }
-
-        return lineTotal * config.quantity;
+        return computeProductLineTotal(product, config);
     }, [allProducts]);
 
     useEffect(() => {

@@ -175,6 +175,8 @@
         },
         "products": {
             "title": "Produits recommandés",
+            "recommendedProduct": "Produit recommandé",
+            "otherCompatible": "Autres produits compatibles",
             "config": "Configuration:",
             "priceLabel": "Prix Estimation",
             "perUnit": "({price} € / unité)",
@@ -433,6 +435,8 @@
         "searchProducts": "Rechercher les produits recommandés",
         "moreChoices": "Plus de choix",
         "nextProduct": "Produit suivant",
+        "unavailable": "Indisponible",
+        "confirm": "Confirmer",
         "errorAddressValidation": "Nous n'arrivons pas à valider votre adresse. La session va se fermer."
     },
     "client": {

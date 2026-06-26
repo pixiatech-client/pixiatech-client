@@ -356,7 +356,7 @@ export async function registerUser(data: unknown) {
     const usersSnapshot = await adminDb.collection('users').limit(1).get();
     const isFirstUser = usersSnapshot.empty;
     const assignedRole = isFirstUser ? 'admin' : defaultRole.id;
-    const status = isFirstUser ? 'approved' : 'pending';
+    const status = isFirstUser || assignedRole === 'fournisseur' ? 'approved' : 'pending';
 
     const formattedPhone = formatPhoneNumber(phone);
     console.log('[Register Action] Formatted phone:', formattedPhone);
@@ -482,7 +482,7 @@ export async function handleGoogleSignIn(data: unknown) {
     const usersSnapshot = await adminDb.collection('users').limit(1).get();
     const isFirstUser = usersSnapshot.empty;
     const assignedRole = isFirstUser ? 'admin' : defaultRole.id;
-    const assignedStatus = isFirstUser ? 'approved' : 'pending';
+    const assignedStatus = isFirstUser || assignedRole === 'fournisseur' ? 'approved' : 'pending';
 
     const userProfile = {
       uid,
@@ -3610,7 +3610,7 @@ export const getCurrentAdminUser = cache(async (): Promise<UserProfile | { error
 
     const userData = userDoc.data() as DocumentData;
 
-    if (userData.status === 'pending') {
+    if (userData.status === 'pending' && userData.role !== 'fournisseur') {
       return { error: 'pending' };
     }
 

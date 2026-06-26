@@ -66,7 +66,7 @@ import { preloadImages } from '@/lib/image-preload';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ProductNotFound, ProductNotFoundProps } from './ProductNotFound';
 import { ProductComparator } from './product-comparator';
-import { calculateTilesCount, calculatePromotionPercent, normalizePrice, DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY } from '@/lib/pricing-engine';
+import { calculateTilesCount, calculatePromotionPercent, normalizePrice, DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, computeProductLineTotal, computeProductUnitPrice } from '@/lib/pricing-engine';
 
 // --- Wizard Component ---
 interface ConfiguratorWizardProps {
@@ -1552,24 +1552,6 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
               return tType;
             }).join(' \u2022 ');
 
-            let unitPrice = 0;
-            const isRentalMode = state.projectType === 'location';
-            if (product.hasDimensions && product.tileWidth && product.tileHeight && product.pricePerTile && product.pricePerTile > 0) {
-              const tilesPerWidth = Math.ceil((state.width * 100) / product.tileWidth);
-              const tilesPerHeight = Math.ceil((state.height * 100) / product.tileHeight);
-              const totalTiles = tilesPerWidth * tilesPerHeight;
-              unitPrice = totalTiles * product.pricePerTile;
-            } else {
-              if (state.projectType === 'vente') {
-                unitPrice = (product.salePricePerSqM || DEFAULT_SALE_PRICE_PER_SQM) * area;
-              } else {
-                const rentalRate = (typeof product.rentalPricePerDay === 'number' && product.rentalPricePerDay > 0)
-                  ? product.rentalPricePerDay
-                  : DEFAULT_RENTAL_PRICE_PER_DAY;
-                unitPrice = rentalRate * area;
-              }
-            }
-
             const isRental = state.projectType === 'location';
             let duration = 1;
             if (isRental && state.rentalStartDate && state.rentalEndDate) {
@@ -1578,11 +1560,26 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
               duration = Math.max(1, Math.ceil((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24)) + 1);
             }
 
-            const totalPrice = unitPrice * quantity * duration;
+            const totalPrice = computeProductLineTotal(product, {
+              width: state.width,
+              height: state.height,
+              quantity: quantity,
+              transactionType: state.projectType === 'vente' ? 'sale' : 'rental',
+              rentalDuration: duration,
+              rentalUnit: 'day',
+            });
+
+            const unitPrice = computeProductUnitPrice(product, {
+              width: state.width,
+              height: state.height,
+              transactionType: state.projectType === 'vente' ? 'sale' : 'rental',
+              rentalDuration: duration,
+              rentalUnit: 'day',
+            });
 
             const hasNoPricingData = !product.pricePerTile && !product.salePricePerSqM && !product.rentalPricePerDay;
             const showOnEstimate = settings.isPriceHidden || hasNoPricingData;
-            const displayedUnitPrice = isRental ? unitPrice * duration : unitPrice;
+            const displayedUnitPrice = unitPrice;
 
             const shortDesc = product.selectedChars && product.selectedChars.length > 0
               ? product.selectedChars.slice(0, 2).map(c => c.value).join(' \u2022 ')
@@ -1701,7 +1698,7 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                     {quantity > 1 && (
                       <p className="text-[10px] font-bold text-slate-400 italic">
                         {t('wizard.products.perUnit', {
-                          price: (isRental ? unitPrice * duration : unitPrice).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')
+                          price: displayedUnitPrice.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US')
                         })}
                       </p>
                     )}

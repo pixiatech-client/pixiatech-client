@@ -69,7 +69,7 @@ import html2canvas from 'html2canvas';
 import confetti from 'canvas-confetti';
 import { QuotePDF } from '@/app/admin/quote-pdf';
 import { BlurredPrice } from '@/components/ui/blurred-price';
-import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR } from '@/lib/pricing-engine';
+import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR, computeProductUnitPrice, computeProductLineTotal, calculateTilesCount } from '@/lib/pricing-engine';
 
 // Available professional LED packs for template selection
 const SEED_PACKS: Pack[] = [
@@ -529,29 +529,21 @@ export default function SignatureFlow({
     const h = p.height || 0;
     const q = p.quantity || 1;
     const s = w * h;
-    const d = Math.round(s * 4);
     const prod = allProducts.find(ap => ap.id === p.productId);
-    let unitPrice = 0;
-    if (prod?.hasDimensions && prod?.tileWidth && prod?.tileHeight && prod?.pricePerTile && prod.pricePerTile > 0) {
-      const tilesPerWidth = Math.ceil((w * 100) / prod.tileWidth);
-      const tilesPerHeight = Math.ceil((h * 100) / prod.tileHeight);
-      const totalTiles = tilesPerWidth * tilesPerHeight;
-      unitPrice = totalTiles * prod.pricePerTile;
-    } else {
-      if (p.transactionType === 'sale') {
-        unitPrice = s * (prod?.salePricePerSqM && prod.salePricePerSqM > 0 ? prod.salePricePerSqM : DEFAULT_SALE_PRICE_PER_SQM);
-      } else if (p.transactionType === 'rental') {
-        const ratePerUnit = p.rentalUnit === 'hour'
-          ? (prod?.rentalPricePerHour && prod.rentalPricePerHour > 0 ? prod.rentalPricePerHour : DEFAULT_RENTAL_PRICE_PER_HOUR)
-          : (prod?.rentalPricePerDay && prod.rentalPricePerDay > 0 ? prod.rentalPricePerDay : DEFAULT_RENTAL_PRICE_PER_DAY);
-        unitPrice = s * ratePerUnit;
-      }
+
+    let d = Math.round(s * 4);
+    if (prod?.hasDimensions && prod?.tileWidth && prod?.tileHeight) {
+      d = calculateTilesCount(w, h, prod.tileWidth, prod.tileHeight);
     }
-    if (p.transactionType === 'rental') {
-      const duration = p.rentalDuration > 0 ? p.rentalDuration : 1;
-      unitPrice *= duration;
-    }
-    const sp = unitPrice;
+
+    const sp = prod ? computeProductUnitPrice(prod, {
+      width: w,
+      height: h,
+      transactionType: p.transactionType,
+      rentalDuration: p.rentalDuration,
+      rentalUnit: p.rentalUnit,
+    }) : 0;
+
     return {
       width: w,
       height: h,
@@ -985,7 +977,14 @@ export default function SignatureFlow({
     return {
       ...p,
       productName: prod?.name || `Product ${idx + 1}`,
-      lineTotal: (calc?.subtotal || 0) * (calc?.quantity || 1),
+      lineTotal: prod ? computeProductLineTotal(prod, {
+        width: p.width,
+        height: p.height,
+        quantity: p.quantity || 1,
+        transactionType: p.transactionType,
+        rentalDuration: p.rentalDuration,
+        rentalUnit: p.rentalUnit,
+      }) : 0,
       unitPrice: calc?.subtotal || 0,
       tileWidth: p.tileWidth || prod?.tileWidth || 0,
       tileHeight: p.tileHeight || prod?.tileHeight || 0,

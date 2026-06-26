@@ -100,3 +100,81 @@ export function formatNumber(value: number, decimals = 2): string {
     maximumFractionDigits: decimals,
   }).format(value);
 }
+
+export function computeProductLineTotal(
+  product: {
+    hasDimensions?: boolean;
+    tileWidth?: number;
+    tileHeight?: number;
+    pricePerTile?: number;
+    salePricePerSqM?: number;
+    rentalPricePerDay?: number;
+    rentalPricePerHour?: number;
+  },
+  config: {
+    width: number;
+    height: number;
+    quantity: number;
+    transactionType: 'sale' | 'rental';
+    rentalDuration?: number;
+    rentalUnit?: 'day' | 'hour';
+  }
+): number {
+  const widthM = config.width || 0;
+  const heightM = config.height || 0;
+  const quantity = config.quantity || 1;
+
+  const options = {
+    dimensionsEnabled: !!product.hasDimensions,
+    tileWidthCM: product.tileWidth,
+    tileHeightCM: product.tileHeight,
+    pricePerTile: product.pricePerTile,
+  };
+
+  if (config.transactionType === 'sale') {
+    return calculateSaleLineTotal(
+      widthM,
+      heightM,
+      product.salePricePerSqM || 0,
+      quantity,
+      options
+    );
+  } else {
+    const rate = config.rentalUnit === 'hour'
+      ? (product.rentalPricePerHour || 0)
+      : (product.rentalPricePerDay || 0);
+    return calculateRentalLineTotal(
+      widthM,
+      heightM,
+      rate,
+      config.rentalUnit || 'day',
+      config.rentalDuration || 1,
+      quantity,
+      options
+    );
+  }
+}
+
+export function computeProductUnitPrice(
+  product: {
+    hasDimensions?: boolean;
+    tileWidth?: number;
+    tileHeight?: number;
+    pricePerTile?: number;
+    salePricePerSqM?: number;
+    rentalPricePerDay?: number;
+    rentalPricePerHour?: number;
+  },
+  config: {
+    width: number;
+    height: number;
+    transactionType: 'sale' | 'rental';
+    rentalDuration?: number;
+    rentalUnit?: 'day' | 'hour';
+  }
+): number {
+  return computeProductLineTotal(product, {
+    ...config,
+    quantity: 1,
+  });
+}

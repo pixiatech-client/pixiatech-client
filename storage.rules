@@ -2,6 +2,15 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    
+    // Secure chats uploads: only participants, admin, commercial, or supplier can read/write
+    match /chats/{chatId}/{allPaths=**} {
+      allow read, write: if request.auth != null && (
+        request.auth.uid in firestore.get(/databases/(default)/documents/chats/$(chatId)).data.participants ||
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['admin', 'commercial', 'fournisseur']
+      );
+    }
+
     match /{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null

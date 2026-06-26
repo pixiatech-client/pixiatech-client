@@ -37,7 +37,7 @@ import { useUser } from '@/firebase';
 import { useI18n } from '@/lib/i18n';
 import { QuotePDF } from '@/app/admin/quote-pdf';
 import confetti from 'canvas-confetti';
-import { calculatePromotionPercent } from '@/lib/pricing-engine';
+import { calculatePromotionPercent, computeProductLineTotal, computeProductUnitPrice } from '@/lib/pricing-engine';
 
 import type { QuoteDetails } from '@/lib/types';
 
@@ -177,20 +177,15 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
   const lineTotal = React.useMemo(() => {
     if (!selectedProduct) return 0;
-    let total = 0;
-    if (selectedProduct.hasDimensions && selectedProduct.tileWidth && selectedProduct.tileHeight && selectedProduct.pricePerTile && selectedProduct.pricePerTile > 0) {
-      const tilesPerWidth = Math.ceil((configState.width * 100) / selectedProduct.tileWidth);
-      const tilesPerHeight = Math.ceil((configState.height * 100) / selectedProduct.tileHeight);
-      total = (tilesPerWidth * tilesPerHeight) * selectedProduct.pricePerTile;
-    } else {
-      if (configState.projectType === 'vente' && selectedProduct.salePricePerSqM) {
-        total = area * selectedProduct.salePricePerSqM;
-      } else if (configState.projectType === 'location' && selectedProduct.rentalPricePerDay) {
-        total = area * selectedProduct.rentalPricePerDay;
-      }
-    }
-    return total * (configState.quantity || 1);
-  }, [selectedProduct, configState.width, configState.height, configState.projectType, area, configState.quantity]);
+    return computeProductLineTotal(selectedProduct, {
+      width: configState.width,
+      height: configState.height,
+      quantity: configState.quantity || 1,
+      transactionType: configState.projectType === 'vente' ? 'sale' : 'rental',
+      rentalDuration: 1,
+      rentalUnit: 'day',
+    });
+  }, [selectedProduct, configState.width, configState.height, configState.projectType, configState.quantity]);
 
   const totalQuote = lineTotal;
 
