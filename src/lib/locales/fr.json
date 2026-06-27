@@ -1003,7 +1003,8 @@
             "errorAccessing": "Erreur d'accès à {collection}.",
             "errorPermissionDenied": "Accès refusé à {collection}. Vérifiez vos permissions Firestore (Projet : {projectId})",
             "errorDatabaseUnavailable": "La base de données est temporairement indisponible.",
-            "errorFirebase": "Erreur Firebase ({code}) : {message}"
+            "errorFirebase": "Erreur Firebase ({code}) : {message}",
+            "tile": "tuile"
         },
         "quoteDetails": {
             "loading": "Chargement de l'estimation…",

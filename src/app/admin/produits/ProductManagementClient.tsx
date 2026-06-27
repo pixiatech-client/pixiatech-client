@@ -423,7 +423,10 @@ const MobileProductCard = React.memo(({
             </span>
           )}
           <span className="text-3xl font-black text-slate-900 tracking-tighter">
-            {product.salePricePerSqM || String(product.price || '').replace(/[^\d]/g, '') || '—'} {'\u20AC'}
+            {product.hasDimensions || product.dimensionsEnabled
+              ? String(normalizePrice(product.pricePerTile || 0)) + ' \u20AC / ' + t('admin.productManagement.tile')
+              : (product.salePricePerSqM || (product.price ? String(normalizePrice(product.price)) : '—')) + ' \u20AC'
+            }
           </span>
         </div>
       </div>
@@ -639,7 +642,10 @@ const ProductListItem = ({
             {product.oldPrice && (
               <span className="text-xs font-semibold text-orange-500 line-through mr-1.5">{product.oldPrice} {'\u20AC'}</span>
             )}
-            {product.salePricePerSqM || String(product.price || '').replace(/[^\d]/g, '') || '—'} {'\u20AC'}
+            {product.hasDimensions || product.dimensionsEnabled
+              ? String(normalizePrice(product.pricePerTile || 0)) + ' \u20AC / ' + t('admin.productManagement.tile')
+              : (product.salePricePerSqM || (product.price ? String(normalizePrice(product.price)) : '—')) + ' \u20AC'
+            }
           </span>
         </div>
       </div>
@@ -4890,7 +4896,7 @@ export default function ProductManagementClient() {
         return e;
       }));
 
-      setPrixVente((editingProduct.price || '').toString().replace(/[^\d]/g, ''));
+      setPrixVente(editingProduct.price != null && editingProduct.price !== '' ? String(normalizePrice(editingProduct.price)) : '');
       setOldPrice(editingProduct.oldPrice ? editingProduct.oldPrice.toString() : '');
 
       // Handle selected characteristics

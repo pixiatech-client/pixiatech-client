@@ -403,43 +403,14 @@ export function QuoteBuilder({
         return {
             products: configuredProducts.map(cp => {
                 const product = allProducts.find(p => p.id === cp.productId);
-                const area = cp.width * cp.height;
-                let finalQuantity = cp.quantity || 1;
-                let finalUnitPrice = 0;
-
-                if (product?.hasDimensions !== false && product?.tileWidth && product?.tileHeight && product?.pricePerTile && product.pricePerTile > 0) {
-                    finalQuantity = cp.quantity || 1;
-                    finalUnitPrice = product.pricePerTile;
-                } else if (product) {
-                    if (cp.transactionType === 'sale') {
-                        const salePrice = product.salePricePerSqM && product.salePricePerSqM > 0 ? product.salePricePerSqM : DEFAULT_SALE_PRICE_PER_SQM;
-                        finalQuantity = area * (cp.quantity || 1);
-                        finalUnitPrice = salePrice;
-                    } else if (cp.transactionType === 'rental') {
-                        if (cp.rentalUnit === 'day') {
-                            const rentalPrice = product.rentalPricePerDay && product.rentalPricePerDay > 0 ? product.rentalPricePerDay : DEFAULT_RENTAL_PRICE_PER_DAY;
-                            finalQuantity = area * (cp.quantity || 1);
-                            finalUnitPrice = rentalPrice;
-                        } else if (cp.rentalUnit === 'hour') {
-                    const rentalPriceHour = product.rentalPricePerHour && product.rentalPricePerHour > 0 ? product.rentalPricePerHour : DEFAULT_RENTAL_PRICE_PER_HOUR;
-                            finalQuantity = area * (cp.quantity || 1);
-                            finalUnitPrice = rentalPriceHour;
-                        }
-                    } else if ((product as any).price && (product as any).price > 0) {
-                        finalUnitPrice = (product as any).price;
-                    }
-                }
-
-                if (cp.transactionType === 'rental' && cp.rentalDuration > 1) {
-                    finalUnitPrice *= cp.rentalDuration;
-                }
+                const lineTotal = calculateLineTotal(cp);
 
                 return {
                     ...cp,
-                    quantity: finalQuantity,
-                    unitPrice: finalUnitPrice,
+                    quantity: cp.quantity || 1,
+                    unitPrice: lineTotal / (cp.quantity || 1),
                     productName: product?.name || 'Unknown',
-                    lineTotal: calculateLineTotal(cp),
+                    lineTotal,
                     tileWidth: product?.tileWidth,
                     tileHeight: product?.tileHeight,
                     pricePerTile: product?.pricePerTile,

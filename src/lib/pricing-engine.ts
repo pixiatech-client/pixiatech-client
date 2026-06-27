@@ -178,3 +178,107 @@ export function computeProductUnitPrice(
     quantity: 1,
   });
 }
+
+export interface QuoteProduct {
+  unitPrice: number;
+  quantity: number;
+  discount?: number;
+  transactionType?: 'sale' | 'rental';
+  rentalDuration?: number;
+  dimensionsEnabled?: boolean;
+  width?: number;
+  height?: number;
+  tileWidth?: number;
+  tileHeight?: number;
+  pricePerTile?: number;
+}
+
+export interface QuoteOptions {
+  productDiscount?: number;
+  deliveryCost?: number;
+  deliveryDiscount?: number;
+  laborCost?: number;
+  laborDiscount?: number;
+  taxRate?: number;
+  globalDiscount?: number;
+}
+
+export interface QuoteTotal {
+  productsSubtotal: number;
+  productsTotal: number;
+  deliveryTotal: number;
+  laborTotal: number;
+  subtotalHT: number;
+  tva: number;
+  totalTTC: number;
+  finalTotal: number;
+  totalInitial: number;
+  totalArea: number;
+  techniciansCount: number;
+}
+
+export function computeQuoteTotal(
+  products: QuoteProduct[],
+  options: QuoteOptions = {}
+): QuoteTotal {
+  const {
+    productDiscount = 0,
+    deliveryCost = 0,
+    deliveryDiscount = 0,
+    laborCost = 0,
+    laborDiscount = 0,
+    taxRate = 0,
+    globalDiscount = 0,
+  } = options;
+
+  const productsSubtotal = products.reduce((acc, p) => {
+    let unitPrice = p.unitPrice || 0;
+    if (p.dimensionsEnabled && p.tileWidth && p.tileHeight && p.pricePerTile) {
+      const tilesPerWidth = Math.ceil(((p.width || 0) * 100) / (p.tileWidth || 1));
+      const tilesPerHeight = Math.ceil(((p.height || 0) * 100) / (p.tileHeight || 1));
+      const totalTiles = tilesPerWidth * tilesPerHeight;
+      unitPrice = totalTiles * (p.pricePerTile || 0);
+    }
+    return acc + ((p.quantity || 0) * unitPrice);
+  }, 0);
+
+  const productsDiscountedTotal = products.reduce((acc, p) => {
+    let unitPrice = p.unitPrice || 0;
+    if (p.dimensionsEnabled && p.tileWidth && p.tileHeight && p.pricePerTile) {
+      const tilesPerWidth = Math.ceil(((p.width || 0) * 100) / (p.tileWidth || 1));
+      const tilesPerHeight = Math.ceil(((p.height || 0) * 100) / (p.tileHeight || 1));
+      const totalTiles = tilesPerWidth * tilesPerHeight;
+      unitPrice = totalTiles * (p.pricePerTile || 0);
+    }
+    const lineBaseTotal = (p.quantity || 0) * unitPrice;
+    let durationFactor = p.transactionType === 'rental' ? (p.rentalDuration || 1) : 1;
+    const lineTotal = lineBaseTotal * durationFactor;
+    const discounted = lineTotal * (1 - (p.discount || 0) / 100);
+    return acc + discounted;
+  }, 0);
+
+  const productsTotal = productsDiscountedTotal * (1 - productDiscount / 100);
+  const deliveryTotal = deliveryCost - (deliveryCost * deliveryDiscount / 100);
+  const laborTotal = laborCost - (laborCost * laborDiscount / 100);
+  const subtotalHT = productsTotal + deliveryTotal + laborTotal;
+  const tva = subtotalHT * taxRate / 100;
+  const totalTTC = subtotalHT + tva;
+  const finalTotal = totalTTC - (totalTTC * globalDiscount / 100);
+
+  const totalArea = products.reduce((acc, p) => acc + ((p.width || 0) * (p.height || 0) * (p.quantity || 1)), 0);
+  const techniciansCount = Math.max(1, Math.ceil(totalArea / 40));
+
+  return {
+    productsSubtotal,
+    productsTotal,
+    deliveryTotal,
+    laborTotal,
+    subtotalHT,
+    tva,
+    totalTTC,
+    finalTotal,
+    totalInitial: productsSubtotal + deliveryCost + laborCost,
+    totalArea,
+    techniciansCount,
+  };
+}

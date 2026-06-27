@@ -92,6 +92,7 @@ import {
 import { Product as GlobalProduct, ProductSpec } from '@/lib/types';
 import { villes } from '@/lib/data/villes';
 import { geminiService } from './services/geminiService';
+import { computeQuoteTotal } from '@/lib/pricing-engine';
 import { cn } from '@/lib/utils';
 import './details.css';
 
@@ -291,17 +292,6 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
       const sitePhoto = clientObj?.sitePhoto || initialEstimation.sitePhoto || initialEstimation.supplierPhoto || initialEstimation.client?.sitePhoto;
 
       const taxRate = initialEstimation.taxRate ?? 0;
-      const dbTotalClient = initialEstimation.totalClient || initialEstimation.totalQuote || 0;
-
-      // Auto-detect if base unit prices are already tax-included
-      const dbProducts = initialEstimation.products || [];
-      const sumProductsHT = dbProducts.reduce((acc: number, p: any) => acc + (p.unitPrice || (p.lineTotal / (p.quantity || 1)) || 0) * (p.quantity || 1), 0);
-      const deliveryCost = initialEstimation.deliveryCost || 0;
-      const laborCost = initialEstimation.laborCost || initialEstimation.installationCost || 0;
-
-      // If the displayed total (incl. tax) equals sum sur lines + fees, the lines are already tax-inclusive
-      const isActuallyTTC = dbTotalClient > 0 && Math.abs(dbTotalClient - (sumProductsHT + deliveryCost + laborCost)) < 0.1;
-      const divisor = isActuallyTTC ? (1 + taxRate / 100) : 1;
 
       const mapped: Estimation = {
         id: displayId,
@@ -319,7 +309,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
           productId: p.productId || p.id || '',
           name: p.productName || p.name || 'Product',
           quantity: p.quantity || 1,
-          unitPrice: (p.unitPrice || (p.lineTotal / (p.quantity || 1)) || 0) / divisor,
+          unitPrice: (p.unitPrice || (p.lineTotal / (p.quantity || 1)) || 0),
           discount: p.discount || 0,
           tileWidth: parseFloat(p.largeurDalle || p.tileWidth || '0'),
           tileHeight: parseFloat(p.hauteurDalle || p.tileHeight || '0'),
@@ -345,15 +335,15 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
               id: 'default',
               name: 'Estimation Globale',
               quantity: 1,
-              unitPrice: dbTotalClient / (1 + taxRate / 100),
+              unitPrice: (initialEstimation.totalClient || initialEstimation.totalQuote || 0) / (1 + taxRate / 100),
               discount: 0
             }
           ],
         productDiscount: initialEstimation.productDiscount || 0,
         deliveryCity: initialEstimation.deliveryCity || initialEstimation.unconfiguredCityQuery || '',
-        deliveryCost: (initialEstimation.deliveryCost || 0) / divisor,
+        deliveryCost: (initialEstimation.deliveryCost || 0),
         deliveryDiscount: initialEstimation.deliveryDiscount || 0,
-        laborCost: (initialEstimation.laborCost || initialEstimation.installationCost || 0) / divisor,
+        laborCost: (initialEstimation.laborCost || initialEstimation.installationCost || 0),
         laborDiscount: initialEstimation.laborDiscount || 0,
         taxRate: taxRate,
         globalDiscount: initialEstimation.globalDiscount || 0,
@@ -395,64 +385,16 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
     onClose?.();
   };
 
-  // Calculations
   const calculations = useMemo(() => {
-    const products = estimation.products || [];
-    const productsSubtotal = products.reduce((acc, p) => {
-      let unitPrice = p.unitPrice || 0;
-      if (p.dimensionsEnabled && p.tileWidth && p.tileHeight && p.pricePerTile) {
-        const tilesPerWidth = Math.ceil(((p.width || 0) * 100) / (p.tileWidth || 1));
-        const tilesPerHeight = Math.ceil(((p.height || 0) * 100) / (p.tileHeight || 1));
-        const totalTiles = tilesPerWidth * tilesPerHeight;
-        unitPrice = totalTiles * (p.pricePerTile || 0);
-      }
-      return acc + ((p.quantity || 0) * unitPrice);
-    }, 0);
-
-    const productsDiscountedTotal = products.reduce((acc, p) => {
-      let unitPrice = p.unitPrice || 0;
-      if (p.dimensionsEnabled && p.tileWidth && p.tileHeight && p.pricePerTile) {
-        const tilesPerWidth = Math.ceil(((p.width || 0) * 100) / (p.tileWidth || 1));
-        const tilesPerHeight = Math.ceil(((p.height || 0) * 100) / (p.tileHeight || 1));
-        const totalTiles = tilesPerWidth * tilesPerHeight;
-        unitPrice = totalTiles * (p.pricePerTile || 0);
-      }
-      const lineBaseTotal = (p.quantity || 0) * unitPrice;
-      
-      // Facteur Location
-      let durationFactor = 1;
-      if (p.transactionType === 'rental') {
-        durationFactor = p.rentalDuration || 1;
-      }
-      
-      const lineTotal = lineBaseTotal * durationFactor;
-      const discounted = lineTotal * (1 - (p.discount || 0) / 100);
-      return acc + discounted;
-    }, 0);
-
-    const productsTotal = productsDiscountedTotal * (1 - (estimation.productDiscount || 0) / 100);
-
-    const deliveryTotal = (estimation.deliveryCost || 0) - ((estimation.deliveryCost || 0) * (estimation.deliveryDiscount || 0) / 100);
-    const laborTotal = (estimation.laborCost || 0) - ((estimation.laborCost || 0) * (estimation.laborDiscount || 0) / 100);
-
-    const subtotalHT = productsTotal + deliveryTotal + laborTotal;
-    const tva = (subtotalHT * (estimation.taxRate || 0)) / 100;
-    const totalTTC = subtotalHT + tva;
-    const finalTotal = totalTTC - (totalTTC * (estimation.globalDiscount || 0) / 100);
-
-    return {
-      productsSubtotal,
-      productsTotal,
-      deliveryTotal,
-      laborTotal,
-      subtotalHT,
-      tva,
-      totalTTC,
-      finalTotal,
-      totalInitial: productsSubtotal + (estimation.deliveryCost || 0) + (estimation.laborCost || 0),
-      totalArea: products.reduce((acc, p) => acc + ((p.width || 0) * (p.height || 0) * (p.quantity || 1)), 0),
-      techniciansCount: Math.max(1, Math.ceil(products.reduce((acc, p) => acc + ((p.width || 0) * (p.height || 0) * (p.quantity || 1)), 0) / 40))
-    };
+    return computeQuoteTotal(estimation.products || [], {
+      productDiscount: estimation.productDiscount,
+      deliveryCost: estimation.deliveryCost,
+      deliveryDiscount: estimation.deliveryDiscount,
+      laborCost: estimation.laborCost,
+      laborDiscount: estimation.laborDiscount,
+      taxRate: estimation.taxRate,
+      globalDiscount: estimation.globalDiscount,
+    });
   }, [estimation]);
 
   const addHistory = (action: string) => {
@@ -1744,15 +1686,24 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                     products: estimation.products.map(p => ({
                                       ...p,
                                       productName: p.name,
-                                      lineTotal: (p.quantity || 1) * (p.unitPrice || 0)
+                                      lineTotal: (p.quantity || 1) * (p.unitPrice || 0),
+                                      unitPrice: p.unitPrice || 0,
+                                      quantity: p.quantity || 1,
+                                      discount: p.discount || 0,
                                     })),
                                     taxRate: estimation.taxRate,
+                                    productDiscount: estimation.productDiscount,
+                                    deliveryCost: estimation.deliveryCost,
+                                    deliveryDiscount: estimation.deliveryDiscount,
+                                    laborCost: estimation.laborCost,
+                                    laborDiscount: estimation.laborDiscount,
                                     globalDiscount: estimation.globalDiscount,
+                                    totalQuote: calculations.finalTotal,
+                                    totalClient: calculations.finalTotal,
                                     client: estimation.client,
                                     rentalPeriod: (estimation as any).rentalPeriod || null,
                                     rentalStartTime: (estimation as any).rentalStartTime || null,
                                     rentalEndTime: (estimation as any).rentalEndTime || null,
-                                    // Auto-transition Pending -> Processed for rentals
                                     ...(isRentalPending ? { status: 'processed' } : {}),
                                   };
                                   // Actual DB Save

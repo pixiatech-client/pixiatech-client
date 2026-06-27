@@ -1066,7 +1066,8 @@
             "errorAccessing": "Error accessing {collection}.",
             "errorPermissionDenied": "Access denied to {collection}. Check your Firestore permissions (Project: {projectId})",
             "errorDatabaseUnavailable": "The database is temporarily unavailable.",
-            "errorFirebase": "Firebase error ({code}): {message}"
+            "errorFirebase": "Firebase error ({code}): {message}",
+            "tile": "tile"
         },
         "quoteDetails": {
             "loading": "Loading estimation...",

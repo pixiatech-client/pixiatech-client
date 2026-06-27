@@ -113,6 +113,12 @@ export type QuoteDetails = {
   selectedCityId?: string | null;
   unconfiguredCityQuery?: string;
   totalQuote: number;
+  totalClient?: number;
+  productDiscount?: number;
+  deliveryDiscount?: number;
+  laborCost?: number;
+  laborDiscount?: number;
+  globalDiscount?: number;
   width: number;
   height: number;
   productName: string;
