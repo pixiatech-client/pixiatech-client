@@ -2015,18 +2015,18 @@ function DistancePitchSelector({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Initialize selectedDistance to first mapped distance or first available
+  // NOTE: selectedDistance intentionally NOT in deps to avoid overriding user selection
   useEffect(() => {
+    if (selectedDistance) return;
     const firstMapped = Object.keys(distancePitches || {}).find(
       (d) => (distancePitches[d] || []).length > 0
     );
     if (firstMapped && availableDistances.includes(firstMapped)) {
-      if (selectedDistance !== firstMapped) {
-        setSelectedDistance(firstMapped);
-      }
-    } else if (!selectedDistance && availableDistances.length > 0) {
+      setSelectedDistance(firstMapped);
+    } else if (availableDistances.length > 0) {
       setSelectedDistance(availableDistances[0]);
     }
-  }, [availableDistances, distancePitches, selectedDistance]);
+  }, [availableDistances, distancePitches]);
 
   // Handle outside click to close the dropdown
   useEffect(() => {
