@@ -105,6 +105,54 @@ const GalleryImage = ({ url, onRemove, idx }: { url: string; onRemove: () => voi
   );
 };
 
+// --- VariantItem for drag-and-drop reordering ---
+const VariantItem = ({ variant, updateVariant, removeVariant, handleImageUpload, t, isOnly }: {
+  variant: { id: number; value: string; image: { file: File; url: string } | null };
+  updateVariant: (id: number, field: string, value: any) => void;
+  removeVariant: (id: number) => void;
+  handleImageUpload: (id: number, e: React.ChangeEvent<HTMLInputElement>) => void;
+  t: (key: string) => string;
+  isOnly: boolean;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: String(variant.id) });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 50 : 'auto' as any,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className={cn("flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100", isDragging && "shadow-lg ring-2 ring-slate-300")}>
+      <button className="shrink-0 p-1 text-slate-400 hover:text-slate-600 cursor-grab active:cursor-grabbing touch-none" {...attributes} {...listeners}>
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <div className="flex-1">
+        <input
+          type="text"
+          value={variant.value}
+          onChange={(e) => updateVariant(variant.id, 'value', e.target.value)}
+          placeholder={t('admin.productManagement.variantPlaceholder')}
+          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
+        />
+      </div>
+      <div className="shrink-0 relative group">
+        <input type="file" id={`variant-image-${variant.id}`} className="hidden" accept="image/*" onChange={(e) => handleImageUpload(variant.id, e)} />
+        <label htmlFor={`variant-image-${variant.id}`} className={cn("flex items-center justify-center w-10 h-10 rounded-lg border border-dashed cursor-pointer transition-colors overflow-hidden", variant.image ? "border-slate-300 bg-slate-100" : "border-slate-300 hover:border-slate-400 hover:bg-slate-100 text-slate-400")} title={t('admin.productManagement.addImageIcon')}>
+          {variant.image ? <img src={variant.image.url} alt="Variant" className="w-full h-full object-cover" /> : <Camera className="w-4 h-4" />}
+        </label>
+        {variant.image && (
+          <button onClick={(e) => { e.preventDefault(); updateVariant(variant.id, 'image', null); }} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Trash2 className="w-3 h-3" />
+          </button>
+        )}
+      </div>
+      <button onClick={() => removeVariant(variant.id)} disabled={isOnly} className="shrink-0 p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-400">
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+};
+
 // --- Distance and Pitch columns for ProductListItem ---
 function DistanceColumn({ product, t }: { product: any, t: (key: string) => string }) {
   const { distance } = getPrimaryDistanceInfo(product);
@@ -1160,6 +1208,7 @@ const CaracteristiquesPage = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [charPage, setCharPage] = useState(1);
+  const variantSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [prevCharPage, setPrevCharPage] = useState(1);
   const [charSearch, setCharSearch] = useState('');
   const charItemsPerPage = 6;
@@ -1249,6 +1298,16 @@ const CaracteristiquesPage = ({
 
   const removeVariant = (id: number) => {
     setVariants(variants.filter(v => v.id !== id));
+  };
+
+  const handleVariantDragEnd = (e: any) => {
+    if (e.active && e.over && e.active.id !== e.over.id) {
+      const oldIdx = variants.findIndex((v) => String(v.id) === e.active.id);
+      const newIdx = variants.findIndex((v) => String(v.id) === e.over.id);
+      if (oldIdx !== -1 && newIdx !== -1) {
+        setVariants(arrayMove([...variants], oldIdx, newIdx));
+      }
+    }
   };
 
   const handleImageUpload = (id: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1862,65 +1921,15 @@ const CaracteristiquesPage = ({
                 <div>
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-3 block">{t('admin.productManagement.charVariants')}</label>
 
-                  <div className="space-y-3">
-                    {variants.map((variant) => (
-                      <div key={variant.id} className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <div className="flex-1">
-                          <input
-                            type="text"
-                            value={variant.value}
-                            onChange={(e) => updateVariant(variant.id, 'value', e.target.value)}
-                            placeholder={t('admin.productManagement.variantPlaceholder')}
-                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
-                          />
-                        </div>
-
-                        {/* Image Upload for Variant */}
-                        <div className="shrink-0 relative group">
-                          <input
-                            type="file"
-                            id={`variant-image-${variant.id}`}
-                            className="hidden"
-                            accept="image/*"
-                            onChange={(e) => handleImageUpload(variant.id, e)}
-                          />
-                          <label
-                            htmlFor={`variant-image-${variant.id}`}
-                            className={cn(
-                              "flex items-center justify-center w-10 h-10 rounded-lg border border-dashed cursor-pointer transition-colors overflow-hidden",
-                              variant.image ? "border-slate-300 bg-slate-100" : "border-slate-300 hover:border-slate-400 hover:bg-slate-100 text-slate-400"
-                            )}
-                            title={t('admin.productManagement.addImageIcon')}
-                          >
-                            {variant.image ? (
-                              <img src={variant.image.url} alt="Variant" className="w-full h-full object-cover" />
-                            ) : (
-                              <Camera className="w-4 h-4" />
-                            )}
-                          </label>
-                          {variant.image && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                updateVariant(variant.id, 'image', null);
-                              }}
-                              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
-
-                        <button
-                          onClick={() => removeVariant(variant.id)}
-                          disabled={variants.length === 1}
-                          className="shrink-0 p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-400"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                  <DndContext sensors={variantSensors} collisionDetection={closestCenter} onDragEnd={handleVariantDragEnd}>
+                    <SortableContext items={variants.map(v => String(v.id))}>
+                      <div className="space-y-3">
+                        {variants.map((variant) => (
+                          <VariantItem key={variant.id} variant={variant} updateVariant={updateVariant} removeVariant={removeVariant} handleImageUpload={handleImageUpload} t={t} isOnly={variants.length === 1} />
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </SortableContext>
+                  </DndContext>
 
                   <button
                     onClick={addVariant}
