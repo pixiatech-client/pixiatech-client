@@ -3042,57 +3042,93 @@ const ProduitPage = ({
                 </div>
               </div>
 
-              {/* Fiche technique PDF */}
-              <div className="flex-1 flex flex-col justify-center">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                  accept={mediaType === 'photo' ? 'image/*' : 'video/*'}
-                />
-                <input type="file" ref={pdfInputRef} onChange={handlePdfChange} className="hidden" accept="application/pdf" />
-                <div onClick={triggerPdfUpload} className={cn(
-                  "border-2 border-dashed rounded-[2rem] p-6 md:p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group",
-                  (pdfUrl || uploadedPdf)
-                    ? "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50"
-                    : "border-slate-200 hover:bg-slate-50"
-                )}>
-                  <div className={cn(
-                    "w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors",
-                    (pdfUrl || uploadedPdf) ? "bg-emerald-100" : "bg-slate-50 group-hover:bg-blue-50"
+              {/* Tab buttons */}
+              <div className="flex gap-1 bg-slate-50 p-1 rounded-xl">
+                {(['pdf', ...(activeSpace === 'boutique' ? ['description', 'detail'] as const : [])] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setFicheTab(tab)}
+                    className={cn(
+                      "flex-1 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all",
+                      ficheTab === tab
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-400 hover:text-slate-600"
+                    )}
+                  >
+                    {tab === 'pdf' ? 'PDF' : tab === 'description' ? 'Description' : 'Description détaillée'}
+                  </button>
+                ))}
+              </div>
+
+              {ficheTab === 'pdf' && (
+                <div className="flex-1 flex flex-col justify-center">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept={mediaType === 'photo' ? 'image/*' : 'video/*'}
+                  />
+                  <input type="file" ref={pdfInputRef} onChange={handlePdfChange} className="hidden" accept="application/pdf" />
+                  <div onClick={triggerPdfUpload} className={cn(
+                    "border-2 border-dashed rounded-[2rem] p-6 md:p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group",
+                    (pdfUrl || uploadedPdf)
+                      ? "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50"
+                      : "border-slate-200 hover:bg-slate-50"
                   )}>
-                    {(pdfUrl || uploadedPdf) ? (
-                      <Check className="w-8 h-8 text-emerald-600" />
-                    ) : (
-                      <Plus className="w-8 h-8 text-slate-300 group-hover:text-blue-500" />
+                    <div className={cn(
+                      "w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors",
+                      (pdfUrl || uploadedPdf) ? "bg-emerald-100" : "bg-slate-50 group-hover:bg-blue-50"
+                    )}>
+                      {(pdfUrl || uploadedPdf) ? (
+                        <Check className="w-8 h-8 text-emerald-600" />
+                      ) : (
+                        <Plus className="w-8 h-8 text-slate-300 group-hover:text-blue-500" />
+                      )}
+                    </div>
+                    <span className="text-xs font-black text-slate-900 uppercase tracking-widest mb-1">
+                      {(pdfUrl || uploadedPdf) ? t('admin.productManagement.techSheetAdded') : t('admin.productManagement.addProductSheet')}
+                    </span>
+                    <span className="text-[9px] text-slate-400 uppercase tracking-widest">
+                      {(pdfUrl || uploadedPdf) ? (uploadedPdf ? uploadedPdf.name : t('admin.productManagement.fileSaved')) : t('admin.productManagement.officialTechSheet')}
+                    </span>
+
+                    {(pdfUrl || uploadedPdf) && (
+                      <div className="flex gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => window.open(uploadedPdf ? URL.createObjectURL(uploadedPdf) : pdfUrl, '_blank')}
+                          className="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-600 hover:text-white transition-all"
+                        >
+                          {t('admin.productManagement.viewPdf')}
+                        </button>
+                        <button
+                          onClick={() => { setPdfUrl(''); setUploadedPdf(null); }}
+                          className="px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all"
+                        >
+                          {t('admin.productManagement.delete')}
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <span className="text-xs font-black text-slate-900 uppercase tracking-widest mb-1">
-                    {(pdfUrl || uploadedPdf) ? t('admin.productManagement.techSheetAdded') : t('admin.productManagement.addProductSheet')}
-                  </span>
-                  <span className="text-[9px] text-slate-400 uppercase tracking-widest">
-                    {(pdfUrl || uploadedPdf) ? (uploadedPdf ? uploadedPdf.name : t('admin.productManagement.fileSaved')) : t('admin.productManagement.officialTechSheet')}
-                  </span>
-
-                  {(pdfUrl || uploadedPdf) && (
-                    <div className="flex gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => window.open(uploadedPdf ? URL.createObjectURL(uploadedPdf) : pdfUrl, '_blank')}
-                        className="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-600 hover:text-white transition-all"
-                      >
-                        {t('admin.productManagement.viewPdf')}
-                      </button>
-                      <button
-                        onClick={() => { setPdfUrl(''); setUploadedPdf(null); }}
-                        className="px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all"
-                      >
-                        {t('admin.productManagement.delete')}
-                      </button>
-                    </div>
-                  )}
                 </div>
-              </div>
+              )}
+
+              {activeSpace === 'boutique' && ficheTab === 'description' && (
+                <div className="flex-1">
+                  <input
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Courte description du produit..."
+                    className="w-full h-12 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-300 transition-colors"
+                  />
+                </div>
+              )}
+
+              {activeSpace === 'boutique' && ficheTab === 'detail' && (
+                <div className="flex-1">
+                  <TipTapEditor value={descriptionDetaillee} onChange={setDescriptionDetaillee} placeholder="Description détaillée du produit..." />
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="pt-6 space-y-3 mt-auto">
