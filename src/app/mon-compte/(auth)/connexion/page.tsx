@@ -268,7 +268,7 @@ export default function ConnexionPage() {
                 <TabsContent value="magic-link" className="mt-0 pt-6">
                   <MagicLinkTab />
                 </TabsContent>
-                <TabsContent value="password" className="mt-0 pt-6 w-[339px] mx-auto">
+                <TabsContent value="password" className="mt-0 pt-6 w-full max-w-[339px] mx-auto">
                   <PasswordTab />
                 </TabsContent>
               </div>

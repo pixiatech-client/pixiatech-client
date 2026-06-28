@@ -98,7 +98,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
   const tabs = allTabs.filter(t => t.roles.includes(userRole));
 
   return (
-    <div className="hidden 2xl:flex justify-center mb-6">
+    <div className="flex justify-center mb-6 overflow-x-auto scrollbar-none -mx-4 px-4">
       <LayoutGroup id="estimation-tabs">
         <div className="relative flex items-center gap-3 bg-theme-card p-2 rounded-2xl border border-theme-card-border shadow-sm w-fit">
           {tabs.map(({ label, icon: Icon, color }) => {

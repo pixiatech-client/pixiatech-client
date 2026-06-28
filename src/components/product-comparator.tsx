@@ -207,7 +207,7 @@ export function ProductComparator({ products, configState, onSelect, selectedPro
 
       {/* Table Container */}
       <div className="flex-1 overflow-auto bg-[#fafafa]">
-        <div className="min-w-[800px] w-full">
+        <div className="min-w-0 md:min-w-[800px] w-full">
           {/* Products Header Row */}
           <div className="flex bg-white sticky top-0 z-20 border-b border-slate-200 shadow-sm">
             <div className="w-64 shrink-0 p-6 flex items-center border-r border-slate-100">

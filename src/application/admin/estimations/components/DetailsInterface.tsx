@@ -893,7 +893,7 @@ export default function DetailsInterface({ estimation: projectEstimation, onClos
                         </div>
                       </div>
 
-                      <div className="text-right flex flex-col justify-end min-w-[350px] relative">
+                      <div className="text-right flex flex-col justify-end min-w-0 md:min-w-[350px] relative">
                         <div className="absolute -top-12 right-0 w-64 h-64 bg-[#6dff1d]/10 rounded-full blur-[100px] pointer-events-none" />
                         
                         <div className="text-[#24c7ff] text-[11px]  font-bold uppercase mb-6 tracking-[0.8em] pr-4 relative">

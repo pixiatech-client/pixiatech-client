@@ -583,7 +583,7 @@ export default function BoutiquePage() {
             </div>
           ) : (
             <>
-              <div>
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100">
@@ -723,7 +723,7 @@ export default function BoutiquePage() {
             </div>
           ) : (
             <>
-              <div>
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100">

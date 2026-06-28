@@ -150,7 +150,7 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
                     </div>
                   ) : (
                     <>
-                    <div className="grid grid-cols-[auto_1fr_1fr_1fr_auto_auto] items-center gap-4 px-3 py-2 font-medium text-muted-foreground text-sm">
+                    <div className="hidden sm:grid grid-cols-[auto_1fr_1fr_1fr_auto_auto] items-center gap-4 px-3 py-2 font-medium text-muted-foreground text-sm">
                         <Checkbox checked={!!isAllSelected} onCheckedChange={handleSelectAll} />
                         <Label>{t('Zone')}</Label>
                         <Label>{t('City (Optional)')}</Label>

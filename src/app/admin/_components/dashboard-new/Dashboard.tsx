@@ -773,7 +773,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                   {t('admin.viewAll')}
                 </button>
               </div>
-              <div className="bg-gray-100 dark:bg-white/5 p-1 rounded-2xl border border-gray-200/50 dark:border-white/5 self-start min-w-[450px]">
+              <div className="bg-gray-100 dark:bg-white/5 p-1 rounded-2xl border border-gray-200/50 dark:border-white/5 self-start min-w-0 md:min-w-[450px]">
                 {isSearchOpen ? (
                   <div className="w-full">
                     <div className="relative">

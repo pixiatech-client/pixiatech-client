@@ -1594,7 +1594,7 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-[400px] bg-white h-full shadow-xl flex flex-col border-l border-gray-200"
+              className="relative w-full max-w-[400px] bg-white h-full shadow-xl flex flex-col border-l border-gray-200"
             >
               <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
                 <div className="flex items-center gap-3">
@@ -1895,7 +1895,7 @@ className="px-4 py-2 text-[10px] font-bold text-theme-sidebar-active-text hover:
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-[400px] bg-white h-full shadow-xl flex flex-col border-l border-gray-200"
+              className="relative w-full max-w-[400px] bg-white h-full shadow-xl flex flex-col border-l border-gray-200"
             >
               <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
                 <div className="flex items-center gap-3">

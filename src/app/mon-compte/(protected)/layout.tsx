@@ -28,7 +28,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
       <MemberSidebar />
 
-      <main className="pl-64 pt-14 min-h-screen">
+      <main className="pl-0 md:pl-64 pt-14 min-h-screen">
         {children}
       </main>
     </div>

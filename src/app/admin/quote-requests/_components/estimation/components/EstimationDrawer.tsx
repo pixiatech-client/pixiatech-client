@@ -122,7 +122,7 @@ export const EstimationDrawer: React.FC<EstimationDrawerProps> = ({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 h-full w-[650px] bg-[#09090b] border-l border-[#27272a] shadow-2xl z-[101] flex flex-col overflow-hidden"
+            className="fixed top-0 right-0 h-full w-full max-w-[650px] bg-[#09090b] border-l border-[#27272a] shadow-2xl z-[101] flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="p-6 border-b border-[#27272a] bg-[#0c0c0e]">

@@ -31,7 +31,8 @@ import {
   Zap,
   Mail,
   Store,
-  CreditCard
+  CreditCard,
+  MoreHorizontal
 } from 'lucide-react';
 import Link from 'next/link';
 import { logout, getThemes, getSettings, saveSidebarConfig } from '@/app/admin/actions';
@@ -82,6 +83,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   const roleColor = isBaseRole ? defaultColors[roleId] : (roleData?.color || (roleData?.roleTemplate === 'commercial' ? '#3b82b6' : '#8b5cf6'));
   const { t, locale, setLocale } = useI18n();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [settings, setSettings] = useState<any>(initialSettings);
   const firestore = useFirestore();
   useEffect(() => {
@@ -405,6 +407,47 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               >
                 <span className="text-xs font-black uppercase tracking-wider">{locale === 'fr' ? 'FR' : 'EN'}</span>
               </Button>
+
+              {/* ── Mobile More Actions ── */}
+              <div className="relative md:hidden">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMobileActionsOpen(!mobileActionsOpen)}
+                  title="More actions"
+                  className="h-11 w-11 rounded-xl bg-white shadow-sm"
+                >
+                  <MoreHorizontal className="h-5 w-5 text-gray-500" />
+                </Button>
+                {mobileActionsOpen && (
+                  <>
+                    <div className="fixed inset-0 z-50" onClick={() => setMobileActionsOpen(false)} />
+                    <div className="absolute right-0 top-full mt-2 z-50 w-48 bg-white rounded-2xl shadow-xl border border-gray-200 py-2 overflow-hidden">
+                      <button
+                        onClick={() => { setIsCalculatorOpen(prev => !prev); setMobileActionsOpen(false); }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <Calculator className="w-4 h-4 text-indigo-500" />
+                        Calculator
+                      </button>
+                      <button
+                        onClick={() => { window.open('/', '_blank'); setMobileActionsOpen(false); }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <Globe className="w-4 h-4 text-emerald-500" />
+                        {t('admin.siteAccess')}
+                      </button>
+                      <button
+                        onClick={() => { setLocale(locale === 'fr' ? 'en' : 'fr'); setMobileActionsOpen(false); }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="w-4 h-4 flex items-center justify-center text-[10px] font-black uppercase tracking-wider text-blue-600 border border-blue-200 rounded">FR</span>
+                        {t('admin.switchLanguage')}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
 
               {userProfile && (
                 <div className="relative group/profile">
