@@ -818,9 +818,16 @@ export function QuoteBuilder({
                             visible={isHintBubbleVisible}
                             onHide={() => setIsHintBubbleVisible(false)}
                         />
-                        <div className="flex justify-center w-full">
-                            <Stepper currentStep={currentStep} onStepClick={handleStepClick} steps={visibleSteps} />
-                        </div>
+                        {showPreview && (
+                            <div className="flex flex-col gap-2">
+                                <div className="flex justify-center w-full ml-[30px]">
+                                    <Stepper currentStep={currentStep} onStepClick={handleStepClick} steps={visibleSteps} />
+                                </div>
+                                <div className="w-full rounded-xl overflow-hidden border border-slate-200 shadow-sm" style={{ height: '240px' }}>
+                                    {renderPreviewContent()}
+                                </div>
+                            </div>
+                        )}
                         <div className="w-full">
                             {renderStepContent()}
                         </div>

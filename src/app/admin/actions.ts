@@ -112,12 +112,14 @@ export async function createSession(idToken: string) {
       crypto.randomUUID?.() ||
       `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 
+    const sessionCreatedAt = Date.now();
+
     // Store session token on user document
     if (adminDb) {
       await adminDb.collection('users').doc(uid).set(
         {
           sessionToken,
-          sessionCreatedAt: Date.now(),
+          sessionCreatedAt,
         },
         { merge: true }
       );
@@ -138,8 +140,8 @@ export async function createSession(idToken: string) {
       sameSite: 'lax',
     });
 
-    // Set sessionToken cookie (httpOnly so only server can read)
-    (await cookies()).set('sessionToken', sessionToken, {
+    // Set sessionToken cookie (compound: token:createdAt so we can compare timestamps reliably)
+    (await cookies()).set('sessionToken', `${sessionToken}:${sessionCreatedAt}`, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
       secure: isSecure,
@@ -3580,11 +3582,24 @@ export async function verifySession() {
     }
 
     const userData = userDoc.data();
-    const storedToken = userData?.sessionToken;
 
-    // Only disconnect if a stored token exists and doesn't match the cookie
+    // Use timestamp-based comparison for robustness: parse sessionCreatedAt from cookie
+    const cookieCreatedAt = parseSessionCreatedAt(sessionTokenCookie);
+    const storedCreatedAt = userData?.sessionCreatedAt ?? null;
+
+    if (storedCreatedAt !== null && cookieCreatedAt !== null) {
+      // If Firestore has a NEWER sessionCreatedAt, the session was taken over
+      if (storedCreatedAt > cookieCreatedAt) {
+        return { valid: false, reason: 'session_mismatch', uid, sessionCreatedAt: storedCreatedAt };
+      }
+      // Timestamps match or cookie is newer → valid session
+      return { valid: true, uid };
+    }
+
+    // Fallback: opaque token comparison for sessions created before the timestamp format
+    const storedToken = userData?.sessionToken;
     if (storedToken && storedToken !== sessionTokenCookie) {
-      return { valid: false, reason: 'session_mismatch', uid, sessionCreatedAt: userData?.sessionCreatedAt ?? null };
+      return { valid: false, reason: 'session_mismatch', uid, sessionCreatedAt: storedCreatedAt };
     }
 
     return { valid: true, uid };
@@ -3592,6 +3607,15 @@ export async function verifySession() {
     console.error('[verifySession] Error:', error);
     return { valid: false, reason: 'error' };
   }
+}
+
+/** Extract sessionCreatedAt from the compound cookie value "uuid:timestamp" */
+function parseSessionCreatedAt(cookieValue: string | undefined): number | null {
+  if (!cookieValue) return null;
+  const colonIdx = cookieValue.lastIndexOf(':');
+  if (colonIdx === -1) return null;
+  const ts = parseInt(cookieValue.slice(colonIdx + 1), 10);
+  return isNaN(ts) ? null : ts;
 }
 
 export const getCurrentAdminUser = cache(async (): Promise<UserProfile | { error: string } | null> => {

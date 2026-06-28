@@ -47,7 +47,10 @@ export async function GET(req: NextRequest) {
     });
 
     if (location) {
-      const locationField = `show${location.charAt(0).toUpperCase() + location.slice(1)}`;
+      const locationField = `show${location
+        .split('-')
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join('')}`;
       messages = messages.filter((m: any) => m.showAllPages === true || m[locationField] === true);
     }
 

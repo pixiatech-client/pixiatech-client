@@ -392,6 +392,24 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 <span className="sr-only">{t('admin.siteAccess')}</span>
               </Button>
 
+              {/* ── 4. Boutique (Store icon) ── */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => window.open('/boutique', '_blank')}
+                title="Boutique"
+                className={cn(
+                  "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
+                  "bg-white hover:bg-theme-sidebar-active-bg"
+                )}
+              >
+                <Store className={cn(
+                  "h-5 w-5 transition-colors",
+                  "text-gray-400 group-hover:text-orange-500"
+                )} />
+                <span className="sr-only">Boutique</span>
+              </Button>
+
               <div className={cn("h-9 w-px mx-1 hidden sm:block", "bg-gray-200")} />
 
               {/* ── 5. Language Switcher (FR / EN) ── */}
@@ -436,6 +454,13 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                       >
                         <Globe className="w-4 h-4 text-emerald-500" />
                         {t('admin.siteAccess')}
+                      </button>
+                      <button
+                        onClick={() => { window.open('/boutique', '_blank'); setMobileActionsOpen(false); }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <Store className="w-4 h-4 text-orange-500" />
+                        Boutique
                       </button>
                       <button
                         onClick={() => { setLocale(locale === 'fr' ? 'en' : 'fr'); setMobileActionsOpen(false); }}

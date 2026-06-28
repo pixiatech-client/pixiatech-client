@@ -13,11 +13,18 @@ function getTypeIcon(type: string) {
   return icons[type] || Info;
 }
 
+const TYPE_COLORS = {
+  info: { bg: 'bg-blue-50', border: 'border-blue-200', icon: 'text-blue-600', text: 'text-blue-800' },
+  success: { bg: 'bg-green-50', border: 'border-green-200', icon: 'text-green-600', text: 'text-green-800' },
+  warning: { bg: 'bg-orange-50', border: 'border-orange-200', icon: 'text-orange-600', text: 'text-orange-800' },
+  alert: { bg: 'bg-red-50', border: 'border-red-200', icon: 'text-red-600', text: 'text-red-800' },
+};
+
 const TYPE_OPTIONS = [
-  { value: 'info' as SystemMessageType, label: 'Information', icon: Info, color: 'bg-blue-100 text-blue-700 border-blue-300' },
-  { value: 'success' as SystemMessageType, label: 'Succès', icon: CheckCircle, color: 'bg-green-100 text-green-700 border-green-300' },
-  { value: 'warning' as SystemMessageType, label: 'Avertissement', icon: AlertTriangle, color: 'bg-orange-100 text-orange-700 border-orange-300' },
-  { value: 'alert' as SystemMessageType, label: 'Alerte', icon: AlertOctagon, color: 'bg-red-100 text-red-700 border-red-300' },
+  { value: 'info' as SystemMessageType, label: 'Information', icon: Info },
+  { value: 'success' as SystemMessageType, label: 'Succès', icon: CheckCircle },
+  { value: 'warning' as SystemMessageType, label: 'Avertissement', icon: AlertTriangle },
+  { value: 'alert' as SystemMessageType, label: 'Alerte', icon: AlertOctagon },
 ];
 
 const ICON_OPTIONS = [
@@ -334,7 +341,8 @@ export default function AlertesSystemePage() {
           )}
 
           {messages.filter(m => m.id !== 'b2b-profile').map(msg => {
-            const info = typeInfo(msg.type);
+            const iconInfo = typeInfo(msg.type);
+            const colors = TYPE_COLORS[msg.type] || TYPE_COLORS.info;
             const Icon = getTypeIcon(msg.type);
             const isPermanent = msg.permanent;
             const hasSchedule = msg.startDate || msg.endDate;
@@ -342,9 +350,9 @@ export default function AlertesSystemePage() {
             return (
               <div key={msg.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                 <div className="p-4 md:p-5 flex flex-col md:flex-row md:items-center gap-4">
-                  <div className={`flex items-center gap-3 shrink-0 px-3 py-2 rounded-xl border ${info.color}`}>
+                  <div className={`flex items-center gap-3 shrink-0 px-3 py-2 rounded-xl border ${colors.bg} ${colors.icon} ${colors.border}`}>
                     <Icon className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase">{info.label}</span>
+                    <span className="text-xs font-bold uppercase">{iconInfo.label}</span>
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -450,25 +458,33 @@ export default function AlertesSystemePage() {
               {form.title || form.content ? (
                 <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/30 rounded-2xl border border-blue-100 p-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-blue-600 mb-3">{t('admin.systemAlerts.preview')}</p>
-                  <div
-                    className="p-3 rounded-xl border"
-                    style={{
-                      backgroundColor: form.color ? `${form.color}15` : undefined,
-                      borderColor: form.color || undefined,
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <livePreview.Icon className="w-5 h-5 mt-0.5 shrink-0" style={{ color: form.color || undefined } as React.CSSProperties} />
-                      <div className="min-w-0">
-                        {form.title && (
-                          <p className="text-sm font-bold text-gray-900">{form.title}</p>
-                        )}
-                        {form.content && (
-                          <p className="text-sm text-gray-600 mt-0.5 whitespace-pre-line">{form.content}</p>
-                        )}
+                  {(() => {
+                    const previewColors = TYPE_COLORS[form.type] || TYPE_COLORS.info;
+                    return (
+                      <div
+                        className={`p-3 rounded-xl border ${form.color ? '' : `${previewColors.bg} ${previewColors.border}`}`}
+                        style={{
+                          backgroundColor: form.color ? `${form.color}15` : undefined,
+                          borderColor: form.color || undefined,
+                        }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <livePreview.Icon
+                            className={`w-5 h-5 mt-0.5 shrink-0 ${form.color ? '' : previewColors.icon}`}
+                            style={{ color: form.color || undefined } as React.CSSProperties}
+                          />
+                          <div className="min-w-0">
+                            {form.title && (
+                              <p className={`text-sm font-bold ${form.color ? 'text-gray-900' : previewColors.text}`}>{form.title}</p>
+                            )}
+                            {form.content && (
+                              <p className={`text-sm mt-0.5 whitespace-pre-line ${form.color ? 'text-gray-600' : previewColors.text}`}>{form.content}</p>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
                 </div>
               ) : (
                 <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4 text-center">
@@ -482,13 +498,14 @@ export default function AlertesSystemePage() {
                 <div className="grid grid-cols-2 gap-2">
                   {TYPE_OPTIONS.map(opt => {
                     const isActive = form.type === opt.value;
+                    const colors = TYPE_COLORS[opt.value] || TYPE_COLORS.info;
                     return (
                       <button
                         key={opt.value}
                         onClick={() => setForm(f => ({ ...f, type: opt.value }))}
                         className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-bold transition-all ${
                           isActive
-                            ? `${opt.color} shadow-sm`
+                            ? `${colors.bg} ${colors.icon} ${colors.border} shadow-sm`
                             : 'border-gray-200 text-gray-500 hover:border-gray-300'
                         }`}
                       >
@@ -585,7 +602,13 @@ export default function AlertesSystemePage() {
                     <input
                       type="checkbox"
                       checked={form.showAllPages}
-                      onChange={e => setForm(f => ({ ...f, showAllPages: e.target.checked }))}
+                      onChange={e => setForm(f => ({
+                        ...f,
+                        showAllPages: e.target.checked,
+                        showHomepage: e.target.checked,
+                        showBoutique: e.target.checked,
+                        showClientArea: e.target.checked,
+                      }))}
                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <div>
@@ -601,7 +624,7 @@ export default function AlertesSystemePage() {
                     <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:border-gray-300 has-[:checked]:border-blue-300 has-[:checked]:bg-blue-50/50 ${form.showAllPages ? 'opacity-50 pointer-events-none' : ''}`}>
                       <input
                         type="checkbox"
-                        checked={form.showAllPages || form.showHomepage}
+                        checked={form.showHomepage}
                         onChange={e => setForm(f => ({ ...f, showHomepage: e.target.checked }))}
                         disabled={form.showAllPages}
                         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -617,7 +640,7 @@ export default function AlertesSystemePage() {
                     <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:border-gray-300 has-[:checked]:border-blue-300 has-[:checked]:bg-blue-50/50 ${form.showAllPages ? 'opacity-50 pointer-events-none' : ''}`}>
                       <input
                         type="checkbox"
-                        checked={form.showAllPages || form.showBoutique}
+                        checked={form.showBoutique}
                         onChange={e => setForm(f => ({ ...f, showBoutique: e.target.checked }))}
                         disabled={form.showAllPages}
                         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -633,7 +656,7 @@ export default function AlertesSystemePage() {
                     <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:border-gray-300 has-[:checked]:border-blue-300 has-[:checked]:bg-blue-50/50 ${form.showAllPages ? 'opacity-50 pointer-events-none' : ''}`}>
                       <input
                         type="checkbox"
-                        checked={form.showAllPages || form.showClientArea}
+                        checked={form.showClientArea}
                         onChange={e => setForm(f => ({ ...f, showClientArea: e.target.checked }))}
                         disabled={form.showAllPages}
                         className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"

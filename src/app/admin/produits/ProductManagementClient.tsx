@@ -17,6 +17,16 @@ import {
   Mail, Lock, Unlock, Phone, UserPlus, EyeOff, Users, Truck, Wrench, History, User as UserIcon, List, Settings, Hammer, Pin
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { normalizePrice } from '@/lib/pricing-engine';
 import { useI18n } from '@/lib/i18n';
 import { Pagination } from '@/components/ui/Pagination';
@@ -106,11 +116,10 @@ const GalleryImage = ({ url, onRemove, idx }: { url: string; onRemove: () => voi
 };
 
 // --- VariantItem for drag-and-drop reordering ---
-const VariantItem = ({ variant, updateVariant, removeVariant, handleImageUpload, t, isOnly }: {
-  variant: { id: number; value: string; image: { file: File; url: string } | null };
+const VariantItem = ({ variant, updateVariant, removeVariant, t, isOnly }: {
+  variant: { id: number; value: string };
   updateVariant: (id: number, field: string, value: any) => void;
   removeVariant: (id: number) => void;
-  handleImageUpload: (id: number, e: React.ChangeEvent<HTMLInputElement>) => void;
   t: (key: string) => string;
   isOnly: boolean;
 }) => {
@@ -135,17 +144,7 @@ const VariantItem = ({ variant, updateVariant, removeVariant, handleImageUpload,
           className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
         />
       </div>
-      <div className="shrink-0 relative group">
-        <input type="file" id={`variant-image-${variant.id}`} className="hidden" accept="image/*" onChange={(e) => handleImageUpload(variant.id, e)} />
-        <label htmlFor={`variant-image-${variant.id}`} className={cn("flex items-center justify-center w-10 h-10 rounded-lg border border-dashed cursor-pointer transition-colors overflow-hidden", variant.image ? "border-slate-300 bg-slate-100" : "border-slate-300 hover:border-slate-400 hover:bg-slate-100 text-slate-400")} title={t('admin.productManagement.addImageIcon')}>
-          {variant.image ? <img src={variant.image.url} alt="Variant" className="w-full h-full object-cover" /> : <Camera className="w-4 h-4" />}
-        </label>
-        {variant.image && (
-          <button onClick={(e) => { e.preventDefault(); updateVariant(variant.id, 'image', null); }} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Trash2 className="w-3 h-3" />
-          </button>
-        )}
-      </div>
+
       <button onClick={() => removeVariant(variant.id)} disabled={isOnly} className="shrink-0 p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-400">
         <Trash2 className="w-4 h-4" />
       </button>
@@ -186,6 +185,28 @@ function getPrimaryDistanceInfo(product: any): { distance: string, pitches: stri
     return { distance: keys[0], pitches: mapping[keys[0]] || [] };
   }
   return { distance: product.distance || '—', pitches: product.pitch ? [product.pitch] : [] };
+}
+
+/**
+ * Strip fields that don't apply in the target space before copying a product
+ * between Boutique (boutique_products) and Configuration guidée (products).
+ */
+function filterProductForSpace(product: any, targetSpace: 'boutique' | 'configuration'): any {
+  const { id, ...data } = product;
+  if (targetSpace === 'configuration') {
+    const { badges, galleryUrls, variants, description, descriptionDetaillee, ...rest } = data;
+    return { ...rest, screenType: data.screenType || 'flat' };
+  } else {
+    const { screenType, ...rest } = data;
+    return {
+      ...rest,
+      badges: data.badges || [],
+      galleryUrls: data.galleryUrls || [],
+      variants: data.variants || [],
+      description: data.description || '',
+      descriptionDetaillee: data.descriptionDetaillee || '',
+    };
+  }
 }
 
 // --- Pitch Badge Dropdown on Product Cards ---
@@ -1202,7 +1223,7 @@ const CaracteristiquesPage = ({
   const [customIcon, setCustomIcon] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState('text-blue-400');
   const [showIconPicker, setShowIconPicker] = useState(false);
-  const [variants, setVariants] = useState([{ id: 1, value: '', image: null as { file: File, url: string } | null }]);
+  const [variants, setVariants] = useState([{ id: 1, value: '' }]);
   const [isLocked, setIsLocked] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -1249,10 +1270,9 @@ const CaracteristiquesPage = ({
       setVariants(char.variants.map((v: any) => ({
         id: parseInt(v.id) || Math.random(),
         value: v.value,
-        image: v.image || null
       })));
     } else {
-      setVariants(char.options.map((opt: string, i: number) => ({ id: i + 1, value: opt, image: null })));
+      setVariants(char.options.map((opt: string, i: number) => ({ id: i + 1, value: opt })));
     }
     setIsLocked(char.locked || false);
     setIsPinned(char.isPinned || false);
@@ -1289,7 +1309,7 @@ const CaracteristiquesPage = ({
   };
 
   const addVariant = () => {
-    setVariants([...variants, { id: Date.now(), value: '', image: null }]);
+    setVariants([...variants, { id: Date.now(), value: '' }]);
   };
 
   const updateVariant = (id: number, field: string, value: any) => {
@@ -1310,17 +1330,6 @@ const CaracteristiquesPage = ({
     }
   };
 
-  const handleImageUpload = (id: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateVariant(id, 'image', { file, url: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleSave = async () => {
     if (!name.trim() || variants.every(v => !v.value.trim())) return;
     if (!user) {
@@ -1338,7 +1347,6 @@ const CaracteristiquesPage = ({
         return {
           id: v.id.toString(),
           value: v.value,
-          image: v.image ? { url: v.image.url, name: v.value } : null
         };
       });
 
@@ -1412,9 +1420,9 @@ const CaracteristiquesPage = ({
         iconName: "luminosité",
         color: "text-yellow-400",
         variants: [
-          { id: "1", value: "800 nits", image: null },
-          { id: "2", value: "1200 nits", image: null },
-          { id: "3", value: "5000 nits", image: null }
+          { id: "1", value: "800 nits" },
+          { id: "2", value: "1200 nits" },
+          { id: "3", value: "5000 nits" }
         ],
         options: ["800 nits", "1200 nits", "5000 nits"],
         locked: false,
@@ -1426,9 +1434,9 @@ const CaracteristiquesPage = ({
         iconName: "activité",
         color: "text-blue-400",
         variants: [
-          { id: "1", value: "1920 Hz", image: null },
-          { id: "2", value: "3840 Hz", image: null },
-          { id: "3", value: "7680 Hz", image: null }
+          { id: "1", value: "1920 Hz" },
+          { id: "2", value: "3840 Hz" },
+          { id: "3", value: "7680 Hz" }
         ],
         options: ["1920 Hz", "3840 Hz", "7680 Hz"],
         locked: false,
@@ -1440,8 +1448,8 @@ const CaracteristiquesPage = ({
         iconName: "couches",
         color: "text-green-400",
         variants: [
-          { id: "1", value: "IP20", image: null },
-          { id: "2", value: "IP65", image: null }
+          { id: "1", value: "IP20" },
+          { id: "2", value: "IP65" }
         ],
         options: ["IP20", "IP65"],
         locked: false,
@@ -1453,8 +1461,8 @@ const CaracteristiquesPage = ({
         iconName: "monitor",
         color: "text-purple-400",
         variants: [
-          { id: "1", value: "1920x1080", image: null },
-          { id: "2", value: "3840x2160", image: null }
+          { id: "1", value: "1920x1080" },
+          { id: "2", value: "3840x2160" }
         ],
         options: ["1920x1080", "3840x2160"],
         locked: false,
@@ -1466,8 +1474,8 @@ const CaracteristiquesPage = ({
         iconName: "zap",
         color: "text-red-400",
         variants: [
-          { id: "1", value: "600W/m²", image: null },
-          { id: "2", value: "800W/m²", image: null }
+          { id: "1", value: "600W/m²" },
+          { id: "2", value: "800W/m²" }
         ],
         options: ["600W/m²", "800W/m²"],
         locked: false,
@@ -1479,8 +1487,8 @@ const CaracteristiquesPage = ({
         iconName: "zap",
         color: "text-orange-400",
         variants: [
-          { id: "1", value: "200W/m²", image: null },
-          { id: "2", value: "300W/m²", image: null }
+          { id: "1", value: "200W/m²" },
+          { id: "2", value: "300W/m²" }
         ],
         options: ["200W/m²", "300W/m²"],
         locked: false,
@@ -1528,7 +1536,7 @@ const CaracteristiquesPage = ({
     setSelectedIcon(Settings2);
     setCustomIcon(null);
     setSelectedColor('text-blue-400');
-    setVariants([{ id: 1, value: '', image: null }]);
+    setVariants([{ id: 1, value: '' }]);
     setIsLocked(false);
     setIsSaved(false);
     setEditingId(null);
@@ -1925,7 +1933,7 @@ const CaracteristiquesPage = ({
                     <SortableContext items={variants.map(v => String(v.id))}>
                       <div className="space-y-3">
                         {variants.map((variant) => (
-                          <VariantItem key={variant.id} variant={variant} updateVariant={updateVariant} removeVariant={removeVariant} handleImageUpload={handleImageUpload} t={t} isOnly={variants.length === 1} />
+                           <VariantItem key={variant.id} variant={variant} updateVariant={updateVariant} removeVariant={removeVariant} t={t} isOnly={variants.length === 1} />
                         ))}
                       </div>
                     </SortableContext>
@@ -2001,6 +2009,8 @@ interface DistancePitchSelectorProps {
   availablePitches: string[];
   distancePitches: Record<string, string[]>;
   setDistancePitches: (val: Record<string, string[]>) => void;
+  selectedDistance: string;
+  setSelectedDistance: (val: string) => void;
 }
 
 function DistancePitchSelector({
@@ -2008,25 +2018,12 @@ function DistancePitchSelector({
   availablePitches,
   distancePitches = {},
   setDistancePitches,
+  selectedDistance,
+  setSelectedDistance,
 }: DistancePitchSelectorProps) {
   const { t } = useI18n();
-  const [selectedDistance, setSelectedDistance] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Initialize selectedDistance to first mapped distance or first available
-  // NOTE: selectedDistance intentionally NOT in deps to avoid overriding user selection
-  useEffect(() => {
-    if (selectedDistance) return;
-    const firstMapped = Object.keys(distancePitches || {}).find(
-      (d) => (distancePitches[d] || []).length > 0
-    );
-    if (firstMapped && availableDistances.includes(firstMapped)) {
-      setSelectedDistance(firstMapped);
-    } else if (availableDistances.length > 0) {
-      setSelectedDistance(availableDistances[0]);
-    }
-  }, [availableDistances, distancePitches]);
 
   // Handle outside click to close the dropdown
   useEffect(() => {
@@ -2331,6 +2328,8 @@ const ProduitPage = ({
   ficheTab,
   setFicheTab,
   activeSpace,
+  onCopyToSpace,
+  isCopying,
   variants,
   setVariants,
   oldPrice,
@@ -2343,6 +2342,8 @@ const ProduitPage = ({
   setStock,
   distancePitches = {},
   setDistancePitches,
+  primaryDistance,
+  setPrimaryDistance,
   wizardSettings
 }: any) => {
   const { t } = useI18n();
@@ -2389,6 +2390,19 @@ const ProduitPage = ({
       setSpecPage(prev => Math.max(prev - 1, 1));
     }
   }, [filteredSpecs.length, specPage]);
+
+  // Fallback: init primaryDistance if still empty and distancePitches has data
+  useEffect(() => {
+    if (primaryDistance) return;
+    const firstMapped = Object.keys(distancePitches || {}).find(
+      (d) => (distancePitches[d] || []).length > 0
+    );
+    if (firstMapped && availableDistances.includes(firstMapped)) {
+      setPrimaryDistance(firstMapped);
+    } else if (availableDistances.length > 0) {
+      setPrimaryDistance(availableDistances[0]);
+    }
+  }, [availableDistances, distancePitches, primaryDistance, setPrimaryDistance]);
 
   const [isPricingMediaOpen, setIsPricingMediaOpen] = useState(false);
 
@@ -2572,6 +2586,8 @@ const ProduitPage = ({
               availablePitches={availablePitches}
               distancePitches={distancePitches || {}}
               setDistancePitches={setDistancePitches}
+              selectedDistance={primaryDistance}
+              setSelectedDistance={setPrimaryDistance}
             />
 
             {/* Technical Specs Grid */}
@@ -3146,6 +3162,20 @@ const ProduitPage = ({
                 >
                   {t('admin.productManagement.cancel')}
                 </button>
+                {editingProduct && (
+                  <button
+                    onClick={() => onCopyToSpace(activeSpace === 'boutique' ? 'configuration' : 'boutique')}
+                    disabled={isCopying}
+                    className="w-full h-10 bg-emerald-50 text-emerald-700 rounded-xl font-black uppercase tracking-[0.2em] text-xs hover:bg-emerald-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isCopying ? (
+                      <div className="w-5 h-5 border-2 border-emerald-700/30 border-t-emerald-700 rounded-full animate-spin" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                    Copier vers {activeSpace === 'boutique' ? 'Configuration guidée' : 'Boutique'}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -3838,13 +3868,13 @@ const MOCK_CHARACTERISTICS = [
     iconName: 'distance',
     color: 'text-cyan-400',
     variants: [
-      { id: 'vd0', value: '0-0.5m', image: null },
-      { id: 'vd1', value: '0.5-2m', image: null },
-      { id: 'vd2', value: '2-5m', image: null },
-      { id: 'vd3', value: '5-10m', image: null },
-      { id: 'vd4', value: '10-20m', image: null },
-      { id: 'vd5', value: '20-50m', image: null },
-      { id: 'vd6', value: '+50m', image: null }
+      { id: 'vd0', value: '0-0.5m' },
+      { id: 'vd1', value: '0.5-2m' },
+      { id: 'vd2', value: '2-5m' },
+      { id: 'vd3', value: '5-10m' },
+      { id: 'vd4', value: '10-20m' },
+      { id: 'vd5', value: '20-50m' },
+      { id: 'vd6', value: '+50m' }
     ],
     options: ['0-0.5m', '0.5-2m', '2-5m', '5-10m', '10-20m', '20-50m', '+50m'],
     locked: true,
@@ -3857,10 +3887,10 @@ const MOCK_CHARACTERISTICS = [
     iconName: 'pixel',
     color: 'text-blue-400',
     variants: [
-      { id: 'pp1', value: 'P1.2', image: null },
-      { id: 'pp2', value: 'P1.5', image: null },
-      { id: 'pp3', value: 'P2', image: null },
-      { id: 'pp4', value: 'P2.5', image: null },
+      { id: 'pp1', value: 'P1.2' },
+      { id: 'pp2', value: 'P1.5' },
+      { id: 'pp3', value: 'P2' },
+      { id: 'pp4', value: 'P2.5' },
       { id: 'pp5', value: 'P3', recommended: false },
       { id: 'pp6', value: 'P4', recommended: false },
       { id: 'pp7', value: 'P5', recommended: false },
@@ -3882,9 +3912,9 @@ const MOCK_CHARACTERISTICS = [
     iconName: 'luminosité',
     color: 'text-yellow-400',
     variants: [
-      { id: '1', value: '800 nits', image: null },
-      { id: '2', value: '1200 nits', image: null },
-      { id: '3', value: '5000 nits', image: null }
+      { id: '1', value: '800 nits' },
+      { id: '2', value: '1200 nits' },
+      { id: '3', value: '5000 nits' }
     ],
     options: ['800 nits', '1200 nits', '5000 nits'],
     locked: false,
@@ -3897,8 +3927,8 @@ const MOCK_CHARACTERISTICS = [
     iconName: 'couches',
     color: 'text-green-400',
     variants: [
-      { id: '1', value: 'IP20', image: null },
-      { id: '2', value: 'IP65', image: null }
+      { id: '1', value: 'IP20' },
+      { id: '2', value: 'IP65' }
     ],
     options: ['IP20', 'IP65'],
     locked: false,
@@ -3911,8 +3941,8 @@ const MOCK_CHARACTERISTICS = [
     iconName: 'monitor',
     color: 'text-purple-400',
     variants: [
-      { id: '1', value: '1920x1080', image: null },
-      { id: '2', value: '3840x2160', image: null }
+      { id: '1', value: '1920x1080' },
+      { id: '2', value: '3840x2160' }
     ],
     options: ['1920x1080', '3840x2160'],
     locked: false,
@@ -3925,8 +3955,8 @@ const MOCK_CHARACTERISTICS = [
     iconName: 'zap',
     color: 'text-red-400',
     variants: [
-      { id: '1', value: '600W/m²', image: null },
-      { id: '2', value: '800W/m²', image: null }
+      { id: '1', value: '600W/m²' },
+      { id: '2', value: '800W/m²' }
     ],
     options: ['600W/m²', '800W/m²'],
     locked: false,
@@ -3938,8 +3968,8 @@ const MOCK_CHARACTERISTICS = [
     iconName: 'zap',
     color: 'text-orange-400',
     variants: [
-      { id: '1', value: '200W/m²', image: null },
-      { id: '2', value: '300W/m²', image: null }
+      { id: '1', value: '200W/m²' },
+      { id: '2', value: '300W/m²' }
     ],
     options: ['200W/m²', '300W/m²'],
     locked: false,
@@ -4094,11 +4124,39 @@ export default function ProductManagementClient() {
     // Clear editing product when navigating away from the form
     if (newPage !== 'produit') {
       setEditingProduct(null);
+      setPrimaryDistance('');
     }
+  };
+
+  const startEditProduct = (product: any) => {
+    setEditingProduct(product);
+    setActivePage('produit');
+    // Initialize primaryDistance synchronously from product's distancePitches
+    let dist = '';
+    if (product?.distancePitches) {
+      const keys = Object.keys(product.distancePitches);
+      if (keys.length > 0) dist = keys[0];
+    }
+    if (!dist && product?.distance) dist = product.distance;
+    setPrimaryDistance(dist);
+  };
+
+  const startNewProduct = () => {
+    setEditingProduct(null);
+    setActivePage('produit');
+    setPrimaryDistance('');
+  };
+
+  const openCopyModal = (target: 'boutique' | 'configuration') => {
+    setCopyTargetSpace(target);
+    setCopyModalOpen(true);
   };
 
   const [products, setProducts] = useState<any[]>([]);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [copyModalOpen, setCopyModalOpen] = useState(false);
+  const [copyTargetSpace, setCopyTargetSpace] = useState<'boutique' | 'configuration'>('configuration');
+  const [isCopying, setIsCopying] = useState(false);
   const [productName, setProductName] = useState('');
   const [characteristics, setCharacteristics] = useState<any[]>([]);
   const [wizardSettings, setWizardSettings] = useState<{ viewingDistances: string[], pixelPitches: string[] }>({ viewingDistances: [], pixelPitches: [] });
@@ -4283,6 +4341,7 @@ export default function ProductManagementClient() {
   const [showCharPanel, setShowCharPanel] = useState(false);
   const [tempSelectedChars, setTempSelectedChars] = useState<string[]>([]);
   const [distancePitches, setDistancePitches] = useState<Record<string, string[]>>({});
+  const [primaryDistance, setPrimaryDistance] = useState<string>('');
   const [charPanelSearch, setCharPanelSearch] = useState('');
 
   const availableChars = characteristics.filter(c => !selectedChars.some(sc => sc.id === c.id));
@@ -4448,9 +4507,12 @@ export default function ProductManagementClient() {
         }
       }
 
-      // Compute flat compatible values for backward compatibility
-      const distVal = Object.keys(distancePitches || {}).filter(k => (distancePitches || {})[k]?.length > 0).join(', ');
-      const pitchVal = Array.from(new Set(Object.values(distancePitches || {}).flat())).join(', ');
+      // Keep only the currently selected distance mapping; discard stale ones
+      const savedPitches = primaryDistance && distancePitches?.[primaryDistance]
+        ? { [primaryDistance]: distancePitches[primaryDistance] }
+        : {};
+      const distVal = Object.keys(savedPitches).filter(k => (savedPitches[k] || []).length > 0).join(', ');
+      const pitchVal = Array.from(new Set(Object.values(savedPitches).flat())).join(', ');
 
       const distCharDef = characteristics.find(c => c.name === 'Distance de visionnage');
       const pitchCharDef = characteristics.find(c => c.name === 'Pixel pitch');
@@ -4496,7 +4558,7 @@ export default function ProductManagementClient() {
         pdfUrl: finalPdfUrl || '',
         pitch: pitchVal,
         distance: distVal,
-        distancePitches: distancePitches || {},
+        distancePitches: savedPitches,
         power: String(selectedChars.find(c => {
           const charDef = characteristics.find(cd => cd.id === c.id);
           return charDef?.name === 'Puissance maximale';
@@ -4550,6 +4612,7 @@ export default function ProductManagementClient() {
 
       setActivePage('gestion');
       setEditingProduct(null);
+      setPrimaryDistance('');
       setUploadedPhoto(null);
       setUploadedVideo(null);
       setPhotoUrl('');
@@ -4587,6 +4650,38 @@ export default function ProductManagementClient() {
         description: error.message || 'Impossible de dupliquer le produit.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleCopyProductToSpace = async () => {
+    if (!editingProduct) return;
+    setIsCopying(true);
+    try {
+      const targetCol = copyTargetSpace === 'boutique' ? 'boutique_products' : 'products';
+      const filtered = filterProductForSpace(editingProduct, copyTargetSpace);
+      const newProduct = {
+        ...filtered,
+        date: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        uid: user?.uid || 'system',
+      };
+      await addDoc(collection(db, targetCol), newProduct);
+      const spaceLabel = copyTargetSpace === 'boutique' ? 'Boutique' : 'Configuration guidée';
+      toast({
+        title: `Copié vers ${spaceLabel}`,
+        description: `« ${editingProduct.name} » a été copié vers ${spaceLabel}.`,
+        variant: 'success',
+      });
+    } catch (error: any) {
+      console.error('Copy between spaces error:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible de copier le produit.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCopying(false);
+      setCopyModalOpen(false);
     }
   };
 
@@ -4733,7 +4828,7 @@ export default function ProductManagementClient() {
                   id: `char-${Date.now()}`,
                   name: data.newCharacteristic.name,
                   iconName: 'puissance',
-                  variants: data.newCharacteristic.variants.map((v: string, i: number) => ({ id: i + 1, value: v, image: null })),
+                  variants: data.newCharacteristic.variants.map((v: string, i: number) => ({ id: i + 1, value: v })),
                   options: data.newCharacteristic.variants,
                   color: 'text-blue-400',
                   locked: false,
@@ -4857,6 +4952,17 @@ export default function ProductManagementClient() {
   const [rentalQuantity, setRentalQuantity] = useState<string>('1');
   const [stock, setStock] = useState<string>('');
 
+  // Auto-activer le badge Promotion quand oldPrice > prixVente
+  useEffect(() => {
+    const oldPriceNum = normalizePrice(oldPrice);
+    const priceNum = normalizePrice(prixVente);
+    if (oldPriceNum > 0 && oldPriceNum > priceNum) {
+      setBadges((prev: string[]) => prev.includes('promotion') ? prev : [...prev, 'promotion']);
+    } else {
+      setBadges((prev: string[]) => prev.includes('promotion') ? prev.filter((b: string) => b !== 'promotion') : prev);
+    }
+  }, [oldPrice, prixVente]);
+
   // Ref to track which product ID has already been initialized, preventing
   // the form from re-resetting when characteristics load asynchronously (F5 race condition fix).
   const lastInitializedProductId = useRef<string | null>(undefined as any);
@@ -4932,6 +5038,8 @@ export default function ProductManagementClient() {
       // Initialize distancePitches — always read directly from the product document (single source of truth)
       if (editingProduct.distancePitches) {
         setDistancePitches(editingProduct.distancePitches);
+        const keys = Object.keys(editingProduct.distancePitches);
+        if (keys.length > 0) setPrimaryDistance(keys[0]);
       } else {
         // Fallback mapping for legacy products without distancePitches
         const legacyDist = editingProduct.distance || (editingProduct.selectedChars && Array.isArray(editingProduct.selectedChars) ? editingProduct.selectedChars.find((c: any) => {
@@ -4945,8 +5053,10 @@ export default function ProductManagementClient() {
         
         if (legacyDist && legacyPitch) {
           setDistancePitches({ [legacyDist]: [legacyPitch] });
+          setPrimaryDistance(legacyDist);
         } else {
           setDistancePitches({});
+          setPrimaryDistance('');
         }
       }
 
@@ -5026,6 +5136,7 @@ export default function ProductManagementClient() {
 
       setSelectedChars(allChars);
       setDistancePitches({});
+      setPrimaryDistance('');
       setPhotoUrl('');
       setVideoUrl('');
       setPdfUrl('');
@@ -5499,8 +5610,8 @@ export default function ProductManagementClient() {
                 <GestionProduits
                   products={products}
                   setProducts={setProducts}
-                  onAddProduct={() => { setEditingProduct(null); setActivePage('produit'); }}
-                  onEditProduct={(product) => { setEditingProduct(product); setActivePage('produit'); }}
+                  onAddProduct={startNewProduct}
+                  onEditProduct={startEditProduct}
                   onDuplicateProduct={handleDuplicateProduct}
                   onDeleteProduct={handleDeleteProduct}
                   onBulkDelete={handleBulkDeleteProducts}
@@ -5644,9 +5755,13 @@ export default function ProductManagementClient() {
                     setVariants={setVariants}
                      distancePitches={distancePitches}
                     setDistancePitches={setDistancePitches}
+                     primaryDistance={primaryDistance}
+                     setPrimaryDistance={setPrimaryDistance}
                      wizardSettings={wizardSettings}
                      activeSpace={activeSpace}
-                  />
+                     onCopyToSpace={openCopyModal}
+                     isCopying={isCopying}
+                   />
               </motion.div>
             )}
           </AnimatePresence>
@@ -5876,6 +5991,28 @@ export default function ProductManagementClient() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Copy product between spaces confirmation */}
+      <AlertDialog open={copyModalOpen} onOpenChange={setCopyModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Copier vers {copyTargetSpace === 'boutique' ? 'la Boutique' : 'la Configuration guidée'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {editingProduct ? (
+                <>Voulez-vous copier <strong>«&nbsp;{editingProduct.name}&nbsp;»</strong> vers {copyTargetSpace === 'boutique' ? 'la Boutique' : 'la Configuration guidée'}&nbsp;? Les champs spécifiques à cet espace seront automatiquement filtrés.</>
+              ) : (
+                'Voulez-vous copier ce produit&nbsp;?'
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCopying}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCopyProductToSpace} disabled={isCopying}>
+              {isCopying ? 'Copie en cours…' : 'Copier'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

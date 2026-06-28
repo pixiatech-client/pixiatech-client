@@ -1783,15 +1783,15 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
       </div>
 
       {/* Compare button */}
-      {sortedProducts.length > 1 && (
+      {sortedProducts.length >= 1 && (
         <div className="p-6 pt-0">
           <div className="relative group/tooltip">
             <button
-              disabled={compareProductIds.length < 2}
+              disabled={compareProductIds.length < 1}
               onClick={() => setShowComparator(true)}
               className={cn(
                 "px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 mx-auto border",
-                compareProductIds.length < 2
+                compareProductIds.length < 1
                   ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
                   : "bg-black text-white hover:bg-[#c6ff00] hover:text-black border-black hover:border-[#c6ff00] active:scale-95 cursor-pointer"
               )}
@@ -1799,9 +1799,9 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
               <Layers className="w-4 h-4" />
               <span>{locale === 'fr' ? 'Comparer les produits' : 'Compare products'} ({compareProductIds.length})</span>
             </button>
-            {compareProductIds.length < 2 && (
+            {compareProductIds.length < 1 && (
               <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest py-2 px-3 rounded-xl shadow-xl opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-all duration-300 text-center z-50">
-                {locale === 'fr' ? 'Veuillez s\u00e9lectionner au moins 2 produits pour pouvoir les comparer' : 'Please select at least 2 products to compare them'}
+                {locale === 'fr' ? 'Veuillez s\u00e9lectionner au moins 1 produit pour voir ses caract\u00e9ristiques' : 'Please select at least 1 product to see its details'}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 pointer-events-none" />
               </div>
             )}

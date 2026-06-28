@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 
-const SETTINGS_DOC_ID = 'app-settings';
+const SETTINGS_DOC_ID = 'main';
 
 export async function GET() {
   const { adminAuth, adminDb } = getFirebaseAdmin();
