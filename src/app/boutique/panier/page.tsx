@@ -107,7 +107,7 @@ export default function CartPage() {
                             </div>
                           )}
                         </div>
-                        <span className="font-bold text-gray-900 text-base whitespace-nowrap ml-2 truncate max-w-[120px]">{formatPrice(item.price * item.quantity)}</span>
+                        <span className="font-bold text-gray-900 text-base ml-2 shrink-0">{formatPrice(item.price * item.quantity)}</span>
                       </div>
                       <div className="mt-auto flex flex-wrap items-end justify-between gap-3">
                         <div className="flex flex-col gap-1.5">

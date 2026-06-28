@@ -312,17 +312,17 @@ export default function ProductDetailPage() {
                       <video
                         src={effectiveMedia.url}
                         controls
-                        className="w-full h-[360px] object-contain bg-slate-50 p-4"
+                        className="w-full h-auto max-h-[360px] object-contain bg-slate-50 p-4"
                       />
                     ) : (
                       <img
                         src={effectiveMedia.url}
                         alt={product.name}
-                        className="w-full h-[360px] object-contain bg-slate-50 transition-transform duration-500 hover:scale-105 p-4 max-w-full max-h-full"
+                        className="w-full h-auto max-h-[360px] object-contain bg-slate-50 transition-transform duration-500 hover:scale-105 p-4 max-w-full max-h-full"
                       />
                     )
                   ) : (
-                    <div className="w-full h-[360px] flex items-center justify-center bg-slate-50 text-slate-300">
+                    <div className="w-full h-40 md:h-[360px] flex items-center justify-center bg-slate-50 text-slate-300">
                       <ShoppingBag size={48} />
                     </div>
                   )}

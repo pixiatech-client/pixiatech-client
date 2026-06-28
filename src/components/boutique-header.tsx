@@ -115,7 +115,7 @@ export function BoutiqueHeader() {
     <header className="fixed top-0 z-30 w-full h-14 bg-white/80 backdrop-blur-xl border-b border-gray-100/80 shadow-sm">
       <div className="max-w-7xl mx-auto pl-6 md:pl-10 lg:pl-14 pr-[20px] h-full flex items-center">
         {/* Left: navigation buttons */}
-        <nav className="flex items-center gap-1.5 -ml-[30px]">
+        <nav className="flex items-center gap-1.5">
           <Link
             href="/"
             className={cn(

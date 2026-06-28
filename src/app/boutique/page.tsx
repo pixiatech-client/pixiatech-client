@@ -361,7 +361,7 @@ export default function BoutiquePage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div>
-                        <span className="text-sm font-semibold text-gray-900 truncate max-w-[100px]">{product.price}{'\u20AC'}</span>
+                        <span className="text-sm font-semibold text-gray-900">{product.price}{'\u20AC'}</span>
                         <PriceLabel />
                       </div>
                       {product.oldPrice && product.oldPrice > product.price && (
