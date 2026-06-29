@@ -197,14 +197,18 @@ export default function AlertesSystemePage() {
 
   const toggleActive = async (msg: SystemMessage) => {
     try {
-      await fetch(`/api/system-messages/${msg.id}`, {
+      const res = await fetch(`/api/system-messages/${msg.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: !msg.active }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Erreur');
+      }
       loadMessages();
-    } catch {
-      toast.error(t('common.error'));
+    } catch (err: any) {
+      toast.error(err.message || t('common.error'));
     }
   };
 
@@ -256,15 +260,24 @@ export default function AlertesSystemePage() {
               onClick={async (e) => {
                 e.stopPropagation();
                 const next = !b2bForm.active;
+                const prev = b2bForm.active;
                 setB2bForm(f => ({ ...f, active: next }));
                 try {
-                  await fetch('/api/system-messages/b2b-profile', {
+                  const res = await fetch('/api/system-messages/b2b-profile', {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ active: next }),
                   });
+                  if (!res.ok) {
+                    setB2bForm(f => ({ ...f, active: prev }));
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'Erreur');
+                  }
                   loadMessages();
-                } catch { toast.error(t('common.error')); }
+                } catch (err: any) {
+                  setB2bForm(f => ({ ...f, active: prev }));
+                  toast.error(err.message || t('common.error'));
+                }
               }}
               className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors shrink-0 ${b2bForm.active ? 'bg-green-500' : 'bg-gray-300'}`}
             >

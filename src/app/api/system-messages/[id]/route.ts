@@ -16,12 +16,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     delete update.id;
     delete update.createdAt;
 
-    await adminDb.collection('system_messages').doc(id).update(update);
+    const docRef = adminDb.collection('system_messages').doc(id);
+    const docSnap = await docRef.get();
+    if (!docSnap.exists) {
+      update.createdAt = FieldValue.serverTimestamp();
+    }
+    await docRef.set(update, { merge: true });
 
     // Auto-deactivate other non-permanent messages if this one was activated
     if (body.active === true) {
-      const docSnap = await adminDb.collection('system_messages').doc(id).get();
-      const docData = docSnap.data();
+      const docData = docSnap.exists ? docSnap.data() : null;
       if (docData && !docData.permanent) {
         const activeSnap = await adminDb.collection('system_messages')
           .where('active', '==', true)

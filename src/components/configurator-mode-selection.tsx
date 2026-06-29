@@ -16,7 +16,7 @@ export function ConfiguratorModeSelection({ onSelectGuide }: { onSelectGuide?: (
       transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="w-full max-w-xl ml-[15px] flex flex-col items-center justify-end p-0 pb-2 h-full"
     >
-      <div className='text-center mb-8 w-full'>
+      <div className='text-center mb-6 w-full'>
         <SparklesText
           text={t('modeSelection.title')}
           sparklesCount={4}
@@ -26,7 +26,7 @@ export function ConfiguratorModeSelection({ onSelectGuide }: { onSelectGuide?: (
         <p className='text-muted-foreground mt-2'>{t('modeSelection.description')}</p>
       </div>
 
-      <div className="space-y-1 w-full">
+      <div className="space-y-6 w-full">
         {/* Configuration Guidée */}
         <motion.div
           onClick={() => onSelectGuide?.()}
