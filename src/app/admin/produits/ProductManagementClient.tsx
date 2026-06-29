@@ -14,7 +14,7 @@ import {
   ChevronRight, Zap, Maximize, SunMedium, PlusCircle, Camera, Image as ImageIcon,
   Video, Play, Upload, Trash2, ArrowLeft, ArrowRight, Link as LinkIcon, Tag, ChevronsUpDown, AlertTriangle, TrendingUp,
   Settings2, Info, Save, Check, X, MoreVertical, Edit2, Copy, GripVertical, Filter, ArrowUpDown, Sparkles, Brain, Globe, ShieldCheck, Zap as ZapIcon, LogOut, LogIn, RefreshCw,
-  Mail, Lock, Unlock, Phone, UserPlus, EyeOff, Users, Truck, Wrench, History, User as UserIcon, List, Settings, Hammer, Pin
+  Mail, Lock, Unlock, Phone, UserPlus, EyeOff, Users, Truck, Wrench, History, User as UserIcon, List, Settings, Hammer, Pin, ShoppingBag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -2334,9 +2334,12 @@ const ProduitPage = ({
   setVariants,
   oldPrice,
   setOldPrice,
-  isHidden,
-  setIsHidden,
-  rentalStock,
+   isHidden,
+   setIsHidden,
+   upsellFor,
+   setUpsellFor,
+   products: allProducts,
+   rentalStock,
   setRentalStock,
   stock,
   setStock,
@@ -2350,6 +2353,9 @@ const ProduitPage = ({
   const [specPage, setSpecPage] = useState(1);
   const [prevSpecPage, setPrevSpecPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [upsellSearch, setUpsellSearch] = useState('');
+  const [upsellOpen, setUpsellOpen] = useState(false);
+  const upsellDropdownRef = useRef<HTMLDivElement>(null);
   const [openVariantIdx, setOpenVariantIdx] = useState<number | null>(0);
   const specItemsPerPage = 6;
 
@@ -2403,6 +2409,18 @@ const ProduitPage = ({
       setPrimaryDistance(availableDistances[0]);
     }
   }, [availableDistances, distancePitches, primaryDistance, setPrimaryDistance]);
+
+  // Close upsell dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (upsellDropdownRef.current && !upsellDropdownRef.current.contains(event.target as Node)) {
+        setUpsellOpen(false);
+        setUpsellSearch('');
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const [isPricingMediaOpen, setIsPricingMediaOpen] = useState(false);
 
@@ -2787,6 +2805,106 @@ const ProduitPage = ({
                     >
                       <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-sm", isHidden ? "left-[28px]" : "left-1")} />
                     </button>
+                  </div>
+
+                  {/* Produits complémentaires (upsell) */}
+                  <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 shadow-[0_0_15px_rgba(0,0,0,0.15)]">
+                    <div className="text-xs font-black text-white uppercase tracking-tight flex items-center gap-1.5 mb-3">
+                      <ShoppingBag className="w-4 h-4 text-emerald-400" />
+                      Produits complémentaires (upsell)
+                      {upsellFor.length > 0 && (
+                        <span className="ml-auto text-[10px] font-normal text-emerald-400">{upsellFor.length} sélectionné{upsellFor.length > 1 ? 's' : ''}</span>
+                      )}
+                    </div>
+                    <div className="text-[9px] text-slate-400 mb-2 leading-tight">
+                      Ces produits seront proposés en complément dans le panier, même s'ils sont masqués de la boutique.
+                    </div>
+                    <div className="relative" ref={upsellDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => setUpsellOpen(!upsellOpen)}
+                        className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-xs text-slate-300 hover:border-slate-600 transition-colors"
+                      >
+                        <span className="truncate">
+                          {upsellFor.length > 0
+                            ? `${upsellFor.length} produit${upsellFor.length > 1 ? 's' : ''} sélectionné${upsellFor.length > 1 ? 's' : ''}`
+                            : 'Sélectionner des produits…'}
+                        </span>
+                        <ChevronDown className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200", upsellOpen && "rotate-180")} />
+                      </button>
+
+                      <AnimatePresence>
+                        {upsellOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4, scale: 0.97 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                            transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}
+                            className="absolute left-0 right-0 z-50 mt-1 rounded-xl border shadow-2xl overflow-hidden bg-zinc-900 border-slate-700/50"
+                          >
+                            <div className="p-2">
+                              <input
+                                type="text"
+                                value={upsellSearch}
+                                onChange={(e) => setUpsellSearch(e.target.value)}
+                                placeholder="Rechercher un produit…"
+                                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500/50 transition-colors"
+                              />
+                            </div>
+                            <div className="max-h-56 overflow-y-auto custom-scrollbar px-1 pb-1">
+                              {allProducts
+                                .filter(p => p.id !== editingProduct?.id)
+                                .filter(p => !upsellSearch || p.name.toLowerCase().includes(upsellSearch.toLowerCase()))
+                                .sort((a, b) => {
+                                  const aSel = upsellFor.includes(a.id) ? 0 : 1;
+                                  const bSel = upsellFor.includes(b.id) ? 0 : 1;
+                                  return aSel - bSel || a.name.localeCompare(b.name);
+                                })
+                                .map(p => (
+                                <button
+                                  key={p.id}
+                                  type="button"
+                                  onClick={() => {
+                                    if (upsellFor.includes(p.id)) {
+                                      setUpsellFor(upsellFor.filter(id => id !== p.id));
+                                    } else {
+                                      setUpsellFor([...upsellFor, p.id]);
+                                    }
+                                  }}
+                                  className={cn(
+                                    "w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-xs transition-all",
+                                    upsellFor.includes(p.id)
+                                      ? "bg-emerald-500/10 text-emerald-300"
+                                      : "text-slate-300 hover:bg-slate-800/60"
+                                  )}
+                                >
+                                  <div className={cn(
+                                    "w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all",
+                                    upsellFor.includes(p.id)
+                                      ? "border-emerald-500 bg-emerald-500 text-white"
+                                      : "border-slate-600 bg-slate-800"
+                                  )}>
+                                    {upsellFor.includes(p.id) && <Check className="w-3 h-3 stroke-[3]" />}
+                                  </div>
+                                  <div className="w-8 h-8 rounded bg-slate-700 overflow-hidden shrink-0">
+                                    {p.image || p.imageUrl ? (
+                                      <img src={p.image || p.imageUrl} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-slate-500"><ShoppingBag className="w-3.5 h-3.5" /></div>
+                                    )}
+                                  </div>
+                                  <span className="truncate text-left flex-1">{p.name}</span>
+                                  {p.isHidden && <EyeOff className="w-3 h-3 text-orange-400/60 shrink-0" />}
+                                </button>
+                              ))}
+                              {allProducts.filter(p => p.id !== editingProduct?.id).filter(p => !upsellSearch || p.name.toLowerCase().includes(upsellSearch.toLowerCase())).length === 0 && (
+                                <p className="text-[10px] text-slate-500 text-center py-6">Aucun produit trouvé</p>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
 
                   {/* Surface Minimum */}
@@ -4579,6 +4697,7 @@ export default function ProductManagementClient() {
         rentalQuantity: Number(rentalQuantity || '1'),
         stock: Number(stock || '0'),
         isHidden: !!isHidden,
+        upsellFor: upsellFor,
         galleryUrls: finalGalleryUrls,
         description: description,
         descriptionDetaillee: descriptionDetaillee,
@@ -4944,6 +5063,7 @@ export default function ProductManagementClient() {
   const [prixVente, setPrixVente] = useState<string>('1250');
   const [oldPrice, setOldPrice] = useState<string>('');
   const [isHidden, setIsHidden] = useState<boolean>(false);
+  const [upsellFor, setUpsellFor] = useState<string[]>([]);
   const [prixLocationHeure, setPrixLocationHeure] = useState<string>('');
   const [prixLocationJour, setPrixLocationJour] = useState<string>('');
   const [surfaceMaxLocation, setSurfaceMaxLocation] = useState<string>('');
@@ -5094,6 +5214,7 @@ export default function ProductManagementClient() {
       setVariants(editingProduct.variants || []);
       setSurface(parseFloat(editingProduct.surfaceMinRequise || '0') || 9.00);
       setIsHidden(!!editingProduct.isHidden);
+      setUpsellFor(editingProduct.upsellFor || []);
     } else {
       // Reset form for new product creation
       setProductName('');
@@ -5122,6 +5243,7 @@ export default function ProductManagementClient() {
       setDimensionsEnabled(false);
       setSurface(9.00);
       setIsHidden(false);
+      setUpsellFor([]);
 
       // Set pinned characteristics by default for new products
       const pinnedChars = characteristics.filter(c => c.isPinned).map(c => ({ id: c.id, value: c.options[0] }));
@@ -5707,9 +5829,12 @@ export default function ProductManagementClient() {
                   setUploadedPdf={setUploadedPdf}
                   pdfUrl={pdfUrl}
                   setPdfUrl={setPdfUrl}
-                  isHidden={isHidden}
-                  setIsHidden={setIsHidden}
-                  handleSaveProduct={handleSaveProduct}
+                   isHidden={isHidden}
+                   setIsHidden={setIsHidden}
+                   upsellFor={upsellFor}
+                   setUpsellFor={setUpsellFor}
+                   products={products}
+                   handleSaveProduct={handleSaveProduct}
                   setActivePage={handlePageChange}
                   user={user}
                   isSaving={isSaving}

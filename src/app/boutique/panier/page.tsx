@@ -1,13 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShoppingBag, Trash2, Minus, Plus, Heart, Truck, ArrowRight, Tag, ChevronDown, CreditCard, Landmark, Shield } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { formatPrice, products } from '@/lib/boutique-data';
+import { formatPrice, fetchUpsellProducts } from '@/lib/boutique-data';
+import type { Product } from '@/lib/boutique-data';
 import { toast } from 'sonner';
-
-const upsellProducts = products.slice(0, 4);
 
 function QtySelector({ value, onMinus, onPlus }: { value: number; onMinus: () => void; onPlus: () => void }) {
   const [anim, setAnim] = useState(false);
@@ -44,6 +43,16 @@ export default function CartPage() {
   const { items, addItem, removeItem, updateQuantity, itemCount, subtotal, promo, promoError, applyPromo, removePromo, totalAfterDiscount, clearCart } = useCart();
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoInput, setPromoInput] = useState('');
+  const [upsellProducts, setUpsellProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const cartIds = items.map(i => i.productId);
+    if (cartIds.length > 0) {
+      fetchUpsellProducts(cartIds).then(setUpsellProducts);
+    } else {
+      setUpsellProducts([]);
+    }
+  }, [items]);
 
   const total = subtotal;
   const tva = Math.round(total * 0.2);
@@ -225,23 +234,25 @@ export default function CartPage() {
               </div>
             </div>
 
-            <section className="mt-16">
-              <h2 className="font-bold text-gray-900 text-lg mb-5">Complétez votre installation</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {upsellProducts.map((p) => (
-                  <div key={p.id} className="bg-white rounded-2xl border border-gray-200/70 p-4 group hover:shadow-md transition-all duration-300">
-                    <div onClick={() => router.push(`/boutique/produit/${p.id}`)} className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-4 cursor-pointer">
-                      <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${p.image})` }} />
+            {upsellProducts.length > 0 && (
+              <section className="mt-16">
+                <h2 className="font-bold text-gray-900 text-lg mb-5">Complétez votre installation</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {upsellProducts.map((p) => (
+                    <div key={p.id} className="bg-white rounded-2xl border border-gray-200/70 p-4 group hover:shadow-md transition-all duration-300">
+                      <div onClick={() => router.push(`/boutique/produit/${p.id}`)} className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-4 cursor-pointer">
+                        <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${p.image})` }} />
+                      </div>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.name}</h3>
+                      <p className="text-sm font-bold text-gray-900 mb-3">{formatPrice(p.price)}</p>
+                      <button onClick={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(`${p.name} ajouté au panier`); }} className="w-full border border-gray-200/70 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all">
+                        Ajouter
+                      </button>
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.name}</h3>
-                    <p className="text-sm font-bold text-gray-900 mb-3">{formatPrice(p.price)}</p>
-                    <button onClick={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(`${p.name} ajouté au panier`); }} className="w-full border border-gray-200/70 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all">
-                      Ajouter
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            )}
           </>
         )}
       </main>

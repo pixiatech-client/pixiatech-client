@@ -57,6 +57,7 @@ export type Product = {
   selectedChars?: { id: string | number; name?: string; value: string }[];
   distancePitches?: Record<string, string[]>;
   isHidden?: boolean;
+  upsellFor?: string[];
 };
 
 export type ProductSpec = {

@@ -28,6 +28,8 @@ export interface Product {
   badges?: string[];
   variants?: ProductVariant[];
   stock?: number;
+  isHidden?: boolean;
+  upsellFor?: string[];
 }
 
 export interface RelatedProduct {
@@ -162,6 +164,8 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     badges: data.badges || [],
     variants: data.variants || [],
     stock: data.stock ?? undefined,
+    upsellFor: data.upsellFor || [],
+    isHidden: !!data.isHidden,
   };
 }
 
@@ -171,7 +175,7 @@ export async function fetchBoutiqueProducts(): Promise<Product[]> {
     const q = collection(firestore, 'boutique_products');
     const snapshot = await getDocs(q);
     if (snapshot.empty) return [];
-    return snapshot.docs.map((d) => mapFirestoreDoc(d, charNameMap)).sort((a, b) => a.name.localeCompare(b.name));
+    return snapshot.docs.map((d) => mapFirestoreDoc(d, charNameMap)).filter(p => !p.isHidden).sort((a, b) => a.name.localeCompare(b.name));
   } catch (e) {
     console.warn('fetchBoutiqueProducts failed:', e);
     return [];
@@ -189,3 +193,42 @@ export async function fetchBoutiqueProduct(id: string): Promise<Product | null> 
     return null;
   }
 }
+
+export async function fetchUpsellProducts(cartProductIds: string[]): Promise<Product[]> {
+  if (cartProductIds.length === 0) return [];
+  try {
+    const charNameMap = await fetchCharacteristicsMap();
+    const upsellIdSet = new Set<string>();
+
+    for (const id of cartProductIds) {
+      const docSnap = await getDoc(doc(firestore, 'boutique_products', id));
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (Array.isArray(data.upsellFor)) {
+          data.upsellFor.forEach((uid: string) => {
+            if (!cartProductIds.includes(uid)) {
+              upsellIdSet.add(uid);
+            }
+          });
+        }
+      }
+    }
+
+    if (upsellIdSet.size === 0) return [];
+
+    const results: Product[] = [];
+    const upsellIds = Array.from(upsellIdSet);
+    for (const uid of upsellIds) {
+      const docSnap = await getDoc(doc(firestore, 'boutique_products', uid));
+      if (docSnap.exists()) {
+        results.push(mapFirestoreDoc(docSnap, charNameMap));
+      }
+    }
+    return results.sort((a, b) => a.name.localeCompare(b.name));
+  } catch (e) {
+    console.warn('fetchUpsellProducts failed:', e);
+    return [];
+  }
+}
+
+export { products as staticProducts };

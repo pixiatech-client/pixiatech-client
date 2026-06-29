@@ -2586,6 +2586,7 @@ const productSchema = z.object({
   minArea: z.coerce.number().min(0, "Minimum area must be positive.").optional(),
   hasDimensions: z.boolean().optional().default(true),
   isHidden: z.boolean().optional().default(false),
+  upsellFor: z.array(z.string()).optional().default([]),
 }).superRefine((data, ctx) => {
   if ((data.tileWidth ?? 0) > 0 || (data.tileHeight ?? 0) > 0 || (data.pricePerTile ?? 0) > 0) {
     if (data.tileWidth === undefined || data.tileWidth <= 0) {
@@ -2674,6 +2675,7 @@ export async function getProducts(options: { page?: number; limit?: number } = {
           rentalPricePerHour: parseFloat(data.prixLocationHeure || data.rentalPricePerHour || 0),
           productUrl: data.pdfUrl || data.productUrl || '',
           isHidden: !!data.isHidden,
+          upsellFor: data.upsellFor || [],
         } as Product;
       });
 
