@@ -66,9 +66,11 @@ export async function POST(req: NextRequest) {
 
     // Upsert customer
     let customerId = '';
+    let isNewCustomer = false;
     if (customerEmail) {
       const result = await upsertCustomer(customerEmail, customerName, customerPhone);
       customerId = result.id;
+      isNewCustomer = result.isNew;
       // Send magic link if new customer
       if (result.isNew) {
         try {
@@ -168,7 +170,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ...capture, rentalOrderIds, saleOrderIds });
+    return NextResponse.json({ ...capture, rentalOrderIds, saleOrderIds, isNewCustomer });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

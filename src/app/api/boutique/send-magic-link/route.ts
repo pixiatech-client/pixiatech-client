@@ -50,14 +50,12 @@ export async function POST(req: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Find customer — don't leak whether email exists
     const customer = await findCustomerByEmail(normalizedEmail);
 
-    // Always return the same message to prevent email enumeration
     if (!customer) {
       return NextResponse.json({
-        message: 'Si cet email est associé à un compte, un lien de connexion vous a été envoyé.',
-      });
+        error: "Aucun compte associé n'a été trouvé. L'espace membre est exclusivement réservé aux clients ayant effectué une commande. Si vous avez récemment passé une commande, vérifiez que vous utilisez la même adresse e-mail que celle renseignée lors de votre achat.",
+      }, { status: 404 });
     }
 
     // Create magic link

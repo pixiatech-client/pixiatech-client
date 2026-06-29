@@ -92,6 +92,7 @@ export default async function CommandesPage() {
                     <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableProduct')}</th>
                     <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableId')}</th>
                     <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableDate')}</th>
+                    <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">Suivi</th>
                     <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider text-right">{t('client.orders.tablePrice')}</th>
                     <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableStatus')}</th>
                     <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider text-right">{t('client.orders.tableActions')}</th>
@@ -130,6 +131,13 @@ export default async function CommandesPage() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-[14px] text-gray-700">{formatDate(order.createdAt)}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {order.trackingNumber ? (
+                            <span className="text-[13px] font-semibold text-[#004ac6]">{order.trackingNumber}</span>
+                          ) : (
+                            <span className="text-[13px] text-gray-400">—</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="text-[14px] font-bold text-gray-900">{formatPrice(order.amountPaid)}</span>

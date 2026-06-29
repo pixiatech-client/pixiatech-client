@@ -2179,7 +2179,8 @@
         "addPromoCode": "Add promo code",
         "promoPlaceholder": "Promo code",
         "apply": "Apply",
-        "completeYourOrder": "Complete your installation"
+        "completeYourOrder": "Complete your installation",
+        "discount": "Discount"
     },
     "checkout": {
         "paypalLoadError": "PayPal loading error",
@@ -2234,7 +2235,40 @@
         "free": "Free",
         "fillBankDetails": "Fill in your bank details above to pay",
         "acceptTerms": "By clicking pay, you accept our terms and conditions of sale.",
-        "promoCode": "Promo code"
+        "promoCode": "Promo code",
+        "confirmed": {
+            "paymentSuccess": "Payment successful",
+            "memberCreated": "Congratulations. A member space has been created for you automatically within our legacy platform.",
+            "transactionId": "TRANSACTION ID",
+            "paidVia": "Paid via {method}",
+            "billingInfo": "Informations",
+            "client": "CLIENT",
+            "email": "EMAIL",
+            "address": "ADDRESS",
+            "payment": "Paiement",
+            "orderNo": "Order No.",
+            "method": "Méthode",
+            "currency": "Currency",
+            "items": "Items",
+            "product": "PRODUCT",
+            "qty": "QTY",
+            "unit": "UNIT",
+            "total": "TOTAL",
+            "purchaseInProgress": "Purchase — In progress",
+            "rentalInProgress": "Rental — In progress",
+            "magicLink": "Magic Link",
+            "magicLinkDesc": "A reserved member space has been created for you. Check your email and don't forget to look in spam to activate your exclusive access.",
+            "checkEmail": "Check my email",
+            "summaryId": "SUMMARY ID",
+            "totalPaid": "Total amount paid",
+            "vatIncluded": "VAT included (20%)",
+            "subtotalHT": "Subtotal excl. VAT",
+            "vat": "VAT (20%)",
+            "security": "Banking Security",
+            "securityDesc": "Encrypted with AES-256. PCI-DSS Level 1 certified.",
+            "downloadInvoice": "Download invoice",
+            "backToShop": "Back to shop"
+        }
     },
     "product": {
         "addedToCart": "{name} added to cart",

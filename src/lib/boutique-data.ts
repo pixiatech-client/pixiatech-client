@@ -103,13 +103,18 @@ import { firestore } from '@/firebase/config';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
 async function fetchCharacteristicsMap(): Promise<Record<string, string>> {
-  const snap = await getDocs(collection(firestore, 'boutique_characteristics'));
-  const map: Record<string, string> = {};
-  snap.forEach((d) => {
-    const name = d.data().name;
-    if (name) map[d.id] = name;
-  });
-  return map;
+  try {
+    const snap = await getDocs(collection(firestore, 'boutique_characteristics'));
+    const map: Record<string, string> = {};
+    snap.forEach((d) => {
+      const name = d.data().name;
+      if (name) map[d.id] = name;
+    });
+    return map;
+  } catch (e) {
+    console.warn('fetchCharacteristicsMap failed, using empty map:', e);
+    return {};
+  }
 }
 
 function buildSpecs(data: any, charNameMap: Record<string, string>): Record<string, string> {
@@ -201,12 +206,16 @@ export async function fetchUpsellProducts(cartProductIds: string[]): Promise<Pro
     const upsellIdSet = new Set<string>();
 
     for (const id of cartProductIds) {
-      const docSnap = await getDoc(doc(firestore, 'boutique_products', id));
+      // Try boutique_products first, then fall back to products (legacy data)
+      let docSnap = await getDoc(doc(firestore, 'boutique_products', id));
+      if (!docSnap.exists()) {
+        docSnap = await getDoc(doc(firestore, 'products', id));
+      }
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (Array.isArray(data.upsellFor)) {
+        if (Array.isArray(data.upsellFor) && data.upsellFor.length > 0) {
           data.upsellFor.forEach((uid: string) => {
-            if (!cartProductIds.includes(uid)) {
+            if (uid && !cartProductIds.includes(uid)) {
               upsellIdSet.add(uid);
             }
           });
@@ -219,7 +228,11 @@ export async function fetchUpsellProducts(cartProductIds: string[]): Promise<Pro
     const results: Product[] = [];
     const upsellIds = Array.from(upsellIdSet);
     for (const uid of upsellIds) {
-      const docSnap = await getDoc(doc(firestore, 'boutique_products', uid));
+      // Try boutique_products first, then fall back to products (legacy IDs)
+      let docSnap = await getDoc(doc(firestore, 'boutique_products', uid));
+      if (!docSnap.exists()) {
+        docSnap = await getDoc(doc(firestore, 'products', uid));
+      }
       if (docSnap.exists()) {
         results.push(mapFirestoreDoc(docSnap, charNameMap));
       }
@@ -230,5 +243,6 @@ export async function fetchUpsellProducts(cartProductIds: string[]): Promise<Pro
     return [];
   }
 }
+
 
 export { products as staticProducts };

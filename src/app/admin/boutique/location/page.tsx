@@ -250,6 +250,9 @@ export default function LocationPage() {
                   Montant
                 </TableHead>
                 <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                  Suivi
+                </TableHead>
+                <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">
                   Statut
                 </TableHead>
                 <TableHead className="text-right text-[11px] font-black uppercase tracking-widest text-slate-400">
@@ -265,6 +268,7 @@ export default function LocationPage() {
                     <TableCell><div className="h-4 bg-slate-100 rounded w-24" /></TableCell>
                     <TableCell><div className="h-4 bg-slate-100 rounded w-36" /></TableCell>
                     <TableCell><div className="h-4 bg-slate-100 rounded w-16" /></TableCell>
+                    <TableCell><div className="h-4 bg-slate-100 rounded w-20" /></TableCell>
                     <TableCell><div className="h-6 bg-slate-100 rounded-full w-20" /></TableCell>
                     <TableCell><div className="h-9 bg-slate-100 rounded w-32 ml-auto" /></TableCell>
                   </TableRow>
@@ -314,6 +318,27 @@ export default function LocationPage() {
                       <span className="font-bold text-slate-900">
                         {formatPrice(order.amountPaid)}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          defaultValue={order.trackingNumber || ''}
+                          placeholder="—"
+                          onBlur={async (e) => {
+                            const val = e.target.value.trim();
+                            if (val === (order.trackingNumber || '')) return;
+                            if (!order.id) return;
+                            try {
+                              await updateRentalOrder(order.id, { trackingNumber: val || '' });
+                              toast({ title: 'Suivi mis à jour', description: val || 'Supprimé' });
+                            } catch {
+                              toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de mettre à jour le suivi.' });
+                            }
+                          }}
+                          className="w-28 px-2 py-1 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-400 transition-all bg-white/80 focus:bg-white placeholder:text-slate-300"
+                        />
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -388,7 +413,7 @@ export default function LocationPage() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center h-48 py-10 bg-slate-50/20"
                   >
                     <div className="flex flex-col items-center justify-center">

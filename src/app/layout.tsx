@@ -1,6 +1,6 @@
 
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Orbitron } from 'next/font/google';
 import Script from 'next/script';
 import { cookies } from 'next/headers';
 import './globals.css';
@@ -10,6 +10,11 @@ import { I18nProvider } from '@/lib/i18n';
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+});
+
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  variable: '--font-orbitron',
 });
 
 export const metadata: Metadata = {
@@ -35,7 +40,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
-      <body className={`${inter.variable} font-body antialiased min-h-[100dvh] bg-[#F5F5F5]`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${orbitron.variable} font-body antialiased min-h-[100dvh]`} suppressHydrationWarning>
         <div className="flare cyan" aria-hidden="true" />
         <div className="flare magenta" aria-hidden="true" />
         <div className="directional-flare" aria-hidden="true" suppressHydrationWarning />

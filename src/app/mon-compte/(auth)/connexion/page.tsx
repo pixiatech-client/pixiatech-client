@@ -28,10 +28,13 @@ function MagicLinkTab() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),
       });
-      if (!res.ok) throw new Error(t('client.login.serverError'));
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || t('client.login.serverError'));
+      }
       setSent(true);
-    } catch {
-      setError(t('client.login.genericError'));
+    } catch (e: any) {
+      setError(e?.message || t('client.login.genericError'));
     }
     setLoading(false);
   };
@@ -80,7 +83,7 @@ function MagicLinkTab() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 leading-relaxed whitespace-pre-line"
           >
             {error}
           </motion.div>
@@ -192,7 +195,7 @@ function PasswordTab() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 leading-relaxed whitespace-pre-line"
           >
             {error}
           </motion.div>

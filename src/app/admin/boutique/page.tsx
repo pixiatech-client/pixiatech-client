@@ -54,11 +54,32 @@ function DetailModal({ open, onClose, order, mode }: {
   order: SaleOrder | RentalOrder | null;
   mode: Mode;
 }) {
+  const [trackingInput, setTrackingInput] = useState(order?.trackingNumber || '');
+
+  useEffect(() => {
+    setTrackingInput(order?.trackingNumber || '');
+  }, [order?.trackingNumber]);
+
   if (!order) return null;
 
   const isSale = mode === 'vente';
   const s = order as SaleOrder;
   const r = order as RentalOrder;
+
+  const handleSaveTracking = async () => {
+    if (!order.id) return;
+    try {
+      if (isSale) {
+        await updateSaleOrder(order.id, { trackingNumber: trackingInput });
+      } else {
+        await updateRentalOrder(order.id, { trackingNumber: trackingInput });
+      }
+      toast.success('Numéro de suivi mis à jour');
+    } catch (err) {
+      console.error('Failed to save tracking number:', err);
+      toast.error('Erreur lors de la mise à jour');
+    }
+  };
 
   const statusLabel = isSale
     ? saleStatusLabels[order.status as SaleStatus] || order.status
@@ -295,6 +316,37 @@ function DetailModal({ open, onClose, order, mode }: {
               </div>
             </div>
           )}
+
+          {/* SUIVI */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Package className="w-4 h-4 text-slate-400" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Suivi</span>
+            </div>
+            <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={trackingInput}
+                  onChange={e => setTrackingInput(e.target.value)}
+                  placeholder="Ajouter un numéro de suivi..."
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-400 transition-all bg-white placeholder:text-slate-300"
+                />
+                <button
+                  onClick={handleSaveTracking}
+                  disabled={trackingInput === (order.trackingNumber || '')}
+                  className="px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Enregistrer
+                </button>
+              </div>
+              {order.trackingNumber && (
+                <p className="text-[11px] text-slate-500">
+                  Suivi actuel : <span className="font-bold text-slate-700">{order.trackingNumber}</span>
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
@@ -601,6 +653,7 @@ export default function BoutiquePage() {
                       <th className="text-left px-4 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Produit</th>
                       <th className="text-left px-4 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Client</th>
                       <th className="text-right px-4 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Montant</th>
+                      <th className="text-center px-4 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Suivi</th>
                       <th className="text-center px-4 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Date</th>
                       <th className="text-center px-4 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Statut</th>
                       <th className="w-12 px-4 py-4" />
@@ -644,6 +697,25 @@ export default function BoutiquePage() {
                             </td>
                             <td className="px-4 py-3 text-right">
                               <span className="text-sm font-bold text-gray-900">{formatPrice(o.amountPaid)}</span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <input
+                                type="text"
+                                defaultValue={(o as any).trackingNumber || ''}
+                                placeholder="—"
+                                onClick={e => e.stopPropagation()}
+                                onBlur={async (e) => {
+                                  const val = e.target.value.trim();
+                                  if (val === ((o as any).trackingNumber || '')) return;
+                                  if (!o.id) return;
+                                  try {
+                                    await updateSaleOrder(o.id, { trackingNumber: val || '' } as any);
+                                  } catch {
+                                    console.error('Failed to update tracking');
+                                  }
+                                }}
+                                className="w-24 px-2 py-1 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-400 transition-all bg-white/60 focus:bg-white placeholder:text-slate-300 text-center"
+                              />
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className="text-sm text-gray-500">{new Date(o.createdAt).toLocaleDateString('fr-FR')}</span>
@@ -740,6 +812,7 @@ export default function BoutiquePage() {
                       <th className="text-left px-4 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Client</th>
                       <th className="text-left px-4 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Période</th>
                       <th className="text-right px-4 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Montant</th>
+                      <th className="text-center px-4 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Suivi</th>
                       <th className="text-center px-4 py-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Statut</th>
                       <th className="w-12 px-4 py-4" />
                     </tr>
@@ -785,6 +858,25 @@ export default function BoutiquePage() {
                             </td>
                             <td className="px-4 py-3 text-right">
                               <span className="text-sm font-bold text-gray-900">{formatPrice(o.amountPaid)}</span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <input
+                                type="text"
+                                defaultValue={(o as any).trackingNumber || ''}
+                                placeholder="—"
+                                onClick={e => e.stopPropagation()}
+                                onBlur={async (e) => {
+                                  const val = e.target.value.trim();
+                                  if (val === ((o as any).trackingNumber || '')) return;
+                                  if (!o.id) return;
+                                  try {
+                                    await updateRentalOrder(o.id, { trackingNumber: val || '' } as any);
+                                  } catch {
+                                    console.error('Failed to update tracking');
+                                  }
+                                }}
+                                className="w-24 px-2 py-1 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-400 transition-all bg-white/60 focus:bg-white placeholder:text-slate-300 text-center"
+                              />
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold ${rentalStatusColors[o.status]}`}>

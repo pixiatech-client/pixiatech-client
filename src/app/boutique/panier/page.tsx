@@ -47,8 +47,12 @@ export default function CartPage() {
 
   useEffect(() => {
     const cartIds = items.map(i => i.productId);
+    console.log('[upsell] cartIds:', cartIds);
     if (cartIds.length > 0) {
-      fetchUpsellProducts(cartIds).then(setUpsellProducts);
+      fetchUpsellProducts(cartIds).then(prods => {
+        console.log('[upsell] fetched products:', prods.map(p => p.name));
+        setUpsellProducts(prods);
+      });
     } else {
       setUpsellProducts([]);
     }
@@ -79,7 +83,7 @@ export default function CartPage() {
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-500">{itemCount} article{itemCount > 1 ? 's' : ''}</p>
                   <button
-                    onClick={() => { if (confirm('Vider le panier ?')) clearCart(); }}
+                    onClick={() => { clearCart(); toast.success('Panier vidé'); }}
                     className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors"
                   >
                     <Trash2 size={14} />

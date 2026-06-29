@@ -18,6 +18,8 @@ export interface RentalOrder {
   renterAddress: string;
   renterCity: string;
   renterPostcode: string;
+  customerId?: string;
+  trackingNumber?: string;
   // Location
   rentalStartDate: string;
   rentalEndDate: string;

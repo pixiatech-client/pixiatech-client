@@ -143,6 +143,12 @@ export default async function CommandeDetailPage({ params, searchParams }: { par
                 <p className="text-sm text-gray-500">{t('client.orderDetail.currency')}</p>
                 <p className="text-sm text-gray-900">{t('client.orderDetail.eur')}</p>
               </div>
+              {order.trackingNumber && (
+                <div className="flex justify-between">
+                  <p className="text-sm text-gray-500">Suivi</p>
+                  <p className="text-sm font-semibold text-[#004ac6]">{order.trackingNumber}</p>
+                </div>
+              )}
               <div className="flex justify-between">
                 <p className="text-sm text-gray-500">{t('client.orderDetail.quantity')}</p>
                 <p className="text-sm text-gray-900">{order.quantity || 1}</p>

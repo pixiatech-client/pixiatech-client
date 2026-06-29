@@ -16,6 +16,8 @@ export interface SaleOrder {
   customerAddress: string;
   customerCity: string;
   customerPostcode: string;
+  customerId?: string;
+  trackingNumber?: string;
   paypalOrderId: string | null;
   paypalCaptureId: string | null;
   amountPaid: number;

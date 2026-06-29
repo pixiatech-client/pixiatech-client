@@ -613,6 +613,14 @@ export interface AdminSettings {
   contactListWidth: number;
 }
 
+export interface UpsellProduct {
+  id: string;
+  name: string;
+  price: number;
+  image: string | null;
+  category: string;
+}
+
 export interface DisputeMessage {
   sender: 'customer' | 'admin';
   text: string;

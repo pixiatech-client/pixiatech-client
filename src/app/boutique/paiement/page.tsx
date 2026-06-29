@@ -1,39 +1,47 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PayPalScriptProvider, usePayPalScriptReducer, PayPalButtons, FUNDING, PayPalCardFieldsProvider, PayPalNameField, PayPalNumberField, PayPalExpiryField, PayPalCVVField, usePayPalCardFields } from '@paypal/react-paypal-js';
 import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, Mail, Phone, User, ChevronDown, Tag, X } from 'lucide-react';
 import { useCart, type CartItem } from '@/contexts/CartContext';
+import { useI18n } from '@/lib/i18n';
 import { formatPrice } from '@/lib/boutique-data';
+import type { PdfSettings } from '@/lib/types';
+import { InvoiceButton } from '@/components/invoice-button';
+import { getPdfSettings } from '@/app/actions/quote-actions';
+import Image from 'next/image';
+import confetti from 'canvas-confetti';
 
 function ConfettiEffect() {
   useEffect(() => {
-    const container = document.getElementById('confetti-container');
-    if (!container) return;
-
-    const colors = ['#3b82f6', '#60a5fa', '#93c5fd', '#2563eb', '#1d4ed8'];
-    const interval = setInterval(() => {
-      const el = document.createElement('div');
-      el.className = 'absolute w-2 h-2 rounded-full';
-      el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      el.style.left = Math.random() * 100 + '%';
-      el.style.top = '-10px';
-      el.style.animation = `fall ${0.8 + Math.random() * 0.6}s ease-in-out forwards`;
-      el.style.opacity = String(0.7 + Math.random() * 0.3);
-      container.appendChild(el);
-      setTimeout(() => el.remove(), 1400);
-    }, 80);
-
-    setTimeout(() => clearInterval(interval), 3000);
-    return () => clearInterval(interval);
+    const duration = 2000;
+    const end = Date.now() + duration;
+    const frame = () => {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.6 },
+        colors: ['#3b82f6', '#60a5fa', '#93c5fd', '#2563eb', '#1d4ed8'],
+      });
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.6 },
+        colors: ['#3b82f6', '#60a5fa', '#93c5fd', '#2563eb', '#1d4ed8'],
+      });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    };
+    frame();
   }, []);
 
   return null;
 }
 
-function PayPalButtonGroup({ total, handlePay, items, delivery }: { total: number; handlePay: () => void; items: CartItem[]; delivery: Record<string, string> }) {
+function PayPalButtonGroup({ total, handlePay, items, delivery }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string> }) {
   const [{ isResolved, isRejected }] = usePayPalScriptReducer();
   const [error, setError] = useState<string | null>(null);
 
@@ -103,7 +111,7 @@ function PayPalButtonGroup({ total, handlePay, items, delivery }: { total: numbe
             if (!res.ok) throw new Error(capture.error);
             console.log('PayPal capture result:', capture);
             if (capture.status === 'COMPLETED') {
-              handlePay();
+              handlePay(capture.isNewCustomer !== false);
             } else {
               setError('Statut inattendu: ' + capture.status);
             }
@@ -155,7 +163,7 @@ const cardFieldStyle = {
   },
 } satisfies Record<string, Record<string, string>>;
 
-function CardSection({ total, handlePay, items, delivery, isDeliveryComplete }: { total: number; handlePay: () => void; items: CartItem[]; delivery: Record<string, string>; isDeliveryComplete: boolean }) {
+function CardSection({ total, handlePay, items, delivery, isDeliveryComplete }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string>; isDeliveryComplete: boolean }) {
   const { cardFieldsForm } = usePayPalCardFields();
   const [ready, setReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -254,16 +262,114 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete }: 
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isDemo = searchParams.get('demo') === '1';
   const { items, subtotal, clearCart, promo, promoError, applyPromo, removePromo, totalAfterDiscount } = useCart();
-  const [step, setStep] = useState<'payment' | 'confirmation'>('payment');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
+  const { t } = useI18n();
+  const [step, setStep] = useState<'payment' | 'confirmation'>(isDemo ? 'confirmation' : 'payment');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>(isDemo ? 'paypal' : 'card');
   const [delivery, setDelivery] = useState({ firstName: '', lastName: '', email: '', phone: '', addressLine1: '', addressLine2: '', postcode: '', city: '' });
+  const [deliveryErrors, setDeliveryErrors] = useState<Record<string, string>>({});
+  const [deliveryTouched, setDeliveryTouched] = useState<Record<string, boolean>>({});
   const [deliveryOpen, setDeliveryOpen] = useState(true);
   const [promoInput, setPromoInput] = useState('');
+  const [mounted, setMounted] = useState(false);
+  const [pdfSettings, setPdfSettings] = useState<PdfSettings | null>(null);
+  const [txId, setTxId] = useState('');
+  const [ordNo, setOrdNo] = useState('');
+  const [dateFmt, setDateFmt] = useState('');
+  const [magicSending, setMagicSending] = useState(false);
+  const [magicSent, setMagicSent] = useState(false);
+  const [magicError, setMagicError] = useState('');
+  const [isNewCustomer, setIsNewCustomer] = useState(true);
+  const [productsOpen, setProductsOpen] = useState(items.length < 2);
+
+  useEffect(() => {
+    setTxId("TXN" + Math.random().toString(36).slice(2, 10).toUpperCase());
+    setOrdNo("ORD" + Date.now().toString(36).toUpperCase());
+    setDateFmt(new Date().toLocaleString('fr-FR'));
+    setMounted(true);
+    if (isDemo) setDelivery(d => ({ ...d, email: 'demo@example.com', firstName: 'Demo', lastName: 'User' }));
+    getPdfSettings().then(setPdfSettings).catch(() => {});
+  }, [isDemo]);
 
   const isDeliveryComplete = !!(delivery.firstName && delivery.lastName && delivery.email && delivery.phone && delivery.addressLine1 && delivery.postcode && delivery.city);
 
-  if (items.length === 0 && step === 'payment') {
+  const NAME_RE = /^[\p{L}\s'-]{2,}$/u;
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const PHONE_RE = /^[\d\s+()]{8,}$/;
+  const POSTCODE_RE = /^\d{5}$/;
+
+  function validateField(field: string, value: string): string {
+    switch (field) {
+      case 'firstName':
+      case 'lastName':
+        if (!value.trim()) return '';
+        if (!NAME_RE.test(value.trim())) return 'Veuillez saisir un prénom valide.';
+        return '';
+      case 'email':
+        if (!value.trim()) return '';
+        if (!EMAIL_RE.test(value.trim())) return 'Veuillez saisir une adresse e-mail valide.';
+        return '';
+      case 'phone':
+        if (!value.trim()) return '';
+        const digits = value.replace(/[^0-9]/g, '');
+        if (digits.length < 8 || !PHONE_RE.test(value.trim())) return 'Veuillez saisir un numéro de téléphone valide.';
+        return '';
+      case 'addressLine1':
+        if (!value.trim()) return '';
+        if (value.trim().length < 6) return 'Merci de saisir une adresse complète.';
+        if (!/\d/.test(value)) return 'Merci de saisir une adresse complète.';
+        if (!/[a-zA-Z\u00C0-\u024F]{2,}/.test(value)) return 'Merci de saisir une adresse complète.';
+        return '';
+      case 'city':
+        if (!value.trim()) return '';
+        if (value.trim().length < 2) return 'Veuillez saisir une ville valide.';
+        if (/^\d+$/.test(value.trim())) return 'Veuillez saisir une ville valide.';
+        return '';
+      case 'postcode':
+        if (!value.trim()) return '';
+        if (!POSTCODE_RE.test(value.trim())) return 'Veuillez saisir un code postal valide.';
+        return '';
+      default:
+        return '';
+    }
+  }
+
+  function handleDeliveryChange(field: string, value: string) {
+    setDelivery(d => ({ ...d, [field]: value }));
+    if (deliveryTouched[field]) {
+      const err = validateField(field, value);
+      setDeliveryErrors(prev => err ? { ...prev, [field]: err } : { ...prev, [field]: '' });
+    }
+  }
+
+  function handleDeliveryBlur(field: string, value: string) {
+    setDeliveryTouched(prev => ({ ...prev, [field]: true }));
+    const err = validateField(field, value);
+    setDeliveryErrors(prev => err ? { ...prev, [field]: err } : { ...prev, [field]: '' });
+  }
+
+  const fieldMeta = (field: string, value: string) => {
+    const error = deliveryErrors[field] || '';
+    const touched = deliveryTouched[field];
+    const hasError = touched && !!error;
+    const isValid = touched && !error && value.trim().length > 0;
+    return { error, hasError, isValid };
+  };
+
+  function inputCls(field: string, value: string, withIcon = true) {
+    const meta = fieldMeta(field, value);
+    return `${withIcon ? 'pl-9' : 'px-3'} pr-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white placeholder:text-gray-300 w-full ${
+      meta.hasError
+        ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
+        : meta.isValid
+          ? 'border-emerald-300 focus:border-emerald-400 focus:ring-emerald-100'
+          : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
+    }`;
+  }
+
+  if (items.length === 0 && step === 'payment' && !isDemo) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F5F5' }}>
         <div className="text-center">
@@ -281,7 +387,8 @@ export default function CheckoutPage() {
   const tva = subtotal * 0.2;
   const discount = promo ? subtotal - totalAfterDiscount : 0;
 
-  const handlePay = () => {
+  const handlePay = (isNew?: boolean) => {
+    if (isNew !== undefined) setIsNewCustomer(isNew);
     if (promo?.promoDocId) {
       fetch('/api/promo/use', {
         method: 'POST',
@@ -293,120 +400,312 @@ export default function CheckoutPage() {
     setStep('confirmation');
   };
 
-  const transactionDetails = {
-    transactionId: "TXN" + Math.random().toString(36).slice(2, 10).toUpperCase(),
-    amount: formatPrice(total),
-    paymentMethod: paymentMethod === 'card' ? 'Carte bancaire' : 'PayPal',
-    date: new Date().toLocaleString('fr-FR'),
-    orderNumber: "ORD" + Date.now().toString(36).toUpperCase()
-  };
-
   if (step === 'confirmation') {
+    const paymentLabel = paymentMethod === 'card' ? t('checkout.cardPayment') : t('checkout.paypal');
+    const invoiceData = mounted ? {
+      orderRef: ordNo.replace('ORD', ''),
+      customerName: `${delivery.firstName} ${delivery.lastName}`.trim() || 'Client',
+      customerEmail: delivery.email || 'email@exemple.com',
+      customerAddress: delivery.addressLine1 + (delivery.addressLine2 ? ', ' + delivery.addressLine2 : ''),
+      customerPostcode: delivery.postcode,
+      customerCity: delivery.city,
+      productName: items[0]?.name || 'Produit',
+      quantity: items.reduce((s, i) => s + i.quantity, 0),
+      unitPrice: items.reduce((s, i) => s + i.price * i.quantity, 0) / items.reduce((s, i) => s + i.quantity, 0) || 0,
+      subtotal,
+      vat: tva,
+      amountPaid: total,
+      createdAt: new Date().toISOString(),
+      type: items.some(i => i.type === 'rental') ? 'rental' as const : 'sale' as const,
+      products: items.map(i => ({
+        name: i.name,
+        quantity: i.quantity,
+        unitPrice: i.price,
+        lineTotal: i.price * i.quantity,
+      })),
+    } : undefined;
+
     return (
-      <div className="min-h-screen bg-[#F5F5F5] py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center overflow-hidden relative">
-        <div id="confetti-container" className="absolute inset-0 pointer-events-none overflow-hidden" />
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-lg relative z-10"
-        >
-          <ConfettiEffect />
+      <div className="h-screen overflow-hidden flex flex-col items-center py-6 px-4 relative">
+        <ConfettiEffect />
 
-          <div className="text-center">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-primary-100"
-            >
-              <Check className="h-10 w-10 text-primary-600" aria-hidden="true" />
-            </motion.div>
-            <motion.h2
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="mt-6 text-3xl font-extrabold text-primary-900"
-            >
-              Commande confirmée !
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-2 text-sm text-gray-500"
-            >
-              Merci pour votre commande. Vous recevrez un email de confirmation sous peu.
-            </motion.p>
+        {/* Success Header */}
+        <header className="text-center mb-6 max-w-2xl">
+          <div className="flex justify-center mb-3">
+            <div className="bg-emerald-500/10 p-1 rounded-full" style={{ boxShadow: '0 0 20px rgba(34,197,94,0.2)' }}>
+              <div className="bg-emerald-500 p-2.5 rounded-full shadow-lg shadow-emerald-500/20">
+                <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.5} />
+                </svg>
+              </div>
+            </div>
           </div>
+          <h1 className="text-2xl font-extrabold text-slate-900 mb-2 tracking-tight">{t('checkout.confirmed.paymentSuccess')}</h1>
+          <p className="text-slate-500 text-sm leading-relaxed font-medium">
+            {t('checkout.confirmed.memberCreated')}
+          </p>
+        </header>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="bg-gray-50 px-4 py-5 sm:p-6 rounded-xl"
-          >
-            <dl className="space-y-4">
-              <div className="flex justify-between">
-                <dt className="text-sm font-medium text-gray-500">ID Transaction</dt>
-                <dd className="text-sm font-semibold text-primary-900">{transactionDetails.transactionId}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-sm font-medium text-gray-500">Montant payé</dt>
-                <dd className="text-sm font-semibold text-primary-600">{transactionDetails.amount}</dd>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between">
-                  <dt className="text-sm font-medium text-gray-500">
-                    <span className="inline-flex items-center gap-1">
-                      <Tag size={12} className="text-emerald-500" />
-                      Code promo
-                    </span>
-                  </dt>
-                  <dd className="text-sm font-semibold text-emerald-600">{promo?.code} (-{formatPrice(discount)})</dd>
+        {/* Main Grid */}
+        <main className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* LEFT COLUMN */}
+          <section className="lg:col-span-7 space-y-4">
+            {/* Receipt Card */}
+            <div className="bg-white rounded-[24px] border border-slate-100 overflow-hidden" style={{ boxShadow: '0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.04)' }}>
+              {/* Receipt Header */}
+              <div className="p-5 flex justify-between items-center border-b border-slate-50">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">{t('checkout.confirmed.transactionId')}</p>
+                  <p className="text-lg font-extrabold text-slate-900">{txId || '...'}</p>
                 </div>
-              )}
-              <div className="flex justify-between">
-                <dt className="text-sm font-medium text-gray-500">Méthode de paiement</dt>
-                <dd className="text-sm font-semibold text-primary-900">{transactionDetails.paymentMethod}</dd>
+                <div className="text-right">
+                  <div className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 mb-1 ${paymentMethod === 'card' ? 'bg-amber-50 border border-amber-100' : 'bg-[#E8F0FE] border border-[#0470DE]/20'}`}>
+                    {paymentMethod === 'card' ? (
+                      <span className="text-base">💳</span>
+                    ) : (
+                      <Image src="/bot-avatars/PayPal.png" alt="PayPal" width={20} height={20} className="object-contain" />
+                    )}
+                    <span className={`text-[11px] font-bold ${paymentMethod === 'card' ? 'text-amber-700' : 'text-[#013187]'}`}>{t('checkout.confirmed.paidVia', { method: paymentLabel })}</span>
+                  </div>
+                  <p className="text-[10px] font-semibold text-slate-400">{dateFmt || '...'}</p>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <dt className="text-sm font-medium text-gray-500">Date & Heure</dt>
-                <dd className="text-sm font-semibold text-primary-900">{transactionDetails.date}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-sm font-medium text-gray-500">Numéro de commande</dt>
-                <dd className="text-sm font-semibold text-primary-900">{transactionDetails.orderNumber}</dd>
-              </div>
-            </dl>
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="flex flex-col space-y-3"
-          >
-            <button
-              onClick={() => router.push('/boutique')}
-              className="w-full bg-primary-600 text-white py-3.5 rounded-xl font-semibold hover:bg-primary-700 active:scale-[0.98] transition-all"
-            >
-              Retour à la boutique
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="w-full border border-gray-300 py-3.5 rounded-xl text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-            >
-              Télécharger le reçu
-            </button>
-          </motion.div>
-        </motion.div>
-        <style jsx>{`
-          @keyframes fall {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
-          }
-        `}</style>
+              {/* Receipt Body */}
+              <div className="p-5 grid grid-cols-2 gap-8">
+                {/* Billing Info */}
+                <div>
+                  <h3 className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider mb-4 border-l-4 border-indigo-500 pl-3">{t('checkout.confirmed.billingInfo')}</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{t('checkout.confirmed.client')}</p>
+                      <p className="text-[12px] font-semibold text-slate-700">{delivery.firstName || '—'} {delivery.lastName || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{t('checkout.confirmed.email')}</p>
+                      <p className="text-[12px] font-semibold text-slate-700">{(delivery.email || '—').toUpperCase()}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{t('checkout.confirmed.address')}</p>
+                      <p className="text-[12px] font-semibold text-slate-700 leading-relaxed">
+                        {delivery.addressLine1 || '—'}{delivery.addressLine2 ? ', ' + delivery.addressLine2 : ''}<br />
+                        {delivery.postcode || ''} {delivery.city || ''}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {/* Payment Details */}
+                <div>
+                  <h3 className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider mb-4 border-l-4 border-indigo-500 pl-3">{t('checkout.confirmed.payment')}</h3>
+                  <div className="space-y-2.5">
+                    {[
+                      [t('checkout.confirmed.orderNo'), ordNo || '...'],
+                      [t('checkout.confirmed.method'), `${paymentLabel} Express`],
+                      [t('checkout.confirmed.currency'), 'EUR (€)'],
+                      [t('checkout.confirmed.items'), String(items.length).padStart(2, '0')],
+                    ].map(([label, val]) => (
+                      <div key={label as string} className="flex justify-between items-center border-b border-slate-50 pb-1.5">
+                        <p className="text-[11px] font-medium text-slate-400">{label}</p>
+                        <p className="text-[11px] font-bold text-slate-700">{val}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Table */}
+              <div className="px-5 pb-5">
+                <div className="bg-slate-50 rounded-[16px] p-5 border border-slate-100">
+                  <button
+                    onClick={() => setProductsOpen(!productsOpen)}
+                    className="flex items-center justify-between w-full mb-3 px-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em]">{t('checkout.confirmed.product')}</span>
+                      {items.length >= 2 && (
+                        <span className="text-[10px] font-bold text-slate-400">({items.length})</span>
+                      )}
+                    </div>
+                    {items.length >= 2 && (
+                      <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${productsOpen ? 'rotate-180' : ''}`} />
+                    )}
+                  </button>
+                  {productsOpen && (
+                  <>
+                    <div className="grid grid-cols-12 text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em] mb-3 px-2">
+                      <div className="col-span-6">{t('checkout.confirmed.product')}</div>
+                      <div className="col-span-2 text-center">{t('checkout.confirmed.qty')}</div>
+                      <div className="col-span-2 text-right">{t('checkout.confirmed.unit')}</div>
+                      <div className="col-span-2 text-right">{t('checkout.confirmed.total')}</div>
+                    </div>
+                    {items.map((item) => (
+                      <div key={item.productId + '-' + item.type} className="bg-white rounded-xl p-3.5 flex items-center shadow-sm border border-slate-100 mb-2 last:mb-0 hover:scale-[1.01] transition-transform duration-300">
+                        <div className="grid grid-cols-12 w-full items-center">
+                          <div className="col-span-6 flex items-center gap-3">
+                            <div className="w-10 h-10 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center ring-4 ring-slate-50 shrink-0">
+                              {item.image ? (
+                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-[8px] font-bold text-white/40">N/A</span>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[13px] font-extrabold text-slate-900 truncate">{item.name}</p>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0" />
+                                <p className="text-[9px] text-indigo-600 font-bold uppercase tracking-wide">{item.type === 'rental' ? t('checkout.confirmed.rentalInProgress') : t('checkout.confirmed.purchaseInProgress')}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="col-span-2 text-center text-[12px] font-bold text-slate-700">{item.quantity}</div>
+                          <div className="col-span-2 text-right text-[11px] font-semibold text-slate-400">{formatPrice(item.price)}</div>
+                          <div className="col-span-2 text-right text-[13px] font-extrabold text-slate-900">{formatPrice(item.price * item.quantity)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Magic Link */}
+            <div className="bg-white rounded-[24px] p-6 flex items-start gap-6 border border-slate-100 group" style={{ boxShadow: '0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.04)' }}>
+              <div className="bg-indigo-500 p-3 rounded-xl text-white shadow-lg shadow-indigo-200 transition-transform group-hover:rotate-6 duration-300 shrink-0">
+                <svg fill="none" height="22" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24" width="22">
+                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                  <path d="M5 3v4" /><path d="M19 17v4" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-base font-extrabold text-slate-900 mb-1.5">
+                  {isNewCustomer ? t('checkout.confirmed.magicLink') : 'Merci de votre confiance'}
+                </h4>
+                <p className="text-[13px] text-slate-500 leading-relaxed mb-4">
+                  {isNewCustomer
+                    ? "Un espace réservé aux membres a été créé pour vous. Consultez votre email et n'oubliez pas de vérifier les spams pour activer votre accès exclusif."
+                    : 'Retrouvez vos commandes et suivez leur suivi dans votre espace membre.'}
+                </p>
+                <button
+                  onClick={async () => {
+                    const email = delivery.email;
+                    if (!email) { setMagicError('Aucune adresse email associée à cette commande.'); return; }
+                    setMagicSending(true);
+                    setMagicError('');
+                    try {
+                      const res = await fetch('/api/boutique/send-magic-link', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email }),
+                      });
+                      if (!res.ok) {
+                        const body = await res.json().catch(() => ({}));
+                        throw new Error(body?.error || 'Échec de l\'envoi');
+                      }
+                      setMagicSent(true);
+                    } catch (e: any) {
+                      setMagicError(e?.message || 'Erreur lors de l\'envoi');
+                    } finally {
+                      setMagicSending(false);
+                    }
+                  }}
+                  disabled={magicSending || magicSent}
+                  className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-[12px] font-bold flex items-center gap-2 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {magicSending ? (
+                    <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : magicSent ? (
+                    <Check size={14} />
+                  ) : (
+                    <svg fill="currentColor" height="14" viewBox="0 0 16 16" width="14">
+                      <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-.239-.756Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z" />
+                    </svg>
+                  )}
+                  {magicSending ? 'Envoi en cours…' : magicSent ? 'Email envoyé' : t('checkout.confirmed.checkEmail')}
+                </button>
+                {magicError && (
+                  <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-100 flex gap-2.5 items-start">
+                    <svg className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-xs text-amber-800 leading-relaxed whitespace-pre-line">{magicError}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* RIGHT COLUMN */}
+          <aside className="lg:col-span-5 space-y-4">
+            {/* Summary Card */}
+            <div className="rounded-[24px] p-6 text-white shadow-2xl shadow-indigo-500/20 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)' }}>
+              <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+              <div className="flex justify-between items-start mb-6 relative z-10">
+                <div className="bg-white/20 backdrop-blur-md p-3 rounded-xl ring-1 ring-white/30">
+                  <svg fill="currentColor" height="20" viewBox="0 0 16 16" width="20">
+                    <path d="M1.92.506a.5.5 0 0 1 .434.14L3 1.293l.646-.647a.5.5 0 0 1 .708 0L5 1.293l.646-.647a.5.5 0 0 1 .708 0L7 1.293l.646-.647a.5.5 0 0 1 .708 0L9 1.293l.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .801.13l.5 1A.5.5 0 0 1 15 2v12a.5.5 0 0 1-.053.224l-.5 1a.5.5 0 0 1-.8.13L13 14.707l-.646.647a.5.5 0 0 1-.708 0L11 14.707l-.646.647a.5.5 0 0 1-.708 0L9 14.707l-.646.647a.5.5 0 0 1-.708 0L7 14.707l-.646.647a.5.5 0 0 1-.708 0L5 14.707l-.646.647a.5.5 0 0 1-.708 0L3 14.707l-.646.647a.5.5 0 0 1-.801-.13l-.5-1A.5.5 0 0 1 1 14V2a.5.5 0 0 1 .053-.224l.5-1a.5.5 0 0 1 .367-.27ZM14 14V2H2v12h12Z" />
+                  </svg>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] font-bold text-white/70 uppercase tracking-[0.2em] mb-0.5">{t('checkout.confirmed.summaryId')}</p>
+                  <p className="text-[11px] font-extrabold tracking-tight">#{txId ? txId.slice(-8) : '...'}</p>
+                </div>
+              </div>
+              <div className="mb-6 relative z-10">
+                <p className="text-[11px] font-bold text-white/80 mb-1">{t('checkout.confirmed.totalPaid')}</p>
+                <h2 className="text-4xl font-[900] tracking-tighter">{formatPrice(total)}</h2>
+                <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{t('checkout.confirmed.vatIncluded')}</p>
+              </div>
+              <div className="space-y-3 mb-6 border-t border-white/20 pt-5 relative z-10">
+                {[
+                  [t('checkout.confirmed.subtotalHT'), formatPrice(subtotal)],
+                  ...(discount > 0 ? [[`Promo (${promo?.code})`, `-${formatPrice(discount)}`]] : []),
+                  [t('checkout.confirmed.vat'), formatPrice(Math.round(tva))],
+                ].map(([label, val]) => (
+                  <div key={label as string} className="flex justify-between items-center text-[13px]">
+                    <span className="text-white/70 font-medium">{label}</span>
+                    <span className="font-extrabold">{val}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Security Banner */}
+              <div className="bg-black/20 backdrop-blur-xl rounded-xl p-3.5 flex gap-3 ring-1 ring-white/10 relative z-10">
+                <div className="pt-0.5">
+                  <svg className="text-indigo-300" fill="currentColor" height="16" viewBox="0 0 16 16" width="16">
+                    <path d="M8 0c-.69 0-1.843.265-2.928.56-1.11.3-2.229.655-2.887.87a1.54 1.54 0 0 0-1.044 1.262c-.596 4.477.787 7.795 2.465 9.99a11.775 11.775 0 0 0 2.517 2.453c.386.273.744.482 1.048.625.28.132.581.24.829.24s.548-.108.829-.24a7.158 7.158 0 0 0 1.048-.625 11.777 11.777 0 0 0 2.517-2.453c1.678-2.195 2.961-5.513 2.365-9.99a1.541 1.541 0 0 0-1.044-1.263 62.467 62.467 0 0 0-2.887-.87C9.843.266 8.69 0 8 0zm0 5a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 8 5z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-white uppercase tracking-widest mb-0.5">{t('checkout.confirmed.security')}</p>
+                  <p className="text-[10px] text-white/60 leading-relaxed font-medium">{t('checkout.confirmed.securityDesc')}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              {mounted && pdfSettings && invoiceData ? (
+                <InvoiceButton data={invoiceData} pdfSettings={pdfSettings} className="w-full bg-slate-900 text-white py-4 rounded-[20px] text-[13px] font-bold flex items-center justify-center gap-3 hover:bg-black hover:shadow-2xl hover:shadow-slate-300 transition-all active:scale-[0.98]" />
+              ) : (
+                <button disabled className="w-full bg-slate-300 text-white py-4 rounded-[20px] text-[13px] font-bold flex items-center justify-center gap-3 cursor-not-allowed">
+                  <svg fill="currentColor" height="16" viewBox="0 0 16 16" width="16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z" />
+                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z" />
+                  </svg>
+                  {t('checkout.confirmed.downloadInvoice')}
+                </button>
+              )}
+              <button onClick={() => router.push('/boutique')} className="w-full bg-white text-slate-700 py-4 rounded-[20px] text-[13px] font-bold border border-slate-200 flex items-center justify-center gap-3 hover:bg-slate-50 transition-all active:scale-[0.98]">
+                <svg fill="currentColor" height="16" viewBox="0 0 16 16" width="16">
+                  <path d="M8 1a2 2 0 0 1 2 2v2H6V3a2 2 0 0 1 2-2zm3 4V3a3 3 0 1 0-6 0v2H2a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3zM2 6h12a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z" />
+                </svg>
+                {t('checkout.confirmed.backToShop')}
+              </button>
+            </div>
+          </aside>
+        </main>
+
+
       </div>
     );
   }
@@ -424,7 +723,7 @@ export default function CheckoutPage() {
             <section className="lg:col-span-7">
               <div className="bg-white rounded-2xl border border-gray-200/70 p-6 md:p-8">
                 <div className="text-center py-8 px-4 bg-amber-50 rounded-xl border border-amber-200">
-                  <p className="text-sm font-semibold text-amber-800 mb-1">PayPal non configuré</p>
+                  <p className="text-sm font-semibold text-amber-800 mb-1">{t('checkout.paypalNotConfigured')}</p>
                   <p className="text-xs text-amber-600">Ajoutez votre <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">NEXT_PUBLIC_PAYPAL_CLIENT_ID</code> dans le fichier <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">.env</code></p>
                 </div>
               </div>
@@ -445,7 +744,7 @@ export default function CheckoutPage() {
                     }`}
                   >
                     <CreditCard size={16} />
-                    Carte bancaire
+                    {t('checkout.cardPayment')}
                   </button>
                   <button
                     onClick={() => setPaymentMethod('paypal')}
@@ -456,7 +755,7 @@ export default function CheckoutPage() {
                     }`}
                   >
                     <Wallet size={16} />
-                    PayPal
+                    {t('checkout.paypal')}
                   </button>
                 </div>
 
@@ -475,8 +774,8 @@ export default function CheckoutPage() {
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">Adresse de livraison</p>
-                        <p className="text-[11px] text-gray-400">{isDeliveryComplete ? `${delivery.firstName} ${delivery.lastName}, ${delivery.addressLine1}, ${delivery.postcode} ${delivery.city}` : 'Requis pour la commande'}</p>
+                        <p className="text-sm font-semibold text-gray-900">{t('checkout.deliveryAddress')}</p>
+                        <p className="text-[11px] text-gray-400">{isDeliveryComplete ? `${delivery.firstName} ${delivery.lastName}, ${delivery.addressLine1}, ${delivery.postcode} ${delivery.city}` : t('checkout.requiredForOrder')}</p>
                       </div>
                     </div>
                     <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${deliveryOpen ? 'rotate-180' : ''}`} />
@@ -485,77 +784,132 @@ export default function CheckoutPage() {
                     <div className="px-4 pb-4 pt-1 border-t border-gray-100">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Prénom *</label>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.firstName')}</label>
                           <div className="relative">
-                            <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                             <input
                               type="text"
-                              placeholder="Jean"
+                              placeholder={t('checkout.firstNamePlaceholder')}
                               value={delivery.firstName}
-                              onChange={e => setDelivery(d => ({ ...d, firstName: e.target.value }))}
-                              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
+                              onChange={e => handleDeliveryChange('firstName', e.target.value)}
+                              onBlur={e => handleDeliveryBlur('firstName', e.target.value)}
+                              aria-invalid={fieldMeta('firstName', delivery.firstName).hasError}
+                              aria-describedby={fieldMeta('firstName', delivery.firstName).error ? 'err-firstName' : undefined}
+                              className={inputCls('firstName', delivery.firstName)}
                             />
+                          </div>
+                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
+                            {fieldMeta('firstName', delivery.firstName).error && (
+                              <p id="err-firstName" className="text-[10px] text-red-500 flex items-center gap-1">
+                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                                {deliveryErrors.firstName}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Nom *</label>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.lastName')}</label>
                           <div className="relative">
-                            <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                             <input
                               type="text"
-                              placeholder="Dupont"
+                              placeholder={t('checkout.lastNamePlaceholder')}
                               value={delivery.lastName}
-                              onChange={e => setDelivery(d => ({ ...d, lastName: e.target.value }))}
-                              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
+                              onChange={e => handleDeliveryChange('lastName', e.target.value)}
+                              onBlur={e => handleDeliveryBlur('lastName', e.target.value)}
+                              aria-invalid={fieldMeta('lastName', delivery.lastName).hasError}
+                              aria-describedby={fieldMeta('lastName', delivery.lastName).error ? 'err-lastName' : undefined}
+                              className={inputCls('lastName', delivery.lastName)}
                             />
+                          </div>
+                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
+                            {fieldMeta('lastName', delivery.lastName).error && (
+                              <p id="err-lastName" className="text-[10px] text-red-500 flex items-center gap-1">
+                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                                {deliveryErrors.lastName}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Email *</label>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.email')}</label>
                           <div className="relative">
-                            <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            <Mail size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                             <input
                               type="email"
-                              placeholder="jean@exemple.fr"
+                              placeholder={t('checkout.emailPlaceholder')}
                               value={delivery.email}
-                              onChange={e => setDelivery(d => ({ ...d, email: e.target.value }))}
-                              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
+                              onChange={e => handleDeliveryChange('email', e.target.value)}
+                              onBlur={e => handleDeliveryBlur('email', e.target.value)}
+                              aria-invalid={fieldMeta('email', delivery.email).hasError}
+                              aria-describedby={fieldMeta('email', delivery.email).error ? 'err-email' : undefined}
+                              className={inputCls('email', delivery.email)}
                             />
+                          </div>
+                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
+                            {fieldMeta('email', delivery.email).error && (
+                              <p id="err-email" className="text-[10px] text-red-500 flex items-center gap-1">
+                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                                {deliveryErrors.email}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Téléphone mobile *</label>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.mobilePhone')}</label>
                           <div className="relative">
-                            <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            <Phone size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                             <input
                               type="tel"
-                              placeholder="06 12 34 56 78"
+                              placeholder={t('checkout.phonePlaceholder')}
                               value={delivery.phone}
-                              onChange={e => setDelivery(d => ({ ...d, phone: e.target.value }))}
-                              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
+                              onChange={e => handleDeliveryChange('phone', e.target.value)}
+                              onBlur={e => handleDeliveryBlur('phone', e.target.value)}
+                              aria-invalid={fieldMeta('phone', delivery.phone).hasError}
+                              aria-describedby={fieldMeta('phone', delivery.phone).error ? 'err-phone' : undefined}
+                              className={inputCls('phone', delivery.phone)}
                             />
+                          </div>
+                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
+                            {fieldMeta('phone', delivery.phone).error && (
+                              <p id="err-phone" className="text-[10px] text-red-500 flex items-center gap-1">
+                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                                {deliveryErrors.phone}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="sm:col-span-2">
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Ligne d'adresse 1 *</label>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.addressLine1')}</label>
                           <div className="relative">
-                            <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            <MapPin size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                             <input
                               type="text"
-                              placeholder="123 Rue de l'Exemple"
+                              placeholder={t('checkout.addressLine1Placeholder')}
                               value={delivery.addressLine1}
-                              onChange={e => setDelivery(d => ({ ...d, addressLine1: e.target.value }))}
-                              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
+                              onChange={e => handleDeliveryChange('addressLine1', e.target.value)}
+                              onBlur={e => handleDeliveryBlur('addressLine1', e.target.value)}
+                              aria-invalid={fieldMeta('addressLine1', delivery.addressLine1).hasError}
+                              aria-describedby={fieldMeta('addressLine1', delivery.addressLine1).error ? 'err-addressLine1' : undefined}
+                              className={inputCls('addressLine1', delivery.addressLine1)}
                             />
+                          </div>
+                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
+                            {fieldMeta('addressLine1', delivery.addressLine1).error && (
+                              <p id="err-addressLine1" className="text-[10px] text-red-500 flex items-center gap-1">
+                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                                {deliveryErrors.addressLine1}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="sm:col-span-2">
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Ligne d'adresse 2</label>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.addressLine2')}</label>
                           <div className="relative">
-                            <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            <MapPin size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                             <input
                               type="text"
-                              placeholder="Appartement, Bâtiment, etc."
+                              placeholder={t('checkout.addressLine2Placeholder')}
                               value={delivery.addressLine2}
                               onChange={e => setDelivery(d => ({ ...d, addressLine2: e.target.value }))}
                               className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
@@ -563,24 +917,46 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                         <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Code postal *</label>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.postalCode')}</label>
                           <input
                             type="text"
-                            placeholder="75001"
+                            placeholder={t('checkout.postalCodePlaceholder')}
                             value={delivery.postcode}
-                            onChange={e => setDelivery(d => ({ ...d, postcode: e.target.value }))}
-                            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
+                            onChange={e => handleDeliveryChange('postcode', e.target.value)}
+                            onBlur={e => handleDeliveryBlur('postcode', e.target.value)}
+                            aria-invalid={fieldMeta('postcode', delivery.postcode).hasError}
+                            aria-describedby={fieldMeta('postcode', delivery.postcode).error ? 'err-postcode' : undefined}
+                            className={inputCls('postcode', delivery.postcode, false)}
                           />
+                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
+                            {fieldMeta('postcode', delivery.postcode).error && (
+                              <p id="err-postcode" className="text-[10px] text-red-500 flex items-center gap-1">
+                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                                {deliveryErrors.postcode}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Ville *</label>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.city')}</label>
                           <input
                             type="text"
-                            placeholder="Paris"
+                            placeholder={t('checkout.cityPlaceholder')}
                             value={delivery.city}
-                            onChange={e => setDelivery(d => ({ ...d, city: e.target.value }))}
-                            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
+                            onChange={e => handleDeliveryChange('city', e.target.value)}
+                            onBlur={e => handleDeliveryBlur('city', e.target.value)}
+                            aria-invalid={fieldMeta('city', delivery.city).hasError}
+                            aria-describedby={fieldMeta('city', delivery.city).error ? 'err-city' : undefined}
+                            className={inputCls('city', delivery.city, false)}
                           />
+                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
+                            {fieldMeta('city', delivery.city).error && (
+                              <p id="err-city" className="text-[10px] text-red-500 flex items-center gap-1">
+                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                                {deliveryErrors.city}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -621,7 +997,9 @@ export default function CheckoutPage() {
                         });
                         const capture = await res.json();
                         if (!res.ok) throw new Error(capture.error);
-                        if (capture.status === 'COMPLETED') handlePay();
+                        if (capture.status === 'COMPLETED') {
+                          handlePay(capture.isNewCustomer !== false);
+                        }
                         else alert('Statut inattendu: ' + capture.status);
                       } catch (err: any) {
                         console.error('CardFields error:', err);
@@ -638,8 +1016,8 @@ export default function CheckoutPage() {
                   ) : (
                     <div className="bg-gray-50/50 border border-dashed border-gray-200 rounded-xl p-6 text-center">
                       <MapPin size={24} className="mx-auto text-gray-300 mb-2" />
-                      <p className="text-sm font-semibold text-gray-500 mb-1">Complétez l'adresse de livraison</p>
-                      <p className="text-xs text-gray-400">Remplissez les champs ci-dessus pour payer avec PayPal.</p>
+                      <p className="text-sm font-semibold text-gray-500 mb-1">{t('checkout.completeDeliveryAddress')}</p>
+                      <p className="text-xs text-gray-400">{t('checkout.fillPaypalFields')}</p>
                     </div>
                   )
                 )}
@@ -648,7 +1026,7 @@ export default function CheckoutPage() {
               <div className="flex items-center justify-between px-4 mt-4">
                 <div className="flex items-center gap-2 text-gray-400">
                   <Lock size={14} />
-                  <span className="text-[11px] font-medium">Paiement 256-bit SSL sécurisé</span>
+                  <span className="text-[11px] font-medium">{t('checkout.securePayment')}</span>
                 </div>
                 <div className="flex items-center gap-3 text-gray-300">
                   <Shield size={20} />
@@ -658,7 +1036,7 @@ export default function CheckoutPage() {
 
             <aside className="lg:col-span-5">
               <div className="bg-white rounded-2xl border border-gray-200/70 p-6 md:p-8 sticky top-8">
-                <h3 className="text-lg font-bold text-gray-900 mb-6">Récapitulatif</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-6">{t('cart.summary')}</h3>
 
                 <div className="space-y-4 mb-6 max-h-[320px] overflow-y-auto">
                   {items.map((item) => (
@@ -674,7 +1052,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-semibold text-gray-900 truncate">{item.name}</h4>
-                        <p className="text-xs text-gray-400 mt-0.5">Qté: {item.quantity}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{t('checkout.qty', { quantity: String(item.quantity) })}</p>
                         <span className="text-sm font-bold text-gray-900">{formatPrice(item.price * item.quantity)}</span>
                       </div>
                     </div>
@@ -685,7 +1063,7 @@ export default function CheckoutPage() {
                   <div className="border-t border-gray-200/40 pt-4 pb-4 mb-4">
                     <div className="flex items-center gap-2 mb-2">
                       <MapPin size={13} className="text-emerald-500" />
-                      <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Adresse de livraison</span>
+                      <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">{t('checkout.deliveryAddress')}</span>
                     </div>
                     <div className="text-xs text-gray-700 leading-relaxed">
                       <p className="font-medium">{delivery.firstName} {delivery.lastName}</p>
@@ -714,17 +1092,17 @@ export default function CheckoutPage() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Code promo"
+                          placeholder={t('checkout.promoCode')}
                           value={promoInput}
                           onChange={e => setPromoInput(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') applyPromo(promoInput); }}
-                          className="flex-1 bg-gray-50 border border-gray-200/70 rounded-xl px-3 py-2 text-xs outline-none focus:border-gray-400 transition-colors"
+                          className="min-w-0 flex-1 bg-gray-50 border border-gray-200/70 rounded-xl px-3 py-2 text-xs outline-none focus:border-gray-400 transition-colors"
                         />
                         <button
                           onClick={() => applyPromo(promoInput)}
                           className="shrink-0 bg-gray-900 text-white px-3 py-2 rounded-xl text-[11px] font-semibold hover:bg-gray-800 transition-colors"
                         >
-                          Appliquer
+                          {t('cart.apply')}
                         </button>
                       </div>
                       {promoError && <p className="text-[11px] text-red-500 mt-1.5">{promoError}</p>}
@@ -734,40 +1112,40 @@ export default function CheckoutPage() {
 
                 <div className="border-t border-gray-200/40 pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Sous-total</span>
+                    <span className="text-gray-500">{t('cart.subtotal')}</span>
                     <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
                   </div>
                   {discount > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-emerald-600">Remise ({promo?.code})</span>
+                      <span className="text-emerald-600">{t('cart.discount')} ({promo?.code})</span>
                       <span className="font-semibold text-emerald-600">-{formatPrice(discount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Livraison Express</span>
-                    <span className="font-semibold text-emerald-600">Gratuite</span>
+                    <span className="text-gray-500">{t('cart.expressDelivery')}</span>
+                    <span className="font-semibold text-emerald-600">{t('cart.free')}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">TVA (20%)</span>
+                    <span className="text-gray-500">{t('cart.vat')}</span>
                     <span className="font-semibold text-gray-900">{formatPrice(Math.round(tva))}</span>
                   </div>
                 </div>
 
                 <div className="border-t border-gray-900 mt-4 pt-4 flex justify-between items-end mb-6">
                   <div>
-                    <p className="text-[11px] font-semibold text-gray-500 uppercase">Total à payer</p>
+                    <p className="text-[11px] font-semibold text-gray-500 uppercase">{t('cart.totalToPay')}</p>
                     <p className="text-xl font-bold text-gray-900">{formatPrice(total)}</p>
                   </div>
                 </div>
 
                 {paymentMethod === 'card' && (
                   <p className="text-center text-[11px] text-gray-400 mt-2 mb-4">
-                    Remplissez vos coordonnées bancaires ci-dessus pour payer
+                    {t('checkout.fillBankDetails')}
                   </p>
                 )}
 
                 <p className="text-center text-[11px] text-gray-400 mt-4 px-4">
-                  En cliquant sur payer, vous acceptez nos conditions générales de vente et notre politique de confidentialité.
+                  {t('checkout.acceptTerms')}
                 </p>
 
                 <div className="mt-5 flex items-center justify-center gap-5 border-t border-gray-100 pt-5">

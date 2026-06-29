@@ -2808,6 +2808,7 @@ const ProduitPage = ({
                   </div>
 
                   {/* Produits complémentaires (upsell) */}
+                  {activeSpace === 'boutique' && (
                   <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 shadow-[0_0_15px_rgba(0,0,0,0.15)]">
                     <div className="text-xs font-black text-white uppercase tracking-tight flex items-center gap-1.5 mb-3">
                       <ShoppingBag className="w-4 h-4 text-emerald-400" />
@@ -2906,6 +2907,7 @@ const ProduitPage = ({
                       </AnimatePresence>
                     </div>
                   </div>
+                  )}
 
                   {/* Surface Minimum */}
                   <div className="space-y-2">
@@ -4417,7 +4419,9 @@ export default function ProductManagementClient() {
           const configSnap = await getDocs(collection(db, 'products'));
           for (const d of configSnap.docs) {
             const data = d.data();
-            await addDoc(collection(db, 'boutique_products'), {
+            // Use setDoc with the original document ID to preserve cross-collection references
+            // (e.g. upsellFor IDs must match between collections)
+            await setDoc(doc(db, 'boutique_products', d.id), {
               ...data,
               price: typeof data.price === 'number' ? data.price : parseFloat(String(data.salePricePerSqM || data.price || 0).replace(/[^0-9.,]/g, '').replace(',', '.')) || 0,
             });

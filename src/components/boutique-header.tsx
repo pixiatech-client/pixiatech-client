@@ -81,10 +81,13 @@ export function BoutiqueHeader() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: memberEmail.trim() }),
       });
-      if (!res.ok) throw new Error('Erreur');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || 'Une erreur est survenue.');
+      }
       setMemberMagicSent(true);
-    } catch {
-      setMemberError('Une erreur est survenue.');
+    } catch (e: any) {
+      setMemberError(e?.message || 'Une erreur est survenue.');
     }
     setMemberLoading(false);
   };
@@ -112,68 +115,97 @@ export function BoutiqueHeader() {
   const truncatedEmail = (session.email || '').length > 20 ? (session.email || '').slice(0, 18) + '...' : (session.email || '');
 
   return (
-    <header className="fixed top-0 z-30 w-full h-14 bg-white/80 backdrop-blur-xl border-b border-gray-100/80 shadow-sm">
-      <div className="max-w-7xl mx-auto pl-6 md:pl-10 lg:pl-14 pr-[20px] h-full flex items-center">
-        {/* Left: navigation buttons */}
-        <nav className="flex items-center gap-1.5">
+    <header className="fixed top-0 z-30 w-full pt-2">
+      <nav className="max-w-7xl mx-4 lg:mx-auto bg-black rounded-full px-6 lg:px-8 py-2.5 flex items-center justify-between shadow-2xl">
+        {/* Logo */}
+        <div className="flex-shrink-0">
+          <a
+            href="https://pixiatech.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white font-tech text-2xl lg:text-3xl tracking-widest hover:opacity-80 transition-opacity"
+          >
+            PIXIATECH
+          </a>
+        </div>
+
+        {/* Nav links - hidden on small screens */}
+        <div className="hidden md:flex items-center space-x-8">
           <Link
             href="/"
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200",
-              pathname === '/' ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+              "font-medium nav-link text-sm",
+              pathname === '/' ? 'text-[#007bff]' : 'text-white'
             )}
           >
-            <Home size={14} />
-            {t('header.home')}
+            Accueil
           </Link>
           <Link
             href="/boutique"
-            className={cn("ml-2.5",
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200",
-              isBoutiquePage ? 'text-gray-900 bg-gray-100' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+            className={cn(
+              "font-medium nav-link text-sm",
+              isBoutiquePage ? 'text-[#007bff]' : 'text-white'
             )}
           >
-            <Store size={14} />
-            {t('header.shop')}
+            Boutique
           </Link>
-        </nav>
+          <a
+            href="https://pixiatech.com/contact"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium nav-link text-sm text-white hover:opacity-80 transition-opacity"
+          >
+            Contactez-Nous
+          </a>
+        </div>
 
-        {/* Spacer: pushes right buttons to the edge + 10px min gap */}
-        <div className="flex-1 min-w-[10px]" />
+        {/* Right side */}
+        <div className="flex items-center space-x-4 lg:space-x-6">
+          {/* Admin shield */}
+          <a
+            href="/admin/login"
+            className="text-white/70 hover:text-white nav-link"
+            aria-label="Administration"
+            title="Administration"
+          >
+            <Shield size={18} />
+          </a>
 
-        {/* Right: Lang + Auth + Cart */}
-        <div className="flex items-center gap-2.5">
           {/* Language toggle */}
           <button
             onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')}
-            className="flex items-center justify-center w-8 h-8 rounded text-[11px] font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
+            className="text-white font-medium text-xs tracking-wider nav-link"
           >
-            {t('langName').toUpperCase()}
+            {locale === 'fr' ? 'FR' : 'EN'}
           </button>
 
-          {/* Admin link */}
+          {/* Cart */}
           <Link
-            href="/admin/login"
-            className="flex items-center justify-center w-8 h-8 rounded text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
-            aria-label={t('header.admin')}
-            title={t('header.admin')}
+            href="/boutique/panier"
+            className="relative text-white/70 hover:text-white nav-link"
+            aria-label="Panier"
           >
-            <Shield size={14} />
+            <ShoppingBag size={18} />
+            {itemCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-white text-black text-[9px] font-bold min-w-[14px] h-[14px] flex items-center justify-center rounded-full">
+                {itemCount}
+              </span>
+            )}
           </Link>
 
-          {/* Auth buttons */}
+          {/* Auth */}
           {session.loggedIn ? (
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-white/10 hover:bg-white/20 transition-all"
               >
                 <User size={14} />
-                <span className="max-w-[100px] truncate">{truncatedEmail}</span>
+                <span className="max-w-[100px] truncate hidden sm:inline">{truncatedEmail}</span>
                 <ChevronDown size={12} className={cn("transition-transform", profileOpen && "rotate-180")} />
               </button>
               {profileOpen && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
                   <Link
                     href="/mon-compte/commandes"
                     onClick={() => setProfileOpen(false)}
@@ -198,10 +230,13 @@ export function BoutiqueHeader() {
             <div className="relative" ref={resellerRef}>
               <button
                 onClick={() => setCreateOpen(!createOpen)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-all duration-200"
+                className="text-white font-semibold py-2 px-6 text-sm min-w-[140px] focus:outline-none"
+                style={{
+                  background: 'linear-gradient(90deg, #7c3aed 0%, #ef4444 50%, #f97316 100%)',
+                  clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)',
+                }}
               >
-                <User size={14} />
-                {t('header.memberArea')}
+                Espace Membre
               </button>
               {createOpen && (
                 <div className="absolute right-0 top-full mt-2 w-[calc(100vw-32px)] sm:w-[480px] bg-white rounded-2xl shadow-2xl border border-gray-100/80 z-50 overflow-hidden" ref={dropdownRef}>
@@ -255,12 +290,11 @@ export function BoutiqueHeader() {
                             </div>
                           </div>
 
-                          {/* Email field */}
                           <div className="relative mb-4">
                             <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                             <input
                               type="email"
-                                  placeholder={t('header.emailPlaceholder')}
+                              placeholder={t('header.emailPlaceholder')}
                               value={memberEmail}
                               onChange={e => setMemberEmail(e.target.value)}
                               className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-gray-50/30 placeholder:text-gray-300"
@@ -268,16 +302,15 @@ export function BoutiqueHeader() {
                           </div>
 
                           {memberError && (
-                            <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-red-50 border border-red-100 rounded-lg">
-                              <svg className="w-3.5 h-3.5 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                            <div className="flex items-start gap-2.5 px-3 py-2.5 mb-4 bg-amber-50 border border-amber-100 rounded-xl">
+                              <svg className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
-                              <p className="text-[11px] text-red-600 font-medium">{memberError}</p>
+                              <p className="text-xs text-amber-700 leading-relaxed whitespace-pre-line">{memberError}</p>
                             </div>
                           )}
 
                           <div className="grid grid-cols-2 gap-3">
-                            {/* Password method */}
                             <form onSubmit={handlePasswordLogin} className="group relative bg-white border border-gray-100 hover:border-gray-200 rounded-xl p-4 transition-all duration-200 hover:shadow-sm">
                               <div className="flex flex-col h-full">
                                 <div className="flex items-center gap-2 mb-3">
@@ -311,7 +344,6 @@ export function BoutiqueHeader() {
                               </div>
                             </form>
 
-                            {/* Magic link method */}
                             <form onSubmit={handleMagicLink} className="group relative bg-white border border-gray-100 hover:border-gray-200 rounded-xl p-4 transition-all duration-200 hover:shadow-sm">
                               <div className="flex flex-col h-full">
                                 <div className="flex items-center gap-2 mb-3">
@@ -389,7 +421,7 @@ export function BoutiqueHeader() {
                                 <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                                 <input
                                   type="email"
-                              placeholder={t('header.emailPlaceholder')}
+                                  placeholder={t('header.emailPlaceholder')}
                                   value={resellerEmail}
                                   onChange={e => setResellerEmail(e.target.value)}
                                   required
@@ -427,24 +459,18 @@ export function BoutiqueHeader() {
                   )}
                 </div>
               )}
-             </div>
+            </div>
           )}
 
-          {/* Cart */}
-          <Link
-            href="/boutique/panier"
-            className="relative flex items-center justify-center w-8 h-8 rounded text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200"
-            aria-label={t('header.cart')}
+          {/* Demo badge */}
+          <a
+            href="/boutique/paiement?demo=1"
+            className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all"
           >
-            <ShoppingBag size={16} />
-            {itemCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-gray-900 text-white text-[9px] font-bold min-w-[14px] h-[14px] flex items-center justify-center rounded-full">
-                {itemCount}
-              </span>
-            )}
-          </Link>
+            Demo
+          </a>
         </div>
-      </div>
+      </nav>
     </header>
   );
 }

@@ -21,15 +21,19 @@ export async function getPayPalSettings(): Promise<PayPalSettings> {
       const data = docSnap.data() || {};
       return {
         ...DEFAULT_SETTINGS,
-        clientId: data.clientId || '',
-        clientSecret: data.clientSecret || '',
+        clientId: data.clientId || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
+        clientSecret: data.clientSecret || process.env.PAYPAL_CLIENT_SECRET || '',
         environment: data.environment || 'sandbox',
       };
     }
   } catch (error) {
     console.error('Error fetching PayPal settings from Firestore:', error);
   }
-  return { ...DEFAULT_SETTINGS };
+  return {
+    ...DEFAULT_SETTINGS,
+    clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
+    clientSecret: process.env.PAYPAL_CLIENT_SECRET || '',
+  };
 }
 
 export async function updatePayPalSettings(data: Partial<PayPalSettings>) {

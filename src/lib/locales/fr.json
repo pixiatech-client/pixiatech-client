@@ -2179,7 +2179,8 @@
         "addPromoCode": "Ajouter un code promotionnel",
         "promoPlaceholder": "Code promo",
         "apply": "Appliquer",
-        "completeYourOrder": "Complétez votre installation"
+        "completeYourOrder": "Complétez votre installation",
+        "discount": "Remise"
     },
     "checkout": {
         "paypalLoadError": "Erreur de chargement PayPal",
@@ -2234,7 +2235,40 @@
         "free": "Gratuite",
         "fillBankDetails": "Remplissez vos coordonnées bancaires ci-dessus pour payer",
         "acceptTerms": "En cliquant sur payer, vous acceptez nos conditions générales de vente.",
-        "promoCode": "Code promo"
+        "promoCode": "Code promo",
+        "confirmed": {
+            "paymentSuccess": "Paiement réussi",
+            "memberCreated": "Félicitations. Un espace membre a été créé pour vous automatiquement au sein de notre plateforme héritage.",
+            "transactionId": "ID TRANSACTION",
+            "paidVia": "Payé via {method}",
+            "billingInfo": "Informations",
+            "client": "CLIENT",
+            "email": "EMAIL",
+            "address": "ADRESSE",
+            "payment": "Paiement",
+            "orderNo": "N° Commande",
+            "method": "Méthode",
+            "currency": "Devise",
+            "items": "Articles",
+            "product": "PRODUIT",
+            "qty": "QTÉ",
+            "unit": "UNITÉ",
+            "total": "TOTAL",
+            "purchaseInProgress": "Achat — En cours",
+            "rentalInProgress": "Location — En cours",
+            "magicLink": "Lien Magique",
+            "magicLinkDesc": "Un espace réservé aux membres a été créé pour vous. Consultez votre email et n'oubliez pas de vérifier les spams pour activer votre accès exclusif.",
+            "checkEmail": "Vérifier mes emails",
+            "summaryId": "ID RÉSUMÉ",
+            "totalPaid": "Montant total réglé",
+            "vatIncluded": "TVA incluse (20%)",
+            "subtotalHT": "Sous-total HT",
+            "vat": "TVA (20%)",
+            "security": "Sécurité Bancaire",
+            "securityDesc": "Chiffré en AES-256. Certifié PCI-DSS Niveau 1.",
+            "downloadInvoice": "Télécharger la facture",
+            "backToShop": "Retour à la boutique"
+        }
     },
     "product": {
         "addedToCart": "{name} ajouté au panier",

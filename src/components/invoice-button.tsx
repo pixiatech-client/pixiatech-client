@@ -6,6 +6,13 @@ import html2canvas from 'html2canvas';
 import { OrderInvoicePDF } from './order-invoice-pdf';
 import type { PdfSettings } from '@/lib/types';
 
+interface InvoiceProduct {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
 interface InvoiceData {
   orderRef: string;
   customerName: string;
@@ -13,9 +20,9 @@ interface InvoiceData {
   customerAddress?: string;
   customerPostcode?: string;
   customerCity?: string;
-  productName: string;
-  quantity: number;
-  unitPrice: number;
+  productName?: string;
+  quantity?: number;
+  unitPrice?: number;
   subtotal: number;
   vat: number;
   amountPaid: number;
@@ -23,9 +30,10 @@ interface InvoiceData {
   type: 'sale' | 'rental';
   rentalStartDate?: string;
   rentalEndDate?: string;
+  products?: InvoiceProduct[];
 }
 
-export function InvoiceButton({ data, pdfSettings }: { data: InvoiceData; pdfSettings?: PdfSettings }) {
+export function InvoiceButton({ data, pdfSettings, className }: { data: InvoiceData; pdfSettings?: PdfSettings; className?: string }) {
   const [generating, setGenerating] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -137,14 +145,23 @@ export function InvoiceButton({ data, pdfSettings }: { data: InvoiceData; pdfSet
         doc.line(margin, y, pageW - margin, y);
         y += 6;
 
+        const productList = data.products && data.products.length > 0 ? data.products : [{
+          name: data.productName || 'Produit',
+          quantity: data.quantity || 1,
+          unitPrice: data.unitPrice || 0,
+          lineTotal: data.subtotal,
+        }];
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         doc.setTextColor('#000');
-        doc.text(data.productName, col1, y, { maxWidth: col2 - col1 - 5 });
-        doc.text(String(data.quantity), col2, y, { align: 'right' });
-        doc.text(`${data.unitPrice.toFixed(2)} €`, col3, y, { align: 'right' });
-        doc.text(`${data.subtotal.toFixed(2)} €`, col4, y, { align: 'right' });
-        y += 10;
+        for (const p of productList) {
+          doc.text(p.name, col1, y, { maxWidth: col2 - col1 - 5 });
+          doc.text(String(p.quantity), col2, y, { align: 'right' });
+          doc.text(`${p.unitPrice.toFixed(2)} €`, col3, y, { align: 'right' });
+          doc.text(`${p.lineTotal.toFixed(2)} €`, col4, y, { align: 'right' });
+          y += 8;
+        }
+        y += 2;
 
         doc.line(margin, y, pageW - margin, y);
         y += 6;
@@ -209,10 +226,10 @@ export function InvoiceButton({ data, pdfSettings }: { data: InvoiceData; pdfSet
             customerAddress={data.customerAddress || ''}
             customerPostcode={data.customerPostcode}
             customerCity={data.customerCity}
-            products={[{
-              name: data.productName,
-              quantity: data.quantity,
-              unitPrice: data.unitPrice,
+            products={data.products && data.products.length > 0 ? data.products : [{
+              name: data.productName || 'Produit',
+              quantity: data.quantity || 1,
+              unitPrice: data.unitPrice || 0,
               lineTotal: data.subtotal,
             }]}
             subtotal={data.subtotal}
@@ -225,7 +242,7 @@ export function InvoiceButton({ data, pdfSettings }: { data: InvoiceData; pdfSet
       <button
         onClick={generateInvoice}
         disabled={generating}
-        className="w-full sm:w-auto px-6 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+        className={className || "w-full sm:w-auto px-6 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
