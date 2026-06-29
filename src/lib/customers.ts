@@ -31,17 +31,19 @@ export async function updateCustomer(id: string, data: Partial<Customer>) {
   await adminDb.collection(COLLECTION).doc(id).update(data);
 }
 
-export async function upsertCustomer(email: string, displayName: string): Promise<{ id: string; isNew: boolean }> {
+export async function upsertCustomer(email: string, displayName: string, phone?: string): Promise<{ id: string; isNew: boolean }> {
   const existing = await findCustomerByEmail(email);
   const now = new Date().toISOString();
   if (existing) {
-    await updateCustomer(existing.id!, { lastLoginAt: now });
+    const updateData: Partial<Customer> = { lastLoginAt: now };
+    if (phone) updateData.phone = phone;
+    await updateCustomer(existing.id!, updateData);
     return { id: existing.id!, isNew: false };
   }
   const id = await createCustomer({
     email,
     displayName,
-    phone: '',
+    phone: phone || '',
     createdAt: now,
     lastLoginAt: now,
     status: 'active',

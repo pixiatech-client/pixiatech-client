@@ -42,9 +42,43 @@ export async function GET() {
       return NextResponse.json({ valid: false, reason: 'user_not_found' });
     }
 
-    const storedToken = userDoc.data()?.sessionToken;
-    if (storedToken && storedToken !== sessionTokenCookie) {
-      return NextResponse.json({ valid: false, reason: 'session_mismatch', uid, sessionCreatedAt: userDoc.data()?.sessionCreatedAt ?? null });
+    const userData = userDoc.data();
+    const storedToken = userData?.sessionToken;
+    const storedCreatedAt = userData?.sessionCreatedAt ?? null;
+
+    // Parse cookieToken and cookieCreatedAt from compound cookie "uuid:timestamp"
+    let cookieToken = sessionTokenCookie;
+    let cookieCreatedAt: number | null = null;
+    if (sessionTokenCookie && sessionTokenCookie.includes(':')) {
+      const colonIdx = sessionTokenCookie.lastIndexOf(':');
+      cookieToken = sessionTokenCookie.substring(0, colonIdx);
+      const tsStr = sessionTokenCookie.substring(colonIdx + 1);
+      const parsed = parseInt(tsStr, 10);
+      if (!isNaN(parsed)) {
+        cookieCreatedAt = parsed;
+      }
+    }
+
+    if (storedCreatedAt !== null && cookieCreatedAt !== null) {
+      // If Firestore has a NEWER sessionCreatedAt, the session was taken over
+      if (storedCreatedAt > cookieCreatedAt) {
+        return NextResponse.json({ 
+          valid: false, 
+          reason: 'session_mismatch', 
+          uid, 
+          sessionCreatedAt: storedCreatedAt 
+        });
+      }
+    } else {
+      // Fallback: opaque token comparison for sessions created before the timestamp format
+      if (storedToken && storedToken !== cookieToken) {
+        return NextResponse.json({ 
+          valid: false, 
+          reason: 'session_mismatch', 
+          uid, 
+          sessionCreatedAt: storedCreatedAt 
+        });
+      }
     }
 
     return NextResponse.json({ valid: true, uid });

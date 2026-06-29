@@ -35,6 +35,7 @@ function ConfettiEffect() {
 
 function PayPalButtonGroup({ total, handlePay, items, delivery }: { total: number; handlePay: () => void; items: CartItem[]; delivery: Record<string, string> }) {
   const [{ isResolved, isRejected }] = usePayPalScriptReducer();
+  const [error, setError] = useState<string | null>(null);
 
   if (isRejected) {
     return (
@@ -104,17 +105,23 @@ function PayPalButtonGroup({ total, handlePay, items, delivery }: { total: numbe
             if (capture.status === 'COMPLETED') {
               handlePay();
             } else {
-              alert('Statut inattendu: ' + capture.status);
+              setError('Statut inattendu: ' + capture.status);
             }
           } catch (err: any) {
             console.error('PayPal error:', err);
-            alert('Erreur PayPal: ' + err.message);
+            setError('Erreur PayPal: ' + err.message);
           }
         }}
         onError={(err) => {
           console.error('PayPal error:', err);
+          setError('Erreur de paiement PayPal. Veuillez réessayer.');
         }}
       />
+      {error && (
+        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          {error}
+        </div>
+      )}
     </div>
   );
 }
@@ -152,6 +159,7 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete }: 
   const { cardFieldsForm } = usePayPalCardFields();
   const [ready, setReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [cardError, setCardError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!cardFieldsForm) { setReady(false); return; }
@@ -162,11 +170,12 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete }: 
   const handleCardSubmit = async () => {
     if (!cardFieldsForm) return;
     setSubmitting(true);
+    setCardError(null);
     try {
       await cardFieldsForm.submit();
     } catch (err: any) {
       console.error('CardFields submit error:', err);
-      alert('Erreur de paiement: ' + (err.message || 'Vérifiez vos informations bancaires'));
+      setCardError(err.message || 'Vérifiez vos informations bancaires');
     } finally {
       setSubmitting(false);
     }
@@ -234,6 +243,11 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete }: 
         )}
         {submitting ? 'Paiement en cours…' : `Payer ${formatPrice(total)}`}
       </button>
+      {cardError && (
+        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          {cardError}
+        </div>
+      )}
     </div>
   );
 }

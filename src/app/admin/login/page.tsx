@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import {
@@ -21,7 +21,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 
-import { createSession, registerUser, handleGoogleSignIn as googleSignInAction, updateGoogleUserProfile } from '@/app/admin/actions';
+import { loginAndRedirect, registerUser, handleGoogleSignIn as googleSignInAction, updateGoogleUserProfile } from '@/app/admin/actions';
 import { useAuth } from '@/firebase';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminT } from '@/hooks/useAdminT';
@@ -47,11 +47,12 @@ function getFirebaseErrorMessage(error: any, fallback: string, t: (s: string) =>
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const auth = useAuth();
   const { t } = useAdminT();
 
   const [authMode, setAuthMode] = useState<AuthMode>('login');
-  const [isSigningOut, setIsSigningOut] = useState(true);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -80,8 +81,16 @@ export default function LoginPage() {
   const [isSavingGoogleProfile, setIsSavingGoogleProfile] = useState(false);
 
   useEffect(() => {
+    const urlError = searchParams.get('error');
+    if (urlError) {
+      setLoginError(decodeURIComponent(urlError));
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    console.log('[Login] Mounted, auth=', !!auth, 'sessionCookie=', document.cookie.includes('session='));
     if (auth) {
-      console.log('[Login] Page ready (auth available)');
+      console.log('[Login] auth available');
     }
     setIsSigningOut(false);
 
@@ -117,35 +126,26 @@ export default function LoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
 
-      const { checkUserStatus } = await import('@/app/admin/actions');
+      const actionsModule = await import('@/app/admin/actions');
+      const { checkUserStatus } = actionsModule;
       const statusResult = await checkUserStatus(userCredential.user.uid);
 
       if (!statusResult.success) {
-        console.warn('[Login] checkUserStatus returned failure:', statusResult.error);
         await signOut(auth);
         throw new Error(statusResult.error || t('Account not found.'));
       }
 
       if (statusResult.status === 'pending') {
-        console.warn('[Login] Account pending approval');
         await signOut(auth);
         throw new Error(t('Your account is pending approval by an administrator.'));
       }
 
       if (statusResult.status === 'suspended') {
-        console.warn('[Login] Account suspended');
         await signOut(auth);
         throw new Error(t('Your account has been suspended.'));
       }
 
       const idToken = await userCredential.user.getIdToken();
-      const sessionResult = await createSession(idToken);
-
-      if (!sessionResult.success) {
-        console.error('[Login] createSession failed:', sessionResult.error);
-        throw new Error(sessionResult.error || t('Session creation failed.'));
-      }
-
 
       if (rememberMe) {
         localStorage.setItem('remember-email', loginEmail);
@@ -153,10 +153,15 @@ export default function LoginPage() {
         localStorage.removeItem('remember-email');
       }
 
-      window.location.href = '/admin';
+      const loginResult = await loginAndRedirect(idToken);
+      if ('redirect' in loginResult) {
+        router.push('/admin');
+      } else {
+        throw new Error(loginResult.error || t('Session creation failed.'));
+      }
     } catch (error: any) {
-      console.error('[Login] handleLogin Error:', error);
-      setLoginError(getFirebaseErrorMessage(error, error.message || t('An error occurred. Please try again.'), t));
+      const errorMessage = getFirebaseErrorMessage(error, error.message || t('An error occurred. Please try again.'), t);
+      setLoginError(errorMessage);
     } finally {
       setIsLoggingIn(false);
     }
@@ -243,11 +248,12 @@ export default function LoginPage() {
       }
 
       if (result.status === 'approved') {
-        const sessionResult = await createSession(idToken);
-        if (!sessionResult.success) {
-throw new Error(sessionResult.error || t('Session creation failed.'));
+        const loginResult = await loginAndRedirect(idToken);
+        if ('redirect' in loginResult) {
+          router.push('/admin');
+        } else {
+          throw new Error(loginResult.error || t('Session creation failed.'));
         }
-        window.location.href = '/admin';
       } else {
         setGoogleUser(result.userData);
         setGoogleDisplayName(result.userData?.displayName || userCredential.user.displayName || '');

@@ -3,6 +3,15 @@ import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const sessionCookie = request.cookies.get('session')?.value;
+  const clientSession = request.cookies.get('client_session')?.value;
+  console.log('[Middleware] path=', pathname, 'session=', !!sessionCookie, 'client_session=', !!clientSession);
+
+  // Sanitize base URL to avoid 0.0.0.0 redirects
+  let requestUrl = request.url;
+  if (requestUrl.includes('://0.0.0.0')) {
+    requestUrl = requestUrl.replace('://0.0.0.0', '://localhost');
+  }
 
   // Public pages: cache on CDN
   const publicPages = ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify'];
@@ -13,35 +22,35 @@ export async function middleware(request: NextRequest) {
   }
 
   // Client espace routes: check client_session cookie
-  const clientLoginUrl = new URL('/mon-compte/connexion', request.url);
+  const clientLoginUrl = new URL('/mon-compte/connexion', requestUrl);
   const isClientAuthPage = pathname === '/mon-compte/connexion' || pathname.startsWith('/mon-compte/valider');
   const isClientRoute = pathname.startsWith('/mon-compte/');
 
   if (isClientRoute && !isClientAuthPage) {
-    const clientSession = request.cookies.get('client_session')?.value;
     if (!clientSession) {
       return NextResponse.redirect(clientLoginUrl);
     }
   }
 
   // Admin routes: session check
-  const sessionCookie = request.cookies.get('session')?.value;
-  const loginUrl = new URL('/admin/login', request.url);
-  const adminUrl = new URL('/admin', request.url);
+  const loginUrl = new URL('/admin/login', requestUrl);
+  const adminUrl = new URL('/admin', requestUrl);
   const isAuthPage = pathname.startsWith('/admin/login') || pathname.startsWith('/admin/register');
   const isApiRoute = pathname.startsWith('/api/');
 
   if (!sessionCookie && !isAuthPage && !isApiRoute && pathname.startsWith('/admin')) {
+    console.log('[Middleware] redirect to login (no session)');
     return NextResponse.redirect(loginUrl);
   }
 
   if (sessionCookie && isAuthPage) {
+    console.log('[Middleware] redirect to admin (has session on auth page)');
     return NextResponse.redirect(adminUrl);
   }
 
   if (sessionCookie && pathname.startsWith('/admin')) {
     try {
-      const verifyUrl = new URL('/api/verify-session', request.url);
+      const verifyUrl = new URL('/api/verify-session', requestUrl);
       const verifyRes = await fetch(verifyUrl, {
         headers: { cookie: request.headers.get('cookie') || '' },
       });

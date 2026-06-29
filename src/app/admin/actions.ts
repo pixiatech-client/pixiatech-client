@@ -158,6 +158,16 @@ export async function createSession(idToken: string) {
   }
 }
 
+export async function loginAndRedirect(idToken: string) {
+  const result = await createSession(idToken);
+  if (result.success) {
+    console.log('[loginAndRedirect] Session created, returning redirect');
+    return { redirect: '/admin' as const };
+  }
+  console.log('[loginAndRedirect] Session creation failed:', result.error);
+  return { error: result.error || 'Session creation failed.' };
+}
+
 export async function checkUserStatus(uid: string) {
   console.log('[checkUserStatus Action] Verifying status for UID:', uid);
   const { adminDb } = getFirebaseAdmin();
