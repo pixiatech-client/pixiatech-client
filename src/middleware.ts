@@ -7,7 +7,13 @@ export async function middleware(request: NextRequest) {
   const clientSession = request.cookies.get('client_session')?.value;
   console.log('[Middleware] path=', pathname, 'session=', !!sessionCookie, 'client_session=', !!clientSession);
 
-  // Sanitize base URL to avoid 0.0.0.0 redirects
+  // Resolve public base URL — Cloud Run exposes 0.0.0.0:8080 internally;
+  // x-forwarded-host / x-forwarded-proto carry the real public domain.
+  const fwdHost = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? request.nextUrl.host;
+  const fwdProto = request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol.replace(':', '');
+  const baseUrl = `${fwdProto}://${fwdHost}`;
+
+  // For internal API fetches, fall back to localhost if still 0.0.0.0
   let requestUrl = request.url;
   if (requestUrl.includes('://0.0.0.0')) {
     requestUrl = requestUrl.replace('://0.0.0.0', '://localhost');
@@ -22,7 +28,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Client espace routes: check client_session cookie
-  const clientLoginUrl = new URL('/mon-compte/connexion', request.nextUrl);
+  const clientLoginUrl = `${baseUrl}/mon-compte/connexion`;
   const isClientAuthPage = pathname === '/mon-compte/connexion' || pathname.startsWith('/mon-compte/valider');
   const isClientRoute = pathname.startsWith('/mon-compte/');
 
@@ -33,8 +39,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Admin routes: session check
-  const loginUrl = new URL('/admin/login', request.nextUrl);
-  const adminUrl = new URL('/admin', request.nextUrl);
+  const loginUrl = `${baseUrl}/admin/login`;
+  const adminUrl = `${baseUrl}/admin`;
   const isAuthPage = pathname.startsWith('/admin/login') || pathname.startsWith('/admin/register');
   const isApiRoute = pathname.startsWith('/api/');
 
