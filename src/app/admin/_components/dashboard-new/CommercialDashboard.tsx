@@ -36,7 +36,7 @@ import { useI18n } from '@/lib/i18n';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useAdminT } from '@/hooks/useAdminT';
-import { cn } from '@/lib/utils';
+import { cn, normalizeSearchText } from '@/lib/utils';
 
 const formatDate = (date: Date | null | undefined, locale: string) => {
   if (!date) return '';
@@ -160,11 +160,11 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
 
   const filteredEstimations = useMemo(() => {
     if (!searchQuery.trim()) return recentEstimations;
-    const q = searchQuery.toLowerCase();
+    const q = normalizeSearchText(searchQuery);
     return recentEstimations.filter(e =>
-      e.id.toLowerCase().includes(q) ||
-      e.client.toLowerCase().includes(q) ||
-      e.statusLabel.toLowerCase().includes(q)
+      normalizeSearchText(e.id).includes(q) ||
+      normalizeSearchText(e.client).includes(q) ||
+      normalizeSearchText(e.statusLabel).includes(q)
     );
   }, [recentEstimations, searchQuery]);
 

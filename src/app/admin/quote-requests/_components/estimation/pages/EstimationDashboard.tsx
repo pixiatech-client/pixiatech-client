@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { cn, normalizeSearchText } from '@/lib/utils';
 import { TabNavigation, SummaryCard } from '../components/Layout';
 import dynamic from 'next/dynamic';
 import { SearchHeader, EstimationTable } from '../components/Table';
@@ -147,6 +148,7 @@ interface EstimationDashboardProps {
 
 
 export const EstimationDashboard: React.FC<EstimationDashboardProps> = ({ userRole = 'admin', userId, userName }) => {
+  const router = useRouter();
   const [estimations, setEstimations] = useState<Estimation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -278,6 +280,11 @@ const isFournisseur = userRole === 'fournisseur';
           })
         )
       );
+
+      if (results.some(r => 'unauthorized' in r && r.unauthorized)) {
+        router.push('/admin/login');
+        return;
+      }
       
       let merged = results.flatMap(r => r.requests);
       // Sort by createdAt descending (newest first)
@@ -483,8 +490,8 @@ const filteredEstimations = useMemo(() => {
          ? (est.status === 'Livraison' || est.status === 'Livré' || est.status === 'Réception confirmée')
          : est.status === activeTab;
        const matchesSearch =
-         est.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         est.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+         normalizeSearchText(est.number).includes(normalizeSearchText(searchTerm)) ||
+         normalizeSearchText(est.client).includes(normalizeSearchText(searchTerm)) ||
          est.date.includes(searchTerm);
 
          if (isFournisseur) {

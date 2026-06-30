@@ -661,6 +661,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   { id: 'email-verification', label: t('admin.emailVerification', { defaultValue: 'Vérification Email' }), icon: ShieldCheck, color: 'text-indigo-600', bg: 'bg-indigo-100/80', href: '/admin/settings/email-verification' },
                   { id: 'flow', label: t('admin.settingsMenu.flow', { defaultValue: 'Parcours client' }), icon: Zap, color: 'text-orange-600', bg: 'bg-orange-100/80', href: '/admin/settings/flow' },
                   { id: 'paypal', label: 'PayPal', icon: CreditCard, color: 'text-blue-600', bg: 'bg-blue-100/80', href: '/admin/settings/paypal' },
+                  { id: 'track', label: 'Suivi colis', icon: Package, color: 'text-indigo-600', bg: 'bg-indigo-100/80', href: '/admin/settings/track' },
                  ].map((item) => (
                   <Link
                     key={item.id}

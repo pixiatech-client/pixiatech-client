@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info } from 'lucide-react';
+import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info, User, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, formatPrice } from '@/lib/boutique-data';
@@ -162,7 +162,7 @@ export default function ProductDetailPage() {
   const [stickyTop, setStickyTop] = useState(194);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
-  const { showHT, showTTC } = useProfile();
+  const { showHT, showTTC, setProfileType, profileType } = useProfile();
   const { t } = useI18n();
 
   useEffect(() => {
@@ -305,29 +305,44 @@ export default function ProductDetailPage() {
           ) : (
           <div className="flex flex-col">
             <section>
-              <div className="bg-white rounded-2xl overflow-hidden shadow-sm -mt-[60px] w-full">
-                <div className="cursor-pointer overflow-hidden w-full" onClick={() => { setSelectedVariant(null); openLightbox(selectedMedia); }}>
+              <button
+                onClick={() => router.push('/boutique')}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-900 text-white border border-white/20 text-xs font-semibold hover:bg-gray-800 hover:shadow-md transition-all cursor-pointer -mt-[60px] mb-0"
+              >
+                <ChevronLeft size={14} />
+                Retour
+              </button>
+              <div className="bg-white rounded-2xl shadow-sm w-full overflow-hidden mt-[15px] mr-5 p-5">
+                <div className="cursor-pointer w-full aspect-[4/3] overflow-hidden rounded-xl" onClick={() => { setSelectedVariant(null); openLightbox(selectedMedia); }}>
                   {effectiveMedia ? (
                     effectiveMedia.type === 'video' ? (
                       <video
                         src={effectiveMedia.url}
                         controls
-                        className="w-full h-auto max-h-[360px] object-contain bg-slate-50 p-4"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
                       <img
                         src={effectiveMedia.url}
                         alt={product.name}
-                        className="w-full h-auto max-h-[360px] object-contain bg-slate-50 transition-transform duration-500 hover:scale-105 p-4 max-w-full max-h-full"
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                       />
                     )
                   ) : (
-                    <div className="w-full h-40 md:h-[360px] flex items-center justify-center bg-slate-50 text-slate-300">
+                    <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
                       <ShoppingBag size={48} />
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* Carte sous la photo */}
+              {product?.description && (
+                <div className="mt-4 bg-white rounded-2xl border border-gray-200/70 p-5">
+                  <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
+                </div>
+              )}
+
               {mediaItems.length > 1 && (
                 <>
                   <div className="flex items-center justify-between mt-4">
@@ -448,6 +463,45 @@ export default function ProductDetailPage() {
                   )}
                   {showHT && <span>Prix HT: {formatPrice(effectivePrice / (1 + taxRate / 100))}</span>}
                   {showTTC && <span>TTC: {formatPrice(effectivePrice)}</span>}
+                </div>
+                <div className="relative mt-2">
+                  <button
+                    onClick={() => setShowInfo(!showInfo)}
+                    className="relative flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium group"
+                  >
+                    <span className="relative flex items-center justify-center">
+                      <Info size={13} className="relative z-10" />
+                      <span className="absolute inset-0 z-0 animate-ping rounded-full bg-blue-400/40 group-hover:bg-blue-400/60" style={{ animationDuration: '2.5s' }} />
+                    </span>
+                    {profileType ? (profileType === 'entreprise' ? ' Profil entreprise ' : ' Profil particulier ') : 'Informations'}
+                  </button>
+                  {showInfo && (
+                    <div className="absolute z-20 left-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-4">
+                      <p className="text-xs text-gray-500 leading-relaxed">{t('product.infoText')}</p>
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <p className="text-xs font-semibold text-gray-800 mb-3">Vous êtes ?</p>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => { setProfileType('particulier'); setShowInfo(false); }}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'particulier' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                          >
+                            <User size={16} />
+                            Je suis un particulier
+                          </button>
+                          <button
+                            onClick={() => { setProfileType('entreprise'); setShowInfo(false); }}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'entreprise' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                          >
+                            <Building2 size={16} />
+                            Je suis une entreprise
+                          </button>
+                        </div>
+                      </div>
+                      <button onClick={() => setShowInfo(false)} className="absolute top-2 right-2 text-gray-300 hover:text-gray-500 transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               {displayVariants.length > 0 && (
@@ -623,18 +677,43 @@ export default function ProductDetailPage() {
                 )}
               </div>
               <div className="relative mt-1">
-                <button onClick={() => setShowInfo(!showInfo)} className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-700 transition-colors font-medium">
-                  <Info size={13} />
-                  {t('product.info')}
+                <button
+                  onClick={() => setShowInfo(!showInfo)}
+                  className="relative flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium group"
+                >
+                  <span className="relative flex items-center justify-center">
+                    <Info size={13} className="relative z-10" />
+                    <span className="absolute inset-0 z-0 animate-ping rounded-full bg-blue-400/40 group-hover:bg-blue-400/60" style={{ animationDuration: '2.5s' }} />
+                  </span>
+                  {profileType ? (profileType === 'entreprise' ? ' Profil entreprise ' : ' Profil particulier ') : t('product.info')}
                 </button>
-                {showInfo && (
-                  <div className="absolute z-20 left-0 top-full mt-1 w-72 bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-xs text-gray-500 leading-relaxed">
-                    {t('product.infoText')}
-                    <button onClick={() => setShowInfo(false)} className="absolute top-2 right-2 text-gray-300 hover:text-gray-500 transition-colors">
-                      <X size={12} />
-                    </button>
-                  </div>
-                )}
+                  {showInfo && (
+                    <div className="absolute z-20 left-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-4">
+                      <p className="text-xs text-gray-500 leading-relaxed">{t('product.infoText')}</p>
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <p className="text-xs font-semibold text-gray-800 mb-3">Vous êtes ?</p>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => { setProfileType('particulier'); setShowInfo(false); }}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'particulier' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                          >
+                            <User size={16} />
+                            Je suis un particulier
+                          </button>
+                          <button
+                            onClick={() => { setProfileType('entreprise'); setShowInfo(false); }}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'entreprise' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                          >
+                            <Building2 size={16} />
+                            Je suis une entreprise
+                          </button>
+                        </div>
+                      </div>
+                      <button onClick={() => setShowInfo(false)} className="absolute top-2 right-2 text-gray-300 hover:text-gray-500 transition-colors">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )}
               </div>
             </div>
 
@@ -776,6 +855,7 @@ export default function ProductDetailPage() {
             </div>
           </aside>
       </main>
+
     </div>
   );
 }

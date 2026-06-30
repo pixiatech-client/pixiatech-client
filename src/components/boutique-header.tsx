@@ -462,13 +462,6 @@ export function BoutiqueHeader() {
             </div>
           )}
 
-          {/* Demo badge */}
-          <a
-            href="/boutique/paiement?demo=1"
-            className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all"
-          >
-            Demo
-          </a>
         </div>
       </nav>
     </header>

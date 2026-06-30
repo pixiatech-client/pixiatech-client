@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
-import { Settings, Image as ImageIcon, AlertTriangle, FileText, MessageSquareQuote, Shield, Palette, Truck, HardHat, Wand2 } from 'lucide-react';
+import { Settings, Image as ImageIcon, AlertTriangle, FileText, MessageSquare, ShieldCheck, Palette, Truck, HardHat, Wand2, Package, Zap, PenTool, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAdminT } from '@/hooks/useAdminT';
 
@@ -18,12 +18,19 @@ interface Tab {
 const tabDefs: Tab[] = [
   { href: '/admin/settings/general', labelKey: 'General', icon: Settings },
   { href: '/admin/settings/images', labelKey: 'Images', icon: ImageIcon },
-  { href: '/admin/settings/wizard', labelKey: 'Wizard', icon: Wand2 },
+  { href: '/admin/settings/wizard', labelKey: 'Assistant & Images', icon: Wand2 },
   { href: '/admin/settings/livraison', labelKey: 'Delivery', icon: Truck },
   { href: '/admin/settings/main-doeuvre', labelKey: 'Labor', icon: HardHat },
   { href: '/admin/settings/pdf', labelKey: 'PDF', icon: FileText },
-  { href: '/admin/settings/themes', labelKey: 'Themes', icon: Palette },
+  { href: '/admin/settings/themes', labelKey: 'Appearance', icon: Palette },
   { href: '/admin/settings/emergency', labelKey: 'Emergency', icon: AlertTriangle },
+  { href: '/admin/settings/messaging', labelKey: 'Messaging', icon: MessageSquare },
+  { href: '/admin/settings/software', labelKey: 'Software', icon: Settings },
+  { href: '/admin/settings/email-verification', labelKey: 'Email Verification', icon: ShieldCheck },
+  { href: '/admin/settings/flow', labelKey: 'Parcours client', icon: Zap },
+  { href: '/admin/settings/signature', labelKey: 'Signature & Compteur', icon: PenTool },
+  { href: '/admin/settings/paypal', labelKey: 'PayPal', icon: CreditCard },
+  { href: '/admin/settings/track', labelKey: 'Suivi colis', icon: Package },
 ];
 
 export function SettingsNav() {

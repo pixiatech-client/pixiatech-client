@@ -2,11 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Trash2, Minus, Plus, Heart, Truck, ArrowRight, Tag, ChevronDown, CreditCard, Landmark, Shield } from 'lucide-react';
+import { ShoppingBag, Trash2, Minus, Plus, Heart, Truck, ArrowRight, ArrowLeft, Tag, ChevronDown, CreditCard, Landmark, Shield, Info, User, Building2, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { formatPrice, fetchUpsellProducts } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
 import { toast } from 'sonner';
+import { useProfile } from '@/contexts/ProfileContext';
 
 function QtySelector({ value, onMinus, onPlus }: { value: number; onMinus: () => void; onPlus: () => void }) {
   const [anim, setAnim] = useState(false);
@@ -44,6 +45,8 @@ export default function CartPage() {
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoInput, setPromoInput] = useState('');
   const [upsellProducts, setUpsellProducts] = useState<Product[]>([]);
+  const [showInfo, setShowInfo] = useState(false);
+  const { profileType, setProfileType, showHT, showTTC, priceLabel, isB2B } = useProfile();
 
   useEffect(() => {
     const cartIds = items.map(i => i.productId);
@@ -58,8 +61,8 @@ export default function CartPage() {
     }
   }, [items]);
 
-  const total = subtotal;
-  const tva = Math.round(total * 0.2);
+  const tva = isB2B ? 0 : Math.round(totalAfterDiscount * 0.2);
+  const total = totalAfterDiscount + tva;
   const discount = promo ? subtotal - totalAfterDiscount : 0;
 
   return (
@@ -81,6 +84,17 @@ export default function CartPage() {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
               <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => {
+                      const lastItem = items[items.length - 1];
+                      if (lastItem) router.push(`/boutique/produit/${lastItem.productId}`);
+                      else router.push('/boutique');
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-900 text-white border border-white/20 text-xs font-semibold hover:bg-gray-800 hover:shadow-md transition-all cursor-pointer"
+                  >
+                    <ArrowLeft size={14} />
+                    Retour
+                  </button>
                   <p className="text-sm text-gray-500">{itemCount} article{itemCount > 1 ? 's' : ''}</p>
                   <button
                     onClick={() => { clearCart(); toast.success('Panier vidé'); }}
@@ -146,12 +160,12 @@ export default function CartPage() {
                   </div>
                 ))}
 
-                <div className="bg-emerald-50 rounded-2xl p-5 flex items-center gap-4 border border-emerald-200/60">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                    <Truck size={20} className="text-emerald-600" />
+                <div className="bg-amber-50 rounded-2xl p-5 flex items-center gap-4 border border-amber-200/60">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                    <Truck size={20} className="text-amber-600" />
                   </div>
-                  <p className="text-sm text-emerald-800">
-                    Félicitations ! Vous bénéficiez de la <strong>Livraison Express OFFERTE</strong> sur cette commande.
+                  <p className="text-sm text-amber-800">
+                    <strong>Livraison Express</strong> — le montant sera calculé lors du paiement selon votre adresse.
                   </p>
                 </div>
               </div>
@@ -161,7 +175,7 @@ export default function CartPage() {
                   <h3 className="font-bold text-gray-900 text-base mb-5">Récapitulatif</h3>
                     <div className="space-y-3 pb-5 border-b border-gray-200/40">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Sous-total</span>
+                        <span className="text-gray-500">Sous-total HT</span>
                         <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
                       </div>
                       {discount > 0 && (
@@ -172,16 +186,54 @@ export default function CartPage() {
                       )}
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Livraison Express</span>
-                        <span className="font-semibold text-emerald-600 text-xs uppercase tracking-wider">Offert</span>
+                        <span className="text-xs text-gray-400">Calculée lors du paiement</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">TVA (20%)</span>
+                        <span className="text-gray-500">TVA {isB2B ? '(0%)' : '(20%)'}</span>
                         <span className="font-semibold text-gray-900">{formatPrice(tva)}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center pt-5 mb-6">
-                      <span className="font-bold text-gray-900 text-base">Total à payer</span>
-                      <span className="font-bold text-gray-900 text-lg">{formatPrice(totalAfterDiscount)}</span>
+                      <span className="font-bold text-gray-900 text-base">{isB2B ? 'Total HT' : 'Total TTC'}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-900 text-lg">{formatPrice(total)}</span>
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowInfo(!showInfo)}
+                            className="relative flex items-center justify-center w-5 h-5 group"
+                          >
+                            <Info size={14} className="relative z-10 text-blue-600" />
+                            <span className="absolute inset-0 z-0 animate-ping rounded-full bg-blue-400/40 group-hover:bg-blue-400/60" style={{ animationDuration: '2.5s' }} />
+                          </button>
+                          {showInfo && (
+                            <div className="absolute z-20 right-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-4">
+                              <p className="text-xs text-gray-500 leading-relaxed">Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs. Les particuliers peuvent également commander directement depuis notre boutique.</p>
+                              <div className="mt-3 pt-3 border-t border-gray-100">
+                                <p className="text-xs font-semibold text-gray-800 mb-3">Vous êtes ?</p>
+                                <div className="flex flex-col gap-2">
+                                  <button
+                                    onClick={() => { setProfileType('particulier'); setShowInfo(false); }}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'particulier' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                                  >
+                                    <User size={16} />
+                                    Je suis un particulier
+                                  </button>
+                                  <button
+                                    onClick={() => { setProfileType('entreprise'); setShowInfo(false); }}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'entreprise' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                                  >
+                                    <Building2 size={16} />
+                                    Je suis une entreprise
+                                  </button>
+                                </div>
+                              </div>
+                              <button onClick={() => setShowInfo(false)} className="absolute top-2 right-2 text-gray-300 hover:text-gray-500 transition-colors">
+                                <X size={12} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   <button
                     onClick={() => router.push('/boutique/paiement')}
@@ -260,6 +312,7 @@ export default function CartPage() {
           </>
         )}
       </main>
+
     </div>
   );
 }

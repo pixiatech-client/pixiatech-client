@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { DisputeForm } from '@/components/dispute-form';
 import { InvoiceButton } from '@/components/invoice-button';
 import { getPdfSettings } from '@/app/actions/quote-actions';
+import { TrackingLink } from '@/components/tracking/tracking-link';
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
@@ -144,9 +145,9 @@ export default async function CommandeDetailPage({ params, searchParams }: { par
                 <p className="text-sm text-gray-900">{t('client.orderDetail.eur')}</p>
               </div>
               {order.trackingNumber && (
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <p className="text-sm text-gray-500">Suivi</p>
-                  <p className="text-sm font-semibold text-[#004ac6]">{order.trackingNumber}</p>
+                  <TrackingLink trackingNumber={order.trackingNumber} />
                 </div>
               )}
               <div className="flex justify-between">

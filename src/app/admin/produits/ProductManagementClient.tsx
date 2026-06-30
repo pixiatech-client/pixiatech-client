@@ -16,7 +16,7 @@ import {
   Settings2, Info, Save, Check, X, MoreVertical, Edit2, Copy, GripVertical, Filter, ArrowUpDown, Sparkles, Brain, Globe, ShieldCheck, Zap as ZapIcon, LogOut, LogIn, RefreshCw,
   Mail, Lock, Unlock, Phone, UserPlus, EyeOff, Users, Truck, Wrench, History, User as UserIcon, List, Settings, Hammer, Pin, ShoppingBag
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, normalizeSearchText } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1237,8 +1237,8 @@ const CaracteristiquesPage = ({
   const filteredCharacteristics = React.useMemo(() => {
     if (!charSearch.trim()) return characteristics;
     return characteristics.filter(c => 
-      c.name.toLowerCase().includes(charSearch.toLowerCase().trim()) ||
-      c.options.some((opt: string) => opt.toLowerCase().includes(charSearch.toLowerCase().trim()))
+      normalizeSearchText(c.name).includes(normalizeSearchText(charSearch)) ||
+      c.options.some((opt: string) => normalizeSearchText(opt).includes(normalizeSearchText(charSearch)))
     );
   }, [characteristics, charSearch]);
 
@@ -2382,7 +2382,7 @@ const ProduitPage = ({
     return list.filter((sc: any) => {
       const charDef = characteristics.find((c: any) => c.id === sc.id);
       if (!charDef) return false;
-      return charDef.name.toLowerCase().includes(searchTerm.toLowerCase().trim());
+      return normalizeSearchText(charDef.name).includes(normalizeSearchText(searchTerm));
     });
   }, [selectedChars, searchTerm, characteristics]);
 
@@ -2855,7 +2855,7 @@ const ProduitPage = ({
                             <div className="max-h-56 overflow-y-auto custom-scrollbar px-1 pb-1">
                               {allProducts
                                 .filter(p => p.id !== editingProduct?.id)
-                                .filter(p => !upsellSearch || p.name.toLowerCase().includes(upsellSearch.toLowerCase()))
+                                .filter(p => !upsellSearch || normalizeSearchText(p.name).includes(normalizeSearchText(upsellSearch)))
                                 .sort((a, b) => {
                                   const aSel = upsellFor.includes(a.id) ? 0 : 1;
                                   const bSel = upsellFor.includes(b.id) ? 0 : 1;
@@ -2898,7 +2898,7 @@ const ProduitPage = ({
                                   {p.isHidden && <EyeOff className="w-3 h-3 text-orange-400/60 shrink-0" />}
                                 </button>
                               ))}
-                              {allProducts.filter(p => p.id !== editingProduct?.id).filter(p => !upsellSearch || p.name.toLowerCase().includes(upsellSearch.toLowerCase())).length === 0 && (
+                              {allProducts.filter(p => p.id !== editingProduct?.id).filter(p => !upsellSearch || normalizeSearchText(p.name).includes(normalizeSearchText(upsellSearch))).length === 0 && (
                                 <p className="text-[10px] text-slate-500 text-center py-6">Aucun produit trouvé</p>
                               )}
                             </div>
@@ -3605,7 +3605,7 @@ const GestionProduits = ({
   };
 
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = normalizeSearchText(p.name).includes(normalizeSearchText(searchQuery));
     const matchesType = filterType === 'all' || (Array.isArray(p.type) ? p.type.includes(filterType) : p.type === filterType);
     return matchesSearch && matchesType;
   }).sort((a, b) => {
@@ -3889,7 +3889,7 @@ const GestionProduits = ({
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-6">{t('admin.productManagement.suggestedResults')}</p>
               {products
-                .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                .filter(p => normalizeSearchText(p.name).includes(normalizeSearchText(searchQuery)))
                 .map(p => (
                   <button
                     key={p.id}
@@ -3911,7 +3911,7 @@ const GestionProduits = ({
                     </div>
                   </button>
                 ))}
-              {products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+              {products.filter(p => normalizeSearchText(p.name).includes(normalizeSearchText(searchQuery))).length === 0 && (
                 <div className="py-20 text-center">
                   <Package className="w-16 h-16 text-slate-200 mx-auto mb-4" />
                   <p className="text-slate-400 font-black uppercase tracking-widest">{t('admin.productManagement.noResults')}</p>
@@ -4468,7 +4468,7 @@ export default function ProductManagementClient() {
 
   const availableChars = characteristics.filter(c => !selectedChars.some(sc => sc.id === c.id));
   const filteredAvailableChars = charPanelSearch.trim()
-    ? availableChars.filter(c => c.name.toLowerCase().includes(charPanelSearch.toLowerCase().trim()))
+    ? availableChars.filter(c => normalizeSearchText(c.name).includes(normalizeSearchText(charPanelSearch)))
     : availableChars;
 
   const [mode, setMode] = useState<('vente' | 'location')[]>(['vente']);

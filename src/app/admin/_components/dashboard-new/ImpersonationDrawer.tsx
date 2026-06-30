@@ -6,6 +6,7 @@ import { X, Search, ChevronRight, Users, Shield, Truck, UserCircle, LogIn, Lucid
 import { toast } from 'sonner';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, where } from 'firebase/firestore';
+import { normalizeSearchText } from '@/lib/utils';
 import type { UserProfile } from '@/lib/types';
 
 interface ImpersonationDrawerProps {
@@ -35,11 +36,12 @@ export function ImpersonationDrawer({ isOpen, onClose, onImpersonate, currentUse
   );
   const { data: allUsers } = useCollection<UserProfile>(usersQuery, { suppressPermissionError: true });
 
+  const st = normalizeSearchText(searchTerm);
   const filteredUsers = allUsers?.filter(u =>
     u.uid !== currentUserId &&
     u.status === 'approved' &&
-    (u.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     u.email?.toLowerCase().includes(searchTerm.toLowerCase()))
+    (normalizeSearchText(u.displayName || '').includes(st) ||
+     normalizeSearchText(u.email || '').includes(st))
   ) || [];
 
   const usersByRole = filteredUsers.reduce((acc, user) => {

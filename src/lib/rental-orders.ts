@@ -32,6 +32,7 @@ export interface RentalOrder {
   emailVerified: boolean;
   emailVerifiedAt: string | null;
   // Paiement
+  deliveryCost: number;
   paypalOrderId: string | null;
   paypalCaptureId: string | null;
   amountPaid: number;

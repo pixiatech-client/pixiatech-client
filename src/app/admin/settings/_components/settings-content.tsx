@@ -4,12 +4,12 @@ import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { getSettings } from '@/app/admin/actions';
 import type { Settings as AppSettings } from '@/lib/types';
 import { motion } from 'framer-motion';
-import { Loader2, Settings,   Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap, PenTool, CreditCard } from 'lucide-react';
+import { Loader2, Settings,   Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap, PenTool, CreditCard, Package } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useAdminT } from '@/hooks/useAdminT';
 
-export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content' | 'signature' | 'paypal';
+export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content' | 'signature' | 'paypal' | 'track';
 
 interface SettingsContentProps {
     initialSection?: SettingsSection;
@@ -29,6 +29,7 @@ const FlowContent = lazy(() => import('../flow/page'));
 const ThemesContent = lazy(() => import('../themes/page'));
 const SignatureContent = lazy(() => import('../signature/page'));
 const PayPalContent = lazy(() => import('../paypal/page'));
+const TrackContent = lazy(() => import('../track/page'));
 
 function LoadingFallback() {
     return (
@@ -58,6 +59,7 @@ const tabsConfigDefs = [
     { id: 'flow' as SettingsSection, labelKey: 'Parcours client', icon: Zap },
     { id: 'signature' as SettingsSection, labelKey: 'Signature & Compteur', icon: PenTool },
     { id: 'paypal' as SettingsSection, labelKey: 'PayPal', icon: CreditCard },
+    { id: 'track' as SettingsSection, labelKey: 'Suivi colis', icon: Package },
 ];
 
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
@@ -136,6 +138,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                 return <SignatureContent />;
             case 'paypal':
                 return <PayPalContent />;
+            case 'track':
+                return <TrackContent />;
             default:
                 return <GeneralContent />;
         }
@@ -158,6 +162,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
             pdf: 'text-orange-500',
             software: 'text-slate-500',
             'main-doeuvre': 'text-emerald-500',
+            track: 'text-indigo-500',
         };
         return colors[tabId] || 'text-slate-500';
     };
@@ -179,6 +184,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
             pdf: 'bg-orange-100/70',
             software: 'bg-slate-100/70',
             'main-doeuvre': 'bg-emerald-100/70',
+            track: 'bg-indigo-100/70',
         };
         return colors[tabId] || 'bg-slate-100/70';
     };

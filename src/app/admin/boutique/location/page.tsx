@@ -20,11 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Package, Euro, Activity, CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { Search, Package, Euro, Activity, CheckCircle2, Loader2, XCircle, Eye } from 'lucide-react';
 import { getRentalOrders, updateRentalOrder, type RentalOrder, type RentalStatus } from '@/lib/rental-orders';
 import { formatPrice } from '@/lib/boutique-data';
-import { cn } from '@/lib/utils';
+import { cn, normalizeSearchText } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { TrackingDetailDrawer } from '@/components/tracking/tracking-detail-drawer';
 
 const statusLabels: Record<RentalStatus, string> = {
   pending_validation: 'En attente',
@@ -76,6 +77,7 @@ export default function LocationPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const [trackingDrawer, setTrackingDrawer] = useState<{ open: boolean; number: string }>({ open: false, number: '' });
 
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
@@ -115,12 +117,12 @@ export default function LocationPage() {
 
   const filteredOrders = useMemo(() => {
     if (!searchQuery.trim()) return orders;
-    const q = searchQuery.toLowerCase().trim();
+    const q = normalizeSearchText(searchQuery);
     return orders.filter(
       (o) =>
-        o.renterCompany?.toLowerCase().includes(q) ||
-        o.renterRepresentative?.toLowerCase().includes(q) ||
-        o.productName?.toLowerCase().includes(q)
+        normalizeSearchText(o.renterCompany ?? '').includes(q) ||
+        normalizeSearchText(o.renterRepresentative ?? '').includes(q) ||
+        normalizeSearchText(o.productName ?? '').includes(q)
     );
   }, [orders, searchQuery]);
 
@@ -320,25 +322,16 @@ export default function LocationPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="text"
-                          defaultValue={order.trackingNumber || ''}
-                          placeholder="—"
-                          onBlur={async (e) => {
-                            const val = e.target.value.trim();
-                            if (val === (order.trackingNumber || '')) return;
-                            if (!order.id) return;
-                            try {
-                              await updateRentalOrder(order.id, { trackingNumber: val || '' });
-                              toast({ title: 'Suivi mis à jour', description: val || 'Supprimé' });
-                            } catch {
-                              toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de mettre à jour le suivi.' });
-                            }
-                          }}
-                          className="w-28 px-2 py-1 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-400 transition-all bg-white/80 focus:bg-white placeholder:text-slate-300"
-                        />
-                      </div>
+                      {order.trackingNumber ? (
+                        <button
+                          onClick={() => setTrackingDrawer({ open: true, number: order.trackingNumber || '' })}
+                          className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                        >
+                          {order.trackingNumber}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-300">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -438,6 +431,12 @@ export default function LocationPage() {
           </Table>
         </div>
       </Card>
+
+      <TrackingDetailDrawer
+        open={trackingDrawer.open}
+        onClose={() => setTrackingDrawer({ open: false, number: '' })}
+        trackingNumber={trackingDrawer.number}
+      />
     </div>
   );
 }

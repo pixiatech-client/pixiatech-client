@@ -150,7 +150,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {}
 
       const allPalettes = [...DEFAULT_PALETTES, ...localCustomThemes];
-      const found = allPalettes.find(t => t.name === themeId || (t.id && t.id === themeId)) || allPalettes[0];
+      const found = allPalettes.find(t => t.name === themeId || (t.id && t.id === themeId)) || allPalettes.find(p => p.isDefault) || allPalettes[0];
       
       if (found) {
         const paletteKey = found.id ?? found.name;

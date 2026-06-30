@@ -156,6 +156,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
           transactionType: txType,
         });
 
+        if ('unauthorized' in result && result.unauthorized) {
+          router.push('/admin/login');
+          return;
+        }
+
         if (!cancelled) {
           setTableQuotes(result.requests);
           tableLastIdsRef.current[currentPage] = result.lastId;

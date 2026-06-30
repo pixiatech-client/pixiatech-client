@@ -2,16 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ArrowLeft, ShoppingBag, SlidersHorizontal, ChevronDown, Star, Sparkles, Tag, X, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, SlidersHorizontal, ChevronDown, Star, Sparkles, Tag, X, RotateCcw, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProducts } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
 import { useProfile } from '@/contexts/ProfileContext';
-import { PriceLabel } from '@/components/B2BProfileSelector';
 import { useI18n } from '@/lib/i18n';
 import { calculatePromotionPercent } from '@/lib/pricing-engine';
+import { normalizeSearchText } from '@/lib/utils';
 
 function FilterDrawer({ open, onClose, categories, selectedCategories, onCategoriesChange, minRating, onMinRatingChange, transactionType, onTransactionTypeChange, onReset, activeCount }: {
   open: boolean; onClose: () => void;
@@ -132,7 +132,6 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
 
 export default function BoutiquePage() {
   const router = useRouter();
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
@@ -145,6 +144,9 @@ export default function BoutiquePage() {
   const [minRating, setMinRating] = useState(0);
   const [transactionType, setTransactionType] = useState<'all' | 'sale' | 'rental'>('all');
   const [sortBy, setSortBy] = useState<'recent' | 'price-asc' | 'price-desc'>('recent');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [displayCount, setDisplayCount] = useState(12);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useCallback((node: HTMLDivElement | null) => {
@@ -169,6 +171,15 @@ export default function BoutiquePage() {
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
+
+    if (searchQuery.trim()) {
+      const q = normalizeSearchText(searchQuery);
+      result = result.filter(p =>
+        normalizeSearchText(p.name).includes(q) ||
+        normalizeSearchText(p.category).includes(q) ||
+        normalizeSearchText(p.description).includes(q)
+      );
+    }
 
     if (activeTab === 'populaires') {
       result = result.filter(p => p.badges?.includes('populaire'));
@@ -197,7 +208,7 @@ export default function BoutiquePage() {
     }
 
     return result;
-  }, [products, activeTab, selectedCategories, minRating, sortBy]);
+  }, [products, activeTab, selectedCategories, minRating, sortBy, transactionType, searchQuery]);
 
   const activeFilterCount = selectedCategories.length + (minRating > 0 ? 1 : 0) + (transactionType !== 'all' ? 1 : 0);
 
@@ -270,6 +281,20 @@ export default function BoutiquePage() {
             </div>
           </div>
           <button
+            onClick={() => {
+              setSearchOpen(true);
+              setTimeout(() => searchInputRef.current?.focus(), 100);
+            }}
+            className={`relative flex items-center justify-center size-9 rounded-full border border-transparent hover:border-gray-200 bg-white shadow-sm transition-all duration-300 ${
+              searchQuery ? 'text-gray-900 border-gray-300 scale-110' : 'text-gray-400 hover:text-gray-600 hover:scale-110'
+            } active:scale-95`}
+          >
+            <Search size={14} />
+            {searchQuery && (
+              <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">!</span>
+            )}
+          </button>
+          <button
             onClick={() => setFilterOpen(true)}
             className="relative flex items-center justify-center size-9 rounded-full border border-transparent hover:border-gray-200 bg-white shadow-sm text-gray-400 hover:text-gray-600 hover:scale-110 active:scale-95 transition-all duration-300"
           >
@@ -280,6 +305,36 @@ export default function BoutiquePage() {
           </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {searchOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 pt-4"
+          >
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher un produit..."
+                className="w-full bg-white border border-gray-200/70 rounded-full pl-10 pr-10 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all shadow-sm"
+              />
+              <button
+                onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 size-5 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500 transition-colors"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 py-6">
         {loading ? (
@@ -297,94 +352,83 @@ export default function BoutiquePage() {
           </div>
         ) : (
           <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredProducts.slice(0, displayCount).map((product, idx) => (
               <article
                 key={product.id}
-                onClick={() => router.push(`/boutique/produit/${product.id}`)}
-                onMouseEnter={() => setHoveredId(product.id)}
-                onMouseLeave={() => setHoveredId(null)}
                 style={{ animationDelay: `${idx * 0.08}s` }}
-                className="product-card-entry bg-white rounded-2xl border border-gray-200/70 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+                className="product-card-entry w-full bg-white p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative"
               >
-                <div className="p-3 pb-0">
-                    <div className="relative">
-                      <div className="aspect-[3/2] bg-gray-50 rounded-xl overflow-hidden">
-                        {product.image ? (
-                          <img
-                            alt={product.name}
-                            src={product.image}
-                            className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 bg-gray-100"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-300">
-                            <ShoppingBag size={32} />
-                          </div>
-                        )}
-                        <div className={`absolute inset-0 bg-black/5 pointer-events-none transition-opacity duration-200 ${hoveredId === product.id ? 'opacity-100' : 'opacity-0'}`} />
-                      <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex gap-3 transition-all duration-200 ${hoveredId === product.id ? 'opacity-100 translate-y-[-50%]' : 'opacity-0 translate-y-[-40%]'}`}>
-                        <span className="flex items-center justify-center size-9 bg-white rounded-full shadow-md text-gray-700 hover:text-gray-900 transition-colors -rotate-45">
-                          <ArrowLeft size={16} className="rotate-45" />
-                        </span>
-                        <span onClick={(e) => handleQuickAdd(e, product)} className="flex items-center justify-center size-9 bg-white rounded-full shadow-md text-gray-700 hover:text-gray-900 transition-colors">
-                          <ShoppingBag size={16} />
-                        </span>
-                      </div>
+                <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }} className="block relative mb-3">
+                  {product.image ? (
+                    <img
+                      alt={product.name}
+                      src={product.image}
+                      className="rounded-xl w-full aspect-[1/1] object-cover bg-gray-50"
+                    />
+                  ) : (
+                    <div className="rounded-xl w-full aspect-[1/1] flex items-center justify-center bg-gray-100 text-gray-300">
+                      <ShoppingBag size={32} />
                     </div>
-                      {product.badges && product.badges.length > 0 && (
-                        <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
-                          {product.badges.map((badge) => (
-                            <span key={badge} className={`badge-etoile ${
-                              badge === 'populaire' ? 'emerald' :
-                              badge === 'nouveaute' ? 'blue' : 'red'
-                            }`}>
-                              <span className="etoile-icon">
-                                {badge === 'populaire' ? <Star size={10} className="text-emerald-400" fill="currentColor" /> :
-                                 badge === 'nouveaute' ? <Sparkles size={10} className="text-blue-400" /> :
-                                 <Tag size={10} className="text-red-400" />}
-                              </span>
-                              <span className={`etoile-text ${
-                                badge === 'populaire' ? 'text-emerald-400' :
-                                badge === 'nouveaute' ? 'text-blue-400' :
-                                'text-red-400'
-                              }`}>
-                                {badge === 'populaire' ? t('boutique.badgePopular') : badge === 'nouveaute' ? t('boutique.badgeNew') : t('boutique.badgePromotion')}
-                              </span>
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                  )}
+                  {product.badges && product.badges.length > 0 && (
+                    <div className="absolute top-2 left-2 flex flex-col gap-1">
+                      {product.badges.map((badge) => (
+                        <span key={badge} className={`badge-etoile ${
+                          badge === 'populaire' ? 'emerald' :
+                          badge === 'nouveaute' ? 'blue' : 'red'
+                        }`}>
+                          <span className="etoile-icon">
+                            {badge === 'populaire' ? <Star size={10} className="text-emerald-400" fill="currentColor" /> :
+                             badge === 'nouveaute' ? <Sparkles size={10} className="text-blue-400" /> :
+                             <Tag size={10} className="text-red-400" />}
+                          </span>
+                          <span className={`etoile-text ${
+                            badge === 'populaire' ? 'text-emerald-400' :
+                            badge === 'nouveaute' ? 'text-blue-400' :
+                            'text-red-400'
+                          }`}>
+                            {badge === 'populaire' ? t('boutique.badgePopular') : badge === 'nouveaute' ? t('boutique.badgeNew') : t('boutique.badgePromotion')}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="absolute top-2 right-2 flex items-center bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-xs">
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} size={12} className={star <= Math.round(product.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'} />
+                      ))}
+                    </div>
                   </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 leading-tight mb-3">{product.name}</h3>
-                  <div className="flex items-center justify-between gap-2">
+                </a>
+                <div>
+                  <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }}>
+                    <h5 className="text-base font-semibold text-gray-900 tracking-tight leading-tight">{product.name}</h5>
+                  </a>
+                  <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center gap-2">
-                      <div>
-                        <span className="text-sm font-semibold text-gray-900">{product.price}{'\u20AC'}</span>
-                        <PriceLabel />
-                      </div>
+                      <span className="text-xl font-extrabold text-gray-900">{product.price}{'\u20AC'}</span>
                       {product.oldPrice && product.oldPrice > product.price && (
                         <>
-                          <span className="text-xs text-gray-400 line-through">{product.oldPrice}{'\u20AC'}</span>
-                          <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          <span className="text-[11px] text-gray-400 line-through">{product.oldPrice}{'\u20AC'}</span>
+                          <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
                             -{calculatePromotionPercent(product.oldPrice, product.price)}%
                           </span>
                         </>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-[11px] text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Star size={12} className="text-amber-400 fill-amber-400" />
-                      {product.rating}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <ShoppingBag size={12} className="text-gray-300" />
-                      {product.category}
-                    </span>
+                    <button
+                      onClick={(e) => handleQuickAdd(e, product)}
+                      type="button"
+                      className="inline-flex items-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer"
+                    >
+                      <ShoppingBag size={14} />
+                      Ajouter
+                    </button>
                   </div>
                 </div>
-                </div>
+
               </article>
             ))}
           </div>

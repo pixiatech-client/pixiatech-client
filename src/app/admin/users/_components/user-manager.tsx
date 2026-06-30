@@ -16,6 +16,7 @@ import { UserRow } from './user-row';
 import { DeleteConfirmationModal } from './delete-confirmation-modal';
 import { UserProfileDrawer } from './user-profile-drawer';
 import { useAdminT } from '@/hooks/useAdminT';
+import { normalizeSearchText } from '@/lib/utils';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -119,11 +120,11 @@ export function UserManager() {
     let filtered = users;
 
     if (searchQuery) {
-      const q = searchQuery.toLowerCase();
+      const q = normalizeSearchText(searchQuery);
       filtered = filtered.filter(u =>
-        u.displayName?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        u.phone?.toLowerCase().includes(q)
+        normalizeSearchText(u.displayName ?? '').includes(q) ||
+        normalizeSearchText(u.email ?? '').includes(q) ||
+        normalizeSearchText(u.phone ?? '').includes(q)
       );
     }
 

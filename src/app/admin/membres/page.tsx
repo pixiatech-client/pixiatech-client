@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, normalizeSearchText } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Pagination } from '@/components/pagination';
 import { getMembers, getResellerLeads, markResellerLeadNotified, deleteResellerLead, getDisputes, connectAsClient, type Member, type ResellerLead } from '../actions';
@@ -66,13 +66,14 @@ function MembresPage() {
     toast.success('Lead supprimé');
   };
 
+  const q = normalizeSearchText(search);
   const filteredMembers = members.filter(m =>
-    m.email.toLowerCase().includes(search.toLowerCase()) ||
-    m.displayName.toLowerCase().includes(search.toLowerCase())
+    normalizeSearchText(m.email).includes(q) ||
+    normalizeSearchText(m.displayName).includes(q)
   );
 
   const filteredLeads = leads.filter(l =>
-    l.email.toLowerCase().includes(search.toLowerCase())
+    normalizeSearchText(l.email).includes(q)
   );
 
   const offset = (page - 1) * PAGE_SIZE;

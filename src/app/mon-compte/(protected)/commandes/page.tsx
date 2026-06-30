@@ -5,6 +5,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { OrderFilters } from '@/components/member-order-filters';
+import { TrackingLink } from '@/components/tracking/tracking-link';
 
 async function getCustomerOrders(customerId: string) {
   const { adminDb } = getFirebaseAdmin();
@@ -133,11 +134,7 @@ export default async function CommandesPage() {
                           <span className="text-[14px] text-gray-700">{formatDate(order.createdAt)}</span>
                         </td>
                         <td className="px-6 py-4">
-                          {order.trackingNumber ? (
-                            <span className="text-[13px] font-semibold text-[#004ac6]">{order.trackingNumber}</span>
-                          ) : (
-                            <span className="text-[13px] text-gray-400">—</span>
-                          )}
+                          <TrackingLink trackingNumber={order.trackingNumber} />
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="text-[14px] font-bold text-gray-900">{formatPrice(order.amountPaid)}</span>

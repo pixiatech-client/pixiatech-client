@@ -17,9 +17,15 @@ interface InvoiceData {
   orderRef: string;
   customerName: string;
   customerEmail: string;
+  customerCompany?: string;
+  customerSiren?: string;
+  customerVatNumber?: string;
+  customerCountry?: string;
   customerAddress?: string;
   customerPostcode?: string;
   customerCity?: string;
+  isB2B?: boolean;
+  vatValidated?: boolean;
   productName?: string;
   quantity?: number;
   unitPrice?: number;
@@ -223,9 +229,15 @@ export function InvoiceButton({ data, pdfSettings, className }: { data: InvoiceD
             rentalEndDate={data.rentalEndDate}
             customerName={data.customerName}
             customerEmail={data.customerEmail}
+            customerCompany={data.customerCompany}
+            customerSiren={data.customerSiren}
+            customerVatNumber={data.customerVatNumber}
+            customerCountry={data.customerCountry}
             customerAddress={data.customerAddress || ''}
             customerPostcode={data.customerPostcode}
             customerCity={data.customerCity}
+            isB2B={data.isB2B}
+            vatValidated={data.vatValidated}
             products={data.products && data.products.length > 0 ? data.products : [{
               name: data.productName || 'Produit',
               quantity: data.quantity || 1,

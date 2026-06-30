@@ -16,11 +16,18 @@ export interface SaleOrder {
   customerAddress: string;
   customerCity: string;
   customerPostcode: string;
+  customerCountry?: string;
+  customerCompany?: string;
+  customerSiren?: string;
+  customerVatNumber?: string;
+  customerVatValidated?: boolean;
   customerId?: string;
   trackingNumber?: string;
+  deliveryCost: number;
   paypalOrderId: string | null;
   paypalCaptureId: string | null;
   amountPaid: number;
+  vat: number;
   status: SaleStatus;
   createdAt: string;
   updatedAt: string;

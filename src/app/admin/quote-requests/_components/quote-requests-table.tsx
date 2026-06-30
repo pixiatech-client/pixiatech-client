@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import type { QuoteRequest } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { cn, normalizeSearchText } from '@/lib/utils';
 import { getQuoteRequests, updateQuoteStatus, moveQuotesToTrash, restoreQuotes, permanentDeleteQuotes, permanentDeleteAllTrashedQuotes } from '@/app/admin/actions';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase';
@@ -154,17 +154,17 @@ export function QuoteRequestsTable() {
     // Search is now the only client-side filter for the current page
     if (!searchQuery) return allRequests;
 
-    const lowercasedQuery = searchQuery.toLowerCase().trim();
+    const lowercasedQuery = normalizeSearchText(searchQuery);
 
     return allRequests.filter(req => {
-      const clientName = req.client.companyName?.toLowerCase() || '';
-      const phone = req.client.phone?.toLowerCase() || '';
-      const date = formatDate(req.createdAt).toLowerCase();
-      const time = formatTime(req.createdAt).toLowerCase();
-      const tracking = req.trackingNumber?.toLowerCase() || '';
+      const clientName = normalizeSearchText(req.client.companyName || '');
+      const phone = normalizeSearchText(req.client.phone || '');
+      const date = normalizeSearchText(formatDate(req.createdAt));
+      const time = normalizeSearchText(formatTime(req.createdAt));
+      const tracking = normalizeSearchText(req.trackingNumber || '');
       
       const totalString = (req.totalQuote || 0).toString();
-      const formattedTotal = formatCurrency(req.totalQuote || 0).toLowerCase();
+      const formattedTotal = normalizeSearchText(formatCurrency(req.totalQuote || 0));
 
       return (
         clientName.includes(lowercasedQuery) ||

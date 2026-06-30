@@ -4,10 +4,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PayPalScriptProvider, usePayPalScriptReducer, PayPalButtons, FUNDING, PayPalCardFieldsProvider, PayPalNameField, PayPalNumberField, PayPalExpiryField, PayPalCVVField, usePayPalCardFields } from '@paypal/react-paypal-js';
-import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, Mail, Phone, User, ChevronDown, Tag, X } from 'lucide-react';
+import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, Mail, Phone, User, ChevronDown, Tag, X, Info, Building2, ArrowLeft, ArrowRight } from 'lucide-react';
+import CityInput from '@/components/CityInput';
 import { useCart, type CartItem } from '@/contexts/CartContext';
 import { useI18n } from '@/lib/i18n';
 import { formatPrice } from '@/lib/boutique-data';
+import { calculateCheckout } from '@/lib/checkout-calculations';
+import { useProfile } from '@/contexts/ProfileContext';
 import type { PdfSettings } from '@/lib/types';
 import { InvoiceButton } from '@/components/invoice-button';
 import { getPdfSettings } from '@/app/actions/quote-actions';
@@ -41,7 +44,7 @@ function ConfettiEffect() {
   return null;
 }
 
-function PayPalButtonGroup({ total, handlePay, items, delivery }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string> }) {
+function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, vatValidated }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string>; deliveryCost: number; vatValidated: boolean }) {
   const [{ isResolved, isRejected }] = usePayPalScriptReducer();
   const [error, setError] = useState<string | null>(null);
 
@@ -105,7 +108,7 @@ function PayPalButtonGroup({ total, handlePay, items, delivery }: { total: numbe
             const res = await fetch('/api/paypal/capture-order', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderId: data.orderID, rentalItems, purchaseItems, delivery }),
+              body: JSON.stringify({ orderId: data.orderID, rentalItems, purchaseItems, delivery: { ...delivery, vatValidated }, deliveryCost }),
             });
             const capture = await res.json();
             if (!res.ok) throw new Error(capture.error);
@@ -163,7 +166,7 @@ const cardFieldStyle = {
   },
 } satisfies Record<string, Record<string, string>>;
 
-function CardSection({ total, handlePay, items, delivery, isDeliveryComplete }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string>; isDeliveryComplete: boolean }) {
+function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, deliveryCost }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string>; isDeliveryComplete: boolean; deliveryCost: number }) {
   const { cardFieldsForm } = usePayPalCardFields();
   const [ready, setReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -268,9 +271,11 @@ export default function CheckoutPage() {
   const { t } = useI18n();
   const [step, setStep] = useState<'payment' | 'confirmation'>(isDemo ? 'confirmation' : 'payment');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>(isDemo ? 'paypal' : 'card');
-  const [delivery, setDelivery] = useState({ firstName: '', lastName: '', email: '', phone: '', addressLine1: '', addressLine2: '', postcode: '', city: '' });
+  const [delivery, setDelivery] = useState({ firstName: '', lastName: '', email: '', phone: '', addressLine1: '', addressLine2: '', postcode: '', city: '', country: 'FR', companyName: '', siren: '', vatNumber: '' });
   const [deliveryErrors, setDeliveryErrors] = useState<Record<string, string>>({});
   const [deliveryTouched, setDeliveryTouched] = useState<Record<string, boolean>>({});
+  const [vatValidated, setVatValidated] = useState(false);
+  const [vatValidating, setVatValidating] = useState(false);
   const [deliveryOpen, setDeliveryOpen] = useState(true);
   const [promoInput, setPromoInput] = useState('');
   const [mounted, setMounted] = useState(false);
@@ -283,6 +288,10 @@ export default function CheckoutPage() {
   const [magicError, setMagicError] = useState('');
   const [isNewCustomer, setIsNewCustomer] = useState(true);
   const [productsOpen, setProductsOpen] = useState(items.length < 2);
+  const [showInfo, setShowInfo] = useState(false);
+  const { profileType, setProfileType, showHT, showTTC, priceLabel, isB2B } = useProfile();
+  const [deliveryCost, setDeliveryCost] = useState(0);
+  const [deliveryLoading, setDeliveryLoading] = useState(false);
 
   useEffect(() => {
     setTxId("TXN" + Math.random().toString(36).slice(2, 10).toUpperCase());
@@ -293,7 +302,35 @@ export default function CheckoutPage() {
     getPdfSettings().then(setPdfSettings).catch(() => {});
   }, [isDemo]);
 
-  const isDeliveryComplete = !!(delivery.firstName && delivery.lastName && delivery.email && delivery.phone && delivery.addressLine1 && delivery.postcode && delivery.city);
+  useEffect(() => {
+    if (!delivery.postcode && !delivery.city) {
+      setDeliveryCost(0);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setDeliveryLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (delivery.postcode) params.set('postcode', delivery.postcode);
+        if (delivery.city) params.set('city', delivery.city);
+        params.set('subtotal', String(subtotal));
+        const res = await fetch(`/api/boutique/delivery-cost?${params}`);
+        const data = await res.json();
+        if (data.deliveryCost !== undefined) setDeliveryCost(data.deliveryCost);
+      } catch (e) {
+        console.error('Failed to fetch delivery cost:', e);
+      } finally {
+        setDeliveryLoading(false);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [delivery.postcode, delivery.city, subtotal]);
+
+  const isDeliveryComplete = !!(
+    delivery.firstName && delivery.lastName && delivery.email && delivery.phone &&
+    delivery.addressLine1 && delivery.postcode && delivery.city && delivery.country &&
+    (!isB2B || (delivery.companyName && delivery.siren))
+  );
 
   const NAME_RE = /^[\p{L}\s'-]{2,}$/u;
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -330,6 +367,15 @@ export default function CheckoutPage() {
       case 'postcode':
         if (!value.trim()) return '';
         if (!POSTCODE_RE.test(value.trim())) return 'Veuillez saisir un code postal valide.';
+        return '';
+      case 'companyName':
+        if (!value.trim()) return '';
+        if (value.trim().length < 2) return 'Veuillez saisir une raison sociale valide.';
+        return '';
+      case 'siren':
+        if (!value.trim()) return '';
+        const sirenDigits = value.replace(/[^0-9]/g, '');
+        if (sirenDigits.length < 9) return 'Le SIREN doit contenir au moins 9 chiffres.';
         return '';
       default:
         return '';
@@ -383,8 +429,18 @@ export default function CheckoutPage() {
     );
   }
 
-  const total = totalAfterDiscount;
-  const tva = subtotal * 0.2;
+  const calc = calculateCheckout({
+    subtotal,
+    totalAfterDiscount,
+    deliveryCost,
+    profileType,
+    country: delivery.country || 'FR',
+    vatValidated,
+  });
+  const tva = calc.vat;
+  const total = calc.total;
+  const totalLabel = calc.totalLabel;
+  const vatLabel = calc.vatLabel;
   const discount = promo ? subtotal - totalAfterDiscount : 0;
 
   const handlePay = (isNew?: boolean) => {
@@ -406,9 +462,15 @@ export default function CheckoutPage() {
       orderRef: ordNo.replace('ORD', ''),
       customerName: `${delivery.firstName} ${delivery.lastName}`.trim() || 'Client',
       customerEmail: delivery.email || 'email@exemple.com',
+      customerCompany: delivery.companyName || undefined,
+      customerSiren: delivery.siren || undefined,
+      customerVatNumber: delivery.vatNumber || undefined,
+      customerCountry: delivery.country,
       customerAddress: delivery.addressLine1 + (delivery.addressLine2 ? ', ' + delivery.addressLine2 : ''),
       customerPostcode: delivery.postcode,
       customerCity: delivery.city,
+      isB2B: isB2B,
+      vatValidated: vatValidated,
       productName: items[0]?.name || 'Produit',
       quantity: items.reduce((s, i) => s + i.quantity, 0),
       unitPrice: items.reduce((s, i) => s + i.price * i.quantity, 0) / items.reduce((s, i) => s + i.quantity, 0) || 0,
@@ -451,7 +513,14 @@ export default function CheckoutPage() {
           {/* LEFT COLUMN */}
           <section className="lg:col-span-7 space-y-4">
             {/* Receipt Card */}
-            <div className="bg-white rounded-[24px] border border-slate-100 overflow-hidden" style={{ boxShadow: '0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.04)' }}>
+            <div className="bg-white rounded-[24px] border border-slate-100 overflow-hidden relative" style={{ boxShadow: '0 10px 25px -5px rgba(0,0,0,0.04), 0 8px 10px -6px rgba(0,0,0,0.04)' }}>
+              <button
+                onClick={() => router.push('/boutique/paiement')}
+                className="absolute top-4 left-4 z-10 flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-900 text-white border border-white/20 text-xs font-semibold hover:bg-gray-800 hover:shadow-md transition-all cursor-pointer"
+              >
+                <ArrowLeft size={14} />
+                Retour
+              </button>
               {/* Receipt Header */}
               <div className="p-5 flex justify-between items-center border-b border-slate-50">
                 <div>
@@ -475,12 +544,30 @@ export default function CheckoutPage() {
               <div className="p-5 grid grid-cols-2 gap-8">
                 {/* Billing Info */}
                 <div>
-                  <h3 className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider mb-4 border-l-4 border-indigo-500 pl-3">{t('checkout.confirmed.billingInfo')}</h3>
+                  <h3 className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider mb-4 border-l-4 border-indigo-500 pl-3">{isB2B ? 'Client (Entreprise)' : 'Client (Particulier)'}</h3>
                   <div className="space-y-3">
+                    {isB2B && delivery.companyName && (
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Raison sociale</p>
+                        <p className="text-[12px] font-semibold text-slate-700">{delivery.companyName}</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{t('checkout.confirmed.client')}</p>
                       <p className="text-[12px] font-semibold text-slate-700">{delivery.firstName || '—'} {delivery.lastName || '—'}</p>
                     </div>
+                    {isB2B && delivery.siren && (
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">SIREN / SIRET</p>
+                        <p className="text-[12px] font-semibold text-slate-700">{delivery.siren}</p>
+                      </div>
+                    )}
+                    {isB2B && delivery.vatNumber && (
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">TVA intracommunautaire</p>
+                        <p className="text-[12px] font-semibold text-slate-700">{delivery.vatNumber} {vatValidated ? '✓' : ''}</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{t('checkout.confirmed.email')}</p>
                       <p className="text-[12px] font-semibold text-slate-700">{(delivery.email || '—').toUpperCase()}</p>
@@ -489,7 +576,7 @@ export default function CheckoutPage() {
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{t('checkout.confirmed.address')}</p>
                       <p className="text-[12px] font-semibold text-slate-700 leading-relaxed">
                         {delivery.addressLine1 || '—'}{delivery.addressLine2 ? ', ' + delivery.addressLine2 : ''}<br />
-                        {delivery.postcode || ''} {delivery.city || ''}
+                        {delivery.postcode || ''} {delivery.city || ''}{delivery.country ? ` (${delivery.country})` : ''}
                       </p>
                     </div>
                   </div>
@@ -652,15 +739,53 @@ export default function CheckoutPage() {
                 </div>
               </div>
               <div className="mb-6 relative z-10">
-                <p className="text-[11px] font-bold text-white/80 mb-1">{t('checkout.confirmed.totalPaid')}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-bold text-white/80 mb-1">{totalLabel}</p>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowInfo(!showInfo)}
+                      className="relative flex items-center justify-center w-6 h-6 group mb-1"
+                    >
+                      <Info size={15} className="relative z-10 text-white/80" />
+                      <span className="absolute inset-0 z-0 animate-ping rounded-full bg-white/20 group-hover:bg-white/30" style={{ animationDuration: '2.5s' }} />
+                    </button>
+                    {showInfo && (
+                      <div className="absolute z-20 right-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-4">
+                        <p className="text-xs text-gray-500 leading-relaxed">Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs. Les particuliers peuvent également commander directement depuis notre boutique.</p>
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <p className="text-xs font-semibold text-gray-800 mb-3">Vous êtes ?</p>
+                          <div className="flex flex-col gap-2">
+                            <button
+                              onClick={() => { setProfileType('particulier'); setShowInfo(false); }}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'particulier' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            >
+                              <User size={16} />
+                              Je suis un particulier
+                            </button>
+                            <button
+                              onClick={() => { setProfileType('entreprise'); setShowInfo(false); }}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'entreprise' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            >
+                              <Building2 size={16} />
+                              Je suis une entreprise
+                            </button>
+                          </div>
+                        </div>
+                        <button onClick={() => setShowInfo(false)} className="absolute top-2 right-2 text-gray-300 hover:text-gray-500 transition-colors">
+                          <X size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <h2 className="text-4xl font-[900] tracking-tighter">{formatPrice(total)}</h2>
-                <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{t('checkout.confirmed.vatIncluded')}</p>
+                <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{vatValidated && isB2B ? 'TVA autoliquidée – Achat hors taxes (HT)' : 'Prix toutes taxes comprises (TTC)'}</p>
               </div>
               <div className="space-y-3 mb-6 border-t border-white/20 pt-5 relative z-10">
                 {[
-                  [t('checkout.confirmed.subtotalHT'), formatPrice(subtotal)],
+                  ['Sous-total HT', formatPrice(subtotal)],
                   ...(discount > 0 ? [[`Promo (${promo?.code})`, `-${formatPrice(discount)}`]] : []),
-                  [t('checkout.confirmed.vat'), formatPrice(Math.round(tva))],
+                  [vatLabel, formatPrice(Math.round(tva))],
                 ].map(([label, val]) => (
                   <div key={label as string} className="flex justify-between items-center text-[13px]">
                     <span className="text-white/70 font-medium">{label}</span>
@@ -733,6 +858,13 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <section className="lg:col-span-7">
               <div className="bg-white rounded-2xl border border-gray-200/70 p-6 md:p-8">
+                <button
+                  onClick={() => router.push('/boutique/panier')}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-900 text-white border border-white/20 text-xs font-semibold hover:bg-gray-800 hover:shadow-md transition-all cursor-pointer mb-4"
+                >
+                  <ArrowLeft size={14} />
+                  Retour
+                </button>
                 {/* Payment method toggle — always visible */}
                 <div className="grid grid-cols-2 gap-2 mb-6">
                   <button
@@ -775,7 +907,7 @@ export default function CheckoutPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{t('checkout.deliveryAddress')}</p>
-                        <p className="text-[11px] text-gray-400">{isDeliveryComplete ? `${delivery.firstName} ${delivery.lastName}, ${delivery.addressLine1}, ${delivery.postcode} ${delivery.city}` : t('checkout.requiredForOrder')}</p>
+                        <p className="text-[11px] text-gray-400">{isDeliveryComplete ? `${delivery.firstName} ${delivery.lastName}, ${delivery.addressLine1}, ${delivery.postcode} ${delivery.city}` : 'Requis pour commander'}</p>
                       </div>
                     </div>
                     <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${deliveryOpen ? 'rotate-180' : ''}`} />
@@ -916,49 +1048,150 @@ export default function CheckoutPage() {
                             />
                           </div>
                         </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.postalCode')}</label>
-                          <input
-                            type="text"
-                            placeholder={t('checkout.postalCodePlaceholder')}
-                            value={delivery.postcode}
-                            onChange={e => handleDeliveryChange('postcode', e.target.value)}
-                            onBlur={e => handleDeliveryBlur('postcode', e.target.value)}
-                            aria-invalid={fieldMeta('postcode', delivery.postcode).hasError}
-                            aria-describedby={fieldMeta('postcode', delivery.postcode).error ? 'err-postcode' : undefined}
-                            className={inputCls('postcode', delivery.postcode, false)}
+                        <div className="sm:col-span-2">
+                          <CityInput
+                            value={delivery.city ? `${delivery.city} (${delivery.postcode})` : ''}
+                            onChange={(cityName, postcode) => {
+                              setDelivery(d => ({ ...d, city: cityName, postcode }));
+                              setDeliveryErrors(prev => ({ ...prev, city: '', postcode: '' }));
+                              if (!deliveryTouched.city) setDeliveryTouched(prev => ({ ...prev, city: true }));
+                              if (!deliveryTouched.postcode) setDeliveryTouched(prev => ({ ...prev, postcode: true }));
+                            }}
+                            error={!!(deliveryErrors.city || deliveryErrors.postcode)}
+                            errorMessage={deliveryErrors.city || deliveryErrors.postcode}
                           />
-                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                            {fieldMeta('postcode', delivery.postcode).error && (
-                              <p id="err-postcode" className="text-[10px] text-red-500 flex items-center gap-1">
-                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                {deliveryErrors.postcode}
-                              </p>
-                            )}
-                          </div>
                         </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.city')}</label>
-                          <input
-                            type="text"
-                            placeholder={t('checkout.cityPlaceholder')}
-                            value={delivery.city}
-                            onChange={e => handleDeliveryChange('city', e.target.value)}
-                            onBlur={e => handleDeliveryBlur('city', e.target.value)}
-                            aria-invalid={fieldMeta('city', delivery.city).hasError}
-                            aria-describedby={fieldMeta('city', delivery.city).error ? 'err-city' : undefined}
-                            className={inputCls('city', delivery.city, false)}
-                          />
-                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                            {fieldMeta('city', delivery.city).error && (
-                              <p id="err-city" className="text-[10px] text-red-500 flex items-center gap-1">
-                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                {deliveryErrors.city}
-                              </p>
-                            )}
-                          </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Pays</label>
+                          <select
+                            value={delivery.country}
+                            onChange={e => handleDeliveryChange('country', e.target.value)}
+                            onBlur={e => handleDeliveryBlur('country', e.target.value)}
+                            className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
+                              fieldMeta('country', delivery.country).hasError
+                                ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
+                                : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
+                            }`}
+                          >
+                            <option value="FR">France</option>
+                            <option value="BE">Belgique</option>
+                            <option value="CH">Suisse</option>
+                            <option value="LU">Luxembourg</option>
+                            <option value="DE">Allemagne</option>
+                            <option value="ES">Espagne</option>
+                            <option value="IT">Italie</option>
+                            <option value="NL">Pays-Bas</option>
+                            <option value="PT">Portugal</option>
+                            <option value="GB">Royaume-Uni</option>
+                            <option value="AT">Autriche</option>
+                            <option value="IE">Irlande</option>
+                            <option value="DK">Danemark</option>
+                            <option value="SE">Suède</option>
+                            <option value="FI">Finlande</option>
+                            <option value="PL">Pologne</option>
+                            <option value="CZ">République Tchèque</option>
+                            <option value="SK">Slovaquie</option>
+                            <option value="HU">Hongrie</option>
+                            <option value="GR">Grèce</option>
+                            <option value="RO">Roumanie</option>
+                            <option value="BG">Bulgarie</option>
+                            <option value="HR">Croatie</option>
+                            <option value="SI">Slovénie</option>
+                            <option value="LT">Lituanie</option>
+                            <option value="LV">Lettonie</option>
+                            <option value="EE">Estonie</option>
+                            <option value="CY">Chypre</option>
+                            <option value="MT">Malte</option>
+                          </select>
                         </div>
                       </div>
+                      {isB2B && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 border-t border-gray-100 pt-3">
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Raison sociale *</label>
+                          <input
+                            type="text"
+                            placeholder="Nom de l'entreprise"
+                            value={delivery.companyName}
+                            onChange={e => handleDeliveryChange('companyName', e.target.value)}
+                            onBlur={e => handleDeliveryBlur('companyName', e.target.value)}
+                            className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
+                              fieldMeta('companyName', delivery.companyName).hasError
+                                ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
+                                : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">SIREN / SIRET *</label>
+                          <input
+                            type="text"
+                            placeholder="123 456 789"
+                            value={delivery.siren}
+                            onChange={e => handleDeliveryChange('siren', e.target.value)}
+                            onBlur={e => handleDeliveryBlur('siren', e.target.value)}
+                            className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
+                              fieldMeta('siren', delivery.siren).hasError
+                                ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
+                                : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
+                            }`}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Numéro de TVA intracommunautaire</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="FRXX999999999"
+                              value={delivery.vatNumber}
+                              onChange={e => {
+                                setDelivery(d => ({ ...d, vatNumber: e.target.value }));
+                                if (vatValidated) setVatValidated(false);
+                              }}
+                              onBlur={e => handleDeliveryBlur('vatNumber', e.target.value)}
+                              className={`flex-1 px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
+                                vatValidated
+                                  ? 'border-emerald-300 bg-emerald-50/30'
+                                  : fieldMeta('vatNumber', delivery.vatNumber).hasError
+                                    ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
+                                    : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
+                              }`}
+                            />
+                            <button
+                              type="button"
+                              disabled={vatValidating || !delivery.vatNumber}
+                              onClick={async () => {
+                                if (!delivery.vatNumber) return;
+                                setVatValidating(true);
+                                try {
+                                  const res = await fetch('/api/boutique/validate-vat', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ vatNumber: delivery.vatNumber }),
+                                  });
+                                  const data = await res.json();
+                                  setVatValidated(data.valid === true);
+                                } catch {
+                                  setVatValidated(false);
+                                } finally {
+                                  setVatValidating(false);
+                                }
+                              }}
+                              className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                                vatValidated
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50'
+                              }`}
+                            >
+                              {vatValidating ? '...' : vatValidated ? '✓ Valide' : 'Valider'}
+                            </button>
+                          </div>
+                          {vatValidated && (
+                            <p className="text-[10px] text-emerald-600 font-semibold mt-1">Numéro de TVA valide — TVA autoliquidée</p>
+                          )}
+                        </div>
+                      </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -993,7 +1226,7 @@ export default function CheckoutPage() {
                         const res = await fetch('/api/paypal/capture-order', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ orderId: data.orderID, rentalItems, purchaseItems, delivery }),
+              body: JSON.stringify({ orderId: data.orderID, rentalItems, purchaseItems, delivery: { ...delivery, vatValidated: vatValidated }, deliveryCost }),
                         });
                         const capture = await res.json();
                         if (!res.ok) throw new Error(capture.error);
@@ -1008,11 +1241,11 @@ export default function CheckoutPage() {
                     }}
                     onError={(err) => console.error('CardFields error:', err)}
                   >
-                    <CardSection total={total} handlePay={handlePay} items={items} delivery={delivery} isDeliveryComplete={isDeliveryComplete} />
+                    <CardSection total={total} handlePay={handlePay} items={items} delivery={delivery} isDeliveryComplete={isDeliveryComplete} deliveryCost={deliveryCost} />
                   </PayPalCardFieldsProvider>
                 ) : (
                   isDeliveryComplete ? (
-                    <PayPalButtonGroup total={total} handlePay={handlePay} items={items} delivery={delivery} />
+                    <PayPalButtonGroup total={total} handlePay={handlePay} items={items} delivery={delivery} deliveryCost={deliveryCost} vatValidated={vatValidated} />
                   ) : (
                     <div className="bg-gray-50/50 border border-dashed border-gray-200 rounded-xl p-6 text-center">
                       <MapPin size={24} className="mx-auto text-gray-300 mb-2" />
@@ -1068,7 +1301,7 @@ export default function CheckoutPage() {
                     <div className="text-xs text-gray-700 leading-relaxed">
                       <p className="font-medium">{delivery.firstName} {delivery.lastName}</p>
                       <p>{delivery.addressLine1}{delivery.addressLine2 ? ', ' + delivery.addressLine2 : ''}</p>
-                      <p>{delivery.postcode} {delivery.city}</p>
+                      <p>{delivery.postcode} {delivery.city} {delivery.country}</p>
                       <p className="text-gray-400 mt-1">{delivery.email} · {delivery.phone}</p>
                     </div>
                   </div>
@@ -1112,7 +1345,7 @@ export default function CheckoutPage() {
 
                 <div className="border-t border-gray-200/40 pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">{t('cart.subtotal')}</span>
+                    <span className="text-gray-500">Sous-total HT</span>
                     <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
                   </div>
                   {discount > 0 && (
@@ -1123,18 +1356,62 @@ export default function CheckoutPage() {
                   )}
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">{t('cart.expressDelivery')}</span>
-                    <span className="font-semibold text-emerald-600">{t('cart.free')}</span>
+                    {!delivery.postcode && !delivery.city ? (
+                      <span className="text-xs text-emerald-600 font-semibold">Saisissez votre adresse</span>
+                    ) : deliveryLoading ? (
+                      <span className="text-xs text-gray-400 animate-pulse">Calcul...</span>
+                    ) : deliveryCost === 0 ? (
+                      <span className="font-semibold text-emerald-600">{t('cart.free')}</span>
+                    ) : (
+                      <span className="font-semibold text-gray-900">{formatPrice(deliveryCost)}</span>
+                    )}
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">{t('cart.vat')}</span>
+                    <span className="text-gray-500">{vatLabel}</span>
                     <span className="font-semibold text-gray-900">{formatPrice(Math.round(tva))}</span>
                   </div>
                 </div>
 
                 <div className="border-t border-gray-900 mt-4 pt-4 flex justify-between items-end mb-6">
                   <div>
-                    <p className="text-[11px] font-semibold text-gray-500 uppercase">{t('cart.totalToPay')}</p>
+                    <p className="text-[11px] font-semibold text-gray-500 uppercase">{totalLabel}</p>
                     <p className="text-xl font-bold text-gray-900">{formatPrice(total)}</p>
+                  </div>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowInfo(!showInfo)}
+                      className="relative flex items-center justify-center w-6 h-6 group"
+                    >
+                      <Info size={15} className="relative z-10 text-blue-600" />
+                      <span className="absolute inset-0 z-0 animate-ping rounded-full bg-blue-400/40 group-hover:bg-blue-400/60" style={{ animationDuration: '2.5s' }} />
+                    </button>
+                    {showInfo && (
+                      <div className="absolute z-20 right-0 bottom-full mb-2 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-4">
+                        <p className="text-xs text-gray-500 leading-relaxed">Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs. Les particuliers peuvent également commander directement depuis notre boutique.</p>
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <p className="text-xs font-semibold text-gray-800 mb-3">Vous êtes ?</p>
+                          <div className="flex flex-col gap-2">
+                            <button
+                              onClick={() => { setProfileType('particulier'); setShowInfo(false); }}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'particulier' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            >
+                              <User size={16} />
+                              Je suis un particulier
+                            </button>
+                            <button
+                              onClick={() => { setProfileType('entreprise'); setShowInfo(false); }}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'entreprise' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                            >
+                              <Building2 size={16} />
+                              Je suis une entreprise
+                            </button>
+                          </div>
+                        </div>
+                        <button onClick={() => setShowInfo(false)} className="absolute top-2 right-2 text-gray-300 hover:text-gray-500 transition-colors">
+                          <X size={12} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1158,6 +1435,7 @@ export default function CheckoutPage() {
           </div>
         )}
       </main>
+
     </div>
     </PayPalScriptProvider>
   );

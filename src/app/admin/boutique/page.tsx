@@ -12,9 +12,11 @@ import {
 import { getSaleOrders, updateSaleOrder, type SaleOrder, type SaleStatus } from '@/lib/sale-orders';
 import { getRentalOrders, updateRentalOrder, type RentalOrder, type RentalStatus } from '@/lib/rental-orders';
 import { formatPrice } from '@/lib/boutique-data';
+import { normalizeSearchText } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Pagination } from '@/components/pagination';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { TrackingDetailDrawer } from '@/components/tracking/tracking-detail-drawer';
 
 type Mode = 'vente' | 'location';
 
@@ -55,6 +57,7 @@ function DetailModal({ open, onClose, order, mode }: {
   mode: Mode;
 }) {
   const [trackingInput, setTrackingInput] = useState(order?.trackingNumber || '');
+  const [trackingDrawerOpen, setTrackingDrawerOpen] = useState(false);
 
   useEffect(() => {
     setTrackingInput(order?.trackingNumber || '');
@@ -341,13 +344,22 @@ function DetailModal({ open, onClose, order, mode }: {
                 </button>
               </div>
               {order.trackingNumber && (
-                <p className="text-[11px] text-slate-500">
-                  Suivi actuel : <span className="font-bold text-slate-700">{order.trackingNumber}</span>
-                </p>
+                <button
+                  onClick={() => setTrackingDrawerOpen(true)}
+                  className="text-[11px] text-slate-500 hover:text-indigo-600 transition-colors text-left w-full"
+                >
+                  Suivi actuel : <span className="font-bold text-slate-700 hover:text-indigo-700 underline-offset-2 hover:underline">{order.trackingNumber}</span>
+                </button>
               )}
             </div>
           </div>
         </div>
+
+        <TrackingDetailDrawer
+          open={trackingDrawerOpen}
+          onClose={() => setTrackingDrawerOpen(false)}
+          trackingNumber={order.trackingNumber || ''}
+        />
       </SheetContent>
     </Sheet>
   );
@@ -366,6 +378,7 @@ export default function BoutiquePage() {
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [trackingDrawerNumber, setTrackingDrawerNumber] = useState<string | null>(null);
   const PAGE_SIZE = 10;
 
   const fetchData = useCallback(async () => {
@@ -402,11 +415,11 @@ export default function BoutiquePage() {
   const filteredSaleOrders = useMemo(() => {
     let result = saleOrders.filter(o => o.status === saleStatus);
     if (search.trim()) {
-      const q = search.toLowerCase();
+      const q = normalizeSearchText(search);
       result = result.filter(o =>
-        o.productName.toLowerCase().includes(q) ||
-        o.customerName.toLowerCase().includes(q) ||
-        o.customerEmail.toLowerCase().includes(q)
+        normalizeSearchText(o.productName).includes(q) ||
+        normalizeSearchText(o.customerName).includes(q) ||
+        normalizeSearchText(o.customerEmail).includes(q)
       );
     }
     return result;
@@ -415,11 +428,11 @@ export default function BoutiquePage() {
   const filteredRentalOrders = useMemo(() => {
     let result = rentalStatus === 'all' ? rentalOrders : rentalOrders.filter(o => o.status === rentalStatus);
     if (search.trim()) {
-      const q = search.toLowerCase();
+      const q = normalizeSearchText(search);
       result = result.filter(o =>
-        o.productName.toLowerCase().includes(q) ||
-        o.renterCompany.toLowerCase().includes(q) ||
-        o.renterEmail.toLowerCase().includes(q)
+        normalizeSearchText(o.productName).includes(q) ||
+        normalizeSearchText(o.renterCompany).includes(q) ||
+        normalizeSearchText(o.renterEmail).includes(q)
       );
     }
     return result;
@@ -699,23 +712,16 @@ export default function BoutiquePage() {
                               <span className="text-sm font-bold text-gray-900">{formatPrice(o.amountPaid)}</span>
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <input
-                                type="text"
-                                defaultValue={(o as any).trackingNumber || ''}
-                                placeholder="—"
-                                onClick={e => e.stopPropagation()}
-                                onBlur={async (e) => {
-                                  const val = e.target.value.trim();
-                                  if (val === ((o as any).trackingNumber || '')) return;
-                                  if (!o.id) return;
-                                  try {
-                                    await updateSaleOrder(o.id, { trackingNumber: val || '' } as any);
-                                  } catch {
-                                    console.error('Failed to update tracking');
-                                  }
-                                }}
-                                className="w-24 px-2 py-1 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-400 transition-all bg-white/60 focus:bg-white placeholder:text-slate-300 text-center"
-                              />
+                              {(o as any).trackingNumber ? (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setTrackingDrawerNumber((o as any).trackingNumber); }}
+                                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                                >
+                                  {(o as any).trackingNumber}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-slate-300">—</span>
+                              )}
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className="text-sm text-gray-500">{new Date(o.createdAt).toLocaleDateString('fr-FR')}</span>
@@ -860,23 +866,16 @@ export default function BoutiquePage() {
                               <span className="text-sm font-bold text-gray-900">{formatPrice(o.amountPaid)}</span>
                             </td>
                             <td className="px-4 py-3 text-center">
-                              <input
-                                type="text"
-                                defaultValue={(o as any).trackingNumber || ''}
-                                placeholder="—"
-                                onClick={e => e.stopPropagation()}
-                                onBlur={async (e) => {
-                                  const val = e.target.value.trim();
-                                  if (val === ((o as any).trackingNumber || '')) return;
-                                  if (!o.id) return;
-                                  try {
-                                    await updateRentalOrder(o.id, { trackingNumber: val || '' } as any);
-                                  } catch {
-                                    console.error('Failed to update tracking');
-                                  }
-                                }}
-                                className="w-24 px-2 py-1 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-400 transition-all bg-white/60 focus:bg-white placeholder:text-slate-300 text-center"
-                              />
+                              {(o as any).trackingNumber ? (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setTrackingDrawerNumber((o as any).trackingNumber); }}
+                                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+                                >
+                                  {(o as any).trackingNumber}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-slate-300">—</span>
+                              )}
                             </td>
                             <td className="px-4 py-3 text-center">
                               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold ${rentalStatusColors[o.status]}`}>
@@ -948,6 +947,12 @@ export default function BoutiquePage() {
           )
         )}
       </div>
+
+      <TrackingDetailDrawer
+        open={!!trackingDrawerNumber}
+        onClose={() => setTrackingDrawerNumber(null)}
+        trackingNumber={trackingDrawerNumber || ''}
+      />
     </div>
   );
 }

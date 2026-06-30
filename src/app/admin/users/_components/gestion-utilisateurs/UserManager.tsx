@@ -21,6 +21,7 @@ import { UserProfileDrawer } from './UserProfileDrawer';
 import { UserTable } from './UserTable';
 import { User, UserRole as LocalUserRole, UserStatus } from './types';
 import { useRoles } from '@/contexts/RoleContext';
+import { normalizeSearchText } from '@/lib/utils';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -104,11 +105,11 @@ export function UserManager() {
     let filtered = users;
 
     if (searchQuery) {
-      const q = searchQuery.toLowerCase();
+      const q = normalizeSearchText(searchQuery);
       filtered = filtered.filter(u =>
-        u.displayName?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        u.phone?.toLowerCase().includes(q)
+        normalizeSearchText(u.displayName ?? '').includes(q) ||
+        normalizeSearchText(u.email ?? '').includes(q) ||
+        normalizeSearchText(u.phone ?? '').includes(q)
       );
     }
 

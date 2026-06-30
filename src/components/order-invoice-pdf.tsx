@@ -42,9 +42,15 @@ interface OrderInvoicePDFProps {
   rentalEndDate?: string;
   customerName: string;
   customerEmail: string;
+  customerCompany?: string;
+  customerSiren?: string;
+  customerVatNumber?: string;
+  customerCountry?: string;
   customerAddress: string;
   customerPostcode?: string;
   customerCity?: string;
+  isB2B?: boolean;
+  vatValidated?: boolean;
   products: InvoiceProduct[];
   subtotal: number;
   vat: number;
@@ -52,7 +58,7 @@ interface OrderInvoicePDFProps {
   totalTtc: number;
 }
 
-export function OrderInvoicePDF({ id, settings, invoiceNumber, createdAt, type, rentalStartDate, rentalEndDate, customerName, customerEmail, customerAddress, customerPostcode, customerCity, products, subtotal, vat, vatRate, totalTtc }: OrderInvoicePDFProps) {
+export function OrderInvoicePDF({ id, settings, invoiceNumber, createdAt, type, rentalStartDate, rentalEndDate, customerName, customerEmail, customerCompany, customerSiren, customerVatNumber, customerCountry, customerAddress, customerPostcode, customerCity, isB2B, vatValidated, products, subtotal, vat, vatRate, totalTtc }: OrderInvoicePDFProps) {
   if (!settings) return null;
 
   const currentTheme = THEMES.find(t => t.id === settings.themeId) || THEMES[0];
@@ -123,12 +129,20 @@ export function OrderInvoicePDF({ id, settings, invoiceNumber, createdAt, type, 
               <User size={24} strokeWidth={2.5} />
             </div>
             <div className="flex-1 flex flex-col items-start text-left gap-0">
-              <span className="uppercase text-[0.72em] text-gray-400 font-black tracking-[0.1em] text-left w-full">Client</span>
+              <span className="uppercase text-[0.72em] text-gray-400 font-black tracking-[0.1em] text-left w-full">{isB2B ? 'Client (Entreprise)' : 'Client (Particulier)'}</span>
+              {customerCompany && (
+                <span style={{ fontSize: '1.1em', fontWeight: 800, color: currentTheme.text }} className="text-left w-full mt-1">{customerCompany}</span>
+              )}
               <span style={{ fontSize: '1.6em', fontWeight: 900, color: currentTheme.text, letterSpacing: '-0.02em', marginBottom: '1px' }} className="text-left w-full">{customerName}</span>
               <div className="flex flex-col items-start text-left gap-1 mt-1 w-full">
+                {customerSiren && (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <span style={{ fontWeight: 500, fontSize: '0.9em' }}>SIRET : {customerSiren}{customerVatNumber ? ` | TVA : ${customerVatNumber}` : ''}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 text-gray-500">
                   <MapPin size={12} className="shrink-0" style={{ color: currentTheme.primary }} />
-                  <span style={{ fontWeight: 500, fontSize: '0.95em' }}>{customerAddress || 'Adresse non fournie'}{customerCity ? `, ${customerPostcode || ''} ${customerCity}` : ''}</span>
+                  <span style={{ fontWeight: 500, fontSize: '0.95em' }}>{customerAddress || 'Adresse non fournie'}{customerCity ? `, ${customerPostcode || ''} ${customerCity}` : ''}{customerCountry ? ` (${customerCountry})` : ''}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-500">
                   <Mail size={12} className="shrink-0" style={{ color: currentTheme.primary }} />
@@ -199,13 +213,14 @@ export function OrderInvoicePDF({ id, settings, invoiceNumber, createdAt, type, 
                   <span style={{ fontWeight: 800, textAlign: 'right', color: '#0f172a' }}>{fmt(subtotal)}</span>
                 </div>
                 <div className="flex justify-between items-center text-[0.78em]">
-                  <span className="text-slate-500 font-medium">TVA ({vatRate}%)</span>
+                  <span className="text-slate-500 font-medium">TVA {isB2B && vatValidated ? '(0%)' : `(${vatRate}%)`}</span>
                   <span style={{ fontWeight: 800, textAlign: 'right', color: '#0f172a' }}>{fmt(vat)}</span>
                 </div>
               </div>
               <div className="mt-6 rounded-xl p-5 flex justify-between items-center text-white shadow-md mx-[-2px]" style={{ background: `linear-gradient(135deg, ${currentTheme.primary} 0%, ${currentTheme.primary}dd 100%)` }}>
                 <div className="flex flex-col">
-                  <span className="text-[0.65em] font-black uppercase tracking-widest opacity-90">TOTAL TTC</span>
+                  <span className="text-[0.65em] font-black uppercase tracking-widest opacity-90">{isB2B && vatValidated ? 'TOTAL HT' : 'TOTAL TTC'}</span>
+                  {isB2B && vatValidated && <span className="text-[0.55em] font-bold uppercase tracking-wider opacity-70 mt-0.5">TVA autoliquidée</span>}
                 </div>
                 <span style={{ fontSize: '1.6em', fontWeight: 900, textAlign: 'right', color: 'white', letterSpacing: '-0.04em' }}>{fmt(totalTtc)}</span>
               </div>

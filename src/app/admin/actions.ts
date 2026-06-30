@@ -18,6 +18,7 @@ import { buildSupplierEmailHtml } from '@/lib/email-templates';
 
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry, Dispute } from '@/lib/types';
 import { normalizePrice } from '@/lib/pricing-engine';
+import { normalizeSearchText } from '@/lib/utils';
 
 export interface ResellerLead {
   id: string;
@@ -1016,10 +1017,10 @@ export async function getUsers({
     });
 
     if (searchTerm) {
-      const lowercasedTerm = searchTerm.toLowerCase();
+      const lowercasedTerm = normalizeSearchText(searchTerm);
       users = users.filter(user =>
-        user.displayName?.toLowerCase().includes(lowercasedTerm) ||
-        user.email.toLowerCase().includes(lowercasedTerm)
+        normalizeSearchText(user.displayName ?? '').includes(lowercasedTerm) ||
+        normalizeSearchText(user.email).includes(lowercasedTerm)
       );
     }
 
@@ -1498,7 +1499,7 @@ export async function getPaginatedQuotes({
   if (!adminDb) throw new Error("Firestore not initialized");
 
   const user = await getCurrentAdminUser();
-  if (!user || 'error' in user) throw new Error("Unauthorized");
+  if (!user || 'error' in user) return { requests: [], lastId: null, unauthorized: true };
 
   const safeSupplierId = (clientSupplierId === '$undefined' || clientSupplierId === 'undefined') 
     ? null 
@@ -3401,7 +3402,8 @@ export async function getActiveGlobalTheme(): Promise<{ themeId: string }> {
   try {
     const doc = await adminDb.collection('settings').doc(ACTIVE_THEME_DOC_ID).get();
     const data = doc.data();
-    const defaultName = (await import('@/lib/color-palettes')).DEFAULT_PALETTES[0].name;
+    const palettes = (await import('@/lib/color-palettes')).DEFAULT_PALETTES;
+    const defaultName = palettes.find(p => p.isDefault)?.name || palettes[0].name;
     return { themeId: data?.activeThemeId || defaultName };
   } catch (error) {
     console.error("Error fetching active theme:", error);

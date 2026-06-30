@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { getDisputes, updateDisputeStatus, replyToDispute } from '../actions';
+import { normalizeSearchText } from '@/lib/utils';
 import type { Dispute, DisputeMessage } from '@/lib/types';
 
 const statusConfig: Record<Dispute['status'], { label: string; color: string; icon: any }> = {
@@ -82,9 +83,10 @@ export default function LitigesPage() {
     setSendingId(null);
   };
 
+  const q = normalizeSearchText(search);
   const filtered = disputes.filter(d =>
-    d.customerEmail.toLowerCase().includes(search.toLowerCase()) ||
-    d.reason.toLowerCase().includes(search.toLowerCase())
+    normalizeSearchText(d.customerEmail).includes(q) ||
+    normalizeSearchText(d.reason).includes(q)
   );
 
   return (

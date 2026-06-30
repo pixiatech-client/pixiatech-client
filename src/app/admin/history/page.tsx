@@ -32,6 +32,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import type { DateRange } from 'react-day-picker';
 import { Badge } from '@/components/ui/badge';
+import { normalizeSearchText } from '@/lib/utils';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -118,14 +119,14 @@ export default function HistoryPage() {
 
     const filteredHistory = useMemo(() => {
         let history = fullHistory;
-        const lowercasedQuery = searchQuery.toLowerCase();
+        const q = normalizeSearchText(searchQuery);
 
-        if (lowercasedQuery) {
+        if (q) {
             history = history.filter(entry =>
-                entry.userName.toLowerCase().includes(lowercasedQuery) ||
-                entry.action.toLowerCase().includes(lowercasedQuery) ||
-                entry.details.toLowerCase().includes(lowercasedQuery) ||
-                entry.quoteName.toLowerCase().includes(lowercasedQuery)
+                normalizeSearchText(entry.userName).includes(q) ||
+                normalizeSearchText(entry.action).includes(q) ||
+                normalizeSearchText(entry.details).includes(q) ||
+                normalizeSearchText(entry.quoteName).includes(q)
             );
         }
 
@@ -148,14 +149,14 @@ export default function HistoryPage() {
 
     const filteredActivityLogs = useMemo(() => {
         let logs = activityLogs;
-        const lowercasedQuery = searchQuery.toLowerCase();
+        const q = normalizeSearchText(searchQuery);
 
-        if (lowercasedQuery) {
+        if (q) {
             logs = logs.filter(entry =>
-                entry.userName.toLowerCase().includes(lowercasedQuery) ||
-                entry.action.toLowerCase().includes(lowercasedQuery) ||
-                entry.details.toLowerCase().includes(lowercasedQuery) ||
-                (entry.targetName || '').toLowerCase().includes(lowercasedQuery)
+                normalizeSearchText(entry.userName).includes(q) ||
+                normalizeSearchText(entry.action).includes(q) ||
+                normalizeSearchText(entry.details).includes(q) ||
+                normalizeSearchText(entry.targetName || '').includes(q)
             );
         }
 

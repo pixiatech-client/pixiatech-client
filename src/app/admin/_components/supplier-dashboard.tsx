@@ -19,7 +19,7 @@ import { Loader2, Package, Search, FilePen, RotateCcw, Truck, ClipboardList, Che
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, normalizeSearchText } from '@/lib/utils';
 import { Pagination } from '@/components/ui/Pagination';
 import {
   AlertDialog,
@@ -216,10 +216,11 @@ export function SupplierDashboard() {
 
   // Filtrage des estimations par onglet et recherche
   const { preparationQuotes, livraisonQuotes } = useMemo(() => {
+    const sq = normalizeSearchText(searchQuery);
     const baseFilter = (q: QuoteRequest) => !searchQuery || 
-        q.client.companyName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        `est-${q.id.substring(0, 6)}`.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        (q.trackingNumber || '').toLowerCase().includes(searchQuery.toLowerCase());
+        normalizeSearchText(q.client.companyName).includes(sq) || 
+        normalizeSearchText(`est-${q.id.substring(0, 6)}`).includes(sq) || 
+        normalizeSearchText(q.trackingNumber || '').includes(sq);
     
     return {
         preparationQuotes: quotes.filter(q => q.status === 'in_progress' && baseFilter(q)),

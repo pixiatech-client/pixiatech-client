@@ -9,7 +9,7 @@ import {
   Truck, Archive, User, Package, FileText, LayoutGrid, 
   ArrowLeft, Check
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, normalizeSearchText } from '@/lib/utils';
 import { Pagination } from '@/components/ui/Pagination';
 import { CustomSelect } from '@/components/ui/custom-select';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -202,10 +202,11 @@ const GestionLocations = () => {
 
   const filteredLocations = useMemo(() => {
     return locations.filter(loc => {
+      const sq = normalizeSearchText(searchQuery);
       const matchesSearch = 
-        (loc.client?.companyName?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (loc.number?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (loc.id.toLowerCase().includes(searchQuery.toLowerCase()));
+        normalizeSearchText(loc.client?.companyName || '').includes(sq) ||
+        normalizeSearchText(loc.number || '').includes(sq) ||
+        normalizeSearchText(loc.id).includes(sq);
       
       const matchesStatus = filterStatus === 'all' || 
         (filterStatus === 'sent' ? (loc.status === 'sent' || loc.status === 'delivered') : loc.status === filterStatus);

@@ -41,7 +41,8 @@ function buildWelcomeEmailHtml(linkUrl: string, expiresInMinutes: number): strin
 
 export async function POST(req: NextRequest) {
   try {
-    const { orderId, rentalItems, purchaseItems, delivery } = await req.json();
+    const { orderId, rentalItems, purchaseItems, delivery, deliveryCost } = await req.json();
+    const deliveryCostNum = typeof deliveryCost === 'number' ? deliveryCost : 0;
     const capture = await capturePayPalOrder(orderId);
     const paypalCaptureId = capture?.purchase_units?.[0]?.payments?.captures?.[0]?.id || capture?.id || '';
     const { adminDb } = getFirebaseAdmin();
@@ -63,6 +64,11 @@ export async function POST(req: NextRequest) {
     const customerAddress2 = delivery?.addressLine2 || '';
     const customerCity = delivery?.city || shippingAddress?.admin_area_2 || '';
     const customerPostcode = delivery?.postcode || shippingAddress?.postal_code || '';
+    const customerCountry = delivery?.country || 'FR';
+    const customerCompany = delivery?.companyName || '';
+    const customerSiren = delivery?.siren || '';
+    const customerVatNumber = delivery?.vatNumber || '';
+    const customerVatValidated = delivery?.vatValidated === true || delivery?.vatValidated === 'true';
 
     // Upsert customer
     let customerId = '';
@@ -124,6 +130,7 @@ export async function POST(req: NextRequest) {
             paypalOrderId: orderId,
             paypalCaptureId,
             amountPaid: item.productPrice * item.quantity,
+            deliveryCost: deliveryCostNum,
             status: 'pending_validation',
             userId: null,
             customerId,
@@ -155,10 +162,17 @@ export async function POST(req: NextRequest) {
               : customerAddress,
             customerCity,
             customerPostcode,
+            customerCountry,
+            customerCompany,
+            customerSiren,
+            customerVatNumber,
+            customerVatValidated,
             customerId,
             paypalOrderId: orderId,
             paypalCaptureId,
             amountPaid: item.productPrice * item.quantity,
+            vat: 0,
+            deliveryCost: deliveryCostNum,
             status: 'commande',
             createdAt: now,
             updatedAt: now,
