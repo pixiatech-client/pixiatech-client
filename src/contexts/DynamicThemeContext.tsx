@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { useUser } from '@/firebase';
 import type { ThemeSettings } from '@/lib/types';
 import { updateUser } from '@/app/admin/actions';
@@ -39,6 +40,8 @@ const DynamicThemeContext = createContext<DynamicThemeContextType | undefined>(u
 
 export function DynamicThemeProvider({ children }: { children: React.ReactNode }) {
   const { user, userProfile } = useUser();
+  const pathname = usePathname();
+  const isAdminPage = pathname?.startsWith('/admin');
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>(DEFAULT_THEME);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -57,8 +60,11 @@ export function DynamicThemeProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    applyTheme(themeSettings);
-  }, [themeSettings, applyTheme]);
+    // Do not apply boutique theme on admin pages — the admin ThemeProvider handles it
+    if (!isAdminPage) {
+      applyTheme(themeSettings);
+    }
+  }, [themeSettings, applyTheme, isAdminPage]);
 
   const updateTheme = (newSettings: Partial<ThemeSettings>) => {
     setThemeSettings(prev => ({ ...prev, ...newSettings }));
