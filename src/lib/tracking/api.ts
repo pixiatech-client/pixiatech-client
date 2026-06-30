@@ -24,52 +24,49 @@ interface RegisterResponse {
   };
 }
 
+interface V2ProviderEvent {
+  time_iso: string | null;
+  time_utc: string | null;
+  time_raw: { date: string | null; time: string | null; timezone: string | null } | null;
+  description: string;
+  description_translation?: { lang: string; description: string };
+  location: string | null;
+  stage: string;
+  sub_status: string;
+}
+
 interface TrackingInfoResponse {
   code: number;
   data: {
     accepted: Array<{
       number: string;
       carrier: number;
-      track: {
-        transit: boolean;
-        latest_status: {
-          status: TrackingStatus;
-          sub_status: string;
+      tag?: string | null;
+      lang?: string | null;
+      origin_country?: string | null;
+      destination_country?: string | null;
+      // v2.4 format
+      track_info?: {
+        latest_status?: { status: string; sub_status: string };
+        latest_event?: Record<string, any>;
+        time_metrics?: {
+          estimated_delivery_date?: { from?: string; to?: string };
         };
-        latest_event: {
-          time: string;
-          time_iso: string;
-          location: { city: string; country: string };
-          description: string;
+        shipping_info?: {
+          shipper_address?: { country?: string };
+          recipient_address?: { country?: string };
         };
-        origin_info: {
-          received_days: number;
-          reference_number: string;
-          pickup_time: string;
-          delivery_time: string;
-          wechat_ship_time: string;
-          other_info: string;
-          track_info: string;
+        tracking?: {
+          providers?: Array<{
+            provider?: { key?: number; name?: string };
+            events?: V2ProviderEvent[];
+          }>;
         };
-        destination_info: {
-          recipient: string;
-          country: string;
-          city: string;
-          address: string;
-          postal_code: string;
-        };
-        last_mile_info: string;
-        milestones: Array<{
-          id: string;
-          action: string;
-          status: string;
-          sub_status: string;
-          time: string;
-          time_iso: string;
-          location: { city: string; country: string };
-        }>;
-        events: Array<{
-          id: string;
+      };
+      // v2.2 fallback
+      track?: {
+        latest_status?: { status: string; sub_status: string };
+        events?: Array<{
           time: string;
           time_iso: string;
           time_raw: string;
@@ -77,11 +74,12 @@ interface TrackingInfoResponse {
           description: string;
           status: string;
           sub_status: string;
-          signed_by: string;
         }>;
-        origin_country: string;
-        destination_country: string;
-        est_delivery_time: string;
+        origin_country?: string;
+        destination_country?: string;
+        est_delivery_time?: string;
+        origin_info?: { pickup_time?: string; delivery_time?: string };
+        destination_info?: { recipient?: string };
       };
     }>;
     rejected: Array<{
@@ -135,8 +133,28 @@ export async function getTrackingInfo(
 }
 
 export function parseTrackingEvents(data: TrackingInfoResponse['data']['accepted'][0]): TrackingEvent[] {
+  // v2.4 format: track_info.tracking.providers[].events[]
+  if (data.track_info?.tracking?.providers) {
+    const all: TrackingEvent[] = [];
+    for (const p of data.track_info.tracking.providers) {
+      if (!p.events) continue;
+      for (const evt of p.events) {
+        all.push({
+          time: evt.time_iso || evt.time_utc || '',
+          timeRaw: evt.time_raw ? `${evt.time_raw.date || ''} ${evt.time_raw.time || ''}`.trim() : '',
+          location: evt.location || '',
+          description: evt.description_translation?.description || evt.description || '',
+          subStatus: evt.sub_status || '',
+          status: evt.stage as TrackingStatus || 'InfoReceived',
+        });
+      }
+    }
+    return all;
+  }
+
+  // v2.2 fallback: track.events[]
   const track = data.track;
-  if (!track || !track.events) return [];
+  if (!track?.events) return [];
 
   return track.events.map((evt) => ({
     time: evt.time_iso || evt.time,

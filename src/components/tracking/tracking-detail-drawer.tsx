@@ -17,32 +17,50 @@ export function TrackingDetailDrawer({ open, onClose, trackingNumber, carrier }:
   const [status, setStatus] = useState<TrackingStatus>('InfoReceived');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+
   useEffect(() => {
     if (!open || !trackingNumber) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
     (async () => {
       setLoading(true);
-      setError(null);
+      if (retryCount === 0) setError(null);
       try {
         const res = await fetch('/api/tracking/status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ trackingNumber, carrier }),
         });
+        if (cancelled) return;
         if (!res.ok) {
           const err = await res.json();
           setError(err.error || 'Erreur lors de la récupération du suivi');
           return;
         }
         const result = await res.json();
-        setStatus(result.data.status);
-        setEvents(result.data.events || []);
+        if (result.data.registered && !result.data.events?.length && retryCount < 3) {
+          timer = setTimeout(() => {
+            if (!cancelled) setRetryCount((c) => c + 1);
+          }, 4000);
+          setError('Numéro enregistré, récupération en cours...');
+        } else {
+          setStatus(result.data.status);
+          setEvents(result.data.events || []);
+        }
       } catch {
-        setError('Erreur réseau');
+        if (!cancelled) setError('Erreur réseau');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, [open, trackingNumber, carrier]);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [open, trackingNumber, carrier, retryCount]);
   const colors = STATUS_COLORS[status] || STATUS_COLORS.InfoReceived;
   return (
     <AnimatePresence>
