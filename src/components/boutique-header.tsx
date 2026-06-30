@@ -162,14 +162,14 @@ export function BoutiqueHeader() {
         {/* Right side */}
         <div className="flex items-center space-x-4 lg:space-x-6">
           {/* Admin shield */}
-          <a
+          <Link
             href="/admin/login"
             className="text-white/70 hover:text-white nav-link"
             aria-label="Administration"
             title="Administration"
           >
             <Shield size={18} />
-          </a>
+          </Link>
 
           {/* Language toggle */}
           <button

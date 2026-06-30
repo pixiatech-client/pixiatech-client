@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Client espace routes: check client_session cookie
-  const clientLoginUrl = new URL('/mon-compte/connexion', requestUrl);
+  const clientLoginUrl = new URL('/mon-compte/connexion', request.nextUrl);
   const isClientAuthPage = pathname === '/mon-compte/connexion' || pathname.startsWith('/mon-compte/valider');
   const isClientRoute = pathname.startsWith('/mon-compte/');
 
@@ -33,8 +33,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Admin routes: session check
-  const loginUrl = new URL('/admin/login', requestUrl);
-  const adminUrl = new URL('/admin', requestUrl);
+  const loginUrl = new URL('/admin/login', request.nextUrl);
+  const adminUrl = new URL('/admin', request.nextUrl);
   const isAuthPage = pathname.startsWith('/admin/login') || pathname.startsWith('/admin/register');
   const isApiRoute = pathname.startsWith('/api/');
 
