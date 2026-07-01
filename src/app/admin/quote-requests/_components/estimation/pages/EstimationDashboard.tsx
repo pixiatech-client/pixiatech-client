@@ -78,12 +78,11 @@ function quoteToEstimation(q: QuoteRequest): Estimation {
   const isValidDate = rawDate && !isNaN(rawDate.getTime());
   const estStatus = statusToEstimation[q.status] || 'En attente';
 
-  const totalClient = typeof q.totalClient === 'number'
+  const totalClient = (typeof q.totalClient === 'number' && q.totalClient > 0)
     ? q.totalClient
-    : (typeof q.totalQuote === 'number'
+    : (typeof q.totalQuote === 'number' && q.totalQuote > 0)
         ? q.totalQuote
-        : (q.products?.reduce((sum: number, p: any) => sum + (p.lineTotal || 0), 0) || 0) + (q.deliveryCost || 0) + (q.laborCost || q.installationCost || 0)
-      );
+        : (q.products?.reduce((sum: number, p: any) => sum + (p.lineTotal || 0), 0) || 0) + (q.deliveryCost || 0) + (q.laborCost || q.installationCost || 0);
   const idShort = q.id.slice(0, 8).toUpperCase();
 
   // Parse rental period from string ISO dates (from getPaginatedQuotes projection)

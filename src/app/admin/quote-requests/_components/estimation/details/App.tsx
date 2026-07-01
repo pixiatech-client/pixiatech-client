@@ -92,7 +92,7 @@ import {
 import { Product as GlobalProduct, ProductSpec } from '@/lib/types';
 import { villes } from '@/lib/data/villes';
 import { geminiService } from './services/geminiService';
-import { computeQuoteTotal } from '@/lib/pricing-engine';
+import { computeQuoteTotal, DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY } from '@/lib/pricing-engine';
 import { cn } from '@/lib/utils';
 import './details.css';
 
@@ -982,8 +982,9 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                                         projectType: specsFromCatalog.projectType || 'Vente',
                                       };
 
-                                      // Determine best price: pricePerTile > salePricePerSqM > 0
-                                      const unitPrice = selectedProd.pricePerTile || selectedProd.salePricePerSqM || 0;
+                                      // Determine best price: pricePerTile > salePricePerSqM > default
+                                      const isRentalProduct = selectedProd.availableFor?.includes('rental') && !selectedProd.availableFor?.includes('sale');
+                                      const unitPrice = selectedProd.pricePerTile || selectedProd.salePricePerSqM || (isRentalProduct ? DEFAULT_RENTAL_PRICE_PER_DAY : DEFAULT_SALE_PRICE_PER_SQM);
 
                                       const newProducts = estimation.products.map(prod => prod.id === p.id ? {
                                         ...prod,

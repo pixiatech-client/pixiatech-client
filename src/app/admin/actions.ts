@@ -1540,7 +1540,8 @@ export async function getPaginatedQuotes({
       treatedAt: toIso(data.treatedAt),
       totalPurchase: data.totalPurchase || 0,
       totalClient: data.totalClient || 0,
-      totalQuote: data.totalQuote || 0,
+      totalQuote: data.totalQuote
+        || (data.products || []).reduce((s: number, p: any) => s + (p.lineTotal || 0), 0) + (data.deliveryCost || 0) + (data.installationCost || 0),
       supplierId: typeof data.supplierId === 'string' ? data.supplierId : (data.supplierId?.id || null),
       trackingNumber: data.trackingNumber || null,
       isReturned: data.isReturned || false,

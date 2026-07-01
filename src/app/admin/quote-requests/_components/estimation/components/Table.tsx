@@ -516,7 +516,7 @@ const EstimationRow: React.FC<EstimationRowProps> = ({
               <div className="w-44 px-3 flex flex-col items-start justify-center shrink-0 overflow-hidden">
                 <span className={`text-[8px] font-black uppercase tracking-[0.2em] mb-0.5 ${isSelected ? 'text-zinc-600' : 'group-hover:text-zinc-600 text-zinc-300'}`}>{t('estimation.totalAmount')}</span>
                 <span className={`font-black text-base tracking-tighter whitespace-nowrap ${isSelected ? 'text-theme-sidebar-active-text' : 'group-hover:text-white text-zinc-900 dark:text-zinc-100'}`}>
-                  {Math.max(est.totalClient, 0.01).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
+                  {(est.totalClient ?? 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €
                 </span>
               </div>
             )}
