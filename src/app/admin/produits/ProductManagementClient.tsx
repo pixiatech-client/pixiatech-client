@@ -52,6 +52,11 @@ interface ProductVariant {
 }
 
 // --- Helper to identify if a URL is a video ---
+interface GalleryItem {
+  url: string;
+  type: 'image' | 'video';
+}
+
 const isVideoUrl = (url: string | undefined | null): boolean => {
   if (!url) return false;
   if (url.startsWith('data:video/') || url.startsWith('blob:')) return true;
@@ -60,6 +65,14 @@ const isVideoUrl = (url: string | undefined | null): boolean => {
   const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
   return isDirectVideo || isYouTube;
 };
+
+function normalizeGalleryItems(items: any[]): GalleryItem[] {
+  return (items || []).map((item: any) =>
+    typeof item === 'string'
+      ? { url: item, type: isVideoUrl(item) ? 'video' as const : 'image' as const }
+      : { url: item.url, type: item.type || 'image' }
+  );
+}
 
 const getYouTubeId = (url: string | undefined | null): string | null => {
   if (!url) return null;
@@ -95,18 +108,30 @@ const getSafeImageUrl = (product: any) => {
   return null;
 };
 
-// --- Sortable image component for gallery drag & drop ---
-const GalleryImage = ({ url, onRemove, idx }: { url: string; onRemove: () => void; idx: number }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: url });
+// --- Sortable gallery item component for drag & drop ---
+const GalleryImage = ({ item, onRemove }: { item: GalleryItem; onRemove: () => void; idx: number }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.url });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 50 : 'auto' as any,
   };
+  const isVideo = item.type === 'video';
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative w-[calc(33.333%-6px)] aspect-square rounded-xl overflow-hidden border border-slate-200 cursor-grab active:cursor-grabbing select-none touch-none">
-      <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
+      {isVideo ? (
+        <div className="relative w-full h-full">
+          <video src={item.url} className="w-full h-full object-cover pointer-events-none" muted playsInline preload="metadata" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-8 h-8 rounded-full bg-black/50 flex items-center justify-center">
+              <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <img src={item.url} alt="" className="w-full h-full object-cover pointer-events-none" />
+      )}
       <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors pointer-events-none" />
       <button onPointerDown={(e) => { e.stopPropagation(); }} onClick={(e) => { e.stopPropagation(); onRemove(); }} className="absolute top-1 right-1 p-2 bg-red-500 text-white rounded-xl opacity-90 hover:opacity-100 active:opacity-100 transition-opacity shadow-lg shadow-red-500/30 z-10">
         <X className="w-4 h-4" />
@@ -443,9 +468,10 @@ const MobileProductCard = React.memo(({
             {Array.from(new Set((Array.isArray(product.mode) ? product.mode : [product.mode]).filter(Boolean))).map((m: any, idx: number) => {
               const val = String(m).toLowerCase();
               let label = m;
-              let colors = "bg-emerald-50 text-emerald-700 border-emerald-100";
+              let colors = "bg-slate-50 text-slate-600 border-slate-100";
               if (val.includes('vente') || val.includes('sale')) { label = 'Purchase'; colors = "bg-emerald-50 text-emerald-700 border-emerald-100"; }
               else if (val.includes('location') || val.includes('rental')) { label = 'Rental'; colors = "bg-violet-50 text-violet-700 border-violet-100"; }
+              else if (val.includes('sur-commande') || val.includes('sur_commande') || val.includes('quote')) { label = 'Sur commande'; colors = "bg-amber-50 text-amber-700 border-amber-100"; }
               return (
                 <div key={`mode-${idx}`} className={cn("px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest", colors)}>
                   {label}
@@ -679,8 +705,9 @@ const ProductListItem = ({
               let label = m;
               let colors = "bg-slate-100 text-slate-600";
 
-              if (val.includes('vente') || val.includes('sale')) { label = t('admin.productManagement.sale'); colors = "bg-emerald-100 text-emerald-700 border-emerald-200"; }
-              else if (val.includes('location') || val.includes('rental')) { label = t('admin.productManagement.rental'); colors = "bg-violet-100 text-violet-700 border-violet-200"; }
+              if (val.includes('vente') || val.includes('sale')) { label = 'Vente'; colors = "bg-emerald-100 text-emerald-700 border-emerald-200"; }
+              else if (val.includes('location') || val.includes('rental')) { label = 'Location'; colors = "bg-violet-100 text-violet-700 border-violet-200"; }
+              else if (val.includes('sur-commande') || val.includes('sur_commande') || val.includes('quote')) { label = 'Sur commande'; colors = "bg-amber-100 text-amber-700 border-amber-200"; }
 
               return (
                 <span key={`mode-${idx}`} className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border transition-colors", colors)}>
@@ -2475,11 +2502,12 @@ const ProduitPage = ({
               <div className="relative flex bg-slate-100/80 p-1 gap-2 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
                 <button
                   onClick={() => {
-                    setMode((prev: string[]) =>
-                      prev.includes('vente')
+                    setMode((prev: string[]) => {
+                      if (prev.includes('sur-commande')) return ['vente'];
+                      return prev.includes('vente')
                         ? (prev.length > 1 ? prev.filter(m => m !== 'vente') : prev)
-                        : [...prev, 'vente']
-                    );
+                        : [...prev.filter(m => m !== 'sur-commande'), 'vente'];
+                    });
                   }}
                   className={cn(
                     "relative flex-1 flex items-center justify-center gap-1.5 px-3 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
@@ -2498,11 +2526,12 @@ const ProduitPage = ({
                 </button>
                 <button
                   onClick={() => {
-                    setMode((prev: string[]) =>
-                      prev.includes('location')
+                    setMode((prev: string[]) => {
+                      if (prev.includes('sur-commande')) return ['location'];
+                      return prev.includes('location')
                         ? (prev.length > 1 ? prev.filter(m => m !== 'location') : prev)
-                        : [...prev, 'location']
-                    );
+                        : [...prev.filter(m => m !== 'sur-commande'), 'location'];
+                    });
                   }}
                   className={cn(
                     "relative flex-1 flex items-center justify-center gap-1.5 px-3 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
@@ -2519,7 +2548,30 @@ const ProduitPage = ({
                   <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-[#4fc3f7]" : "text-slate-400")} />
                   <span className="z-20 whitespace-nowrap">{t('admin.productManagement.rental')}</span>
                 </button>
+                <button
+                  onClick={() => setMode(['sur-commande'])}
+                  className={cn(
+                    "relative flex-1 flex items-center justify-center gap-1.5 px-3 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                    mode.includes('sur-commande') ? "text-white" : "text-slate-400 hover:text-slate-700"
+                  )}
+                >
+                  {mode.includes('sur-commande') && (
+                    <motion.span
+                      layoutId="mode-bubble-sc"
+                      className="absolute inset-0 z-10 bg-[#18181B] rounded-xl shadow-lg border border-[#18181B]"
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                    />
+                  )}
+                  <Package className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('sur-commande') ? "text-amber-400" : "text-slate-400")} />
+                  <span className="z-20 whitespace-nowrap">Sur commande</span>
+                </button>
               </div>
+              {mode.includes('sur-commande') && (
+                <div className="flex items-center gap-1.5 px-1 pt-1">
+                  <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
+                  <span className="text-[9px] text-amber-600 font-semibold">Les options vente et location sont désactivées pour ce produit</span>
+                </div>
+              )}
             </div>
 
             {/* Desktop Only: Screen type / Badges */}
@@ -3070,12 +3122,12 @@ const ProduitPage = ({
                     </div>
                   </div>
                 </div>
-                <input type="file" ref={galleryFileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" multiple />
-                <DndContext collisionDetection={closestCenter} onDragEnd={(e) => { if (e.active && e.over && e.active.id !== e.over.id) { setGalleryUrls((items) => { const oldIdx = items.indexOf(String(e.active.id)); const newIdx = items.indexOf(String(e.over.id)); return arrayMove(items, oldIdx, newIdx); }); } }}>
-                  <SortableContext items={galleryUrls}>
+                <input type="file" ref={galleryFileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*,video/mp4,video/webm,video/quicktime" multiple />
+                <DndContext collisionDetection={closestCenter} onDragEnd={(e) => { if (e.active && e.over && e.active.id !== e.over.id) { setGalleryUrls((items) => { const ids = items.map(i => i.url); const oldIdx = ids.indexOf(String(e.active.id)); const newIdx = ids.indexOf(String(e.over.id)); return arrayMove(items, oldIdx, newIdx); }); } }}>
+                  <SortableContext items={galleryUrls.map(i => i.url)}>
                     <div className="flex flex-wrap gap-2">
-                      {galleryUrls.map((url, idx) => (
-                        <GalleryImage key={url} url={url} idx={idx} onRemove={() => removeGalleryImage(idx)} />
+                      {galleryUrls.map((item, idx) => (
+                        <GalleryImage key={item.url} item={item} idx={idx} onRemove={() => removeGalleryImage(idx)} />
                       ))}
                       <button onClick={triggerGalleryUpload} className="w-[calc(33.333%-6px)] aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
                         <Plus className="w-5 h-5 text-slate-300" />
@@ -3141,11 +3193,11 @@ const ProduitPage = ({
                                 </div>
                               </div>
                               <div>
-                                <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Photo associée</label>
+                                <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Photo / Vidéo associée</label>
                                 <select value={v.image} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], image: e.target.value }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400">
                                   <option value="">Aucune</option>
-                                  {galleryUrls.map((u, gi) => (
-                                    <option key={u} value={u}>Photo {gi + 1}</option>
+                                  {galleryUrls.map((item, gi) => (
+                                    <option key={item.url} value={item.url}>{item.type === 'video' ? '[Video]' : '[Photo]'} {gi + 1}</option>
                                   ))}
                                 </select>
                               </div>
@@ -3341,11 +3393,12 @@ const ProduitPage = ({
                       <div className="relative flex bg-slate-100/80 p-1 gap-2 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
                         <button
                           onClick={() => {
-                            setMode((prev: string[]) =>
-                              prev.includes('vente')
+                            setMode((prev: string[]) => {
+                              if (prev.includes('sur-commande')) return ['vente'];
+                              return prev.includes('vente')
                                 ? (prev.length > 1 ? prev.filter(m => m !== 'vente') : prev)
-                                : [...prev, 'vente']
-                            );
+                                : [...prev.filter(m => m !== 'sur-commande'), 'vente'];
+                            });
                           }}
                           className={cn(
                             "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
@@ -3365,11 +3418,12 @@ const ProduitPage = ({
 
                         <button
                           onClick={() => {
-                            setMode((prev: string[]) =>
-                              prev.includes('location')
+                            setMode((prev: string[]) => {
+                              if (prev.includes('sur-commande')) return ['location'];
+                              return prev.includes('location')
                                 ? (prev.length > 1 ? prev.filter(m => m !== 'location') : prev)
-                                : [...prev, 'location']
-                            );
+                                : [...prev.filter(m => m !== 'sur-commande'), 'location'];
+                            });
                           }}
                           className={cn(
                             "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
@@ -3386,7 +3440,31 @@ const ProduitPage = ({
                           <Calendar className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('location') ? "text-[#4fc3f7]" : "text-slate-400")} />
                           <span className="z-20 whitespace-nowrap">{t('admin.productManagement.rental')}</span>
                         </button>
+
+                        <button
+                          onClick={() => setMode(['sur-commande'])}
+                          className={cn(
+                            "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
+                            mode.includes('sur-commande') ? "text-white" : "text-slate-400 hover:text-slate-700"
+                          )}
+                        >
+                          {mode.includes('sur-commande') && (
+                            <motion.span
+                              layoutId="mode-bubble-mobile-sc"
+                              className="absolute inset-0 z-10 bg-[#18181B] rounded-xl shadow-lg border border-[#18181B]"
+                              transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
+                            />
+                          )}
+                          <Package className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('sur-commande') ? "text-amber-400" : "text-slate-400")} />
+                          <span className="z-20 whitespace-nowrap">Sur commande</span>
+                        </button>
                       </div>
+                      {mode.includes('sur-commande') && (
+                        <div className="flex items-center gap-1.5 px-1">
+                          <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
+                          <span className="text-[10px] text-amber-600 font-semibold">Vente et location désactivés</span>
+                        </div>
+                      )}
                     </div>
 
                   {/* Screen Type / Badges (Mobile) */}
@@ -3480,12 +3558,12 @@ const ProduitPage = ({
                 {activeSpace === 'boutique' && (
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Galerie photos</label>
-                    <input type="file" ref={galleryFileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" multiple />
-                    <DndContext collisionDetection={closestCenter} onDragEnd={(e) => { if (e.active && e.over && e.active.id !== e.over.id) { setGalleryUrls((items) => { const oldIdx = items.indexOf(String(e.active.id)); const newIdx = items.indexOf(String(e.over.id)); return arrayMove(items, oldIdx, newIdx); }); } }}>
-                      <SortableContext items={galleryUrls}>
+                    <input type="file" ref={galleryFileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*,video/mp4,video/webm,video/quicktime" multiple />
+                    <DndContext collisionDetection={closestCenter} onDragEnd={(e) => { if (e.active && e.over && e.active.id !== e.over.id) { setGalleryUrls((items) => { const ids = items.map(i => i.url); const oldIdx = ids.indexOf(String(e.active.id)); const newIdx = ids.indexOf(String(e.over.id)); return arrayMove(items, oldIdx, newIdx); }); } }}>
+                      <SortableContext items={galleryUrls.map(i => i.url)}>
                         <div className="flex flex-wrap gap-2">
-                          {galleryUrls.map((url, idx) => (
-                        <GalleryImage key={url} url={url} idx={idx} onRemove={() => removeGalleryImage(idx)} />
+                          {galleryUrls.map((item, idx) => (
+                        <GalleryImage key={item.url} item={item} idx={idx} onRemove={() => removeGalleryImage(idx)} />
                           ))}
                           <button onClick={triggerGalleryUpload} className="w-[calc(33.333%-6px)] aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
                             <Plus className="w-5 h-5 text-slate-300" />
@@ -4471,7 +4549,7 @@ export default function ProductManagementClient() {
     ? availableChars.filter(c => normalizeSearchText(c.name).includes(normalizeSearchText(charPanelSearch)))
     : availableChars;
 
-  const [mode, setMode] = useState<('vente' | 'location')[]>(['vente']);
+  const [mode, setMode] = useState<('vente' | 'location' | 'sur-commande')[]>(['vente']);
   const [environment, setEnvironment] = useState<('interieur' | 'exterieur' | 'semi-exterieur')[]>(['exterieur']);
   const [screenType, setScreenType] = useState<'flat' | 'curved'>('flat');
   const [badges, setBadges] = useState<string[]>([]);
@@ -4490,7 +4568,7 @@ export default function ProductManagementClient() {
   const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryFileInputRef = useRef<HTMLInputElement>(null);
-  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
+  const [galleryUrls, setGalleryUrls] = useState<GalleryItem[]>([]);
 
   const [aiSettings, setAiSettings] = useState<AISettings>(DEFAULT_AI_SETTINGS);
   const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
@@ -4616,16 +4694,17 @@ export default function ProductManagementClient() {
         finalPdfUrl = await getDownloadURL(uploadResult.ref);
       }
 
-      // Handle Gallery Photos Upload
-      const finalGalleryUrls: string[] = [];
-      for (const url of galleryUrls) {
-        if (url.startsWith('data:')) {
-          const blob = await (await fetch(url)).blob();
-          const galleryRef = ref(storage, `products/gallery/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`);
+      // Handle Gallery Photos & Videos Upload
+      const finalGalleryUrls: any[] = [];
+      for (const item of galleryUrls) {
+        if (item.url.startsWith('data:')) {
+          const blob = await (await fetch(item.url)).blob();
+          const ext = item.type === 'video' ? 'mp4' : 'jpg';
+          const galleryRef = ref(storage, `products/gallery/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
           const uploadResult = await uploadBytes(galleryRef, blob);
-          finalGalleryUrls.push(await getDownloadURL(uploadResult.ref));
+          finalGalleryUrls.push({ url: await getDownloadURL(uploadResult.ref), type: item.type });
         } else {
-          finalGalleryUrls.push(url);
+          finalGalleryUrls.push({ url: item.url, type: item.type });
         }
       }
 
@@ -4699,7 +4778,7 @@ export default function ProductManagementClient() {
         prixLocationJour: String(prixLocationJour || '0'),
         rentalStock: Number(rentalStock || '0'),
         rentalQuantity: Number(rentalQuantity || '1'),
-        stock: Number(stock || '0'),
+        stock: mode.includes('vente') ? Number(stock || '0') : null,
         isHidden: !!isHidden,
         upsellFor: upsellFor,
         galleryUrls: finalGalleryUrls,
@@ -5019,9 +5098,10 @@ export default function ProductManagementClient() {
   const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       Array.from(e.target.files).forEach((file) => {
+        const type = file.type.startsWith('video/') ? 'video' : 'image';
         const reader = new FileReader();
         reader.onloadend = () => {
-          setGalleryUrls((prev) => [...prev, reader.result as string]);
+          setGalleryUrls((prev) => [...prev, { url: reader.result as string, type }]);
         };
         reader.readAsDataURL(file);
       });
@@ -5212,7 +5292,7 @@ export default function ProductManagementClient() {
       setDimensionsEnabled(!!(editingProduct.dimensionsEnabled || editingProduct.hasDimensions));
       setScreenType(editingProduct.screenType || 'flat');
       setBadges(editingProduct.badges || []);
-      setGalleryUrls(editingProduct.galleryUrls || []);
+      setGalleryUrls(normalizeGalleryItems(editingProduct.galleryUrls || editingProduct.gallery || []));
       setDescription(editingProduct.description || '');
       setDescriptionDetaillee(editingProduct.descriptionDetaillee || '');
       setVariants(editingProduct.variants || []);

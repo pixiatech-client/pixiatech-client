@@ -28,6 +28,7 @@ const flowSchema = z.object({
     taxEnabled: z.boolean(),
     taxRate: z.coerce.number().min(0).max(100),
     taxMode: z.enum(['ht', 'ttc']),
+    boutiqueB2B: z.boolean(),
     sale: z.object({
       maxProductsPerQuote: z.coerce.number().min(1).default(3),
       flatScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
@@ -217,6 +218,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     taxEnabled: initialSettings.estimationFlow?.taxEnabled ?? false,
     taxRate: initialSettings.estimationFlow?.taxRate ?? 19,
     taxMode: (initialSettings.estimationFlow?.taxMode ?? 'ht') as 'ht' | 'ttc',
+    boutiqueB2B: initialSettings.estimationFlow?.boutiqueB2B ?? false,
     sale: (initialSettings.estimationFlow as any)?.sale || {
       maxProductsPerQuote: 3,
       flatScreen: { maxWidth: 20, maxHeight: 10 },
@@ -425,8 +427,8 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
         </CardContent>
       </Card>
 
-      {/* TOP ROW: Options parcours / TVA / Zoom 3D */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* TOP ROW: Options parcours / TVA / Boutique B2B / Zoom 3D */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
         {/* Options parcours */}
         <Card className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -502,6 +504,26 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
               ) : (
                 <p className="text-[10px] text-slate-400 italic">{t('100% HT — Aucune TVA appliquée')}</p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Boutique B2B */}
+        <Card className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+              <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-xs">🏪</div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">Boutique TVA Morcen</h4>
+                <p className="text-[10px] text-slate-400">Mode B2B forcé</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/40">
+              <div className="space-y-0.5 pr-2">
+                <Label className="text-xs font-bold text-slate-900">Activer B2B boutique</Label>
+                <p className="text-[10px] text-slate-400 leading-tight">Toute la boutique passe en mode professionnel (HT), sélecteur de profil masqué</p>
+              </div>
+              <Switch checked={form.watch('estimationFlow.boutiqueB2B')} onCheckedChange={(v) => form.setValue('estimationFlow.boutiqueB2B', v)} />
             </div>
           </CardContent>
         </Card>

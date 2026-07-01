@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { firestore } from '@/firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 
 export type ProfileType = 'entreprise' | 'particulier' | null;
 
@@ -12,6 +14,7 @@ interface ProfileContextValue {
   priceLabel: string;
   isB2B: boolean;
   hydrated: boolean;
+  forceB2B: boolean;
 }
 
 const ProfileContext = createContext<ProfileContextValue>({
@@ -22,12 +25,14 @@ const ProfileContext = createContext<ProfileContextValue>({
   priceLabel: '',
   isB2B: false,
   hydrated: false,
+  forceB2B: false,
 });
 
 const STORAGE_KEY = 'pixia_profile_type';
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
+  const [forceB2B, setForceB2B] = useState(false);
 
   const [profileType, setProfileTypeState] = useState<ProfileType>(() => {
     if (typeof window !== 'undefined') {
@@ -41,24 +46,36 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setHydrated(true);
+    getDoc(doc(firestore, 'settings', 'main')).then((snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as any;
+        if (data?.estimationFlow?.boutiqueB2B) {
+          setForceB2B(true);
+          setProfileTypeState('entreprise');
+          localStorage.setItem(STORAGE_KEY, 'entreprise');
+        }
+      }
+    }).catch(() => {});
   }, []);
 
   const setProfileType = useCallback((type: ProfileType) => {
+    if (forceB2B && type !== 'entreprise') return;
     setProfileTypeState(type);
     if (type) {
       localStorage.setItem(STORAGE_KEY, type);
     } else {
       localStorage.removeItem(STORAGE_KEY);
     }
-  }, []);
+  }, [forceB2B]);
 
-  const isB2B = profileType === 'entreprise';
-  const showHT = profileType === 'entreprise';
-  const showTTC = profileType === 'particulier';
+  const resolvedType = forceB2B ? 'entreprise' : profileType;
+  const isB2B = resolvedType === 'entreprise';
+  const showHT = resolvedType === 'entreprise';
+  const showTTC = resolvedType === 'particulier';
   const priceLabel = isB2B ? 'Prix hors taxes' : 'TVA incluse';
 
   return (
-    <ProfileContext.Provider value={{ profileType, setProfileType, showHT, showTTC, priceLabel, isB2B, hydrated }}>
+    <ProfileContext.Provider value={{ profileType: resolvedType, setProfileType, showHT, showTTC, priceLabel, isB2B, hydrated, forceB2B }}>
       {children}
     </ProfileContext.Provider>
   );

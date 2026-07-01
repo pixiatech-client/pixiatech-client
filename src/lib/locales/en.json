@@ -2141,6 +2141,7 @@
         "reset": "Reset",
         "viewResults": "View results",
         "addedToCart": "{name} added to cart",
+        "outOfStock": "This product is out of stock",
         "products": "Products",
         "popular": "Popular",
         "newArrivals": "New arrivals",
@@ -2295,8 +2296,21 @@
         "viewCart": "View cart",
         "continueShopping": "Continue shopping",
         "fillRentalForm": "Fill in the rental form to continue",
+        "rentNow": "Rent now",
         "datasheet": "Datasheet",
         "download": "Download",
-        "watchVideo": "Watch video"
+        "watchVideo": "Watch video",
+        "notForSale": "Not available for purchase",
+        "notForRental": "Not available for rental",
+        "unavailable": "Unavailable",
+        "unavailableShort": "Out of stock",
+        "outOfStock": "Out of stock",
+        "onlyLeft": "Only {count} left",
+        "inStock": "{count} in stock",
+        "requestQuote": "Request a quote",
+        "quantity": "Quantity",
+        "quantityPlaceholder": "E.g.: 10",
+        "priceOnRequest": "Price on request",
+        "quoteInfo": "Order processed within 48h max, you will be contacted by email."
     }
 }

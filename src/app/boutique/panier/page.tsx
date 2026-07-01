@@ -46,7 +46,7 @@ export default function CartPage() {
   const [promoInput, setPromoInput] = useState('');
   const [upsellProducts, setUpsellProducts] = useState<Product[]>([]);
   const [showInfo, setShowInfo] = useState(false);
-  const { profileType, setProfileType, showHT, showTTC, priceLabel, isB2B } = useProfile();
+  const { profileType, setProfileType, showHT, showTTC, priceLabel, isB2B, forceB2B } = useProfile();
 
   useEffect(() => {
     const cartIds = items.map(i => i.productId);
@@ -197,6 +197,7 @@ export default function CartPage() {
                       <span className="font-bold text-gray-900 text-base">{isB2B ? 'Total HT' : 'Total TTC'}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-gray-900 text-lg">{formatPrice(total)}</span>
+                        {!forceB2B && (
                         <div className="relative">
                           <button
                             onClick={() => setShowInfo(!showInfo)}
@@ -233,6 +234,7 @@ export default function CartPage() {
                             </div>
                           )}
                         </div>
+                        )}
                       </div>
                     </div>
                   <button

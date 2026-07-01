@@ -13,6 +13,18 @@ import { useI18n } from '@/lib/i18n';
 import { calculatePromotionPercent } from '@/lib/pricing-engine';
 import { normalizeSearchText } from '@/lib/utils';
 
+function getModeBadge(product: Product): { label: string; colors: string } | null {
+  const avail = product.availableFor ?? [];
+  if (avail.includes('sur-commande')) return { label: 'Sur commande', colors: 'bg-amber-500 text-white' };
+  const hasSale = avail.includes('sale');
+  const hasRental = avail.includes('rental');
+  if (hasSale && product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale')) return { label: 'Rupture de stock', colors: 'bg-red-500 text-white' };
+  if (hasSale && hasRental) return { label: 'Vente & Location', colors: 'bg-violet-500 text-white' };
+  if (hasSale) return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
+  if (hasRental) return { label: 'Location', colors: 'bg-blue-500 text-white' };
+  return null;
+}
+
 function FilterDrawer({ open, onClose, categories, selectedCategories, onCategoriesChange, minRating, onMinRatingChange, transactionType, onTransactionTypeChange, onReset, activeCount }: {
   open: boolean; onClose: () => void;
   categories: string[]; selectedCategories: string[]; onCategoriesChange: (c: string[]) => void;
@@ -148,6 +160,8 @@ export default function BoutiquePage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [displayCount, setDisplayCount] = useState(12);
+  const [quoteDeclinedId, setQuoteDeclinedId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useCallback((node: HTMLDivElement | null) => {
     if (observerRef.current) observerRef.current.disconnect();
@@ -161,7 +175,18 @@ export default function BoutiquePage() {
   }, []);
 
   useEffect(() => {
-    fetchBoutiqueProducts().then(setProducts).finally(() => setLoading(false));
+    fetchBoutiqueProducts().then((all) => {
+      setProducts(all);
+      const params = new URLSearchParams(window.location.search);
+      const declined = params.get('quote_declined');
+      if (declined) {
+        setQuoteDeclinedId(declined);
+        const others = all.filter(p => !p.availableFor?.includes('sur-commande'));
+        const shuffled = others.sort(() => Math.random() - 0.5).slice(0, 2);
+        setSuggestions(shuffled);
+        window.history.replaceState({}, '', '/boutique');
+      }
+    }).finally(() => setLoading(false));
   }, []);
 
   const categories = useMemo(() => {
@@ -214,6 +239,10 @@ export default function BoutiquePage() {
 
   const handleQuickAdd = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
+    if (product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale')) {
+      toast.error(t('boutique.outOfStock'));
+      return;
+    }
     addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' });
     toast.success(t('boutique.addedToCart', { name: product.name }));
   };
@@ -240,6 +269,42 @@ export default function BoutiquePage() {
         activeCount={activeFilterCount}
       />
 
+      {quoteDeclinedId && (
+        <div className="mx-6 md:mx-10 lg:mx-14 mt-4 p-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <ShoppingBag className="w-6 h-6 text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-gray-900">Merci de votre réponse</h3>
+              <p className="text-sm text-gray-500 mt-1">Nous avons bien noté votre décision. N'hésitez pas à découvrir nos autres produits :</p>
+              {suggestions.length > 0 && (
+                <div className="flex gap-3 mt-4">
+                  {suggestions.map((p) => (
+                    <a key={p.id} href={`/boutique/produit/${p.id}`}
+                      className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group flex-1 min-w-0">
+                      {p.image ? (
+                        <img src={p.image} alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200 flex-shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                          <ShoppingBag className="w-5 h-5 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-gray-600 transition-colors">{p.name}</p>
+                        <p className="text-xs font-bold text-gray-700 mt-0.5">{p.price} €</p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={() => setQuoteDeclinedId(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between px-6 md:px-10 lg:px-14 py-4 border-b border-gray-200/40">
         <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1.5 rounded-full">
           {[
@@ -357,20 +422,33 @@ export default function BoutiquePage() {
               <article
                 key={product.id}
                 style={{ animationDelay: `${idx * 0.08}s` }}
-                className="product-card-entry w-full bg-white p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative"
+                className={`product-card-entry w-full bg-white p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'opacity-70' : ''}`}
               >
                 <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }} className="block relative mb-3">
+                  {product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') && (
+                    <div className="absolute inset-0 rounded-xl border border-red-500 pointer-events-none z-10" />
+                  )}
                   {product.image ? (
                     <img
                       alt={product.name}
                       src={product.image}
-                      className="rounded-xl w-full aspect-[1/1] object-cover bg-gray-50"
+                      className={`rounded-xl w-full aspect-[1/1] object-cover bg-gray-50 ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'grayscale' : ''}`}
                     />
                   ) : (
-                    <div className="rounded-xl w-full aspect-[1/1] flex items-center justify-center bg-gray-100 text-gray-300">
+                    <div className={`rounded-xl w-full aspect-[1/1] flex items-center justify-center bg-gray-100 text-gray-300 ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'grayscale' : ''}`}>
                       <ShoppingBag size={32} />
                     </div>
                   )}
+                  {(() => {
+                    const modeBadge = getModeBadge(product);
+                    return modeBadge ? (
+                      <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider shadow-sm ${modeBadge.colors}`}>
+                          {modeBadge.label}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                   {product.badges && product.badges.length > 0 && (
                     <div className="absolute top-2 left-2 flex flex-col gap-1">
                       {product.badges.map((badge) => (
@@ -394,7 +472,7 @@ export default function BoutiquePage() {
                       ))}
                     </div>
                   )}
-                  <div className="absolute top-2 right-2 flex items-center bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 shadow-xs">
+                  <div className="absolute bottom-2 left-2 flex items-center">
                     <div className="flex items-center gap-0.5">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star key={star} size={12} className={star <= Math.round(product.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'} />

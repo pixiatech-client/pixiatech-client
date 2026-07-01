@@ -1,5 +1,5 @@
 import { firestore } from '@/firebase/config';
-import { collection, addDoc, updateDoc, doc, getDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDoc, getDocs, deleteDoc, query, where, orderBy, limit } from 'firebase/firestore';
 
 export type SaleStatus = 'commande' | 'archive' | 'corbeille';
 
@@ -68,6 +68,10 @@ export async function getSaleOrders(options?: {
   const q = query(collection(firestore, COLLECTION), ...constraints);
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as SaleOrder));
+}
+
+export async function deleteSaleOrder(id: string) {
+  await deleteDoc(doc(firestore, COLLECTION, id));
 }
 
 export async function getAllSaleOrders(): Promise<SaleOrder[]> {

@@ -2141,6 +2141,7 @@
         "reset": "Réinitialiser",
         "viewResults": "Voir les résultats",
         "addedToCart": "{name} ajouté au panier",
+        "outOfStock": "Ce produit est en rupture de stock",
         "products": "Produits",
         "popular": "Populaires",
         "newArrivals": "Nouveautés",
@@ -2295,8 +2296,21 @@
         "viewCart": "Voir le panier",
         "continueShopping": "Continuer mes achats",
         "fillRentalForm": "Remplissez le formulaire de location ci-contre pour continuer",
+        "rentNow": "Louer",
         "datasheet": "Fiche technique",
         "download": "Télécharger",
-        "watchVideo": "Voir la vidéo"
+        "watchVideo": "Voir la vidéo",
+        "notForSale": "Non disponible à la vente",
+        "notForRental": "Non disponible à la location",
+        "unavailable": "Indisponible",
+        "unavailableShort": "Rupture",
+        "outOfStock": "Rupture de stock",
+        "onlyLeft": "Plus que {count} en stock",
+        "inStock": "{count} en stock",
+        "requestQuote": "Demander un devis",
+        "quantity": "Quantité",
+        "quantityPlaceholder": "Ex : 10",
+        "priceOnRequest": "Uniquement sur devis",
+        "quoteInfo": "Commande traitée sous 48h max, vous serez contacté par email."
     }
 }

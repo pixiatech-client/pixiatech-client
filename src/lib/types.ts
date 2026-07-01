@@ -220,6 +220,7 @@ export type Settings = {
     taxEnabled: boolean;
     taxRate: number;
     taxMode: 'ht' | 'ttc';
+    boutiqueB2B: boolean;
     sale: {
       maxProductsPerQuote: number;
       flatScreen: { maxWidth: number; maxHeight: number };

@@ -54,7 +54,7 @@ export function LayoutProvider({
           <div className="flex flex-col bg-background min-h-dvh">
             {isFrontendPage && !isMonComptePage && <BoutiqueHeader />}
             {isFrontendPage ? (
-              <div className="flex flex-col flex-1 pt-[72px]">
+              <div className={`flex flex-col flex-1 ${isMonComptePage ? '' : 'pt-[72px]'}`}>
                 <SiteBanners />
                 <main
                   className={cn(

@@ -2932,6 +2932,7 @@ const settingsSchema = z.object({
     taxEnabled: z.boolean(),
     taxRate: z.number().min(0).max(100),
     taxMode: z.enum(['ht', 'ttc']),
+    boutiqueB2B: z.boolean(),
     sale: z.object({
       maxProductsPerQuote: z.coerce.number().min(1).default(3),
       flatScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
@@ -3037,6 +3038,7 @@ export async function getSettings(): Promise<Settings> {
       taxEnabled: false,
       taxRate: 19,
       taxMode: 'ht',
+      boutiqueB2B: false,
       sale: {
         maxProductsPerQuote: 3,
         flatScreen: { maxWidth: 20, maxHeight: 10 },

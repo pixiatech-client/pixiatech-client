@@ -40,7 +40,7 @@ export function calculateCheckout(input: CheckoutInput): CheckoutResult {
   let totalLabel: string;
   let vatLabel: string;
 
-  if (customerType === 'particulier' || customerType === 'entreprise_france') {
+  if (customerType === 'particulier') {
     vat = Math.round(totalAfterDiscount * vatRate / 100);
     totalLabel = 'Total TTC';
     vatLabel = `TVA (${vatRate}%)`;

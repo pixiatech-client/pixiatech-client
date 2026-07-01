@@ -2,13 +2,13 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info, User, Building2 } from 'lucide-react';
+import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info, User, Building2, Calculator, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, formatPrice } from '@/lib/boutique-data';
 import { firestore } from '@/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
-import type { Product, ProductVariant } from '@/lib/boutique-data';
+import type { Product, ProductVariant, GalleryItem } from '@/lib/boutique-data';
 import BoutiqueRentalFlow from '@/components/BoutiqueRentalFlow';
 import { useProfile } from '@/contexts/ProfileContext';
 import { PriceLabel } from '@/components/B2BProfileSelector';
@@ -159,7 +159,17 @@ export default function ProductDetailPage() {
   const [taxRate, setTaxRate] = useState(20);
   const [showInfo, setShowInfo] = useState(false);
   const [locationCompleted, setLocationCompleted] = useState(false);
+  const [showQuoteForm, setShowQuoteForm] = useState(false);
+  const [quoteFormData, setQuoteFormData] = useState({ name: '', email: '', phone: '', company: '', comment: '' });
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [quoteDone, setQuoteDone] = useState(false);
   const [stickyTop, setStickyTop] = useState(194);
+  const [budgetOpen, setBudgetOpen] = useState(false);
+  const [surfaceW, setSurfaceW] = useState(0);
+  const [surfaceH, setSurfaceH] = useState(0);
+  const [panelW, setPanelW] = useState(0);
+  const [panelH, setPanelH] = useState(0);
+  const [budgetResult, setBudgetResult] = useState<{ totalSurface: number; panelSurface: number; panelCount: number; unitPrice: number; totalPrice: number } | null>(null);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
   const { showHT, showTTC, setProfileType, profileType } = useProfile();
@@ -191,17 +201,21 @@ export default function ProductDetailPage() {
     if (active.length > 0) setSelectedVariant(active[0]);
   }, [product]);
 
-  const galleryImages = product?.gallery && product.gallery.length > 0
-    ? [product.image, ...product.gallery].filter(Boolean)
-    : product?.image ? [product.image] : [];
+  const galleryImages: MediaItem[] = product?.gallery && product.gallery.length > 0
+    ? [product.image, ...product.gallery].filter((x): x is string | GalleryItem => x != null).map(x => {
+        if (typeof x === 'string') return { type: 'image' as const, url: x };
+        return { type: x.type, url: x.url };
+      })
+    : product?.image ? [{ type: 'image' as const, url: product.image }] : [];
 
   const mediaItems: MediaItem[] = [
-    ...galleryImages.map(url => ({ type: 'image' as const, url })),
+    ...galleryImages,
     ...(product?.videoUrl ? [{ type: 'video' as const, url: product.videoUrl }] : []),
   ];
 
   const canRent = product?.availableFor?.includes('rental') ?? false;
   const canBuy = product?.availableFor?.includes('sale') ?? true;
+  const canQuote = product?.availableFor?.includes('sur-commande') ?? false;
 
   const effectivePrice = selectedVariant?.price ?? product?.price ?? 0;
   const effectiveMedia = selectedVariant?.image
@@ -260,6 +274,37 @@ export default function ProductDetailPage() {
     if (!product || isOutOfStock) return;
     addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' }, quantity);
     router.push('/boutique/paiement');
+  };
+
+  const handleRequestQuote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!product) return;
+    setQuoteLoading(true);
+    try {
+      const res = await fetch('/api/quote-requests/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: product.id,
+          productName: product.name,
+          productImage: product.image || '',
+          quantity,
+          customerName: quoteFormData.name,
+          customerEmail: quoteFormData.email,
+          customerPhone: quoteFormData.phone,
+          customerCompany: quoteFormData.company,
+          customerCountry: 'FR',
+          customerAddress: '',
+          comment: quoteFormData.comment,
+        }),
+      });
+      if (!res.ok) throw new Error('Erreur');
+      setQuoteDone(true);
+      toast.success('Demande de devis envoyée avec succès');
+    } catch {
+      toast.error("Erreur lors de l'envoi de la demande");
+    }
+    setQuoteLoading(false);
   };
 
   const openLightbox = (idx: number) => {
@@ -408,31 +453,21 @@ export default function ProductDetailPage() {
                           </button>
                         );
                       })}
-                      {mediaItems.length > maxVisibleThumbs && (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setThumbStart(s => Math.max(0, s - 1))}
-                            disabled={thumbStart === 0}
-                            className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200/70 hover:border-gray-400 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                          >
-                            <ChevronLeft size={14} className="text-gray-500" />
-                          </button>
-                          <span className="text-xs font-semibold text-gray-400 min-w-[40px] text-center">
-                            {thumbStart + 1}-{Math.min(thumbStart + maxVisibleThumbs, mediaItems.length)}/{mediaItems.length}
-                          </span>
-                          <button
-                            onClick={() => setThumbStart(s => Math.min(mediaItems.length - maxVisibleThumbs, s + 1))}
-                            disabled={thumbStart >= mediaItems.length - maxVisibleThumbs}
-                            className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200/70 hover:border-gray-400 rounded-xl transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                          >
-                            <ChevronRight size={14} className="text-gray-500" />
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </>
               )}
+
+              <div className="mt-4 flex items-center gap-3">
+                <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed group">
+                  <FileText size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">{t('product.datasheet')}</span>
+                </button>
+                <button onClick={() => { const a = document.createElement('a'); a.href = product.image; a.download = product.name; a.click(); }} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors group">
+                  <Download size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">{t('product.download')}</span>
+                </button>
+              </div>
             </section>
 
             {/* Mobile purchase info */}
@@ -559,10 +594,52 @@ export default function ProductDetailPage() {
                   )}
                 </div>
               </div>
+              {canQuote && !canBuy && !canRent ? (
+                quoteDone ? (
+                  <div className="flex flex-col gap-3 mt-2">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                      <p className="text-sm font-semibold text-emerald-800">Demande envoyée</p>
+                      <p className="text-xs text-emerald-600 mt-1">Nous vous contacterons sous 48h maximum.</p>
+                    </div>
+                    <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all">
+                      Continuer mes achats
+                    </button>
+                  </div>
+                ) : !showQuoteForm ? (
+                  <button onClick={() => setShowQuoteForm(true)}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <FileText size={15} /> {t('product.requestQuote')}
+                  </button>
+                ) : (
+                  <form onSubmit={handleRequestQuote} className="flex flex-col gap-3 mt-2">
+                    <p className="text-xs text-gray-500 leading-relaxed">{t('product.quoteInfo')}</p>
+                    <input type="text" placeholder="Votre nom *" required value={quoteFormData.name} onChange={e => setQuoteFormData(d => ({ ...d, name: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20" />
+                    <input type="email" placeholder="Votre email *" required value={quoteFormData.email} onChange={e => setQuoteFormData(d => ({ ...d, email: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20" />
+                    <input type="tel" placeholder="Votre téléphone *" required value={quoteFormData.phone} onChange={e => setQuoteFormData(d => ({ ...d, phone: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20" />
+                    <input type="text" placeholder="Société (optionnel)" value={quoteFormData.company} onChange={e => setQuoteFormData(d => ({ ...d, company: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20" />
+                    <textarea placeholder="Commentaire (optionnel)" rows={2} value={quoteFormData.comment} onChange={e => setQuoteFormData(d => ({ ...d, comment: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 resize-none" />
+                    <button type="submit" disabled={quoteLoading}
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-40">
+                      {quoteLoading ? 'Envoi...' : 'Envoyer la demande'}
+                    </button>
+                    <button type="button" onClick={() => setShowQuoteForm(false)}
+                      className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors">Annuler</button>
+                  </form>
+                )
+              ) : (
+                <>
               <button onClick={handleAddToCart} disabled={isOutOfStock} className="w-full bg-gray-900 text-white py-2.5 px-4 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
                   <ShoppingBag size={15} /> {isOutOfStock ? 'Indisponible' : t('product.addToCart')}
                 </button>
               <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full mt-2 border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">{isOutOfStock ? 'Indisponible' : t('product.buyNow')}</button>
+                </>
+              )}
             </div>
 
             <div className="mt-20 border-t border-gray-200/40 pt-12 space-y-16">
@@ -613,9 +690,10 @@ export default function ProductDetailPage() {
         </div>
 
         <aside
-          className="hidden lg:flex flex-col fixed z-10 w-[420px] max-h-[calc(100vh-9rem)] overflow-y-auto"
+          className="hidden lg:flex flex-col fixed z-10 w-[420px] max-h-[calc(100vh-9rem)]"
           style={{ top: stickyTop, right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))', transition: 'top 0.35s ease' }}
         >
+          <div className="flex-1 min-h-0 overflow-y-auto pr-1">
             <nav className="text-sm text-gray-400 mb-4">
               <ol className="flex list-none p-0">
                 <li className="flex items-center">
@@ -746,6 +824,207 @@ export default function ProductDetailPage() {
               </div>
             )}
 
+            {/* Calculateur de budget */}
+            {(() => {
+              const parsePanelDimensions = (source?: string): { w: number; h: number } | null => {
+                const dimKeys = ['dimensions du module', 'dimensions', 'dimension', 'taille', 'format', 'dalle', 'module'];
+                if (source) {
+                  const match = source.match(/(\d+(?:[.,]\d+)?)\s*[×xX*]\s*(\d+(?:[.,]\d+)?)\s*(mm|cm|m)?/i);
+                  if (match) {
+                    const w = parseFloat(match[1].replace(',', '.'));
+                    const h = parseFloat(match[2].replace(',', '.'));
+                    const unit = (match[3] || 'cm').toLowerCase();
+                    const factor = unit === 'mm' ? 0.1 : unit === 'm' ? 100 : 1;
+                    return { w: w * factor, h: h * factor };
+                  }
+                }
+                const specsLower = Object.fromEntries(
+                  Object.entries(product.specs).map(([k, v]) => [k.toLowerCase().trim(), v])
+                );
+                for (const key of dimKeys) {
+                  const val = specsLower[key];
+                  if (!val) continue;
+                  const match = val.match(/(\d+(?:[.,]\d+)?)\s*[×xX*]\s*(\d+(?:[.,]\d+)?)\s*(mm|cm|m)?/i);
+                  if (match) {
+                    const w = parseFloat(match[1].replace(',', '.'));
+                    const h = parseFloat(match[2].replace(',', '.'));
+                    const unit = (match[3] || 'cm').toLowerCase();
+                    const factor = unit === 'mm' ? 0.1 : unit === 'm' ? 100 : 1;
+                    return { w: w * factor, h: h * factor };
+                  }
+                }
+                return null;
+              };
+
+              const dims = parsePanelDimensions(selectedVariant?.description) ?? parsePanelDimensions();
+              const unitPrice = effectivePrice;
+              const pW = dims?.w ?? panelW;
+              const pH = dims?.h ?? panelH;
+              const canAutoCalc = surfaceW > 0 && surfaceH > 0 && pW > 0 && pH > 0;
+              const autoResult = canAutoCalc ? (() => {
+                const totalSurface = surfaceW * surfaceH;
+                const panelSurfaceM2 = (pW * pH) / 10000;
+                const panelCount = Math.ceil(totalSurface / panelSurfaceM2);
+                const totalPrice = panelCount * unitPrice;
+                return { totalSurface, panelSurface: panelSurfaceM2, panelCount, unitPrice, totalPrice };
+              })() : null;
+
+              return (
+                <div className="mb-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
+                  <button type="button" onClick={() => setBudgetOpen(prev => !prev)} className="w-full flex items-center justify-between p-5 hover:bg-gray-50/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                        <Calculator size={16} className="text-emerald-600" />
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-sm font-bold text-gray-900">Calculer le budget</h3>
+                        <p className="text-[11px] text-gray-400 font-medium">Estimez le coût de votre projet</p>
+                      </div>
+                    </div>
+                    <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${budgetOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {budgetOpen && (
+                  <div className="px-5 pb-5 border-t border-gray-100 pt-4">
+
+                  {dims && (
+                    <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl">
+                      <Package size={13} className="text-blue-500 shrink-0" />
+                      <p className="text-[11px] text-blue-700 font-medium">
+                        Dalle détectée : <span className="font-bold">{dims.w} × {dims.h} cm</span>
+                      </p>
+                    </div>
+                  )}
+
+                  {!dims && (
+                    <div className="mb-4 space-y-3">
+                      <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 font-medium">
+                        Dimensions de dalle non trouvées. Saisissez-les :
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Largeur dalle (cm)</label>
+                          <input type="number" value={panelW || ''} min={1} onChange={e => setPanelW(parseFloat(e.target.value) || 0)}
+                            className="w-full px-3 py-2 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Hauteur dalle (cm)</label>
+                          <input type="number" value={panelH || ''} min={1} onChange={e => setPanelH(parseFloat(e.target.value) || 0)}
+                            className="w-full px-3 py-2 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">
+                        Largeur surface (m)
+                      </label>
+                      <input type="number" value={surfaceW || ''} min={0.1} step={0.1} placeholder="ex: 10"
+                        onChange={e => setSurfaceW(parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50 transition-colors" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">
+                        Hauteur surface (m)
+                      </label>
+                      <input type="number" value={surfaceH || ''} min={0.1} step={0.1} placeholder="ex: 3"
+                        onChange={e => setSurfaceH(parseFloat(e.target.value) || 0)}
+                        className="w-full px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50 transition-colors" />
+                    </div>
+                  </div>
+
+                  {!canAutoCalc && surfaceW > 0 && surfaceH > 0 && (!dims && (panelW <= 0 || panelH <= 0)) && (
+                    <p className="text-[11px] text-amber-600 mt-2">Veuillez renseigner les dimensions de la dalle.</p>
+                  )}
+
+                  {autoResult && (
+                    <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 overflow-hidden animate-fadeIn">
+                      <div className="px-4 py-3 border-b border-emerald-100 bg-emerald-50">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Résultat de l&apos;estimation</p>
+                      </div>
+                      <div className="px-4 py-3 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Surface totale</span>
+                          <span className="text-xs font-bold text-gray-800">{autoResult.totalSurface.toFixed(2)} m²</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Surface d&apos;une dalle</span>
+                          <span className="text-xs font-bold text-gray-800">{autoResult.panelSurface.toFixed(4)} m²</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Nombre de dalles</span>
+                          <span className="text-xs font-bold text-gray-800">{autoResult.panelCount} dalles</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-500">Prix unitaire</span>
+                          <span className="text-xs font-bold text-gray-800">{formatPrice(autoResult.unitPrice)}</span>
+                        </div>
+                        <div className="h-px bg-emerald-200/50 my-1" />
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-gray-900">Prix total estimé</span>
+                          <span className="text-lg font-black text-emerald-700 tracking-tight">{formatPrice(autoResult.totalPrice)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {canQuote && !canBuy && !canRent ? (
+            <div className="flex flex-col gap-3 mb-6">
+              {quoteDone ? (
+                <div className="flex flex-col gap-3">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                    <p className="text-sm font-semibold text-emerald-800">Demande envoyée</p>
+                    <p className="text-xs text-emerald-600 mt-1">Nous vous contacterons sous 48h maximum.</p>
+                  </div>
+                  <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all">
+                    <Store size={16} className="inline mr-2 -mt-0.5" />
+                    Continuer mes achats
+                  </button>
+                </div>
+              ) : !showQuoteForm ? (
+                <>
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <p className="text-xs text-amber-800 font-semibold">{t('product.priceOnRequest')}</p>
+                    <p className="text-xs text-amber-600 mt-1">{t('product.quoteInfo')}</p>
+                  </div>
+                  <button onClick={() => setShowQuoteForm(true)}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-sm">
+                    <FileText size={16} />
+                    {t('product.requestQuote')}
+                  </button>
+                </>
+              ) : (
+                <form onSubmit={handleRequestQuote} className="flex flex-col gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <p className="text-xs font-semibold text-amber-800">{t('product.requestQuote')}</p>
+                  <input type="text" placeholder="Votre nom *" required value={quoteFormData.name} onChange={e => setQuoteFormData(d => ({ ...d, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-white" />
+                  <input type="email" placeholder="Votre email *" required value={quoteFormData.email} onChange={e => setQuoteFormData(d => ({ ...d, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-white" />
+                  <input type="tel" placeholder="Votre téléphone *" required value={quoteFormData.phone} onChange={e => setQuoteFormData(d => ({ ...d, phone: e.target.value }))}
+                    className="w-full px-3 py-2 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-white" />
+                  <input type="text" placeholder="Société (optionnel)" value={quoteFormData.company} onChange={e => setQuoteFormData(d => ({ ...d, company: e.target.value }))}
+                    className="w-full px-3 py-2 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-white" />
+                  <textarea placeholder="Commentaire (optionnel)" rows={2} value={quoteFormData.comment} onChange={e => setQuoteFormData(d => ({ ...d, comment: e.target.value }))}
+                    className="w-full px-3 py-2 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-white resize-none" />
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={quoteLoading}
+                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl text-xs font-semibold transition-all disabled:opacity-40">
+                      {quoteLoading ? 'Envoi...' : 'Envoyer'}
+                    </button>
+                    <button type="button" onClick={() => setShowQuoteForm(false)}
+                      className="px-4 py-2.5 text-xs text-amber-700 hover:text-amber-900 transition-colors">Annuler</button>
+                  </div>
+                </form>
+              )}
+            </div>
+            ) : (
+            <>
             <div className="flex border-b border-gray-200/40 mb-6">
               <button
                 onClick={() => setPurchaseType('achat')}
@@ -838,21 +1117,11 @@ export default function ProductDetailPage() {
                 </>
               )}
             </div>
+            </>
+            )}
 
-            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-200/40">
-              <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="flex flex-col items-center gap-2 group disabled:opacity-30 disabled:cursor-not-allowed">
-                <div className="w-10 h-10 flex items-center justify-center bg-white rounded-full border border-gray-200/70 group-hover:border-gray-400 transition-colors">
-                  <FileText size={16} className="text-gray-500" />
-                </div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{t('product.datasheet')}</span>
-              </button>
-              <button onClick={() => { const a = document.createElement('a'); a.href = product.image; a.download = product.name; a.click(); }} className="flex flex-col items-center gap-2 group">
-                <div className="w-10 h-10 flex items-center justify-center bg-white rounded-full border border-gray-200/70 group-hover:border-gray-400 transition-colors">
-                  <Download size={16} className="text-gray-500" />
-                </div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{t('product.download')}</span>
-              </button>
-            </div>
+
+          </div>
           </aside>
       </main>
 

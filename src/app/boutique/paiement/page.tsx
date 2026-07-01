@@ -289,7 +289,7 @@ export default function CheckoutPage() {
   const [isNewCustomer, setIsNewCustomer] = useState(true);
   const [productsOpen, setProductsOpen] = useState(items.length < 2);
   const [showInfo, setShowInfo] = useState(false);
-  const { profileType, setProfileType, showHT, showTTC, priceLabel, isB2B } = useProfile();
+  const { profileType, setProfileType, showHT, showTTC, priceLabel, isB2B, forceB2B } = useProfile();
   const [deliveryCost, setDeliveryCost] = useState(0);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
 
@@ -741,6 +741,7 @@ export default function CheckoutPage() {
               <div className="mb-6 relative z-10">
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] font-bold text-white/80 mb-1">{totalLabel}</p>
+                  {!forceB2B && (
                   <div className="relative">
                     <button
                       onClick={() => setShowInfo(!showInfo)}
@@ -777,6 +778,7 @@ export default function CheckoutPage() {
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
                 <h2 className="text-4xl font-[900] tracking-tighter">{formatPrice(total)}</h2>
                 <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{vatValidated && isB2B ? 'TVA autoliquidée – Achat hors taxes (HT)' : 'Prix toutes taxes comprises (TTC)'}</p>
@@ -1377,6 +1379,7 @@ export default function CheckoutPage() {
                     <p className="text-[11px] font-semibold text-gray-500 uppercase">{totalLabel}</p>
                     <p className="text-xl font-bold text-gray-900">{formatPrice(total)}</p>
                   </div>
+                  {!forceB2B && (
                   <div className="relative">
                     <button
                       onClick={() => setShowInfo(!showInfo)}
@@ -1413,6 +1416,7 @@ export default function CheckoutPage() {
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
 
                 {paymentMethod === 'card' && (

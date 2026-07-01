@@ -612,6 +612,7 @@ export default function SignatureFlow({
     taxEnabled: false,
     taxRate: 19,
     taxMode: 'ht' as const,
+    boutiqueB2B: false,
     sale: {
       maxProductsPerQuote: 3,
       flatScreen: { maxWidth: 20, maxHeight: 10 },

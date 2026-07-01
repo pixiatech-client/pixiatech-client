@@ -1,3 +1,8 @@
+export interface GalleryItem {
+  url: string;
+  type: 'image' | 'video';
+}
+
 export interface ProductVariant {
   name: string;
   description?: string;
@@ -20,16 +25,17 @@ export interface Product {
   longDescription: string;
   descriptionDetaillee?: string;
   image: string | null;
-  gallery?: string[];
+  gallery?: (string | GalleryItem)[];
   videoUrl?: string;
   pdfUrl?: string;
-  availableFor?: string[];
+  availableFor?: ('sale' | 'rental' | 'sur-commande')[];
   specs: Record<string, string>;
   badges?: string[];
   variants?: ProductVariant[];
   stock?: number;
   isHidden?: boolean;
   upsellFor?: string[];
+  quoteOnly?: boolean;
 }
 
 export interface RelatedProduct {
@@ -161,15 +167,18 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     longDescription: data.longDescription || '',
     descriptionDetaillee: data.descriptionDetaillee || '',
     image,
-    gallery: data.galleryUrls || data.gallery || [],
+    gallery: (data.galleryUrls || data.gallery || []).map((item: any) =>
+      typeof item === 'string' ? { url: item, type: 'image' } : item
+    ),
     videoUrl: data.videoUrl || '',
     pdfUrl: data.pdfUrl || '',
-    availableFor: (data.availableFor || data.mode || ['sale', 'rental']).map((m: string) => m.toLowerCase()),
+    availableFor: normalizeAvailableFor(data.availableFor || data.mode || ['sale', 'rental']),
     specs: buildSpecs(data, charNameMap),
     badges: data.badges || [],
     variants: data.variants || [],
     stock: data.stock ?? undefined,
     upsellFor: data.upsellFor || [],
+    quoteOnly: !!data.quoteOnly || data.availableFor?.includes('sur-commande') || false,
     isHidden: !!data.isHidden,
   };
 }
@@ -185,6 +194,16 @@ export async function fetchBoutiqueProducts(): Promise<Product[]> {
     console.warn('fetchBoutiqueProducts failed:', e);
     return [];
   }
+}
+
+function normalizeAvailableFor(values: string[]): ('sale' | 'rental' | 'sur-commande')[] {
+  return values.map(m => {
+    const lower = m.toLowerCase().replace(/[\s_-]/g, '');
+    if (lower === 'surcommande' || lower === 'quoterequest' || lower === 'quoteonly') return 'sur-commande';
+    if (lower === 'sale' || lower === 'achat' || lower === 'vente' || lower === 'purchase') return 'sale';
+    if (lower === 'rental' || lower === 'location' || lower === 'rent') return 'rental';
+    return m.toLowerCase() as any;
+  });
 }
 
 export async function fetchBoutiqueProduct(id: string): Promise<Product | null> {
