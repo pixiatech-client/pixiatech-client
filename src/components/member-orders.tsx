@@ -147,7 +147,19 @@ function OrderBottomSheet({ order, open, onClose }: { order: Order; open: boolea
   )
 }
 
-export function MemberOrders({ orders, t }: { orders: Order[]; t: (key: string) => string }) {
+interface OrdersTranslations {
+  tableProduct: string
+  tableId: string
+  tableDate: string
+  tablePrice: string
+  tableStatus: string
+  tableActions: string
+  cancelBtn: string
+  detailsBtn: string
+  pagination: string
+}
+
+export function MemberOrders({ orders, translations }: { orders: Order[]; translations: OrdersTranslations }) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   return (
@@ -190,13 +202,13 @@ export function MemberOrders({ orders, t }: { orders: Order[]; t: (key: string) 
           <table className="w-full text-left border-collapse">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableProduct')}</th>
-                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableId')}</th>
-                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableDate')}</th>
+                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{translations.tableProduct}</th>
+                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{translations.tableId}</th>
+                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{translations.tableDate}</th>
                 <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">Suivi</th>
-                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider text-right">{t('client.orders.tablePrice')}</th>
-                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableStatus')}</th>
-                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider text-right">{t('client.orders.tableActions')}</th>
+                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider text-right">{translations.tablePrice}</th>
+                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{translations.tableStatus}</th>
+                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider text-right">{translations.tableActions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -247,11 +259,11 @@ export function MemberOrders({ orders, t }: { orders: Order[]; t: (key: string) 
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {(order.status === 'commande' || order.status === 'pending_validation' || order.status === 'validated') && (
-                          <span className="px-3 py-1.5 border border-red-400 text-red-400 text-[12px] font-semibold rounded-lg opacity-40 cursor-not-allowed">{t('client.orders.cancelBtn')}</span>
+                          <span className="px-3 py-1.5 border border-red-400 text-red-400 text-[12px] font-semibold rounded-lg opacity-40 cursor-not-allowed">{translations.cancelBtn}</span>
                         )}
                         <Link href={`/mon-compte/commande/${order.id}?type=${order.type}`}
                           className="px-3 py-1.5 border border-gray-200 text-gray-600 text-[12px] font-semibold rounded-lg hover:bg-gray-50 transition-colors">
-                          {t('client.orders.detailsBtn')}
+                          {translations.detailsBtn}
                         </Link>
                       </div>
                     </td>
@@ -263,7 +275,7 @@ export function MemberOrders({ orders, t }: { orders: Order[]; t: (key: string) 
         </div>
 
         <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <span className="text-[13px] text-gray-500">{t('client.orders.pagination').replace('{count}', String(orders.length))}</span>
+          <span className="text-[13px] text-gray-500">{translations.pagination.replace('{count}', String(orders.length))}</span>
           <div className="flex items-center gap-2">
             <button className="p-1 border border-gray-200 rounded hover:bg-gray-100 transition-all disabled:opacity-50" disabled>
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>

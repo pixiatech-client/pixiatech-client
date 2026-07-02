@@ -64,7 +64,17 @@ export default async function CommandesPage() {
         </div>
       ) : (
         <>
-          <MemberOrders orders={orders as any} t={t} />
+          <MemberOrders orders={orders as any} translations={{
+            tableProduct: t('client.orders.tableProduct'),
+            tableId: t('client.orders.tableId'),
+            tableDate: t('client.orders.tableDate'),
+            tablePrice: t('client.orders.tablePrice'),
+            tableStatus: t('client.orders.tableStatus'),
+            tableActions: t('client.orders.tableActions'),
+            cancelBtn: t('client.orders.cancelBtn'),
+            detailsBtn: t('client.orders.detailsBtn'),
+            pagination: t('client.orders.pagination'),
+          }} />
 
           {/* Summary Cards */}
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
