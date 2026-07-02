@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info, User, Building2, Calculator, Package } from 'lucide-react';
+import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info, User, Mail, Phone, Building2, Calculator, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, formatPrice } from '@/lib/boutique-data';
@@ -182,7 +182,7 @@ export default function ProductDetailPage() {
   const [showInfo, setShowInfo] = useState(false);
   const [locationCompleted, setLocationCompleted] = useState(false);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
-  const [quoteFormData, setQuoteFormData] = useState({ name: '', email: '', phone: '', company: '', comment: '' });
+  const [quoteFormData, setQuoteFormData] = useState({ name: '', email: '', phone: '', company: '', siren: '', vat: '', comment: '' });
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteDone, setQuoteDone] = useState(false);
   const [stickyTop, setStickyTop] = useState(194);
@@ -315,6 +315,8 @@ export default function ProductDetailPage() {
           customerEmail: quoteFormData.email,
           customerPhone: quoteFormData.phone,
           customerCompany: quoteFormData.company,
+          customerSiren: quoteFormData.siren,
+          customerVat: quoteFormData.vat,
           customerCountry: 'FR',
           customerAddress: '',
           comment: quoteFormData.comment,
@@ -369,6 +371,80 @@ export default function ProductDetailPage() {
         <div className="lg:mr-[450px]">
           {purchaseType === 'location' && !locationCompleted ? (
             <BoutiqueRentalFlow product={product} onComplete={() => setLocationCompleted(true)} />
+          ) : canQuote && !canBuy && !canRent && showQuoteForm ? (
+            <div className="max-w-2xl">
+              <button onClick={() => setShowQuoteForm(false)}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors cursor-pointer mb-6"
+              >
+                <ChevronLeft size={14} />
+                Retour au produit
+              </button>
+
+              <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
+                <h2 className="text-lg font-bold text-gray-900 mb-1">{t('product.requestQuote')}</h2>
+                <p className="text-xs text-gray-500 mb-6">{t('product.quoteInfo')}</p>
+
+                <form onSubmit={handleRequestQuote} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Nom complet *</label>
+                      <div className="relative">
+                        <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
+                        <input type="text" placeholder="Votre nom" required value={quoteFormData.name} onChange={e => setQuoteFormData(d => ({ ...d, name: e.target.value }))}
+                          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Email *</label>
+                      <div className="relative">
+                        <Mail size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
+                        <input type="email" placeholder="email@exemple.com" required value={quoteFormData.email} onChange={e => setQuoteFormData(d => ({ ...d, email: e.target.value }))}
+                          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Téléphone *</label>
+                      <div className="relative">
+                        <Phone size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
+                        <input type="tel" placeholder="+33 6 12 34 56 78" required value={quoteFormData.phone} onChange={e => setQuoteFormData(d => ({ ...d, phone: e.target.value }))}
+                          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Raison sociale</label>
+                      <input type="text" placeholder="Nom de l'entreprise" value={quoteFormData.company} onChange={e => setQuoteFormData(d => ({ ...d, company: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">SIREN / SIRET</label>
+                      <input type="text" placeholder="123 456 789" value={quoteFormData.siren} onChange={e => setQuoteFormData(d => ({ ...d, siren: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">N° TVA intracommunautaire</label>
+                      <input type="text" placeholder="FRXX999999999" value={quoteFormData.vat} onChange={e => setQuoteFormData(d => ({ ...d, vat: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Commentaire</label>
+                    <textarea placeholder="Décrivez votre projet, vos besoins spécifiques..." rows={3} value={quoteFormData.comment} onChange={e => setQuoteFormData(d => ({ ...d, comment: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white resize-none" />
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button type="submit" disabled={quoteLoading}
+                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-40 shadow-sm">
+                      {quoteLoading ? 'Envoi en cours...' : 'Envoyer la demande'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           ) : (
           <div className="flex flex-col">
             <section>
@@ -483,7 +559,7 @@ export default function ProductDetailPage() {
               <div className="mt-4 flex flex-wrap items-center [&>*:not(:first-child)]:ml-[-2px]">
                 <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed group">
                   <FileText size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">{t('product.datasheet')}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">{t('product.datasheet')}</span>
                 </button>
                 {product.playStoreUrl && (
                   <button onClick={() => window.open(product.playStoreUrl, '_blank')} className="h-[44px] w-[118px] sm:h-[52px] sm:w-[174px] hover:opacity-90 active:scale-95 transition-all shrink-0">
@@ -498,7 +574,7 @@ export default function ProductDetailPage() {
                 {product.downloadUrl2 && (
                   <button onClick={() => window.open(product.downloadUrl2, '_blank')} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors group">
                     <Download size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">
                       {product.downloadLabel2 || 'Télécharger'}
                     </span>
                   </button>
@@ -506,7 +582,7 @@ export default function ProductDetailPage() {
                 {product.downloadUrl3 && (
                   <button onClick={() => window.open(product.downloadUrl3, '_blank')} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors group">
                     <Download size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">
                       {product.downloadLabel3 || 'Télécharger'}
                     </span>
                   </button>
@@ -648,32 +724,12 @@ export default function ProductDetailPage() {
                       Continuer mes achats
                     </button>
                   </div>
-                ) : !showQuoteForm ? (
+                ) : (
                   <button onClick={() => setShowQuoteForm(true)}
                     className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
                   >
                     <FileText size={15} /> {t('product.requestQuote')}
                   </button>
-                ) : (
-                  <form onSubmit={handleRequestQuote} className="flex flex-col gap-3 mt-2">
-                    <p className="text-xs text-gray-500 leading-relaxed">{t('product.quoteInfo')}</p>
-                    <input type="text" placeholder="Votre nom *" required value={quoteFormData.name} onChange={e => setQuoteFormData(d => ({ ...d, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20" />
-                    <input type="email" placeholder="Votre email *" required value={quoteFormData.email} onChange={e => setQuoteFormData(d => ({ ...d, email: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20" />
-                    <input type="tel" placeholder="Votre téléphone *" required value={quoteFormData.phone} onChange={e => setQuoteFormData(d => ({ ...d, phone: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20" />
-                    <input type="text" placeholder="Société (optionnel)" value={quoteFormData.company} onChange={e => setQuoteFormData(d => ({ ...d, company: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20" />
-                    <textarea placeholder="Commentaire (optionnel)" rows={2} value={quoteFormData.comment} onChange={e => setQuoteFormData(d => ({ ...d, comment: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 resize-none" />
-                    <button type="submit" disabled={quoteLoading}
-                      className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-40">
-                      {quoteLoading ? 'Envoi...' : 'Envoyer la demande'}
-                    </button>
-                    <button type="button" onClick={() => setShowQuoteForm(false)}
-                      className="w-full text-xs text-gray-400 hover:text-gray-600 transition-colors">Annuler</button>
-                  </form>
                 )
               ) : (
                 <>
@@ -700,7 +756,7 @@ export default function ProductDetailPage() {
               <section>
                 <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
                   <div className="p-8 pb-0 flex items-center justify-between mb-8">
-                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
                       <Settings2 size={16} className="text-slate-400" />
                       {t('product.technicalSpecs')}
                     </h4>
@@ -833,7 +889,7 @@ export default function ProductDetailPage() {
                   <div className="flex items-center gap-2">
                     <span className="bg-gray-900 text-white px-2.5 py-1 rounded-lg text-xs font-bold tracking-tight shadow-sm">{selectedVariant.description}</span>
                     {selectedVariant?.reference && (
-                      <span className="text-[11px] text-gray-400 font-mono font-medium bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200/50">{selectedVariant.reference}</span>
+                      <span className="text-xs text-gray-400 font-mono font-medium bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200/50">{selectedVariant.reference}</span>
                     )}
                   </div>
                 )}
@@ -909,7 +965,7 @@ export default function ProductDetailPage() {
                       </div>
                       <div className="text-left">
                         <h3 className="text-sm font-bold text-gray-900">Calculer le budget</h3>
-                        <p className="text-[11px] text-gray-400 font-medium">Estimez le coût de votre projet</p>
+                        <p className="text-xs text-gray-400 font-medium">Estimez le coût de votre projet</p>
                       </div>
                     </div>
                     <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${budgetOpen ? 'rotate-180' : ''}`} />
@@ -920,7 +976,7 @@ export default function ProductDetailPage() {
                   {dims && (
                     <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl">
                       <Package size={13} className="text-blue-500 shrink-0" />
-                      <p className="text-[11px] text-blue-700 font-medium">
+                      <p className="text-xs text-blue-700 font-medium">
                         Dalle détectée : <span className="font-bold">{dims.w} × {dims.h} cm</span>
                       </p>
                     </div>
@@ -928,7 +984,7 @@ export default function ProductDetailPage() {
 
                   {!dims && (
                     <div className="mb-4 space-y-3">
-                      <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 font-medium">
+                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 font-medium">
                         Dimensions de dalle non trouvées. Saisissez-les :
                       </p>
                       <div className="grid grid-cols-2 gap-3">
@@ -966,7 +1022,7 @@ export default function ProductDetailPage() {
                   </div>
 
                   {!canAutoCalc && surfaceW > 0 && surfaceH > 0 && (!dims && (panelW <= 0 || panelH <= 0)) && (
-                    <p className="text-[11px] text-amber-600 mt-2">Veuillez renseigner les dimensions de la dalle.</p>
+                    <p className="text-xs text-amber-600 mt-2">Veuillez renseigner les dimensions de la dalle.</p>
                   )}
 
                   {autoResult && (
@@ -1018,7 +1074,7 @@ export default function ProductDetailPage() {
                     Continuer mes achats
                   </button>
                 </div>
-              ) : !showQuoteForm ? (
+              ) : (
                 <>
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                     <p className="text-xs text-amber-800 font-semibold">{t('product.priceOnRequest')}</p>
@@ -1030,28 +1086,6 @@ export default function ProductDetailPage() {
                     {t('product.requestQuote')}
                   </button>
                 </>
-              ) : (
-                <form onSubmit={handleRequestQuote} className="flex flex-col gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                  <p className="text-xs font-semibold text-amber-800">{t('product.requestQuote')}</p>
-                  <input type="text" placeholder="Votre nom *" required value={quoteFormData.name} onChange={e => setQuoteFormData(d => ({ ...d, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-white" />
-                  <input type="email" placeholder="Votre email *" required value={quoteFormData.email} onChange={e => setQuoteFormData(d => ({ ...d, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-white" />
-                  <input type="tel" placeholder="Votre téléphone *" required value={quoteFormData.phone} onChange={e => setQuoteFormData(d => ({ ...d, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-white" />
-                  <input type="text" placeholder="Société (optionnel)" value={quoteFormData.company} onChange={e => setQuoteFormData(d => ({ ...d, company: e.target.value }))}
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-white" />
-                  <textarea placeholder="Commentaire (optionnel)" rows={2} value={quoteFormData.comment} onChange={e => setQuoteFormData(d => ({ ...d, comment: e.target.value }))}
-                    className="w-full px-3 py-2 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/30 bg-white resize-none" />
-                  <div className="flex gap-2">
-                    <button type="submit" disabled={quoteLoading}
-                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl text-xs font-semibold transition-all disabled:opacity-40">
-                      {quoteLoading ? 'Envoi...' : 'Envoyer'}
-                    </button>
-                    <button type="button" onClick={() => setShowQuoteForm(false)}
-                      className="px-4 py-2.5 text-xs text-amber-700 hover:text-amber-900 transition-colors">Annuler</button>
-                  </div>
-                </form>
               )}
             </div>
             ) : (
@@ -1155,7 +1189,6 @@ export default function ProductDetailPage() {
           </div>
           </aside>
       </main>
-
     </div>
   );
 }

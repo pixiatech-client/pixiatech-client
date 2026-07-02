@@ -2137,6 +2137,8 @@
         "all": "All",
         "sale": "Sale",
         "rental": "Rental",
+        "surCommande": "Made to order",
+        "closeFilters": "Close filters",
         "minRating": "Minimum rating",
         "reset": "Reset",
         "viewResults": "View results",

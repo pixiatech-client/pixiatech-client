@@ -52,7 +52,7 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
   open: boolean; onClose: () => void;
   categories: string[]; selectedCategories: string[]; onCategoriesChange: (c: string[]) => void;
   minRating: number; onMinRatingChange: (r: number) => void;
-  transactionType: 'all' | 'sale' | 'rental'; onTransactionTypeChange: (t: 'all' | 'sale' | 'rental') => void;
+  transactionType: 'all' | 'sale' | 'rental' | 'sur-commande'; onTransactionTypeChange: (t: 'all' | 'sale' | 'rental' | 'sur-commande') => void;
   onReset: () => void; activeCount: number;
 }) {
   const { t } = useI18n();
@@ -71,20 +71,20 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none"
             >
-              <div className="pointer-events-auto w-full bg-white rounded-t-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85dvh]" onClick={(e) => e.stopPropagation()}>
-                <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
+              <div className="pointer-events-auto w-full bg-white rounded-t-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]" onClick={(e) => e.stopPropagation()}>
+                <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100">
                   <h2 className="font-bold text-gray-900">{t('boutique.filters')}</h2>
-                  <button onClick={onClose} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
+                  <button onClick={onClose} aria-label={t('boutique.closeFilters')} className="size-11 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
                     <X size={16} className="text-gray-500" />
                   </button>
                 </div>
 
-                <div className="p-6 space-y-7 max-h-[60vh] overflow-y-auto">
+                <div className="p-5 space-y-5 max-h-[55vh] overflow-y-auto">
                   <div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.categories')}</h3>
-                    <div className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-3">{t('boutique.categories')}</h3>
+                    <div className="space-y-1">
                       {categories.map((cat) => (
-                        <label key={cat} className="flex items-center gap-3 cursor-pointer group">
+                        <label key={cat} className="flex items-center gap-3 cursor-pointer group py-0.5">
                           <input
                             type="checkbox"
                             checked={selectedCategories.includes(cat)}
@@ -104,17 +104,18 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                   </div>
 
                   <div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.type')}</h3>
-                    <div className="flex gap-2">
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-3">{t('boutique.type')}</h3>
+                    <div className="flex flex-col gap-1.5">
                       {[
                         { value: 'all' as const, label: t('boutique.all') },
                         { value: 'sale' as const, label: t('boutique.sale') },
                         { value: 'rental' as const, label: t('boutique.rental') },
+                        { value: 'sur-commande' as const, label: t('boutique.surCommande') },
                       ].map((opt) => (
                         <button
                           key={opt.value}
                           onClick={() => onTransactionTypeChange(opt.value)}
-                          className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                          className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                             transactionType === opt.value
                               ? 'bg-gray-900 text-white shadow-sm'
                               : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
@@ -127,16 +128,16 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                   </div>
 
                   <div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.minRating')}</h3>
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-3">{t('boutique.minRating')}</h3>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
                           onClick={() => onMinRatingChange(minRating === star ? 0 : star)}
-                          className={`p-1 transition-all duration-200 ${star <= minRating ? 'scale-110' : ''}`}
+                          className={`p-2 transition-all duration-200 ${star <= minRating ? 'scale-110' : ''}`}
                         >
                           <Star
-                            size={22}
+                            size={20}
                             className={star <= minRating ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-300'}
                           />
                         </button>
@@ -148,10 +149,10 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                   </div>
                 </div>
 
-                <div className="px-6 py-4 flex gap-3 border-t border-gray-100">
+                <div className="px-5 py-3 flex gap-3 border-t border-gray-100">
                   {activeCount > 0 && (
                     <button onClick={onReset} className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all">
-                      <RotateCcw size={13} />
+                      <RotateCcw size={12} />
                       {t('boutique.reset')}
                     </button>
                   )}
@@ -168,19 +169,19 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
               className="fixed inset-0 z-50 flex items-center justify-end pointer-events-none"
             >
               <div className="pointer-events-auto w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-gray-200/70 overflow-hidden flex flex-col max-h-[85dvh] h-auto" onClick={(e) => e.stopPropagation()}>
-                <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
+                <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100">
                   <h2 className="font-bold text-gray-900">{t('boutique.filters')}</h2>
-                  <button onClick={onClose} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
+                  <button onClick={onClose} aria-label={t('boutique.closeFilters')} className="size-11 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
                     <X size={16} className="text-gray-500" />
                   </button>
                 </div>
 
-                <div className="p-6 space-y-7 max-h-[60vh] overflow-y-auto">
+                <div className="p-5 space-y-5 max-h-[55vh] overflow-y-auto">
                   <div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.categories')}</h3>
-                    <div className="space-y-2">
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-3">{t('boutique.categories')}</h3>
+                    <div className="space-y-1">
                       {categories.map((cat) => (
-                        <label key={cat} className="flex items-center gap-3 cursor-pointer group">
+                        <label key={cat} className="flex items-center gap-3 cursor-pointer group py-0.5">
                           <input
                             type="checkbox"
                             checked={selectedCategories.includes(cat)}
@@ -200,17 +201,18 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                   </div>
 
                   <div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.type')}</h3>
-                    <div className="flex gap-2">
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-3">{t('boutique.type')}</h3>
+                    <div className="flex flex-col gap-1.5">
                       {[
                         { value: 'all' as const, label: t('boutique.all') },
                         { value: 'sale' as const, label: t('boutique.sale') },
                         { value: 'rental' as const, label: t('boutique.rental') },
+                        { value: 'sur-commande' as const, label: t('boutique.surCommande') },
                       ].map((opt) => (
                         <button
                           key={opt.value}
                           onClick={() => onTransactionTypeChange(opt.value)}
-                          className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                          className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                             transactionType === opt.value
                               ? 'bg-gray-900 text-white shadow-sm'
                               : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
@@ -223,16 +225,16 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                   </div>
 
                   <div>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.minRating')}</h3>
+                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-3">{t('boutique.minRating')}</h3>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
                           key={star}
                           onClick={() => onMinRatingChange(minRating === star ? 0 : star)}
-                          className={`p-1 transition-all duration-200 ${star <= minRating ? 'scale-110' : ''}`}
+                          className={`p-2 transition-all duration-200 ${star <= minRating ? 'scale-110' : ''}`}
                         >
                           <Star
-                            size={22}
+                            size={20}
                             className={star <= minRating ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-300'}
                           />
                         </button>
@@ -244,14 +246,14 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                   </div>
                 </div>
 
-                <div className="px-6 py-4 flex gap-3 border-t border-gray-100">
+                <div className="px-5 py-3 flex gap-3 border-t border-gray-100">
                   {activeCount > 0 && (
-                    <button onClick={onReset} className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all">
-                      <RotateCcw size={13} />
+                    <button onClick={onReset} className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all">
+                      <RotateCcw size={12} />
                       {t('boutique.reset')}
                     </button>
                   )}
-                  <button onClick={onClose} className={`${activeCount > 0 ? 'flex-1' : 'w-full'} bg-gray-900 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-all`}>
+                  <button onClick={onClose} className={`${activeCount > 0 ? 'flex-1' : 'w-full'} bg-gray-900 text-white py-2 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-all`}>
                     {t('boutique.viewResults')}
                   </button>
                 </div>
@@ -276,7 +278,7 @@ export default function BoutiquePage() {
   const [activeTab, setActiveTab] = useState<'all' | 'populaires' | 'nouveautes'>('all');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
-  const [transactionType, setTransactionType] = useState<'all' | 'sale' | 'rental'>('all');
+  const [transactionType, setTransactionType] = useState<'all' | 'sale' | 'rental' | 'sur-commande'>('all');
   const [sortBy, setSortBy] = useState<'recent' | 'price-asc' | 'price-desc'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -428,8 +430,8 @@ export default function BoutiquePage() {
           </div>
         </div>
       )}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 md:px-10 lg:px-14 py-4 border-b border-gray-200/40">
-        <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1.5 rounded-full overflow-x-auto scrollbar-hide">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 px-4 md:px-10 lg:px-14 py-2 md:py-4 border-b border-gray-200/40">
+        <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1 sm:p-1.5 rounded-full overflow-x-auto scrollbar-hide">
           {[
             { id: 'all', label: t('boutique.products') },
             { id: 'populaires', label: t('boutique.popular') },
@@ -438,7 +440,7 @@ export default function BoutiquePage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className="relative px-4 sm:px-6 py-2 rounded-full text-xs font-medium transition-colors duration-300 shrink-0"
+              className="relative px-3 sm:px-6 py-1.5 md:py-2 rounded-full text-xs font-medium transition-colors duration-300 shrink-0"
             >
               {activeTab === tab.id && (
                 <motion.div
@@ -682,7 +684,7 @@ export default function BoutiquePage() {
                       <span className="text-xl font-extrabold text-gray-900">{product.price}{'\u20AC'}</span>
                       {product.oldPrice && product.oldPrice > product.price && (
                         <>
-                          <span className="text-[11px] text-gray-400 line-through">{product.oldPrice}{'\u20AC'}</span>
+                          <span className="text-xs text-gray-400 line-through">{product.oldPrice}{'\u20AC'}</span>
                           <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
                             -{calculatePromotionPercent(product.oldPrice, product.price)}%
                           </span>

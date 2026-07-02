@@ -2137,6 +2137,8 @@
         "all": "Toutes",
         "sale": "Vente",
         "rental": "Location",
+        "surCommande": "Sur commande",
+        "closeFilters": "Fermer les filtres",
         "minRating": "Note minimale",
         "reset": "Réinitialiser",
         "viewResults": "Voir les résultats",
