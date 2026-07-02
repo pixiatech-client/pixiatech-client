@@ -14,6 +14,28 @@ import { useProfile } from '@/contexts/ProfileContext';
 import { PriceLabel } from '@/components/B2BProfileSelector';
 import { useI18n } from '@/lib/i18n';
 
+const renderStars = (rating: number, size: number) => {
+  const stars = [];
+  const floorRating = Math.floor(rating);
+  for (let i = 1; i <= 5; i++) {
+    if (i <= floorRating) {
+      stars.push(<Star key={i} size={size} className="text-amber-400 fill-amber-400" />);
+    } else if (i - 0.5 <= rating) {
+      stars.push(
+        <div key={i} className="relative inline-block" style={{ width: size, height: size }}>
+          <Star size={size} className="text-gray-200 fill-gray-200 absolute top-0 left-0" />
+          <div className="absolute top-0 left-0 overflow-hidden" style={{ width: '50%' }}>
+            <Star size={size} className="text-amber-400 fill-amber-400 max-w-none" />
+          </div>
+        </div>
+      );
+    } else {
+      stars.push(<Star key={i} size={size} className="text-gray-200 fill-gray-200" />);
+    }
+  }
+  return stars;
+};
+
 const specIcons: Record<string, { icon: typeof Maximize2; color: string }> = {
   'surface': { icon: Maximize2, color: 'blue' },
   'résolution': { icon: Monitor, color: 'violet' },
@@ -172,7 +194,7 @@ export default function ProductDetailPage() {
   const [budgetResult, setBudgetResult] = useState<{ totalSurface: number; panelSurface: number; panelCount: number; unitPrice: number; totalPrice: number } | null>(null);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
-  const { showHT, showTTC, setProfileType, profileType } = useProfile();
+  const { showHT, showTTC, setProfileType, profileType, forceB2B } = useProfile();
   const { t } = useI18n();
 
   useEffect(() => {
@@ -357,7 +379,7 @@ export default function ProductDetailPage() {
                 <ChevronLeft size={14} />
                 Retour
               </button>
-              <div className="bg-white rounded-2xl shadow-sm w-full overflow-hidden mt-[15px] mr-5 p-5">
+              <div className="bg-white rounded-2xl shadow-sm w-full mt-[15px] mr-5 p-5">
                 <div className="cursor-pointer w-full aspect-[4/3] overflow-hidden rounded-xl" onClick={() => { setSelectedVariant(null); openLightbox(selectedMedia); }}>
                   {effectiveMedia ? (
                     effectiveMedia.type === 'video' ? (
@@ -458,15 +480,37 @@ export default function ProductDetailPage() {
                 </>
               )}
 
-              <div className="mt-4 flex items-center gap-3">
-                <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed group">
+              <div className="mt-4 flex flex-wrap items-center [&>*:not(:first-child)]:ml-[-2px]">
+                <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed group">
                   <FileText size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">{t('product.datasheet')}</span>
                 </button>
-                <button onClick={() => { const a = document.createElement('a'); a.href = product.image; a.download = product.name; a.click(); }} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors group">
-                  <Download size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">{t('product.download')}</span>
-                </button>
+                {product.playStoreUrl && (
+                  <button onClick={() => window.open(product.playStoreUrl, '_blank')} className="h-[52px] w-[174px] hover:opacity-90 active:scale-95 transition-all shrink-0">
+                    <img src="/google.svg" alt="Google Play" className="h-full w-full object-fill rounded-lg" />
+                  </button>
+                )}
+                {product.appStoreUrl && (
+                  <button onClick={() => window.open(product.appStoreUrl, '_blank')} className="h-[44px] w-[118px] hover:opacity-90 active:scale-95 transition-all shrink-0">
+                    <img src="/appele.svg" alt="App Store" className="h-full w-full object-fill rounded-[6px]" />
+                  </button>
+                )}
+                {product.downloadUrl2 && (
+                  <button onClick={() => window.open(product.downloadUrl2, '_blank')} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors group">
+                    <Download size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">
+                      {product.downloadLabel2 || 'Télécharger'}
+                    </span>
+                  </button>
+                )}
+                {product.downloadUrl3 && (
+                  <button onClick={() => window.open(product.downloadUrl3, '_blank')} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors group">
+                    <Download size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">
+                      {product.downloadLabel3 || 'Télécharger'}
+                    </span>
+                  </button>
+                )}
               </div>
             </section>
 
@@ -474,32 +518,29 @@ export default function ProductDetailPage() {
             <div className="lg:hidden flex flex-col mb-6 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <span className="text-xs font-bold uppercase tracking-widest text-blue-500 mb-2">{product.category}</span>
               <h1 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h1>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} size={16} className={star <= Math.round(product.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-300'} />
-                  ))}
+              {product.showRating !== false && (
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-0.5">
+                    {renderStars(product.rating ?? 5.0, 16)}
+                  </div>
+                  <span className="text-xs text-gray-400">({product.reviews ?? 0})</span>
                 </div>
-                <span className="text-xs text-gray-400">({product.reviews})</span>
-              </div>
+              )}
               <div className="mb-4">
                 <div className="flex items-center gap-3 flex-wrap">
                   {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                     <span className="text-base text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
                   )}
                   <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
+                  <span className="text-[10px] font-bold text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md tracking-wider">Hors taxes</span>
                   {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                     <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">-{Math.round((1 - effectivePrice / effectiveOldPrice) * 100)}%</span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                  {(!showHT && !showTTC) && (
-                    <><span>HT: {formatPrice(effectivePrice / (1 + taxRate / 100))}</span><span>TTC: {formatPrice(effectivePrice)}</span></>
-                  )}
-                  {showHT && <span>Prix HT: {formatPrice(effectivePrice / (1 + taxRate / 100))}</span>}
-                  {showTTC && <span>TTC: {formatPrice(effectivePrice)}</span>}
-                </div>
+
                 <div className="relative mt-2">
+                  {!forceB2B && (
+                    <>
                   <button
                     onClick={() => setShowInfo(!showInfo)}
                     className="relative flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium group"
@@ -537,10 +578,12 @@ export default function ProductDetailPage() {
                       </button>
                     </div>
                   )}
+                    </>
+                  )}
                 </div>
               </div>
               {displayVariants.length > 0 && (
-                <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide mb-4">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {displayVariants.map((v) => (
                     <button key={v.name} onClick={() => { setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
                       className={`shrink-0 px-3 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-600 hover:border-gray-400'}`}>
@@ -715,18 +758,14 @@ export default function ProductDetailPage() {
               <p className="text-gray-500 text-sm leading-relaxed mb-4">{product.description}</p>
             )}
 
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    size={18}
-                    className={star <= Math.round(product.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-300'}
-                  />
-                ))}
+            {product.showRating !== false && (
+              <div className="flex items-center gap-2 mb-6">
+                <div className="flex items-center gap-0.5">
+                  {renderStars(product.rating ?? 5.0, 18)}
+                </div>
+                <span className="text-sm text-gray-400">{t('product.reviews', { count: product.reviews ?? 0 })}</span>
               </div>
-              <span className="text-sm text-gray-400">{t('product.reviews', { count: product.reviews })}</span>
-            </div>
+            )}
 
             <div className="mb-6">
               <div className="flex items-center gap-3 flex-wrap">
@@ -734,27 +773,17 @@ export default function ProductDetailPage() {
                   <span className="text-lg text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
                 )}
                 <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
+                <span className="text-[10px] font-bold text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md tracking-wider">Hors taxes</span>
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                     -{Math.round((1 - effectivePrice / effectiveOldPrice) * 100)}%
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-4 mt-2">
-                {(!showHT && !showTTC) && (
-                  <>
-                    <span className="text-sm text-gray-500 font-medium">{t('product.priceHT')} : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice / (1 + taxRate / 100))}</span></span>
-                    <span className="text-sm text-gray-500 font-medium">{t('product.priceTTC')} : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice)}</span></span>
-                  </>
-                )}
-                {showHT && (
-                  <span className="text-sm text-gray-500 font-medium">{t('product.priceExclTax')} : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice / (1 + taxRate / 100))}</span></span>
-                )}
-                {showTTC && (
-                  <span className="text-sm text-gray-500 font-medium">{t('product.inclTax')} : <span className="text-gray-700 font-semibold">{formatPrice(effectivePrice)}</span></span>
-                )}
-              </div>
+
               <div className="relative mt-1">
+                {!forceB2B && (
+                  <>
                 <button
                   onClick={() => setShowInfo(!showInfo)}
                   className="relative flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium group"
@@ -792,6 +821,8 @@ export default function ProductDetailPage() {
                       </button>
                     </div>
                   )}
+                  </>
+                )}
               </div>
             </div>
 
@@ -806,7 +837,7 @@ export default function ProductDetailPage() {
                     )}
                   </div>
                 )}
-                <div className="flex flex-nowrap gap-2 overflow-x-auto scrollbar-hide">
+                <div className="flex flex-wrap gap-2">
                   {displayVariants.map((v) => (
                     <button
                       key={v.name}

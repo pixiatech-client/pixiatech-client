@@ -12,7 +12,7 @@ import {
   Package, FileText, Search, Plus, ShoppingCart, Calendar,
   Monitor, Sun, Store, Eye, Grid, ChevronLeft, ChevronDown, ChevronUp,
   ChevronRight, Zap, Maximize, SunMedium, PlusCircle, Camera, Image as ImageIcon,
-  Video, Play, Upload, Trash2, ArrowLeft, ArrowRight, Link as LinkIcon, Tag, ChevronsUpDown, AlertTriangle, TrendingUp,
+  Video, Play, Upload, Trash2, ArrowLeft, ArrowRight, Link as LinkIcon, Tag, ChevronsUpDown, AlertTriangle, TrendingUp, Star,
   Settings2, Info, Save, Check, X, MoreVertical, Edit2, Copy, GripVertical, Filter, ArrowUpDown, Sparkles, Brain, Globe, ShieldCheck, Zap as ZapIcon, LogOut, LogIn, RefreshCw,
   Mail, Lock, Unlock, Phone, UserPlus, EyeOff, Users, Truck, Wrench, History, User as UserIcon, List, Settings, Hammer, Pin, ShoppingBag
 } from 'lucide-react';
@@ -2374,7 +2374,29 @@ const ProduitPage = ({
   setDistancePitches,
   primaryDistance,
   setPrimaryDistance,
-  wizardSettings
+  wizardSettings,
+  rating,
+  setRating,
+  showRating,
+  setShowRating,
+  reviews,
+  setReviews,
+  downloadEnabled,
+  setDownloadEnabled,
+  downloadLabel,
+  setDownloadLabel,
+  playStoreUrl,
+  setPlayStoreUrl,
+  appStoreUrl,
+  setAppStoreUrl,
+  downloadLabel2,
+  setDownloadLabel2,
+  downloadUrl2,
+  setDownloadUrl2,
+  downloadLabel3,
+  setDownloadLabel3,
+  downloadUrl3,
+  setDownloadUrl3
 }: any) => {
   const { t } = useI18n();
   const [specPage, setSpecPage] = useState(1);
@@ -2758,6 +2780,167 @@ const ProduitPage = ({
                 </button>
               </div>
             </div>
+
+            {activeSpace === 'boutique' && (
+              <div className="bg-transparent md:bg-white border-none md:border border-slate-100 rounded-3xl p-5 space-y-5 shadow-sm mt-4">
+                <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                  <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
+                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  </div>
+                  <div className="flex flex-col">
+                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Téléchargements & Évaluation</h4>
+                    <span className="text-[9px] text-slate-400 font-medium">Boutons boutique et note étoiles</span>
+                  </div>
+                </div>
+
+                {/* Section Évaluation */}
+                <div className="space-y-3">
+                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Évaluation (Étoiles)</h5>
+                  <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-slate-50/50">
+                    <div className="space-y-0.5">
+                      <span className="text-[11px] font-bold text-slate-800">Afficher la note étoiles</span>
+                      <p className="text-[9px] text-slate-400 leading-tight">Afficher les étoiles sur le produit</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={showRating}
+                        onChange={(e) => setShowRating(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-slate-950"></div>
+                    </label>
+                  </div>
+
+                  {showRating && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Note (ex: 4.8)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="5"
+                          step="0.1"
+                          value={rating}
+                          onChange={(e) => setRating(e.target.value)}
+                          className="w-full h-9 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-semibold outline-none focus:border-slate-400"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Nombre d'avis</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={reviews}
+                          onChange={(e) => setReviews(e.target.value)}
+                          className="w-full h-9 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-semibold outline-none focus:border-slate-400"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section Téléchargements */}
+                <div className="space-y-3 pt-1">
+                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Bouton de téléchargement principal</h5>
+                  <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-slate-50/50">
+                    <div className="space-y-0.5">
+                      <span className="text-[11px] font-bold text-slate-800">Activer le bouton télécharger</span>
+                      <p className="text-[9px] text-slate-400 leading-tight">Téléchargement de l'image du produit</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={downloadEnabled}
+                        onChange={(e) => setDownloadEnabled(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-8 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-slate-950"></div>
+                    </label>
+                  </div>
+
+                  {downloadEnabled && (
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Nom du bouton (ex: DOWNLOAD)</label>
+                      <input
+                        type="text"
+                        placeholder="DOWNLOAD"
+                        value={downloadLabel}
+                        onChange={(e) => setDownloadLabel(e.target.value)}
+                        className="w-full h-9 bg-slate-50 border border-slate-200 rounded-xl px-3 text-xs font-semibold outline-none focus:border-slate-400"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Boutons d'applications additionnels */}
+                <div className="space-y-3 pt-1">
+                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Boutons additionnels (Lien Store / Apps)</h5>
+                  
+                  <div className="p-3 rounded-2xl border border-slate-100 bg-slate-50/30 space-y-1">
+                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Lien Google Play Store</label>
+                    <input
+                      type="text"
+                      placeholder="https://play.google.com/store/apps/details?id=..."
+                      value={playStoreUrl}
+                      onChange={(e) => setPlayStoreUrl(e.target.value)}
+                      className="w-full h-8 bg-white border border-slate-200 rounded-xl px-3 text-xs font-semibold outline-none focus:border-slate-300"
+                    />
+                  </div>
+
+                  <div className="p-3 rounded-2xl border border-slate-100 bg-slate-50/30 space-y-1">
+                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Lien Apple App Store</label>
+                    <input
+                      type="text"
+                      placeholder="https://apps.apple.com/app/..."
+                      value={appStoreUrl}
+                      onChange={(e) => setAppStoreUrl(e.target.value)}
+                      className="w-full h-8 bg-white border border-slate-200 rounded-xl px-3 text-xs font-semibold outline-none focus:border-slate-300"
+                    />
+                  </div>
+
+                  <div className="p-3 rounded-2xl border border-slate-100 bg-slate-50/30 space-y-2">
+                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Bouton personnalisé A</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Nom du bouton"
+                        value={downloadLabel2}
+                        onChange={(e) => setDownloadLabel2(e.target.value)}
+                        className="w-full h-8 bg-white border border-slate-200 rounded-xl px-2.5 text-xs font-semibold outline-none focus:border-slate-300"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Lien (https://...)"
+                        value={downloadUrl2}
+                        onChange={(e) => setDownloadUrl2(e.target.value)}
+                        className="w-full h-8 bg-white border border-slate-200 rounded-xl px-2.5 text-xs font-semibold outline-none focus:border-slate-300"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-2xl border border-slate-100 bg-slate-50/30 space-y-2">
+                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Bouton personnalisé B</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Nom du bouton"
+                        value={downloadLabel3}
+                        onChange={(e) => setDownloadLabel3(e.target.value)}
+                        className="w-full h-8 bg-white border border-slate-200 rounded-xl px-2.5 text-xs font-semibold outline-none focus:border-slate-300"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Lien (https://...)"
+                        value={downloadUrl3}
+                        onChange={(e) => setDownloadUrl3(e.target.value)}
+                        className="w-full h-8 bg-white border border-slate-200 rounded-xl px-2.5 text-xs font-semibold outline-none focus:border-slate-300"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Middle Column: Tarification */}
@@ -4561,6 +4744,19 @@ export default function ProductManagementClient() {
   const [mediaType, setMediaType] = useState<'photo' | 'video'>('photo');
   const [dimensionsEnabled, setDimensionsEnabled] = useState(false);
 
+  // Rating and Download button customizations
+  const [rating, setRating] = useState<string>('5');
+  const [showRating, setShowRating] = useState<boolean>(true);
+  const [reviews, setReviews] = useState<string>('0');
+  const [downloadEnabled, setDownloadEnabled] = useState<boolean>(true);
+  const [downloadLabel, setDownloadLabel] = useState<string>('');
+  const [playStoreUrl, setPlayStoreUrl] = useState<string>('');
+  const [appStoreUrl, setAppStoreUrl] = useState<string>('');
+  const [downloadLabel2, setDownloadLabel2] = useState<string>('');
+  const [downloadUrl2, setDownloadUrl2] = useState<string>('');
+  const [downloadLabel3, setDownloadLabel3] = useState<string>('');
+  const [downloadUrl3, setDownloadUrl3] = useState<string>('');
+
   // Media State
   const [photoUrl, setPhotoUrl] = useState('');
   const [uploadedPhoto, setUploadedPhoto] = useState<File | null>(null);
@@ -4785,6 +4981,17 @@ export default function ProductManagementClient() {
         description: description,
         descriptionDetaillee: descriptionDetaillee,
         variants: variants,
+        rating: Number(rating) || 5,
+        showRating: showRating !== false,
+        reviews: Number(reviews) || 0,
+        downloadEnabled: downloadEnabled !== false,
+        downloadLabel: downloadLabel || '',
+        playStoreUrl: playStoreUrl || '',
+        appStoreUrl: appStoreUrl || '',
+        downloadLabel2: downloadLabel2 || '',
+        downloadUrl2: downloadUrl2 || '',
+        downloadLabel3: downloadLabel3 || '',
+        downloadUrl3: downloadUrl3 || '',
         date: new Date().toISOString(),
         uid: user?.uid || 'system',
         selectedChars: filteredSelectedChars
@@ -5299,6 +5506,19 @@ export default function ProductManagementClient() {
       setSurface(parseFloat(editingProduct.surfaceMinRequise || '0') || 9.00);
       setIsHidden(!!editingProduct.isHidden);
       setUpsellFor(editingProduct.upsellFor || []);
+
+      // Populate rating & downloads custom properties
+      setRating((editingProduct.rating ?? 5).toString());
+      setShowRating(editingProduct.showRating !== false);
+      setReviews((editingProduct.reviews ?? 0).toString());
+      setDownloadEnabled(editingProduct.downloadEnabled !== false);
+      setDownloadLabel(editingProduct.downloadLabel || '');
+      setPlayStoreUrl(editingProduct.playStoreUrl || '');
+      setAppStoreUrl(editingProduct.appStoreUrl || '');
+      setDownloadLabel2(editingProduct.downloadLabel2 || '');
+      setDownloadUrl2(editingProduct.downloadUrl2 || '');
+      setDownloadLabel3(editingProduct.downloadLabel3 || '');
+      setDownloadUrl3(editingProduct.downloadUrl3 || '');
     } else {
       // Reset form for new product creation
       setProductName('');
@@ -5328,6 +5548,19 @@ export default function ProductManagementClient() {
       setSurface(9.00);
       setIsHidden(false);
       setUpsellFor([]);
+
+      // Reset rating & downloads custom properties
+      setRating('5');
+      setShowRating(true);
+      setReviews('0');
+      setDownloadEnabled(true);
+      setDownloadLabel('');
+      setPlayStoreUrl('');
+      setAppStoreUrl('');
+      setDownloadLabel2('');
+      setDownloadUrl2('');
+      setDownloadLabel3('');
+      setDownloadUrl3('');
 
       // Set pinned characteristics by default for new products
       const pinnedChars = characteristics.filter(c => c.isPinned).map(c => ({ id: c.id, value: c.options[0] }));
@@ -5970,6 +6203,28 @@ export default function ProductManagementClient() {
                      activeSpace={activeSpace}
                      onCopyToSpace={openCopyModal}
                      isCopying={isCopying}
+                     rating={rating}
+                     setRating={setRating}
+                     showRating={showRating}
+                     setShowRating={setShowRating}
+                     reviews={reviews}
+                     setReviews={setReviews}
+                     downloadEnabled={downloadEnabled}
+                     setDownloadEnabled={setDownloadEnabled}
+                     downloadLabel={downloadLabel}
+                     setDownloadLabel={setDownloadLabel}
+                     playStoreUrl={playStoreUrl}
+                     setPlayStoreUrl={setPlayStoreUrl}
+                     appStoreUrl={appStoreUrl}
+                     setAppStoreUrl={setAppStoreUrl}
+                     downloadLabel2={downloadLabel2}
+                     setDownloadLabel2={setDownloadLabel2}
+                     downloadUrl2={downloadUrl2}
+                     setDownloadUrl2={setDownloadUrl2}
+                     downloadLabel3={downloadLabel3}
+                     setDownloadLabel3={setDownloadLabel3}
+                     downloadUrl3={downloadUrl3}
+                     setDownloadUrl3={setDownloadUrl3}
                    />
               </motion.div>
             )}

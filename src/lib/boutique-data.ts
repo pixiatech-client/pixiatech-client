@@ -36,6 +36,15 @@ export interface Product {
   isHidden?: boolean;
   upsellFor?: string[];
   quoteOnly?: boolean;
+  showRating?: boolean;
+  downloadEnabled?: boolean;
+  downloadLabel?: string;
+  playStoreUrl?: string;
+  appStoreUrl?: string;
+  downloadLabel2?: string;
+  downloadUrl2?: string;
+  downloadLabel3?: string;
+  downloadUrl3?: string;
 }
 
 export interface RelatedProduct {
@@ -180,6 +189,15 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     upsellFor: data.upsellFor || [],
     quoteOnly: !!data.quoteOnly || data.availableFor?.includes('sur-commande') || false,
     isHidden: !!data.isHidden,
+    showRating: data.showRating !== false,
+    downloadEnabled: data.downloadEnabled !== false,
+    downloadLabel: data.downloadLabel || '',
+    playStoreUrl: data.playStoreUrl || '',
+    appStoreUrl: data.appStoreUrl || '',
+    downloadLabel2: data.downloadLabel2 || '',
+    downloadUrl2: data.downloadUrl2 || '',
+    downloadLabel3: data.downloadLabel3 || '',
+    downloadUrl3: data.downloadUrl3 || '',
   };
 }
 

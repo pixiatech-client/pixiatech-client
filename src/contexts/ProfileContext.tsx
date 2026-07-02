@@ -70,7 +70,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   const resolvedType = forceB2B ? 'entreprise' : profileType;
   const isB2B = resolvedType === 'entreprise';
-  const showHT = resolvedType === 'entreprise';
+  const showHT = resolvedType !== 'particulier'; // true par défaut (null) et pour entreprise
   const showTTC = resolvedType === 'particulier';
   const priceLabel = isB2B ? 'Prix hors taxes' : 'TVA incluse';
 

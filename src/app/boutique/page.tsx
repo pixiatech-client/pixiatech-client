@@ -13,6 +13,28 @@ import { useI18n } from '@/lib/i18n';
 import { calculatePromotionPercent } from '@/lib/pricing-engine';
 import { normalizeSearchText } from '@/lib/utils';
 
+const renderStars = (rating: number, size: number) => {
+  const stars = [];
+  const floorRating = Math.floor(rating);
+  for (let i = 1; i <= 5; i++) {
+    if (i <= floorRating) {
+      stars.push(<Star key={i} size={size} className="text-amber-400 fill-amber-400" />);
+    } else if (i - 0.5 <= rating) {
+      stars.push(
+        <div key={i} className="relative inline-block" style={{ width: size, height: size }}>
+          <Star size={size} className="text-gray-200 fill-gray-200 absolute top-0 left-0" />
+          <div className="absolute top-0 left-0 overflow-hidden" style={{ width: '50%' }}>
+            <Star size={size} className="text-amber-400 fill-amber-400 max-w-none" />
+          </div>
+        </div>
+      );
+    } else {
+      stars.push(<Star key={i} size={size} className="text-gray-200 fill-gray-200" />);
+    }
+  }
+  return stars;
+};
+
 function getModeBadge(product: Product): { label: string; colors: string } | null {
   const avail = product.availableFor ?? [];
   if (avail.includes('sur-commande')) return { label: 'Sur commande', colors: 'bg-amber-500 text-white' };
@@ -472,13 +494,13 @@ export default function BoutiquePage() {
                       ))}
                     </div>
                   )}
-                  <div className="absolute bottom-2 left-2 flex items-center">
-                    <div className="flex items-center gap-0.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} size={12} className={star <= Math.round(product.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'} />
-                      ))}
+                  {product.showRating !== false && (
+                    <div className="absolute bottom-2 left-2 flex items-center">
+                      <div className="flex items-center gap-0.5">
+                        {renderStars(product.rating ?? 5.0, 12)}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </a>
                 <div>
                   <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }}>

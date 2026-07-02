@@ -428,7 +428,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
       </Card>
 
       {/* TOP ROW: Options parcours / TVA / Boutique B2B / Zoom 3D */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Options parcours */}
         <Card className="rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -504,26 +504,13 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
               ) : (
                 <p className="text-[10px] text-slate-400 italic">{t('100% HT — Aucune TVA appliquée')}</p>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Boutique B2B */}
-        <Card className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <CardContent className="p-5 space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-xs">🏪</div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">Boutique TVA Morcen</h4>
-                <p className="text-[10px] text-slate-400">Mode B2B forcé</p>
+              <div className="flex items-center justify-between p-3 rounded-xl border border-amber-100 bg-amber-50/30">
+                <div className="space-y-0.5 pr-2">
+                  <Label className="text-xs font-bold text-slate-900">Boutique TVA</Label>
+                  <p className="text-[10px] text-slate-400 leading-tight">Toute la boutique passe en mode professionnel (HT), sélecteur de profil masqué</p>
+                </div>
+                <Switch checked={form.watch('estimationFlow.boutiqueB2B')} onCheckedChange={(v) => form.setValue('estimationFlow.boutiqueB2B', v)} />
               </div>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/40">
-              <div className="space-y-0.5 pr-2">
-                <Label className="text-xs font-bold text-slate-900">Activer B2B boutique</Label>
-                <p className="text-[10px] text-slate-400 leading-tight">Toute la boutique passe en mode professionnel (HT), sélecteur de profil masqué</p>
-              </div>
-              <Switch checked={form.watch('estimationFlow.boutiqueB2B')} onCheckedChange={(v) => form.setValue('estimationFlow.boutiqueB2B', v)} />
             </div>
           </CardContent>
         </Card>
