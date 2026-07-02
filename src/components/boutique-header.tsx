@@ -316,10 +316,19 @@ export function BoutiqueHeader() {
             <div className="relative" ref={resellerRef}>
               <button
                 onClick={() => setCreateOpen(!createOpen)}
-                className="text-white/70 hover:text-white nav-link"
+                className="text-white/70 hover:text-white nav-link md:hidden"
                 aria-label="Espace Membre"
               >
                 <User size={18} />
+              </button>
+              <button
+                onClick={() => setCreateOpen(!createOpen)}
+                className="hidden md:block text-white font-semibold py-2 px-6 text-sm min-w-[140px] focus:outline-none rounded-lg"
+                style={{
+                  background: 'linear-gradient(90deg, #7c3aed 0%, #ef4444 50%, #f97316 100%)',
+                }}
+              >
+                Espace Membre
               </button>
 
               {/* Desktop dropdown wrapper */}
