@@ -78,7 +78,7 @@ export function TrackingDetailDrawer({ open, onClose, trackingNumber, carrier }:
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-md bg-white shadow-2xl z-50 flex flex-col rounded-t-3xl max-h-[85vh]"
+            className="fixed bottom-0 left-0 right-0 w-full bg-white shadow-2xl z-50 flex flex-col rounded-t-3xl max-h-[85vh]"
           >
             <div className="flex items-center justify-between p-4 border-b border-slate-200 shrink-0">
               <div className="flex items-center gap-2">

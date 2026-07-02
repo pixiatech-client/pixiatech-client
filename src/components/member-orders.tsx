@@ -70,7 +70,7 @@ function OrderBottomSheet({ order, open, onClose }: { order: Order | null; open:
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-md bg-white shadow-2xl z-50 flex flex-col rounded-t-3xl max-h-[85vh]"
+            className="fixed bottom-0 left-0 right-0 w-full bg-white shadow-2xl z-50 flex flex-col rounded-t-3xl max-h-[85vh]"
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0">
               <div className="w-8 h-1 rounded-full bg-gray-300 mx-auto absolute left-1/2 -translate-x-1/2 top-2" />

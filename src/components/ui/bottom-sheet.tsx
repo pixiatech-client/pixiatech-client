@@ -36,7 +36,7 @@ export function BottomSheet({ open, onClose, title, children, className }: Botto
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col ${className || ''}`}
+            className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col w-full ${className || ''}`}
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0">
               <div className="flex items-center gap-2">
