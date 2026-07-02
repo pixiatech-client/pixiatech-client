@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { X, Package, MapPin, Clock, Truck, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMediaQuery } from 'usehooks-ts';
 import { cn } from '@/lib/utils';
 import { STATUS_LABELS, STATUS_COLORS } from '@/lib/tracking/constants';
 import type { TrackingStatus, TrackingEvent } from '@/lib/tracking/types';
@@ -13,6 +14,7 @@ interface TrackingDetailDrawerProps {
   carrier?: number;
 }
 export function TrackingDetailDrawer({ open, onClose, trackingNumber, carrier }: TrackingDetailDrawerProps) {
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [events, setEvents] = useState<TrackingEvent[]>([]);
   const [status, setStatus] = useState<TrackingStatus>('InfoReceived');
   const [loading, setLoading] = useState(true);
@@ -74,15 +76,20 @@ export function TrackingDetailDrawer({ open, onClose, trackingNumber, carrier }:
             onClick={onClose}
           />
           <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            initial={isMobile ? { y: '100%' } : { x: '100%' }}
+            animate={isMobile ? { y: 0 } : { x: 0 }}
+            exit={isMobile ? { y: '100%' } : { x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 w-full bg-white shadow-2xl z-50 flex flex-col rounded-t-3xl max-h-[85vh]"
+            className={cn(
+              'fixed bg-white shadow-2xl z-50 flex flex-col',
+              isMobile
+                ? 'bottom-0 left-0 right-0 w-full rounded-t-3xl max-h-[85vh]'
+                : 'top-0 right-0 h-full w-full max-w-md'
+            )}
           >
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 shrink-0">
+            <div className={cn('flex items-center justify-between p-4 border-b border-slate-200', isMobile && 'shrink-0')}>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-1 rounded-full bg-gray-300 mx-auto absolute left-1/2 -translate-x-1/2 top-2" />
+                {isMobile && <div className="w-8 h-1 rounded-full bg-gray-300 mx-auto absolute left-1/2 -translate-x-1/2 top-2" />}
                 <Package className="w-5 h-5 text-indigo-600" />
                 <h2 className="font-semibold text-sm">Suivi de colis</h2>
               </div>
