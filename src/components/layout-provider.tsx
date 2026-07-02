@@ -103,7 +103,7 @@ export function LayoutProvider({
               </main>
             )}
             {showBottomNav && (
-              <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center px-4 pb-3">
+              <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center px-4 pb-3 md:hidden">
                 <ExpandableTabs
                   tabs={bottomNavTabs}
                   onChange={handleBottomNavChange}
