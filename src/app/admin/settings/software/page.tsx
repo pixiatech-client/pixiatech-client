@@ -146,7 +146,7 @@ export default function SoftwareSettingsPage() {
 
   const handleRunDiagnostic = async () => {
     if (!diagEmail) {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Entrez un email pour recevoir le test de diagnostic.' });
+      toast({ variant: 'destructive', title: t('Error'), description: t('Enter an email to receive the diagnostic test.') });
       return;
     }
     setIsRunningDiag(true);
@@ -300,7 +300,7 @@ export default function SoftwareSettingsPage() {
 
             {/* Sender name */}
             <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-700">{t('Nom de l\'expéditeur')}</Label>
+              <Label className="text-xs font-bold text-slate-700">{t('Sender name')}</Label>
               <Input
                 type="text"
                 placeholder="PixiaTech"
@@ -395,7 +395,7 @@ export default function SoftwareSettingsPage() {
             )}
 
             <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl">
-              💡 {t("Le test enverra un e-mail de confirmation à l'adresse saisie en utilisant la configuration active ci-dessus.")}
+              💡 {t('The test will send a confirmation email with detailed diagnostic information.')}
             </p>
           </div>
         </div>
@@ -404,15 +404,15 @@ export default function SoftwareSettingsPage() {
         <div className="border-t border-slate-100 pt-6 mt-6">
           <h3 className="text-lg font-black text-slate-900 mb-1 flex items-center gap-2">
             <Bug className="w-5 h-5 text-orange-500" />
-            Diagnostic SMTP Complet
+            {t('Complete SMTP Diagnostic')}
           </h3>
           <p className="text-xs text-slate-500 mb-4">
-            Lance un test complet : vérification des variables d'environnement, connexion SMTP, et envoi réel d'un email. Affiche les logs étape par étape.
+            {t('Runs a full diagnostic check of your SMTP server configuration. An email will be sent to the address below.')}
           </p>
 
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-700">Email destinataire du test</Label>
+              <Label className="text-xs font-bold text-slate-700">{t('Test recipient email')}</Label>
               <Input
                 type="email"
                 placeholder="votre@email.com"
@@ -428,9 +428,9 @@ export default function SoftwareSettingsPage() {
               className="w-full md:w-auto min-w-[240px] h-12 rounded-xl font-black bg-orange-600 text-white hover:bg-orange-700 shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isRunningDiag ? (
-                <><RefreshCw className="w-4 h-4 animate-spin" /> Diagnostic en cours...</>
+                <><RefreshCw className="w-4 h-4 animate-spin" /> {t('Diagnostic in progress...')}</>
               ) : (
-                <><Bug className="w-4 h-4" /> Lancer le diagnostic complet</>
+                <><Bug className="w-4 h-4" /> {t('Run full diagnostic')}</>
               )}
             </Button>
 
@@ -445,7 +445,7 @@ export default function SoftwareSettingsPage() {
                     : <XCircle className="w-5 h-5 text-red-600" />
                   }
                   <span className={`font-black text-sm ${diagResult.success ? 'text-green-800' : 'text-red-800'}`}>
-                    {diagResult.success ? '✅ Email envoyé avec succès !' : '❌ Échec du diagnostic'}
+                    {diagResult.success ? '✅ ' + t('Email sent successfully!') : '❌ ' + t('Diagnostic failed')}
                   </span>
                   {diagResult.duration && (
                     <span className="ml-auto text-xs text-slate-400 flex items-center gap-1">
@@ -458,11 +458,11 @@ export default function SoftwareSettingsPage() {
                 {diagResult.success && (
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="bg-white/70 rounded-lg p-2">
-                      <span className="font-bold text-slate-600">Envoyé à</span>
+                      <span className="font-bold text-slate-600">{t('Sent to')}</span>
                       <p className="text-slate-800">{diagResult.to}</p>
                     </div>
                     <div className="bg-white/70 rounded-lg p-2">
-                      <span className="font-bold text-slate-600">Serveur utilisé</span>
+                      <span className="font-bold text-slate-600">{t('Server used')}</span>
                       <p className="text-slate-800">{diagResult.host}:{diagResult.port}</p>
                     </div>
                     <div className="bg-white/70 rounded-lg p-2 col-span-2">
@@ -474,7 +474,7 @@ export default function SoftwareSettingsPage() {
 
                 {diagResult.error && (
                   <div className="bg-white/70 rounded-lg p-2">
-                    <span className="font-bold text-red-600 text-xs">Erreur:</span>
+                    <span className="font-bold text-red-600 text-xs">{t('Error:')}</span>
                     <p className="text-red-800 text-xs font-mono mt-1">{diagResult.error}</p>
                   </div>
                 )}
@@ -482,7 +482,7 @@ export default function SoftwareSettingsPage() {
                 {/* Step-by-step logs */}
                 {diagResult.logs && diagResult.logs.length > 0 && (
                   <div className="bg-slate-900 rounded-lg p-3 overflow-x-auto">
-                    <p className="text-xs font-bold text-slate-400 mb-2">📋 Logs détaillés :</p>
+                    <p className="text-xs font-bold text-slate-400 mb-2">📋 {t('Detailed logs:')}</p>
                     {diagResult.logs.map((log, i) => (
                       <div key={i} className={`text-[11px] font-mono py-0.5 ${
                         log.includes('✅') ? 'text-green-400' :

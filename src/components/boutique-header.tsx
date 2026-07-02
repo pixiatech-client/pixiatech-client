@@ -323,10 +323,11 @@ export function BoutiqueHeader() {
               </button>
               <button
                 onClick={() => setCreateOpen(!createOpen)}
-                className="hidden md:block text-white font-semibold py-3 px-8 text-sm min-w-[170px] focus:outline-none"
+                className="hidden md:block text-white font-bold py-2.5 px-8 text-sm min-w-[170px] focus:outline-none transition-all hover:brightness-110 active:scale-95 duration-200"
                 style={{
                   background: 'linear-gradient(90deg, #7c3aed 0%, #ef4444 50%, #f97316 100%)',
-                  borderRadius: '20px 0 0 20px',
+                  borderRadius: '0 16px 0 16px',
+                  clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 0.6px) calc(100% - 14px), calc(100% - 2px) calc(100% - 12px), calc(100% - 10px) calc(100% - 4px), calc(100% - 12px) calc(100% - 2px), calc(100% - 14px) calc(100% - 0.6px), calc(100% - 16px) 100%, 0 100%, 0 16px, 0.6px 14px, 2px 12px, 10px 4px, 12px 2px, 14px 0.6px)',
                 }}
               >
                 Espace Membre

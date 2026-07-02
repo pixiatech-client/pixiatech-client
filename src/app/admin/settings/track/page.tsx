@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle, XCircle, RefreshCw, Package } from 'lucide-react';
+import { useAdminT } from '@/hooks/useAdminT';
 
 import type { ProviderSettings } from '@/lib/tracking/types';
 
@@ -22,6 +23,7 @@ const DEFAULT_PROVIDERS = [
 ];
 
 export default function TrackSettingsPage() {
+  const { t } = useAdminT();
   const [providers, setProviders] = useState<ProviderSettings[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export default function TrackSettingsPage() {
         );
       }
     } catch {
-      toast.error('Erreur chargement transporteurs');
+      toast.error(t('Error loading carriers'));
     } finally {
       setLoading(false);
     }
@@ -89,9 +91,9 @@ export default function TrackSettingsPage() {
         body: JSON.stringify(provider),
       });
       if (!res.ok) throw new Error();
-      toast.success(`${provider.label} sauvegardé`);
+      toast.success(`${provider.label} ${t('saved')}`);
     } catch {
-      toast.error('Erreur sauvegarde');
+      toast.error(t('Save error'));
     } finally {
       setSaving(null);
     }
@@ -102,7 +104,7 @@ export default function TrackSettingsPage() {
     try {
       const provider = providers.find((p) => p.id === id);
       if (!provider || !provider.apiKey) {
-        toast.error('Clé API manquante');
+        toast.error(t('Missing API key'));
         return;
       }
       const res = await fetch('/api/tracking/test', {
@@ -114,12 +116,12 @@ export default function TrackSettingsPage() {
       updateProvider(id, { lastTestOk: ok, lastTestAt: new Date().toISOString() });
       await saveProvider(id);
       if (ok) {
-        toast.success(`${provider.label} — connexion OK`);
+        toast.success(`${provider.label} — ${t('connection OK')}`);
       } else {
-        toast.error(`${provider.label} — échec connexion`);
+        toast.error(`${provider.label} — ${t('connection failed')}`);
       }
     } catch {
-      toast.error('Erreur test connexion');
+      toast.error(t('Connection test error'));
     } finally {
       setTesting(null);
     }
@@ -137,11 +139,10 @@ export default function TrackSettingsPage() {
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
       <div className="flex items-center gap-3 mb-2">
         <Package className="w-6 h-6 text-indigo-600" />
-        <h1 className="text-2xl font-bold tracking-tight">Suivi de colis</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('Package Tracking')}</h1>
       </div>
       <p className="text-sm text-muted-foreground max-w-2xl">
-        Configurez vos fournisseurs de suivi de colis. PIXIA utilise 17TRACK comme intermédiaire
-        principal pour le suivi multi-transporteur. Activez la connexion après avoir saisi votre clé API.
+        {t('Configure your shipping carriers for package tracking.')}
       </p>
 
       <div className="grid gap-4">
@@ -168,7 +169,7 @@ export default function TrackSettingsPage() {
                     ) : (
                       <RefreshCw className="w-3.5 h-3.5 mr-1" />
                     )}
-                    Tester
+                    {t('Test')}
                   </Button>
                   <Button
                     size="sm"
@@ -178,7 +179,7 @@ export default function TrackSettingsPage() {
                     {saving === provider.id ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
                     ) : null}
-                    Sauvegarder
+                    {t('Save')}
                   </Button>
                 </div>
               </div>
@@ -190,21 +191,21 @@ export default function TrackSettingsPage() {
                     <XCircle className="w-3 h-3 text-red-600" />
                   )}
                   <span className={provider.lastTestOk ? 'text-green-600' : 'text-red-600'}>
-                    Dernier test : {new Date(provider.lastTestAt).toLocaleString('fr-FR')}
-                    {provider.lastTestOk ? ' — OK' : ' — Échec'}
+                    {t('Last test')}: {new Date(provider.lastTestAt).toLocaleString('fr-FR')}
+                    {provider.lastTestOk ? ` — ${t('OK')}` : ` — ${t('Failed')}`}
                   </span>
                 </div>
               )}
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid gap-2">
-                <Label>Clé API</Label>
+                <Label>{t('API Key')}</Label>
                 <div className="flex gap-2">
                   <Input
                     type={showKey[provider.id] ? 'text' : 'password'}
                     value={provider.apiKey}
                     onChange={(e) => updateProvider(provider.id, { apiKey: e.target.value })}
-                    placeholder="Saisissez votre clé API..."
+                    placeholder={t('Enter your API key...')}
                     className="flex-1"
                   />
                   <Button
@@ -215,7 +216,7 @@ export default function TrackSettingsPage() {
                     }
                     className="shrink-0"
                   >
-                    {showKey[provider.id] ? 'Masquer' : 'Afficher'}
+                    {showKey[provider.id] ? t('Hide') : t('Show')}
                   </Button>
                 </div>
               </div>

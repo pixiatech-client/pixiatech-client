@@ -67,6 +67,10 @@ const adminTranslations: Record<string, string> = {
   'Email Verification': 'Vérification Email',
   'Hint Bubble': 'Bulle d\'aide',
   'Parcours client': 'Parcours client',
+  'Assistant & Images': 'Assistant & Images',
+  'Signature & Compteur': 'Signature & Compteur',
+  'PayPal': 'PayPal',
+  'Suivi colis': 'Suivi colis',
   'Show menu': 'Afficher le menu',
   'Previous page': 'Page précédente',
   'Unable to load initial data.': 'Impossible de charger les données initiales.',
@@ -403,6 +407,24 @@ const adminTranslations: Record<string, string> = {
   'Recommended Pixel Pitch': 'Pitch pixel recommandé',
   'Recommended': 'Recommandé',
 
+  // PayPal
+  'PayPal Configuration': 'Configuration PayPal',
+  'Editable': 'Modifiable',
+  'Configure your PayPal professional account credentials.': 'Configurez les identifiants de votre compte professionnel PayPal.',
+  'Environment': 'Environnement',
+  'PayPal Client ID': 'ID Client PayPal',
+  'Found in your PayPal Developer Dashboard under "API Credentials".': 'Trouvé dans votre tableau de bord développeur PayPal, section "API Credentials".',
+  'PayPal Client Secret': 'Secret Client PayPal',
+  'Enter your secret': 'Saisissez votre secret',
+  'Hide secret': 'Masquer le secret',
+  'Show secret': 'Afficher le secret',
+  'The secret is never displayed by default for security reasons.': 'Le secret n\'est jamais affiché par défaut pour des raisons de sécurité.',
+  'Security notice': 'Avis de sécurité',
+  'These credentials are stored securely in Firestore and are never exposed in the client-side code. Only administrators can access this page.': 'Ces identifiants sont stockés de manière sécurisée dans Firestore et ne sont jamais exposés dans le code client. Seuls les administrateurs peuvent accéder à cette page.',
+  'Unable to load PayPal settings.': 'Impossible de charger les paramètres PayPal.',
+  'PayPal configuration has been updated.': 'La configuration PayPal a été mise à jour.',
+  'An error occurred while saving.': 'Une erreur est survenue lors de l\'enregistrement.',
+
   // Themes
   'Theme Management': 'Gestion des thèmes',
   'Customize the appearance of the estimation app in real time.': 'Personnalisez l\'apparence de l\'application d\'estimation en temps réel.',
@@ -520,7 +542,6 @@ const adminTranslations: Record<string, string> = {
   'English': 'Anglais',
   'Note about custom roles': 'Note sur les rôles personnalisés',
   'Roles created by cloning will automatically inherit these settings based on their original template.': 'Les rôles créés par clonage hériteront automatiquement de ces paramètres basés sur leur modèle d\'origine.',
-  'An error occurred while saving.': 'Une erreur est survenue lors de l\'enregistrement.',
   'Section "{sectionName}" has been updated.': 'La section "{sectionName}" a été mise à jour.',
   'Width must be at least 1': 'La largeur doit être d\'au moins 1',
   'Height must be at least 1': 'La hauteur doit être d\'au moins 1',
@@ -993,6 +1014,42 @@ const adminTranslations: Record<string, string> = {
 
   // Personalization editor missing translations
   'Action': 'Action',
+
+  // Package Tracking
+  'Package Tracking': 'Suivi de colis',
+  'Configure your shipping carriers for package tracking.': 'Configurez vos transporteurs pour le suivi des colis.',
+  'Error loading carriers': 'Erreur de chargement des transporteurs',
+  'Save error': 'Erreur de sauvegarde',
+  'Missing API key': 'Clé API manquante',
+  'Connection test error': 'Erreur de test de connexion',
+  'Connection test successful': 'Test de connexion réussi',
+  'Carrier name': 'Nom du transporteur',
+  'Enter your API key...': 'Saisissez votre clé API...',
+  'Add a carrier': 'Ajouter un transporteur',
+  'No carriers configured.': 'Aucun transporteur configuré.',
+  'Add your first carrier to get started.': 'Ajoutez votre premier transporteur pour commencer.',
+
+  // SMTP Diagnostic
+  'Enter an email to receive the diagnostic test.': 'Entrez un email pour recevoir le test de diagnostic.',
+  'Sender name': 'Nom de l\'expéditeur',
+  'Complete SMTP Diagnostic': 'Diagnostic SMTP Complet',
+  'Runs a full diagnostic check of your SMTP server configuration. An email will be sent to the address below.': 'Effectue un diagnostic complet de votre configuration SMTP. Un email sera envoyé à l\'adresse ci-dessous.',
+  'Test recipient email': 'Email destinataire du test',
+  'Diagnostic in progress...': 'Diagnostic en cours...',
+  'Run full diagnostic': 'Lancer le diagnostic complet',
+  'Email sent successfully!': 'Email envoyé avec succès !',
+  'Diagnostic failed': 'Échec du diagnostic',
+  'Sent to': 'Envoyé à',
+  'Server used': 'Serveur utilisé',
+  'Detailed logs:': 'Logs détaillés :',
+  'Error:': 'Erreur :',
+  'The test will send a confirmation email with detailed diagnostic information.': 'Le test enverra un e-mail de confirmation avec les informations de diagnostic détaillées.',
+
+  // Misc standalone keys
+  'Test': 'Test',
+  'Enable': 'Activer',
+  'Show': 'Afficher',
+  'Hide': 'Masquer',
 };
 
 export default adminTranslations;
