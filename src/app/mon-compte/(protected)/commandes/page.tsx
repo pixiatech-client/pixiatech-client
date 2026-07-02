@@ -5,7 +5,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { OrderFilters } from '@/components/member-order-filters';
-import { TrackingLink } from '@/components/tracking/tracking-link';
+import { MemberOrders } from '@/components/member-orders';
 
 async function getCustomerOrders(customerId: string) {
   const { adminDb } = getFirebaseAdmin();
@@ -20,26 +20,6 @@ async function getCustomerOrders(customerId: string) {
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function statusConfig(t: (key: string) => string, type: string, status: string): { label: string; icon: string; bg: string; text: string } {
-  const sale: Record<string, any> = {
-    commande: { label: t('client.orders.statusEnCours'), icon: 'hourglass_empty', bg: 'bg-[#ffdbcd]', text: 'text-[#943700]' },
-    archive: { label: t('client.orders.statusLivre'), icon: 'check_circle', bg: 'bg-[#d0e1fb]', text: 'text-[#38485d]' },
-    corbeille: { label: t('client.orders.statusAnnule'), icon: 'cancel', bg: 'bg-[#ffdad6]', text: 'text-[#ba1a1a]' },
-  };
-  const rental: Record<string, any> = {
-    pending_validation: { label: t('client.orders.statusEnCours'), icon: 'hourglass_empty', bg: 'bg-[#ffdbcd]', text: 'text-[#943700]' },
-    validated: { label: t('client.orders.statusEnCours'), icon: 'local_shipping', bg: 'bg-[#d0e1fb]', text: 'text-[#38485d]' },
-    shipped: { label: t('client.orders.statusEnCours'), icon: 'local_shipping', bg: 'bg-[#d0e1fb]', text: 'text-[#38485d]' },
-    completed: { label: t('client.orders.statusLivre'), icon: 'check_circle', bg: 'bg-green-100', text: 'text-green-700' },
-    cancelled: { label: t('client.orders.statusAnnule'), icon: 'cancel', bg: 'bg-[#ffdad6]', text: 'text-[#ba1a1a]' },
-  };
-  return (type === 'sale' ? sale : rental)[status] || { label: status, icon: 'help', bg: 'bg-[#eaeef2]', text: 'text-[#505f76]' };
 }
 
 export default async function CommandesPage() {
@@ -84,98 +64,7 @@ export default async function CommandesPage() {
         </div>
       ) : (
         <>
-          {/* Table */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableProduct')}</th>
-                    <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableId')}</th>
-                    <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableDate')}</th>
-                    <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">Suivi</th>
-                    <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider text-right">{t('client.orders.tablePrice')}</th>
-                    <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">{t('client.orders.tableStatus')}</th>
-                    <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider text-right">{t('client.orders.tableActions')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {orders.map((order: any) => {
-                    const cfg = statusConfig(t, order.type, order.status);
-                    return (
-                      <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <Link
-                            href={`/boutique/produit/${order.productId}`}
-                            className="flex items-center gap-3 group"
-                          >
-                            {order.productImage ? (
-                              <img
-                                src={order.productImage}
-                                alt={order.productName}
-                                className="w-12 h-12 rounded-lg object-cover border border-gray-100 group-hover:border-gray-300 transition-colors"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100">
-                                <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                            )}
-                            <span className="text-sm font-medium text-gray-900 group-hover:text-[#004ac6] transition-colors">
-                              {order.productName}
-                            </span>
-                          </Link>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-[14px] font-bold text-gray-900">#{order.id.slice(0, 8).toUpperCase()}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-[14px] text-gray-700">{formatDate(order.createdAt)}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <TrackingLink trackingNumber={order.trackingNumber} />
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className="text-[14px] font-bold text-gray-900">{formatPrice(order.amountPaid)}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-[12px] font-semibold ${cfg.bg} ${cfg.text}`}>
-                            {cfg.label}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {(order.status === 'commande' || order.status === 'pending_validation' || order.status === 'validated') && (
-                              <span className="px-3 py-1.5 border border-red-400 text-red-400 text-[12px] font-semibold rounded-lg opacity-40 cursor-not-allowed">{t('client.orders.cancelBtn')}</span>
-                            )}
-                            <Link href={`/mon-compte/commande/${order.id}?type=${order.type}`}
-                              className="px-3 py-1.5 border border-gray-200 text-gray-600 text-[12px] font-semibold rounded-lg hover:bg-gray-50 transition-colors">
-                              {t('client.orders.detailsBtn')}
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
-              <span className="text-[13px] text-gray-500">{t('client.orders.pagination').replace('{count}', String(orders.length))}</span>
-              <div className="flex items-center gap-2">
-                <button className="p-1 border border-gray-200 rounded hover:bg-gray-100 transition-all disabled:opacity-50" disabled>
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <span className="text-[12px] font-semibold text-gray-900 px-2">1</span>
-                <button className="p-1 border border-gray-200 rounded hover:bg-gray-100 transition-all">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                </button>
-              </div>
-            </div>
-          </div>
+          <MemberOrders orders={orders as any} t={t} />
 
           {/* Summary Cards */}
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">

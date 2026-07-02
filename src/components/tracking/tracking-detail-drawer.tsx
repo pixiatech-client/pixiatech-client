@@ -74,14 +74,15 @@ export function TrackingDetailDrawer({ open, onClose, trackingNumber, carrier }:
             onClick={onClose}
           />
           <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col"
+            className="fixed bottom-0 left-0 right-0 mx-auto w-full max-w-md bg-white shadow-2xl z-50 flex flex-col rounded-t-3xl max-h-[85vh]"
           >
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 shrink-0">
               <div className="flex items-center gap-2">
+                <div className="w-8 h-1 rounded-full bg-gray-300 mx-auto absolute left-1/2 -translate-x-1/2 top-2" />
                 <Package className="w-5 h-5 text-indigo-600" />
                 <h2 className="font-semibold text-sm">Suivi de colis</h2>
               </div>
@@ -115,7 +116,7 @@ export function TrackingDetailDrawer({ open, onClose, trackingNumber, carrier }:
                 </div>
               </div>
             ) : (
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4 pb-8">
                 <div className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium mb-4', colors.bg, colors.text, colors.border, 'border')}>
                   <span className={cn('w-1.5 h-1.5 rounded-full', colors.dot.replace('text-', 'bg-'))} />
                   {STATUS_LABELS[status] || status}
