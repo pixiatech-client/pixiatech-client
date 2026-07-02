@@ -43,13 +43,16 @@ function statusConfig(type: string, status: string): { label: string; icon: stri
   return (type === 'sale' ? sale : rental)[status] || { label: status, icon: 'help', bg: 'bg-[#eaeef2]', text: 'text-[#505f76]' }
 }
 
-function OrderBottomSheet({ order, open, onClose }: { order: Order; open: boolean; onClose: () => void }) {
-  const cfg = statusConfig(order.type, order.status)
+function OrderBottomSheet({ order, open, onClose }: { order: Order | null; open: boolean; onClose: () => void }) {
   useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden'
-    else document.body.style.overflow = ''
+    if (!open || !order) return
+    document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
-  }, [open])
+  }, [open, order])
+
+  if (!order) return null
+
+  const cfg = statusConfig(order.type, order.status)
 
   return (
     <AnimatePresence>
@@ -290,7 +293,7 @@ export function MemberOrders({ orders, translations }: { orders: Order[]; transl
 
       {/* Order detail bottom sheet */}
       <OrderBottomSheet
-        order={selectedOrder!}
+        order={selectedOrder}
         open={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
       />
