@@ -323,7 +323,7 @@ export function BoutiqueHeader() {
               </button>
               <button
                 onClick={() => setCreateOpen(!createOpen)}
-                className="hidden md:block text-white font-semibold py-2 px-6 text-sm min-w-[140px] focus:outline-none rounded-lg"
+                className="hidden md:block text-white font-semibold py-2 px-6 text-sm min-w-[140px] focus:outline-none"
                 style={{
                   background: 'linear-gradient(90deg, #7c3aed 0%, #ef4444 50%, #f97316 100%)',
                 }}
