@@ -50,15 +50,6 @@ export function MemberHeader({ customerEmail, customerId }: { customerEmail: str
           </Button>
           <div className="h-6 w-px bg-gray-200 mx-1.5" />
           <span className="text-[13px] text-gray-500 hidden sm:block">{customerEmail}</span>
-          <div className="h-6 w-px bg-gray-200 hidden sm:block" />
-          <form action="/api/boutique/logout" method="POST">
-            <button className="flex items-center gap-2 h-9 px-4 rounded-xl bg-white shadow-sm border border-gray-200/60 text-[12px] font-semibold text-red-600 hover:bg-red-50 hover:border-red-200/60 transition-all">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              {t('admin.logout')}
-            </button>
-          </form>
         </div>
       </div>
     </header>

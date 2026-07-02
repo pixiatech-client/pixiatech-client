@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ArrowLeft, ShoppingBag, SlidersHorizontal, ChevronDown, Star, Sparkles, Tag, X, RotateCcw, Search } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, SlidersHorizontal, ChevronDown, Star, Sparkles, Tag, X, RotateCcw, Search, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
@@ -12,6 +12,7 @@ import { useProfile } from '@/contexts/ProfileContext';
 import { useI18n } from '@/lib/i18n';
 import { calculatePromotionPercent } from '@/lib/pricing-engine';
 import { normalizeSearchText } from '@/lib/utils';
+import { useMediaQuery } from 'usehooks-ts';
 
 const renderStars = (rating: number, size: number) => {
   const stars = [];
@@ -55,6 +56,7 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
   onReset: () => void; activeCount: number;
 }) {
   const { t } = useI18n();
+  const isMobile = useMediaQuery('(max-width: 767px)');
   return (
     <AnimatePresence>
       {open && (
@@ -63,101 +65,199 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40" onClick={onClose}
           />
-          <motion.div
-            initial={{ opacity: 0, x: 120 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 120 }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed inset-0 z-50 flex items-center justify-end pointer-events-none"
-          >
-            <div className="pointer-events-auto w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-gray-200/70 overflow-hidden flex flex-col max-h-[85dvh] h-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
-                <h2 className="font-bold text-gray-900">{t('boutique.filters')}</h2>
-                <button onClick={onClose} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
-                  <X size={16} className="text-gray-500" />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-7 max-h-[60vh] overflow-y-auto">
-                <div>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.categories')}</h3>
-                  <div className="space-y-2">
-                    {categories.map((cat) => (
-                      <label key={cat} className="flex items-center gap-3 cursor-pointer group">
-                        <input
-                          type="checkbox"
-                          checked={selectedCategories.includes(cat)}
-                          onChange={() => {
-                            onCategoriesChange(
-                              selectedCategories.includes(cat)
-                                ? selectedCategories.filter(c => c !== cat)
-                                : [...selectedCategories, cat]
-                            );
-                          }}
-                          className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
-                        />
-                        <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{cat}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.type')}</h3>
-                  <div className="flex gap-2">
-                    {[
-                      { value: 'all' as const, label: t('boutique.all') },
-                      { value: 'sale' as const, label: t('boutique.sale') },
-                      { value: 'rental' as const, label: t('boutique.rental') },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => onTransactionTypeChange(opt.value)}
-                        className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                          transactionType === opt.value
-                            ? 'bg-gray-900 text-white shadow-sm'
-                            : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.minRating')}</h3>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => onMinRatingChange(minRating === star ? 0 : star)}
-                        className={`p-1 transition-all duration-200 ${star <= minRating ? 'scale-110' : ''}`}
-                      >
-                        <Star
-                          size={22}
-                          className={star <= minRating ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-300'}
-                        />
-                      </button>
-                    ))}
-                    {minRating > 0 && (
-                      <span className="text-xs text-gray-400 ml-2">({minRating}+)</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="px-6 py-4 flex gap-3 border-t border-gray-100">
-                {activeCount > 0 && (
-                  <button onClick={onReset} className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all">
-                    <RotateCcw size={13} />
-                    {t('boutique.reset')}
+          {isMobile ? (
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none"
+            >
+              <div className="pointer-events-auto w-full bg-white rounded-t-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85dvh]" onClick={(e) => e.stopPropagation()}>
+                <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
+                  <h2 className="font-bold text-gray-900">{t('boutique.filters')}</h2>
+                  <button onClick={onClose} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
+                    <X size={16} className="text-gray-500" />
                   </button>
-                )}
-                <button onClick={onClose} className={`${activeCount > 0 ? 'flex-1' : 'w-full'} bg-gray-900 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-all`}>
-                  {t('boutique.viewResults')}
-                </button>
+                </div>
+
+                <div className="p-6 space-y-7 max-h-[60vh] overflow-y-auto">
+                  <div>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.categories')}</h3>
+                    <div className="space-y-2">
+                      {categories.map((cat) => (
+                        <label key={cat} className="flex items-center gap-3 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={selectedCategories.includes(cat)}
+                            onChange={() => {
+                              onCategoriesChange(
+                                selectedCategories.includes(cat)
+                                  ? selectedCategories.filter(c => c !== cat)
+                                  : [...selectedCategories, cat]
+                              );
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                          />
+                          <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{cat}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.type')}</h3>
+                    <div className="flex gap-2">
+                      {[
+                        { value: 'all' as const, label: t('boutique.all') },
+                        { value: 'sale' as const, label: t('boutique.sale') },
+                        { value: 'rental' as const, label: t('boutique.rental') },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => onTransactionTypeChange(opt.value)}
+                          className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                            transactionType === opt.value
+                              ? 'bg-gray-900 text-white shadow-sm'
+                              : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.minRating')}</h3>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => onMinRatingChange(minRating === star ? 0 : star)}
+                          className={`p-1 transition-all duration-200 ${star <= minRating ? 'scale-110' : ''}`}
+                        >
+                          <Star
+                            size={22}
+                            className={star <= minRating ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-300'}
+                          />
+                        </button>
+                      ))}
+                      {minRating > 0 && (
+                        <span className="text-xs text-gray-400 ml-2">({minRating}+)</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 flex gap-3 border-t border-gray-100">
+                  {activeCount > 0 && (
+                    <button onClick={onReset} className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all">
+                      <RotateCcw size={13} />
+                      {t('boutique.reset')}
+                    </button>
+                  )}
+                  <button onClick={onClose} className={`${activeCount > 0 ? 'flex-1' : 'w-full'} bg-gray-900 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-all`}>
+                    {t('boutique.viewResults')}
+                  </button>
+                </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, x: 120 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 120 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed inset-0 z-50 flex items-center justify-end pointer-events-none"
+            >
+              <div className="pointer-events-auto w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-gray-200/70 overflow-hidden flex flex-col max-h-[85dvh] h-auto" onClick={(e) => e.stopPropagation()}>
+                <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
+                  <h2 className="font-bold text-gray-900">{t('boutique.filters')}</h2>
+                  <button onClick={onClose} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
+                    <X size={16} className="text-gray-500" />
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-7 max-h-[60vh] overflow-y-auto">
+                  <div>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.categories')}</h3>
+                    <div className="space-y-2">
+                      {categories.map((cat) => (
+                        <label key={cat} className="flex items-center gap-3 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={selectedCategories.includes(cat)}
+                            onChange={() => {
+                              onCategoriesChange(
+                                selectedCategories.includes(cat)
+                                  ? selectedCategories.filter(c => c !== cat)
+                                  : [...selectedCategories, cat]
+                              );
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                          />
+                          <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{cat}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.type')}</h3>
+                    <div className="flex gap-2">
+                      {[
+                        { value: 'all' as const, label: t('boutique.all') },
+                        { value: 'sale' as const, label: t('boutique.sale') },
+                        { value: 'rental' as const, label: t('boutique.rental') },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => onTransactionTypeChange(opt.value)}
+                          className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                            transactionType === opt.value
+                              ? 'bg-gray-900 text-white shadow-sm'
+                              : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">{t('boutique.minRating')}</h3>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => onMinRatingChange(minRating === star ? 0 : star)}
+                          className={`p-1 transition-all duration-200 ${star <= minRating ? 'scale-110' : ''}`}
+                        >
+                          <Star
+                            size={22}
+                            className={star <= minRating ? 'text-amber-400 fill-amber-400' : 'text-gray-300 fill-gray-300'}
+                          />
+                        </button>
+                      ))}
+                      {minRating > 0 && (
+                        <span className="text-xs text-gray-400 ml-2">({minRating}+)</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-6 py-4 flex gap-3 border-t border-gray-100">
+                  {activeCount > 0 && (
+                    <button onClick={onReset} className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all">
+                      <RotateCcw size={13} />
+                      {t('boutique.reset')}
+                    </button>
+                  )}
+                  <button onClick={onClose} className={`${activeCount > 0 ? 'flex-1' : 'w-full'} bg-gray-900 text-white py-2.5 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-all`}>
+                    {t('boutique.viewResults')}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </>
       )}
     </AnimatePresence>
@@ -180,6 +280,7 @@ export default function BoutiquePage() {
   const [sortBy, setSortBy] = useState<'recent' | 'price-asc' | 'price-desc'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [displayCount, setDisplayCount] = useState(12);
   const [quoteDeclinedId, setQuoteDeclinedId] = useState<string | null>(null);
@@ -327,8 +428,8 @@ export default function BoutiquePage() {
           </div>
         </div>
       )}
-      <div className="flex items-center justify-between px-6 md:px-10 lg:px-14 py-4 border-b border-gray-200/40">
-        <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1.5 rounded-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 md:px-10 lg:px-14 py-4 border-b border-gray-200/40">
+        <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1.5 rounded-full overflow-x-auto scrollbar-hide">
           {[
             { id: 'all', label: t('boutique.products') },
             { id: 'populaires', label: t('boutique.popular') },
@@ -337,7 +438,7 @@ export default function BoutiquePage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className="relative px-6 py-2 rounded-full text-xs font-medium transition-colors duration-300"
+              className="relative px-4 sm:px-6 py-2 rounded-full text-xs font-medium transition-colors duration-300 shrink-0"
             >
               {activeTab === tab.id && (
                 <motion.div
@@ -346,27 +447,97 @@ export default function BoutiquePage() {
                   transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                 />
               )}
-              <span className={`relative z-10 transition-colors duration-300 ${activeTab === tab.id ? 'text-white' : 'text-gray-500'}`}>
+              <span className={`relative z-10 transition-colors duration-300 whitespace-nowrap ${activeTab === tab.id ? 'text-white' : 'text-gray-500'}`}>
                 {tab.label}
               </span>
             </button>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
-          <div className="relative group">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="appearance-none bg-white border border-transparent hover:border-gray-200 rounded-full px-4 py-2 pr-8 text-xs font-medium text-gray-700 shadow-sm focus:ring-4 focus:ring-gray-100 transition-all duration-300 cursor-pointer"
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative">
+            <button
+              onClick={() => setSortOpen(!sortOpen)}
+              className="flex items-center gap-1.5 bg-white border border-transparent hover:border-gray-200 rounded-full px-3 sm:px-4 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all duration-300 cursor-pointer"
             >
-              <option value="recent">{t('boutique.sortPopular')}</option>
-              <option value="price-asc">{t('boutique.sortPriceAsc')}</option>
-              <option value="price-desc">{t('boutique.sortPriceDesc')}</option>
-            </select>
-            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none group-hover:translate-y-0.5 transition-transform">
-              <ChevronDown size={13} className="text-gray-400" />
-            </div>
+              {sortBy === 'recent' ? t('boutique.sortPopular') : sortBy === 'price-asc' ? t('boutique.sortPriceAsc') : t('boutique.sortPriceDesc')}
+              <ChevronDown size={13} className="text-gray-400 transition-transform duration-300" style={{ transform: sortOpen ? 'rotate(180deg)' : undefined }} />
+            </button>
+            {/* Desktop dropdown */}
+            <AnimatePresence>
+              {sortOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 4, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  className="hidden md:block absolute right-0 top-full mt-1 z-50 w-48 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden"
+                >
+                  {[
+                    { value: 'recent', label: t('boutique.sortPopular') },
+                    { value: 'price-asc', label: t('boutique.sortPriceAsc') },
+                    { value: 'price-desc', label: t('boutique.sortPriceDesc') },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => { setSortBy(opt.value as typeof sortBy); setSortOpen(false); }}
+                      className={`w-full flex items-center justify-between px-4 py-3 text-xs font-semibold transition-colors ${
+                        sortBy === opt.value ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      {opt.label}
+                      {sortBy === opt.value && <Check className="w-3.5 h-3.5 text-blue-500" />}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+          {/* Mobile bottom sheet */}
+          <AnimatePresence>
+            {sortOpen && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 md:hidden" onClick={() => setSortOpen(false)}
+                />
+                <motion.div
+                  initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                  transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                  className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none md:hidden"
+                >
+                  <div className="pointer-events-auto w-full bg-white rounded-t-3xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                    <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
+                      <h2 className="font-bold text-gray-900">Trier par</h2>
+                      <button onClick={() => setSortOpen(false)} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
+                        <X size={16} className="text-gray-500" />
+                      </button>
+                    </div>
+                    <div className="p-3">
+                      {[
+                        { value: 'recent', label: t('boutique.sortPopular') },
+                        { value: 'price-asc', label: t('boutique.sortPriceAsc') },
+                        { value: 'price-desc', label: t('boutique.sortPriceDesc') },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => { setSortBy(opt.value as typeof sortBy); setSortOpen(false); }}
+                          className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl text-left text-base font-bold transition-all ${
+                            sortBy === opt.value ? 'bg-blue-50 ring-1 ring-blue-500/20 text-blue-700' : 'text-gray-900 hover:bg-gray-50'
+                          }`}
+                        >
+                          {opt.label}
+                          {sortBy === opt.value && (
+                            <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                              <Check className="w-4 h-4 text-white" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
           <button
             onClick={() => {
               setSearchOpen(true);
@@ -374,7 +545,7 @@ export default function BoutiquePage() {
             }}
             className={`relative flex items-center justify-center size-9 rounded-full border border-transparent hover:border-gray-200 bg-white shadow-sm transition-all duration-300 ${
               searchQuery ? 'text-gray-900 border-gray-300 scale-110' : 'text-gray-400 hover:text-gray-600 hover:scale-110'
-            } active:scale-95`}
+            } active:scale-95 shrink-0`}
           >
             <Search size={14} />
             {searchQuery && (
@@ -383,7 +554,7 @@ export default function BoutiquePage() {
           </button>
           <button
             onClick={() => setFilterOpen(true)}
-            className="relative flex items-center justify-center size-9 rounded-full border border-transparent hover:border-gray-200 bg-white shadow-sm text-gray-400 hover:text-gray-600 hover:scale-110 active:scale-95 transition-all duration-300"
+            className="relative flex items-center justify-center size-9 rounded-full border border-transparent hover:border-gray-200 bg-white shadow-sm text-gray-400 hover:text-gray-600 hover:scale-110 active:scale-95 transition-all duration-300 shrink-0"
           >
             <SlidersHorizontal size={14} />
             {activeFilterCount > 0 && (
@@ -400,7 +571,7 @@ export default function BoutiquePage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 pt-4"
+            className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 lg:px-14 pt-4"
           >
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
@@ -423,7 +594,7 @@ export default function BoutiquePage() {
         )}
       </AnimatePresence>
 
-      <main className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 py-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 lg:px-14 py-6">
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="size-8 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
@@ -439,12 +610,12 @@ export default function BoutiquePage() {
           </div>
         ) : (
           <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {filteredProducts.slice(0, displayCount).map((product, idx) => (
               <article
                 key={product.id}
                 style={{ animationDelay: `${idx * 0.08}s` }}
-                className={`product-card-entry w-full bg-white p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'opacity-70' : ''}`}
+                className={`product-card-entry w-full bg-white p-3 sm:p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative flex flex-col ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'opacity-70' : ''}`}
               >
                 <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }} className="block relative mb-3">
                   {product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') && (
@@ -502,11 +673,11 @@ export default function BoutiquePage() {
                     </div>
                   )}
                 </a>
-                <div>
+                <div className="flex flex-col flex-1">
                   <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }}>
                     <h5 className="text-base font-semibold text-gray-900 tracking-tight leading-tight">{product.name}</h5>
                   </a>
-                  <div className="flex items-center justify-between mt-3">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-auto gap-2 pt-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xl font-extrabold text-gray-900">{product.price}{'\u20AC'}</span>
                       {product.oldPrice && product.oldPrice > product.price && (
@@ -521,7 +692,7 @@ export default function BoutiquePage() {
                     <button
                       onClick={(e) => handleQuickAdd(e, product)}
                       type="button"
-                      className="inline-flex items-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer"
+                      className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer w-full md:w-auto"
                     >
                       <ShoppingBag size={14} />
                       Ajouter

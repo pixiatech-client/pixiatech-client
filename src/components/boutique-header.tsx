@@ -3,10 +3,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Store, ShoppingBag, User, LogOut, Package, ChevronDown, Shield, Key, Mail } from 'lucide-react';
+import { Home, Store, ShoppingBag, User, LogOut, Package, ChevronDown, Shield, Key, Mail, Menu, X, Check } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useI18n } from '@/lib/i18n';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useMediaQuery } from 'usehooks-ts';
 
 export function BoutiqueHeader() {
   const router = useRouter();
@@ -22,6 +25,7 @@ export function BoutiqueHeader() {
   const [memberError, setMemberError] = useState('');
   const [memberMagicSent, setMemberMagicSent] = useState(false);
   const [resellerOpen, setResellerOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [resellerEmail, setResellerEmail] = useState('');
   const [resellerLoading, setResellerLoading] = useState(false);
   const [resellerDone, setResellerDone] = useState(false);
@@ -113,10 +117,92 @@ export function BoutiqueHeader() {
   const isBoutiquePage = pathname.startsWith('/boutique');
 
   const truncatedEmail = (session.email || '').length > 20 ? (session.email || '').slice(0, 18) + '...' : (session.email || '');
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   return (
     <header className="fixed top-0 z-30 w-full pt-2">
       <nav className="max-w-7xl mx-4 lg:mx-auto bg-black rounded-full px-6 lg:px-8 py-2.5 flex items-center justify-between shadow-2xl">
+        {/* Hamburger - mobile only */}
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetTrigger asChild>
+            <button
+              className="md:hidden text-white/70 hover:text-white nav-link mr-2"
+              aria-label="Menu"
+            >
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-full sm:w-[400px] bg-black border-r-0 p-0 flex flex-col">
+            <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
+            {/* Header bar inside menu */}
+            <div className="flex items-center justify-between px-6 pt-4 pb-2">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-white/50 hover:text-white"
+                  aria-label="Fermer"
+                >
+                  <X size={22} />
+                </button>
+                <span className="text-white font-tech text-xl tracking-widest">PIXIATECH</span>
+              </div>
+            </div>
+            {/* Menu items */}
+            <nav className="flex flex-col flex-1 px-6 pt-8 pb-6 gap-1">
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  "py-3 text-2xl font-medium transition-colors",
+                  pathname === '/'
+                    ? 'text-white'
+                    : 'text-white/60 hover:text-white'
+                )}
+              >
+                Accueil
+              </Link>
+              <Link
+                href="/boutique"
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  "py-3 text-2xl font-medium transition-colors",
+                  isBoutiquePage
+                    ? 'text-white'
+                    : 'text-white/60 hover:text-white'
+                )}
+              >
+                Boutique
+              </Link>
+              <a
+                href="https://pixiatech.com/contact"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 text-2xl font-medium text-white/60 hover:text-white transition-colors"
+              >
+                Contactez-Nous
+              </a>
+              <Link
+                href="/admin/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 text-2xl font-medium text-white/60 hover:text-white transition-colors"
+              >
+                Accès administration
+              </Link>
+              {/* Spacer */}
+              <div className="flex-1" />
+              {/* Espace Membre button */}
+              <button
+                onClick={() => { setMobileMenuOpen(false); setCreateOpen(true); }}
+                className="flex items-center justify-center gap-2.5 w-full bg-white text-black font-semibold py-3.5 rounded-xl text-sm hover:bg-white/90 transition-colors"
+              >
+                <User size={16} />
+                Espace Membre
+              </button>
+            </nav>
+          </SheetContent>
+        </Sheet>
+
         {/* Logo */}
         <div className="flex-shrink-0">
           <a
@@ -230,240 +316,328 @@ export function BoutiqueHeader() {
             <div className="relative" ref={resellerRef}>
               <button
                 onClick={() => setCreateOpen(!createOpen)}
-                className="text-white font-semibold py-2 px-6 text-sm min-w-[140px] focus:outline-none"
-                style={{
-                  background: 'linear-gradient(90deg, #7c3aed 0%, #ef4444 50%, #f97316 100%)',
-                  clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)',
-                }}
+                className="text-white/70 hover:text-white nav-link"
+                aria-label="Espace Membre"
               >
-                Espace Membre
+                <User size={18} />
               </button>
-              {createOpen && (
+
+              {/* Desktop dropdown wrapper */}
+              {!isMobile && createOpen && (
                 <div className="absolute right-0 top-full mt-2 w-[calc(100vw-32px)] sm:w-[480px] bg-white rounded-2xl shadow-2xl border border-gray-100/80 z-50 overflow-hidden" ref={dropdownRef}>
-                  {/* Tabs */}
-                  <div className="flex bg-gray-50/50 p-1.5 m-1.5 rounded-xl gap-1">
-                    <button
-                      onClick={() => setEspaceTab('membre')}
-                      className={`flex-1 py-2.5 text-xs font-semibold text-center transition-all duration-200 rounded-lg ${
-                        espaceTab === 'membre'
-                          ? 'text-gray-900 bg-white shadow-sm border border-gray-100'
-                          : 'text-gray-400 hover:text-gray-600'
-                      }`}
-                    >
-                      <User size={14} className="inline mr-2 -mt-0.5" />
-                      {t('header.member')}
-                    </button>
-                    <button
-                      onClick={() => setEspaceTab('revendeur')}
-                      className={`flex-1 py-2.5 text-xs font-semibold text-center transition-all duration-200 rounded-lg ${
-                        espaceTab === 'revendeur'
-                          ? 'text-gray-900 bg-white shadow-sm border border-gray-100'
-                          : 'text-gray-400 hover:text-gray-600'
-                      }`}
-                    >
-                      <Store size={14} className="inline mr-2 -mt-0.5" />
-                      {t('header.reseller')}
-                    </button>
-                  </div>
-
-                  {/* Tab content */}
-                  {espaceTab === 'membre' ? (
-                    <div className="p-5 pt-2">
-                      {memberMagicSent ? (
-                        <div className="text-center py-10 px-4">
-                          <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4 rotate-0">
-                            <svg className="w-7 h-7 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                          <p className="text-base font-semibold text-gray-900 mb-1.5">{t('header.emailSent')}</p>
-                          <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-                            {t('header.emailSentDesc')}
-                          </p>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex items-baseline justify-between mb-5">
-                            <div>
-                              <p className="text-sm font-semibold text-gray-900">{t('header.memberLogin')}</p>
-                              <p className="text-[11px] text-gray-400 mt-0.5">{t('header.memberLoginDesc')}</p>
-                            </div>
-                          </div>
-
-                          <div className="relative mb-4">
-                            <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                            <input
-                              type="email"
-                              placeholder={t('header.emailPlaceholder')}
-                              value={memberEmail}
-                              onChange={e => setMemberEmail(e.target.value)}
-                              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-gray-50/30 placeholder:text-gray-300"
-                            />
-                          </div>
-
-                          {memberError && (
-                            <div className="flex items-start gap-2.5 px-3 py-2.5 mb-4 bg-amber-50 border border-amber-100 rounded-xl">
-                              <svg className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <p className="text-xs text-amber-700 leading-relaxed whitespace-pre-line">{memberError}</p>
-                            </div>
-                          )}
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <form onSubmit={handlePasswordLogin} className="group relative bg-white border border-gray-100 hover:border-gray-200 rounded-xl p-4 transition-all duration-200 hover:shadow-sm">
-                              <div className="flex flex-col h-full">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <div className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
-                                    <Key size={13} className="text-gray-500" />
-                                  </div>
-                                  <span className="text-xs font-semibold text-gray-800">{t('header.password')}</span>
-                                </div>
-                                <input
-                                  type="password"
-                                  placeholder={t('header.passwordPlaceholder')}
-                                  value={memberPassword}
-                                  onChange={e => setMemberPassword(e.target.value)}
-                                  className="w-full px-2.5 py-2 border border-gray-100 rounded-lg text-xs bg-gray-50/30 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-300 transition-all placeholder:text-gray-300 mb-3"
-                                />
-                                <button
-                                  type="submit"
-                                  disabled={memberLoading || !memberEmail || !memberPassword}
-                                  className="mt-auto w-full bg-gray-900 text-white py-2 rounded-lg text-[11px] font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-[0.98]"
-                                >
-                                  {memberLoading ? (
-                                    <span className="flex items-center justify-center gap-1.5">
-                                      <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                      </svg>
-                                      {t('header.connecting')}
-                                    </span>
-                                  ) : t('header.memberLogin')}
-                                </button>
-                              </div>
-                            </form>
-
-                            <form onSubmit={handleMagicLink} className="group relative bg-white border border-gray-100 hover:border-gray-200 rounded-xl p-4 transition-all duration-200 hover:shadow-sm">
-                              <div className="flex flex-col h-full">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                                    <svg className="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                                    </svg>
-                                  </div>
-                                  <span className="text-xs font-semibold text-gray-800">{t('header.magicLink')}</span>
-                                </div>
-                                <p className="text-[10.5px] text-gray-400 leading-relaxed flex-1 mb-3">
-                                  {t('header.magicLinkDesc')}
-                                </p>
-                                <button
-                                  type="submit"
-                                  disabled={memberLoading || !memberEmail}
-                                  className="w-full bg-gray-50 border border-gray-100 text-gray-700 py-2 rounded-lg text-[11px] font-semibold hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-[0.98]"
-                                >
-                                  {memberLoading ? (
-                                    <span className="flex items-center justify-center gap-1.5">
-                                      <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                      </svg>
-                                      {t('header.sending')}
-                                    </span>
-                                  ) : t('header.sendLink')}
-                                </button>
-                              </div>
-                            </form>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="p-5 pt-2">
-                      {resellerDone ? (
-                        <div className="text-center py-10 px-4">
-                          <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-7 h-7 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                          <p className="text-base font-semibold text-gray-900 mb-1.5">{t('header.thanksInterest')}</p>
-                          <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
-                            {t('header.resellerInterestDesc')}
-                          </p>
-                        </div>
-                      ) : (
-                        <div>
-                          <div className="mb-5">
-                            <p className="text-sm font-semibold text-gray-900">{t('header.becomeReseller')}</p>
-                            <p className="text-[11px] text-gray-400 mt-0.5">{t('header.resellerProgram')}</p>
-                          </div>
-
-                          <div className="bg-amber-50/50 border border-amber-100/60 rounded-xl p-4 mb-5">
-                            <div className="flex gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                                <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                              </div>
-                              <div>
-                                <p className="text-[11px] font-semibold text-amber-800 mb-0.5">{t('header.resellerComingSoon')}</p>
-                                <p className="text-[10.5px] text-amber-600/80 leading-relaxed">
-                                  {t('header.resellerNotOpen')}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <form onSubmit={handleResellerInterest}>
-                            <div className="flex gap-2">
-                              <div className="relative flex-1">
-                                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                <input
-                                  type="email"
-                                  placeholder={t('header.emailPlaceholder')}
-                                  value={resellerEmail}
-                                  onChange={e => setResellerEmail(e.target.value)}
-                                  required
-                                  className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-gray-50/30 placeholder:text-gray-300"
-                                />
-                              </div>
-                              <button
-                                type="submit"
-                                disabled={resellerLoading || !resellerEmail}
-                                className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-[0.98] whitespace-nowrap"
-                              >
-                                {resellerLoading ? (
-                                  <span className="flex items-center gap-1.5">
-                                    <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                    </svg>
-                                    {t('header.sending')}
-                                  </span>
-                                ) : t('header.notifyMe')}
-                              </button>
-                            </div>
-                            {resellerError && (
-                              <p className="text-[11px] text-red-600 font-medium mt-2 flex items-center gap-1.5">
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                </svg>
-                                {resellerError}
-                              </p>
-                            )}
-                          </form>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <EspaceMembreContent
+                    espaceTab={espaceTab} setEspaceTab={setEspaceTab}
+                    memberEmail={memberEmail} setMemberEmail={setMemberEmail}
+                    memberPassword={memberPassword} setMemberPassword={setMemberPassword}
+                    memberLoading={memberLoading} memberError={memberError}
+                    memberMagicSent={memberMagicSent}
+                    handlePasswordLogin={handlePasswordLogin}
+                    handleMagicLink={handleMagicLink}
+                    resellerDone={resellerDone}
+                    resellerEmail={resellerEmail} setResellerEmail={setResellerEmail}
+                    resellerLoading={resellerLoading} resellerError={resellerError}
+                    handleResellerInterest={handleResellerInterest}
+                  />
                 </div>
               )}
+
+              {/* Mobile bottom sheet */}
+              <AnimatePresence>
+                {isMobile && createOpen && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+                      onClick={() => setCreateOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                      transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                      className="fixed inset-0 z-50 flex items-end justify-center pointer-events-none"
+                    >
+                      <div className="pointer-events-auto w-full bg-white rounded-t-3xl shadow-2xl overflow-y-auto max-h-[85dvh] min-h-[65dvh] pb-24" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-6 pt-5 pb-2">
+                          <h2 className="font-bold text-gray-900">Espace Membre</h2>
+                          <button onClick={() => setCreateOpen(false)} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
+                            <X size={16} className="text-gray-500" />
+                          </button>
+                        </div>
+                        <EspaceMembreContent
+                          espaceTab={espaceTab} setEspaceTab={setEspaceTab}
+                          memberEmail={memberEmail} setMemberEmail={setMemberEmail}
+                          memberPassword={memberPassword} setMemberPassword={setMemberPassword}
+                          memberLoading={memberLoading} memberError={memberError}
+                          memberMagicSent={memberMagicSent}
+                          handlePasswordLogin={handlePasswordLogin}
+                          handleMagicLink={handleMagicLink}
+                          resellerDone={resellerDone}
+                          resellerEmail={resellerEmail} setResellerEmail={setResellerEmail}
+                          resellerLoading={resellerLoading} resellerError={resellerError}
+                          handleResellerInterest={handleResellerInterest}
+                        />
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
         </div>
       </nav>
     </header>
+  );
+}
+
+function EspaceMembreContent({
+  espaceTab, setEspaceTab,
+  memberEmail, setMemberEmail,
+  memberPassword, setMemberPassword,
+  memberLoading, memberError,
+  memberMagicSent,
+  handlePasswordLogin,
+  handleMagicLink,
+  resellerDone,
+  resellerEmail, setResellerEmail,
+  resellerLoading, resellerError,
+  handleResellerInterest,
+}: {
+  espaceTab: 'membre' | 'revendeur';
+  setEspaceTab: (t: 'membre' | 'revendeur') => void;
+  memberEmail: string;
+  setMemberEmail: (v: string) => void;
+  memberPassword: string;
+  setMemberPassword: (v: string) => void;
+  memberLoading: boolean;
+  memberError: string;
+  memberMagicSent: boolean;
+  handlePasswordLogin: (e: React.FormEvent) => Promise<void>;
+  handleMagicLink: (e: React.FormEvent) => Promise<void>;
+  resellerDone: boolean;
+  resellerEmail: string;
+  setResellerEmail: (v: string) => void;
+  resellerLoading: boolean;
+  resellerError: string;
+  handleResellerInterest: (e: React.FormEvent) => Promise<void>;
+}) {
+  const { t } = useI18n();
+  return (
+    <>
+      <div className="flex bg-gray-100 p-1.5 mx-4 my-4 rounded-xl gap-1">
+        <button
+          onClick={() => setEspaceTab('membre')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold transition-all duration-200 rounded-lg ${
+            espaceTab === 'membre'
+              ? 'bg-gray-900 text-white shadow-md'
+              : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'
+          }`}
+        >
+          <User size={14} className={espaceTab === 'membre' ? 'text-blue-400' : 'text-gray-400'} />
+          {t('header.member')}
+        </button>
+        <button
+          onClick={() => setEspaceTab('revendeur')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-semibold transition-all duration-200 rounded-lg ${
+            espaceTab === 'revendeur'
+              ? 'bg-gray-900 text-white shadow-md'
+              : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'
+          }`}
+        >
+          <Store size={14} className={espaceTab === 'revendeur' ? 'text-emerald-400' : 'text-gray-400'} />
+          {t('header.reseller')}
+        </button>
+      </div>
+
+      {espaceTab === 'membre' ? (
+        <div className="p-5 pt-2">
+          {memberMagicSent ? (
+            <div className="text-center py-10 px-4">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4 rotate-0">
+                <svg className="w-7 h-7 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-base font-semibold text-gray-900 mb-1.5">{t('header.emailSent')}</p>
+              <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
+                {t('header.emailSentDesc')}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-baseline justify-between mb-5">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{t('header.memberLogin')}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{t('header.memberLoginDesc')}</p>
+                </div>
+              </div>
+
+              <div className="relative mb-4">
+                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  type="email"
+                  placeholder={t('header.emailPlaceholder')}
+                  value={memberEmail}
+                  onChange={e => setMemberEmail(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-gray-50/30 placeholder:text-gray-300"
+                />
+              </div>
+
+              {memberError && (
+                <div className="flex items-start gap-2.5 px-3 py-2.5 mb-4 bg-amber-50 border border-amber-100 rounded-xl">
+                  <svg className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs text-amber-700 leading-relaxed whitespace-pre-line">{memberError}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <form onSubmit={handlePasswordLogin} className="group relative bg-white border border-gray-100 hover:border-gray-200 rounded-xl p-4 transition-all duration-200 hover:shadow-sm">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+                        <Key size={13} className="text-gray-500" />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-800">{t('header.password')}</span>
+                    </div>
+                    <input
+                      type="password"
+                      placeholder={t('header.passwordPlaceholder')}
+                      value={memberPassword}
+                      onChange={e => setMemberPassword(e.target.value)}
+                      className="w-full px-2.5 py-2 border border-gray-100 rounded-lg text-xs bg-gray-50/30 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-300 transition-all placeholder:text-gray-300 mb-3"
+                    />
+                    <button
+                      type="submit"
+                      disabled={memberLoading || !memberEmail || !memberPassword}
+                      className="mt-auto w-full bg-gray-900 text-white py-2 rounded-lg text-[11px] font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-[0.98]"
+                    >
+                      {memberLoading ? (
+                        <span className="flex items-center justify-center gap-1.5">
+                          <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                          {t('header.connecting')}
+                        </span>
+                      ) : t('header.memberLogin')}
+                    </button>
+                  </div>
+                </form>
+
+                <form onSubmit={handleMagicLink} className="group relative bg-white border border-gray-100 hover:border-gray-200 rounded-xl p-4 transition-all duration-200 hover:shadow-sm">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                        <svg className="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                      </div>
+                      <span className="text-xs font-semibold text-gray-800">{t('header.magicLink')}</span>
+                    </div>
+                    <p className="text-[10.5px] text-gray-400 leading-relaxed flex-1 mb-3">
+                      {t('header.magicLinkDesc')}
+                    </p>
+                    <button
+                      type="submit"
+                      disabled={memberLoading || !memberEmail}
+                      className="w-full bg-gray-50 border border-gray-100 text-gray-700 py-2 rounded-lg text-[11px] font-semibold hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-[0.98]"
+                    >
+                      {memberLoading ? (
+                        <span className="flex items-center justify-center gap-1.5">
+                          <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                          {t('header.sending')}
+                        </span>
+                      ) : t('header.sendLink')}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="p-5 pt-2">
+          {resellerDone ? (
+            <div className="text-center py-10 px-4">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-7 h-7 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-base font-semibold text-gray-900 mb-1.5">{t('header.thanksInterest')}</p>
+              <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
+                {t('header.resellerInterestDesc')}
+              </p>
+            </div>
+          ) : (
+            <div>
+              <div className="mb-5">
+                <p className="text-sm font-semibold text-gray-900">{t('header.becomeReseller')}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{t('header.resellerProgram')}</p>
+              </div>
+
+              <div className="bg-amber-50/50 border border-amber-100/60 rounded-xl p-4 mb-5">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                    <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold text-amber-800 mb-0.5">{t('header.resellerComingSoon')}</p>
+                    <p className="text-[10.5px] text-amber-600/80 leading-relaxed">
+                      {t('header.resellerNotOpen')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleResellerInterest}>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <input
+                      type="email"
+                      placeholder={t('header.emailPlaceholder')}
+                      value={resellerEmail}
+                      onChange={e => setResellerEmail(e.target.value)}
+                      required
+                      className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-gray-50/30 placeholder:text-gray-300"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={resellerLoading || !resellerEmail}
+                    className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-xs font-semibold hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 active:scale-[0.98] whitespace-nowrap"
+                  >
+                    {resellerLoading ? (
+                      <span className="flex items-center gap-1.5">
+                        <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        {t('header.sending')}
+                      </span>
+                    ) : t('header.notifyMe')}
+                  </button>
+                </div>
+                {resellerError && (
+                  <p className="text-[11px] text-red-600 font-medium mt-2 flex items-center gap-1.5">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    {resellerError}
+                  </p>
+                )}
+              </form>
+            </div>
+          )}
+        </div>
+      )}
+    </>
   );
 }

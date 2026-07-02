@@ -431,8 +431,8 @@ export default function ProductDetailPage() {
                       <ChevronRight size={16} className="text-gray-600" />
                     </button>
                   </div>
-                  <div className="relative mt-3">
-                    <div className="flex gap-3 justify-center">
+                  <div className="relative mt-3 overflow-x-auto scrollbar-hide">
+                    <div className="flex gap-3 justify-start sm:justify-center">
                       {mediaItems.slice(thumbStart, thumbStart + maxVisibleThumbs).map((item, idx) => {
                         const realIdx = thumbStart + idx;
                         const isVideo = item.type === 'video';
@@ -486,13 +486,13 @@ export default function ProductDetailPage() {
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">{t('product.datasheet')}</span>
                 </button>
                 {product.playStoreUrl && (
-                  <button onClick={() => window.open(product.playStoreUrl, '_blank')} className="h-[52px] w-[174px] hover:opacity-90 active:scale-95 transition-all shrink-0">
-                    <img src="/google.svg" alt="Google Play" className="h-full w-full object-fill rounded-lg" />
+                  <button onClick={() => window.open(product.playStoreUrl, '_blank')} className="h-[44px] w-[118px] sm:h-[52px] sm:w-[174px] hover:opacity-90 active:scale-95 transition-all shrink-0">
+                    <img src="/google.svg" alt="Google Play" className="h-full w-full object-contain rounded-lg" />
                   </button>
                 )}
                 {product.appStoreUrl && (
-                  <button onClick={() => window.open(product.appStoreUrl, '_blank')} className="h-[44px] w-[118px] hover:opacity-90 active:scale-95 transition-all shrink-0">
-                    <img src="/appele.svg" alt="App Store" className="h-full w-full object-fill rounded-[6px]" />
+                  <button onClick={() => window.open(product.appStoreUrl, '_blank')} className="h-[38px] w-[100px] sm:h-[44px] sm:w-[118px] hover:opacity-90 active:scale-95 transition-all shrink-0">
+                    <img src="/appele.svg" alt="App Store" className="h-full w-full object-contain rounded-[6px]" />
                   </button>
                 )}
                 {product.downloadUrl2 && (
@@ -626,12 +626,12 @@ export default function ProductDetailPage() {
                     className="w-full rounded-xl font-bold focus:outline-none transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none bg-[#1a1f2e] text-white border border-blue-500/30 focus:border-cyan-400 px-4 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                   {!isOutOfStock && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
-                    <button onClick={() => setQuantity(Math.min(availableStock, quantity + 1))} className="transition-colors text-slate-500 hover:text-slate-300">
-                      <ChevronUp size={12} />
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col">
+                    <button onClick={() => setQuantity(Math.min(availableStock, quantity + 1))} className="p-2 transition-colors text-slate-500 hover:text-slate-300">
+                      <ChevronUp size={14} />
                     </button>
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="transition-colors text-slate-500 hover:text-slate-300">
-                      <ChevronDown size={12} />
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-2 transition-colors text-slate-500 hover:text-slate-300">
+                      <ChevronDown size={14} />
                     </button>
                   </div>
                   )}
@@ -1118,23 +1118,23 @@ export default function ProductDetailPage() {
                       <button
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
                         disabled={isOutOfStock || quantity <= 1}
-                        className="w-8 h-8 flex items-center justify-center bg-[#1a1f2e] rounded-l-lg border border-blue-500/30 border-r-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="w-10 h-10 flex items-center justify-center bg-[#1a1f2e] rounded-l-lg border border-blue-500/30 border-r-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       >
-                        <Minus size={11} />
+                        <Minus size={13} />
                       </button>
                       <input
                         type="number"
                         value={quantity}
                         onChange={(e) => setQuantity(Math.min(availableStock, Math.max(1, parseInt(e.target.value) || 1)))}
                         disabled={isOutOfStock}
-                        className="w-11 h-8 text-center text-xs font-bold bg-[#1a1f2e] text-white border border-blue-500/30 focus:outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-12 h-10 text-center text-sm font-bold bg-[#1a1f2e] text-white border border-blue-500/30 focus:outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none disabled:opacity-40 disabled:cursor-not-allowed"
                       />
                       <button
                         onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
                         disabled={isOutOfStock || quantity >= availableStock}
-                        className="w-8 h-8 flex items-center justify-center bg-[#1a1f2e] rounded-r-lg border border-blue-500/30 border-l-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="w-10 h-10 flex items-center justify-center bg-[#1a1f2e] rounded-r-lg border border-blue-500/30 border-l-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       >
-                        <Plus size={11} />
+                        <Plus size={13} />
                       </button>
                     </div>
                     <button onClick={handleAddToCart} disabled={isOutOfStock} className="flex-1 bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
