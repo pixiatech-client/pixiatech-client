@@ -422,7 +422,7 @@ export default function BoutiquePage() {
                         <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-gray-600 transition-colors">{p.name}</p>
                         <p className="text-xs font-bold text-gray-700 mt-0.5">
                           {p.priceDisplay === 'free' ? 'Gratuit' :
-                           p.priceDisplay === 'multiprice' ? 'Multiprix' :
+                           p.priceDisplay === 'multiprice' ? 'Tarifs multiples' :
                            p.priceDisplay === 'quote' ? 'Sur devis' :
                            `${p.price} €`}
                         </p>
@@ -711,7 +711,7 @@ export default function BoutiquePage() {
                     <div className="flex items-center gap-2">
                       <span className="text-xl font-extrabold text-gray-900">
                         {product.priceDisplay === 'free' ? 'Gratuit' :
-                         product.priceDisplay === 'multiprice' ? 'Multiprix' :
+                         product.priceDisplay === 'multiprice' ? 'Tarifs multiples' :
                          product.priceDisplay === 'quote' ? 'Sur devis' :
                          `${product.price}${'\u20AC'}`}
                       </span>

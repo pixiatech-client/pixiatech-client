@@ -705,7 +705,7 @@ export default function ProductDetailPage() {
                   {product?.priceDisplay === 'free' ? (
                     <div className="text-2xl font-bold text-emerald-600">Gratuit</div>
                   ) : product?.priceDisplay === 'multiprice' ? (
-                    <div className="text-2xl font-bold text-gray-900">Multiprix</div>
+                    <div className="text-2xl font-bold text-gray-900">Tarifs multiples</div>
                   ) : product?.priceDisplay === 'quote' ? (
                     <div className="text-2xl font-bold text-gray-900">Sur devis</div>
                   ) : (
@@ -989,20 +989,18 @@ export default function ProductDetailPage() {
                 {product?.priceDisplay === 'free' ? (
                   <div className="text-3xl font-bold text-emerald-600">Gratuit</div>
                 ) : product?.priceDisplay === 'multiprice' ? (
-                  <div className="text-3xl font-bold text-gray-900">Multiprix</div>
+                  <div className="text-3xl font-bold text-gray-900">Tarifs multiples</div>
                 ) : product?.priceDisplay === 'quote' ? (
                   <div className="text-3xl font-bold text-gray-900">Sur devis</div>
                 ) : (
                   <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
                 )}
-                <span className="text-[10px] font-bold text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md tracking-wider">Hors taxes</span>
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                     -{Math.round((1 - effectivePrice / effectiveOldPrice) * 100)}%
                   </span>
                 )}
               </div>
-
               <div className="relative mt-1">
                 {!forceB2B && (
                   <>

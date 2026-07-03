@@ -3192,33 +3192,35 @@ const ProduitPage = ({
                   </div>
 
                   {/* Affichage Prix 0€ */}
-                  <div className="bg-purple-950/40 p-4 rounded-2xl border border-purple-500/20 relative group overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-transparent pointer-events-none" />
-                    <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2 block">Affichage du prix</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { value: 'zero', label: '0 €', sub: 'Affiche le prix réel' },
-                        { value: 'free', label: 'Gratuit', sub: 'Affiche "Gratuit"' },
-                        { value: 'multiprice', label: 'Multiprix', sub: 'Affiche "Multiprix"' },
-                        { value: 'quote', label: 'Sur devis', sub: 'Affiche "Sur devis"' },
-                      ].map(opt => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => setPriceDisplay(opt.value)}
-                          className={`flex flex-col items-start gap-0.5 p-2.5 rounded-xl border text-left transition-all duration-150 ${
-                            priceDisplay === opt.value
-                              ? 'border-purple-400 bg-purple-500/20 shadow-[0_0_12px_rgba(168,85,247,0.15)]'
-                              : 'border-purple-900/30 bg-purple-950/20 hover:border-purple-600/40'
-                          }`}
-                        >
-                          <span className="text-xs font-bold text-white">{opt.label}</span>
-                          <span className="text-[9px] text-purple-300/60 leading-tight">{opt.sub}</span>
-                        </button>
-                      ))}
+                  {normalizePrice(prixVente) === 0 && (
+                    <div className="bg-purple-950/40 p-4 rounded-2xl border border-purple-500/20 relative group overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-transparent pointer-events-none" />
+                      <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2 block">Affichage du prix</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { value: 'zero', label: '0 €', sub: 'Affiche le prix réel' },
+                          { value: 'free', label: 'Gratuit', sub: 'Affiche "Gratuit"' },
+                          { value: 'multiprice', label: 'Tarifs multiples', sub: 'Affiche "Tarifs multiples"' },
+                          { value: 'quote', label: 'Sur devis', sub: 'Affiche "Sur devis"' },
+                        ].map(opt => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setPriceDisplay(opt.value)}
+                            className={`flex flex-col items-start gap-0.5 p-2.5 rounded-xl border text-left transition-all duration-150 ${
+                              priceDisplay === opt.value
+                                ? 'border-purple-400 bg-purple-500/20 shadow-[0_0_12px_rgba(168,85,247,0.15)]'
+                                : 'border-purple-900/30 bg-purple-950/20 hover:border-purple-600/40'
+                            }`}
+                          >
+                            <span className="text-xs font-bold text-white">{opt.label}</span>
+                            <span className="text-[9px] text-purple-300/60 leading-tight">{opt.sub}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="text-[9px] text-purple-400/40 mt-2 font-medium italic tracking-tight">Définit l'affichage quand le prix est à 0 €</div>
                     </div>
-                    <div className="text-[9px] text-purple-400/40 mt-2 font-medium italic tracking-tight">Définit l'affichage quand le prix est à 0 €</div>
-                  </div>
+                  )}
 
                   {Array.isArray(mode) && mode.includes('vente') && (
                     <div className="bg-white/[0.03] p-4 rounded-2xl border border-white/[0.06] relative group overflow-hidden shadow-sm">
