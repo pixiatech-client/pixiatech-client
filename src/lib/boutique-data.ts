@@ -43,8 +43,13 @@ export interface Product {
   appStoreUrl?: string;
   downloadLabel2?: string;
   downloadUrl2?: string;
+  downloadIcon2?: string;
+  downloadCustomIcon2?: string;
   downloadLabel3?: string;
   downloadUrl3?: string;
+  downloadIcon3?: string;
+  downloadCustomIcon3?: string;
+  priceDisplay?: 'zero' | 'free' | 'multiprice' | 'quote';
 }
 
 export interface RelatedProduct {
@@ -198,6 +203,7 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     downloadUrl2: data.downloadUrl2 || '',
     downloadLabel3: data.downloadLabel3 || '',
     downloadUrl3: data.downloadUrl3 || '',
+    priceDisplay: data.priceDisplay || undefined,
   };
 }
 

@@ -626,18 +626,21 @@ export default function CheckoutPage() {
                       <div className="col-span-2 text-right">{t('checkout.confirmed.total')}</div>
                     </div>
                     {items.map((item) => (
-                      <div key={item.productId + '-' + item.type} className="bg-white rounded-xl p-3.5 flex items-center shadow-sm border border-slate-100 mb-2 last:mb-0 hover:scale-[1.01] transition-transform duration-300">
+                      <div key={item.productId + '-' + item.type + '-' + (item.variantName || '')} className="bg-white rounded-xl p-3.5 flex items-center shadow-sm border border-slate-100 mb-2 last:mb-0 hover:scale-[1.01] transition-transform duration-300">
                         <div className="grid grid-cols-12 w-full items-center">
                           <div className="col-span-6 flex items-center gap-3">
                             <div className="w-10 h-10 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center ring-4 ring-slate-50 shrink-0">
-                              {item.image ? (
-                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                              {(item.variantImage || item.image) ? (
+                                <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover" />
                               ) : (
                                 <span className="text-[8px] font-bold text-white/40">N/A</span>
                               )}
                             </div>
                             <div className="min-w-0">
                               <p className="text-[13px] font-extrabold text-slate-900 truncate">{item.name}</p>
+                              {item.variantName && !item.name.includes(item.variantName) && (
+                                <p className="text-[9px] text-slate-500 font-semibold">{item.variantName}</p>
+                              )}
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shrink-0" />
                                 <p className="text-[9px] text-indigo-600 font-bold uppercase tracking-wide">{item.type === 'rental' ? t('checkout.confirmed.rentalInProgress') : t('checkout.confirmed.purchaseInProgress')}</p>
@@ -1275,10 +1278,10 @@ export default function CheckoutPage() {
 
                 <div className="space-y-4 mb-6 max-h-[320px] overflow-y-auto">
                   {items.map((item) => (
-                    <div key={item.productId + '-' + item.type} className="flex gap-3">
+                    <div key={item.productId + '-' + item.type + '-' + (item.variantName || '')} className="flex gap-3">
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                        {item.image ? (
-                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        {(item.variantImage || item.image) ? (
+                          <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-300">
                             <ShoppingBag size={16} />
@@ -1287,6 +1290,9 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-semibold text-gray-900 truncate">{item.name}</h4>
+                        {item.variantName && !item.name.includes(item.variantName) && (
+                          <p className="text-[10px] text-gray-500 font-medium">{item.variantName}</p>
+                        )}
                         <p className="text-xs text-gray-400 mt-0.5">{t('checkout.qty', { quantity: String(item.quantity) })}</p>
                         <span className="text-sm font-bold text-gray-900">{formatPrice(item.price * item.quantity)}</span>
                       </div>

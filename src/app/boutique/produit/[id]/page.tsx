@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info, User, Mail, Phone, Building2, Calculator, Package } from 'lucide-react';
+import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info, User, Mail, Phone, Building2, Calculator, Package, Activity, Smartphone, Tv, Grid, Maximize, SunMedium, Upload, File, Folder, Image as ImageIcon, Video, Music, Printer, Bluetooth, Wifi, Tablet, Laptop, Mouse, Keyboard, Headphones, Speaker, Mic, Camera, Settings, Heart, Bell, Home, Search, MessageSquare, Calendar, Clock, MapPin, Globe, Lock, HelpCircle, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Share2, Link as LinkIcon, Gift, ShieldCheck, CreditCard, Award, BookOpen, ShoppingCart, Users, RefreshCw, Menu, Send, Navigation, ZoomIn, ZoomOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, formatPrice } from '@/lib/boutique-data';
@@ -13,6 +13,28 @@ import BoutiqueRentalFlow from '@/components/BoutiqueRentalFlow';
 import { useProfile } from '@/contexts/ProfileContext';
 import { PriceLabel } from '@/components/B2BProfileSelector';
 import { useI18n } from '@/lib/i18n';
+
+const ICON_MAP: Record<string, any> = {
+  screen: Monitor, distance: Eye, puissance: Zap, brightness: SunMedium,
+  pixel: Grid, resolution: Maximize, settings: Settings2,
+  activity: Activity, processeur: Cpu, couches: Layers, mobile: Smartphone, television: Tv,
+  'Télécharger': Download, 'Téléverser': Upload, 'Document': FileText, 'Fichier': File,
+  'Dossier': Folder, 'Image': ImageIcon, 'Vidéo': Video, 'Musique': Music,
+  'Imprimante': Printer, 'Bluetooth': Bluetooth, 'Wi-Fi': Wifi, 'Écran': Monitor,
+  'Mobile': Smartphone, 'Tablette': Tablet, 'Portable': Laptop, 'Souris': Mouse,
+  'Clavier': Keyboard, 'Casque': Headphones, 'Haut-parleur': Speaker, 'Micro': Mic,
+  'Caméra': Camera, 'Réglages': Settings, 'Utilisateur': User, 'Favoris': Heart,
+  'Étoile': Star, 'Notification': Bell, 'Accueil': Home, 'Recherche': Search,
+  'Email': Mail, 'Téléphone': Phone, 'Chat': MessageSquare, 'Calendrier': Calendar,
+  'Horloge': Clock, 'Localisation': MapPin, 'Langue': Globe, 'Verrouiller': Lock,
+  'Infos': Info, 'Aide': HelpCircle, 'Alerte': AlertTriangle, 'Validé': CheckCircle,
+  'Refusé': XCircle, 'Ajouter': Plus, 'Retirer': Minus, 'Modifier': Edit,
+  'Supprimer': Trash2, 'Copier': Copy, 'Partager': Share2, 'Lien': LinkIcon,
+  'Cadeau': Gift, 'Sécurité': ShieldCheck, 'Carte bancaire': CreditCard,
+  'Récompense': Award, 'Livre': BookOpen, 'Panier': ShoppingCart, 'Sac': ShoppingBag,
+  'Équipe': Users, 'Rafraîchir': RefreshCw, 'Menu': Menu, 'Envoyer': Send,
+  'Navigation': Navigation, 'Zoom avant': ZoomIn, 'Zoom arrière': ZoomOut,
+};
 
 const renderStars = (rating: number, size: number) => {
   const stars = [];
@@ -143,7 +165,6 @@ function Lightbox({ items, index, onClose, onPrev, onNext }: { items: MediaItem[
             ref={videoRef}
             src={current.url}
             controls
-            autoPlay
             className="max-w-[90vw] max-h-[85vh] rounded-2xl select-none"
             onClick={(e) => e.stopPropagation()}
           />
@@ -187,6 +208,31 @@ export default function ProductDetailPage() {
   const [quoteDone, setQuoteDone] = useState(false);
   const [stickyTop, setStickyTop] = useState(194);
   const [budgetOpen, setBudgetOpen] = useState(false);
+  const committedVariantRef = useRef<ProductVariant | null>(null);
+  const comboboxRef1 = useRef<HTMLDivElement>(null);
+  const comboboxRef2 = useRef<HTMLDivElement>(null);
+  const comboboxBtn1Ref = useRef<HTMLButtonElement>(null);
+  const comboboxBtn2Ref = useRef<HTMLButtonElement>(null);
+  const [comboboxOpen1, setComboboxOpen1] = useState(false);
+  const [comboboxOpen2, setComboboxOpen2] = useState(false);
+  const [dropdownRect1, setDropdownRect1] = useState<DOMRect | null>(null);
+  const [dropdownRect2, setDropdownRect2] = useState<DOMRect | null>(null);
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (comboboxRef1.current && !comboboxRef1.current.contains(e.target as Node)) setComboboxOpen1(false);
+      if (comboboxRef2.current && !comboboxRef2.current.contains(e.target as Node)) setComboboxOpen2(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => {
+    if (selectedMedia < thumbStart) {
+      setThumbStart(selectedMedia);
+    } else if (selectedMedia >= thumbStart + maxVisibleThumbs) {
+      setThumbStart(Math.max(0, selectedMedia - maxVisibleThumbs + 1));
+    }
+  }, [selectedMedia, thumbStart, maxVisibleThumbs]);
   const [surfaceW, setSurfaceW] = useState(0);
   const [surfaceH, setSurfaceH] = useState(0);
   const [panelW, setPanelW] = useState(0);
@@ -220,7 +266,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (!product) return;
     const active = (product.variants || []).filter(v => v.active && v.name);
-    if (active.length > 0) setSelectedVariant(active[0]);
+    if (active.length > 0) { setSelectedVariant(active[0]); committedVariantRef.current = active[0]; }
   }, [product]);
 
   const galleryImages: MediaItem[] = product?.gallery && product.gallery.length > 0
@@ -288,13 +334,35 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!product || isOutOfStock) return;
-    addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' }, quantity);
+    addItem({
+      productId: product.id,
+      name: selectedVariant ? `${product.name} - ${selectedVariant.name}` : product.name,
+      price: effectivePrice,
+      image: selectedVariant?.image || product.image,
+      category: product.category,
+      type: 'purchase',
+      variantName: selectedVariant?.name,
+      variantReference: selectedVariant?.reference,
+      variantImage: selectedVariant?.image,
+      variantPrice: selectedVariant?.price,
+    }, quantity);
     toast.success(t('product.addedToCart', { name: product.name }));
   };
 
   const handleBuyNow = () => {
     if (!product || isOutOfStock) return;
-    addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' }, quantity);
+    addItem({
+      productId: product.id,
+      name: selectedVariant ? `${product.name} - ${selectedVariant.name}` : product.name,
+      price: effectivePrice,
+      image: selectedVariant?.image || product.image,
+      category: product.category,
+      type: 'purchase',
+      variantName: selectedVariant?.name,
+      variantReference: selectedVariant?.reference,
+      variantImage: selectedVariant?.image,
+      variantPrice: selectedVariant?.price,
+    }, quantity);
     router.push('/boutique/paiement');
   };
 
@@ -380,69 +448,87 @@ export default function ProductDetailPage() {
                 Retour au produit
               </button>
 
-              <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
-                <h2 className="text-lg font-bold text-gray-900 mb-1">{t('product.requestQuote')}</h2>
-                <p className="text-xs text-gray-500 mb-6">{t('product.quoteInfo')}</p>
-
-                <form onSubmit={handleRequestQuote} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Nom complet *</label>
-                      <div className="relative">
-                        <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                        <input type="text" placeholder="Votre nom" required value={quoteFormData.name} onChange={e => setQuoteFormData(d => ({ ...d, name: e.target.value }))}
-                          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Email *</label>
-                      <div className="relative">
-                        <Mail size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                        <input type="email" placeholder="email@exemple.com" required value={quoteFormData.email} onChange={e => setQuoteFormData(d => ({ ...d, email: e.target.value }))}
-                          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Téléphone *</label>
-                      <div className="relative">
-                        <Phone size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                        <input type="tel" placeholder="+33 6 12 34 56 78" required value={quoteFormData.phone} onChange={e => setQuoteFormData(d => ({ ...d, phone: e.target.value }))}
-                          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Raison sociale</label>
-                      <input type="text" placeholder="Nom de l'entreprise" value={quoteFormData.company} onChange={e => setQuoteFormData(d => ({ ...d, company: e.target.value }))}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
-                    </div>
+              {/* Form container — checkout style */}
+              <div className="bg-gray-50/50 rounded-xl border border-gray-100">
+                {/* Header */}
+                <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                    <FileText size={15} className="text-amber-400" />
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">SIREN / SIRET</label>
-                      <input type="text" placeholder="123 456 789" value={quoteFormData.siren} onChange={e => setQuoteFormData(d => ({ ...d, siren: e.target.value }))}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">N° TVA intracommunautaire</label>
-                      <input type="text" placeholder="FRXX999999999" value={quoteFormData.vat} onChange={e => setQuoteFormData(d => ({ ...d, vat: e.target.value }))}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white" />
-                    </div>
-                  </div>
-
                   <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Commentaire</label>
-                    <textarea placeholder="Décrivez votre projet, vos besoins spécifiques..." rows={3} value={quoteFormData.comment} onChange={e => setQuoteFormData(d => ({ ...d, comment: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white resize-none" />
+                    <p className="text-sm font-semibold text-gray-900">{t('product.requestQuote')}</p>
+                    <p className="text-[11px] text-gray-400">{t('product.quoteInfo')}</p>
                   </div>
+                </div>
 
-                  <div className="flex gap-3 pt-2">
-                    <button type="submit" disabled={quoteLoading}
-                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-40 shadow-sm">
-                      {quoteLoading ? 'Envoi en cours...' : 'Envoyer la demande'}
-                    </button>
-                  </div>
-                </form>
+                {/* Fields */}
+                <div className="px-4 pb-4 pt-3">
+                  <form onSubmit={handleRequestQuote} className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Nom complet */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Nom complet *</label>
+                        <div className="relative">
+                          <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
+                          <input type="text" placeholder="Votre nom" required value={quoteFormData.name} onChange={e => setQuoteFormData(d => ({ ...d, name: e.target.value }))}
+                            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
+                        </div>
+                      </div>
+                      {/* Email */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Email *</label>
+                        <div className="relative">
+                          <Mail size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
+                          <input type="email" placeholder="email@exemple.com" required value={quoteFormData.email} onChange={e => setQuoteFormData(d => ({ ...d, email: e.target.value }))}
+                            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
+                        </div>
+                      </div>
+                      {/* Téléphone */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Téléphone *</label>
+                        <div className="relative">
+                          <Phone size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
+                          <input type="tel" placeholder="+33 6 12 34 56 78" required value={quoteFormData.phone} onChange={e => setQuoteFormData(d => ({ ...d, phone: e.target.value }))}
+                            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
+                        </div>
+                      </div>
+                      {/* Raison Sociale */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Raison sociale</label>
+                        <div className="relative">
+                          <Building2 size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
+                          <input type="text" placeholder="Nom de l'entreprise" value={quoteFormData.company} onChange={e => setQuoteFormData(d => ({ ...d, company: e.target.value }))}
+                            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
+                        </div>
+                      </div>
+                      {/* SIREN / SIRET */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">SIREN / SIRET</label>
+                        <input type="text" placeholder="123 456 789" value={quoteFormData.siren} onChange={e => setQuoteFormData(d => ({ ...d, siren: e.target.value }))}
+                          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
+                      </div>
+                      {/* TVA */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">N° TVA intracommunautaire</label>
+                        <input type="text" placeholder="FRXX999999999" value={quoteFormData.vat} onChange={e => setQuoteFormData(d => ({ ...d, vat: e.target.value }))}
+                          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
+                      </div>
+                      {/* Commentaire */}
+                      <div className="sm:col-span-2">
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Commentaire</label>
+                        <textarea placeholder="Décrivez votre projet, vos besoins spécifiques..." rows={3} value={quoteFormData.comment} onChange={e => setQuoteFormData(d => ({ ...d, comment: e.target.value }))}
+                          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white resize-none placeholder:text-gray-300" />
+                      </div>
+                    </div>
+
+                    <div className="pt-1">
+                      <button type="submit" disabled={quoteLoading}
+                        className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-40 shadow-sm">
+                        {quoteLoading ? 'Envoi en cours...' : 'Envoyer la demande'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
           ) : (
@@ -461,8 +547,11 @@ export default function ProductDetailPage() {
                     effectiveMedia.type === 'video' ? (
                       <video
                         src={effectiveMedia.url}
-                        controls
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
+                        autoPlay
+                        muted
+                        playsInline
+                        preload="metadata"
                       />
                     ) : (
                       <img
@@ -556,7 +645,7 @@ export default function ProductDetailPage() {
                 </>
               )}
 
-              <div className="mt-4 flex flex-wrap items-center [&>*:not(:first-child)]:ml-[-2px]">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed group">
                   <FileText size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">{t('product.datasheet')}</span>
@@ -573,7 +662,10 @@ export default function ProductDetailPage() {
                 )}
                 {product.downloadUrl2 && (
                   <button onClick={() => window.open(product.downloadUrl2, '_blank')} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors group">
-                    <Download size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
+                    {(() => {
+                      const Icon = product.downloadCustomIcon2 ? null : (product.downloadIcon2 ? ICON_MAP[product.downloadIcon2] : null) || Download;
+                      return product.downloadCustomIcon2 ? <img src={product.downloadCustomIcon2} className="w-3.5 h-3.5 object-contain text-gray-500 group-hover:text-gray-700 transition-colors" /> : <Icon size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />;
+                    })()}
                     <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">
                       {product.downloadLabel2 || 'Télécharger'}
                     </span>
@@ -581,7 +673,10 @@ export default function ProductDetailPage() {
                 )}
                 {product.downloadUrl3 && (
                   <button onClick={() => window.open(product.downloadUrl3, '_blank')} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors group">
-                    <Download size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
+                    {(() => {
+                      const Icon = product.downloadCustomIcon3 ? null : (product.downloadIcon3 ? ICON_MAP[product.downloadIcon3] : null) || Download;
+                      return product.downloadCustomIcon3 ? <img src={product.downloadCustomIcon3} className="w-3.5 h-3.5 object-contain text-gray-500 group-hover:text-gray-700 transition-colors" /> : <Icon size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />;
+                    })()}
                     <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">
                       {product.downloadLabel3 || 'Télécharger'}
                     </span>
@@ -607,7 +702,15 @@ export default function ProductDetailPage() {
                   {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                     <span className="text-base text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
                   )}
-                  <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
+                  {product?.priceDisplay === 'free' ? (
+                    <div className="text-2xl font-bold text-emerald-600">Gratuit</div>
+                  ) : product?.priceDisplay === 'multiprice' ? (
+                    <div className="text-2xl font-bold text-gray-900">Multiprix</div>
+                  ) : product?.priceDisplay === 'quote' ? (
+                    <div className="text-2xl font-bold text-gray-900">Sur devis</div>
+                  ) : (
+                    <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
+                  )}
                   <span className="text-[10px] font-bold text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md tracking-wider">Hors taxes</span>
                   {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                     <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">-{Math.round((1 - effectivePrice / effectiveOldPrice) * 100)}%</span>
@@ -659,13 +762,68 @@ export default function ProductDetailPage() {
                 </div>
               </div>
               {displayVariants.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {displayVariants.map((v) => (
-                    <button key={v.name} onClick={() => { setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
-                      className={`shrink-0 px-3 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-600 hover:border-gray-400'}`}>
-                      {v.name}
-                    </button>
-                  ))}
+                <div className="mb-4">
+                  {displayVariants.length > 8 ? (
+                    <div ref={comboboxRef1}>
+                      <button
+                        ref={comboboxBtn1Ref}
+                        onClick={() => {
+                          const rect = comboboxBtn1Ref.current?.getBoundingClientRect() ?? null;
+                          setDropdownRect1(rect);
+                          setComboboxOpen1(o => !o);
+                        }}
+                        className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
+                      >
+                        <span>{selectedVariant?.name || "Choisir une variante"}</span>
+                        <ChevronDown size={16} className={`transition-transform duration-200 ${comboboxOpen1 ? 'rotate-180' : ''}`} />
+                      </button>
+                      {comboboxOpen1 && dropdownRect1 && (
+                        <div
+                          className="bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-y-auto"
+                          style={{
+                            position: 'fixed',
+                            zIndex: 9999,
+                            top: dropdownRect1.bottom + 6,
+                            left: dropdownRect1.left,
+                            width: dropdownRect1.width,
+                            maxHeight: 320,
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: '#e5e7eb transparent',
+                          }}
+                        >
+                          <ul className="py-1">
+                            {displayVariants.map((v) => (
+                              <li key={v.name}>
+                                <button
+                                  onMouseEnter={() => { setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
+                                  onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); setComboboxOpen1(false); }}
+                                  className="inline-flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-900 hover:text-white transition-colors"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold uppercase shrink-0 bg-gray-100 text-gray-400">{v.name?.charAt(0)}</div>
+                                    <div className="text-left">
+                                      <div className="text-sm font-bold">{v.name}</div>
+                                      {v.reference && <div className="text-[10px] text-gray-400 font-mono">{v.reference}</div>}
+                                    </div>
+                                  </div>
+                                  {v.price && <div className="text-xs font-bold text-gray-600">{formatPrice(v.price)}</div>}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {displayVariants.map((v) => (
+                        <button key={v.name} onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
+                          className={`shrink-0 px-4 py-2.5 text-sm font-bold rounded-2xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white shadow-md' : 'border-gray-200/70 text-gray-600 hover:border-gray-400 hover:shadow-sm'}`}>
+                          {v.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
               <div className={`bg-violet-500/10 p-4 rounded-2xl border relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] ring-1 ${isOutOfStock ? 'border-red-400/40 ring-red-500/20' : 'border-violet-500/40 ring-violet-500/20'}`}>
@@ -741,7 +899,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            <div className="mt-20 border-t border-gray-200/40 pt-12 space-y-16">
+            <div className="mt-28 border-t border-gray-200/40 pt-16 space-y-24">
               {(product.descriptionDetaillee || product.longDescription) && (
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('product.description')}</h2>
@@ -790,9 +948,9 @@ export default function ProductDetailPage() {
 
         <aside
           className="hidden lg:flex flex-col fixed z-10 w-[420px] max-h-[calc(100vh-9rem)]"
-          style={{ top: stickyTop, right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))', transition: 'top 0.35s ease' }}
+          style={{ top: stickyTop, right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))', transition: 'top 0.35s ease', overflow: 'visible' }}
         >
-          <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+          <div className="flex-1 min-h-0 pr-1 overflow-visible">
             <nav className="text-sm text-gray-400 mb-4">
               <ol className="flex list-none p-0">
                 <li className="flex items-center">
@@ -828,7 +986,15 @@ export default function ProductDetailPage() {
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="text-lg text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
                 )}
-                <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
+                {product?.priceDisplay === 'free' ? (
+                  <div className="text-3xl font-bold text-emerald-600">Gratuit</div>
+                ) : product?.priceDisplay === 'multiprice' ? (
+                  <div className="text-3xl font-bold text-gray-900">Multiprix</div>
+                ) : product?.priceDisplay === 'quote' ? (
+                  <div className="text-3xl font-bold text-gray-900">Sur devis</div>
+                ) : (
+                  <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
+                )}
                 <span className="text-[10px] font-bold text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md tracking-wider">Hors taxes</span>
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -893,21 +1059,75 @@ export default function ProductDetailPage() {
                     )}
                   </div>
                 )}
-                <div className="flex flex-wrap gap-2">
-                  {displayVariants.map((v) => (
+                {displayVariants.length > 8 ? (
+                  <div ref={comboboxRef2}>
                     <button
-                      key={v.name}
+                      ref={comboboxBtn2Ref}
                       onClick={() => {
-                        setSelectedVariant(v);
-                        const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image);
-                        if (imgIdx >= 0) setSelectedMedia(imgIdx);
+                        const rect = comboboxBtn2Ref.current?.getBoundingClientRect() ?? null;
+                        setDropdownRect2(rect);
+                        setComboboxOpen2(o => !o);
                       }}
-                      className={`shrink-0 px-3 py-2 text-xs font-bold rounded-xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200/70 text-gray-600 hover:border-gray-400'}`}
+                      className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
                     >
-                      {v.name}
+                      <span>{selectedVariant?.name || "Choisir une variante"}</span>
+                      <ChevronDown size={16} className={`transition-transform duration-200 ${comboboxOpen2 ? 'rotate-180' : ''}`} />
                     </button>
-                  ))}
-                </div>
+                    {comboboxOpen2 && dropdownRect2 && (
+                      <div
+                        className="bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-y-auto"
+                        style={{
+                          position: 'fixed',
+                          zIndex: 9999,
+                          top: dropdownRect2.bottom + 6,
+                          left: dropdownRect2.left,
+                          width: dropdownRect2.width,
+                          maxHeight: 320,
+                          scrollbarWidth: 'thin',
+                          scrollbarColor: '#e5e7eb transparent',
+                        }}
+                      >
+                        <ul className="py-1">
+                          {displayVariants.map((v) => (
+                            <li key={v.name}>
+                              <button
+                                onMouseEnter={() => { setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
+                                onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); setComboboxOpen2(false); }}
+                                className="inline-flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold uppercase shrink-0 bg-gray-100 text-gray-400">{v.name?.charAt(0)}</div>
+                                  <div className="text-left">
+                                    <div className="text-sm font-bold">{v.name}</div>
+                                    {v.reference && <div className="text-[10px] text-gray-400 font-mono">{v.reference}</div>}
+                                  </div>
+                                </div>
+                                {v.price && <div className="text-xs font-bold text-gray-600">{formatPrice(v.price)}</div>}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {displayVariants.map((v) => (
+                      <button
+                        key={v.name}
+                        onClick={() => {
+                          setSelectedVariant(v);
+                          committedVariantRef.current = v;
+                          const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image);
+                          if (imgIdx >= 0) setSelectedMedia(imgIdx);
+                        }}
+                        className={`shrink-0 px-4 py-2.5 text-sm font-bold rounded-2xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white shadow-md' : 'border-gray-200/70 text-gray-600 hover:border-gray-400 hover:shadow-sm'}`}
+                      >
+                        {v.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -956,7 +1176,7 @@ export default function ProductDetailPage() {
                 return { totalSurface, panelSurface: panelSurfaceM2, panelCount, unitPrice, totalPrice };
               })() : null;
 
-              return (
+              return canQuote && (
                 <div className="mb-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
                   <button type="button" onClick={() => setBudgetOpen(prev => !prev)} className="w-full flex items-center justify-between p-5 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center gap-3">
@@ -1091,19 +1311,22 @@ export default function ProductDetailPage() {
             ) : (
             <>
             <div className="flex border-b border-gray-200/40 mb-6">
-              <button
-                onClick={() => setPurchaseType('achat')}
-                className={`px-6 py-3 text-sm font-semibold border-b-2 transition-colors ${purchaseType === 'achat' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-              >
-                {t('product.purchase')}
-              </button>
-              <button
-                onClick={() => canRent ? setPurchaseType('location') : undefined}
-                disabled={!canRent}
-                className={`px-6 py-3 text-sm font-semibold border-b-2 transition-colors ${purchaseType === 'location' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'} ${!canRent ? 'opacity-40 cursor-not-allowed line-through' : ''}`}
-              >
-                {t('product.rental')}
-              </button>
+              {canBuy && (
+                <button
+                  onClick={() => setPurchaseType('achat')}
+                  className={`px-6 py-3 text-sm font-semibold border-b-2 transition-colors ${purchaseType === 'achat' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                >
+                  {t('product.purchase')}
+                </button>
+              )}
+              {canRent && (
+                <button
+                  onClick={() => setPurchaseType('location')}
+                  className={`px-6 py-3 text-sm font-semibold border-b-2 transition-colors ${purchaseType === 'location' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+                >
+                  {t('product.rental')}
+                </button>
+              )}
             </div>
 
             <div className="flex flex-col gap-3 mb-6">

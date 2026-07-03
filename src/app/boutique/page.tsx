@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ArrowLeft, ShoppingBag, SlidersHorizontal, ChevronDown, Star, Sparkles, Tag, X, RotateCcw, Search, Check } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, SlidersHorizontal, ChevronDown, Star, Sparkles, Tag, X, RotateCcw, Search, Check, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
@@ -270,12 +270,12 @@ export default function BoutiquePage() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addItem } = useCart();
+  const { addItem, savedItems, saveItem, unsaveItem, isSaved } = useCart();
   const { showHT, showTTC } = useProfile();
   const { t } = useI18n();
 
   const [filterOpen, setFilterOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'populaires' | 'nouveautes'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'populaires' | 'nouveautes' | 'saved'>('all');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
   const [transactionType, setTransactionType] = useState<'all' | 'sale' | 'rental' | 'sur-commande'>('all');
@@ -335,6 +335,9 @@ export default function BoutiquePage() {
       result = result.filter(p => p.badges?.includes('populaire'));
     } else if (activeTab === 'nouveautes') {
       result = result.filter(p => p.badges?.includes('nouveaute'));
+    } else if (activeTab === 'saved') {
+      const savedIds = savedItems.map(i => i.productId);
+      result = result.filter(p => savedIds.includes(p.id));
     }
 
     if (transactionType !== 'all') {
@@ -358,7 +361,7 @@ export default function BoutiquePage() {
     }
 
     return result;
-  }, [products, activeTab, selectedCategories, minRating, sortBy, transactionType, searchQuery]);
+  }, [products, activeTab, selectedCategories, minRating, sortBy, transactionType, searchQuery, savedItems]);
 
   const activeFilterCount = selectedCategories.length + (minRating > 0 ? 1 : 0) + (transactionType !== 'all' ? 1 : 0);
 
@@ -417,7 +420,12 @@ export default function BoutiquePage() {
                       )}
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-gray-600 transition-colors">{p.name}</p>
-                        <p className="text-xs font-bold text-gray-700 mt-0.5">{p.price} €</p>
+                        <p className="text-xs font-bold text-gray-700 mt-0.5">
+                          {p.priceDisplay === 'free' ? 'Gratuit' :
+                           p.priceDisplay === 'multiprice' ? 'Multiprix' :
+                           p.priceDisplay === 'quote' ? 'Sur devis' :
+                           `${p.price} €`}
+                        </p>
                       </div>
                     </a>
                   ))}
@@ -436,6 +444,7 @@ export default function BoutiquePage() {
             { id: 'all', label: t('boutique.products') },
             { id: 'populaires', label: t('boutique.popular') },
             { id: 'nouveautes', label: t('boutique.newArrivals') },
+            { id: 'saved', label: 'Mes favoris' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -619,7 +628,7 @@ export default function BoutiquePage() {
                 style={{ animationDelay: `${idx * 0.08}s` }}
                 className={`product-card-entry w-full bg-white p-3 sm:p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative flex flex-col ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'opacity-70' : ''}`}
               >
-                <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }} className="block relative mb-3">
+                <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }} className="block relative mb-3 group">
                   {product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') && (
                     <div className="absolute inset-0 rounded-xl border border-red-500 pointer-events-none z-10" />
                   )}
@@ -644,6 +653,25 @@ export default function BoutiquePage() {
                       </div>
                     ) : null;
                   })()}
+                  {!isSaved(product.id) && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); saveItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase', quantity: 1 }); }}
+                    className="absolute inset-0 m-auto w-10 h-10 flex items-center justify-center rounded-full transition-all z-20 bg-white/70 hover:bg-white/90 hover:shadow-sm opacity-0 group-hover:opacity-100"
+                  >
+                    <Heart size={20} className="text-gray-500" />
+                  </button>
+                  )}
+                  {isSaved(product.id) && (
+                    <div className="absolute top-2 left-2 flex flex-col gap-1 z-20">
+                      <button type="button" onClick={(e) => { e.stopPropagation(); e.preventDefault(); unsaveItem(product.id); }} className="badge-etoile cursor-pointer">
+                        <span className="etoile-icon">
+                          <Heart size={10} className="text-red-500" fill="currentColor" />
+                        </span>
+                        <span className="etoile-text">Sauvegardé</span>
+                      </button>
+                    </div>
+                  )}
                   {product.badges && product.badges.length > 0 && (
                     <div className="absolute top-2 left-2 flex flex-col gap-1">
                       {product.badges.map((badge) => (
@@ -681,7 +709,12 @@ export default function BoutiquePage() {
                   </a>
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-auto gap-2 pt-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-xl font-extrabold text-gray-900">{product.price}{'\u20AC'}</span>
+                      <span className="text-xl font-extrabold text-gray-900">
+                        {product.priceDisplay === 'free' ? 'Gratuit' :
+                         product.priceDisplay === 'multiprice' ? 'Multiprix' :
+                         product.priceDisplay === 'quote' ? 'Sur devis' :
+                         `${product.price}${'\u20AC'}`}
+                      </span>
                       {product.oldPrice && product.oldPrice > product.price && (
                         <>
                           <span className="text-xs text-gray-400 line-through">{product.oldPrice}{'\u20AC'}</span>

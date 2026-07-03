@@ -14,7 +14,11 @@ import {
   ChevronRight, Zap, Maximize, SunMedium, PlusCircle, Camera, Image as ImageIcon,
   Video, Play, Upload, Trash2, ArrowLeft, ArrowRight, Link as LinkIcon, Tag, ChevronsUpDown, AlertTriangle, TrendingUp, Star,
   Settings2, Info, Save, Check, X, MoreVertical, Edit2, Copy, GripVertical, Filter, ArrowUpDown, Sparkles, Brain, Globe, ShieldCheck, Zap as ZapIcon, LogOut, LogIn, RefreshCw,
-  Mail, Lock, Unlock, Phone, UserPlus, EyeOff, Users, Truck, Wrench, History, User as UserIcon, List, Settings, Hammer, Pin, ShoppingBag
+  Mail, Lock, Unlock, Phone, UserPlus, EyeOff, Users, Truck, Wrench, History, User as UserIcon, List, Settings, Hammer, Pin, ShoppingBag,
+  Download, File, Folder, Music, Printer, Bluetooth, Wifi, Tablet, Laptop, Mouse, Keyboard,
+  Headphones, Speaker, Mic, Heart, Home, Clock, MapPin, HelpCircle, CheckCircle, XCircle,
+  Share2, Edit, MessageSquare, Bell, Gift, CreditCard, Award, BookOpen,
+  Menu, Send, Navigation, ZoomIn, ZoomOut, Minus as MinusIcon
 } from 'lucide-react';
 import { cn, normalizeSearchText } from '@/lib/utils';
 import {
@@ -1211,6 +1215,71 @@ const getIcon = (iconName: string) => {
   return ICON_LIBRARY.find(i => i.name === iconName)?.icon || Settings2;
 };
 
+const BUTTON_ICON_LIBRARY = [
+  { name: 'Télécharger', icon: Download },
+  { name: 'Téléverser', icon: Upload },
+  { name: 'Document', icon: FileText },
+  { name: 'Fichier', icon: File },
+  { name: 'Dossier', icon: Folder },
+  { name: 'Image', icon: ImageIcon },
+  { name: 'Vidéo', icon: Video },
+  { name: 'Musique', icon: Music },
+  { name: 'Imprimante', icon: Printer },
+  { name: 'Bluetooth', icon: Bluetooth },
+  { name: 'Wi-Fi', icon: Wifi },
+  { name: 'Écran', icon: Monitor },
+  { name: 'Mobile', icon: Smartphone },
+  { name: 'Tablette', icon: Tablet },
+  { name: 'Portable', icon: Laptop },
+  { name: 'Souris', icon: Mouse },
+  { name: 'Clavier', icon: Keyboard },
+  { name: 'Casque', icon: Headphones },
+  { name: 'Haut-parleur', icon: Speaker },
+  { name: 'Micro', icon: Mic },
+  { name: 'Caméra', icon: Camera },
+  { name: 'Réglages', icon: Settings },
+  { name: 'Utilisateur', icon: UserIcon },
+  { name: 'Favoris', icon: Heart },
+  { name: 'Étoile', icon: Star },
+  { name: 'Notification', icon: Bell },
+  { name: 'Accueil', icon: Home },
+  { name: 'Recherche', icon: Search },
+  { name: 'Email', icon: Mail },
+  { name: 'Téléphone', icon: Phone },
+  { name: 'Chat', icon: MessageSquare },
+  { name: 'Calendrier', icon: Calendar },
+  { name: 'Horloge', icon: Clock },
+  { name: 'Localisation', icon: MapPin },
+  { name: 'Langue', icon: Globe },
+  { name: 'Verrouiller', icon: Lock },
+  { name: 'Infos', icon: Info },
+  { name: 'Aide', icon: HelpCircle },
+  { name: 'Alerte', icon: AlertTriangle },
+  { name: 'Validé', icon: CheckCircle },
+  { name: 'Refusé', icon: XCircle },
+  { name: 'Ajouter', icon: Plus },
+  { name: 'Retirer', icon: MinusIcon },
+  { name: 'Modifier', icon: Edit },
+  { name: 'Supprimer', icon: Trash2 },
+  { name: 'Copier', icon: Copy },
+  { name: 'Partager', icon: Share2 },
+  { name: 'Lien', icon: LinkIcon },
+  { name: 'Cadeau', icon: Gift },
+  { name: 'Sécurité', icon: ShieldCheck },
+  { name: 'Carte bancaire', icon: CreditCard },
+  { name: 'Récompense', icon: Award },
+  { name: 'Livre', icon: BookOpen },
+  { name: 'Panier', icon: ShoppingCart },
+  { name: 'Sac', icon: ShoppingBag },
+  { name: 'Équipe', icon: Users },
+  { name: 'Rafraîchir', icon: RefreshCw },
+  { name: 'Menu', icon: Menu },
+  { name: 'Envoyer', icon: Send },
+  { name: 'Navigation', icon: Navigation },
+  { name: 'Zoom avant', icon: ZoomIn },
+  { name: 'Zoom arrière', icon: ZoomOut },
+];
+
 const slideVariants = {
   enter: (direction: number) => ({
     x: direction > 0 ? 100 : -100,
@@ -2343,6 +2412,8 @@ const ProduitPage = ({
   isAnalyzing,
   analysisProgress,
   pdfError,
+  priceDisplay,
+  setPriceDisplay,
   setIsAISettingsOpen,
   screenType,
   setScreenType,
@@ -2396,7 +2467,19 @@ const ProduitPage = ({
   downloadLabel3,
   setDownloadLabel3,
   downloadUrl3,
-  setDownloadUrl3
+  setDownloadUrl3,
+  downloadIcon2,
+  setDownloadIcon2,
+  downloadCustomIcon2,
+  setDownloadCustomIcon2,
+  downloadIcon3,
+  setDownloadIcon3,
+  downloadCustomIcon3,
+  setDownloadCustomIcon3,
+  showIconPicker2,
+  setShowIconPicker2,
+  showIconPicker3,
+  setShowIconPicker3
 }: any) => {
   const { t } = useI18n();
   const [specPage, setSpecPage] = useState(1);
@@ -2917,6 +3000,24 @@ const ProduitPage = ({
                         className="w-full h-8 bg-white border border-slate-200 rounded-xl px-2.5 text-xs font-semibold outline-none focus:border-slate-300"
                       />
                     </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => setShowIconPicker2(true)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-colors text-[10px] font-semibold text-slate-500"
+                      >
+                        {downloadCustomIcon2 ? (
+                          <img src={downloadCustomIcon2} className="w-4 h-4 object-contain" />
+                        ) : downloadIcon2 ? (
+                          React.createElement(BUTTON_ICON_LIBRARY.find(i => i.name === downloadIcon2)?.icon || Settings2, { className: "w-4 h-4" })
+                        ) : (
+                          <Settings2 className="w-4 h-4" />
+                        )}
+                        Icône
+                      </button>
+                      {(downloadIcon2 || downloadCustomIcon2) && (
+                        <button onClick={() => { setDownloadIcon2(''); setDownloadCustomIcon2(''); }} className="text-[10px] text-red-500 hover:text-red-700 font-semibold">Retirer</button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="p-3 rounded-2xl border border-slate-100 bg-slate-50/30 space-y-2">
@@ -2937,6 +3038,106 @@ const ProduitPage = ({
                         className="w-full h-8 bg-white border border-slate-200 rounded-xl px-2.5 text-xs font-semibold outline-none focus:border-slate-300"
                       />
                     </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => setShowIconPicker3(true)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-colors text-[10px] font-semibold text-slate-500"
+                      >
+                        {downloadCustomIcon3 ? (
+                          <img src={downloadCustomIcon3} className="w-4 h-4 object-contain" />
+                        ) : downloadIcon3 ? (
+                          React.createElement(BUTTON_ICON_LIBRARY.find(i => i.name === downloadIcon3)?.icon || Settings2, { className: "w-4 h-4" })
+                        ) : (
+                          <Settings2 className="w-4 h-4" />
+                        )}
+                        Icône
+                      </button>
+                      {(downloadIcon3 || downloadCustomIcon3) && (
+                        <button onClick={() => { setDownloadIcon3(''); setDownloadCustomIcon3(''); }} className="text-[10px] text-red-500 hover:text-red-700 font-semibold">Retirer</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Icon picker modal for Bouton A */}
+            {showIconPicker2 && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div onClick={() => setShowIconPicker2(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                <div className="bg-white rounded-3xl p-6 w-full max-w-md relative z-10 shadow-2xl border border-slate-200">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-slate-900">Icône - Bouton A</h3>
+                    <button onClick={() => setShowIconPicker2(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                      <X className="w-5 h-5 text-slate-500" />
+                    </button>
+                  </div>
+                  <div className="max-h-[55vh] overflow-y-auto -mx-2 px-2">
+                    <div className="grid grid-cols-4 gap-4">
+                      {BUTTON_ICON_LIBRARY.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <button key={item.name}
+                            onClick={() => { setDownloadIcon2(item.name); setDownloadCustomIcon2(''); setShowIconPicker2(false); }}
+                            className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all border-2 ${downloadIcon2 === item.name ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-slate-50 border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100'}`}
+                          >
+                            <Icon className="w-6 h-6" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">{item.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Téléverser une icône personnalisée</label>
+                    <input type="file" id="icon-upload-2" className="hidden" accept="image/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) { const reader = new FileReader(); reader.onloadend = () => { setDownloadCustomIcon2(reader.result as string); setDownloadIcon2(''); setShowIconPicker2(false); }; reader.readAsDataURL(file); }
+                    }} />
+                    <label htmlFor="icon-upload-2" className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-[#131E3F] hover:text-white transition-all text-sm font-bold text-slate-600 group">
+                      <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Téléverser
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Icon picker modal for Bouton B */}
+            {showIconPicker3 && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div onClick={() => setShowIconPicker3(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                <div className="bg-white rounded-3xl p-6 w-full max-w-md relative z-10 shadow-2xl border border-slate-200">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-slate-900">Icône - Bouton B</h3>
+                    <button onClick={() => setShowIconPicker3(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                      <X className="w-5 h-5 text-slate-500" />
+                    </button>
+                  </div>
+                  <div className="max-h-[55vh] overflow-y-auto -mx-2 px-2">
+                    <div className="grid grid-cols-4 gap-4">
+                      {BUTTON_ICON_LIBRARY.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <button key={item.name}
+                            onClick={() => { setDownloadIcon3(item.name); setDownloadCustomIcon3(''); setShowIconPicker3(false); }}
+                            className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all border-2 ${downloadIcon3 === item.name ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-slate-50 border-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-100'}`}
+                          >
+                            <Icon className="w-6 h-6" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">{item.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Téléverser une icône personnalisée</label>
+                    <input type="file" id="icon-upload-3" className="hidden" accept="image/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) { const reader = new FileReader(); reader.onloadend = () => { setDownloadCustomIcon3(reader.result as string); setDownloadIcon3(''); setShowIconPicker3(false); }; reader.readAsDataURL(file); }
+                    }} />
+                    <label htmlFor="icon-upload-3" className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-[#131E3F] hover:text-white transition-all text-sm font-bold text-slate-600 group">
+                      <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Téléverser
+                    </label>
                   </div>
                 </div>
               </div>
@@ -2988,6 +3189,35 @@ const ProduitPage = ({
                       colorTheme="orange"
                     />
                     <div className="text-[9px] text-orange-400 mt-1 font-medium italic tracking-tight">{t('admin.productManagement.oldSellingPriceHelp')}</div>
+                  </div>
+
+                  {/* Affichage Prix 0€ */}
+                  <div className="bg-purple-950/40 p-4 rounded-2xl border border-purple-500/20 relative group overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-transparent pointer-events-none" />
+                    <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2 block">Affichage du prix</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { value: 'zero', label: '0 €', sub: 'Affiche le prix réel' },
+                        { value: 'free', label: 'Gratuit', sub: 'Affiche "Gratuit"' },
+                        { value: 'multiprice', label: 'Multiprix', sub: 'Affiche "Multiprix"' },
+                        { value: 'quote', label: 'Sur devis', sub: 'Affiche "Sur devis"' },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setPriceDisplay(opt.value)}
+                          className={`flex flex-col items-start gap-0.5 p-2.5 rounded-xl border text-left transition-all duration-150 ${
+                            priceDisplay === opt.value
+                              ? 'border-purple-400 bg-purple-500/20 shadow-[0_0_12px_rgba(168,85,247,0.15)]'
+                              : 'border-purple-900/30 bg-purple-950/20 hover:border-purple-600/40'
+                          }`}
+                        >
+                          <span className="text-xs font-bold text-white">{opt.label}</span>
+                          <span className="text-[9px] text-purple-300/60 leading-tight">{opt.sub}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="text-[9px] text-purple-400/40 mt-2 font-medium italic tracking-tight">Définit l'affichage quand le prix est à 0 €</div>
                   </div>
 
                   {Array.isArray(mode) && mode.includes('vente') && (
@@ -4754,8 +4984,14 @@ export default function ProductManagementClient() {
   const [appStoreUrl, setAppStoreUrl] = useState<string>('');
   const [downloadLabel2, setDownloadLabel2] = useState<string>('');
   const [downloadUrl2, setDownloadUrl2] = useState<string>('');
+  const [downloadIcon2, setDownloadIcon2] = useState<string>('');
+  const [downloadCustomIcon2, setDownloadCustomIcon2] = useState<string>('');
   const [downloadLabel3, setDownloadLabel3] = useState<string>('');
   const [downloadUrl3, setDownloadUrl3] = useState<string>('');
+  const [downloadIcon3, setDownloadIcon3] = useState<string>('');
+  const [downloadCustomIcon3, setDownloadCustomIcon3] = useState<string>('');
+  const [showIconPicker2, setShowIconPicker2] = useState(false);
+  const [showIconPicker3, setShowIconPicker3] = useState(false);
 
   // Media State
   const [photoUrl, setPhotoUrl] = useState('');
@@ -4984,14 +5220,19 @@ export default function ProductManagementClient() {
         rating: Number(rating) || 5,
         showRating: showRating !== false,
         reviews: Number(reviews) || 0,
+        priceDisplay: priceDisplay,
         downloadEnabled: downloadEnabled !== false,
         downloadLabel: downloadLabel || '',
         playStoreUrl: playStoreUrl || '',
         appStoreUrl: appStoreUrl || '',
         downloadLabel2: downloadLabel2 || '',
         downloadUrl2: downloadUrl2 || '',
+        downloadIcon2: downloadIcon2 || '',
+        downloadCustomIcon2: downloadCustomIcon2 || '',
         downloadLabel3: downloadLabel3 || '',
         downloadUrl3: downloadUrl3 || '',
+        downloadIcon3: downloadIcon3 || '',
+        downloadCustomIcon3: downloadCustomIcon3 || '',
         date: new Date().toISOString(),
         uid: user?.uid || 'system',
         selectedChars: filteredSelectedChars
@@ -5362,6 +5603,7 @@ export default function ProductManagementClient() {
   const [rentalStock, setRentalStock] = useState<string>('');
   const [rentalQuantity, setRentalQuantity] = useState<string>('1');
   const [stock, setStock] = useState<string>('');
+  const [priceDisplay, setPriceDisplay] = useState<string>('zero');
 
   // Auto-activer le badge Promotion quand oldPrice > prixVente
   useEffect(() => {
@@ -5424,6 +5666,7 @@ export default function ProductManagementClient() {
 
       setPrixVente(editingProduct.price != null && editingProduct.price !== '' ? String(normalizePrice(editingProduct.price)) : '');
       setOldPrice(editingProduct.oldPrice ? editingProduct.oldPrice.toString() : '');
+      setPriceDisplay(editingProduct.priceDisplay || 'zero');
 
       // Handle selected characteristics
       if (editingProduct.selectedChars && Array.isArray(editingProduct.selectedChars)) {
@@ -5517,8 +5760,12 @@ export default function ProductManagementClient() {
       setAppStoreUrl(editingProduct.appStoreUrl || '');
       setDownloadLabel2(editingProduct.downloadLabel2 || '');
       setDownloadUrl2(editingProduct.downloadUrl2 || '');
+      setDownloadIcon2(editingProduct.downloadIcon2 || '');
+      setDownloadCustomIcon2(editingProduct.downloadCustomIcon2 || '');
       setDownloadLabel3(editingProduct.downloadLabel3 || '');
       setDownloadUrl3(editingProduct.downloadUrl3 || '');
+      setDownloadIcon3(editingProduct.downloadIcon3 || '');
+      setDownloadCustomIcon3(editingProduct.downloadCustomIcon3 || '');
     } else {
       // Reset form for new product creation
       setProductName('');
@@ -6118,9 +6365,11 @@ export default function ProductManagementClient() {
                   setSurfaceMaxLocation={setSurfaceMaxLocation}
                   rentalStock={rentalStock}
                   setRentalStock={setRentalStock}
-                  stock={stock}
-                  setStock={setStock}
-                  surfaceMinRequise={surfaceMinRequise}
+                   stock={stock}
+                   setStock={setStock}
+                   priceDisplay={priceDisplay}
+                   setPriceDisplay={setPriceDisplay}
+                   surfaceMinRequise={surfaceMinRequise}
                   setSurfaceMinRequise={setSurfaceMinRequise}
                   dimensionsEnabled={dimensionsEnabled}
                   setDimensionsEnabled={setDimensionsEnabled}
@@ -6225,7 +6474,19 @@ export default function ProductManagementClient() {
                      setDownloadLabel3={setDownloadLabel3}
                      downloadUrl3={downloadUrl3}
                      setDownloadUrl3={setDownloadUrl3}
-                   />
+                     downloadIcon2={downloadIcon2}
+                     setDownloadIcon2={setDownloadIcon2}
+                     downloadCustomIcon2={downloadCustomIcon2}
+                     setDownloadCustomIcon2={setDownloadCustomIcon2}
+                     downloadIcon3={downloadIcon3}
+                     setDownloadIcon3={setDownloadIcon3}
+                     downloadCustomIcon3={downloadCustomIcon3}
+                     setDownloadCustomIcon3={setDownloadCustomIcon3}
+                     showIconPicker2={showIconPicker2}
+                     setShowIconPicker2={setShowIconPicker2}
+                     showIconPicker3={showIconPicker3}
+                     setShowIconPicker3={setShowIconPicker3}
+                    />
               </motion.div>
             )}
           </AnimatePresence>

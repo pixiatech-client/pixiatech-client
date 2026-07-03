@@ -41,7 +41,7 @@ function QtySelector({ value, onMinus, onPlus }: { value: number; onMinus: () =>
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, addItem, removeItem, updateQuantity, itemCount, subtotal, promo, promoError, applyPromo, removePromo, totalAfterDiscount, clearCart } = useCart();
+  const { items, savedItems, addItem, removeItem, updateQuantity, itemCount, subtotal, promo, promoError, applyPromo, removePromo, totalAfterDiscount, clearCart, saveItem, unsaveItem, moveToCart, isSaved } = useCart();
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoInput, setPromoInput] = useState('');
   const [upsellProducts, setUpsellProducts] = useState<Product[]>([]);
@@ -105,10 +105,10 @@ export default function CartPage() {
                   </button>
                 </div>
                 {items.map((item) => (
-                  <div key={item.productId + '-' + item.type} className="bg-white rounded-2xl border border-gray-200/70 p-5 flex gap-6 transition-all duration-300 hover:shadow-md group">
+                  <div key={item.productId + '-' + item.type + '-' + (item.variantName || '')} className="bg-white rounded-2xl border border-gray-200/70 p-5 flex gap-6 transition-all duration-300 hover:shadow-md group">
                     <div className="w-24 h-24 sm:w-44 sm:h-44 rounded-xl overflow-hidden bg-gray-100 shrink-0 relative">
-                      {item.image ? (
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      {(item.variantImage || item.image) ? (
+                        <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-300">
                           <ShoppingBag size={24} />
@@ -120,17 +120,31 @@ export default function CartPage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <h2 className="font-bold text-gray-900 text-base mb-1">{item.name}</h2>
-                          <p className="text-sm text-gray-400">{item.category}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm text-gray-400">{item.category}</p>
+                            {item.variantName && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-900 text-white">
+                                {item.variantName}
+                              </span>
+                            )}
+                            {item.variantReference && (
+                              <span className="text-[10px] text-gray-400 font-mono">Réf: {item.variantReference}</span>
+                            )}
                             {item.type === 'rental' && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 ml-2">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600">
                                 Location
                               </span>
                             )}
-                          </p>
+                          </div>
                           {item.type === 'rental' && item.rentalStartDate && (
                             <div className="mt-2 text-xs text-gray-500 space-y-0.5">
                               <p>Du {item.rentalStartDate} au {item.rentalEndDate}</p>
                               <p>De {item.rentalStartTime} à {item.rentalEndTime}</p>
+                            </div>
+                          )}
+                          {item.variantPrice && item.variantPrice !== item.price && (
+                            <div className="mt-1 text-xs text-gray-400">
+                              Prix unitaire: {formatPrice(item.price)}
                             </div>
                           )}
                         </div>
@@ -141,16 +155,16 @@ export default function CartPage() {
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Quantité</label>
                           <QtySelector
                             value={item.quantity}
-                            onMinus={() => updateQuantity(item.productId, item.quantity - 1, item.type)}
-                            onPlus={() => updateQuantity(item.productId, item.quantity + 1, item.type)}
+                            onMinus={() => updateQuantity(item.productId, item.quantity - 1, item.type, item.variantName)}
+                            onPlus={() => updateQuantity(item.productId, item.quantity + 1, item.type, item.variantName)}
                           />
                         </div>
                         <div className="flex gap-3">
-                          <button className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-700 transition-colors">
-                            <Heart size={15} />
-                            Sauvegarder
+                          <button onClick={() => saveItem(item)} className={`flex items-center gap-1.5 text-xs transition-colors ${isSaved(item.productId, item.variantName) ? 'text-red-500' : 'text-gray-400 hover:text-gray-700'}`}>
+                            <Heart size={15} className={isSaved(item.productId, item.variantName) ? 'fill-red-500' : ''} />
+                            {isSaved(item.productId, item.variantName) ? 'Sauvegardé' : 'Sauvegarder'}
                           </button>
-                          <button onClick={() => removeItem(item.productId, item.type)} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors">
+                          <button onClick={() => removeItem(item.productId, item.type, item.variantName)} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors">
                             <Trash2 size={15} />
                             Supprimer
                           </button>
@@ -291,6 +305,50 @@ export default function CartPage() {
                 </div>
               </div>
             </div>
+
+            {savedItems.length > 0 && (
+              <div className="mt-8">
+                <div className="flex items-center gap-2 mb-4">
+                  <Heart size={16} className="text-red-500 fill-red-500" />
+                  <h2 className="font-bold text-gray-900 text-lg">Articles sauvegardés ({savedItems.length})</h2>
+                </div>
+                <div className="space-y-3">
+                  {savedItems.map((item) => (
+                    <div key={item.productId + '-' + item.type + '-' + (item.variantName || '')} className="bg-white rounded-2xl border border-gray-200/70 p-4 flex items-center gap-4 transition-all hover:shadow-sm">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                        {(item.variantImage || item.image) ? (
+                          <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300">
+                            <ShoppingBag size={16} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-gray-900 truncate">{item.name}</h4>
+                        <p className="text-xs text-gray-400">{item.category}</p>
+                        {item.variantName && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold bg-gray-100 text-gray-600 mt-1">
+                            {item.variantName}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm font-bold text-gray-900 shrink-0">{formatPrice(item.price)}</div>
+                      <button
+                        onClick={() => moveToCart(item)}
+                        className="shrink-0 flex items-center gap-1.5 bg-gray-900 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-colors"
+                      >
+                        <ShoppingBag size={13} />
+                        Remettre au panier
+                      </button>
+                      <button onClick={() => unsaveItem(item.productId, item.type, item.variantName)} className="shrink-0 text-gray-400 hover:text-red-500 transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {upsellProducts.length > 0 && (
               <section className="mt-16">
