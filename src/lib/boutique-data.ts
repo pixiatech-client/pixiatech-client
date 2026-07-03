@@ -201,8 +201,12 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     appStoreUrl: data.appStoreUrl || '',
     downloadLabel2: data.downloadLabel2 || '',
     downloadUrl2: data.downloadUrl2 || '',
+    downloadIcon2: data.downloadIcon2 || '',
+    downloadCustomIcon2: data.downloadCustomIcon2 || '',
     downloadLabel3: data.downloadLabel3 || '',
     downloadUrl3: data.downloadUrl3 || '',
+    downloadIcon3: data.downloadIcon3 || '',
+    downloadCustomIcon3: data.downloadCustomIcon3 || '',
     priceDisplay: data.priceDisplay || undefined,
   };
 }
