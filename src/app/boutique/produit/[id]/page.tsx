@@ -704,7 +704,7 @@ export default function ProductDetailPage() {
                   )}
                   {product?.priceDisplay === 'free' ? (
                     <div className="text-2xl font-bold text-emerald-600">Gratuit</div>
-                  ) : product?.priceDisplay === 'multiprice' && !selectedVariant?.price ? (
+                  ) : product?.priceDisplay === 'multiprice' && !selectedVariant ? (
                     <div className="text-2xl font-bold text-gray-900">Tarifs multiples</div>
                   ) : product?.priceDisplay === 'quote' ? (
                     <div className="text-2xl font-bold text-gray-900">Sur devis</div>
@@ -988,7 +988,7 @@ export default function ProductDetailPage() {
                 )}
                 {product?.priceDisplay === 'free' ? (
                   <div className="text-3xl font-bold text-emerald-600">Gratuit</div>
-                ) : product?.priceDisplay === 'multiprice' && !selectedVariant?.price ? (
+                ) : product?.priceDisplay === 'multiprice' && !selectedVariant ? (
                   <div className="text-3xl font-bold text-gray-900">Tarifs multiples</div>
                 ) : product?.priceDisplay === 'quote' ? (
                   <div className="text-3xl font-bold text-gray-900">Sur devis</div>
