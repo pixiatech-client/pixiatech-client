@@ -356,14 +356,26 @@ export default function CartPage() {
                           </span>
                         )}
                       </div>
-                      <div className="text-sm font-bold text-gray-900 shrink-0">{formatPrice(item.price)}</div>
-                      <button
-                        onClick={() => moveToCart(item)}
-                        className="shrink-0 flex items-center gap-1.5 bg-gray-900 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-colors"
-                      >
-                        <ShoppingBag size={13} />
-                        Remettre au panier
-                      </button>
+                      {item.price > 0 && (
+                        <div className="text-sm font-bold text-gray-900 shrink-0">{formatPrice(item.price)}</div>
+                      )}
+                      {item.price > 0 || (item.variantPrice ?? 0) > 0 ? (
+                        <button
+                          onClick={() => moveToCart(item)}
+                          className="shrink-0 flex items-center gap-1.5 bg-gray-900 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-colors"
+                        >
+                          <ShoppingBag size={13} />
+                          Remettre au panier
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => router.push(`/boutique/produit/${item.productId}`)}
+                          className="shrink-0 flex items-center gap-1.5 bg-gray-900 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-colors"
+                        >
+                          <ShoppingBag size={13} />
+                          Plus d'infos
+                        </button>
+                      )}
                       <button onClick={() => unsaveItem(item.productId, item.type, item.variantName)} className="shrink-0 text-gray-400 hover:text-red-500 transition-colors">
                         <Trash2 size={14} />
                       </button>

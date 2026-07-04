@@ -9,7 +9,7 @@ export function formatProductPriceLabel(product: Product): string {
   if (product.priceDisplay === 'free') return 'Gratuit';
   if (product.priceDisplay === 'multiprice') return 'Tarifs multiples';
   if (product.priceDisplay === 'quote') return 'Sur devis';
-  return product.price > 0 ? formatPrice(product.price) : formatPrice(product.price);
+  return formatPrice(product.price);
 }
 
 export function isProductMoreInfo(product: Product): boolean {
