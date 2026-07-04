@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info, User, Mail, Phone, Building2, Calculator, Package, Activity, Smartphone, Tv, Grid, Maximize, SunMedium, Upload, File, Folder, Image as ImageIcon, Video, Music, Printer, Bluetooth, Wifi, Tablet, Laptop, Mouse, Keyboard, Headphones, Speaker, Mic, Camera, Settings, Heart, Bell, Home, Search, MessageSquare, Calendar, Clock, MapPin, Globe, Lock, HelpCircle, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Share2, Link as LinkIcon, Gift, ShieldCheck, CreditCard, Award, BookOpen, ShoppingCart, Users, RefreshCw, Menu, Send, Navigation, ZoomIn, ZoomOut, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
@@ -236,6 +236,10 @@ export default function ProductDetailPage() {
   const [comboboxOpen2, setComboboxOpen2] = useState(false);
   const [dropdownRect1, setDropdownRect1] = useState<DOMRect | null>(null);
   const [dropdownRect2, setDropdownRect2] = useState<DOMRect | null>(null);
+  const variantWrapRef1 = useRef<HTMLDivElement>(null);
+  const variantWrapRef2 = useRef<HTMLDivElement>(null);
+  const [variantOverflow1, setVariantOverflow1] = useState(false);
+  const [variantOverflow2, setVariantOverflow2] = useState(false);
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (comboboxRef1.current && !comboboxRef1.current.contains(e.target as Node)) setComboboxOpen1(false);
@@ -244,6 +248,12 @@ export default function ProductDetailPage() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+  useLayoutEffect(() => {
+    const el1 = variantWrapRef1.current;
+    const el2 = variantWrapRef2.current;
+    if (el1) setVariantOverflow1(el1.scrollHeight > el1.clientHeight);
+    if (el2) setVariantOverflow2(el2.scrollHeight > el2.clientHeight);
+  });
 
   useEffect(() => {
     if (selectedMedia < thumbStart) {
@@ -1258,7 +1268,7 @@ export default function ProductDetailPage() {
               </div>
               {displayVariants.length > 0 && (
                 <div className="mb-4">
-                  {displayVariants.length > 8 ? (
+                  {variantOverflow1 ? (
                     <div ref={comboboxRef1}>
                       <button
                         ref={comboboxBtn1Ref}
@@ -1310,7 +1320,7 @@ export default function ProductDetailPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="flex flex-wrap gap-2">
+                    <div ref={variantWrapRef1} className="flex flex-wrap gap-2">
                       {displayVariants.map((v) => (
                         <button key={v.name} onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
                           className={`shrink-0 px-4 py-2.5 text-sm font-bold rounded-2xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white shadow-md' : 'border-gray-200/70 text-gray-600 hover:border-gray-400 hover:shadow-sm'}`}>
@@ -1430,7 +1440,7 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="mt-28 border-t border-gray-200/40 pt-16 space-y-24">
-              {product?.description && (
+              {product?.description && product.description.length > 60 && (
                 <div className="bg-white rounded-2xl border border-gray-200/70 p-5">
                   <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
                 </div>
@@ -1531,7 +1541,7 @@ export default function ProductDetailPage() {
             <span className="text-xs font-bold uppercase tracking-widest text-blue-500 mb-3">{product.category}</span>
             <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">{product.name}</h1>
 
-            {product.description && (
+            {product.description && product.description.length <= 60 && (
               <p className="text-gray-500 text-sm leading-relaxed mb-4">{product.description}</p>
             )}
 
@@ -1622,7 +1632,7 @@ export default function ProductDetailPage() {
                     )}
                   </div>
                 )}
-                {displayVariants.length > 8 ? (
+                {variantOverflow2 ? (
                   <div ref={comboboxRef2}>
                     <button
                       ref={comboboxBtn2Ref}
@@ -1674,7 +1684,7 @@ export default function ProductDetailPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="flex flex-wrap gap-2">
+                  <div ref={variantWrapRef2} className="flex flex-wrap gap-2">
                     {displayVariants.map((v) => (
                       <button
                         key={v.name}
