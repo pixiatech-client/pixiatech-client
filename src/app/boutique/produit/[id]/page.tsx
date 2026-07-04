@@ -1056,6 +1056,157 @@ export default function ProductDetailPage() {
                 <ChevronLeft size={14} />
                 Retour
               </button>
+              {/* Zone gauche : image OU calculateur selon budgetOpen */}
+              {budgetOpen && canQuote ? (
+                /* ── Calculateur de budget (panneau gauche) ── */
+                (() => {
+                  const parsePanelDimensions = (source?: string): { w: number; h: number } | null => {
+                    const dimKeys = ['dimensions du module', 'dimensions', 'dimension', 'taille', 'format', 'dalle', 'module'];
+                    if (source) {
+                      const match = source.match(/(\d+(?:[.,]\d+)?)\s*[×xX*]\s*(\d+(?:[.,]\d+)?)\s*(mm|cm|m)?/i);
+                      if (match) {
+                        const w = parseFloat(match[1].replace(',', '.'));
+                        const h = parseFloat(match[2].replace(',', '.'));
+                        const unit = (match[3] || 'cm').toLowerCase();
+                        const factor = unit === 'mm' ? 0.1 : unit === 'm' ? 100 : 1;
+                        return { w: w * factor, h: h * factor };
+                      }
+                    }
+                    const specsLower = Object.fromEntries(
+                      Object.entries(product.specs).map(([k, v]) => [k.toLowerCase().trim(), v])
+                    );
+                    for (const key of dimKeys) {
+                      const val = specsLower[key];
+                      if (!val) continue;
+                      const match = val.match(/(\d+(?:[.,]\d+)?)\s*[×xX*]\s*(\d+(?:[.,]\d+)?)\s*(mm|cm|m)?/i);
+                      if (match) {
+                        const w = parseFloat(match[1].replace(',', '.'));
+                        const h = parseFloat(match[2].replace(',', '.'));
+                        const unit = (match[3] || 'cm').toLowerCase();
+                        const factor = unit === 'mm' ? 0.1 : unit === 'm' ? 100 : 1;
+                        return { w: w * factor, h: h * factor };
+                      }
+                    }
+                    return null;
+                  };
+                  const dims = parsePanelDimensions(selectedVariant?.description) ?? parsePanelDimensions();
+                  const unitPrice = effectivePrice;
+                  const pW = dims?.w ?? panelW;
+                  const pH = dims?.h ?? panelH;
+                  const canAutoCalc = surfaceW > 0 && surfaceH > 0 && pW > 0 && pH > 0;
+                  const autoResult = canAutoCalc ? (() => {
+                    const totalSurface = surfaceW * surfaceH;
+                    const panelSurfaceM2 = (pW * pH) / 10000;
+                    const panelCount = Math.ceil(totalSurface / panelSurfaceM2);
+                    const totalPrice = panelCount * unitPrice;
+                    return { totalSurface, panelSurface: panelSurfaceM2, panelCount, unitPrice, totalPrice };
+                  })() : null;
+
+                  return (
+                    <div className="bg-white rounded-2xl shadow-sm w-full mt-[15px] mr-5 p-5 relative">
+                      {/* Header */}
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                          <Calculator size={16} className="text-emerald-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-gray-900">Calculer le budget</h3>
+                          <p className="text-xs text-gray-400 font-medium">Estimez le coût de votre projet</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setBudgetOpen(false)}
+                          className="ml-auto w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-400 transition-all"
+                          title="Fermer et revoir les photos"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+
+                      {dims && (
+                        <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl">
+                          <Package size={13} className="text-blue-500 shrink-0" />
+                          <p className="text-xs text-blue-700 font-medium">
+                            Dalle détectée : <span className="font-bold">{dims.w} × {dims.h} cm</span>
+                          </p>
+                        </div>
+                      )}
+
+                      {!dims && (
+                        <div className="mb-4 space-y-3">
+                          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 font-medium">
+                            Dimensions de dalle non trouvées. Saisissez-les :
+                          </p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Largeur dalle (cm)</label>
+                              <input type="number" value={panelW || ''} min={1} onChange={e => setPanelW(parseFloat(e.target.value) || 0)}
+                                className="w-full px-3 py-2 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50" />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Hauteur dalle (cm)</label>
+                              <input type="number" value={panelH || ''} min={1} onChange={e => setPanelH(parseFloat(e.target.value) || 0)}
+                                className="w-full px-3 py-2 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Largeur surface (m)</label>
+                          <input type="number" value={surfaceW || ''} min={0.1} step={0.1} placeholder="ex: 10"
+                            onChange={e => setSurfaceW(parseFloat(e.target.value) || 0)}
+                            className="w-full px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50 transition-colors" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Hauteur surface (m)</label>
+                          <input type="number" value={surfaceH || ''} min={0.1} step={0.1} placeholder="ex: 3"
+                            onChange={e => setSurfaceH(parseFloat(e.target.value) || 0)}
+                            className="w-full px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50 transition-colors" />
+                        </div>
+                      </div>
+
+                      {!canAutoCalc && surfaceW > 0 && surfaceH > 0 && (!dims && (panelW <= 0 || panelH <= 0)) && (
+                        <p className="text-xs text-amber-600 mt-2">Veuillez renseigner les dimensions de la dalle.</p>
+                      )}
+
+                      {autoResult && (
+                        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 overflow-hidden">
+                          <div className="px-4 py-3 border-b border-emerald-100 bg-emerald-50">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Résultat de l&apos;estimation</p>
+                          </div>
+                          <div className="px-4 py-3 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">Surface totale</span>
+                              <span className="text-xs font-bold text-gray-800">{autoResult.totalSurface.toFixed(2)} m²</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">Surface d&apos;une dalle</span>
+                              <span className="text-xs font-bold text-gray-800">{autoResult.panelSurface.toFixed(4)} m²</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">Nombre de dalles</span>
+                              <span className="text-xs font-bold text-gray-800">{autoResult.panelCount} dalles</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">Prix unitaire</span>
+                              <span className="text-xs font-bold text-gray-800">{formatPrice(autoResult.unitPrice)}</span>
+                            </div>
+                            <div className="h-px bg-emerald-200/50 my-1" />
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-bold text-gray-900">Prix total estimé</span>
+                              <span className="text-lg font-black text-emerald-700 tracking-tight">{formatPrice(autoResult.totalPrice)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()
+              ) : (
+                /* ── Image principale + carrousel (vue normale) ── */
+                <>
               <div className="bg-white rounded-2xl shadow-sm w-full mt-[15px] mr-5 p-5 relative">
                 {(() => {
                   const modeBadge = getModeBadge(product);
@@ -1160,6 +1311,8 @@ export default function ProductDetailPage() {
                       })}
                     </div>
                   </div>
+                </>
+              )}
                 </>
               )}
 
@@ -1326,7 +1479,7 @@ export default function ProductDetailPage() {
                                       {v.reference && <div className="text-[10px] text-gray-400 font-mono">{v.reference}</div>}
                                     </div>
                                   </div>
-                                  {v.price && <div className="text-xs font-bold text-gray-600">{formatPrice(v.price)}</div>}
+                                  {v.price > 0 && <div className="text-xs font-bold text-gray-600">{formatPrice(v.price)}</div>}
                                 </button>
                               </li>
                             ))}
@@ -1685,7 +1838,7 @@ export default function ProductDetailPage() {
                                     {v.reference && <div className="text-[10px] text-gray-400 font-mono">{v.reference}</div>}
                                   </div>
                                 </div>
-                                {v.price && <div className="text-xs font-bold text-gray-600">{formatPrice(v.price)}</div>}
+                                {v.price > 0 && <div className="text-xs font-bold text-gray-600">{formatPrice(v.price)}</div>}
                               </button>
                             </li>
                           ))}
