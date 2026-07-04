@@ -421,10 +421,14 @@ export default function BoutiquePage() {
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-gray-600 transition-colors">{p.name}</p>
                         <p className="text-xs font-bold text-gray-700 mt-0.5">
-                          {p.priceDisplay === 'free' ? 'Gratuit' :
-                           p.priceDisplay === 'multiprice' ? 'Tarifs multiples' :
-                           p.priceDisplay === 'quote' ? 'Sur devis' :
-                           `${p.price} €`}
+                          {p.price > 0 ? (
+                            `${p.price} €`
+                          ) : (
+                            p.priceDisplay === 'free' ? 'Gratuit' :
+                            p.priceDisplay === 'multiprice' ? 'Tarifs multiples' :
+                            p.priceDisplay === 'quote' ? 'Sur devis' :
+                            '0 €'
+                          )}
                         </p>
                       </div>
                     </a>
@@ -710,10 +714,14 @@ export default function BoutiquePage() {
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-auto gap-2 pt-3">
                     <div className="flex items-center gap-2">
                       <span className="text-xl font-extrabold text-gray-900">
-                        {product.priceDisplay === 'free' ? 'Gratuit' :
-                         product.priceDisplay === 'multiprice' ? 'Tarifs multiples' :
-                         product.priceDisplay === 'quote' ? 'Sur devis' :
-                         `${product.price}${'\u20AC'}`}
+                        {product.price > 0 ? (
+                          `${product.price}${'\u20AC'}`
+                        ) : (
+                          product.priceDisplay === 'free' ? 'Gratuit' :
+                          product.priceDisplay === 'multiprice' ? 'Tarifs multiples' :
+                          product.priceDisplay === 'quote' ? 'Sur devis' :
+                          `0${'\u20AC'}`
+                        )}
                       </span>
                       {product.oldPrice && product.oldPrice > product.price && (
                         <>
@@ -724,7 +732,7 @@ export default function BoutiquePage() {
                         </>
                       )}
                     </div>
-                    {product.priceDisplay === 'multiprice' || product.priceDisplay === 'quote' ? (
+                    {!(product.price > 0) && (product.priceDisplay === 'multiprice' || product.priceDisplay === 'quote') ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

@@ -702,7 +702,9 @@ export default function ProductDetailPage() {
                   {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                     <span className="text-base text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
                   )}
-                  {product?.priceDisplay === 'free' ? (
+                  {product && product.price > 0 ? (
+                    <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
+                  ) : product?.priceDisplay === 'free' ? (
                     <div className="text-2xl font-bold text-emerald-600">Gratuit</div>
                   ) : product?.priceDisplay === 'multiprice' && !selectedVariant ? (
                     <div className="text-2xl font-bold text-gray-900">Tarifs multiples</div>
@@ -986,7 +988,9 @@ export default function ProductDetailPage() {
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="text-lg text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
                 )}
-                {product?.priceDisplay === 'free' ? (
+                {product && product.price > 0 ? (
+                  <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
+                ) : product?.priceDisplay === 'free' ? (
                   <div className="text-3xl font-bold text-emerald-600">Gratuit</div>
                 ) : product?.priceDisplay === 'multiprice' && !selectedVariant ? (
                   <div className="text-3xl font-bold text-gray-900">Tarifs multiples</div>
