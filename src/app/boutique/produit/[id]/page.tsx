@@ -228,6 +228,7 @@ export default function ProductDetailPage() {
   const [quoteDone, setQuoteDone] = useState(false);
   const [stickyTop, setStickyTop] = useState(194);
   const [budgetOpen, setBudgetOpen] = useState(false);
+  const [hoveredVariant, setHoveredVariant] = useState<ProductVariant | null>(null);
   const committedVariantRef = useRef<ProductVariant | null>(null);
   const comboboxRef1 = useRef<HTMLDivElement>(null);
   const comboboxRef2 = useRef<HTMLDivElement>(null);
@@ -1376,17 +1377,22 @@ export default function ProductDetailPage() {
                   {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                     <span className="text-base text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
                   )}
-                  {product?.priceDisplay === 'free' ? (
-                    <div className="text-2xl font-bold text-emerald-600">Gratuit</div>
-                  ) : product?.priceDisplay === 'multiprice' && !selectedVariant ? (
-                    <div className="text-2xl font-bold text-gray-900">Tarifs multiples</div>
-                  ) : product?.priceDisplay === 'quote' ? (
-                    <div className="text-2xl font-bold text-gray-900">Sur devis</div>
-                  ) : product && product.price > 0 ? (
-                    <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
-                  ) : (
-                    <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
-                  )}
+                  {(() => {
+                    const currentVar = hoveredVariant ?? selectedVariant;
+                    if (product?.priceDisplay === 'free') {
+                      return <div className="text-2xl font-bold text-emerald-600">Gratuit</div>;
+                    }
+                    if (currentVar && currentVar.price > 0) {
+                      return <div className="text-2xl font-bold text-gray-900">{formatPrice(currentVar.price)}</div>;
+                    }
+                    if (product?.priceDisplay === 'multiprice' && !selectedVariant) {
+                      return <div className="text-2xl font-bold text-gray-900">Tarifs multiples</div>;
+                    }
+                    if (product?.priceDisplay === 'quote') {
+                      return <div className="text-2xl font-bold text-gray-900">Sur devis</div>;
+                    }
+                    return <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>;
+                  })()}
                   <span className="text-[10px] font-bold text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md tracking-wider">Hors taxes</span>
                   {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                     <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">-{Math.round((1 - effectivePrice / effectiveOldPrice) * 100)}%</span>
@@ -1468,7 +1474,8 @@ export default function ProductDetailPage() {
                             {displayVariants.map((v) => (
                               <li key={v.name}>
                                 <button
-                                  onMouseEnter={() => { setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
+                                  onMouseEnter={() => { setHoveredVariant(v); setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
+                                  onMouseLeave={() => setHoveredVariant(null)}
                                   onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); setComboboxOpen1(false); }}
                                   className="inline-flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-900 hover:text-white transition-colors"
                                 >
@@ -1490,7 +1497,10 @@ export default function ProductDetailPage() {
                   ) : (
                     <div ref={variantWrapRef1} className="flex flex-wrap gap-2">
                       {displayVariants.map((v) => (
-                        <button key={v.name} onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
+                        <button key={v.name} 
+                          onMouseEnter={() => setHoveredVariant(v)}
+                          onMouseLeave={() => setHoveredVariant(null)}
+                          onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
                           className={`shrink-0 px-4 py-2.5 text-sm font-bold rounded-2xl border-2 transition-all ${selectedVariant?.image === v.image ? 'border-gray-900 bg-gray-900 text-white shadow-md' : 'border-gray-200/70 text-gray-600 hover:border-gray-400 hover:shadow-sm'}`}>
                           {v.name}
                         </button>
@@ -1725,17 +1735,22 @@ export default function ProductDetailPage() {
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="text-lg text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
                 )}
-                {product?.priceDisplay === 'free' ? (
-                  <div className="text-3xl font-bold text-emerald-600">Gratuit</div>
-                ) : product?.priceDisplay === 'multiprice' && !selectedVariant ? (
-                  <div className="text-3xl font-bold text-gray-900">Tarifs multiples</div>
-                ) : product?.priceDisplay === 'quote' ? (
-                  <div className="text-3xl font-bold text-gray-900">Sur devis</div>
-                ) : product && product.price > 0 ? (
-                  <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
-                ) : (
-                  <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
-                )}
+                {(() => {
+                  const currentVar = hoveredVariant ?? selectedVariant;
+                  if (product?.priceDisplay === 'free') {
+                    return <div className="text-3xl font-bold text-emerald-600">Gratuit</div>;
+                  }
+                  if (currentVar && currentVar.price > 0) {
+                    return <div className="text-3xl font-bold text-gray-900">{formatPrice(currentVar.price)}</div>;
+                  }
+                  if (product?.priceDisplay === 'multiprice' && !selectedVariant) {
+                    return <div className="text-3xl font-bold text-gray-900">Tarifs multiples</div>;
+                  }
+                  if (product?.priceDisplay === 'quote') {
+                    return <div className="text-3xl font-bold text-gray-900">Sur devis</div>;
+                  }
+                  return <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>;
+                })()}
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                     -{Math.round((1 - effectivePrice / effectiveOldPrice) * 100)}%
@@ -1827,7 +1842,8 @@ export default function ProductDetailPage() {
                           {displayVariants.map((v) => (
                             <li key={v.name}>
                               <button
-                                onMouseEnter={() => { setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
+                                onMouseEnter={() => { setHoveredVariant(v); setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
+                                onMouseLeave={() => setHoveredVariant(null)}
                                 onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); setComboboxOpen2(false); }}
                                 className="inline-flex items-center justify-between w-full px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                               >
@@ -1851,6 +1867,8 @@ export default function ProductDetailPage() {
                     {displayVariants.map((v) => (
                       <button
                         key={v.name}
+                        onMouseEnter={() => setHoveredVariant(v)}
+                        onMouseLeave={() => setHoveredVariant(null)}
                         onClick={() => {
                           setSelectedVariant(v);
                           committedVariantRef.current = v;
@@ -1867,155 +1885,31 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Calculateur de budget */}
-            {(() => {
-              const parsePanelDimensions = (source?: string): { w: number; h: number } | null => {
-                const dimKeys = ['dimensions du module', 'dimensions', 'dimension', 'taille', 'format', 'dalle', 'module'];
-                if (source) {
-                  const match = source.match(/(\d+(?:[.,]\d+)?)\s*[×xX*]\s*(\d+(?:[.,]\d+)?)\s*(mm|cm|m)?/i);
-                  if (match) {
-                    const w = parseFloat(match[1].replace(',', '.'));
-                    const h = parseFloat(match[2].replace(',', '.'));
-                    const unit = (match[3] || 'cm').toLowerCase();
-                    const factor = unit === 'mm' ? 0.1 : unit === 'm' ? 100 : 1;
-                    return { w: w * factor, h: h * factor };
-                  }
-                }
-                const specsLower = Object.fromEntries(
-                  Object.entries(product.specs).map(([k, v]) => [k.toLowerCase().trim(), v])
-                );
-                for (const key of dimKeys) {
-                  const val = specsLower[key];
-                  if (!val) continue;
-                  const match = val.match(/(\d+(?:[.,]\d+)?)\s*[×xX*]\s*(\d+(?:[.,]\d+)?)\s*(mm|cm|m)?/i);
-                  if (match) {
-                    const w = parseFloat(match[1].replace(',', '.'));
-                    const h = parseFloat(match[2].replace(',', '.'));
-                    const unit = (match[3] || 'cm').toLowerCase();
-                    const factor = unit === 'mm' ? 0.1 : unit === 'm' ? 100 : 1;
-                    return { w: w * factor, h: h * factor };
-                  }
-                }
-                return null;
-              };
-
-              const dims = parsePanelDimensions(selectedVariant?.description) ?? parsePanelDimensions();
-              const unitPrice = effectivePrice;
-              const pW = dims?.w ?? panelW;
-              const pH = dims?.h ?? panelH;
-              const canAutoCalc = surfaceW > 0 && surfaceH > 0 && pW > 0 && pH > 0;
-              const autoResult = canAutoCalc ? (() => {
-                const totalSurface = surfaceW * surfaceH;
-                const panelSurfaceM2 = (pW * pH) / 10000;
-                const panelCount = Math.ceil(totalSurface / panelSurfaceM2);
-                const totalPrice = panelCount * unitPrice;
-                return { totalSurface, panelSurface: panelSurfaceM2, panelCount, unitPrice, totalPrice };
-              })() : null;
-
-              return canQuote && (
-                <div className="mb-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
-                  <button type="button" onClick={() => setBudgetOpen(prev => !prev)} className="w-full flex items-center justify-between p-5 hover:bg-gray-50/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                        <Calculator size={16} className="text-emerald-600" />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="text-sm font-bold text-gray-900">Calculer le budget</h3>
-                        <p className="text-xs text-gray-400 font-medium">Estimez le coût de votre projet</p>
-                      </div>
+            {/* Calculateur de budget - Simple bouton de déclenchement */}
+            {canQuote && (
+              <div className="mb-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setBudgetOpen(prev => !prev)}
+                  className={`w-full flex items-center justify-between p-5 hover:bg-gray-50/50 transition-colors ${
+                    budgetOpen ? 'bg-emerald-50/30' : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                      budgetOpen ? 'bg-emerald-500 text-white shadow-sm' : 'bg-emerald-500/10 text-emerald-600'
+                    }`}>
+                      <Calculator size={16} />
                     </div>
-                    <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${budgetOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  {budgetOpen && (
-                  <div className="px-5 pb-5 border-t border-gray-100 pt-4">
-
-                  {dims && (
-                    <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl">
-                      <Package size={13} className="text-blue-500 shrink-0" />
-                      <p className="text-xs text-blue-700 font-medium">
-                        Dalle détectée : <span className="font-bold">{dims.w} × {dims.h} cm</span>
-                      </p>
-                    </div>
-                  )}
-
-                  {!dims && (
-                    <div className="mb-4 space-y-3">
-                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 font-medium">
-                        Dimensions de dalle non trouvées. Saisissez-les :
-                      </p>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Largeur dalle (cm)</label>
-                          <input type="number" value={panelW || ''} min={1} onChange={e => setPanelW(parseFloat(e.target.value) || 0)}
-                            className="w-full px-3 py-2 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50" />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Hauteur dalle (cm)</label>
-                          <input type="number" value={panelH || ''} min={1} onChange={e => setPanelH(parseFloat(e.target.value) || 0)}
-                            className="w-full px-3 py-2 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50" />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">
-                        Largeur surface (m)
-                      </label>
-                      <input type="number" value={surfaceW || ''} min={0.1} step={0.1} placeholder="ex: 10"
-                        onChange={e => setSurfaceW(parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50 transition-colors" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">
-                        Hauteur surface (m)
-                      </label>
-                      <input type="number" value={surfaceH || ''} min={0.1} step={0.1} placeholder="ex: 3"
-                        onChange={e => setSurfaceH(parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50 transition-colors" />
+                    <div className="text-left">
+                      <h3 className="text-sm font-bold text-gray-900">Calculer le budget</h3>
+                      <p className="text-xs text-gray-400 font-medium">Estimez le coût de votre projet</p>
                     </div>
                   </div>
-
-                  {!canAutoCalc && surfaceW > 0 && surfaceH > 0 && (!dims && (panelW <= 0 || panelH <= 0)) && (
-                    <p className="text-xs text-amber-600 mt-2">Veuillez renseigner les dimensions de la dalle.</p>
-                  )}
-
-                  {autoResult && (
-                    <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 overflow-hidden animate-fadeIn">
-                      <div className="px-4 py-3 border-b border-emerald-100 bg-emerald-50">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Résultat de l&apos;estimation</p>
-                      </div>
-                      <div className="px-4 py-3 space-y-2.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">Surface totale</span>
-                          <span className="text-xs font-bold text-gray-800">{autoResult.totalSurface.toFixed(2)} m²</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">Surface d&apos;une dalle</span>
-                          <span className="text-xs font-bold text-gray-800">{autoResult.panelSurface.toFixed(4)} m²</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">Nombre de dalles</span>
-                          <span className="text-xs font-bold text-gray-800">{autoResult.panelCount} dalles</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">Prix unitaire</span>
-                          <span className="text-xs font-bold text-gray-800">{formatPrice(autoResult.unitPrice)}</span>
-                        </div>
-                        <div className="h-px bg-emerald-200/50 my-1" />
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-gray-900">Prix total estimé</span>
-                          <span className="text-lg font-black text-emerald-700 tracking-tight">{formatPrice(autoResult.totalPrice)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  </div>
-                  )}
-                </div>
-              );
-            })()}
+                  <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${budgetOpen ? 'rotate-180 text-emerald-600' : ''}`} />
+                </button>
+              </div>
+            )}
 
             {canQuote && !canBuy && !canRent ? (
             <div className="flex flex-col gap-3 mb-6">
