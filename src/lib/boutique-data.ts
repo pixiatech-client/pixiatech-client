@@ -225,13 +225,16 @@ export async function fetchBoutiqueProducts(): Promise<Product[]> {
 }
 
 function normalizeAvailableFor(values: string[]): ('sale' | 'rental' | 'sur-commande')[] {
-  return values.map(m => {
+  const modes = values.map(m => {
     const lower = m.toLowerCase().replace(/[\s_-]/g, '');
     if (lower === 'surcommande' || lower === 'quoterequest' || lower === 'quoteonly') return 'sur-commande';
     if (lower === 'sale' || lower === 'achat' || lower === 'vente' || lower === 'purchase') return 'sale';
     if (lower === 'rental' || lower === 'location' || lower === 'rent') return 'rental';
     return m.toLowerCase() as any;
   });
+  if (modes.includes('sur-commande')) return ['sur-commande'];
+  if (modes.includes('rental')) return ['rental'];
+  return ['sale'];
 }
 
 export async function fetchBoutiqueProduct(id: string): Promise<Product | null> {
@@ -300,12 +303,9 @@ export interface ModeBadgeInfo {
 export function getModeBadge(product: Product): ModeBadgeInfo | null {
   const avail = product.availableFor ?? [];
   if (avail.includes('sur-commande')) return { label: 'Sur commande', colors: 'bg-amber-500 text-white' };
-  const hasSale = avail.includes('sale');
-  const hasRental = avail.includes('rental');
-  if (hasSale && product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale')) return { label: 'Rupture de stock', colors: 'bg-red-500 text-white' };
-  if (hasSale && hasRental) return { label: 'Vente & Location', colors: 'bg-violet-500 text-white' };
-  if (hasSale) return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
-  if (hasRental) return { label: 'Location', colors: 'bg-blue-500 text-white' };
+  if (avail.includes('sale') && product.stock !== undefined && product.stock <= 0) return { label: 'Rupture de stock', colors: 'bg-red-500 text-white' };
+  if (avail.includes('sale')) return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
+  if (avail.includes('rental')) return { label: 'Location', colors: 'bg-blue-500 text-white' };
   return null;
 }
 

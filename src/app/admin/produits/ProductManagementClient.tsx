@@ -2606,20 +2606,13 @@ const ProduitPage = ({
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.salesMode')}</label>
               <div className="relative flex bg-slate-100/80 p-1 gap-2 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
                 <button
-                  onClick={() => {
-                    setMode((prev: string[]) => {
-                      if (prev.includes('sur-commande')) return ['vente'];
-                      return prev.includes('vente')
-                        ? (prev.length > 1 ? prev.filter(m => m !== 'vente') : prev)
-                        : [...prev.filter(m => m !== 'sur-commande'), 'vente'];
-                    });
-                  }}
+                  onClick={() => setMode(['vente'])}
                   className={cn(
                     "relative flex-1 flex items-center justify-center gap-1.5 px-3 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                    mode.includes('vente') ? "text-white" : "text-slate-400 hover:text-slate-700"
+                    mode.includes('vente') && !mode.includes('sur-commande') ? "text-white" : "text-slate-400 hover:text-slate-700"
                   )}
                 >
-                  {mode.includes('vente') && (
+                  {mode.includes('vente') && !mode.includes('sur-commande') && (
                     <motion.span
                       layoutId="mode-bubble-vente"
                       className="absolute inset-0 z-10 bg-[#18181B] rounded-xl shadow-lg border border-[#18181B]"
@@ -2630,14 +2623,7 @@ const ProduitPage = ({
                   <span className="z-20 whitespace-nowrap">{t('admin.productManagement.sale')}</span>
                 </button>
                 <button
-                  onClick={() => {
-                    setMode((prev: string[]) => {
-                      if (prev.includes('sur-commande')) return ['location'];
-                      return prev.includes('location')
-                        ? (prev.length > 1 ? prev.filter(m => m !== 'location') : prev)
-                        : [...prev.filter(m => m !== 'sur-commande'), 'location'];
-                    });
-                  }}
+                  onClick={() => setMode(['location'])}
                   className={cn(
                     "relative flex-1 flex items-center justify-center gap-1.5 px-3 h-10 text-[10px] md:text-xs font-bold transition-all z-20 uppercase tracking-widest",
                     mode.includes('location') ? "text-white" : "text-slate-400 hover:text-slate-700"
@@ -3807,20 +3793,13 @@ const ProduitPage = ({
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.salesMode')}</label>
                       <div className="relative flex bg-slate-100/80 p-1 gap-2 rounded-2xl border border-slate-200 w-full overflow-hidden shadow-sm">
                         <button
-                          onClick={() => {
-                            setMode((prev: string[]) => {
-                              if (prev.includes('sur-commande')) return ['vente'];
-                              return prev.includes('vente')
-                                ? (prev.length > 1 ? prev.filter(m => m !== 'vente') : prev)
-                                : [...prev.filter(m => m !== 'sur-commande'), 'vente'];
-                            });
-                          }}
+                          onClick={() => setMode(['vente'])}
                           className={cn(
                             "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
-                            mode.includes('vente') ? "text-white" : "text-slate-400 hover:text-slate-700"
+                            mode.includes('vente') && !mode.includes('sur-commande') ? "text-white" : "text-slate-400 hover:text-slate-700"
                           )}
                         >
-                          {mode.includes('vente') && (
+                          {mode.includes('vente') && !mode.includes('sur-commande') && (
                             <motion.span
                               layoutId="mode-bubble-mobile-vente"
                               className="absolute inset-0 z-10 bg-[#18181B] rounded-xl shadow-lg border border-[#18181B]"
@@ -3832,14 +3811,7 @@ const ProduitPage = ({
                         </button>
 
                         <button
-                          onClick={() => {
-                            setMode((prev: string[]) => {
-                              if (prev.includes('sur-commande')) return ['location'];
-                              return prev.includes('location')
-                                ? (prev.length > 1 ? prev.filter(m => m !== 'location') : prev)
-                                : [...prev.filter(m => m !== 'sur-commande'), 'location'];
-                            });
-                          }}
+                          onClick={() => setMode(['location'])}
                           className={cn(
                             "relative flex-1 flex items-center justify-center gap-1.5 px-2 h-10 text-xs font-bold transition-all z-20 uppercase tracking-widest",
                             mode.includes('location') ? "text-white" : "text-slate-400 hover:text-slate-700"
@@ -5638,17 +5610,24 @@ export default function ProductManagementClient() {
       if (Array.isArray(editingProduct.mode)) {
         initialModes = editingProduct.mode;
       } else if (editingProduct.mode === 'les deux') {
-        initialModes = ['vente', 'location'];
+        initialModes = ['vente'];
       } else if (editingProduct.mode) {
         initialModes = [editingProduct.mode];
       }
 
-      // Reverse map DB values to UI labels
-      setMode(initialModes.map(m => {
+      // Normalize to UI labels, keep only first mode (exclusive)
+      const mapped = initialModes.map(m => {
         if (m === 'sale') return 'vente';
         if (m === 'rental') return 'location';
         return m;
-      }));
+      }).filter((m: string) => m === 'vente' || m === 'location' || m === 'sur-commande');
+      if (mapped.includes('sur-commande')) {
+        setMode(['sur-commande']);
+      } else if (mapped.includes('location')) {
+        setMode(['location']);
+      } else {
+        setMode(['vente']);
+      }
 
       // Handle environment (convert from old string format if necessary)
       let initialTypes: any[] = [];

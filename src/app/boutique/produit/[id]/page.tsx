@@ -195,7 +195,6 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [purchaseType, setPurchaseType] = useState<'achat' | 'location'>('achat');
   const [selectedMedia, setSelectedMedia] = useState(0);
   const [thumbStart, setThumbStart] = useState(0);
   const maxVisibleThumbs = 4;
@@ -420,15 +419,6 @@ export default function ProductDetailPage() {
   const canRent = product?.availableFor?.includes('rental') ?? false;
   const canBuy = product?.availableFor?.includes('sale') ?? true;
   const canQuote = product?.availableFor?.includes('sur-commande') ?? false;
-
-  useEffect(() => {
-    if (canRent && !canBuy && purchaseType !== 'location') {
-      setPurchaseType('location');
-    }
-    if (canBuy && !canRent && purchaseType !== 'achat') {
-      setPurchaseType('achat');
-    }
-  }, [canRent, canBuy, product?.id]);
 
   const effectivePrice = selectedVariant?.price ?? product?.price ?? 0;
   const effectiveMedia = selectedVariant?.image
@@ -1554,23 +1544,7 @@ export default function ProductDetailPage() {
                   )}
                 </div>
               </div>
-              {(canBuy || canRent) && (
-                <div className="flex border-b border-gray-200/40 mb-3 mt-2">
-                  {canBuy && (
-                    <button onClick={() => setPurchaseType('achat')}
-                      className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${purchaseType === 'achat' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
-                      {t('product.purchase')}
-                    </button>
-                  )}
-                  {canRent && (
-                    <button onClick={() => setPurchaseType('location')}
-                      className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${purchaseType === 'location' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
-                      {t('product.rental')}
-                    </button>
-                  )}
-                </div>
-              )}
-              {canQuote && !canBuy && !canRent ? (
+              {canQuote ? (
                 quoteDone ? (
                   <div className="flex flex-col gap-3 mt-2">
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
@@ -1588,7 +1562,7 @@ export default function ProductDetailPage() {
                     <FileText size={15} /> {t('product.requestQuote')}
                   </button>
                 )
-              ) : purchaseType === 'location' && locationCompleted ? (
+              ) : canRent && locationCompleted ? (
                 <div className="flex flex-col gap-3 mt-2">
                   <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
                     <p className="text-sm font-semibold text-emerald-800">{t('product.readyForRental')}</p>
@@ -1601,7 +1575,7 @@ export default function ProductDetailPage() {
                     <Store size={15} /> {t('product.continueShopping')}
                   </button>
                 </div>
-              ) : purchaseType === 'location' ? (
+              ) : canRent ? (
                 <button onClick={() => setShowRentalContent(true)}
                   className="w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
                 >
@@ -1911,7 +1885,7 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {canQuote && !canBuy && !canRent ? (
+            {canQuote ? (
             <div className="flex flex-col gap-3 mb-6">
               {quoteDone ? (
                 <div className="flex flex-col gap-3">
@@ -1938,105 +1912,82 @@ export default function ProductDetailPage() {
                 </>
               )}
             </div>
-            ) : (
-            <>
-            <div className="flex border-b border-gray-200/40 mb-6">
-              {canBuy && (
-                <button
-                  onClick={() => setPurchaseType('achat')}
-                  className={`px-6 py-3 text-sm font-semibold border-b-2 transition-colors ${purchaseType === 'achat' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-                >
-                  {t('product.purchase')}
-                </button>
-              )}
-              {canRent && (
-                <button
-                  onClick={() => setPurchaseType('location')}
-                  className={`px-6 py-3 text-sm font-semibold border-b-2 transition-colors ${purchaseType === 'location' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
-                >
-                  {t('product.rental')}
-                </button>
-              )}
-            </div>
-
+            ) : canRent ? (
             <div className="flex flex-col gap-3 mb-6">
-              {purchaseType === 'location' ? (
-                locationCompleted ? (
-                  <div className="flex flex-col gap-3">
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-                      <p className="text-sm font-semibold text-emerald-800">{t('product.readyForRental')}</p>
-                      <p className="text-xs text-emerald-600 mt-1">{t('product.rentalInfoAdded')}</p>
-                    </div>
-                    <button onClick={() => router.push('/boutique/panier')} className="w-full bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
-                      <ShoppingBag size={16} />
-                      {t('product.viewCart')}
-                    </button>
-                    <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all flex items-center justify-center gap-2">
-                      <Store size={16} />
-                      {t('product.continueShopping')}
-                    </button>
+              {locationCompleted ? (
+                <div className="flex flex-col gap-3">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                    <p className="text-sm font-semibold text-emerald-800">{t('product.readyForRental')}</p>
+                    <p className="text-xs text-emerald-600 mt-1">{t('product.rentalInfoAdded')}</p>
                   </div>
-                ) : (
-                  <button onClick={() => setShowRentalContent(true)}
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    <CalendarDays size={18} /> {t('product.rental')}
+                  <button onClick={() => router.push('/boutique/panier')} className="w-full bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
+                    <ShoppingBag size={16} />
+                    {t('product.viewCart')}
                   </button>
-                )
+                  <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all flex items-center justify-center gap-2">
+                    <Store size={16} />
+                    {t('product.continueShopping')}
+                  </button>
+                </div>
               ) : (
-                <>
-                  <div className="flex items-center gap-2">
-                    {isOutOfStock ? (
-                      <span className="inline-block w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
-                    ) : availableStock <= 3 ? (
-                      <span className="inline-block w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
-                    ) : (
-                      <span className="inline-block w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
-                    )}
-                    {isOutOfStock ? (
-                      <span className="text-xs font-medium text-red-500">Rupture de stock</span>
-                    ) : availableStock <= 3 ? (
-                      <span className="text-xs font-medium text-orange-500">Plus que {availableStock} en stock</span>
-                    ) : (
-                      <span className="text-xs font-medium text-green-600">En stock</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center shrink-0">
-                      <button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        disabled={isOutOfStock || quantity <= 1}
-                        className="w-10 h-10 flex items-center justify-center bg-[#1a1f2e] rounded-l-lg border border-blue-500/30 border-r-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <Minus size={13} />
-                      </button>
-                      <input
-                        type="number"
-                        value={quantity}
-                        onChange={(e) => setQuantity(Math.min(availableStock, Math.max(1, parseInt(e.target.value) || 1)))}
-                        disabled={isOutOfStock}
-                        className="w-12 h-10 text-center text-sm font-bold bg-[#1a1f2e] text-white border border-blue-500/30 focus:outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none disabled:opacity-40 disabled:cursor-not-allowed"
-                      />
-                      <button
-                        onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
-                        disabled={isOutOfStock || quantity >= availableStock}
-                        className="w-10 h-10 flex items-center justify-center bg-[#1a1f2e] rounded-r-lg border border-blue-500/30 border-l-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <Plus size={13} />
-                      </button>
-                    </div>
-                    <button onClick={handleAddToCart} disabled={isOutOfStock} className="flex-1 bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
-                      <ShoppingBag size={16} />
-                      {isOutOfStock ? 'Indisponible' : t('product.addToCart')}
-                    </button>
-                  </div>
-                  <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">
-                    {isOutOfStock ? 'Indisponible' : t('product.buyNow')}
-                  </button>
-                </>
+                <button onClick={() => setShowRentalContent(true)}
+                  className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <CalendarDays size={18} /> {t('product.rental')}
+                </button>
               )}
             </div>
-            </>
+            ) : (
+            <div className="flex flex-col gap-3 mb-6">
+              <div className="flex items-center gap-2">
+                {isOutOfStock ? (
+                  <span className="inline-block w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                ) : availableStock <= 3 ? (
+                  <span className="inline-block w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
+                ) : (
+                  <span className="inline-block w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
+                )}
+                {isOutOfStock ? (
+                  <span className="text-xs font-medium text-red-500">Rupture de stock</span>
+                ) : availableStock <= 3 ? (
+                  <span className="text-xs font-medium text-orange-500">Plus que {availableStock} en stock</span>
+                ) : (
+                  <span className="text-xs font-medium text-green-600">En stock</span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center shrink-0">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={isOutOfStock || quantity <= 1}
+                    className="w-10 h-10 flex items-center justify-center bg-[#1a1f2e] rounded-l-lg border border-blue-500/30 border-r-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <Minus size={13} />
+                  </button>
+                  <input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.min(availableStock, Math.max(1, parseInt(e.target.value) || 1)))}
+                    disabled={isOutOfStock}
+                    className="w-12 h-10 text-center text-sm font-bold bg-[#1a1f2e] text-white border border-blue-500/30 focus:outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none disabled:opacity-40 disabled:cursor-not-allowed"
+                  />
+                  <button
+                    onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
+                    disabled={isOutOfStock || quantity >= availableStock}
+                    className="w-10 h-10 flex items-center justify-center bg-[#1a1f2e] rounded-r-lg border border-blue-500/30 border-l-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <Plus size={13} />
+                  </button>
+                </div>
+                <button onClick={handleAddToCart} disabled={isOutOfStock} className="flex-1 bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                  <ShoppingBag size={16} />
+                  {isOutOfStock ? 'Indisponible' : t('product.addToCart')}
+                </button>
+              </div>
+              <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                {isOutOfStock ? 'Indisponible' : t('product.buyNow')}
+              </button>
+            </div>
             )}
 
 
