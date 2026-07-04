@@ -6,6 +6,7 @@ import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Do
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, fetchUpsellProducts, formatPrice, getModeBadge } from '@/lib/boutique-data';
+import { ActionButton, formatProductPriceLabel } from '@/components/boutique/ProductActionButton';
 import { firestore } from '@/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Product, ProductVariant, GalleryItem } from '@/lib/boutique-data';
@@ -249,10 +250,23 @@ export default function ProductDetailPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
   useLayoutEffect(() => {
+    const checkWrap = (el: HTMLDivElement) => {
+      const children = Array.from(el.children) as HTMLElement[];
+      if (children.length < 2) return false;
+      const firstTop = children[0].offsetTop;
+      return children.some(c => c.offsetTop > firstTop);
+    };
     const el1 = variantWrapRef1.current;
     const el2 = variantWrapRef2.current;
-    if (el1) setVariantOverflow1(el1.scrollHeight > el1.clientHeight);
-    if (el2) setVariantOverflow2(el2.scrollHeight > el2.clientHeight);
+    if (el1) setVariantOverflow1(checkWrap(el1));
+    if (el2) setVariantOverflow2(checkWrap(el2));
+    const ro = new ResizeObserver(() => {
+      if (el1) setVariantOverflow1(checkWrap(el1));
+      if (el2) setVariantOverflow2(checkWrap(el2));
+    });
+    if (el1) ro.observe(el1);
+    if (el2) ro.observe(el2);
+    return () => ro.disconnect();
   });
 
   useEffect(() => {
@@ -584,7 +598,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F5F5' }}>
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('product.notFound')}</h1>
-          <button onClick={() => router.push('/boutique')} className="text-blue-600 hover:underline">{t('product.backToShop')}</button>
+          <button onClick={() => router.push('/boutique')} className="px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-blue-600 transition-all">{t('product.backToShop')}</button>
         </div>
       </div>
     );
@@ -607,13 +621,14 @@ export default function ProductDetailPage() {
             {showRentalContent ? (
             <div className="max-w-2xl">
               <button onClick={() => setShowRentalContent(false)}
-                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors cursor-pointer mb-6"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white text-xs font-semibold rounded-xl hover:bg-blue-600 transition-all mb-6"
               >
                 <ChevronLeft size={14} />
                 Retour au produit
               </button>
               <BoutiqueRentalFlow
                 product={product}
+                dailyRate={effectivePrice}
                 onComplete={() => {
                   setShowRentalContent(false);
                   setLocationCompleted(true);
@@ -623,7 +638,7 @@ export default function ProductDetailPage() {
             ) : canQuote && !canBuy && !canRent && showQuoteForm ? (
             <div className="max-w-2xl">
               <button onClick={() => setShowQuoteForm(false)}
-                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors cursor-pointer mb-6"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white text-xs font-semibold rounded-xl hover:bg-blue-600 transition-all mb-6"
               >
                 <ChevronLeft size={14} />
                 Retour au produit
@@ -1149,9 +1164,9 @@ export default function ProductDetailPage() {
               )}
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="flex items-center gap-2 px-3 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors disabled:opacity-30 disabled:cursor-not-allowed group">
-                  <FileText size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">{t('product.datasheet')}</span>
+                <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                  <FileText size={14} />
+                  <span className="text-xs uppercase tracking-wider">{t('product.datasheet')}</span>
                 </button>
                 {product.playStoreUrl && (
                   <button onClick={() => window.open(product.playStoreUrl, '_blank')} className="h-[44px] w-[118px] sm:h-[52px] sm:w-[174px] hover:opacity-90 active:scale-95 transition-all shrink-0">
@@ -1164,23 +1179,23 @@ export default function ProductDetailPage() {
                   </button>
                 )}
                 {product.downloadUrl2 && (
-                  <button onClick={() => window.open(product.downloadUrl2, '_blank')} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors group">
+                  <button onClick={() => window.open(product.downloadUrl2, '_blank')} className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all">
                     {(() => {
                       const Icon = product.downloadCustomIcon2 ? null : (product.downloadIcon2 ? ICON_MAP[product.downloadIcon2] : null) || Download;
-                      return product.downloadCustomIcon2 ? <img src={product.downloadCustomIcon2} className="w-3.5 h-3.5 object-contain text-gray-500 group-hover:text-gray-700 transition-colors" /> : <Icon size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />;
+                      return product.downloadCustomIcon2 ? <img src={product.downloadCustomIcon2} className="w-3.5 h-3.5 object-contain" /> : <Icon size={14} />;
                     })()}
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">
+                    <span className="text-xs uppercase tracking-wider">
                       {product.downloadLabel2 || 'Télécharger'}
                     </span>
                   </button>
                 )}
                 {product.downloadUrl3 && (
-                  <button onClick={() => window.open(product.downloadUrl3, '_blank')} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200/70 rounded-xl hover:border-gray-400 transition-colors group">
+                  <button onClick={() => window.open(product.downloadUrl3, '_blank')} className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all">
                     {(() => {
                       const Icon = product.downloadCustomIcon3 ? null : (product.downloadIcon3 ? ICON_MAP[product.downloadIcon3] : null) || Download;
-                      return product.downloadCustomIcon3 ? <img src={product.downloadCustomIcon3} className="w-3.5 h-3.5 object-contain text-gray-500 group-hover:text-gray-700 transition-colors" /> : <Icon size={14} className="text-gray-500 group-hover:text-gray-700 transition-colors" />;
+                      return product.downloadCustomIcon3 ? <img src={product.downloadCustomIcon3} className="w-3.5 h-3.5 object-contain" /> : <Icon size={14} />;
                     })()}
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">
+                    <span className="text-xs uppercase tracking-wider">
                       {product.downloadLabel3 || 'Télécharger'}
                     </span>
                   </button>
@@ -1192,6 +1207,9 @@ export default function ProductDetailPage() {
             <div className="lg:hidden flex flex-col mb-6 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <span className="text-xs font-bold uppercase tracking-widest text-blue-500 mb-2">{product.category}</span>
               <h1 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h1>
+              {product.description && product.description.length <= 60 && (
+                <p className="text-gray-500 text-sm leading-relaxed mb-3">{product.description}</p>
+              )}
               {product.showRating !== false && (
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex items-center gap-0.5">
@@ -1227,12 +1245,9 @@ export default function ProductDetailPage() {
                     <>
                   <button
                     onClick={() => setShowInfo(!showInfo)}
-                    className="relative flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium group"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg hover:bg-blue-600 transition-all"
                   >
-                    <span className="relative flex items-center justify-center">
-                      <Info size={13} className="relative z-10" />
-                      <span className="absolute inset-0 z-0 animate-ping rounded-full bg-blue-400/40 group-hover:bg-blue-400/60" style={{ animationDuration: '2.5s' }} />
-                    </span>
+                    <Info size={13} />
                     {profileType ? (profileType === 'entreprise' ? ' Profil entreprise ' : ' Profil particulier ') : 'Informations'}
                   </button>
                   {showInfo && (
@@ -1505,10 +1520,8 @@ export default function ProductDetailPage() {
                           })()}
                         </div>
                         <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.name}</h3>
-                        <p className="text-sm font-bold text-gray-900 mb-3">{p.priceDisplay === 'free' ? 'Gratuit' : p.priceDisplay === 'multiprice' ? 'Tarifs multiples' : p.priceDisplay === 'quote' ? 'Sur devis' : p.price > 0 ? formatPrice(p.price) : formatPrice(p.price)}</p>
-                        <button onClick={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(`${p.name} ajouté au panier`); }} className="w-full border border-gray-200/70 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all">
-                          Ajouter
-                        </button>
+                        <p className="text-sm font-bold text-gray-900 mb-3">{formatProductPriceLabel(p)}</p>
+                      <ActionButton product={p} onAddToCart={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(`${p.name} ajouté au panier`); }} />
                       </div>
                     ))}
                   </div>
@@ -1581,12 +1594,9 @@ export default function ProductDetailPage() {
                   <>
                 <button
                   onClick={() => setShowInfo(!showInfo)}
-                  className="relative flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium group"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg hover:bg-blue-600 transition-all"
                 >
-                  <span className="relative flex items-center justify-center">
-                    <Info size={13} className="relative z-10" />
-                    <span className="absolute inset-0 z-0 animate-ping rounded-full bg-blue-400/40 group-hover:bg-blue-400/60" style={{ animationDuration: '2.5s' }} />
-                  </span>
+                  <Info size={13} />
                   {profileType ? (profileType === 'entreprise' ? ' Profil entreprise ' : ' Profil particulier ') : t('product.info')}
                 </button>
                   {showInfo && (

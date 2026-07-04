@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProducts, getModeBadge } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
+import { PriceDisplay, ActionButton } from '@/components/boutique/ProductActionButton';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useI18n } from '@/lib/i18n';
 import { calculatePromotionPercent } from '@/lib/pricing-engine';
@@ -353,14 +354,16 @@ export default function BoutiquePage() {
 
   const activeFilterCount = selectedCategories.length + (minRating > 0 ? 1 : 0) + (transactionType !== 'all' ? 1 : 0);
 
-  const handleQuickAdd = (e: React.MouseEvent, product: Product) => {
-    e.stopPropagation();
-    if (product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale')) {
+  const handleQuickAdd = (e: React.MouseEvent | Product, product?: Product) => {
+    const p = product ?? (e as Product);
+    const evt = 'stopPropagation' in e ? e as React.MouseEvent : null;
+    if (evt) evt.stopPropagation();
+    if (p.stock !== undefined && p.stock <= 0 && p.availableFor?.includes('sale')) {
       toast.error(t('boutique.outOfStock'));
       return;
     }
-    addItem({ productId: product.id, name: product.name, price: product.price, image: product.image, category: product.category, type: 'purchase' });
-    toast.success(t('boutique.addedToCart', { name: product.name }));
+    addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' });
+    toast.success(t('boutique.addedToCart', { name: p.name }));
   };
 
   const resetFilters = () => {
@@ -701,16 +704,7 @@ export default function BoutiquePage() {
                   </a>
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-auto gap-2 pt-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-xl font-extrabold text-gray-900">
-                        {product.price > 0 ? (
-                          `${product.price}${'\u20AC'}`
-                        ) : (
-                          product.priceDisplay === 'free' ? 'Gratuit' :
-                          product.priceDisplay === 'multiprice' ? 'Tarifs multiples' :
-                          product.priceDisplay === 'quote' ? 'Sur devis' :
-                          `0${'\u20AC'}`
-                        )}
-                      </span>
+                      <PriceDisplay product={product} />
                       {product.oldPrice && product.oldPrice > product.price && (
                         <>
                           <span className="text-xs text-gray-400 line-through">{product.oldPrice}{'\u20AC'}</span>
@@ -721,17 +715,7 @@ export default function BoutiquePage() {
                       )}
                     </div>
                     {!(product.price > 0) && (product.priceDisplay === 'multiprice' || product.priceDisplay === 'quote') ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          router.push(`/boutique/produit/${product.id}`);
-                        }}
-                        type="button"
-                        className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer w-full md:w-auto"
-                      >
-                        {t('boutique.moreInfo')}
-                      </button>
+                      <ActionButton product={product} onAddToCart={() => handleQuickAdd(product)} />
                     ) : (
                       <button
                         onClick={(e) => handleQuickAdd(e, product)}

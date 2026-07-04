@@ -11,6 +11,7 @@ import CityInput from './CityInput';
 import { validatePhone } from '@/lib/phone-validation';
 import { sendBoutiqueOtp, sendBoutiqueOtpWithResend, verifyBoutiqueOtp } from '@/app/actions/boutique-actions';
 import { getSettings } from '@/app/admin/actions';
+import DateRangePicker from './boutique/DateRangePicker';
 
 interface BoutiqueRentalFlowProps {
   product: {
@@ -21,6 +22,7 @@ interface BoutiqueRentalFlowProps {
     category: string;
     availableFor?: string[];
   };
+  dailyRate?: number;
   onComplete: () => void;
 }
 
@@ -30,7 +32,7 @@ const formatTime = (seconds: number) => {
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRentalFlowProps) {
+export default function BoutiqueRentalFlow({ product, dailyRate, onComplete }: BoutiqueRentalFlowProps) {
   const router = useRouter();
   const { addItem } = useCart();
 
@@ -52,6 +54,15 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [quantity, setQuantity] = useState(1);
 
+  const dailyRatePrice = dailyRate ?? product.price;
+  const rentalDays = (() => {
+    if (!rentalStartDate || !rentalEndDate) return 0;
+    const start = new Date(rentalStartDate);
+    const end = new Date(rentalEndDate);
+    const diff = end.getTime() - start.getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1);
+  })();
+  const rentalUnitPrice = rentalDays * dailyRatePrice;
 
   const [acceptedCgl, setAcceptedCgl] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
@@ -154,7 +165,7 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
     addItem({
       productId: product.id,
       name: product.name,
-      price: product.price,
+      price: rentalUnitPrice,
       image: product.image,
       category: product.category,
       type: 'rental',
@@ -342,48 +353,48 @@ export default function BoutiqueRentalFlow({ product, onComplete }: BoutiqueRent
                 className="w-full rounded-xl px-4 py-3 text-sm font-medium border border-gray-200/70 bg-gray-100/50 text-gray-500 cursor-not-allowed" />
             </div>
 
-            <div className="md:col-span-2 bg-gray-900 rounded-2xl p-5 space-y-4">
-              <div className="flex items-center gap-2">
-                <CalendarDays size={14} className="text-gray-400" />
-                <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.15em]">Période de location</span>
+            <DateRangePicker
+              startDate={rentalStartDate}
+              endDate={rentalEndDate}
+              onStartDateChange={setRentalStartDate}
+              onEndDateChange={setRentalEndDate}
+              attemptedSubmit={attemptedSubmit}
+              className="md:col-span-2"
+            />
+            <div className="md:col-span-2 grid grid-cols-2 gap-3 -mt-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Heure début *</label>
+                <input type="time" value={rentalStartTime} onChange={(e) => setRentalStartTime(e.target.value)}
+                  className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
+                    attemptedSubmit && !rentalStartTime ? 'border-red-400 bg-red-900/20 text-red-200' : 'border-gray-700 bg-gray-800 text-white'
+                  }`} />
+                {attemptedSubmit && !rentalStartTime && <p className="text-red-400 text-[10px] font-bold">▲ Requis</p>}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Date début *</label>
-                  <input type="date" value={rentalStartDate} onChange={(e) => setRentalStartDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
-                      attemptedSubmit && !rentalStartDate ? 'border-red-400 bg-red-900/20 text-red-200' : 'border-gray-700 bg-gray-800 text-white'
-                    }`} />
-                  {attemptedSubmit && !rentalStartDate && <p className="text-red-400 text-[10px] font-bold">▲ Requis</p>}
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Date fin *</label>
-                  <input type="date" value={rentalEndDate} onChange={(e) => setRentalEndDate(e.target.value)}
-                    min={rentalStartDate || new Date().toISOString().split('T')[0]}
-                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
-                      attemptedSubmit && !rentalEndDate ? 'border-red-400 bg-red-900/20 text-red-200' : 'border-gray-700 bg-gray-800 text-white'
-                    }`} />
-                  {attemptedSubmit && !rentalEndDate && <p className="text-red-400 text-[10px] font-bold">▲ Requis</p>}
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Heure début *</label>
-                  <input type="time" value={rentalStartTime} onChange={(e) => setRentalStartTime(e.target.value)}
-                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
-                      attemptedSubmit && !rentalStartTime ? 'border-red-400 bg-red-900/20 text-red-200' : 'border-gray-700 bg-gray-800 text-white'
-                    }`} />
-                  {attemptedSubmit && !rentalStartTime && <p className="text-red-400 text-[10px] font-bold">▲ Requis</p>}
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Heure fin *</label>
-                  <input type="time" value={rentalEndTime} onChange={(e) => setRentalEndTime(e.target.value)}
-                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
-                      attemptedSubmit && !rentalEndTime ? 'border-red-400 bg-red-900/20 text-red-200' : 'border-gray-700 bg-gray-800 text-white'
-                    }`} />
-                  {attemptedSubmit && !rentalEndTime && <p className="text-red-400 text-[10px] font-bold">▲ Requis</p>}
-                </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Heure fin *</label>
+                <input type="time" value={rentalEndTime} onChange={(e) => setRentalEndTime(e.target.value)}
+                  className={`w-full rounded-xl px-3 py-2.5 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
+                    attemptedSubmit && !rentalEndTime ? 'border-red-400 bg-red-900/20 text-red-200' : 'border-gray-700 bg-gray-800 text-white'
+                  }`} />
+                {attemptedSubmit && !rentalEndTime && <p className="text-red-400 text-[10px] font-bold">▲ Requis</p>}
               </div>
             </div>
+
+            {rentalDays > 0 && (
+              <div className="md:col-span-2 bg-emerald-50 border border-emerald-200 rounded-2xl p-5 space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[11px] font-black text-emerald-700 uppercase tracking-[0.15em]">Détail du prix</span>
+                </div>
+                <div className="text-sm text-emerald-800 space-y-1">
+                  <p>Location du <span className="font-bold">{new Date(rentalStartDate).toLocaleDateString('fr-FR')}</span> au <span className="font-bold">{new Date(rentalEndDate).toLocaleDateString('fr-FR')}</span></p>
+                  <p><span className="font-bold">{rentalDays} jours</span> × <span className="font-bold">{dailyRatePrice}€</span> / jour {quantity > 1 && <span>× <span className="font-bold">{quantity}</span></span>}</p>
+                  <div className="pt-2 mt-2 border-t border-emerald-200 flex items-center justify-between">
+                    <span className="text-sm font-bold">Total location</span>
+                    <span className="text-xl font-extrabold">{rentalUnitPrice * quantity}€</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Remarques</label>

@@ -6,6 +6,7 @@ import { ShoppingBag, Trash2, Minus, Plus, Heart, Truck, ArrowRight, ArrowLeft, 
 import { useCart } from '@/contexts/CartContext';
 import { formatPrice, fetchUpsellProducts, getModeBadge } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
+import { ActionButton, formatProductPriceLabel } from '@/components/boutique/ProductActionButton';
 import { toast } from 'sonner';
 import { useProfile } from '@/contexts/ProfileContext';
 
@@ -390,10 +391,8 @@ export default function CartPage() {
                         })()}
                       </div>
                         <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.name}</h3>
-                        <p className="text-sm font-bold text-gray-900 mb-3">{p.priceDisplay === 'free' ? 'Gratuit' : p.priceDisplay === 'multiprice' ? 'Tarifs multiples' : p.priceDisplay === 'quote' ? 'Sur devis' : p.price > 0 ? formatPrice(p.price) : formatPrice(p.price)}</p>
-                      <button onClick={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(`${p.name} ajouté au panier`); }} className="w-full border border-gray-200/70 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all">
-                        Ajouter
-                      </button>
+                        <p className="text-sm font-bold text-gray-900 mb-3">{formatProductPriceLabel(p)}</p>
+                      <ActionButton product={p} onAddToCart={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(`${p.name} ajouté au panier`); }} />
                     </div>
                   ))}
                 </div>
