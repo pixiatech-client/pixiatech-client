@@ -2154,7 +2154,8 @@
         "resetFilters": "Réinitialiser les filtres",
         "badgePopular": "Populaire",
         "badgeNew": "Nouveauté",
-        "badgePromotion": "Promotion"
+        "badgePromotion": "Promotion",
+        "moreInfo": "Plus d'infos"
     },
     "cart": {
         "emptyTitle": "Votre panier est vide",

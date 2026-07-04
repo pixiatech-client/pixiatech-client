@@ -724,14 +724,28 @@ export default function BoutiquePage() {
                         </>
                       )}
                     </div>
-                    <button
-                      onClick={(e) => handleQuickAdd(e, product)}
-                      type="button"
-                      className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer w-full md:w-auto"
-                    >
-                      <ShoppingBag size={14} />
-                      Ajouter
-                    </button>
+                    {product.priceDisplay === 'multiprice' || product.priceDisplay === 'quote' ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          router.push(`/boutique/produit/${product.id}`);
+                        }}
+                        type="button"
+                        className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer w-full md:w-auto"
+                      >
+                        {t('boutique.moreInfo')}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => handleQuickAdd(e, product)}
+                        type="button"
+                        className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer w-full md:w-auto"
+                      >
+                        <ShoppingBag size={14} />
+                        Ajouter
+                      </button>
+                    )}
                   </div>
                 </div>
 

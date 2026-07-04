@@ -2154,7 +2154,8 @@
         "resetFilters": "Reset filters",
         "badgePopular": "Popular",
         "badgeNew": "New",
-        "badgePromotion": "Promotion"
+        "badgePromotion": "Promotion",
+        "moreInfo": "More info"
     },
     "cart": {
         "emptyTitle": "Your cart is empty",
