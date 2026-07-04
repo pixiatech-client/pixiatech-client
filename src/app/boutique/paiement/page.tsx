@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { PayPalScriptProvider, usePayPalScriptReducer, PayPalButtons, FUNDING, PayPalCardFieldsProvider, PayPalNameField, PayPalNumberField, PayPalExpiryField, PayPalCVVField, usePayPalCardFields } from '@paypal/react-paypal-js';
 import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, Mail, Phone, User, ChevronDown, Tag, X, Info, Building2, ArrowLeft, ArrowRight } from 'lucide-react';
 import CityInput from '@/components/CityInput';
+import { useVatValidation } from '@/hooks/useVatValidation';
 import { useCart, type CartItem } from '@/contexts/CartContext';
 import { useI18n } from '@/lib/i18n';
 import { formatPrice } from '@/lib/boutique-data';
@@ -274,8 +275,7 @@ export default function CheckoutPage() {
   const [delivery, setDelivery] = useState({ firstName: '', lastName: '', email: '', phone: '', addressLine1: '', addressLine2: '', postcode: '', city: '', country: 'FR', companyName: '', siren: '', vatNumber: '' });
   const [deliveryErrors, setDeliveryErrors] = useState<Record<string, string>>({});
   const [deliveryTouched, setDeliveryTouched] = useState<Record<string, boolean>>({});
-  const [vatValidated, setVatValidated] = useState(false);
-  const [vatValidating, setVatValidating] = useState(false);
+  const { vatValidated, vatValidating, vatStatus, vatErrorMessage, validate: validateVat, reset: resetVat } = useVatValidation();
   const [deliveryOpen, setDeliveryOpen] = useState(true);
   const [promoInput, setPromoInput] = useState('');
   const [mounted, setMounted] = useState(false);
@@ -1151,48 +1151,42 @@ export default function CheckoutPage() {
                               value={delivery.vatNumber}
                               onChange={e => {
                                 setDelivery(d => ({ ...d, vatNumber: e.target.value }));
-                                if (vatValidated) setVatValidated(false);
+                                if (vatStatus !== 'idle') resetVat();
                               }}
                               onBlur={e => handleDeliveryBlur('vatNumber', e.target.value)}
                               className={`flex-1 px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
-                                vatValidated
+                                vatStatus === 'valid'
                                   ? 'border-emerald-300 bg-emerald-50/30'
-                                  : fieldMeta('vatNumber', delivery.vatNumber).hasError
-                                    ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                                    : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
+                                  : vatStatus === 'invalid'
+                                    ? 'border-red-300 bg-red-50/30'
+                                    : fieldMeta('vatNumber', delivery.vatNumber).hasError
+                                      ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
+                                      : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
                               }`}
                             />
                             <button
                               type="button"
                               disabled={vatValidating || !delivery.vatNumber}
-                              onClick={async () => {
-                                if (!delivery.vatNumber) return;
-                                setVatValidating(true);
-                                try {
-                                  const res = await fetch('/api/boutique/validate-vat', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ vatNumber: delivery.vatNumber }),
-                                  });
-                                  const data = await res.json();
-                                  setVatValidated(data.valid === true);
-                                } catch {
-                                  setVatValidated(false);
-                                } finally {
-                                  setVatValidating(false);
-                                }
-                              }}
+                              onClick={() => validateVat(delivery.vatNumber)}
                               className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                                vatValidated
+                                vatStatus === 'valid'
                                   ? 'bg-emerald-500 text-white'
-                                  : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50'
+                                  : vatStatus === 'invalid'
+                                    ? 'bg-red-500 text-white'
+                                    : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50'
                               }`}
                             >
-                              {vatValidating ? '...' : vatValidated ? '✓ Valide' : 'Valider'}
+                              {vatValidating ? '...' : vatStatus === 'valid' ? '✓ Valide' : vatStatus === 'invalid' ? '✗ Invalide' : 'Valider'}
                             </button>
                           </div>
-                          {vatValidated && (
+                          {vatStatus === 'valid' && (
                             <p className="text-[10px] text-emerald-600 font-semibold mt-1">Numéro de TVA valide — TVA autoliquidée</p>
+                          )}
+                          {vatStatus === 'invalid' && (
+                            <p className="text-[10px] text-red-500 font-semibold mt-1">{vatErrorMessage}</p>
+                          )}
+                          {vatStatus === 'error' && (
+                            <p className="text-[10px] text-amber-600 font-semibold mt-1">{vatErrorMessage}</p>
                           )}
                         </div>
                       </div>

@@ -23,23 +23,40 @@ function formatVatNumber(raw: string): { countryCode: string; number: string } |
 
 async function checkVies(countryCode: string, vatNumber: string): Promise<{ valid: boolean; name?: string; address?: string }> {
   try {
-    const response = await fetch(
-      `https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number/${countryCode}/${vatNumber}`,
-      { signal: AbortSignal.timeout(10000) }
-    );
+    console.log('[VIES] Appel API VIES : countryCode=' + countryCode + ' vatNumber=' + vatNumber);
+
+    const url = 'https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number';
+    const body = JSON.stringify({ countryCode, vatNumber });
+
+    console.log('[VIES] URL:', url);
+    console.log('[VIES] Body:', body);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      signal: AbortSignal.timeout(15000),
+    });
+
+    console.log('[VIES] HTTP Status:', response.status);
+
     if (!response.ok) {
       const text = await response.text().catch(() => '');
-      console.warn(`[VIES] HTTP ${response.status}: ${text}`);
+      console.warn('[VIES] HTTP Error:', response.status, text);
       return { valid: false };
     }
+
     const data = await response.json();
+    console.log('[VIES] Response:', JSON.stringify(data, null, 2));
+    console.log('[VIES] Valid:', data.valid);
+
     return {
       valid: data.valid === true,
       name: data.name || undefined,
       address: data.address || undefined,
     };
-  } catch (err) {
-    console.warn('[VIES] Network error, using fallback validation:', err);
+  } catch (err: any) {
+    console.error('[VIES] Erreur réseau:', err.message);
     return { valid: false };
   }
 }

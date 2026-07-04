@@ -14,6 +14,7 @@ import CityInput from '@/components/CityInput';
 import { useProfile } from '@/contexts/ProfileContext';
 import { PriceLabel } from '@/components/B2BProfileSelector';
 import { useI18n } from '@/lib/i18n';
+import { useVatValidation } from '@/hooks/useVatValidation';
 
 const ICON_MAP: Record<string, any> = {
   screen: Monitor, distance: Eye, puissance: Zap, brightness: SunMedium,
@@ -219,8 +220,7 @@ export default function ProductDetailPage() {
     vatNumber: '',
     comment: '',
   });
-  const [vatValidating, setVatValidating] = useState(false);
-  const [vatValidated, setVatValidated] = useState(false);
+  const { vatValidated, vatValidating, vatStatus, vatErrorMessage, validate: validateVat, reset: resetVat } = useVatValidation();
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteDone, setQuoteDone] = useState(false);
   const [stickyTop, setStickyTop] = useState(194);
@@ -842,45 +842,39 @@ export default function ProductDetailPage() {
                               value={quoteFormData.vatNumber}
                               onChange={e => {
                                 setQuoteFormData(d => ({ ...d, vatNumber: e.target.value }));
-                                if (vatValidated) setVatValidated(false);
+                                if (vatStatus !== 'idle') resetVat();
                               }}
                               className={`flex-1 px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
-                                vatValidated
+                                vatStatus === 'valid'
                                   ? 'border-emerald-300 bg-emerald-50/30'
-                                  : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
+                                  : vatStatus === 'invalid'
+                                    ? 'border-red-300 bg-red-50/30'
+                                    : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
                               }`}
                             />
                             <button
                               type="button"
                               disabled={vatValidating || !quoteFormData.vatNumber}
-                              onClick={async () => {
-                                if (!quoteFormData.vatNumber) return;
-                                setVatValidating(true);
-                                try {
-                                  const res = await fetch('/api/boutique/validate-vat', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ vatNumber: quoteFormData.vatNumber }),
-                                  });
-                                  const data = await res.json();
-                                  setVatValidated(data.valid === true);
-                                } catch {
-                                  setVatValidated(false);
-                                } finally {
-                                  setVatValidating(false);
-                                }
-                              }}
+                              onClick={() => validateVat(quoteFormData.vatNumber)}
                               className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                                vatValidated
+                                vatStatus === 'valid'
                                   ? 'bg-emerald-500 text-white'
-                                  : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50'
+                                  : vatStatus === 'invalid'
+                                    ? 'bg-red-500 text-white'
+                                    : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50'
                               }`}
                             >
-                              {vatValidating ? '...' : vatValidated ? '✓ Valide' : 'Valider'}
+                              {vatValidating ? '...' : vatStatus === 'valid' ? '✓ Valide' : vatStatus === 'invalid' ? '✗ Invalide' : 'Valider'}
                             </button>
                           </div>
-                          {vatValidated && (
+                          {vatStatus === 'valid' && (
                             <p className="text-[10px] text-emerald-600 font-semibold mt-1">Numéro de TVA valide — TVA autoliquidée</p>
+                          )}
+                          {vatStatus === 'invalid' && (
+                            <p className="text-[10px] text-red-500 font-semibold mt-1">{vatErrorMessage}</p>
+                          )}
+                          {vatStatus === 'error' && (
+                            <p className="text-[10px] text-amber-600 font-semibold mt-1">{vatErrorMessage}</p>
                           )}
                         </div>
                       </div>
