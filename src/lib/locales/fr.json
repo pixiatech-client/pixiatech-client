@@ -1004,7 +1004,20 @@
             "errorPermissionDenied": "Accès refusé à {collection}. Vérifiez vos permissions Firestore (Projet : {projectId})",
             "errorDatabaseUnavailable": "La base de données est temporairement indisponible.",
             "errorFirebase": "Erreur Firebase ({code}) : {message}",
-            "tile": "tuile"
+            "tile": "tuile",
+            "table": "Tableau",
+            "insertTable": "Insérer un tableau",
+            "addColumnBefore": "Ajouter colonne avant",
+            "addColumnAfter": "Ajouter colonne après",
+            "deleteColumn": "Supprimer colonne",
+            "addRowBefore": "Ajouter ligne avant",
+            "addRowAfter": "Ajouter ligne après",
+            "deleteRow": "Supprimer ligne",
+            "mergeCells": "Fusionner cellules",
+            "splitCell": "Diviser cellule",
+            "toggleHeaderRow": "Entête de ligne",
+            "toggleHeaderColumn": "Entête de colonne",
+            "deleteTable": "Supprimer le tableau"
         },
         "quoteDetails": {
             "loading": "Chargement de l'estimation…",

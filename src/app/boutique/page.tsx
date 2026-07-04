@@ -6,7 +6,7 @@ import { ArrowLeft, ShoppingBag, SlidersHorizontal, ChevronDown, Star, Sparkles,
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
-import { fetchBoutiqueProducts } from '@/lib/boutique-data';
+import { fetchBoutiqueProducts, getModeBadge } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useI18n } from '@/lib/i18n';
@@ -35,18 +35,6 @@ const renderStars = (rating: number, size: number) => {
   }
   return stars;
 };
-
-function getModeBadge(product: Product): { label: string; colors: string } | null {
-  const avail = product.availableFor ?? [];
-  if (avail.includes('sur-commande')) return { label: 'Sur commande', colors: 'bg-amber-500 text-white' };
-  const hasSale = avail.includes('sale');
-  const hasRental = avail.includes('rental');
-  if (hasSale && product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale')) return { label: 'Rupture de stock', colors: 'bg-red-500 text-white' };
-  if (hasSale && hasRental) return { label: 'Vente & Location', colors: 'bg-violet-500 text-white' };
-  if (hasSale) return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
-  if (hasRental) return { label: 'Location', colors: 'bg-blue-500 text-white' };
-  return null;
-}
 
 function FilterDrawer({ open, onClose, categories, selectedCategories, onCategoriesChange, minRating, onMinRatingChange, transactionType, onTransactionTypeChange, onReset, activeCount }: {
   open: boolean; onClose: () => void;

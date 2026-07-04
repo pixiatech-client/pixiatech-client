@@ -2,10 +2,10 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info, User, Mail, Phone, Building2, Calculator, Package, Activity, Smartphone, Tv, Grid, Maximize, SunMedium, Upload, File, Folder, Image as ImageIcon, Video, Music, Printer, Bluetooth, Wifi, Tablet, Laptop, Mouse, Keyboard, Headphones, Speaker, Mic, Camera, Settings, Heart, Bell, Home, Search, MessageSquare, Calendar, Clock, MapPin, Globe, Lock, HelpCircle, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Share2, Link as LinkIcon, Gift, ShieldCheck, CreditCard, Award, BookOpen, ShoppingCart, Users, RefreshCw, Menu, Send, Navigation, ZoomIn, ZoomOut } from 'lucide-react';
+import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Download, Play, Maximize2, Monitor, Cpu, Zap, Eye, LayoutGrid, Sun, Truck, Layers, Settings2, X, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Info, User, Mail, Phone, Building2, Calculator, Package, Activity, Smartphone, Tv, Grid, Maximize, SunMedium, Upload, File, Folder, Image as ImageIcon, Video, Music, Printer, Bluetooth, Wifi, Tablet, Laptop, Mouse, Keyboard, Headphones, Speaker, Mic, Camera, Settings, Heart, Bell, Home, Search, MessageSquare, Calendar, Clock, MapPin, Globe, Lock, HelpCircle, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, Share2, Link as LinkIcon, Gift, ShieldCheck, CreditCard, Award, BookOpen, ShoppingCart, Users, RefreshCw, Menu, Send, Navigation, ZoomIn, ZoomOut, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
-import { fetchBoutiqueProduct, formatPrice } from '@/lib/boutique-data';
+import { fetchBoutiqueProduct, fetchUpsellProducts, formatPrice, getModeBadge } from '@/lib/boutique-data';
 import { firestore } from '@/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Product, ProductVariant, GalleryItem } from '@/lib/boutique-data';
@@ -204,7 +204,9 @@ export default function ProductDetailPage() {
   const [taxRate, setTaxRate] = useState(20);
   const [showInfo, setShowInfo] = useState(false);
   const [locationCompleted, setLocationCompleted] = useState(false);
+  const [showRentalContent, setShowRentalContent] = useState(false);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
+  const [upsellProducts, setUpsellProducts] = useState<Product[]>([]);
   const [quoteFormData, setQuoteFormData] = useState({
     firstName: '',
     lastName: '',
@@ -373,6 +375,11 @@ export default function ProductDetailPage() {
     if (active.length > 0) { setSelectedVariant(active[0]); committedVariantRef.current = active[0]; }
   }, [product]);
 
+  useEffect(() => {
+    if (!product) return;
+    fetchUpsellProducts([product.id]).then(setUpsellProducts);
+  }, [product]);
+
   const galleryImages: MediaItem[] = product?.gallery && product.gallery.length > 0
     ? [product.image, ...product.gallery].filter((x): x is string | GalleryItem => x != null).map(x => {
         if (typeof x === 'string') return { type: 'image' as const, url: x };
@@ -388,6 +395,15 @@ export default function ProductDetailPage() {
   const canRent = product?.availableFor?.includes('rental') ?? false;
   const canBuy = product?.availableFor?.includes('sale') ?? true;
   const canQuote = product?.availableFor?.includes('sur-commande') ?? false;
+
+  useEffect(() => {
+    if (canRent && !canBuy && purchaseType !== 'location') {
+      setPurchaseType('location');
+    }
+    if (canBuy && !canRent && purchaseType !== 'achat') {
+      setPurchaseType('achat');
+    }
+  }, [canRent, canBuy, product?.id]);
 
   const effectivePrice = selectedVariant?.price ?? product?.price ?? 0;
   const effectiveMedia = selectedVariant?.image
@@ -578,9 +594,23 @@ export default function ProductDetailPage() {
 
       <main className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pt-24 pb-16">
         <div className="lg:mr-[450px]">
-          {purchaseType === 'location' && !locationCompleted ? (
-            <BoutiqueRentalFlow product={product} onComplete={() => setLocationCompleted(true)} />
-          ) : canQuote && !canBuy && !canRent && showQuoteForm ? (
+            {showRentalContent ? (
+            <div className="max-w-2xl">
+              <button onClick={() => setShowRentalContent(false)}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors cursor-pointer mb-6"
+              >
+                <ChevronLeft size={14} />
+                Retour au produit
+              </button>
+              <BoutiqueRentalFlow
+                product={product}
+                onComplete={() => {
+                  setShowRentalContent(false);
+                  setLocationCompleted(true);
+                }}
+              />
+            </div>
+            ) : canQuote && !canBuy && !canRent && showQuoteForm ? (
             <div className="max-w-2xl">
               <button onClick={() => setShowQuoteForm(false)}
                 className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors cursor-pointer mb-6"
@@ -1001,7 +1031,17 @@ export default function ProductDetailPage() {
                 <ChevronLeft size={14} />
                 Retour
               </button>
-              <div className="bg-white rounded-2xl shadow-sm w-full mt-[15px] mr-5 p-5">
+              <div className="bg-white rounded-2xl shadow-sm w-full mt-[15px] mr-5 p-5 relative">
+                {(() => {
+                  const modeBadge = getModeBadge(product);
+                  return modeBadge ? (
+                    <div className="absolute top-7 right-7 z-10 flex flex-col gap-1 items-end">
+                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider shadow-sm ${modeBadge.colors}`}>
+                        {modeBadge.label}
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
                 <div className="cursor-pointer w-full aspect-[4/3] overflow-hidden rounded-xl" onClick={() => { setSelectedVariant(null); openLightbox(selectedMedia); }}>
                   {effectiveMedia ? (
                     effectiveMedia.type === 'video' ? (
@@ -1027,13 +1067,6 @@ export default function ProductDetailPage() {
                   )}
                 </div>
               </div>
-
-              {/* Carte sous la photo */}
-              {product?.description && (
-                <div className="mt-4 bg-white rounded-2xl border border-gray-200/70 p-5">
-                  <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
-                </div>
-              )}
 
               {mediaItems.length > 1 && (
                 <>
@@ -1162,14 +1195,14 @@ export default function ProductDetailPage() {
                   {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                     <span className="text-base text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
                   )}
-                  {product && product.price > 0 ? (
-                    <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
-                  ) : product?.priceDisplay === 'free' ? (
+                  {product?.priceDisplay === 'free' ? (
                     <div className="text-2xl font-bold text-emerald-600">Gratuit</div>
                   ) : product?.priceDisplay === 'multiprice' && !selectedVariant ? (
                     <div className="text-2xl font-bold text-gray-900">Tarifs multiples</div>
                   ) : product?.priceDisplay === 'quote' ? (
                     <div className="text-2xl font-bold text-gray-900">Sur devis</div>
+                  ) : product && product.price > 0 ? (
+                    <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
                   ) : (
                     <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
                   )}
@@ -1333,6 +1366,22 @@ export default function ProductDetailPage() {
                   )}
                 </div>
               </div>
+              {(canBuy || canRent) && (
+                <div className="flex border-b border-gray-200/40 mb-3 mt-2">
+                  {canBuy && (
+                    <button onClick={() => setPurchaseType('achat')}
+                      className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${purchaseType === 'achat' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+                      {t('product.purchase')}
+                    </button>
+                  )}
+                  {canRent && (
+                    <button onClick={() => setPurchaseType('location')}
+                      className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${purchaseType === 'location' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+                      {t('product.rental')}
+                    </button>
+                  )}
+                </div>
+              )}
               {canQuote && !canBuy && !canRent ? (
                 quoteDone ? (
                   <div className="flex flex-col gap-3 mt-2">
@@ -1351,6 +1400,25 @@ export default function ProductDetailPage() {
                     <FileText size={15} /> {t('product.requestQuote')}
                   </button>
                 )
+              ) : purchaseType === 'location' && locationCompleted ? (
+                <div className="flex flex-col gap-3 mt-2">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                    <p className="text-sm font-semibold text-emerald-800">{t('product.readyForRental')}</p>
+                    <p className="text-xs text-emerald-600 mt-1">{t('product.rentalInfoAdded')}</p>
+                  </div>
+                  <button onClick={() => router.push('/boutique/panier')} className="w-full bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
+                    <ShoppingBag size={15} /> {t('product.viewCart')}
+                  </button>
+                  <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all flex items-center justify-center gap-2">
+                    <Store size={15} /> {t('product.continueShopping')}
+                  </button>
+                </div>
+              ) : purchaseType === 'location' ? (
+                <button onClick={() => setShowRentalContent(true)}
+                  className="w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <CalendarDays size={15} /> {t('product.rental')}
+                </button>
               ) : (
                 <>
               <button onClick={handleAddToCart} disabled={isOutOfStock} className="w-full bg-gray-900 text-white py-2.5 px-4 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
@@ -1362,6 +1430,12 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="mt-28 border-t border-gray-200/40 pt-16 space-y-24">
+              {product?.description && (
+                <div className="bg-white rounded-2xl border border-gray-200/70 p-5">
+                  <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
+                </div>
+              )}
+
               {(product.descriptionDetaillee || product.longDescription) && (
               <section>
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('product.description')}</h2>
@@ -1403,6 +1477,33 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
               </section>
+              {upsellProducts.length > 0 && (
+                <section>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Complétez votre installation</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {upsellProducts.map((p) => (
+                      <div key={p.id} className="bg-white rounded-2xl border border-gray-200/70 p-4 group hover:shadow-md transition-all duration-300">
+                        <div onClick={() => router.push(`/boutique/produit/${p.id}`)} className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-4 cursor-pointer relative">
+                          <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${p.image})` }} />
+                          {(() => {
+                            const b = getModeBadge(p);
+                            return b ? (
+                              <div className="absolute top-1.5 right-1.5 z-10">
+                                <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-sm ${b.colors}`}>{b.label}</span>
+                              </div>
+                            ) : null;
+                          })()}
+                        </div>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.name}</h3>
+                        <p className="text-sm font-bold text-gray-900 mb-3">{p.priceDisplay === 'free' ? 'Gratuit' : p.priceDisplay === 'multiprice' ? 'Tarifs multiples' : p.priceDisplay === 'quote' ? 'Sur devis' : p.price > 0 ? formatPrice(p.price) : formatPrice(p.price)}</p>
+                        <button onClick={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(`${p.name} ajouté au panier`); }} className="w-full border border-gray-200/70 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all">
+                          Ajouter
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           </div>
           )}
@@ -1448,14 +1549,14 @@ export default function ProductDetailPage() {
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="text-lg text-gray-400 line-through font-medium">{formatPrice(effectiveOldPrice)}</span>
                 )}
-                {product && product.price > 0 ? (
-                  <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
-                ) : product?.priceDisplay === 'free' ? (
+                {product?.priceDisplay === 'free' ? (
                   <div className="text-3xl font-bold text-emerald-600">Gratuit</div>
                 ) : product?.priceDisplay === 'multiprice' && !selectedVariant ? (
                   <div className="text-3xl font-bold text-gray-900">Tarifs multiples</div>
                 ) : product?.priceDisplay === 'quote' ? (
                   <div className="text-3xl font-bold text-gray-900">Sur devis</div>
+                ) : product && product.price > 0 ? (
+                  <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
                 ) : (
                   <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>
                 )}
@@ -1809,10 +1910,11 @@ export default function ProductDetailPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-3 py-6 px-4 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                    <CalendarDays size={24} className="text-gray-400" />
-                    <p className="text-sm text-gray-500 text-center">{t('product.fillRentalForm')}</p>
-                  </div>
+                  <button onClick={() => setShowRentalContent(true)}
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <CalendarDays size={18} /> {t('product.rental')}
+                  </button>
                 )
               ) : (
                 <>

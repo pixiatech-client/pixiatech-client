@@ -12,7 +12,12 @@ import Highlight from '@tiptap/extension-highlight';
 import FontFamily from '@tiptap/extension-font-family';
 import Youtube from '@tiptap/extension-youtube';
 import Bold from '@tiptap/extension-bold';
+import { Table } from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 
 interface TipTapEditorProps {
   value: string;
@@ -81,15 +86,18 @@ function DropdownBtn({ children, onClick }: { children: React.ReactNode; onClick
 }
 
 function MenuBar({ editor }: { editor: Editor | null }) {
+  const { t } = useI18n();
   const [typographyOpen, setTypographyOpen] = useState(false);
   const [textSizeOpen, setTextSizeOpen] = useState(false);
   const [textColorOpen, setTextColorOpen] = useState(false);
   const [fontFamilyOpen, setFontFamilyOpen] = useState(false);
+  const [tableOpen, setTableOpen] = useState(false);
 
   const typoRef = useClickOutside(useCallback(() => setTypographyOpen(false), []));
   const tsRef = useClickOutside(useCallback(() => setTextSizeOpen(false), []));
   const tcRef = useClickOutside(useCallback(() => setTextColorOpen(false), []));
   const ffRef = useClickOutside(useCallback(() => setFontFamilyOpen(false), []));
+  // tableRef removed: table panel is now an inline accordion, not a floating dropdown
 
   if (!editor) return null;
 
@@ -252,7 +260,122 @@ function MenuBar({ editor }: { editor: Editor | null }) {
             </div>
           )}
         </div>
+
+        <div className="w-px h-4 bg-slate-200" />
+
+        <button
+          type="button"
+          onClick={() => setTableOpen(!tableOpen)}
+          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors border ${
+            tableOpen
+              ? 'bg-slate-200 text-slate-900 border-slate-300'
+              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+          }`}
+        >
+          <svg className="w-3.5 h-3.5 shrink-0" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15v3c0 .5523.44772 1 1 1h16c.5523 0 1-.4477 1-1v-3M3 15V6c0-.55228.44772-1 1-1h16c.5523 0 1 .44772 1 1v9M3 15h18M8 4v16m8-16v16"/><path stroke="currentColor" strokeLinecap="round" strokeWidth={2} d="M3 10h18"/></svg>
+          Tableau
+          <svg className={`w-3 h-3 transition-transform ${tableOpen ? 'rotate-180' : ''}`} aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19 9-7 7-7-7"/></svg>
+        </button>
       </div>
+
+      {/* Table accordion — inline panel, stays open while editing */}
+      {tableOpen && (
+        <div className="border-t border-slate-200 bg-slate-50 px-3 py-2">
+          {!editor.isActive('table') ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 font-medium uppercase tracking-wide mr-1">Insérer</span>
+              <button
+                type="button"
+                title={t('admin.productManagement.insertTable') || 'Insérer un tableau (3×3)'}
+                onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+              >
+                <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15v3c0 .5523.44772 1 1 1h16c.5523 0 1-.4477 1-1v-3M3 15V6c0-.55228.44772-1 1-1h16c.5523 0 1 .44772 1 1v9M3 15h18M8 4v16m8-16v16"/><path stroke="currentColor" strokeLinecap="round" strokeWidth={2} d="M3 10h18"/></svg>
+              </button>
+              <span className="text-xs text-slate-500">Tableau 3 × 3</span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-1">
+              {/* ── Columns ── */}
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide px-1">Col.</span>
+              <button type="button" title={t('admin.productManagement.addColumnBefore') || 'Colonne avant'}
+                onClick={() => editor.chain().focus().addColumnBefore().run()}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="7" height="14" rx="1" stroke="currentColor" strokeWidth="2"/><path d="M17 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M21 9h-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M17 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M17 15h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M14 12h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+              <button type="button" title={t('admin.productManagement.addColumnAfter') || 'Colonne après'}
+                onClick={() => editor.chain().focus().addColumnAfter().run()}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="5" width="7" height="14" rx="1" stroke="currentColor" strokeWidth="2"/><path d="M7 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M3 9h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M3 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M3 15h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M10 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+              <button type="button" title={t('admin.productManagement.deleteColumn') || 'Supprimer colonne'}
+                onClick={() => editor.chain().focus().deleteColumn().run()}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="7" height="14" rx="1" stroke="currentColor" strokeWidth="2"/><rect x="14" y="5" width="7" height="14" rx="1" stroke="currentColor" strokeWidth="2"/><path d="M10 9l4 6M14 9l-4 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              </button>
+
+              <div className="w-px h-5 bg-slate-300 mx-0.5" />
+
+              {/* ── Rows ── */}
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide px-1">Lig.</span>
+              <button type="button" title={t('admin.productManagement.addRowBefore') || 'Ligne avant'}
+                onClick={() => editor.chain().focus().addRowBefore().run()}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="7" rx="1" stroke="currentColor" strokeWidth="2"/><path d="M12 14v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M9 17h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M5 14h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+              <button type="button" title={t('admin.productManagement.addRowAfter') || 'Ligne après'}
+                onClick={() => editor.chain().focus().addRowAfter().run()}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="14" width="18" height="7" rx="1" stroke="currentColor" strokeWidth="2"/><path d="M12 10V4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M9 7h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M5 14h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+              <button type="button" title={t('admin.productManagement.deleteRow') || 'Supprimer ligne'}
+                onClick={() => editor.chain().focus().deleteRow().run()}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="7" rx="1" stroke="currentColor" strokeWidth="2"/><rect x="3" y="14" width="18" height="7" rx="1" stroke="currentColor" strokeWidth="2"/><path d="M9 9.5l6 5M15 9.5l-6 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              </button>
+
+              <div className="w-px h-5 bg-slate-300 mx-0.5" />
+
+              {/* ── Cells ── */}
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide px-1">Cell.</span>
+              <button type="button" title={t('admin.productManagement.mergeCells') || 'Fusionner cellules'}
+                onClick={() => editor.chain().focus().mergeCells().run()}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="1" stroke="currentColor" strokeWidth="2"/><path d="M12 5v14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="2 2"/><path d="M9 12l3-3 3 3M9 12l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button type="button" title={t('admin.productManagement.splitCell') || 'Diviser cellule'}
+                onClick={() => editor.chain().focus().splitCell().run()}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="1" stroke="currentColor" strokeWidth="2"/><path d="M12 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M15 9l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M9 9l-3 3 3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+
+              <div className="w-px h-5 bg-slate-300 mx-0.5" />
+
+              {/* ── Header ── */}
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wide px-1">En-tête</span>
+              <button type="button" title={t('admin.productManagement.toggleHeaderRow') || 'Basculer en-tête ligne'}
+                onClick={() => editor.chain().focus().toggleHeaderRow().run()}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="6" rx="1" fill="currentColor" fillOpacity=".2" stroke="currentColor" strokeWidth="2"/><path d="M3 14h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+              <button type="button" title={t('admin.productManagement.toggleHeaderColumn') || 'Basculer en-tête colonne'}
+                onClick={() => editor.chain().focus().toggleHeaderColumn().run()}
+                className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="6" height="14" rx="1" fill="currentColor" fillOpacity=".2" stroke="currentColor" strokeWidth="2"/><path d="M12 5v14M16 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+
+              <div className="w-px h-5 bg-slate-300 mx-0.5" />
+
+              {/* ── Delete table ── */}
+              <button type="button" title={t('admin.productManagement.deleteTable') || 'Supprimer le tableau'}
+                onClick={() => { editor.chain().focus().deleteTable().run(); setTableOpen(false); }}
+                className="p-1.5 rounded-md border border-red-200 bg-white text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -282,6 +405,14 @@ export default function TipTapEditor({ value, onChange }: TipTapEditorProps) {
         width: 640,
         height: 480,
       }),
+      Table.configure({
+        resizable: true,
+        allowTableNodeSelection: true,
+        HTMLAttributes: { class: 'min-w-full border-collapse table-fixed' },
+      }),
+      TableRow,
+      TableCell,
+      TableHeader,
     ],
     content: value || '',
     onUpdate: ({ editor }) => {

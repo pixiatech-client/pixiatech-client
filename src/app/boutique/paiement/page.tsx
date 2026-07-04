@@ -264,6 +264,12 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, de
   );
 }
 
+function checkoutModeBadge(type: string): { label: string; colors: string } | null {
+  if (type === 'rental') return { label: 'Location', colors: 'bg-blue-500 text-white' };
+  if (type === 'purchase') return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
+  return null;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -629,12 +635,24 @@ export default function CheckoutPage() {
                       <div key={item.productId + '-' + item.type + '-' + (item.variantName || '')} className="bg-white rounded-xl p-3.5 flex items-center shadow-sm border border-slate-100 mb-2 last:mb-0 hover:scale-[1.01] transition-transform duration-300">
                         <div className="grid grid-cols-12 w-full items-center">
                           <div className="col-span-6 flex items-center gap-3">
-                            <div className="w-10 h-10 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center ring-4 ring-slate-50 shrink-0">
-                              {(item.variantImage || item.image) ? (
-                                <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <span className="text-[8px] font-bold text-white/40">N/A</span>
-                              )}
+                            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 relative">
+                              <div className="w-full h-full bg-slate-900 rounded-xl ring-4 ring-slate-50">
+                                {(item.variantImage || item.image) ? (
+                                  <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover rounded-xl" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <span className="text-[8px] font-bold text-white/40">N/A</span>
+                                  </div>
+                                )}
+                              </div>
+                              {(() => {
+                                const b = checkoutModeBadge(item.type);
+                                return b ? (
+                                  <div className="absolute -top-1 -right-1 z-10">
+                                    <span className={`px-1 py-0.5 rounded text-[7px] font-black uppercase tracking-wider shadow-sm ${b.colors}`}>{b.label}</span>
+                                  </div>
+                                ) : null;
+                              })()}
                             </div>
                             <div className="min-w-0">
                               <p className="text-[13px] font-extrabold text-slate-900 truncate">{item.name}</p>
@@ -1273,7 +1291,7 @@ export default function CheckoutPage() {
                 <div className="space-y-4 mb-6 max-h-[320px] overflow-y-auto">
                   {items.map((item) => (
                     <div key={item.productId + '-' + item.type + '-' + (item.variantName || '')} className="flex gap-3">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0 relative">
                         {(item.variantImage || item.image) ? (
                           <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
@@ -1281,6 +1299,14 @@ export default function CheckoutPage() {
                             <ShoppingBag size={16} />
                           </div>
                         )}
+                        {(() => {
+                          const b = checkoutModeBadge(item.type);
+                          return b ? (
+                            <div className="absolute top-0.5 right-0.5 z-10">
+                              <span className={`px-1 py-0.5 rounded text-[7px] font-black uppercase tracking-wider shadow-sm ${b.colors}`}>{b.label}</span>
+                            </div>
+                          ) : null;
+                        })()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-semibold text-gray-900 truncate">{item.name}</h4>

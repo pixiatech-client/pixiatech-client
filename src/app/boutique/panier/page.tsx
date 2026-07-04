@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { ShoppingBag, Trash2, Minus, Plus, Heart, Truck, ArrowRight, ArrowLeft, Tag, ChevronDown, CreditCard, Landmark, Shield, Info, User, Building2, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { formatPrice, fetchUpsellProducts } from '@/lib/boutique-data';
+import { formatPrice, fetchUpsellProducts, getModeBadge } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
 import { toast } from 'sonner';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -37,6 +37,12 @@ function QtySelector({ value, onMinus, onPlus }: { value: number; onMinus: () =>
       </button>
     </div>
   );
+}
+
+function cartModeBadge(type: string): { label: string; colors: string } | null {
+  if (type === 'rental') return { label: 'Location', colors: 'bg-blue-500 text-white' };
+  if (type === 'purchase') return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
+  return null;
 }
 
 export default function CartPage() {
@@ -114,6 +120,14 @@ export default function CartPage() {
                           <ShoppingBag size={24} />
                         </div>
                       )}
+                      {(() => {
+                        const b = cartModeBadge(item.type);
+                        return b ? (
+                          <div className="absolute top-1.5 right-1.5 z-10">
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-sm ${b.colors}`}>{b.label}</span>
+                          </div>
+                        ) : null;
+                      })()}
                       <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-xl" />
                     </div>
                     <div className="flex flex-col flex-1 py-1">
@@ -315,7 +329,7 @@ export default function CartPage() {
                 <div className="space-y-3">
                   {savedItems.map((item) => (
                     <div key={item.productId + '-' + item.type + '-' + (item.variantName || '')} className="bg-white rounded-2xl border border-gray-200/70 p-4 flex items-center gap-4 transition-all hover:shadow-sm">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0 relative">
                         {(item.variantImage || item.image) ? (
                           <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
@@ -323,6 +337,14 @@ export default function CartPage() {
                             <ShoppingBag size={16} />
                           </div>
                         )}
+                        {(() => {
+                          const b = cartModeBadge(item.type);
+                          return b ? (
+                            <div className="absolute top-0.5 right-0.5 z-10">
+                              <span className={`px-1 py-0.5 rounded text-[7px] font-black uppercase tracking-wider shadow-sm ${b.colors}`}>{b.label}</span>
+                            </div>
+                          ) : null;
+                        })()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-semibold text-gray-900 truncate">{item.name}</h4>
@@ -356,11 +378,19 @@ export default function CartPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {upsellProducts.map((p) => (
                     <div key={p.id} className="bg-white rounded-2xl border border-gray-200/70 p-4 group hover:shadow-md transition-all duration-300">
-                      <div onClick={() => router.push(`/boutique/produit/${p.id}`)} className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-4 cursor-pointer">
+                      <div onClick={() => router.push(`/boutique/produit/${p.id}`)} className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-4 cursor-pointer relative">
                         <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${p.image})` }} />
+                        {(() => {
+                          const b = getModeBadge(p);
+                          return b ? (
+                            <div className="absolute top-1.5 right-1.5 z-10">
+                              <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-sm ${b.colors}`}>{b.label}</span>
+                            </div>
+                          ) : null;
+                        })()}
                       </div>
-                      <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.name}</h3>
-                      <p className="text-sm font-bold text-gray-900 mb-3">{formatPrice(p.price)}</p>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.name}</h3>
+                        <p className="text-sm font-bold text-gray-900 mb-3">{p.priceDisplay === 'free' ? 'Gratuit' : p.priceDisplay === 'multiprice' ? 'Tarifs multiples' : p.priceDisplay === 'quote' ? 'Sur devis' : p.price > 0 ? formatPrice(p.price) : formatPrice(p.price)}</p>
                       <button onClick={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(`${p.name} ajouté au panier`); }} className="w-full border border-gray-200/70 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all">
                         Ajouter
                       </button>

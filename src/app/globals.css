@@ -1225,3 +1225,114 @@ img, video {
   z-index: 10;
   cursor: default;
 }
+
+/* ================================================================
+   TIPTAP – Styles des tableaux (éditeur + rendu boutique)
+   ─ En-tête (th) : fond gris clair, texte gras
+   ─ Corps (td)   : uniquement une bordure horizontale basse, grise
+   ─ Pas de bordures verticales ni de grille complète
+   ================================================================ */
+
+/* --- Éditeur (prose dans l'admin) --- */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* En-tête : fond gris */
+.prose table th,
+.prose table thead th {
+  background-color: #f1f5f9;   /* slate-100 */
+  color: #1e293b;              /* slate-800 */
+  font-weight: 600;
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.55rem 0.85rem;
+  border: none;
+  border-bottom: 2px solid #cbd5e1; /* slate-300 */
+  text-align: left;
+}
+
+/* Cellules corps : ligne horizontale uniquement */
+.prose table td {
+  padding: 0.5rem 0.85rem;
+  border: none;
+  border-bottom: 1px solid #e2e8f0; /* slate-200 */
+  vertical-align: top;
+  color: #334155;                   /* slate-700 */
+}
+
+/* Dernière ligne : pas de trait en bas */
+.prose table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Lignes paires légèrement teintées (optionnel – supprime si non voulu) */
+.prose table tbody tr:nth-child(even) td {
+  background-color: #f8fafc; /* slate-50 */
+}
+
+/* Supprime toute bordure verticale résiduelle */
+.prose table th,
+.prose table td {
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+}
+/* Rétablir la bordure basse après le reset */
+.prose table th {
+  border-bottom: 2px solid #cbd5e1 !important;
+}
+.prose table td {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+.prose table tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* --- Rendu boutique (description produit affiché côté client) --- */
+.boutique-content table,
+.product-description table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 1rem 0;
+}
+
+.boutique-content table th,
+.boutique-content table thead th,
+.product-description table th,
+.product-description table thead th {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 0.82em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.55rem 0.85rem;
+  border: none;
+  border-bottom: 2px solid #cbd5e1;
+  text-align: left;
+}
+
+.boutique-content table td,
+.product-description table td {
+  padding: 0.5rem 0.85rem;
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+  color: #334155;
+}
+
+.boutique-content table tr:last-child td,
+.product-description table tr:last-child td {
+  border-bottom: none;
+}
+
+.boutique-content table tbody tr:nth-child(even) td,
+.product-description table tbody tr:nth-child(even) td {
+  background-color: #f8fafc;
+}
+
