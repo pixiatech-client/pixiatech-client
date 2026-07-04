@@ -10,6 +10,7 @@ import { firestore } from '@/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Product, ProductVariant, GalleryItem } from '@/lib/boutique-data';
 import BoutiqueRentalFlow from '@/components/BoutiqueRentalFlow';
+import CityInput from '@/components/CityInput';
 import { useProfile } from '@/contexts/ProfileContext';
 import { PriceLabel } from '@/components/B2BProfileSelector';
 import { useI18n } from '@/lib/i18n';
@@ -203,7 +204,23 @@ export default function ProductDetailPage() {
   const [showInfo, setShowInfo] = useState(false);
   const [locationCompleted, setLocationCompleted] = useState(false);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
-  const [quoteFormData, setQuoteFormData] = useState({ name: '', email: '', phone: '', company: '', siren: '', vat: '', comment: '' });
+  const [quoteFormData, setQuoteFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    postcode: '',
+    country: 'FR',
+    companyName: '',
+    siren: '',
+    vatNumber: '',
+    comment: '',
+  });
+  const [vatValidating, setVatValidating] = useState(false);
+  const [vatValidated, setVatValidated] = useState(false);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteDone, setQuoteDone] = useState(false);
   const [stickyTop, setStickyTop] = useState(194);
@@ -241,6 +258,7 @@ export default function ProductDetailPage() {
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
   const { showHT, showTTC, setProfileType, profileType, forceB2B } = useProfile();
+  const isB2B = profileType === 'entreprise';
   const { t } = useI18n();
 
   useEffect(() => {
@@ -371,6 +389,9 @@ export default function ProductDetailPage() {
     if (!product) return;
     setQuoteLoading(true);
     try {
+      const customerName = `${quoteFormData.firstName} ${quoteFormData.lastName}`.trim();
+      const customerAddress = `${quoteFormData.addressLine1}${quoteFormData.addressLine2 ? ', ' + quoteFormData.addressLine2 : ''}, ${quoteFormData.postcode} ${quoteFormData.city}`.trim();
+
       const res = await fetch('/api/quote-requests/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -379,14 +400,14 @@ export default function ProductDetailPage() {
           productName: product.name,
           productImage: product.image || '',
           quantity,
-          customerName: quoteFormData.name,
+          customerName,
           customerEmail: quoteFormData.email,
           customerPhone: quoteFormData.phone,
-          customerCompany: quoteFormData.company,
-          customerSiren: quoteFormData.siren,
-          customerVat: quoteFormData.vat,
-          customerCountry: 'FR',
-          customerAddress: '',
+          customerCompany: isB2B ? quoteFormData.companyName : '',
+          customerSiren: isB2B ? quoteFormData.siren : '',
+          customerVat: isB2B ? quoteFormData.vatNumber : '',
+          customerCountry: quoteFormData.country,
+          customerAddress,
           comment: quoteFormData.comment,
         }),
       });
@@ -465,15 +486,26 @@ export default function ProductDetailPage() {
                 <div className="px-4 pb-4 pt-3">
                   <form onSubmit={handleRequestQuote} className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* Nom complet */}
+                      {/* Prénom */}
                       <div>
-                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Nom complet *</label>
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Prénom *</label>
                         <div className="relative">
                           <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                          <input type="text" placeholder="Votre nom" required value={quoteFormData.name} onChange={e => setQuoteFormData(d => ({ ...d, name: e.target.value }))}
+                          <input type="text" placeholder="Jean" required value={quoteFormData.firstName} onChange={e => setQuoteFormData(d => ({ ...d, firstName: e.target.value }))}
                             className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
                         </div>
                       </div>
+
+                      {/* Nom */}
+                      <div>
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Nom *</label>
+                        <div className="relative">
+                          <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
+                          <input type="text" placeholder="Dupont" required value={quoteFormData.lastName} onChange={e => setQuoteFormData(d => ({ ...d, lastName: e.target.value }))}
+                            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
+                        </div>
+                      </div>
+
                       {/* Email */}
                       <div>
                         <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Email *</label>
@@ -483,45 +515,178 @@ export default function ProductDetailPage() {
                             className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
                         </div>
                       </div>
-                      {/* Téléphone */}
+
+                      {/* Téléphone mobile */}
                       <div>
-                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Téléphone *</label>
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Téléphone mobile *</label>
                         <div className="relative">
                           <Phone size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                          <input type="tel" placeholder="+33 6 12 34 56 78" required value={quoteFormData.phone} onChange={e => setQuoteFormData(d => ({ ...d, phone: e.target.value }))}
+                          <input type="tel" placeholder="06 12 34 56 78" required value={quoteFormData.phone} onChange={e => setQuoteFormData(d => ({ ...d, phone: e.target.value }))}
                             className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
                         </div>
                       </div>
-                      {/* Raison Sociale */}
-                      <div>
-                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Raison sociale</label>
-                        <div className="relative">
-                          <Building2 size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                          <input type="text" placeholder="Nom de l'entreprise" value={quoteFormData.company} onChange={e => setQuoteFormData(d => ({ ...d, company: e.target.value }))}
-                            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
-                        </div>
-                      </div>
-                      {/* SIREN / SIRET */}
-                      <div>
-                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">SIREN / SIRET</label>
-                        <input type="text" placeholder="123 456 789" value={quoteFormData.siren} onChange={e => setQuoteFormData(d => ({ ...d, siren: e.target.value }))}
-                          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
-                      </div>
-                      {/* TVA */}
-                      <div>
-                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">N° TVA intracommunautaire</label>
-                        <input type="text" placeholder="FRXX999999999" value={quoteFormData.vat} onChange={e => setQuoteFormData(d => ({ ...d, vat: e.target.value }))}
-                          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
-                      </div>
-                      {/* Commentaire */}
+
+                      {/* Ligne d'adresse 1 */}
                       <div className="sm:col-span-2">
-                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Commentaire</label>
-                        <textarea placeholder="Décrivez votre projet, vos besoins spécifiques..." rows={3} value={quoteFormData.comment} onChange={e => setQuoteFormData(d => ({ ...d, comment: e.target.value }))}
-                          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white resize-none placeholder:text-gray-300" />
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Ligne d'adresse 1 *</label>
+                        <div className="relative">
+                          <MapPin size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
+                          <input type="text" placeholder="123 Rue de l'Exemple" required value={quoteFormData.addressLine1} onChange={e => setQuoteFormData(d => ({ ...d, addressLine1: e.target.value }))}
+                            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
+                        </div>
+                      </div>
+
+                      {/* Ligne d'adresse 2 */}
+                      <div className="sm:col-span-2">
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Ligne d'adresse 2</label>
+                        <div className="relative">
+                          <MapPin size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
+                          <input type="text" placeholder="Appartement, Bâtiment, etc." value={quoteFormData.addressLine2} onChange={e => setQuoteFormData(d => ({ ...d, addressLine2: e.target.value }))}
+                            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
+                        </div>
+                      </div>
+
+                      {/* Ville & Code Postal (CityInput) */}
+                      <div className="sm:col-span-2">
+                        <CityInput
+                          value={quoteFormData.city ? `${quoteFormData.city} (${quoteFormData.postcode})` : ''}
+                          onChange={(cityName, postcode) => {
+                            setQuoteFormData(d => ({ ...d, city: cityName, postcode }));
+                          }}
+                        />
+                      </div>
+
+                      {/* Pays */}
+                      <div className="sm:col-span-2">
+                        <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Pays</label>
+                        <select
+                          value={quoteFormData.country}
+                          onChange={e => setQuoteFormData(d => ({ ...d, country: e.target.value }))}
+                          className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white"
+                        >
+                          <option value="FR">France</option>
+                          <option value="BE">Belgique</option>
+                          <option value="CH">Suisse</option>
+                          <option value="LU">Luxembourg</option>
+                          <option value="DE">Allemagne</option>
+                          <option value="ES">Espagne</option>
+                          <option value="IT">Italie</option>
+                          <option value="NL">Pays-Bas</option>
+                          <option value="PT">Portugal</option>
+                          <option value="GB">Royaume-Uni</option>
+                          <option value="AT">Autriche</option>
+                          <option value="IE">Irlande</option>
+                          <option value="DK">Danemark</option>
+                          <option value="SE">Suède</option>
+                          <option value="FI">Finlande</option>
+                          <option value="PL">Pologne</option>
+                          <option value="CZ">République Tchèque</option>
+                          <option value="SK">Slovaquie</option>
+                          <option value="HU">Hongrie</option>
+                          <option value="GR">Grèce</option>
+                          <option value="RO">Roumanie</option>
+                          <option value="BG">Bulgarie</option>
+                          <option value="HR">Croatie</option>
+                          <option value="SI">Slovénie</option>
+                          <option value="LT">Lituanie</option>
+                          <option value="LV">Lettonie</option>
+                          <option value="EE">Estonie</option>
+                          <option value="CY">Chypre</option>
+                          <option value="MT">Malte</option>
+                        </select>
                       </div>
                     </div>
 
-                    <div className="pt-1">
+                    {isB2B && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 border-t border-gray-100 pt-3">
+                        {/* Raison sociale */}
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Raison sociale *</label>
+                          <input
+                            type="text"
+                            placeholder="Nom de l'entreprise"
+                            required
+                            value={quoteFormData.companyName}
+                            onChange={e => setQuoteFormData(d => ({ ...d, companyName: e.target.value }))}
+                            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
+                          />
+                        </div>
+
+                        {/* SIREN / SIRET */}
+                        <div>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">SIREN / SIRET *</label>
+                          <input
+                            type="text"
+                            placeholder="123 456 789"
+                            required
+                            value={quoteFormData.siren}
+                            onChange={e => setQuoteFormData(d => ({ ...d, siren: e.target.value }))}
+                            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
+                          />
+                        </div>
+
+                        {/* TVA */}
+                        <div className="sm:col-span-2">
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Numéro de TVA intracommunautaire</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="FRXX999999999"
+                              value={quoteFormData.vatNumber}
+                              onChange={e => {
+                                setQuoteFormData(d => ({ ...d, vatNumber: e.target.value }));
+                                if (vatValidated) setVatValidated(false);
+                              }}
+                              className={`flex-1 px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
+                                vatValidated
+                                  ? 'border-emerald-300 bg-emerald-50/30'
+                                  : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
+                              }`}
+                            />
+                            <button
+                              type="button"
+                              disabled={vatValidating || !quoteFormData.vatNumber}
+                              onClick={async () => {
+                                if (!quoteFormData.vatNumber) return;
+                                setVatValidating(true);
+                                try {
+                                  const res = await fetch('/api/boutique/validate-vat', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ vatNumber: quoteFormData.vatNumber }),
+                                  });
+                                  const data = await res.json();
+                                  setVatValidated(data.valid === true);
+                                } catch {
+                                  setVatValidated(false);
+                                } finally {
+                                  setVatValidating(false);
+                                }
+                              }}
+                              className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                                vatValidated
+                                  ? 'bg-emerald-500 text-white'
+                                  : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50'
+                              }`}
+                            >
+                              {vatValidating ? '...' : vatValidated ? '✓ Valide' : 'Valider'}
+                            </button>
+                          </div>
+                          {vatValidated && (
+                            <p className="text-[10px] text-emerald-600 font-semibold mt-1">Numéro de TVA valide — TVA autoliquidée</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Commentaire */}
+                    <div className="pt-2">
+                      <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Commentaire</label>
+                      <textarea placeholder="Décrivez votre projet, vos besoins spécifiques..." rows={3} value={quoteFormData.comment} onChange={e => setQuoteFormData(d => ({ ...d, comment: e.target.value }))}
+                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white resize-none placeholder:text-gray-300" />
+                    </div>
+
+                    <div className="pt-2">
                       <button type="submit" disabled={quoteLoading}
                         className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-40 shadow-sm">
                         {quoteLoading ? 'Envoi en cours...' : 'Envoyer la demande'}
