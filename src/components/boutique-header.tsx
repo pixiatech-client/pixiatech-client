@@ -127,20 +127,20 @@ export function BoutiqueHeader() {
           <SheetTrigger asChild>
             <button
               className="md:hidden text-white/70 hover:text-white nav-link mr-2"
-              aria-label="Menu"
+              aria-label={t('header.menu')}
             >
               {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </SheetTrigger>
           <SheetContent side="left" className="w-full sm:w-[400px] bg-black border-r-0 p-0 flex flex-col">
-            <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
+            <SheetTitle className="sr-only">Navigation menu</SheetTitle>
             {/* Header bar inside menu */}
             <div className="flex items-center justify-between px-6 pt-4 pb-2">
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="text-white/50 hover:text-white"
-                  aria-label="Fermer"
+                  aria-label={t('header.close')}
                 >
                   <X size={22} />
                 </button>
@@ -149,46 +149,46 @@ export function BoutiqueHeader() {
             </div>
             {/* Menu items */}
             <nav className="flex flex-col flex-1 px-6 pt-8 pb-6 gap-1">
-              <Link
-                href="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  "py-3 text-2xl font-medium transition-colors",
-                  pathname === '/'
-                    ? 'text-white'
-                    : 'text-white/60 hover:text-white'
-                )}
-              >
-                Accueil
-              </Link>
-              <Link
-                href="/boutique"
-                onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  "py-3 text-2xl font-medium transition-colors",
-                  isBoutiquePage
-                    ? 'text-white'
-                    : 'text-white/60 hover:text-white'
-                )}
-              >
-                Boutique
-              </Link>
-              <a
-                href="https://pixiatech.com/contact"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMobileMenuOpen(false)}
-                className="py-3 text-2xl font-medium text-white/60 hover:text-white transition-colors"
-              >
-                Contactez-Nous
-              </a>
-              <Link
-                href="/admin/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="py-3 text-2xl font-medium text-white/60 hover:text-white transition-colors"
-              >
-                Accès administration
-              </Link>
+                <Link
+                  href="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "py-3 text-2xl font-medium transition-colors",
+                    pathname === '/'
+                      ? 'text-white'
+                      : 'text-white/60 hover:text-white'
+                  )}
+                >
+                  {t('header.home')}
+                </Link>
+                <Link
+                  href="/boutique"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    "py-3 text-2xl font-medium transition-colors",
+                    isBoutiquePage
+                      ? 'text-white'
+                      : 'text-white/60 hover:text-white'
+                  )}
+                >
+                  {t('header.shop')}
+                </Link>
+                <a
+                  href="https://pixiatech.com/contact"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="py-3 text-2xl font-medium text-white/60 hover:text-white transition-colors"
+                >
+                  {t('header.contactUs')}
+                </a>
+                <Link
+                  href="/admin/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="py-3 text-2xl font-medium text-white/60 hover:text-white transition-colors"
+                >
+                  {t('header.admin')}
+                </Link>
               {/* Spacer */}
               <div className="flex-1" />
               {/* Espace Membre button */}
@@ -197,7 +197,7 @@ export function BoutiqueHeader() {
                 className="flex items-center justify-center gap-2.5 w-full bg-white text-black font-semibold py-3.5 rounded-xl text-sm hover:bg-white/90 transition-colors"
               >
                 <User size={16} />
-                Espace Membre
+                {t('header.memberArea')}
               </button>
             </nav>
           </SheetContent>
@@ -224,7 +224,7 @@ export function BoutiqueHeader() {
               pathname === '/' ? 'text-[#007bff]' : 'text-white'
             )}
           >
-            Accueil
+            {t('header.home')}
           </Link>
           <Link
             href="/boutique"
@@ -233,7 +233,7 @@ export function BoutiqueHeader() {
               isBoutiquePage ? 'text-[#007bff]' : 'text-white'
             )}
           >
-            Boutique
+            {t('header.shop')}
           </Link>
           <a
             href="https://pixiatech.com/contact"
@@ -241,7 +241,7 @@ export function BoutiqueHeader() {
             rel="noopener noreferrer"
             className="font-medium nav-link text-sm text-white hover:opacity-80 transition-opacity"
           >
-            Contactez-Nous
+            {t('header.contactUs')}
           </a>
         </div>
 
@@ -251,8 +251,8 @@ export function BoutiqueHeader() {
           <Link
             href="/admin/login"
             className="text-white/70 hover:text-white nav-link"
-            aria-label="Administration"
-            title="Administration"
+            aria-label={t('header.admin')}
+            title={t('header.admin')}
           >
             <Shield size={18} />
           </Link>
@@ -269,7 +269,7 @@ export function BoutiqueHeader() {
           <Link
             href="/boutique/panier"
             className="relative text-white/70 hover:text-white nav-link"
-            aria-label="Panier"
+            aria-label={t('header.cart')}
           >
             <ShoppingBag size={18} />
             {itemCount > 0 && (
@@ -317,7 +317,7 @@ export function BoutiqueHeader() {
               <button
                 onClick={() => setCreateOpen(!createOpen)}
                 className="text-white/70 hover:text-white nav-link md:hidden"
-                aria-label="Espace Membre"
+                aria-label={t('header.memberArea')}
               >
                 <User size={18} />
               </button>
@@ -330,7 +330,7 @@ export function BoutiqueHeader() {
                   clipPath: 'polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 0.6px) calc(100% - 14px), calc(100% - 2px) calc(100% - 12px), calc(100% - 10px) calc(100% - 4px), calc(100% - 12px) calc(100% - 2px), calc(100% - 14px) calc(100% - 0.6px), calc(100% - 16px) 100%, 0 100%, 0 16px, 0.6px 14px, 2px 12px, 10px 4px, 12px 2px, 14px 0.6px)',
                 }}
               >
-                Espace Membre
+                {t('header.memberArea')}
               </button>
 
               {/* Desktop dropdown wrapper */}
@@ -368,7 +368,7 @@ export function BoutiqueHeader() {
                     >
                       <div className="pointer-events-auto w-full bg-white rounded-t-3xl shadow-2xl overflow-y-auto max-h-[85dvh] min-h-[65dvh] pb-24" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between px-6 pt-5 pb-2">
-                          <h2 className="font-bold text-gray-900">Espace Membre</h2>
+                          <h2 className="font-bold text-gray-900">{t('header.memberArea')}</h2>
                           <button onClick={() => setCreateOpen(false)} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
                             <X size={16} className="text-gray-500" />
                           </button>
