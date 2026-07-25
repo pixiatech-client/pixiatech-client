@@ -1,4 +1,7 @@
-import { parsePhoneNumberWithError, ParseError, CountryCode } from 'libphonenumber-js';
+import { parsePhoneNumberWithError as parseLib, CountryCode } from 'libphonenumber-js';
+import rawMetadata from 'libphonenumber-js/metadata.min.json';
+
+const metadata = (rawMetadata as any)?.default || rawMetadata;
 
 export interface PhoneValidationResult {
   isValid: boolean;
@@ -49,7 +52,7 @@ export function validatePhone(phone: string, defaultCountry: CountryCode = 'FR')
 
   // 3. Strict validation with libphonenumber-js
   try {
-    const phoneNumber = parsePhoneNumberWithError(cleaned, defaultCountry);
+    const phoneNumber = (parseLib as any)(cleaned, { defaultCountry }, metadata);
 
     // libphonenumber-js considers some short codes valid. We want strict full numbers.
     if (!phoneNumber.isValid()) {
@@ -62,23 +65,94 @@ export function validatePhone(phone: string, defaultCountry: CountryCode = 'FR')
       country: phoneNumber.country,
     };
 
-  } catch (error) {
-    if (error instanceof ParseError) {
-      // Return translated or clean error messages based on ParseError type
-      switch (error.message) {
-        case 'INVALID_COUNTRY':
-          return { isValid: false, error: 'Le code pays est invalide.' };
-        case 'NOT_A_NUMBER':
-          return { isValid: false, error: 'Ce n\'est pas un numéro valide.' };
-        case 'TOO_SHORT':
-        case 'TOO_SHORT_NSN':
-          return { isValid: false, error: 'Le numéro est trop court.' };
-        case 'TOO_LONG':
-          return { isValid: false, error: 'Le numéro est trop long.' };
-        default:
-          return { isValid: false, error: 'Format de numéro incorrect.' };
-      }
+
+  } catch (error: any) {
+    const msg = error?.message || String(error);
+    switch (msg) {
+      case 'INVALID_COUNTRY':
+        return { isValid: false, error: 'Le code pays est invalide.' };
+      case 'NOT_A_NUMBER':
+        return { isValid: false, error: 'Ce n\'est pas un numéro valide.' };
+      case 'TOO_SHORT':
+      case 'TOO_SHORT_NSN':
+        return { isValid: false, error: 'Le numéro est trop court.' };
+      case 'TOO_LONG':
+        return { isValid: false, error: 'Le numéro est trop long.' };
+      default:
+        return { isValid: false, error: 'Format de numéro incorrect.' };
     }
-    return { isValid: false, error: 'Erreur lors de la validation du numéro.' };
   }
 }
+
+
+export interface CountryConfig {
+  code: CountryCode | string;
+  /** Path to an SVG flag image served from /public/flags/ */
+  flagSrc: string;
+  /** Alt text for the flag image */
+  flagAlt: string;
+  /** International dial code (e.g. +33, +86) */
+  dialCode: string;
+  prefixes: string[];
+}
+
+export const SUPPORTED_COUNTRIES: CountryConfig[] = [
+  {
+    code: 'FR',
+    flagSrc: '/flags/fr.svg',
+    flagAlt: 'France',
+    dialCode: '+33',
+    prefixes: ['06', '07', '+33', '33'],
+  },
+  {
+    code: 'CN',
+    flagSrc: '/flags/cn.svg',
+    flagAlt: 'China',
+    dialCode: '+86',
+    prefixes: ['+86', '86'],
+  },
+];
+
+/**
+ * Detects the country config (including SVG flag path) for a phone string.
+ * Returns null if no country is recognized.
+ */
+export function detectCountryConfig(phone: string): CountryConfig | null {
+  if (!phone) return null;
+
+  const cleaned = phone.replace(/\s+/g, '').trim();
+  if (!cleaned) return null;
+
+  // 1. Fast prefix matching for real-time typing feedback
+  for (const country of SUPPORTED_COUNTRIES) {
+    for (const prefix of country.prefixes) {
+      if (prefix.startsWith('+')) {
+        if (cleaned.startsWith(prefix)) {
+          return country;
+        }
+      } else {
+        // Local prefix (e.g., '06', '07') - only if user hasn't typed an international '+'
+        if (!cleaned.startsWith('+') && cleaned.startsWith(prefix)) {
+          return country;
+        }
+      }
+    }
+  }
+
+  // 2. Fallback: try parsing with libphonenumber-js if number starts with '+'
+  if (cleaned.startsWith('+')) {
+    try {
+      const phoneNumber = (parseLib as any)(cleaned, metadata);
+      const parsedCountry = phoneNumber?.country;
+      if (parsedCountry) {
+        const found = SUPPORTED_COUNTRIES.find((c) => c.code === parsedCountry);
+        if (found) return found;
+      }
+    } catch {
+      // Ignore parse errors while user is typing
+    }
+  }
+
+  return null;
+}
+

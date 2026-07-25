@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { X, Check, Filter, ChevronDown, LayoutGrid } from 'lucide-react';
 import { EstimationStatus } from '../types';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface MobileFilterDrawerProps {
   isOpen: boolean;
@@ -12,14 +13,14 @@ interface MobileFilterDrawerProps {
   userRole: string;
 }
 
-const allTabs: { label: EstimationStatus; color: string; roles: string[] }[] = [
-  { label: 'En attente', color: '#f4af07', roles: ['admin', 'commercial'] },
-  { label: 'Traité', color: '#3b82f6', roles: ['admin', 'commercial'] },
-  { label: 'Retourné', color: '#f97316', roles: ['admin', 'fournisseur', 'commercial'] },
-  { label: 'Fournisseur', color: '#a78bfa', roles: ['admin', 'fournisseur'] },
-  { label: 'Livraison', color: '#22c55e', roles: ['admin', 'commercial', 'fournisseur'] },
-  { label: 'Archivé', color: '#9ca3af', roles: ['admin', 'commercial'] },
-  { label: 'Corbeille', color: '#ef4444', roles: ['admin', 'commercial'] },
+const allTabs: { label: EstimationStatus; tKey: string; color: string; roles: string[] }[] = [
+  { label: 'En attente', tKey: 'Pending', color: '#f4af07', roles: ['admin', 'commercial'] },
+  { label: 'Traité', tKey: 'Processed', color: '#3b82f6', roles: ['admin', 'commercial'] },
+  { label: 'Retourné', tKey: 'Returned', color: '#f97316', roles: ['admin', 'fournisseur', 'commercial'] },
+  { label: 'Fournisseur', tKey: 'Supplier', color: '#a78bfa', roles: ['admin', 'fournisseur'] },
+  { label: 'Livraison', tKey: 'Delivery', color: '#22c55e', roles: ['admin', 'commercial', 'fournisseur'] },
+  { label: 'Archivé', tKey: 'Archived', color: '#9ca3af', roles: ['admin', 'commercial'] },
+  { label: 'Corbeille', tKey: 'Trash', color: '#ef4444', roles: ['admin', 'commercial'] },
 ];
 
 export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
@@ -30,6 +31,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
   tabCounts,
   userRole,
 }) => {
+  const { t: adt } = useAdminT();
   const tabs = allTabs.filter(t => t.roles.includes(userRole));
   const [selectedTab, setSelectedTab] = React.useState<EstimationStatus>(activeTab);
 
@@ -90,10 +92,10 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-black uppercase tracking-tight text-zinc-900 dark:text-white leading-none">
-                    Statuses
+                    {adt('Statuses')}
                   </h3>
                   <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">
-                    Filter by category
+                    {adt('Filter by category')}
                   </p>
                 </div>
               </div>
@@ -108,7 +110,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
             {/* Filters List (Studio Style - Image 5) */}
             <div className="px-4 py-2 overflow-y-auto custom-scrollbar flex-1">
               <div className="flex flex-col">
-                {tabs.map(({ label, color }, index) => {
+                {tabs.map(({ label, tKey, color }, index) => {
                   const isActive = selectedTab === label;
                   const count = tabCounts[label] || 0;
 
@@ -133,7 +135,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                           <div className="flex items-center gap-6">
                             <span className={`text-base font-black uppercase tracking-tight ${isActive ? 'text-black dark:text-white' : 'text-zinc-600 dark:text-zinc-400'
                               }`}>
-                              {label}
+                              {adt(tKey)}
                             </span>
                             <div className="w-14 h-8 bg-black dark:bg-[#c6ff00] rounded-xl shadow-sm flex items-center justify-center">
                               <span className="text-sm font-black text-[#c6ff00] dark:text-black">
@@ -143,7 +145,7 @@ export const MobileFilterDrawer: React.FC<MobileFilterDrawerProps> = ({
                           </div>
                           {count > 0 && (
                             <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1 opacity-60">
-                              {count} estimation{count > 1 ? 's' : ''}
+                              {count} {adt('estimations')}
                             </span>
                           )}
                         </div>

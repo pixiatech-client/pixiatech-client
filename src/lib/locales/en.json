@@ -29,7 +29,14 @@
         "no": "No",
         "cancel": "Cancel",
         "preview": "Preview",
-        "edit": "Edit"
+        "logo": "Logo",
+        "edit": "Edit",
+        "sending": "Sending...",
+        "city": "City *",
+        "cityPlaceholder": "Search for a city",
+        "noCityFound": "No city found",
+        "important": "Important",
+        "imageNotAvailable": "Image not available"
     },
     "header": {
         "login": "Login"
@@ -49,7 +56,7 @@
         "description": "The method that suits you best.",
         "boutiqueTitle": "Guided Configuration",
         "boutiqueDesc": "Recommended — Fast, simple and hassle-free.",
-        "boutiqueShopTitle": "Boutique",
+        "boutiqueShopTitle": "Shop",
         "boutiqueShopDesc": "Browse our catalog of products — simple, fast, no configuration needed.",
         "wizardTitle": "Guided Configuration",
         "wizardDesc": "Recommended — Fast, simple and hassle-free.",
@@ -106,6 +113,13 @@
             "diameterTotal": "Total Diameter (m)",
             "diameter": "Diameter (m)",
             "heightStandard": "Height (m)",
+            "loading3d": "Loading 3D simulator...",
+            "screenConfig": "Screen Configuration",
+            "dimensionsLabel": "Dimensions (W x H)",
+            "circularView": "360° circular view",
+            "interior": "Interior",
+            "exterior": "Exterior",
+            "standardHeights": "Standard Heights",
             "bgDecor": "Decor (Background)",
             "groundLines": "Ground Lines",
             "curvatureAdjust": "Curvature Adjustment",
@@ -226,7 +240,9 @@
         "minAreaReached": "Minimum area reached.",
         "minAreaRequired": "Minimum area of {area} m² required.",
         "quantityInfo": "Number of identical screens for this configuration",
-        "unitsAvailable": "available"
+        "unitsAvailable": "available",
+        "configureAtLeastOne": "Please configure at least one product.",
+        "stockInsufficient": "Insufficient stock — {remaining} / {total} available"
     },
     "delivery": {
         "title": "Delivery",
@@ -629,6 +645,8 @@
         "rental": "Rental",
         "type": "Type",
         "users": "Users",
+        "memberSpace": "Member Area",
+        "memberManagement": "Client and supplier management",
         "manageUsers": "Manage Users",
         "manageUsersDesc": "View, edit, and manage all platform users.",
         "noUsersFound": "No users found",
@@ -645,6 +663,9 @@
         "switchLanguage": "Switch to English",
         "floatingCalculator": "Calculator",
         "siteAccess": "Access Site",
+        "boutique": "Shop",
+        "navOrders": "Orders",
+        "navCodesPromo": "Promo Codes",
         "profile": "Profile",
         "general": "General",
         "images": "Images",
@@ -851,7 +872,8 @@
             "logoColorLabel": "Color",
             "logoImageLabel": "Image (optional)",
             "cancelButton": "Cancel",
-            "saveButtonLogo": "Save"
+            "saveButtonLogo": "Save",
+            "userRoleSpace": "{roleName} Space"
         },
         "productManagement": {
             "managementTitle": "Product Management",
@@ -1182,7 +1204,8 @@
             "emergency": "Emergency",
             "messaging": "Messaging",
             "software": "SMTP Server",
-            "flow": "Customer Flow"
+            "flow": "Customer Flow",
+            "track": "Package Tracking"
         },
         "resetCounters": "Reset counters to zero",
         "clientSpace": "Client Area",
@@ -1595,7 +1618,55 @@
         "supplier": "Supplier",
         "commercial": "Commercial",
         "administrator": "Administrator",
-        "refusalPlaceholder": "Explain the reason for return..."
+        "refusalPlaceholder": "Explain the reason for return...",
+        "validation": {
+            "assignSupplier": "Please ASSIGN A SUPPLIER before processing this estimation",
+            "trackingRequired": "Please enter the TRACKING NUMBER and DELIVERY DATE before moving to delivery",
+            "adminOnlyRestore": "Only the ADMINISTRATOR can restore from the Trash",
+            "unauthorizedTransition": "Unauthorized transition: cannot go back to \"Pending\" from \"Delivery\"",
+            "adminOnlyDelete": "Only the ADMINISTRATOR can permanently delete",
+            "cannotGoBack": "Cannot go back after marking delivery as completed",
+            "receiptAlreadyConfirmed": "Receipt has already been confirmed by the client"
+        },
+        "popup": {
+            "actionRefused": "Action refused",
+            "impossibleAction": "This action is not possible.",
+            "returnReason": "Return Reason",
+            "noReason": "No reason specified.",
+            "supplierInstructions": "Supplier Instructions",
+            "noInstructions": "No technical instructions."
+        },
+        "error": {
+            "noEstimation": "Error: no estimation found",
+            "onlyResponsibleCommercial": "Only the responsible commercial can transfer estimation {number} to the supplier.",
+            "transferError": "Error during transfer",
+            "deletionError": "An error occurred during deletion.",
+            "bulkDeletionError": "An error occurred during bulk deletion."
+        },
+        "history": {
+            "delayDetectedDetail": "{days} day(s) of delay detected — planned date: {date}",
+            "penaltyDetail": "Late penalty: {days} day(s)",
+            "lateDeliveryNotif": "Late delivery — {days} day(s)",
+            "deliveryCreatedBy": "Delivery created by {user}",
+            "deliveryStartedBy": "Delivery started by {user}",
+            "deliveryCompletedBy": "{user} marked delivery as completed on {date} at {time}",
+            "receiptConfirmedDetail": "Receipt confirmed by {user} on {date} at {time}",
+            "trackingDetail": "Tracking: {number}, planned delivery: {deliveryDate} (entered by {user} on {date} at {time})"
+        },
+        "resync": {
+            "title": "Synchronize data",
+            "irreversible": "This operation is irreversible",
+            "description": "All statistics will be recalculated from Firestore data. Current counters will be replaced.",
+            "warning": "Potentially heavy action depending on data volume",
+            "syncButton": "Synchronize"
+        },
+        "deleteSingleDesc": "This estimation will be permanently deleted, along with its chat history.",
+        "trashSingleDesc": "The estimation will be moved to the trash. You can restore it later.",
+        "selectedCount": "{count} estimation(s) affected",
+        "deleteBulkDesc": "These estimations will be permanently deleted, along with their chat histories.",
+        "trashBulkDesc": "These estimations will be moved to the trash.",
+        "unknownClient": "Unknown Client",
+        "noSpecificReason": "No specific reason"
     },
     "drawer": {
         "consoleTitle": "Modification Console",
@@ -1661,7 +1732,8 @@
         "pdf": "PDF",
         "share": "Share",
         "translate": "Translate",
-        "transmit": "Send"
+        "transmit": "Send",
+        "estimationNumberLabel": "Estimation #{number}"
     },
     "profile": {
         "title": "My Profile",
@@ -1919,7 +1991,12 @@
         "installation": "Installation",
         "totalEstimate": "Estimated Total",
         "installationTitle": "Installation",
-        "recommended": "Recommended",
+    "screen3d": {
+        "width": "WIDTH: {value} M",
+        "height": "HEIGHT: {value} M",
+        "diameter": "DIAMETER: {value} M"
+    },
+    "recommended": "Recommended",
         "installationQuestion": "Would you like to include installation by our technicians?",
         "includeInstallation": "Yes, include installation",
         "includeInstallationDesc": "Our experts handle everything.",
@@ -1931,6 +2008,7 @@
         "zoneNotConfiguredDesc": "PixiaTech does not yet cover this area for automated configurations.",
         "resetToParis": "Reset to Paris",
         "nextStep": "Proceed to contract",
+        "backToContract": "Back to contract & signature",
 
         "productLabel": "Product",
         "surfaceTech": "For a total area of {area} m², your project requires {count} technician(s).",
@@ -2147,6 +2225,7 @@
         "notifyMe": "Notify me"
     },
     "boutique": {
+        "searchPlaceholder": "Search for a product...",
         "filters": "Filters",
         "categories": "Categories",
         "type": "Type",

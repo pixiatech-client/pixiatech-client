@@ -129,7 +129,7 @@ export type QuoteDetails = {
     from: Date;
     to: Date;
   };
-  lang: 'fr' | 'en';
+  lang: 'fr' | 'en' | 'zh-CN';
   sitePhoto?: string;
   taxRate?: number;
   configuratorType?: 'guided' | 'manual' | 'lumi';
@@ -402,7 +402,7 @@ export type QuoteRequest = Omit<QuoteDetails, 'products' | 'rentalPeriod'> & {
   assignedAt?: Date;
   supplierNotes?: string;
   supplierTechDetails?: any;
-  lang: 'fr' | 'en';
+  lang: 'fr' | 'en' | 'zh-CN';
   pdfSettings?: PdfSettings;
   pdfUrl?: string;
   contractUrl?: string;

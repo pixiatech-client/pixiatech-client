@@ -1,6 +1,35 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Apply baseline security headers to every response (defense in depth).
+// CSP is permissive enough to keep the existing PayPal/Firebase/Three.js features working.
+function applySecurityHeaders(response: NextResponse, isHttps: boolean): NextResponse {
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.paypal.com https://*.firebaseio.com https://*.googleapis.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data: https://fonts.gstatic.com",
+      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss: https://*.paypal.com",
+      "frame-src 'self' https://*.paypal.com https://www.youtube.com",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; ')
+  );
+  if (isHttps) {
+    // Only set HSTS over HTTPS so we don't brick localhost dev
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('session')?.value;
@@ -21,10 +50,11 @@ export async function middleware(request: NextRequest) {
 
   // Public pages: cache on CDN
   const publicPages = ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify'];
+  const isHttps = (request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol.replace(':', '')) === 'https';
   if (publicPages.includes(pathname)) {
     const response = NextResponse.next();
     response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
-    return response;
+    return applySecurityHeaders(response, isHttps);
   }
 
   // Client espace routes: check client_session cookie
@@ -62,23 +92,29 @@ export async function middleware(request: NextRequest) {
       });
       const data = await verifyRes.json();
 
-      if (!data.valid && data.reason === 'session_mismatch') {
+      // Fail-closed: any invalid session (mismatch, error, expired) kicks the user to login.
+      // Previously only 'session_mismatch' triggered a redirect, which let stale/invalid
+      // cookies slip through if the API returned another reason or errored out.
+      if (!data.valid) {
         const response = NextResponse.redirect(loginUrl);
         response.cookies.delete('session');
         response.cookies.delete('sessionToken');
         return response;
       }
     } catch (err) {
-      console.error('[Middleware] verify-session error:', err);
+      // Fail-closed: if verify-session itself errors out (timeout, 500, network),
+      // we DO NOT let the request through. Better to force a re-login than to
+      // expose the admin panel during an auth outage.
+      console.error('[Middleware] verify-session error, forcing re-login:', err);
+      const response = NextResponse.redirect(loginUrl);
+      response.cookies.delete('session');
+      response.cookies.delete('sessionToken');
+      return response;
     }
   }
 
   const response = NextResponse.next();
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
-  return response;
+  return applySecurityHeaders(response, isHttps);
 }
 
 export const config = {

@@ -77,11 +77,11 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   const roleId = userProfile?.role as string;
   const roleData = roles?.find(r => r.id === roleId);
   const isBaseRole = ['admin', 'commercial', 'fournisseur'].includes(roleId);
-  const defaultNames: Record<string, string> = { admin: 'Administrateur', commercial: 'Commercial', fournisseur: 'Fournisseur' };
   const defaultColors: Record<string, string> = { admin: '#ef4444', commercial: '#f97316', fournisseur: '#22c55e' };
-  const roleName = isBaseRole ? defaultNames[roleId] : (roleData?.name || 'Administrateur');
-  const roleColor = isBaseRole ? defaultColors[roleId] : (roleData?.color || (roleData?.roleTemplate === 'commercial' ? '#3b82b6' : '#8b5cf6'));
   const { t, locale, setLocale } = useI18n();
+  const defaultNames: Record<string, string> = { admin: t('Administrateur'), commercial: t('Commercial'), fournisseur: t('Fournisseur') };
+  const roleName = isBaseRole ? defaultNames[roleId] : (roleData?.name || t('Administrateur'));
+  const roleColor = isBaseRole ? defaultColors[roleId] : (roleData?.color || (roleData?.roleTemplate === 'commercial' ? '#3b82b6' : '#8b5cf6'));
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [settings, setSettings] = useState<any>(initialSettings);
@@ -198,16 +198,16 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
       try {
         const result = await saveSidebarConfig({ logoConfig: newConfig });
         if (result.success) {
-          sonnerToast.success('Logo saved successfully!', {
-            description: 'The change is applied for all users.',
+          sonnerToast.success(t('Logo saved successfully!'), {
+            description: t('The change is applied for all users.'),
           });
         } else {
-          sonnerToast.error('Error saving logo.', {
-            description: typeof result.error === 'string' ? result.error : 'Please try again.',
+          sonnerToast.error(t('Error saving logo.'), {
+            description: typeof result.error === 'string' ? result.error : t('Please try again.'),
           });
         }
       } catch (error) {
-        sonnerToast.error('Network error while saving.');
+        sonnerToast.error(t('Network error while saving.'));
       }
     }
   };
@@ -217,16 +217,16 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
       try {
         const result = await saveSidebarConfig({ sidebarOrder: newOrder });
         if (result.success) {
-          sonnerToast.success('Menu order saved!', {
-            description: 'The new order is applied for all users.',
+          sonnerToast.success(t('Menu order saved!'), {
+            description: t('The new order is applied for all users.'),
           });
         } else {
-          sonnerToast.error('Error saving order.', {
-            description: typeof result.error === 'string' ? result.error : 'Please try again.',
+          sonnerToast.error(t('Error saving order.'), {
+            description: typeof result.error === 'string' ? result.error : t('Please try again.'),
           });
         }
       } catch (error) {
-        sonnerToast.error('Network error while saving.');
+        sonnerToast.error(t('Network error while saving.'));
       }
     }
   };
@@ -299,7 +299,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     "group flex items-center justify-center h-11 w-11 rounded-xl mt-1 border-0 shadow-sm transition-all duration-200 cursor-pointer",
                     "bg-white hover:bg-theme-sidebar-active-bg text-gray-700 hover:text-emerald-500"
                   )}
-                  aria-label="Show menu"
+                  aria-label={t('Show menu')}
                 >
                   <Menu className="h-5 w-5 pointer-events-none" />
                 </button>
@@ -316,7 +316,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 >
                   <div className="flex items-center gap-2">
                     <Settings className="h-4 w-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">MENU</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{t('MENU')}</span>
                   </div>
                 </Button>
               )}
@@ -328,7 +328,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   "bg-white hover:bg-theme-sidebar-active-bg"
                 )}
                 onClick={() => router.back()}
-                title="Previous page"
+                title={t('Previous page')}
               >
                 <ChevronDown className="h-5 w-5 transition-all duration-200 text-gray-500 group-hover:text-emerald-500 rotate-90" />
               </Button>
@@ -354,7 +354,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsCalculatorOpen(prev => !prev)}
-                title="Calculator"
+                title={t('Calculator')}
                 className={cn(
                   "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
                   isCalculatorOpen
@@ -368,7 +368,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                     ? "text-indigo-400"
                     : "text-gray-500 group-hover:text-indigo-400"
                 )} />
-                <span className="sr-only">Calculator</span>
+                <span className="sr-only">{t('Calculator')}</span>
               </Button>
 
               {/* ── 2. Notifications ── */}
@@ -397,7 +397,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                 variant="ghost"
                 size="icon"
                 onClick={() => window.open('/boutique', '_blank')}
-                title="Boutique"
+                title={t('admin.boutique')}
                 className={cn(
                   "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
                   "bg-white hover:bg-theme-sidebar-active-bg"
@@ -407,24 +407,36 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   "h-5 w-5 transition-colors",
                   "text-gray-400 group-hover:text-orange-500"
                 )} />
-                <span className="sr-only">Boutique</span>
+                <span className="sr-only">{t('admin.boutique')}</span>
               </Button>
 
               <div className={cn("h-9 w-px mx-1 hidden sm:block", "bg-gray-200")} />
 
-              {/* ── 5. Language Switcher (FR / EN) ── */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setLocale(locale === 'fr' ? 'en' : 'fr')}
-                title={t('admin.switchLanguage')}
-                className={cn(
-                  "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
-                  "bg-white hover:bg-theme-sidebar-active-bg hover:text-blue-700"
-                )}
-              >
-                <span className="text-xs font-black uppercase tracking-wider">{locale === 'fr' ? 'FR' : 'EN'}</span>
-              </Button>
+              {/* ── 5. Language Switcher (role-aware: fournisseur = FR/EN/中文, others = FR/EN) ── */}
+              {(() => {
+                const isFournisseur = roleId === 'fournisseur';
+                const nextLocale = isFournisseur
+                  ? locale === 'fr' ? 'en' : locale === 'en' ? 'zh-CN' : 'fr'
+                  : locale === 'fr' ? 'en' : 'fr';
+                const flagSrc = locale === 'fr' ? '/flags/fr.svg' : locale === 'en' ? '/flags/us.svg' : '/flags/cn.svg';
+                const flagAlt = locale === 'fr' ? 'FR' : locale === 'en' ? 'EN' : 'CN';
+                const label = locale === 'fr' ? 'FR' : locale === 'en' ? 'EN' : '中文';
+                return (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setLocale(nextLocale as any)}
+                    title={t('admin.switchLanguage')}
+                    className={cn(
+                      "group h-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex items-center gap-1.5 px-2.5",
+                      "bg-white hover:bg-theme-sidebar-active-bg hover:text-blue-700"
+                    )}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={flagSrc} alt={flagAlt} className="h-3.5 w-5 rounded-[2px] object-cover shadow-sm shrink-0" />
+                    <span className="text-[11px] font-black uppercase tracking-wider">{label}</span>
+                  </Button>
+                );
+              })()}
 
               {/* ── Mobile More Actions ── */}
               <div className="relative md:hidden">
@@ -432,7 +444,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   variant="ghost"
                   size="icon"
                   onClick={() => setMobileActionsOpen(!mobileActionsOpen)}
-                  title="More actions"
+                  title={t('More actions')}
                   className="h-11 w-11 rounded-xl bg-white shadow-sm"
                 >
                   <MoreHorizontal className="h-5 w-5 text-gray-500" />
@@ -446,7 +458,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                         className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         <Calculator className="w-4 h-4 text-indigo-500" />
-                        Calculator
+                        {t('admin.floatingCalculator')}
                       </button>
                       <button
                         onClick={() => { window.open('/', '_blank'); setMobileActionsOpen(false); }}
@@ -460,15 +472,27 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                         className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         <Store className="w-4 h-4 text-orange-500" />
-                        Boutique
+                        {t('admin.boutique')}
                       </button>
-                      <button
-                        onClick={() => { setLocale(locale === 'fr' ? 'en' : 'fr'); setMobileActionsOpen(false); }}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        <span className="w-4 h-4 flex items-center justify-center text-[10px] font-black uppercase tracking-wider text-blue-600 border border-blue-200 rounded">FR</span>
-                        {t('admin.switchLanguage')}
-                      </button>
+                      {(() => {
+                        const isFournisseur = roleId === 'fournisseur';
+                        const nextLocale = isFournisseur
+                          ? locale === 'fr' ? 'en' : locale === 'en' ? 'zh-CN' : 'fr'
+                          : locale === 'fr' ? 'en' : 'fr';
+                        const flagSrc = locale === 'fr' ? '/flags/fr.svg' : locale === 'en' ? '/flags/us.svg' : '/flags/cn.svg';
+                        const flagAlt = locale === 'fr' ? 'FR' : locale === 'en' ? 'EN' : 'CN';
+                        const label = locale === 'fr' ? 'FR' : locale === 'en' ? 'EN' : '中文';
+                        return (
+                          <button
+                            onClick={() => { setLocale(nextLocale as any); setMobileActionsOpen(false); }}
+                            className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={flagSrc} alt={flagAlt} className="w-4 h-4 rounded-[2px] object-cover" />
+                            {t('admin.switchLanguage')} — {label}
+                          </button>
+                        );
+                      })()}
                     </div>
                   </>
                 )}
@@ -661,7 +685,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   { id: 'email-verification', label: t('admin.emailVerification', { defaultValue: 'Vérification Email' }), icon: ShieldCheck, color: 'text-indigo-600', bg: 'bg-indigo-100/80', href: '/admin/settings/email-verification' },
                   { id: 'flow', label: t('admin.settingsMenu.flow', { defaultValue: 'Parcours client' }), icon: Zap, color: 'text-orange-600', bg: 'bg-orange-100/80', href: '/admin/settings/flow' },
                   { id: 'paypal', label: 'PayPal', icon: CreditCard, color: 'text-blue-600', bg: 'bg-blue-100/80', href: '/admin/settings/paypal' },
-                  { id: 'track', label: 'Suivi colis', icon: Package, color: 'text-indigo-600', bg: 'bg-indigo-100/80', href: '/admin/settings/track' },
+                  { id: 'track', label: t('admin.settingsMenu.track'), icon: Package, color: 'text-indigo-600', bg: 'bg-indigo-100/80', href: '/admin/settings/track' },
                  ].map((item) => (
                   <Link
                     key={item.id}
@@ -698,7 +722,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                   }}
                 >
                   <LayoutDashboard size={14} />
-                  MENU
+                  {t('MENU')}
                 </Button>
               </div>
             </motion.div>
@@ -773,7 +797,7 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
         setThemes(fetchedThemes);
         setSettings(fetchedSettings);
       } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Unable to load initial data.' });
+        toast({ variant: 'destructive', title: t('Error'), description: t('Unable to load initial data.') });
       } finally {
         setLocalLoading(false);
       }
@@ -831,7 +855,7 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
       { href: '/admin', label: t('admin.dashboard'), icon: LayoutGrid, exact: true, color: 'text-blue-500', subtitle: t('admin.dashboardSubtitle') },
       { href: '/admin/quote-requests', label: t('admin.estimations'), icon: ListTodo, exact: false, color: 'text-orange-500', subtitle: t('admin.estimationsSubtitle') },
       { href: '/admin/produits', label: t('admin.products'), icon: Package, exact: false, color: 'text-yellow-500', subtitle: t('admin.productsSubtitle') },
-      { href: '/admin/membres', label: 'Espace membre', icon: Users, exact: true, color: 'text-violet-500', subtitle: 'Gestion des clients et fournisseurs' },
+      { href: '/admin/membres', label: t('admin.memberSpace'), icon: Users, exact: true, color: 'text-violet-500', subtitle: t('admin.memberManagement') },
       { href: '/admin/users', label: t('admin.users'), icon: Users, exact: true, color: 'text-emerald-500', subtitle: '' },
       { href: '/admin/settings', label: t('admin.settings'), icon: Settings, exact: true, color: 'text-fuchsia-500', subtitle: t('admin.settingsSubtitle') },
       { href: '/admin/history', label: t('admin.history'), icon: History, exact: true, color: 'text-blue-400', subtitle: t('admin.historySubtitle') },

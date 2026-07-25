@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowLeft, User, Users, Send, FileText, History, Box, Truck, Wrench, ChevronDown, ChevronUp } from 'lucide-react';
 import { Estimation } from '../types';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface EstimationDetailsProps {
   estimation: Estimation | null;
@@ -12,6 +13,7 @@ interface EstimationDetailsProps {
 }
 
 export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation, isOpen, onClose }) => {
+  const { t: adt } = useAdminT();
   if (!estimation) return null;
 
   return (
@@ -45,7 +47,7 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                     </button>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold text-zinc-900 tracking-tight">Estimation Details</h2>
+                        <h2 className="text-lg font-bold text-zinc-900 tracking-tight">{adt('Estimation Details')}</h2>
                         <span className="text-zinc-400 font-bold tracking-wide text-[10px] uppercase">{estimation.number}</span>
                       </div>
                     </div>
@@ -61,15 +63,15 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                 <div className="flex items-center gap-2">
                   <button className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] font-bold uppercase tracking-wide text-zinc-600 hover:bg-zinc-100 transition-all">
                     <User className="w-3.5 h-3.5" />
-                    Client
+                    {adt('Client')}
                   </button>
                   <button className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] font-bold uppercase tracking-wide text-zinc-600 hover:bg-zinc-100 transition-all">
                     <Users className="w-3.5 h-3.5" />
-                    Fournisseur
+                    {adt('Supplier')}
                   </button>
                   <button className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[10px] font-bold uppercase tracking-wide text-zinc-400 hover:bg-zinc-100 transition-all">
                     <Truck className="w-3.5 h-3.5" />
-                    Transmettre
+                    {adt('Transmit')}
                   </button>
                 </div>
               </div>
@@ -78,21 +80,21 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                 <div className="col-span-2 bg-white rounded-xl p-4 shadow-sm border border-zinc-100 relative">
                   <div className="flex items-center gap-2 mb-4">
                     <User className="w-4 h-4 text-zinc-900" />
-                    <h3 className="text-base font-bold text-zinc-900 tracking-tight">Client</h3>
+                    <h3 className="text-base font-bold text-zinc-900 tracking-tight">{adt('Client')}</h3>
                     <FileText className="absolute right-4 top-4 w-4 h-4 text-blue-500 cursor-pointer" />
                   </div>
 
                   <div className="space-y-2.5 text-sm">
                     <div className="flex gap-2">
-                      <span className="font-bold text-zinc-900">Nom:</span>
+                      <span className="font-bold text-zinc-900">{adt('Name:')}</span>
                       <span className="text-zinc-600">{estimation.client}</span>
                     </div>
                     <div className="flex gap-2">
-                      <span className="font-bold text-zinc-900">Email:</span>
+                      <span className="font-bold text-zinc-900">{adt('Email:')}</span>
                       <span className="text-zinc-600">{estimation.email || '-'}</span>
                     </div>
                     <div className="flex gap-2">
-                      <span className="font-bold text-zinc-900">Phone:</span>
+                      <span className="font-bold text-zinc-900">{adt('Phone:')}</span>
                       <span className="text-zinc-600">{estimation.phone || '-'}</span>
                     </div>
                   </div>
@@ -101,10 +103,10 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                 <div className="bg-white rounded-xl p-4 shadow-sm border border-zinc-100">
                   <div className="flex items-center gap-2 mb-4">
                     <History className="w-4 h-4 text-zinc-900" />
-                    <h3 className="text-base font-bold text-zinc-900 tracking-tight">Historique</h3>
+                    <h3 className="text-base font-bold text-zinc-900 tracking-tight">{adt('History')}</h3>
                   </div>
                   <div className="flex items-center justify-center h-20 text-center">
-                    <p className="text-zinc-400 text-xs italic">Aucun historique.</p>
+                    <p className="text-zinc-400 text-xs italic">{adt('No history for this estimation.')}</p>
                   </div>
                 </div>
               </div>
@@ -113,16 +115,16 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Box className="w-4 h-4 text-zinc-900" />
-                    <h3 className="text-base font-bold text-zinc-900 tracking-tight">Produits</h3>
+                    <h3 className="text-base font-bold text-zinc-900 tracking-tight">{adt('Products')}</h3>
                   </div>
                   <ChevronUp className="w-4 h-4 text-zinc-400" />
                 </div>
-                <p className="text-zinc-400 text-xs mb-4">Total initial: {estimation.totalPurchase.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
+                <p className="text-zinc-400 text-xs mb-4">{adt('Initial Total (excl. tax)')}: {estimation.totalPurchase.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
 
                 <div className="bg-zinc-50 rounded-lg p-3 border border-zinc-100">
                   <div className="flex flex-col gap-2">
                     <div className="flex flex-col gap-1">
-                      <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">Remise Produits (%)</label>
+                      <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">{adt('Product Discount (%)')}</label>
                       <input
                         type="number"
                         defaultValue={0}
@@ -130,7 +132,7 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-zinc-500 text-xs">Nouveau total:</span>
+                      <span className="text-zinc-500 text-xs">{adt('New total:')}</span>
                       <span className="font-bold text-zinc-900 text-sm">{estimation.totalPurchase.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</span>
                     </div>
                   </div>
@@ -141,14 +143,14 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Truck className="w-4 h-4 text-zinc-900" />
-                    <h3 className="text-base font-bold text-zinc-900 tracking-tight">Livraison</h3>
+                    <h3 className="text-base font-bold text-zinc-900 tracking-tight">{adt('Delivery')}</h3>
                   </div>
                   <ChevronUp className="w-4 h-4 text-zinc-400" />
                 </div>
 
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1">
-                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">Delivery cost (€)</label>
+                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">{adt('Delivery cost (€)')}</label>
                     <input
                       type="number"
                       defaultValue={0}
@@ -159,7 +161,7 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                   <div className="bg-zinc-50 rounded-lg p-3 border border-zinc-100">
                     <div className="flex flex-col gap-2">
                       <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">Remise Livraison (%)</label>
+                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">{adt('Delivery Discount (%)')}</label>
                         <input
                           type="number"
                           defaultValue={0}
@@ -167,7 +169,7 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-zinc-500 text-xs">Nouveau total:</span>
+                        <span className="text-zinc-500 text-xs">{adt('New total:')}</span>
                         <span className="font-bold text-zinc-900 text-sm">0,00 €</span>
                       </div>
                     </div>
@@ -179,14 +181,14 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Wrench className="w-4 h-4 text-zinc-900" />
-                    <h3 className="text-base font-bold text-zinc-900 tracking-tight">Main d'oeuvre</h3>
+                    <h3 className="text-base font-bold text-zinc-900 tracking-tight">{adt('Labor')}</h3>
                   </div>
                   <ChevronUp className="w-4 h-4 text-zinc-400" />
                 </div>
 
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1">
-                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">Labor cost (€)</label>
+                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">{adt('Labor cost (€)')}</label>
                     <input
                       type="number"
                       defaultValue={0}
@@ -197,7 +199,7 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                   <div className="bg-zinc-50 rounded-lg p-3 border border-zinc-100">
                     <div className="flex flex-col gap-2">
                       <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">Remise Main d'oeuvre (%)</label>
+                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wide">{adt('Labor Discount (%)')}</label>
                         <input
                           type="number"
                           defaultValue={0}
@@ -205,7 +207,7 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-zinc-500 text-xs">Nouveau total:</span>
+                        <span className="text-zinc-500 text-xs">{adt('New total:')}</span>
                         <span className="font-bold text-zinc-900 text-sm">0,00 €</span>
                       </div>
                     </div>
@@ -217,21 +219,21 @@ export const EstimationDetails: React.FC<EstimationDetailsProps> = ({ estimation
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-3">
                     <div className="flex flex-col">
-                      <span className="text-zinc-600 text-[9px] font-bold uppercase tracking-wide">Total Initial (HT)</span>
+                      <span className="text-zinc-600 text-[9px] font-bold uppercase tracking-wide">{adt('Initial Total (excl. tax)')}</span>
                       <span className="text-lg font-bold text-zinc-900">{estimation.totalPurchase.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-3 items-end">
                     <div className="flex flex-col items-end">
-                      <span className="text-zinc-600 text-[9px] font-bold uppercase tracking-wide">Total Final (HT)</span>
+                      <span className="text-zinc-600 text-[9px] font-bold uppercase tracking-wide">{adt('Final Total (excl. tax)')}</span>
                       <span className="text-lg font-bold text-zinc-900">{estimation.totalPurchase.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-zinc-600 text-[9px] font-bold uppercase tracking-wide">TVA (%):</span>
+                      <span className="text-zinc-600 text-[9px] font-bold uppercase tracking-wide">{adt('VAT (%):')}</span>
                       <div className="bg-white/50 px-4 py-1 rounded-lg font-bold text-zinc-900 text-sm">20</div>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className="text-zinc-600 text-[9px] font-bold uppercase tracking-wide">Total Final (TTC)</span>
+                      <span className="text-zinc-600 text-[9px] font-bold uppercase tracking-wide">{adt('Final Total (incl. tax)')}</span>
                       <span className="text-xl font-bold text-zinc-900">{(estimation.totalPurchase * 1.2).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</span>
                     </div>
                   </div>

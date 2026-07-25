@@ -36,11 +36,14 @@ import { collection, query, orderBy, where, limit, onSnapshot } from 'firebase/f
 import { useAdminT } from '@/hooks/useAdminT';
 import { normalizeSearchText } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+import { NotificationFirestore } from '@/lib/types';
 
 const formatDate = (date: Date | null | undefined, locale: string) => {
   if (!date) return '';
   try {
-    return date.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'short' });
+    const localeMap: Record<string, string> = { fr: 'fr-FR', en: 'en-US', 'zh-CN': 'zh-CN' };
+    return date.toLocaleDateString(localeMap[locale] || 'en-US', { day: 'numeric', month: 'short' });
   } catch {
     return '';
   }
@@ -56,15 +59,15 @@ const formatDate = (date: Date | null | undefined, locale: string) => {
     return 0;
   };
 
-const statusMeta: Record<string, { labelEn: string; labelFr: string; color: string; bg: string }> = {
-  pending: { labelEn: 'Pending', labelFr: 'En attente', color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  processed: { labelEn: 'Processed', labelFr: 'Traité', color: 'text-blue-600', bg: 'bg-blue-50' },
-  in_progress: { labelEn: 'In progress', labelFr: 'En cours', color: 'text-orange-600', bg: 'bg-orange-50' },
-  sent: { labelEn: 'Sent', labelFr: 'Livré', color: 'text-green-600', bg: 'bg-green-50' },
-  delivered: { labelEn: 'Delivered', labelFr: 'Livré', color: 'text-green-600', bg: 'bg-green-50' },
-  archived: { labelEn: 'Archived', labelFr: 'Archivé', color: 'text-gray-600', bg: 'bg-gray-50' },
-  returned: { labelEn: 'Returned', labelFr: 'Retourné', color: 'text-purple-600', bg: 'bg-purple-50' },
-  rented: { labelEn: 'Rented', labelFr: 'Loué', color: 'text-teal-600', bg: 'bg-teal-50' },
+const statusMeta: Record<string, { tKey: string; color: string; bg: string }> = {
+  pending: { tKey: 'Pending', color: 'text-yellow-600', bg: 'bg-yellow-50' },
+  processed: { tKey: 'Processed', color: 'text-blue-600', bg: 'bg-blue-50' },
+  in_progress: { tKey: 'In progress', color: 'text-orange-600', bg: 'bg-orange-50' },
+  sent: { tKey: 'Sent', color: 'text-green-600', bg: 'bg-green-50' },
+  delivered: { tKey: 'Delivered', color: 'text-green-600', bg: 'bg-green-50' },
+  archived: { tKey: 'Archived', color: 'text-gray-600', bg: 'bg-gray-50' },
+  returned: { tKey: 'Returned', color: 'text-purple-600', bg: 'bg-purple-50' },
+  rented: { tKey: 'Rented', color: 'text-teal-600', bg: 'bg-teal-50' },
 };
 
 interface FournisseurDashboardProps {
@@ -139,12 +142,12 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
     if (!items.length) return [];
     return items.slice(0, 5).map((q: any) => {
       const statusStr = q.status || 'pending';
-      const meta = statusMeta[statusStr] || { labelEn: statusStr, labelFr: statusStr, color: 'text-gray-600', bg: 'bg-gray-50' };
+      const meta = statusMeta[statusStr] || { tKey: statusStr, color: 'text-gray-600', bg: 'bg-gray-50' };
       return {
         id: q.estimationNumber || q.id?.slice(0, 8) || 'N/A',
-        client: q.clientName || q.clientEmail || q.userName || 'Client',
+        client: q.clientName || q.clientEmail || q.userName || t('admin.client'),
         commercial: q.treatedByName || '',
-        statusLabel: locale === 'fr' ? meta.labelFr : meta.labelEn,
+        statusLabel: adt(meta.tKey),
         statusColor: meta.color,
         statusBg: meta.bg,
         amount: getQuoteAmount(q),
@@ -171,6 +174,33 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
     }
   }, [isSearchOpen]);
 
+  // Real-time notification listener — toast when new estimation arrives
+  const lastNotifCountRef = useRef<number>(0);
+  useEffect(() => {
+    if (!firestore || !uid) return;
+    const q = query(
+      collection(firestore, 'notifications'),
+      where('userId', '==', uid),
+      where('type', '==', 'estimation_sent'),
+      where('read', '==', false),
+      limit(5)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const count = snap.size;
+      if (lastNotifCountRef.current > 0 && count > lastNotifCountRef.current) {
+        const newest = snap.docs[0]?.data() as NotificationFirestore | undefined;
+        if (newest) {
+          toast.success(adt('Nouveau devis reçu'), {
+            description: adt('Nouvelle estimation reçue'),
+            duration: 8000,
+          });
+        }
+      }
+      lastNotifCountRef.current = count;
+    });
+    return () => unsub();
+  }, [firestore, uid, adt]);
+
   const filteredEstimations = useMemo(() => {
     if (!searchQuery.trim()) return recentEstimations;
     const q = normalizeSearchText(searchQuery);
@@ -190,7 +220,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-              {t('admin.fournisseurDashboard.greeting', { userName: userName || 'Fournisseur' })}
+              {t('admin.fournisseurDashboard.greeting', { userName: userName || adt('Supplier') })}
             </h1>
             <p className="text-sm mt-1 text-gray-500">
               {t('admin.fournisseurDashboard.subtitle')}
@@ -223,7 +253,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t('admin.fournisseurDashboard.searchPlaceholder') || 'Rechercher une estimation...'}
+                    placeholder={t('admin.fournisseurDashboard.searchPlaceholder') || adt('Search for an estimate...')}
                     className={`w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border outline-none transition-colors ${
                       isDark
                         ? 'bg-black/20 border-white/10 text-white placeholder-gray-500 focus:border-white/20'
@@ -241,7 +271,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                 </div>
                 {searchQuery && (
                   <p className={`text-xs mt-2 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                    {filteredEstimations.length} résultat{filteredEstimations.length !== 1 ? 's' : ''}
+                    {filteredEstimations.length} {adt('estimations')}
                   </p>
                 )}
               </div>
@@ -319,7 +349,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold">
               {isSearchOpen && searchQuery
-                ? `${t('admin.searchResults') || 'Résultats de recherche'}`
+                ? t('admin.searchResults')
                 : t('admin.recentEstimations')}
             </h3>
             <Link
@@ -336,7 +366,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                 <tr className={`text-left text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                   <th className="pb-4 font-semibold">{t('admin.number')}</th>
                   <th className="pb-4 font-semibold">{t('admin.client')}</th>
-                  <th className="pb-4 font-semibold">{t('admin.commercial') || 'Commercial'}</th>
+                  <th className="pb-4 font-semibold">{t('admin.commercial')}</th>
                   <th className="pb-4 font-semibold">{t('admin.status')}</th>
                   <th className="pb-4 font-semibold">{t('admin.amount')}</th>
                   <th className="pb-4 font-semibold">{t('admin.date')}</th>
@@ -353,7 +383,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                 ) : filteredEstimations.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-12 text-center text-gray-400 italic">
-                      {searchQuery ? t('admin.noSearchResults') || 'Aucun résultat pour cette recherche' : t('admin.noEstimations') || 'Aucune estimation pour le moment'}
+                      {searchQuery ? adt('No results found.') : adt('No estimation requests in this category.')}
                     </td>
                   </tr>
                 ) : filteredEstimations.map((quote) => (
@@ -378,7 +408,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                     </td>
                     <td className="py-4">
                       <span className="text-sm font-bold group-hover:text-white transition-colors">
-                        {quote.amount.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US', { style: 'currency', currency: 'EUR' })}
+                        {quote.amount.toLocaleString(locale === 'fr' ? 'fr-FR' : locale === 'zh-CN' ? 'zh-CN' : 'en-US', { style: 'currency', currency: 'EUR' })}
                       </span>
                     </td>
                     <td className="py-4">
@@ -407,38 +437,38 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold">{t('admin.fournisseurDashboard.totalRevenue') || 'Chiffre d\'affaires'}</h3>
+              <h3 className="text-sm font-bold">{t('admin.fournisseurDashboard.totalRevenue')}</h3>
               <DollarSign className="w-5 h-5 text-emerald-500" />
             </div>
             <p className="text-2xl font-black">
-              {visibleQuotes.reduce((sum: number, q: any) => sum + getQuoteAmount(q), 0).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US', { style: 'currency', currency: 'EUR' })}
+              {visibleQuotes.reduce((sum: number, q: any) => sum + getQuoteAmount(q), 0).toLocaleString(locale === 'fr' ? 'fr-FR' : locale === 'zh-CN' ? 'zh-CN' : 'en-US', { style: 'currency', currency: 'EUR' })}
             </p>
             <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              {visibleQuotes.length} {t('admin.estimations') || 'estimations'}
+              {visibleQuotes.length} {t('admin.estimations')}
             </p>
           </div>
           <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold">{t('admin.fournisseurDashboard.avgPerQuote') || 'Moyen par devis'}</h3>
+              <h3 className="text-sm font-bold">{t('admin.fournisseurDashboard.avgPerQuote')}</h3>
               <TrendingUp className="w-5 h-5 text-blue-500" />
             </div>
             <p className="text-2xl font-black">
               {visibleQuotes.length > 0
-                ? (visibleQuotes.reduce((sum: number, q: any) => sum + getQuoteAmount(q), 0) / visibleQuotes.length).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US', { style: 'currency', currency: 'EUR' })
-                : '0 €'}
+                ? (visibleQuotes.reduce((sum: number, q: any) => sum + getQuoteAmount(q), 0) / visibleQuotes.length).toLocaleString(locale === 'fr' ? 'fr-FR' : locale === 'zh-CN' ? 'zh-CN' : 'en-US', { style: 'currency', currency: 'EUR' })
+                : (0).toLocaleString(locale === 'fr' ? 'fr-FR' : locale === 'zh-CN' ? 'zh-CN' : 'en-US', { style: 'currency', currency: 'EUR' })}
             </p>
             <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              {t('admin.fournisseurDashboard.estimatesProcessed') || 'Devis traités'}
+              {t('admin.fournisseurDashboard.estimatesProcessed')}
             </p>
           </div>
           <div className={`p-6 rounded-[2rem] border transition-colors duration-300 ${isDark ? 'bg-[#141414] border-white/5 text-white' : 'bg-white border-gray-200 shadow-sm text-gray-900'}`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold">{t('admin.fournisseurDashboard.productsManaged') || 'Produits gérés'}</h3>
+              <h3 className="text-sm font-bold">{t('admin.fournisseurDashboard.productsManaged')}</h3>
               <Package className="w-5 h-5 text-purple-500" />
             </div>
             <p className="text-2xl font-black">{stats.products}</p>
             <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              {t('admin.products') || 'Produits'}
+              {t('admin.products')}
             </p>
           </div>
         </div>
@@ -456,7 +486,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
             {userAvatar ? (
               <img
                 src={userAvatar}
-                alt="Profile"
+                alt={t('admin.supplier')}
                 className="w-20 h-20 rounded-full border-4 border-white dark:border-white/10 shadow-xl mx-auto object-cover"
                 referrerPolicy="no-referrer"
               />
@@ -466,7 +496,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
               </div>
             )}
           </div>
-          <h3 className="text-lg font-bold">{userName || 'Fournisseur'}</h3>
+          <h3 className="text-lg font-bold">{userName || adt('Supplier')}</h3>
           <p className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('admin.supplier')}</p>
 
           <div className="flex items-center justify-center gap-4 mt-6">
@@ -501,20 +531,20 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                 <span className="text-sm font-medium">{t('admin.fournisseurDashboard.totalRevenue')}</span>
               </div>
               <span className="text-sm font-bold text-emerald-600">
-                {visibleQuotes.reduce((sum: number, q: any) => sum + getQuoteAmount(q), 0).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US', { style: 'currency', currency: 'EUR' })}
+                {visibleQuotes.reduce((sum: number, q: any) => sum + getQuoteAmount(q), 0).toLocaleString(locale === 'fr' ? 'fr-FR' : locale === 'zh-CN' ? 'zh-CN' : 'en-US', { style: 'currency', currency: 'EUR' })}
               </span>
             </div>
             <div className="flex items-center justify-between p-3 bg-orange-50 rounded-xl">
               <div className="flex items-center gap-3">
                 <ShoppingBag className="w-5 h-5 text-orange-500" />
-                <span className="text-sm font-medium">{t('admin.fournisseurDashboard.estimatesCompleted') || 'Devis complétés'}</span>
+                <span className="text-sm font-medium">{t('admin.fournisseurDashboard.estimatesCompleted')}</span>
               </div>
               <span className="text-sm font-bold text-orange-600">{stats.delivered}</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
               <div className="flex items-center gap-3">
                 <Clock className="w-5 h-5 text-blue-500" />
-                <span className="text-sm font-medium">{t('admin.fournisseurDashboard.inProgress') || 'En cours'}</span>
+                <span className="text-sm font-medium">{t('admin.fournisseurDashboard.inProgress')}</span>
               </div>
               <span className="text-sm font-bold text-blue-600">{stats.inProgress}</span>
             </div>
@@ -528,7 +558,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
             <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gray-100 dark:bg-white/5"></div>
             {activities.length === 0 ? (
               <p className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'} italic`}>
-                {t('admin.noRecentActivity') || 'Aucune activité récente'}
+                {t('admin.noRecentActivity')}
               </p>
             ) : activities.map((activity, idx) => (
               <div key={activity.id} className="relative">

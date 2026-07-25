@@ -5,8 +5,9 @@
 
 import fr from './locales/fr.json';
 import en from './locales/en.json';
+import zhCN from './locales/zh-CN.json';
 
-export type Locale = 'fr' | 'en';
+export type Locale = 'fr' | 'en' | 'zh-CN';
 
 type NestedKeyOf<T> = T extends object
   ? { [K in keyof T]: K extends string
@@ -38,12 +39,14 @@ function flattenObject(obj: any, prefix = ''): Record<string, string> {
 // Create flat translation maps for fast lookup
 const flatFr = flattenObject(fr);
 const flatEn = flattenObject(en);
+const flatZhCN = flattenObject(zhCN);
 
 /**
  * Get the translation for a key in the specified locale
  * Falls back to French if key not found
  */
 export function getTranslation(key: string, locale: Locale = 'en'): string {
+  if (locale === 'zh-CN') return flatZhCN[key] || flatEn[key] || key;
   const translations = locale === 'en' ? flatEn : flatFr;
   return translations[key] || flatFr[key] || key;
 }
@@ -72,7 +75,7 @@ export function createTranslator(locale: Locale) {
 export function getLocaleFromCookie(cookieHeader?: string): Locale {
   if (!cookieHeader) return 'en';
   
-  const match = cookieHeader.match(/admin-locale=(fr|en)/);
+  const match = cookieHeader.match(/admin-locale=(fr|en|zh-CN)/);
   return (match?.[1] as Locale) || 'en';
 }
 
@@ -85,7 +88,7 @@ export const backendTranslations = {
   'errors.accountNotFound': { fr: 'Compte non trouvé.', en: 'Account not found.' },
   'errors.invalidData': { fr: 'Données invalides.', en: 'Invalid data.' },
   'errors.userAlreadyExists': { fr: 'Un utilisateur avec cet email existe déjà.', en: 'A user with this email already exists.' },
-  'errors.invalidPhoneFormat': { fr: "Le format du numéro de téléphone est invalide. Veuillez utiliser un format international (ex: +33612345678).", en: "The phone number format is invalid. Please use an international format (e.g. +33612345678)." },
+  'errors.invalidPhoneFormat': { fr: "Le format du numéro de téléphone est invalide. Veuillez utiliser un format international (ex: +33612345678).", en: "The phone number format is invalid. Please use an international format (e.g. +33612345678).", 'zh-CN': "电话号码格式无效。请使用国际格式（例如：+8613812345678）。" },
   'errors.registrationFailed': { fr: "Une erreur est survenue lors de l'inscription.", en: "An error occurred during registration." },
   'errors.roleNotFound': { fr: 'Rôle introuvable', en: 'Role not found' },
   'errors.cannotModifyDefaultRole': { fr: 'Impossible de modifier un rôle par défaut', en: 'Cannot modify a default role' },

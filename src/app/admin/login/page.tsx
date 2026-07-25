@@ -15,7 +15,6 @@ import {
   Lock,
   LogIn,
   Mail,
-  Phone,
   ShieldCheck,
   User,
   UserPlus,
@@ -25,6 +24,8 @@ import { loginAndRedirect, registerUser, handleGoogleSignIn as googleSignInActio
 import { useAuth } from '@/firebase';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminT } from '@/hooks/useAdminT';
+import { useI18n } from '@/lib/i18n';
+import { validatePhone, detectCountryConfig } from '@/lib/phone-validation';
 
 type AuthMode = 'login' | 'signup';
 
@@ -50,6 +51,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const auth = useAuth();
   const { t } = useAdminT();
+  const { locale, setLocale } = useI18n();
 
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -80,6 +82,9 @@ export default function LoginPage() {
   const [googlePhone, setGooglePhone] = useState('');
   const [isSavingGoogleProfile, setIsSavingGoogleProfile] = useState(false);
 
+  const signupCountry = useMemo(() => detectCountryConfig(signupPhone), [signupPhone]);
+  const googleCountry = useMemo(() => detectCountryConfig(googlePhone), [googlePhone]);
+
   useEffect(() => {
     const urlError = searchParams.get('error');
     if (urlError) {
@@ -103,13 +108,13 @@ export default function LoginPage() {
 
   const activeTitle = useMemo(() => {
     return authMode === 'login' ? t('Login') : t('Create an account');
-  }, [authMode]);
+  }, [authMode, t]);
 
   const activeDescription = useMemo(() => {
     return authMode === 'login'
       ? t('Access your admin space and manage your catalog.')
       : t('Create your admin account with the required information.');
-  }, [authMode]);
+  }, [authMode, t]);
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -189,15 +194,17 @@ export default function LoginPage() {
       if (!signupPhone.trim()) {
         throw new Error(t('Phone number is required.'));
       }
-      if (!/^(\+33|0)[1-9][0-9]{8}$/.test(signupPhone.replace(/\s/g, ''))) {
-        throw new Error(t('Invalid phone number format. Example: 06 12 34 56 78'));
+
+      const phoneValidation = validatePhone(signupPhone);
+      if (!phoneValidation.isValid) {
+        throw new Error(phoneValidation.error || t('Invalid phone number format. Example: 06 12 34 56 78'));
       }
 
       const result = await registerUser({
         email: signupEmail,
         password: signupPassword,
         displayName: signupName,
-        phone: signupPhone || '',
+        phone: phoneValidation.normalized || signupPhone || '',
       });
 
       if (!result.success) {
@@ -319,9 +326,21 @@ export default function LoginPage() {
             className="hidden lg:block"
           >
             <div className="max-w-xl space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-slate-600 shadow-sm backdrop-blur">
-                <ShieldCheck className="h-4 w-4 text-blue-600" />
-                {t('Admin Space')}
+              <div className="flex items-center gap-2.5">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/50 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                  <ShieldCheck className="h-3.5 w-3.5 mr-0.5" />
+                  {locale === 'zh-CN' ? '管理空间 (ADMIN SPACE)' : t('Admin Space')}
+                </div>
+
+                <button
+                  onClick={() => setLocale(locale === 'zh-CN' ? 'en' : 'zh-CN')}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/50 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white transition-colors"
+                  title={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/flags/cn.svg" alt="CN" className="h-3.5 w-5 rounded-[2px] object-cover" />
+                  {locale === 'zh-CN' ? 'EN' : '中文'}
+                </button>
               </div>
 
               <div className="space-y-4">
@@ -373,6 +392,18 @@ export default function LoginPage() {
             className="mx-auto w-full max-w-md"
           >
             <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white/95 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur">
+              <div className="absolute right-4 top-4 z-10 lg:hidden">
+                <button
+                  onClick={() => setLocale(locale === 'zh-CN' ? 'en' : 'zh-CN')}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/50 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white transition-colors"
+                  title={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/flags/cn.svg" alt="CN" className="h-3.5 w-5 rounded-[2px] object-cover" />
+                  {locale === 'zh-CN' ? 'EN' : '中文'}
+                </button>
+              </div>
+
               <div className="border-b border-slate-100 bg-slate-50/80 px-6 pb-6 pt-8 sm:px-8">
                 <div className="mb-6 flex justify-center">
                   <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-slate-900 shadow-lg shadow-slate-200">
@@ -583,8 +614,22 @@ export default function LoginPage() {
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="signup-phone">
                           {t('Phone')}
                         </label>
-                        <div className="relative">
-                          <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <div className="flex items-center bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden focus-within:border-slate-900 focus-within:bg-white focus-within:ring-4 focus-within:ring-slate-900/5 transition-all">
+                          <div className="flex items-center px-4 space-x-2 border-r border-slate-200 shrink-0">
+                            {signupCountry ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={signupCountry.flagSrc}
+                                alt={signupCountry.flagAlt}
+                                className="h-5 w-7 rounded-[3px] object-cover shadow-sm select-none"
+                              />
+                            ) : (
+                              <span className="text-sm">🌐</span>
+                            )}
+                            <span className="text-sm font-medium text-slate-600">
+                              {signupCountry?.dialCode || '+33'}
+                            </span>
+                          </div>
                           <input
                             id="signup-phone"
                             type="tel"
@@ -592,7 +637,7 @@ export default function LoginPage() {
                             value={signupPhone}
                             onChange={(event) => setSignupPhone(event.target.value)}
                             placeholder={t('+33 6 00 00 00 00')}
-                            className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
+                            className="h-12 w-full bg-transparent border-none px-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-0"
                           />
                         </div>
                       </div>
@@ -658,14 +703,28 @@ export default function LoginPage() {
                         <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">
                           {t('Phone')} <span className="normal-case tracking-normal text-slate-400">({t('optional')})</span>
                         </label>
-                        <div className="relative">
-                          <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <div className="flex items-center bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden focus-within:border-slate-900 focus-within:bg-white focus-within:ring-4 focus-within:ring-slate-900/5 transition-all">
+                          <div className="flex items-center px-4 space-x-2 border-r border-slate-200 shrink-0">
+                            {googleCountry ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={googleCountry.flagSrc}
+                                alt={googleCountry.flagAlt}
+                                className="h-5 w-7 rounded-[3px] object-cover shadow-sm select-none"
+                              />
+                            ) : (
+                              <span className="text-sm">🌐</span>
+                            )}
+                            <span className="text-sm font-medium text-slate-600">
+                              {googleCountry?.dialCode || '+33'}
+                            </span>
+                          </div>
                           <input
                             type="tel"
                             value={googlePhone}
                             onChange={(e) => setGooglePhone(e.target.value)}
                             placeholder={t('+33 6 00 00 00 00')}
-                            className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
+                            className="h-12 w-full bg-transparent border-none px-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-0"
                           />
                         </div>
                       </div>

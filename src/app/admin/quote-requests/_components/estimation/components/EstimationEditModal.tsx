@@ -309,7 +309,7 @@ export const EstimationEditModal: React.FC<EstimationEditModalProps> = ({
                       <div className="space-y-2">
                         <div className="flex items-center justify-between p-3 bg-[#0a0a0b] rounded-lg">
                           <div className="flex-1">
-                            <p className="text-sm font-bold text-white">Estimation #{localEstimation.number}</p>
+                            <p className="text-sm font-bold text-white">{t('editModal.estimationNumberLabel', { number: localEstimation.number })}</p>
                             <p className="text-xs text-zinc-500">{localEstimation.reference}</p>
                           </div>
                           <div className="text-right">

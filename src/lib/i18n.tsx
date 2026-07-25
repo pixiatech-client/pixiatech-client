@@ -4,12 +4,13 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import fr from './locales/fr.json';
 import en from './locales/en.json';
+import zhCN from './locales/zh-CN.json';
 import { setLocaleCookie } from './locale-actions';
 
-type Locale = 'fr' | 'en';
+type Locale = 'fr' | 'en' | 'zh-CN';
 type Translations = typeof fr;
 
-const translations: Record<Locale, Translations> = { fr, en };
+const translations: Record<Locale, any> = { fr, en, 'zh-CN': zhCN };
 
 interface I18nContextType {
   locale: Locale;
@@ -23,19 +24,21 @@ const I18nContext = createContext<I18nContextType | undefined>(undefined);
 export const IntlHelpers = {
   formatGreeting: (userName: string, locale: Locale) => {
     const hour = new Date().getHours();
-    const greeting = locale === 'en' ? 'Good' : 'Bonjour';
+    const greeting = locale === 'zh-CN' ? '你好' : locale === 'en' ? 'Good' : 'Bonjour';
     return `${greeting}, ${userName}`;
   },
   formatDate: (date: Date, locale: Locale, options?: Intl.DateTimeFormatOptions) => {
     try {
-      return date.toLocaleDateString(locale === 'en' ? 'en-US' : 'fr-FR', options || { day: 'numeric', month: 'short' });
+      const localeMap: Record<Locale, string> = { fr: 'fr-FR', en: 'en-US', 'zh-CN': 'zh-CN' };
+      return date.toLocaleDateString(localeMap[locale] || 'fr-FR', options || { day: 'numeric', month: 'short' });
     } catch {
       return '';
     }
   },
   formatDateTime: (date: Date, locale: Locale) => {
     try {
-      return date.toLocaleTimeString(locale === 'en' ? 'en-US' : 'fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const localeMap: Record<Locale, string> = { fr: 'fr-FR', en: 'en-US', 'zh-CN': 'zh-CN' };
+      return date.toLocaleTimeString(localeMap[locale] || 'fr-FR', { hour: '2-digit', minute: '2-digit' });
     } catch {
       return '';
     }
@@ -46,7 +49,7 @@ export const IntlHelpers = {
 const getStoredLocale = (): Locale => {
   if (typeof window === 'undefined') return 'fr';
   const stored = localStorage.getItem('admin-locale');
-  if (stored === 'en' || stored === 'fr') return stored;
+  if (stored === 'en' || stored === 'fr' || stored === 'zh-CN') return stored as Locale;
   return 'fr';
 };
 

@@ -100,7 +100,7 @@ export const SupplierQuoteDialog = React.forwardRef<HTMLDivElement, SupplierQuot
       startPdfRender(async () => {
         const pdf = await generatePdf();
         if (pdf) {
-          pdf.save(`fiche_technique_${quote.id.substring(0, 6)}.pdf`);
+          pdf.save(`${t('Technical sheet')}_${quote.id.substring(0, 6)}.pdf`);
         }
       });
     };

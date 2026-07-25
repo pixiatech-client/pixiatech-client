@@ -209,7 +209,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
           await uploadBytes(storageRef, blob);
           const downloadURL = await getDownloadURL(storageRef);
           
-          await sendMediaMessage('audio', downloadURL, 'Message vocal');
+          await sendMediaMessage('audio', downloadURL, adt('Message vocal'));
         } catch (uploadError) {
           console.error('Error uploading audio:', uploadError);
         }
@@ -260,7 +260,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
       await sendMediaMessage(type, downloadURL, file.name);
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert('Erreur lors de l\'envoi du fichier');
+      alert(adt('Erreur lors de l\'envoi du fichier'));
     }
     
     setIsUploading(false);
@@ -344,7 +344,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
       await addDoc(collection(db, 'notifications'), {
         userId: targetUserId,
         type: 'message',
-        title: `Nouveau message de ${currentUser.displayName || 'quelqu\'un'}`,
+        title: adt(`Nouveau message de ${currentUser.displayName || 'quelqu\'un'}`),
         description: inputText.trim().substring(0, 100),
         href: '/admin/quote-requests',
         read: false,
@@ -356,7 +356,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
       onMessageSent?.();
     } catch (error) {
       console.error('[EstimationChat] Error sending message:', error);
-      alert('Erreur lors de l\'envoi du message');
+      alert(adt('Erreur lors de l\'envoi du message'));
     }
   };
 
@@ -471,22 +471,22 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black">
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="text-zinc-500 text-xs">Chargement...</div>
+                  <div className="text-zinc-500 text-xs">{adt('Loading...')}</div>
                 </div>
               ) : messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4">
                     <Shield className="w-8 h-8 text-zinc-600" />
                   </div>
-                  <h3 className="text-zinc-300 text-sm font-bold mb-1">Start a conversation</h3>
+                  <h3 className="text-zinc-300 text-sm font-bold mb-1">{adt('Start a conversation')}</h3>
                   <p className="text-zinc-600 text-xs">
-                    Envoyez un message au {otherUser?.role === 'prestataire' ? 'fournisseur' : 'client'}
+                    {adt('Envoyez un message au')} {otherUser?.role === 'prestataire' ? adt('fournisseur') : adt('client')}
                   </p>
                 </div>
               ) : (
                 messages.map((msg) => {
                   const isMine = msg.senderId === currentUser.uid;
-                  const senderName = msg.senderName || (isMine ? 'Vous' : 'Inconnu');
+                  const senderName = msg.senderName || (isMine ? adt('Vous') : adt('Inconnu'));
                   const senderRole = msg.senderRole || (isMine ? currentUser.role : 'unknown');
                   const roleLabel = senderRole === 'admin' ? adt('Admin') : senderRole === 'prestataire' ? adt('Fournisseur') : adt('Commercial');
                   const roleColor = senderRole === 'admin' ? 'bg-blue-500/20 text-blue-400' : senderRole === 'prestataire' ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400';
@@ -517,7 +517,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
                       <span className="text-[10px] text-zinc-500 mt-1 px-1">
                         {formatTime(msg.createdAt)}
                         {isMine && (
-                          <span className="ml-1 text-[#95d230]">• Sent</span>
+                          <span className="ml-1 text-[#95d230]">{adt('• Sent')}</span>
                         )}
                       </span>
                     </div>
@@ -566,7 +566,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
                   {isRecording && (
                     <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
                       <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                      <span className="text-red-500 text-xs font-mono">Enregistrement... {formatRecordingTime(recordingTime)}</span>
+                      <span className="text-red-500 text-xs font-mono">{adt('Recording... ')}{formatRecordingTime(recordingTime)}</span>
                     </div>
                   )}
                   <textarea
@@ -578,7 +578,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
                         handleSendMessage();
                       }
                     }}
-                    placeholder="Votre message..."
+                    placeholder={adt('Your message...')}
                     className="w-full p-3 bg-black border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none text-sm text-white min-h-[44px] max-h-[120px]"
                     rows={1}
                   />
@@ -620,7 +620,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
                     {selectedMedia.type === 'image' ? (
                       <img 
                         src={selectedMedia.url} 
-                        alt="Full screen" 
+                        alt={adt('Full screen')} 
                         className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
                         referrerPolicy="no-referrer"
                       />

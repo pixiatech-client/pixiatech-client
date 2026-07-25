@@ -6,15 +6,16 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 import fr from '@/lib/locales/fr.json';
 import en from '@/lib/locales/en.json';
+import zhCN from '@/lib/locales/zh-CN.json';
 import { getSettings } from '@/app/admin/actions';
 import { updateStatsOnCreate } from '@/lib/statsService';
-import { createHash } from 'crypto';
+import { createHash, randomInt } from 'crypto';
 import { Timestamp } from 'firebase-admin/firestore';
 import type { MessageStyle, PreviewTheme } from '@/components/verification/types';
 import { getSmtpTransport, type SmtpSettings } from '@/lib/smtpService';
 
-type Locale = 'fr' | 'en';
-const translations = { fr, en };
+type Locale = 'fr' | 'en' | 'zh-CN';
+const translations = { fr, en, 'zh-CN': zhCN };
 
 import { validatePhone } from '@/lib/phone-validation';
 
@@ -535,7 +536,7 @@ export async function createQuoteWithContract(
     width: number;
     height: number;
     productName: string;
-    lang: 'fr' | 'en';
+    lang: 'fr' | 'en' | 'zh-CN';
     rentalPeriod?: { from: string; to: string };
     rentalStartTime?: string;
     rentalEndTime?: string;
@@ -554,7 +555,7 @@ export async function createQuoteWithContract(
     const isEmailVerificationEnabled = globalSettings?.isEmailVerificationEnabled ?? true;
     const validityMinutes = evSettings?.validityMinutes || 10;
 
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpCode = randomInt(100000, 1000000).toString();
     const expirationDate = new Date();
     expirationDate.setMinutes(expirationDate.getMinutes() + validityMinutes);
 
@@ -631,7 +632,7 @@ export async function createQuoteWithContract(
 async function sendSignatureOtpEmail(
   recipientEmail: string,
   otpCode: string,
-  lang: 'fr' | 'en',
+  lang: 'fr' | 'en' | 'zh-CN',
   companyName: string,
   representative: string,
   totalAmount: number,
@@ -716,7 +717,7 @@ export async function sendVerificationOtp(params: {
   email: string;
   company: string;
   representative: string;
-  lang: 'fr' | 'en';
+  lang: 'fr' | 'en' | 'zh-CN';
   totalQuote: number;
   productDetails: string;
 }): Promise<{ success: boolean; pendingId?: string; otpCode?: string; error?: string }> {
@@ -729,7 +730,7 @@ export async function sendVerificationOtp(params: {
     const evSettings = settings?.emailVerification;
     const validityMinutes = evSettings?.validityMinutes || 10;
 
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpCode = randomInt(100000, 1000000).toString();
     const expirationDate = new Date();
     expirationDate.setMinutes(expirationDate.getMinutes() + validityMinutes);
 
@@ -845,7 +846,7 @@ export async function createEstimationFromPending(
     width: number;
     height: number;
     productName: string;
-    lang: 'fr' | 'en';
+    lang: 'fr' | 'en' | 'zh-CN';
     rentalPeriod?: { from: string; to: string };
     rentalStartTime?: string;
     rentalEndTime?: string;
@@ -931,7 +932,7 @@ export async function resendVerificationOtp(pendingId: string): Promise<{ succes
       return { success: false, error: 'Session invalide.' };
     }
 
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpCode = randomInt(100000, 1000000).toString();
     const expirationDate = new Date();
     expirationDate.setMinutes(expirationDate.getMinutes() + validityMinutes);
 
@@ -990,7 +991,7 @@ export async function resendQuoteOtp(quoteId: string): Promise<{ success: boolea
       return { success: false, error: 'Maximum resend attempts reached.' };
     }
 
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpCode = randomInt(100000, 1000000).toString();
     const expirationDate = new Date();
     expirationDate.setMinutes(expirationDate.getMinutes() + validityMinutes);
 

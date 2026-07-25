@@ -73,7 +73,7 @@ const estimationToStatus: Record<EstimationStatus, string> = {
 };
 
 
-function quoteToEstimation(q: QuoteRequest): Estimation {
+function quoteToEstimation(q: QuoteRequest, t: (key: string, options?: Record<string, string | number>) => string): Estimation {
   const rawDate = q.createdAt ? (q.createdAt instanceof Date ? q.createdAt : new Date(q.createdAt)) : null;
   const isValidDate = rawDate && !isNaN(rawDate.getTime());
   const estStatus = statusToEstimation[q.status] || 'En attente';
@@ -97,7 +97,7 @@ function quoteToEstimation(q: QuoteRequest): Estimation {
    return {
      id: q.id,
      number: q.number || `DEV-${idShort}`,
-      client: typeof q.client === 'string' ? q.client : (q.client?.companyName || (q.client as any)?.name || 'Unknown Client'),
+      client: typeof q.client === 'string' ? q.client : (q.client?.companyName || (q.client as any)?.name || t('estimation.unknownClient')),
      phone: (q.client && typeof q.client === 'object' ? q.client.phone : (q as any).phone) || '',
      email: (q.client && typeof q.client === 'object' ? q.client.email : (q as any).email) || '',
      status: estStatus,
@@ -290,7 +290,7 @@ const isFournisseur = userRole === 'fournisseur';
       merged.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       const finalRequests = statusKeys.length > 1 ? merged.slice(0, itemsPerPage * 3) : merged;
       
-      const newEstimations = finalRequests.map((q: any) => quoteToEstimation(q));
+      const newEstimations = finalRequests.map((q: any) => quoteToEstimation(q, t));
       const mergedLastId = finalRequests.length > 0 ? finalRequests[finalRequests.length - 1].id : null;
       
       // Update cache
@@ -404,14 +404,14 @@ const isFournisseur = userRole === 'fournisseur';
               userId: 'system',
               userName: 'System',
               timestamp: Date.now(),
-              details: `${delayDays} jour(s) de retard détecté(s) — date prévue: ${est.trackingInfo.deliveryDate}`,
+              details: t('estimation.history.delayDetectedDetail', { days: delayDays, date: est.trackingInfo.deliveryDate }),
             };
             const penaltyEntry = {
               action: 'penaltyCalculated',
               userId: 'system',
               userName: 'System',
               timestamp: Date.now(),
-              details: `Pénalité de retard: ${delayDays} jour(s)`,
+              details: t('estimation.history.penaltyDetail', { days: delayDays }),
             };
             const existingHistory = est.deliveryHistory || [];
             const updatedHistory = [...existingHistory, historyEntry, penaltyEntry];
@@ -434,7 +434,7 @@ const isFournisseur = userRole === 'fournisseur';
                 type: 'delay',
                 read: false,
                 createdAt: serverTimestamp(),
-                message: `Livraison en retard — ${delayDays} jour(s)`,
+                message: t('estimation.history.lateDeliveryNotif', { days: delayDays }),
               });
             } catch (err) {
               console.error('Failed to update delay detection:', err);
@@ -574,44 +574,44 @@ const tabCounts = useMemo(() => {
       // Rule #1: Cannot move to 'Traité' without a supplier (Except for Admin)
       if (currentStatus === 'En attente' && targetStatus === 'Traité') {
         if (!estimation.supplierId && !estimation.supplier && userRole !== 'admin') {
-          return { valid: false, error: 'Veuillez ASSIGNER UN FOURNISSEUR avant de traiter cette estimation' };
+          return { valid: false, error: t('estimation.validation.assignSupplier') };
         }
       }
       
       // Rule #2: Cannot move to 'Livraison' without trackingNumber + deliveryDate
       if (currentStatus === 'Fournisseur' && targetStatus === 'Livraison') {
         if (!estimation.trackingNumber || !estimation.trackingInfo?.deliveryDate) {
-          return { valid: false, error: 'Veuillez saisir le NUMÉRO DE SUIVI et la DATE DE LIVRAISON avant de passer en livraison' };
+          return { valid: false, error: t('estimation.validation.trackingRequired') };
         }
       }
       
       // Rule #3: Only ADMIN can restore from Trash
       if (currentStatus === 'Corbeille' && targetStatus === 'En attente') {
         if (userRole !== 'admin') {
-          return { valid: false, error: 'Seul l\'ADMINISTRATEUR peut restaurer depuis la Corbeille' };
+          return { valid: false, error: t('estimation.validation.adminOnlyRestore') };
         }
       }
       
       // Rule #4: No automatic return to En attente from Livraison
       if (currentStatus === 'Livraison' && targetStatus === 'En attente') {
-        return { valid: false, error: 'Transition non autorisée : impossible de revenir à "En attente" depuis "Livraison"' };
+        return { valid: false, error: t('estimation.validation.unauthorizedTransition') };
       }
       
       // Rule #5: Only ADMIN can permanently delete
       if (targetStatus === 'Corbeille' && currentStatus === 'Corbeille') {
         if (userRole !== 'admin') {
-          return { valid: false, error: 'Seul l\'ADMINISTRATEUR peut supprimer définitivement' };
+          return { valid: false, error: t('estimation.validation.adminOnlyDelete') };
         }
       }
 
       // Rule #6: Cannot transition Livré -> Livraison (read-only after delivered)
       if (currentStatus === 'Livré' && targetStatus === 'Livraison') {
-        return { valid: false, error: 'Impossible de revenir en arrière après avoir marqué la livraison comme terminée' };
+        return { valid: false, error: t('estimation.validation.cannotGoBack') };
       }
 
       // Rule #7: Cannot transition Réception confirmée -> Livré
       if (currentStatus === 'Réception confirmée' && targetStatus === 'Livré') {
-        return { valid: false, error: 'La réception a déjà été confirmée par le client' };
+        return { valid: false, error: t('estimation.validation.receiptAlreadyConfirmed') };
       }
       
       return { valid: true };
@@ -736,8 +736,8 @@ const tabCounts = useMemo(() => {
       const validation = validateStatusTransition(est.status, nextStatus, est, currentUser.role);
       if (!validation.valid) {
         setPopupData({
-          title: 'Action refusée',
-          message: validation.error || 'Cette action est impossible.',
+          title: t('estimation.popup.actionRefused'),
+          message: validation.error || t('estimation.popup.impossibleAction'),
           subtitle: `Estimation ${est.number}`,
           variant: 'alert'
         });
@@ -765,7 +765,7 @@ const tabCounts = useMemo(() => {
             userId: currentUser.uid || 'system',
             userName: currentUser.displayName || 'System',
             timestamp: Date.now(),
-            details: `Livraison démarrée par ${currentUser.displayName || 'System'}`,
+            details: t('estimation.history.deliveryStartedBy', { user: currentUser.displayName || 'System' }),
           };
           const existingHistory = est.deliveryHistory || [];
           updateData.deliveryHistory = [...existingHistory, historyEntry];
@@ -893,15 +893,15 @@ const tabCounts = useMemo(() => {
       
       if (isReturned) {
         setPopupData({
-          title: 'Return Reason',
-          message: est.returnReason || quoteToUse?.returnReason || 'No reason specified.',
+          title: t('estimation.popup.returnReason'),
+          message: est.returnReason || quoteToUse?.returnReason || t('estimation.popup.noReason'),
           subtitle: `Réf: ${est.number}`,
           variant: 'alert'
         });
       } else {
         setPopupData({
-          title: 'Supplier Instructions',
-          message: est.supplierNotes || quoteToUse?.supplierNotes || 'No technical instructions.',
+          title: t('estimation.popup.supplierInstructions'),
+          message: est.supplierNotes || quoteToUse?.supplierNotes || t('estimation.popup.noInstructions'),
           subtitle: `Réf: ${est.number}`,
           variant: 'default'
         });
@@ -926,7 +926,7 @@ const tabCounts = useMemo(() => {
         userId: currentUser.uid || 'system',
         userName: currentUser.displayName || 'System',
         timestamp: Date.now(),
-        details: `N° suivi: ${info.number}, livraison prévue: ${info.deliveryDate} (saisi par ${currentUser.displayName || 'System'} le ${dateStr} à ${timeStr})`,
+        details: t('estimation.history.trackingDetail', { number: info.number, deliveryDate: info.deliveryDate, user: currentUser.displayName || 'System', date: dateStr, time: timeStr }),
       };
       const existingHistory = est?.deliveryHistory || [];
       const updatedHistory = [...existingHistory, historyEntry];
@@ -944,7 +944,7 @@ const tabCounts = useMemo(() => {
 // Rule #3: Only ADMIN can restore from Trash
     const handleRestore = useCallback(async (id: string) => {
       if (currentUser.role !== 'admin') {
-        alert('Seul l\'ADMINISTRATEUR peut restaurer depuis la Corbeille');
+        alert(t('estimation.validation.adminOnlyRestore'));
         return;
       }
       
@@ -975,7 +975,7 @@ const tabCounts = useMemo(() => {
    const handleBulkRestore = useCallback(async () => {
      if (selectedItems.size === 0) return;
       if (currentUser.role !== 'admin') {
-        alert('Seul l\'ADMINISTRATEUR peut restaurer des estimations');
+        alert(t('estimation.validation.adminOnlyRestore'));
        return;
      }
 
@@ -1069,7 +1069,7 @@ const tabCounts = useMemo(() => {
          : Array.from(selectedItems.values());
 
        if (itemsToProcess.length === 0) {
-          alert('Error: no estimation found');
+           alert(t('estimation.error.noEstimation'));
          setIsSupplierPanelOpen(false);
          return;
        }
@@ -1080,7 +1080,7 @@ const tabCounts = useMemo(() => {
        try {
          for (const activeEstimation of itemsToProcess) {
           if (currentUser.role !== 'admin' && activeEstimation.treatedBy && currentUser.uid !== activeEstimation.treatedBy) {
-              alert(`Only the responsible commercial can transfer estimation ${activeEstimation.number} to the supplier.`);
+              alert(t('estimation.error.onlyResponsibleCommercial', { number: activeEstimation.number }));
              failedIds.push(activeEstimation.id);
              continue;
            }
@@ -1114,7 +1114,7 @@ const tabCounts = useMemo(() => {
 
        } catch (error) {
          console.error('Error transferring to supplier:', error);
-          alert('Error during transfer');
+           alert(t('estimation.error.transferError'));
        } finally {
          setIsLoading(false);
          setIsSupplierPanelOpen(false);
@@ -1190,7 +1190,7 @@ const tabCounts = useMemo(() => {
                 userId: currentUser.uid || 'system',
                 userName: currentUser.displayName || 'System',
                 timestamp: Date.now(),
-                details: `Livraison créée par ${currentUser.displayName || 'System'}`,
+                details: t('estimation.history.deliveryCreatedBy', { user: currentUser.displayName || 'System' }),
               };
               const existingHistory = est?.deliveryHistory || [];
               await updateQuoteStatus(id, {
@@ -1211,7 +1211,7 @@ const tabCounts = useMemo(() => {
                supplierId: undefined,
                returnReason: data?.subject && data?.reason 
                  ? `${data.subject}: ${data.reason}` 
-              : (data?.subject || data?.reason || 'No reason specified')
+              : (data?.subject || data?.reason || t('estimation.popup.noReason'))
              });
            }
          }
@@ -1227,9 +1227,9 @@ const tabCounts = useMemo(() => {
                isReturned: false
              };
            } else {
-             const finalReason = data?.subject && data?.reason && data.reason.trim() !== ""
-               ? `${data.subject}: ${data.reason}` 
-               : (data?.subject || data?.reason || 'No specific reason');
+              const finalReason = data?.subject && data?.reason && data.reason.trim() !== ""
+                ? `${data.subject}: ${data.reason}` 
+                : (data?.subject || data?.reason || t('estimation.noSpecificReason'));
                
              return {
                ...est,
@@ -1326,7 +1326,7 @@ const tabCounts = useMemo(() => {
             isLocked: true,
           } : e
         ));
-        await addDeliveryHistoryEntry(id, 'deliveryCompleted', `${currentUser.displayName} a marqué la livraison comme terminée le ${dateStr} à ${timeStr}`);
+        await addDeliveryHistoryEntry(id, 'deliveryCompleted', t('estimation.history.deliveryCompletedBy', { user: currentUser.displayName, date: dateStr, time: timeStr }));
         setActiveTab('Livraison' as EstimationStatus);
       } catch (error) {
         console.error('Failed to mark as delivered:', error);
@@ -1363,7 +1363,7 @@ const tabCounts = useMemo(() => {
             isLocked: true,
           } : e
         ));
-        await addDeliveryHistoryEntry(id, 'receiptConfirmed', `Réception confirmée par ${currentUser.displayName} le ${dateStr} à ${timeStr}`);
+        await addDeliveryHistoryEntry(id, 'receiptConfirmed', t('estimation.history.receiptConfirmedDetail', { user: currentUser.displayName, date: dateStr, time: timeStr }));
         setActiveTab('Livraison' as EstimationStatus);
       } catch (error) {
         console.error('Failed to confirm receipt:', error);
@@ -1495,7 +1495,7 @@ const tabCounts = useMemo(() => {
         });
      } catch (error) {
        console.error('Error during deletion:', error);
-        alert('An error occurred during deletion.');
+         alert(t('estimation.error.deletionError'));
      } finally {
        setIsLoading(false);
      }
@@ -1543,7 +1543,7 @@ const tabCounts = useMemo(() => {
         });
      } catch (error) {
        console.error('Error during bulk deletion:', error);
-        alert('An error occurred during bulk deletion.');
+         alert(t('estimation.error.bulkDeletionError'));
      } finally {
        setIsLoading(false);
      }
@@ -1840,19 +1840,19 @@ const tabCounts = useMemo(() => {
                 <Calculator className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-black text-lg leading-tight">Synchroniser les données</h3>
-                <p className="text-amber-100 text-sm mt-1">Cette opération est irréversible</p>
+                <h3 className="text-white font-black text-lg leading-tight">{t('estimation.resync.title')}</h3>
+                <p className="text-amber-100 text-sm mt-1">{t('estimation.resync.irreversible')}</p>
               </div>
             </div>
             <div className="px-6 py-5">
               <p className="text-zinc-700 text-sm leading-relaxed">
-                Toutes les statistiques seront recalculées à partir des données Firestore. Les compteurs actuels seront remplacés.
+                {t('estimation.resync.description')}
               </p>
               <p className="text-amber-600 text-xs mt-3 leading-relaxed font-semibold flex items-center gap-1.5">
                 <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                 </svg>
-                Action potentiellement lourde selon le volume de données
+                {t('estimation.resync.warning')}
               </p>
             </div>
             <div className="px-6 pb-6 flex gap-3">
@@ -1860,7 +1860,7 @@ const tabCounts = useMemo(() => {
                 onClick={() => setIsResyncConfirming(false)}
                 className="flex-1 px-4 py-3 rounded-xl border-2 border-zinc-200 text-zinc-700 font-bold text-sm hover:bg-zinc-50 transition-all"
               >
-                Annuler
+                {t('estimation.cancel')}
               </button>
               <button
                 onClick={confirmResync}
@@ -1869,7 +1869,7 @@ const tabCounts = useMemo(() => {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
                 </svg>
-                Synchroniser
+                {t('estimation.resync.syncButton')}
               </button>
             </div>
           </div>
@@ -1890,16 +1890,16 @@ const tabCounts = useMemo(() => {
               </div>
               <div>
                 <h3 className="text-white font-black text-lg leading-tight">
-                  {activeTab === 'Corbeille' ? 'Supprimer définitivement' : 'Mettre à la corbeille'}
+                  {activeTab === 'Corbeille' ? t('estimation.deletePermanently') : t('estimation.moveToTrash')}
                 </h3>
-                <p className="text-red-100 text-sm mt-1">Cette action est irréversible</p>
+                <p className="text-red-100 text-sm mt-1">{t('estimation.irreversibleAction')}</p>
               </div>
             </div>
             <div className="px-6 py-5">
               <p className="text-zinc-700 text-sm leading-relaxed">
                 {activeTab === 'Corbeille'
-                  ? 'Cette estimation sera supprimée définitivement, ainsi que son historique de chat.'
-                  : 'L\'estimation sera déplacée dans la corbeille. Vous pourrez la restaurer ultérieurement.'}
+                  ? t('estimation.deleteSingleDesc')
+                  : t('estimation.trashSingleDesc')}
               </p>
             </div>
             <div className="px-6 pb-6 flex gap-3">
@@ -1907,7 +1907,7 @@ const tabCounts = useMemo(() => {
                 onClick={() => setConfirmDeleteId(null)}
                 className="flex-1 px-4 py-3 rounded-xl border-2 border-zinc-200 text-zinc-700 font-bold text-sm hover:bg-zinc-50 transition-all"
               >
-                Annuler
+                {t('estimation.cancel')}
               </button>
               <button
                 onClick={() => {
@@ -1918,7 +1918,7 @@ const tabCounts = useMemo(() => {
                 className="flex-1 px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm transition-all shadow-lg shadow-red-200 flex items-center justify-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />
-                {activeTab === 'Corbeille' ? 'Supprimer' : 'Mettre à la corbeille'}
+                {activeTab === 'Corbeille' ? t('estimation.delete') : t('estimation.moveToTrash')}
               </button>
             </div>
           </div>
@@ -1939,16 +1939,16 @@ const tabCounts = useMemo(() => {
               </div>
               <div>
                 <h3 className="text-white font-black text-lg leading-tight">
-                  {activeTab === 'Corbeille' ? 'Supprimer définitivement' : 'Mettre à la corbeille'}
+                  {activeTab === 'Corbeille' ? t('estimation.deletePermanently') : t('estimation.moveToTrash')}
                 </h3>
-                <p className="text-red-100 text-sm mt-1">{selectedItems.size} estimation(s) concernée(s)</p>
+                <p className="text-red-100 text-sm mt-1">{t('estimation.selectedCount', { count: selectedItems.size })}</p>
               </div>
             </div>
             <div className="px-6 py-5">
               <p className="text-zinc-700 text-sm leading-relaxed">
                 {activeTab === 'Corbeille'
-                  ? 'Ces estimations seront supprimées définitivement, ainsi que leurs historiques de chat.'
-                  : 'Ces estimations seront déplacées dans la corbeille.'}
+                  ? t('estimation.deleteBulkDesc')
+                  : t('estimation.trashBulkDesc')}
               </p>
             </div>
             <div className="px-6 pb-6 flex gap-3">
@@ -1956,7 +1956,7 @@ const tabCounts = useMemo(() => {
                 onClick={() => setConfirmBulkDelete(false)}
                 className="flex-1 px-4 py-3 rounded-xl border-2 border-zinc-200 text-zinc-700 font-bold text-sm hover:bg-zinc-50 transition-all"
               >
-                Annuler
+                {t('estimation.cancel')}
               </button>
               <button
                 onClick={() => {
@@ -1966,7 +1966,7 @@ const tabCounts = useMemo(() => {
                 className="flex-1 px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm transition-all shadow-lg shadow-red-200 flex items-center justify-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />
-                {activeTab === 'Corbeille' ? 'Supprimer' : 'Mettre à la corbeille'}
+                {activeTab === 'Corbeille' ? t('estimation.delete') : t('estimation.moveToTrash')}
               </button>
             </div>
           </div>

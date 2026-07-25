@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAdminT } from '@/hooks/useAdminT';
 import { 
   User, Settings, History, Plus, Trash2, Send, Languages, FileText, Calculator,
   Truck, Eraser, Wrench, CheckCircle2, AlertCircle, TrendingDown, ArrowRight,
@@ -119,6 +120,7 @@ const INITIAL_ESTIMATION: Estimation = {
 };
 
 export default function DetailsApp({ estimation }: DetailsAppProps) {
+  const { t: adt } = useAdminT();
   const [profile, setProfile] = useState<ProfileType>('client');
   const [currentEstimation, setCurrentEstimation] = useState<Estimation>(estimation || INITIAL_ESTIMATION);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -210,8 +212,8 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
         <header className="h-20 border-b border-[#27272a] flex items-center justify-between px-10 bg-[#18181b]/50 backdrop-blur-md">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-xl font-bold">Technical & Commercial Details</h1>
-              <p className="text-xs text-[#a1a1aa]">Estimation #{currentEstimation?.id || 'N/A'}</p>
+              <h1 className="text-xl font-bold">{adt('Technical & Commercial Details')}</h1>
+              <p className="text-xs text-[#a1a1aa]">{adt('Estimation #')}{currentEstimation?.id || 'N/A'}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -220,20 +222,20 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                 onClick={() => setProfile('client')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${profile === 'client' ? 'bg-[#3b82f6] text-white' : 'text-[#a1a1aa] hover:text-white'}`}
               >
-                Client
+                {adt('Client')}
               </button>
               <button
                 onClick={() => setProfile('supplier')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${profile === 'supplier' ? 'bg-[#3b82f6] text-white' : 'text-[#a1a1aa] hover:text-white'}`}
               >
-                Fournisseur
+                {adt('Supplier')}
               </button>
             </div>
             <button
               onClick={() => setIsEditMode(!isEditMode)}
               className={`h-11 px-4 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${isEditMode ? 'bg-amber-500/20 border-amber-500/50 text-amber-500' : 'bg-white/5 border-[#27272a] text-[#a1a1aa] hover:text-white'}`}
             >
-              <Pencil size={14} /> {isEditMode ? 'Exit' : 'Edit'}
+              <Pencil size={14} /> {isEditMode ? adt('Exit') : adt('Edit')}
             </button>
           </div>
         </header>
@@ -256,7 +258,7 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                         className="text-lg font-bold bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-1.5 w-full focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30"
                       />
                     ) : (
-                      <h2 className="text-lg font-bold">{currentEstimation?.client?.name || 'Client'}</h2>
+                      <h2 className="text-lg font-bold">{currentEstimation?.client?.name || adt('Client')}</h2>
                     )}
                     {isEditMode ? (
                       <input
@@ -264,7 +266,7 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                         value={currentEstimation?.client?.company || ''}
                         onChange={(e) => updateClient('company', e.target.value)}
                         className="text-sm text-[#a1a1aa] bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-1.5 w-full mt-1 focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30"
-                        placeholder="Company"
+                        placeholder={adt('Company')}
                       />
                     ) : (
                       <p className="text-sm text-[#a1a1aa]">{currentEstimation?.client?.company || ''}</p>
@@ -276,13 +278,13 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                     onClick={() => setFullscreenPhoto(currentEstimation?.client?.sitePhoto || null)}
                     className="w-16 h-16 rounded-lg overflow-hidden border border-[#27272a]"
                   >
-                    <img src={currentEstimation.client.sitePhoto} alt="Site" className="w-full h-full object-cover" />
+                    <img src={currentEstimation.client.sitePhoto} alt={adt('Site')} className="w-full h-full object-cover" />
                   </button>
                 )}
               </div>
               <div className="grid grid-cols-4 gap-4 text-sm">
                 <div>
-                  <span className="text-[#a1a1aa]">Email</span>
+                  <span className="text-[#a1a1aa]">{adt('Email')}</span>
                   {isEditMode ? (
                     <input
                       type="email"
@@ -295,7 +297,7 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                   )}
                 </div>
                 <div>
-                  <span className="text-[#a1a1aa]">Phone</span>
+                  <span className="text-[#a1a1aa]">{adt('Phone')}</span>
                   {isEditMode ? (
                     <input
                       type="text"
@@ -308,7 +310,7 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                   )}
                 </div>
                 <div className="col-span-2">
-                  <span className="text-[#a1a1aa]">Adresse</span>
+                  <span className="text-[#a1a1aa]">{adt('Address')}</span>
                   {isEditMode ? (
                     <input
                       type="text"
@@ -322,14 +324,14 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                 </div>
               </div>
               <div className="mt-4">
-                <span className="text-[#a1a1aa] text-xs">Notes</span>
+                <span className="text-[#a1a1aa] text-xs">{adt('Notes')}</span>
                 {isEditMode ? (
                   <textarea
                     value={currentEstimation?.client?.notes || ''}
                     onChange={(e) => updateClient('notes', e.target.value)}
                     className="mt-1 w-full bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6]/30"
                     rows={3}
-                    placeholder="Notes..."
+                    placeholder={adt('Notes...')}
                   />
                 ) : (
                   currentEstimation?.client?.notes && (
@@ -346,11 +348,11 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                   <div className="w-10 h-10 bg-[#3b82f6]/20 rounded-xl flex items-center justify-center">
                     <Box size={20} className="text-[#3b82f6]" />
                   </div>
-                  <h2 className="text-lg font-bold">Produits</h2>
+                  <h2 className="text-lg font-bold">{adt('Products')}</h2>
                 </div>
                 {isEditMode && (
                   <button onClick={addProduct} className="flex items-center gap-2 px-3 py-2 bg-[#3b82f6] rounded-lg text-sm">
-                    <Plus size={16} /> Ajouter
+                    <Plus size={16} /> {adt('Add')}
                   </button>
                 )}
               </div>
@@ -398,33 +400,33 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
                 <div className="w-10 h-10 bg-[#10b981]/20 rounded-xl flex items-center justify-center">
                   <Calculator size={20} className="text-[#10b981]" />
                 </div>
-                <h2 className="text-lg font-bold">Financial Summary</h2>
+                <h2 className="text-lg font-bold">{adt('Financial Summary')}</h2>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#a1a1aa]">Product subtotal</span>
+                    <span className="text-[#a1a1aa]">{adt('Product subtotal')}</span>
                     <span>{formatCurrency(calculations.productsTotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#a1a1aa]">Delivery</span>
+                    <span className="text-[#a1a1aa]">{adt('Delivery')}</span>
                     <span>{formatCurrency(calculations.deliveryTotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#a1a1aa]">Labor</span>
+                    <span className="text-[#a1a1aa]">{adt('Labor')}</span>
                     <span>{formatCurrency(calculations.laborTotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-[#a1a1aa]">VAT ({currentEstimation.taxRate}%)</span>
+                    <span className="text-[#a1a1aa]">{adt(`VAT (${currentEstimation.taxRate}%)`)}</span>
                     <span>{formatCurrency(calculations.tva)}</span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-[#a1a1aa]">Total incl. tax</div>
+                  <div className="text-sm text-[#a1a1aa]">{adt('Total incl. tax')}</div>
                   <div className="text-2xl font-bold text-green-500">{formatCurrency(calculations.totalTTC)}</div>
                   {currentEstimation.globalDiscount > 0 && (
                     <div className="text-xs text-green-500">
-                      Savings: {formatCurrency(calculations.totalTTC - calculations.finalTotal)}
+                      {adt('Savings:')} {formatCurrency(calculations.totalTTC - calculations.finalTotal)}
                     </div>
                   )}
                 </div>
@@ -435,19 +437,19 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
             <div className="grid grid-cols-4 gap-4">
               <button onClick={() => alert('PDF en cours...')} className="flex items-center justify-center gap-2 p-4 bg-[#18181b] border border-[#27272a] rounded-xl hover:border-[#3b82f6] transition-colors">
                 <Download size={20} />
-                <span>PDF</span>
+                <span>{adt('PDF')}</span>
               </button>
               <button onClick={() => alert('Partage en cours...')} className="flex items-center justify-center gap-2 p-4 bg-[#18181b] border border-[#27272a] rounded-xl hover:border-[#3b82f6] transition-colors">
                 <Share2 size={20} />
-                <span>Partager</span>
+                <span>{adt('Share')}</span>
               </button>
               <button onClick={() => alert('Traduction...')} className="flex items-center justify-center gap-2 p-4 bg-[#18181b] border border-[#27272a] rounded-xl hover:border-[#3b82f6] transition-colors">
                 <Languages size={20} />
-                <span>Traduire</span>
+                <span>{adt('Translate')}</span>
               </button>
               <button onClick={() => setIsTransmitModalOpen(true)} className="flex items-center justify-center gap-2 p-4 bg-[#18181b] border border-[#27272a] rounded-xl hover:border-[#3b82f6] transition-colors">
                 <Send size={20} />
-                <span>Transmettre</span>
+                <span>{adt('Transmit')}</span>
               </button>
             </div>
           </div>
@@ -464,7 +466,7 @@ export default function DetailsApp({ estimation }: DetailsAppProps) {
             onClick={() => setFullscreenPhoto(null)}
             className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-10"
           >
-            <img src={fullscreenPhoto} alt="Fullscreen" className="max-w-full max-h-full object-contain" />
+            <img src={fullscreenPhoto} alt={adt('Fullscreen')} className="max-w-full max-h-full object-contain" />
             <button className="absolute top-4 right-4 p-2 bg-white/10 rounded-lg">
               <X size={24} />
             </button>

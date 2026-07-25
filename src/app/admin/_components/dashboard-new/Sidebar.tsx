@@ -227,12 +227,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'estimations', label: t('admin.estimations'), icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'history', label: t('admin.history'), icon: Clock, color: 'text-cyan-400', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'produit', label: t('admin.products'), icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
-    { id: 'boutique', label: 'Commandes', icon: ClipboardList, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
-    { id: 'codes-promo', label: 'Codes Promo', icon: Tag, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
-    { id: 'membres', label: 'Espace membre', icon: Users, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'boutique', label: t('admin.navOrders'), icon: ClipboardList, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'codes-promo', label: t('admin.navCodesPromo'), icon: Tag, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'membres', label: t('admin.memberSpace'), icon: Users, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'messages', label: t('admin.messages'), icon: MessageSquare, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'notifications', label: t('admin.notifications'), icon: Bell, color: 'text-amber-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'alertes-systeme', label: 'Alertes système', icon: AlertTriangle, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
+    { id: 'alertes-systeme', label: t('admin.systemAlerts.title'), icon: AlertTriangle, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'profile', label: t('admin.myProfile'), icon: UserIcon, color: 'text-purple-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'settings', label: t('admin.settings'), icon: Settings, color: 'text-fuchsia-500', roles: [UserRole.ADMINISTRATEUR] },
   ], [t]);
@@ -302,7 +302,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (role === UserRole.ADMINISTRATEUR && onSaveLogo) {
         onSaveLogo(tempLogoConfig);
     }
-    toast.success('Logo configuration updated!');
+    toast.success(t('admin.sidebar.logoUpdated'));
   };
 
   const sidebarClasses = `
@@ -418,7 +418,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }}
               >
                 {logoConfig.image ? (
-                  <img src={logoConfig.image} alt="Logo" className="w-8 h-8 rounded-lg object-cover shadow-lg group-hover/logowrapper:ring-2 group-hover/logowrapper:ring-blue-500 transition-all" />
+                  <img src={logoConfig.image} alt={t('common.logo')} className="w-8 h-8 rounded-lg object-cover shadow-lg group-hover/logowrapper:ring-2 group-hover/logowrapper:ring-blue-500 transition-all" />
                 ) : (
                   <div className={`w-8 h-8 ${logoConfig.color} rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20 group-hover/logowrapper:scale-110 transition-transform`}>
                     {logoConfig.letter}
@@ -433,7 +433,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     >
                       <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                       <span className="text-[8px] font-bold text-white uppercase tracking-[0.15em] whitespace-nowrap">
-                        {locale === 'fr' ? `Espace ${userRoleName}` : `${userRoleName} Space`}
+                        {t('admin.sidebar.userRoleSpace', { roleName: userRoleName })}
                       </span>
                     </div>
                   )}
@@ -455,7 +455,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }}
               >
                 {logoConfig.image ? (
-                  <img src={logoConfig.image} alt="Logo" className={`w-8 h-8 rounded-lg object-cover shadow-lg mx-auto transition-all ${role === UserRole.ADMINISTRATEUR ? 'group-hover/logowrapper:ring-2 group-hover/logowrapper:ring-blue-500' : ''}`} />
+                  <img src={logoConfig.image} alt={t('common.logo')} className={`w-8 h-8 rounded-lg object-cover shadow-lg mx-auto transition-all ${role === UserRole.ADMINISTRATEUR ? 'group-hover/logowrapper:ring-2 group-hover/logowrapper:ring-blue-500' : ''}`} />
                 ) : (
                   <div className={`w-8 h-8 ${logoConfig.color} rounded-lg flex items-center justify-center text-white font-bold mx-auto shadow-lg shadow-blue-500/20 transition-transform ${role === UserRole.ADMINISTRATEUR ? 'group-hover/logowrapper:scale-110' : ''}`}>
                     {logoConfig.letter}
@@ -516,7 +516,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('admin.livePreview')}</span>
                       <div className="flex items-center justify-center gap-3 scale-110 origin-center w-full overflow-hidden px-4">
                         {tempLogoConfig.image ? (
-                          <img src={tempLogoConfig.image} alt="Preview" className="w-10 h-10 rounded-lg object-cover shadow-lg shrink-0" />
+                          <img src={tempLogoConfig.image} alt={t('common.preview')} className="w-10 h-10 rounded-lg object-cover shadow-lg shrink-0" />
                         ) : (
                           <div className={`w-10 h-10 ${tempLogoConfig.color} rounded-lg flex items-center justify-center text-white font-bold shadow-lg shrink-0`}>
                             {tempLogoConfig.letter}
@@ -531,7 +531,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t('admin.appName')}</label>
                       <input
                         type="text"
-                        placeholder="Ex: Mon App"
+                        placeholder={t('admin.sidebar.appNamePlaceholder')}
                         value={tempLogoConfig.text}
                         onChange={(e) => setTempLogoConfig(prev => ({ ...prev, text: e.target.value }))}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
@@ -546,7 +546,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           <input
                             type="text"
                             maxLength={1}
-                            placeholder="P"
+                            placeholder={t('admin.sidebar.initialPlaceholder')}
                             value={tempLogoConfig.letter}
                             onChange={(e) => setTempLogoConfig(prev => ({ ...prev, letter: e.target.value.toUpperCase() }))}
                             className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white text-center font-bold focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"

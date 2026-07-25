@@ -140,12 +140,12 @@ export function QuoteRequestsTable() {
   };
   
   const formatDate = (date: Date | string) => {
-      if (!date) return 'N/A';
+      if (!date) return t('N/A');
       return new Date(date as any).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const formatTime = (date: Date | string) => {
-      if (!date) return 'N/A';
+      if (!date) return t('N/A');
       return new Date(date as any).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   };
 
@@ -378,7 +378,7 @@ export function QuoteRequestsTable() {
                                 checked={isAllSelected}
                                 onCheckedChange={handleSelectAll}
                                 className="rounded-md border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
-                                aria-label="Select all rows on this page"
+                                aria-label={t("Select all rows on this page")}
                             />
                         </TableHead>
                         <TableHead className="text-[11px] font-black uppercase tracking-widest text-slate-400">{t("Ref.")}</TableHead>

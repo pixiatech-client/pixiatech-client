@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Truck, CheckCircle2, AlertCircle } from 'lucide-react';
 import { getUsers } from '@/app/admin/actions';
 import type { UserProfile } from '@/lib/types';
+import { useAdminT } from '@/hooks/useAdminT';
 
 interface SupplierPanelProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface SupplierPanelProps {
 }
 
 export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, onConfirm }) => {
+  const { t: adt } = useAdminT();
   const [suppliers, setSuppliers] = useState<UserProfile[]>([]);
   const [selectedSupplier, setSelectedSupplier] = useState('');
   const [notes, setNotes] = useState('');
@@ -44,7 +46,7 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
   const handleConfirm = () => {
     const selected = suppliers.find(s => s.uid === selectedSupplier);
     if (!selected) {
-      alert('Please select a supplier');
+      alert(adt('Please select a supplier'));
       return;
     }
     onConfirm(selected.uid, selected.displayName || selected.email, notes, notes);
@@ -73,9 +75,9 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
                 </div>
                 <div>
                   <h2 className="text-xl  font-bold text-white uppercase">
-                    Send to Supplier
+                    {adt('Send to Supplier')}
                   </h2>
-                  <p className="text-[10px] text-zinc-500 ">Select a supplier</p>
+                  <p className="text-[10px] text-zinc-500 ">{adt('Select a supplier')}</p>
                 </div>
               </div>
               <button
@@ -88,12 +90,12 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
 
             <div className="space-y-6 max-h-[50vh] overflow-y-auto">
               {isLoading ? (
-                <div className="text-center py-8 text-zinc-500">Loading suppliers...</div>
+                <div className="text-center py-8 text-zinc-500">{adt('Loading suppliers...')}</div>
               ) : suppliers.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-zinc-500">
                   <AlertCircle size={32} className="mb-3 text-red-500" />
-                  <p className="text-sm">No supplier found</p>
-                  <p className="text-xs text-zinc-600 mt-1">Check that users with the supplier role exist</p>
+                  <p className="text-sm">{adt('No supplier found')}</p>
+                  <p className="text-xs text-zinc-600 mt-1">{adt('Check that users with the supplier role exist')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 gap-2">
@@ -133,12 +135,12 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
 
               <div className="space-y-2">
                 <label className="text-[10px] text-zinc-500  font-bold uppercase tracking-wider">
-                  Notes for the supplier (optional)
+                  {adt('Notes for the supplier (optional)')}
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Instructions techniques..."
+                  placeholder={adt('Technical instructions...')}
                   className="w-full h-28 p-4 bg-black/50 border border-[#27272a] rounded-2xl text-sm text-white  placeholder:text-zinc-600 focus:border-[#3b82f6]/50 focus:outline-none resize-none"
                 />
               </div>
@@ -149,14 +151,14 @@ export const SupplierPanel: React.FC<SupplierPanelProps> = ({ isOpen, onClose, o
                 onClick={onClose}
                 className="flex-1 py-4 rounded-2xl border border-white/10 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:bg-white/5 transition-all"
               >
-                Cancel
+                {adt('Cancel')}
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={!selectedSupplier}
                 className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-[#3b82f6] to-[#2563eb] text-white text-xs font-bold uppercase tracking-wider shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                <Send size={16} /> Confirm
+                <Send size={16} /> {adt('Confirm')}
               </button>
             </div>
           </motion.div>

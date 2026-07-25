@@ -304,7 +304,7 @@ const registerSchema = z.object({
 function formatPhoneNumber(phone?: string): string | undefined {
   if (!phone) return undefined;
 
-  const digitsOnly = phone.replace(/\\s/g, '');
+  const digitsOnly = phone.replace(/\s/g, '');
 
   // If it's a French number starting with 0, replace with +33
   if (digitsOnly.startsWith('0') && digitsOnly.length === 10) {
@@ -1929,7 +1929,7 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
         updatePayload.treatedAt = FieldValue.serverTimestamp();
       }
       
-      // Notify the supplier
+      // Notify the supplier (in-app only, no email)
       if (supplier && supplier.uid !== adminUser.uid) {
         notifications.push({
           userId: supplier.uid,
@@ -1941,12 +1941,6 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
           createdAt: FieldValue.serverTimestamp(),
           quoteRequestId: quoteId
         });
-
-        if (supplier.email) {
-          const quoteNumber = quoteData?.number || quoteId.substring(0, 8);
-          const clientName = quoteData?.client?.companyName || 'Client';
-          sendSupplierEmail(supplier.email, quoteNumber, clientName, data.supplierNotes).catch(console.error);
-        }
       }
     }
 

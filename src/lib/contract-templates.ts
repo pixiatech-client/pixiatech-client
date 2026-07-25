@@ -418,7 +418,7 @@ ELECTRONIC ACCEPTANCE
 
 These General Terms and Conditions shall be deemed accepted upon the Client's validation of the consent relating to the processing of commercial and contractual data during the ordering, quotation, rental, or service subscription process.`;
 
-export function getContractTemplate(mode: 'vente' | 'location', locale: 'fr' | 'en'): string {
+export function getContractTemplate(mode: 'vente' | 'location', locale: 'fr' | 'en' | 'zh-CN'): string {
   if (mode === 'vente') {
     return locale === 'fr' ? SALE_FR : SALE_EN;
   }
