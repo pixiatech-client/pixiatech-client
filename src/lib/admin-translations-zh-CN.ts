@@ -372,6 +372,15 @@ const adminTranslationsZhCN: Record<string, string> = {
 
   // quote-requests-table
   'N/A': 'N/A',
+
+  // Table headers (estimation)
+  'estimation.numberHeader': '编号',
+  'estimation.clientHeader': '客户',
+  'estimation.trackingNumberLabel': '跟踪号',
+  'estimation.statusHeader': '状态',
+  'estimation.timeDateHeader': '时间/日期',
+  'estimation.priceHeader': '价格',
+  'estimation.actionHeader': '操作',
 };
 
 export default adminTranslationsZhCN;
