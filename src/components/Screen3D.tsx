@@ -284,7 +284,8 @@ function Screen({
   curveRight, 
   isDarkMode, 
   videoUrl,
-  setControlsEnabled
+  setControlsEnabled,
+  t
 }: Screen3DProps & { 
   isDarkMode: boolean; 
   cabinetAngle?: number; 
@@ -499,7 +500,7 @@ function Screen({
         <DimensionLine 
           start={new THREE.Vector3(0, height + 0.5, 0)} 
           end={new THREE.Vector3(currentX, height + 0.5, currentZ)} 
-          label={`LARGEUR: ${width.toFixed(2)} M`} 
+          label={t('screen3d.width', { value: width.toFixed(2) })} 
           color="#1e293b"
           isDarkMode={isDarkMode}
           occlude={false}
@@ -508,7 +509,7 @@ function Screen({
         <DimensionLine 
           start={new THREE.Vector3(-0.9, 0, 0)} 
           end={new THREE.Vector3(-0.9, height, 0)} 
-          label={`HAUTEUR: ${height.toFixed(2)} M`} 
+          label={t('screen3d.height', { value: height.toFixed(2) })} 
           color="#1e293b"
           isDarkMode={isDarkMode}
           occlude={false}
@@ -563,7 +564,7 @@ function Screen({
         <DimensionLine 
           start={new THREE.Vector3(-R_360, height + 0.5, 0)} 
           end={new THREE.Vector3(R_360, height + 0.5, 0)} 
-          label={`DIAMÈTRE: ${(R_360 * 2).toFixed(2)} M`} 
+          label={t('screen3d.diameter', { value: (R_360 * 2).toFixed(2) })} 
           color="#1e293b"
           isDarkMode={isDarkMode}
           occlude={false}
@@ -572,7 +573,7 @@ function Screen({
         <DimensionLine 
           start={new THREE.Vector3(-R_360 - 0.12, 0, 0)} 
           end={new THREE.Vector3(-R_360 - 0.12, height, 0)} 
-          label={`HAUTEUR: ${height.toFixed(2)} M`} 
+          label={t('screen3d.height', { value: height.toFixed(2) })} 
           color="#1e293b"
           isDarkMode={isDarkMode}
           occlude={false}
@@ -718,9 +719,11 @@ export default function ScreenViewer(props: Screen3DProps & { cabinetAngle?: num
           </mesh>
         </group>
         
+        {/* 
         <Suspense fallback={null}>
           <Environment preset={isDarkMode ? "night" : "studio"} environmentIntensity={0.8} />
-        </Suspense>
+        </Suspense> 
+        */}
         
         <ContactShadows resolution={1024} scale={30} blur={2.5} opacity={isDarkMode ? 0.8 : 0.3} far={2.5} color="#000000" />
       </Canvas>

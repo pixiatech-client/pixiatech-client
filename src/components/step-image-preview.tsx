@@ -53,7 +53,7 @@ export function StepImagePreview({ imageUrl, title }: StepImagePreviewProps) {
                     ) : (
                         <Image
                             src={imageUrl}
-                            alt={displayTitle || 'Aperçu'}
+                            alt={displayTitle || t('common.preview')}
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             className="object-contain p-6"
@@ -64,7 +64,7 @@ export function StepImagePreview({ imageUrl, title }: StepImagePreviewProps) {
                 </>
             ) : (
                 <div className="w-full h-full flex items-center justify-center bg-muted">
-                    <p className="text-muted-foreground">Image non disponible</p>
+                    <p className="text-muted-foreground">{t('common.imageNotAvailable')}</p>
                 </div>
             )}
         </div>

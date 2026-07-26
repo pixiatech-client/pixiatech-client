@@ -588,8 +588,8 @@ export function Configurator({
                         : "bg-red-100 text-red-800"
                     )}>
                       {avail.available
-                        ? `✓ ${avail.remaining} / ${avail.total} ${t('configurator.unitsAvailable') ?? 'disponibles'}`
-                        : `✗ Stock insuffisant — ${avail.remaining} / ${avail.total} disponibles`
+                        ? `✓ ${avail.remaining} / ${avail.total} ${t('configurator.unitsAvailable')}`
+                        : `✗ ${t('configurator.stockInsufficient', { remaining: avail.remaining, total: avail.total })}`
                       }
                     </div>
                   );

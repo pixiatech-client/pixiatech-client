@@ -3,10 +3,6 @@ import { findCustomerByEmail } from '@/lib/customers';
 import { createMagicLink } from '@/lib/magic-link';
 import { getSmtpTransport } from '@/lib/smtpService';
 
-function isSandboxEmail(email: string): boolean {
-  return email.includes('@sandbox') || email.includes('@personal.example.com');
-}
-
 function buildMagicLinkEmailHtml(linkUrl: string, expiresInMinutes: number): string {
   return `
 <!DOCTYPE html>
@@ -62,20 +58,16 @@ export async function POST(req: NextRequest) {
     const origin = process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin;
     const { url } = await createMagicLink(normalizedEmail, customer.id!, origin);
 
-    // Determine recipient
-    const isSandbox = isSandboxEmail(normalizedEmail);
-    const toEmail = isSandbox ? 'ayanhil@gmail.com' : normalizedEmail;
-
-    // Send email
+    // Send email to the actual recipient (no more sandbox redirect)
     const { transporter, fromHeader } = await getSmtpTransport();
     await transporter.sendMail({
       from: fromHeader,
-      to: toEmail,
+      to: normalizedEmail,
       subject: 'Connexion à votre espace client PIXIATECH',
       html: buildMagicLinkEmailHtml(url, 15),
     });
 
-    console.log(`[MagicLink] Sent to ${toEmail}${isSandbox ? ` (redirected from ${normalizedEmail})` : ''}`);
+    console.log(`[MagicLink] Sent to ${normalizedEmail}`);
 
     return NextResponse.json({
       message: 'Si cet email est associé à un compte, un lien de connexion vous a été envoyé.',

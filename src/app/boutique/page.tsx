@@ -395,8 +395,8 @@ export default function BoutiquePage() {
               <ShoppingBag className="w-6 h-6 text-amber-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-bold text-gray-900">Merci de votre réponse</h3>
-              <p className="text-sm text-gray-500 mt-1">Nous avons bien noté votre décision. N'hésitez pas à découvrir nos autres produits :</p>
+              <h3 className="text-lg font-bold text-gray-900">{t('boutique.declinedTitle')}</h3>
+              <p className="text-sm text-gray-500 mt-1">{t('boutique.declinedDesc')}</p>
               {suggestions.length > 0 && (
                 <div className="flex gap-3 mt-4">
                   {suggestions.map((p) => (
@@ -415,9 +415,9 @@ export default function BoutiquePage() {
                           {p.price > 0 ? (
                             `${p.price} €`
                           ) : (
-                            p.priceDisplay === 'free' ? 'Gratuit' :
-                            p.priceDisplay === 'multiprice' ? 'Tarifs multiples' :
-                            p.priceDisplay === 'quote' ? 'Sur devis' :
+                            p.priceDisplay === 'free' ? t('boutique.free') :
+                            p.priceDisplay === 'multiprice' ? t('boutique.multipleRates') :
+                            p.priceDisplay === 'quote' ? t('boutique.onQuote') :
                             '0 €'
                           )}
                         </p>
@@ -439,7 +439,7 @@ export default function BoutiquePage() {
             { id: 'all', label: t('boutique.products') },
             { id: 'populaires', label: t('boutique.popular') },
             { id: 'nouveautes', label: t('boutique.newArrivals') },
-            { id: 'saved', label: 'Mes favoris' },
+            { id: 'saved', label: t('boutique.myFavorites') },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -512,7 +512,7 @@ export default function BoutiquePage() {
                 >
                   <div className="pointer-events-auto w-full bg-white rounded-t-3xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
                     <div className="px-6 py-5 flex items-center justify-between border-b border-gray-100">
-                      <h2 className="font-bold text-gray-900">Trier par</h2>
+                      <h2 className="font-bold text-gray-900">{t('boutique.sortBy')}</h2>
                       <button onClick={() => setSortOpen(false)} className="size-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors">
                         <X size={16} className="text-gray-500" />
                       </button>
@@ -586,7 +586,7 @@ export default function BoutiquePage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher un produit..."
+                placeholder={t('boutique.searchPlaceholder')}
                 className="w-full bg-white border border-gray-200/70 rounded-full pl-10 pr-10 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all shadow-sm"
               />
               <button
@@ -663,7 +663,7 @@ export default function BoutiquePage() {
                         <span className="etoile-icon">
                           <Heart size={10} className="text-red-500" fill="currentColor" />
                         </span>
-                        <span className="etoile-text">Sauvegardé</span>
+                        <span className="etoile-text">{t('boutique.saved')}</span>
                       </button>
                     </div>
                   )}
@@ -723,7 +723,7 @@ export default function BoutiquePage() {
                         className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer w-full md:w-auto"
                       >
                         <ShoppingBag size={14} />
-                        Ajouter
+                        {t('boutique.add')}
                       </button>
                     )}
                   </div>

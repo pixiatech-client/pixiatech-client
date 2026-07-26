@@ -300,40 +300,40 @@ export default function ProductDetailPage() {
       case 'firstName':
       case 'lastName':
         if (!value.trim()) return '';
-        if (!NAME_RE.test(value.trim())) return 'Veuillez saisir un prénom valide.';
+        if (!NAME_RE.test(value.trim())) return t('boutique.validFirstName');
         return '';
       case 'email':
         if (!value.trim()) return '';
-        if (!EMAIL_RE.test(value.trim())) return 'Veuillez saisir une adresse e-mail valide.';
+        if (!EMAIL_RE.test(value.trim())) return t('boutique.validEmail');
         return '';
       case 'phone':
         if (!value.trim()) return '';
         const digits = value.replace(/[^0-9]/g, '');
-        if (digits.length < 8 || !PHONE_RE.test(value.trim())) return 'Veuillez saisir un numéro de téléphone valide.';
+        if (digits.length < 8 || !PHONE_RE.test(value.trim())) return t('boutique.validPhone');
         return '';
       case 'addressLine1':
         if (!value.trim()) return '';
-        if (value.trim().length < 6) return 'Merci de saisir une adresse complète.';
-        if (!/\d/.test(value)) return 'Merci de saisir une adresse complète.';
-        if (!/[a-zA-Z\u00C0-\u024F]{2,}/.test(value)) return 'Merci de saisir une adresse complète.';
+        if (value.trim().length < 6) return t('boutique.validAddress');
+        if (!/\d/.test(value)) return t('boutique.validAddress');
+        if (!/[a-zA-Z\u00C0-\u024F]{2,}/.test(value)) return t('boutique.validAddress');
         return '';
       case 'city':
         if (!value.trim()) return '';
-        if (value.trim().length < 2) return 'Veuillez saisir une ville valide.';
-        if (/^\d+$/.test(value.trim())) return 'Veuillez saisir une ville valide.';
+        if (value.trim().length < 2) return t('boutique.validCity');
+        if (/^\d+$/.test(value.trim())) return t('boutique.validCity');
         return '';
       case 'postcode':
         if (!value.trim()) return '';
-        if (!POSTCODE_RE.test(value.trim())) return 'Veuillez saisir un code postal valide.';
+        if (!POSTCODE_RE.test(value.trim())) return t('boutique.validPostcode');
         return '';
       case 'companyName':
         if (!value.trim()) return '';
-        if (value.trim().length < 2) return 'Veuillez saisir une raison sociale valide.';
+        if (value.trim().length < 2) return t('boutique.validCompany');
         return '';
       case 'siren':
         if (!value.trim()) return '';
         const sirenDigits = value.replace(/[^0-9]/g, '');
-        if (sirenDigits.length < 9) return 'Le SIREN doit contenir au moins 9 chiffres.';
+        if (sirenDigits.length < 9) return t('boutique.validSiren');
         return '';
       default:
         return '';
@@ -632,7 +632,7 @@ export default function ProductDetailPage() {
                 className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white text-xs font-semibold rounded-xl hover:bg-blue-600 transition-all mb-6"
               >
                 <ChevronLeft size={14} />
-                Retour au produit
+                {t('boutique.backToProduct')}
               </button>
 
               <div className="bg-gray-50/50 rounded-xl border border-gray-100">
@@ -643,69 +643,69 @@ export default function ProductDetailPage() {
                       <div className="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-4">
                         <CheckCircle size={32} className="text-emerald-600" />
                       </div>
-                      <h2 className="text-xl font-extrabold text-gray-900">Félicitations !</h2>
+                      <h2 className="text-xl font-extrabold text-gray-900">{t('boutique.congratulations')}</h2>
                       <p className="text-sm text-gray-600 mt-2 max-w-sm mx-auto">
-                        Nous avons bien envoyé un email à <strong className="text-emerald-700">{quoteFormData.email}</strong>.
+                        {t('boutique.emailSentTo')} <strong className="text-emerald-700">{quoteFormData.email}</strong>.
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">Nous vous contacterons sous 48h maximum.</p>
+                      <p className="text-xs text-gray-500 mt-1">{t('boutique.processedIn48h')}</p>
                     </div>
 
                     {/* Summary of submitted info */}
                     <div className="p-6 space-y-3">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Récapitulatif de votre demande</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('boutique.requestSummary')}</p>
                       <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50 text-xs">
                         <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">Produit</span>
+                          <span className="text-gray-500">{t('boutique.fieldProduct')}</span>
                           <span className="font-semibold text-gray-900 text-right max-w-[60%]">{product?.name}</span>
                         </div>
                         <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">Quantité</span>
+                          <span className="text-gray-500">{t('boutique.fieldQuantity')}</span>
                           <span className="font-semibold text-gray-900">{quantity}</span>
                         </div>
                         <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">Nom</span>
+                          <span className="text-gray-500">{t('boutique.fieldName')}</span>
                           <span className="font-semibold text-gray-900">{quoteFormData.firstName} {quoteFormData.lastName}</span>
                         </div>
                         <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">Email</span>
+                          <span className="text-gray-500">{t('boutique.fieldEmail')}</span>
                           <span className="font-semibold text-gray-900">{quoteFormData.email}</span>
                         </div>
                         <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">Téléphone</span>
+                          <span className="text-gray-500">{t('boutique.fieldPhone')}</span>
                           <span className="font-semibold text-gray-900">{quoteFormData.phone}</span>
                         </div>
                         <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">Adresse</span>
+                          <span className="text-gray-500">{t('boutique.fieldAddress')}</span>
                           <span className="font-semibold text-gray-900 text-right max-w-[60%]">
                             {quoteFormData.addressLine1}{quoteFormData.addressLine2 ? ', ' + quoteFormData.addressLine2 : ''}
                             <br />{quoteFormData.postcode} {quoteFormData.city}
                           </span>
                         </div>
                         <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">Pays</span>
+                          <span className="text-gray-500">{t('boutique.fieldCountry')}</span>
                           <span className="font-semibold text-gray-900">{quoteFormData.country}</span>
                         </div>
                         {isB2B && quoteFormData.companyName && (
                         <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">Entreprise</span>
+                          <span className="text-gray-500">{t('boutique.fieldCompany')}</span>
                           <span className="font-semibold text-gray-900">{quoteFormData.companyName}</span>
                         </div>
                         )}
                         {isB2B && quoteFormData.siren && (
                         <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">SIREN</span>
+                          <span className="text-gray-500">{t('boutique.fieldSiren')}</span>
                           <span className="font-semibold text-gray-900">{quoteFormData.siren}</span>
                         </div>
                         )}
                         {isB2B && quoteFormData.vatNumber && (
                         <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">TVA</span>
+                          <span className="text-gray-500">{t('boutique.fieldVat')}</span>
                           <span className="font-semibold text-gray-900">{quoteFormData.vatNumber}</span>
                         </div>
                         )}
                         {quoteFormData.comment && (
                         <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">Commentaire</span>
+                          <span className="text-gray-500">{t('boutique.fieldComment')}</span>
                           <span className="font-semibold text-gray-900 text-right max-w-[60%]">{quoteFormData.comment}</span>
                         </div>
                         )}
@@ -714,16 +714,16 @@ export default function ProductDetailPage() {
 
                     {/* Thank you + actions */}
                     <div className="px-6 pb-6 text-center">
-                      <p className="text-xs text-gray-500 mb-4">Merci de votre confiance ! Notre équipe traitera votre demande dans les plus brefs délais.</p>
+                      <p className="text-xs text-gray-500 mb-4">{t('boutique.thankYouMessage')}</p>
                       <div className="flex flex-col gap-2">
                         <button onClick={() => router.push('/boutique')}
                           className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 shadow-sm">
                           <Store size={15} />
-                          Continuer mes achats
+                          {t('boutique.continueShopping')}
                         </button>
                         <button onClick={() => router.push('/mon-compte/commandes')}
                           className="w-full border-2 border-gray-200 text-gray-600 hover:border-gray-400 hover:text-gray-900 py-3 rounded-xl text-xs font-semibold transition-all">
-                          Suivre mes demandes
+                          {t('boutique.trackRequests')}
                         </button>
                       </div>
                     </div>
@@ -747,7 +747,7 @@ export default function ProductDetailPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {/* Prénom */}
                           <div>
-                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Prénom *</label>
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.firstName')}</label>
                             <div className="relative">
                               <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                               <input type="text" placeholder="Jean" required value={quoteFormData.firstName}
@@ -769,7 +769,7 @@ export default function ProductDetailPage() {
 
                           {/* Nom */}
                           <div>
-                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Nom *</label>
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.lastName')}</label>
                             <div className="relative">
                               <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                               <input type="text" placeholder="Dupont" required value={quoteFormData.lastName}
@@ -791,7 +791,7 @@ export default function ProductDetailPage() {
 
                           {/* Email */}
                           <div>
-                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Email *</label>
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldEmail')} *</label>
                             <div className="relative">
                               <Mail size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                               <input type="email" placeholder="email@exemple.com" required value={quoteFormData.email}
@@ -813,7 +813,7 @@ export default function ProductDetailPage() {
 
                           {/* Téléphone mobile */}
                           <div>
-                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Téléphone mobile *</label>
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldPhone')} *</label>
                             <div className="relative">
                               <Phone size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                               <input type="tel" placeholder="06 12 34 56 78" required value={quoteFormData.phone}
@@ -835,7 +835,7 @@ export default function ProductDetailPage() {
 
                           {/* Ligne d'adresse 1 */}
                           <div className="sm:col-span-2">
-                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Ligne d'adresse 1 *</label>
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldAddress')} 1 *</label>
                             <div className="relative">
                               <MapPin size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                               <input type="text" placeholder="123 Rue de l'Exemple" required value={quoteFormData.addressLine1}
@@ -857,7 +857,7 @@ export default function ProductDetailPage() {
 
                           {/* Ligne d'adresse 2 */}
                           <div className="sm:col-span-2">
-                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Ligne d'adresse 2</label>
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldAddress')} 2</label>
                             <div className="relative">
                               <MapPin size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
                               <input type="text" placeholder="Appartement, Bâtiment, etc." value={quoteFormData.addressLine2} onChange={e => setQuoteFormData(d => ({ ...d, addressLine2: e.target.value }))}
@@ -884,7 +884,7 @@ export default function ProductDetailPage() {
 
                           {/* Pays */}
                           <div className="sm:col-span-2">
-                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Pays</label>
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldCountry')}</label>
                             <select
                               value={quoteFormData.country}
                               onChange={e => setQuoteFormData(d => ({ ...d, country: e.target.value }))}
@@ -928,7 +928,7 @@ export default function ProductDetailPage() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 border-t border-gray-100 pt-3">
                             {/* Raison sociale */}
                             <div>
-                              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Raison sociale *</label>
+                              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldCompany')} *</label>
                               <input
                                 type="text"
                                 placeholder="Nom de l'entreprise"
@@ -950,7 +950,7 @@ export default function ProductDetailPage() {
 
                             {/* SIREN / SIRET */}
                             <div>
-                              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">SIREN / SIRET *</label>
+                              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldSiren')} *</label>
                               <input
                                 type="text"
                                 placeholder="123 456 789"
@@ -972,7 +972,7 @@ export default function ProductDetailPage() {
 
                             {/* TVA */}
                             <div className="sm:col-span-2">
-                              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Numéro de TVA intracommunautaire</label>
+                              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldVat')}</label>
                               <div className="flex gap-2">
                                 <input
                                   type="text"
@@ -1020,7 +1020,7 @@ export default function ProductDetailPage() {
 
                         {/* Commentaire */}
                         <div className="pt-2">
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Commentaire</label>
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldComment')}</label>
                           <textarea placeholder="Décrivez votre projet, vos besoins spécifiques..." rows={3} value={quoteFormData.comment} onChange={e => setQuoteFormData(d => ({ ...d, comment: e.target.value }))}
                             className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white resize-none placeholder:text-gray-300" />
                         </div>
@@ -1028,7 +1028,7 @@ export default function ProductDetailPage() {
                         <div className="pt-2">
                           <button type="submit" disabled={quoteLoading}
                             className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-40 shadow-sm">
-                            {quoteLoading ? 'Envoi en cours...' : 'Envoyer la demande'}
+                            {quoteLoading ? t('auth.sending') : t('product.requestQuote')}
                           </button>
                         </div>
                       </form>

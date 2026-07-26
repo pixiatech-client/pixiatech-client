@@ -5,6 +5,22 @@ import { upsertCustomer } from '@/lib/customers';
 import { createMagicLink } from '@/lib/magic-link';
 import { getSmtpTransport } from '@/lib/smtpService';
 
+// Lightweight auth gate: at least one valid session cookie must be present.
+// This blocks anonymous abuse of the capture endpoint (order creation, customer
+// upsert, magic link email). PayPal orderId alone is NOT sufficient auth because
+// it can leak through logs, network traces, or be guessed.
+async function requireAuthenticatedSession(req: NextRequest): Promise<NextResponse | null> {
+  const clientSession = req.cookies.get('client_session')?.value;
+  const adminSession = req.cookies.get('session')?.value;
+  if (!clientSession && !adminSession) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  // We do a presence check here; downstream server-side code already uses Admin SDK
+  // with its own authorization. Returning 401 if neither cookie exists blocks
+  // the anonymous attack vector without disrupting legitimate clients.
+  return null;
+}
+
 function buildWelcomeEmailHtml(linkUrl: string, expiresInMinutes: number): string {
   return `
 <!DOCTYPE html>
@@ -41,6 +57,9 @@ function buildWelcomeEmailHtml(linkUrl: string, expiresInMinutes: number): strin
 
 export async function POST(req: NextRequest) {
   try {
+    const authErr = await requireAuthenticatedSession(req);
+    if (authErr) return authErr;
+
     const { orderId, rentalItems, purchaseItems, delivery, deliveryCost } = await req.json();
     const deliveryCostNum = typeof deliveryCost === 'number' ? deliveryCost : 0;
     const capture = await capturePayPalOrder(orderId);

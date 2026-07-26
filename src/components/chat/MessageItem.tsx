@@ -9,6 +9,19 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { useRoles } from '@/contexts/RoleContext';
 import { useI18n } from '@/lib/i18n';
 import { getAvatarUrl } from '@/lib/avatar';
+import DOMPurify from 'dompurify';
+
+// Sanitize untrusted user-generated content before dangerouslySetInnerHTML.
+// Translation keys come from i18n bundles (trusted) and pass through unchanged.
+const sanitizeUntrusted = (html: string): string => {
+  if (!html) return '';
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'br', 'p', 'ul', 'ol', 'li', 'span', 'div', 'img'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'title', 'class'],
+    ALLOW_DATA_ATTR: false,
+    FORBID_ATTR: ['style', 'onerror', 'onload', 'onclick'],
+  });
+};
 
 const translateOption = (option: MessageOption | string, translateFn: (key: string, params?: Record<string, string | number>) => string): string => {
   if (typeof option === 'string') return option;
@@ -91,9 +104,11 @@ export default function MessageItem({ msg, isMine, isMiniChat, onMediaClick, oth
 
   const getTranslatedContent = () => {
     if (msg.translationKey) {
+      // i18n bundle values are trusted
       return t(msg.translationKey, msg.translationParams);
     }
-    return msg.content;
+    // User-generated content must be sanitized before dangerouslySetInnerHTML
+    return sanitizeUntrusted(msg.content || '');
   };
 
   React.useEffect(() => {

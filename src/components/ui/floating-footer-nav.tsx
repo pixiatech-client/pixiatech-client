@@ -4,6 +4,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 
 interface FloatingFooterNavProps {
     onBack: () => void;
@@ -22,7 +23,7 @@ export function FloatingFooterNav({
     onBack,
     onNext,
     nextDisabled = false,
-    nextLabel = "Suivant",
+    nextLabel,
     backLabel,
     className,
     nextType = 'button',
@@ -30,6 +31,7 @@ export function FloatingFooterNav({
     isLoading = false,
     backIsPrimary = false
 }: FloatingFooterNavProps) {
+    const { t } = useI18n();
     return (
         <footer className={cn("p-4 md:p-6 bg-transparent mt-10", className)}>
             <div className="relative p-1.5 bg-black/20 backdrop-blur-md border border-white/50 rounded-[24px] pointer-events-auto w-full md:w-[650px] mx-auto before:absolute before:inset-0 before:rounded-[24px] before:bg-gradient-to-br before:from-white/60 before:via-transparent before:to-transparent before:opacity-70 before:pointer-events-none after:absolute after:inset-0 after:rounded-[24px] after:bg-gradient-to-tl after:from-white/30 after:via-transparent after:to-transparent after:opacity-50 after:pointer-events-none">
@@ -46,7 +48,7 @@ export function FloatingFooterNav({
                                     <ChevronLeft size={14} strokeWidth={3} className="text-white group-hover:text-black transition-colors duration-300" />
                                 </div>
                                 <span className="relative z-10 text-white font-bold uppercase tracking-widest text-[12px] mr-4 transition-colors duration-300 group-hover:text-[#c6ff00]">
-                                    {backLabel || "Retour au contrat & signature"}
+                                    {backLabel || t('signature.backToContract')}
                                 </span>
                             </button>
                             <button
@@ -78,7 +80,7 @@ export function FloatingFooterNav({
                                 >
                                     <div className="absolute inset-0 bg-black group-hover:bg-gray-900 transition-colors duration-300"></div>
                                     <span className="relative z-10 text-white font-bold uppercase tracking-widest text-[12px] ml-4 transition-colors duration-300 group-hover:text-[#c6ff00]">
-                                        {isLoading ? "Envoi en cours..." : nextLabel}
+                                        {isLoading ? t('common.sending') : nextLabel || t('common.next')}
                                     </span>
                                     <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center transition-all duration-300 group-hover:bg-[#c6ff00] group-hover:scale-105">
                                         {isLoading ? (

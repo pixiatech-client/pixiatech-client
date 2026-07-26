@@ -74,7 +74,7 @@ function VerificationView({ email, onNewQuote }: { email: string; onNewQuote: ()
                     className="rounded-full h-11 px-8 font-bold text-[11px] tracking-widest uppercase border-slate-200 text-slate-700 hover:bg-black hover:text-white hover:border-black shadow-sm w-full group transition-all duration-300 flex items-center justify-center gap-2"
                 >
                     <ArrowLeft className="w-4 h-4 transition-colors group-hover:text-[#2563EB]" /> 
-                    <span>{t('common.backToSite') || "Retour au site"}</span>
+                    <span>{t('common.backToSite')}</span>
                 </Button>
             </div>
         </div>

@@ -1,6 +1,31 @@
 import { NextResponse } from 'next/server';
 import { getActive17TrackKey, saveTrackingStatus, getCachedTracking } from '@/lib/tracking/service';
 import { getTrackingInfo, parseTrackingEvents, registerTrackingNumber } from '@/lib/tracking/api';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
+
+// 17Track API quota is paid — gate this endpoint behind an admin session
+// to prevent anonymous abuse and quota exhaustion.
+async function requireAdminSession(req: Request): Promise<NextResponse | null> {
+  const cookieHeader = req.headers.get('cookie') || '';
+  const sessionMatch = cookieHeader.match(/(?:^|;\s*)session=([^;]+)/);
+  if (!sessionMatch) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  try {
+    const { adminAuth, adminDb } = getFirebaseAdmin();
+    if (!adminAuth || !adminDb) {
+      return NextResponse.json({ error: 'Admin SDK not initialized' }, { status: 500 });
+    }
+    const decoded = await adminAuth.verifySessionCookie(decodeURIComponent(sessionMatch[1]), true);
+    const userDoc = await adminDb.collection('users').doc(decoded.uid).get();
+    if (!userDoc.exists || userDoc.data()?.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    return null;
+  } catch {
+    return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+  }
+}
 
 function extractItems(data: unknown): {
   items: any[];
@@ -18,6 +43,9 @@ function extractItems(data: unknown): {
 
 export async function POST(req: Request) {
   try {
+    const authErr = await requireAdminSession(req);
+    if (authErr) return authErr;
+
     const { trackingNumber, carrier } = await req.json();
     if (!trackingNumber) {
       return NextResponse.json({ error: 'Numéro de suivi requis' }, { status: 400 });

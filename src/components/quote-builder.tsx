@@ -504,7 +504,7 @@ export function QuoteBuilder({
         const originalStep = getOriginalStep(currentStep);
         if (originalStep === 1) {
             if (configuredProducts.length === 0) {
-                alert("Veuillez configurer au moins un produit.");
+                alert(t('configurator.configureAtLeastOne'));
                 return;
             }
             saveQuoteState({

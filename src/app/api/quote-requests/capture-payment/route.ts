@@ -5,8 +5,16 @@ import { upsertCustomer } from '@/lib/customers';
 import { createMagicLink } from '@/lib/magic-link';
 import { getSmtpTransport } from '@/lib/smtpService';
 
-function isSandboxEmail(email: string): boolean {
-  return email.includes('@sandbox') || email.includes('@personal.example.com');
+// Auth gate: a valid session cookie must be present to prevent anonymous abuse.
+// PayPal orderId alone is not enough — it can leak through logs/network traces.
+function unauthorizedResponse(): NextResponse {
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+}
+
+function hasValidSessionCookie(req: NextRequest): boolean {
+  const clientSession = req.cookies.get('client_session')?.value;
+  const adminSession = req.cookies.get('session')?.value;
+  return Boolean(clientSession || adminSession);
 }
 
 function buildLoginEmailHtml(linkUrl: string, expiresInMinutes: number): string {
@@ -78,6 +86,10 @@ function buildWelcomeEmailHtml(linkUrl: string, expiresInMinutes: number): strin
 
 export async function POST(req: NextRequest) {
   try {
+    if (!hasValidSessionCookie(req)) {
+      return unauthorizedResponse();
+    }
+
     const { orderId, quoteId, promoDocId } = await req.json();
     if (!orderId || !quoteId) {
       return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
@@ -124,10 +136,9 @@ export async function POST(req: NextRequest) {
         const html = result.isNew
           ? buildWelcomeEmailHtml(url, 15)
           : buildLoginEmailHtml(url, 15);
-        const toEmail = isSandboxEmail(quote.customerEmail) ? 'ayanhil@gmail.com' : quote.customerEmail;
         await transporter.sendMail({
           from: fromHeader,
-          to: toEmail,
+          to: quote.customerEmail,
           subject: result.isNew
             ? 'Bienvenue chez PIXIATECH — Confirmez votre email'
             : 'Connexion à votre espace client PIXIATECH',

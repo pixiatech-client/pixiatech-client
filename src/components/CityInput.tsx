@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Search, ChevronDown, Check } from 'lucide-react';
 import { CITIES } from '@/lib/cities';
+import { useI18n } from '@/lib/i18n';
 
 interface CityInputProps {
   value: string;
@@ -12,6 +13,7 @@ interface CityInputProps {
 }
 
 export default function CityInput({ value, onChange, error, errorMessage }: CityInputProps) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState(value || '');
   const [selectedId, setSelectedId] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -31,14 +33,14 @@ export default function CityInput({ value, onChange, error, errorMessage }: City
   return (
     <div className="space-y-1.5 relative">
       <div className="flex items-center gap-2">
-        <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Ville *</label>
-        <span className="text-[9px] bg-orange-100 text-orange-700 border border-orange-200/60 px-2 py-0.5 rounded-md font-extrabold uppercase tracking-wider">Important</span>
+        <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">{t('common.city')}</label>
+        <span className="text-[9px] bg-orange-100 text-orange-700 border border-orange-200/60 px-2 py-0.5 rounded-md font-extrabold uppercase tracking-wider">{t('common.important')}</span>
       </div>
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
           <Search size={14} />
         </div>
-        <input type="text" placeholder="Rechercher une ville"
+        <input type="text" placeholder={t('common.cityPlaceholder')}
           value={searchQuery}
           onChange={(e) => { setSearchQuery(e.target.value); setIsOpen(true); }}
           onFocus={() => setIsOpen(true)}
@@ -63,7 +65,7 @@ export default function CityInput({ value, onChange, error, errorMessage }: City
               </button>
             ))
           ) : (
-            <div className="text-center p-4 text-sm text-gray-400">Aucune ville trouvée</div>
+            <div className="text-center p-4 text-sm text-gray-400">{t('common.noCityFound')}</div>
           )}
         </div>
       )}

@@ -3,10 +3,6 @@ import { upsertCustomer } from '@/lib/customers';
 import { createMagicLink } from '@/lib/magic-link';
 import { getSmtpTransport } from '@/lib/smtpService';
 
-function isSandboxEmail(email: string): boolean {
-  return email.includes('@sandbox') || email.includes('@personal.example.com');
-}
-
 function buildMagicLinkEmailHtml(linkUrl: string, expiresInMinutes: number): string {
   return `
 <!DOCTYPE html>
@@ -62,13 +58,10 @@ export async function POST(req: NextRequest) {
     const origin = req.nextUrl.origin;
     const { url } = await createMagicLink(normalizedEmail, id, origin);
 
-    const isSandbox = isSandboxEmail(normalizedEmail);
-    const toEmail = isSandbox ? 'ayanhil@gmail.com' : normalizedEmail;
-
     const { transporter, fromHeader } = await getSmtpTransport();
     await transporter.sendMail({
       from: fromHeader,
-      to: toEmail,
+      to: normalizedEmail,
       subject: 'Bienvenue chez PIXIATECH — Confirmez votre email',
       html: buildMagicLinkEmailHtml(url, 15),
     });

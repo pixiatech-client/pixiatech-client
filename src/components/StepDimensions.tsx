@@ -16,7 +16,7 @@ const ScreenViewer = dynamic(() => import('./Screen3D'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full min-h-[380px] sm:min-h-[480px] xl:min-h-[600px] flex items-center justify-center bg-slate-900 text-white font-bold uppercase tracking-widest text-[10px] animate-pulse rounded-[3.5rem]">
-      Chargement du simulateur 3D...
+      Loading 3D...
     </div>
   )
 });
@@ -147,7 +147,7 @@ export default function StepDimensions({
             {/* Flat vs Curved vs 360 Toggle */}
             <div className="space-y-3 relative z-10">
               <label className="text-[11px] uppercase tracking-wider font-bold ml-2 text-slate-600">
-                Configuration de l'Écran
+                {t('wizard.dimensions.screenConfig')}
               </label>
               <div className="p-1 bg-slate-900/5 backdrop-blur-md rounded-xl border border-slate-900/10 flex gap-1">
                 <button
@@ -210,7 +210,7 @@ export default function StepDimensions({
                 >
                   <span className="flex items-center gap-2">
                     <LayoutIcon className="w-4 h-4" />
-                    Dimensions (L × H)
+                    {t('wizard.dimensions.dimensionsLabel')}
                   </span>
                   <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isDimensionsExpanded ? 'rotate-90' : ''}`} />
                 </button>
@@ -234,7 +234,7 @@ export default function StepDimensions({
                       {/* Cabinet Orientation Selector */}
                       <div className="space-y-2">
                         <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">
-                          Vue circulaire 360
+                          {t('wizard.dimensions.circularView')}
                         </label>
                         <div className="grid grid-cols-2 gap-1 bg-slate-900/5 p-1 rounded-lg border border-slate-900/10">
                           <button
@@ -251,7 +251,7 @@ export default function StepDimensions({
                                 : "text-slate-400 hover:bg-white/50"
                             }`}
                           >
-                            Intérieur
+                            {t('wizard.dimensions.interior')}
                           </button>
                           <button
                             type="button"
@@ -267,7 +267,7 @@ export default function StepDimensions({
                                 : "text-slate-400 hover:bg-white/50"
                             }`}
                           >
-                            Extérieur
+                            {t('wizard.dimensions.exterior')}
                           </button>
                         </div>
                       </div>
@@ -276,7 +276,7 @@ export default function StepDimensions({
                       <div className="space-y-3 relative">
                         <div className="flex justify-between items-center">
                           <span className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-500 ml-2">
-                            {t('wizard.dimensions.diameterTotal') || 'Diamètre Total (m)'}
+                            {t('wizard.dimensions.diameterTotal')}
                           </span>
                           <div className="flex items-center bg-white rounded-full border border-slate-200 px-2 py-0.5 shadow-sm transition-all duration-300">
                             <button
@@ -320,7 +320,7 @@ export default function StepDimensions({
                       {/* Standard Height Buttons */}
                       <div className="space-y-2">
                         <label className="text-[10px] uppercase tracking-wider font-bold text-slate-500 ml-1">
-                          Hauteurs Standards
+                          {t('wizard.dimensions.standardHeights')}
                         </label>
                         <div className="flex gap-2">
                           {[2.5, 3.0].map((h) => (
@@ -389,7 +389,7 @@ export default function StepDimensions({
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-[11px] uppercase tracking-[0.2em] font-black text-slate-500 ml-2">
-                        {state.is360 ? (t('wizard.dimensions.heightStandard') || 'Hauteur (m)') : t('wizard.dimensions.heightTotal')}
+                        {state.is360 ? t('wizard.dimensions.heightStandard') : t('wizard.dimensions.heightTotal')}
                       </span>
                       <div className="flex items-center bg-white rounded-full border border-slate-200 px-2 py-0.5 shadow-sm">
                         <button
