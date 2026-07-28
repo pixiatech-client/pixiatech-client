@@ -1,5 +1,5 @@
 # https://firebase.google.com/docs/app-hosting/configure
-# Last updated: 2026-06-25T16:55:00Z
+# Last updated: 2026-07-28T11:30:00Z
 
 runConfig:
   minInstances: 1
@@ -22,5 +22,25 @@ env:
 
   - variable: SESSION_SECRET
     secret: SESSION_SECRET
+    availability:
+      - RUNTIME
+
+  # Firebase Admin SDK — required for session cookie creation
+  - variable: ADMIN_PROJECT_ID
+    value: studio-9205859220-a6440
+    availability:
+      - RUNTIME
+
+  - variable: ADMIN_CLIENT_EMAIL
+    value: firebase-adminsdk-fbsvc@studio-9205859220-a6440.iam.gserviceaccount.com
+    availability:
+      - RUNTIME
+
+  # ADMIN_PRIVATE_KEY must be stored in Google Secret Manager.
+  # Create it once with:
+  #   gcloud secrets create ADMIN_PRIVATE_KEY --project=studio-9205859220-a6440
+  #   gcloud secrets versions add ADMIN_PRIVATE_KEY --data-file=private_key.txt --project=studio-9205859220-a6440
+  - variable: ADMIN_PRIVATE_KEY
+    secret: ADMIN_PRIVATE_KEY
     availability:
       - RUNTIME
