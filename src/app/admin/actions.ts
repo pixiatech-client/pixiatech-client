@@ -100,40 +100,70 @@ const THEMES_CACHE_TTL_MS = 120_000; // 2 minutes
 
 export async function createSession(idToken: string) {
   console.log('[Session Action] Starting session creation...');
-  const { adminAuth, adminDb } = getFirebaseAdmin();
+
+  // 1. Guard: Admin SDK must be available
+  let adminAuth: ReturnType<typeof getFirebaseAdmin>['adminAuth'];
+  let adminDb: ReturnType<typeof getFirebaseAdmin>['adminDb'];
   try {
+    const services = getFirebaseAdmin();
+    adminAuth = services.adminAuth;
+    adminDb = services.adminDb;
+  } catch (sdkErr: any) {
+    console.error('[Session Action] Firebase Admin SDK not available:', sdkErr);
+    return { success: false, error: 'Firebase Admin SDK not initialized: ' + sdkErr.message };
+  }
+
+  if (!adminAuth) {
+    console.error('[Session Action] adminAuth is null — check ADMIN_CLIENT_EMAIL / ADMIN_PRIVATE_KEY env vars');
+    return { success: false, error: 'Authentication service not available.' };
+  }
+
+  try {
+    // 2. Verify the id token
+    console.log('[Session Action] Verifying idToken...');
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
+    console.log('[Session Action] idToken verified for uid:', uid);
 
-    const settings = await getSettings();
-    const isSingleSession = settings?.isSingleSessionEnabled ?? false;
+    // 3. Read single-session setting — isolated so a Firestore hiccup can't abort login
+    let isSingleSession = false;
+    try {
+      const settings = await getSettings();
+      isSingleSession = settings?.isSingleSessionEnabled ?? false;
+    } catch (settingsErr: any) {
+      console.warn('[Session Action] Could not read settings, defaulting isSingleSession=false:', settingsErr.message);
+    }
 
-    // Generate unique session token
+    // 4. Generate unique session token
     const sessionToken =
       crypto.randomUUID?.() ||
       `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
-
     const sessionCreatedAt = Date.now();
 
-    // Store session token on user document
+    // 5. Persist session token on user document (best-effort)
     if (adminDb) {
-      await adminDb.collection('users').doc(uid).set(
-        {
-          sessionToken,
-          sessionCreatedAt,
-        },
-        { merge: true }
-      );
+      try {
+        await adminDb.collection('users').doc(uid).set(
+          { sessionToken, sessionCreatedAt },
+          { merge: true }
+        );
+        console.log('[Session Action] Session token stored in Firestore.');
+      } catch (dbErr: any) {
+        console.warn('[Session Action] Could not store sessionToken in Firestore (non-fatal):', dbErr.message);
+      }
     }
 
-    const expiresIn = 60 * 60 * 24 * 5 * 1000;
-    console.log('[Session Action] Creating session cookie...');
+    // 6. Create Firebase session cookie
+    const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+    console.log('[Session Action] Creating Firebase session cookie...');
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
-    console.log('[Session Action] Session cookie created successfully.');
+    console.log('[Session Action] Firebase session cookie created successfully.');
 
+    // 7. Write cookies
     const isSecure = process.env.NODE_ENV === 'production';
+    const cookieStore = await cookies();
 
-    (await cookies()).set('session', sessionCookie, {
+    cookieStore.set('session', sessionCookie, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
       secure: isSecure,
@@ -141,8 +171,7 @@ export async function createSession(idToken: string) {
       sameSite: 'lax',
     });
 
-    // Set sessionToken cookie (compound: token:createdAt so we can compare timestamps reliably)
-    (await cookies()).set('sessionToken', `${sessionToken}:${sessionCreatedAt}`, {
+    cookieStore.set('sessionToken', `${sessionToken}:${sessionCreatedAt}`, {
       maxAge: expiresIn / 1000,
       httpOnly: true,
       secure: isSecure,
@@ -150,12 +179,11 @@ export async function createSession(idToken: string) {
       sameSite: 'lax',
     });
 
-    console.log('[Session Action] Session token stored and cookies set.');
-
+    console.log('[Session Action] Cookies set successfully. Session creation complete.');
     return { success: true, sessionToken };
   } catch (error: any) {
-    console.error('[Session Action] Error creating session:', error);
-    return { success: false, error: 'Failed to create session: ' + error.message };
+    console.error('[Session Action] Error creating session:', error?.code, error?.message, error);
+    return { success: false, error: 'Failed to create session: ' + (error?.message ?? String(error)) };
   }
 }
 

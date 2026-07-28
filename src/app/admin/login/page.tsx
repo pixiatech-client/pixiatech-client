@@ -159,6 +159,7 @@ export default function LoginPage() {
       }
 
       const loginResult = await loginAndRedirect(idToken);
+      console.log('[Login] loginResult:', loginResult);
       if ('redirect' in loginResult) {
         router.push('/admin');
       } else {
