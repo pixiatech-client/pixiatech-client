@@ -161,7 +161,7 @@ export default function LoginPage() {
       const loginResult = await loginAndRedirect(idToken);
       console.log('[Login] loginResult:', loginResult);
       if ('redirect' in loginResult) {
-        router.push('/admin');
+        window.location.href = '/admin';
       } else {
         throw new Error(loginResult.error || t('Session creation failed.'));
       }
@@ -258,7 +258,7 @@ export default function LoginPage() {
       if (result.status === 'approved') {
         const loginResult = await loginAndRedirect(idToken);
         if ('redirect' in loginResult) {
-          router.push('/admin');
+          window.location.href = '/admin';
         } else {
           throw new Error(loginResult.error || t('Session creation failed.'));
         }

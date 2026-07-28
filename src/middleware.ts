@@ -85,9 +85,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (sessionCookie && pathname.startsWith('/admin')) {
-    const MAX_RETRIES = 2;
-    const TIMEOUT_MS = 5000;
-    let lastError: unknown = null;
+    const MAX_RETRIES = 1;
+    const TIMEOUT_MS = 2000;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
@@ -105,7 +104,7 @@ export async function middleware(request: NextRequest) {
           break; // session OK, let through
         }
 
-        // Only delete cookies on definitive auth failures, not transient errors
+        // Only delete cookies on definitive auth failures ('session_mismatch', 'expired', 'user_not_found')
         if (data.reason === 'session_mismatch' || data.reason === 'expired' || data.reason === 'user_not_found') {
           console.log('[Middleware] session invalid (reason=' + data.reason + '), redirecting to login');
           const response = NextResponse.redirect(loginUrl);
@@ -113,22 +112,10 @@ export async function middleware(request: NextRequest) {
           response.cookies.delete('sessionToken');
           return response;
         }
-
-        // For other reasons (admin_sdk_not_initialized, unknown), retry
-        lastError = new Error('verify-session: ' + data.reason);
+        break; // Other reasons: fail open, let AdminLayout do the authoritative check
       } catch (err) {
-        lastError = err;
-        console.warn('[Middleware] verify-session attempt ' + (attempt + 1) + '/' + (MAX_RETRIES + 1) + ' failed:', err);
+        console.warn('[Middleware] verify-session attempt ' + (attempt + 1) + '/' + (MAX_RETRIES + 1) + ' failed (failing open):', err);
       }
-    }
-
-    // All retries exhausted — only then fail closed
-    if (lastError) {
-      console.error('[Middleware] verify-session failed after ' + (MAX_RETRIES + 1) + ' attempts, forcing re-login:', lastError);
-      const response = NextResponse.redirect(loginUrl);
-      response.cookies.delete('session');
-      response.cookies.delete('sessionToken');
-      return response;
     }
   }
 
