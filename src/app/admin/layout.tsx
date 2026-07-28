@@ -162,7 +162,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     if (hasSession && hasValidFirebaseUser) return;
 
     // No session and no Firebase user — genuinely logged out
-    if (elapsed < 2000 && !hasSession) return;
+    if (elapsed < 5000 && !hasSession) return;
 
     // Both session cookie AND Firebase user are gone — genuinely logged out
     if (!hasSession && !hasValidFirebaseUser) {

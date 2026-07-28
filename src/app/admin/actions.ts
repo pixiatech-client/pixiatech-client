@@ -3609,7 +3609,11 @@ export async function verifySession() {
 
     // Fallback: opaque token comparison for sessions created before the timestamp format
     const storedToken = userData?.sessionToken;
-    if (storedToken && storedToken !== sessionTokenCookie) {
+    // sessionTokenCookie is "uuid:timestamp" — extract just the UUID part for comparison
+    const cookieToken = sessionTokenCookie?.includes(':')
+      ? sessionTokenCookie.substring(0, sessionTokenCookie.lastIndexOf(':'))
+      : sessionTokenCookie;
+    if (storedToken && storedToken !== cookieToken) {
       return { valid: false, reason: 'session_mismatch', uid, sessionCreatedAt: storedCreatedAt };
     }
 

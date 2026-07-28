@@ -85,27 +85,46 @@ export async function middleware(request: NextRequest) {
   }
 
   if (sessionCookie && pathname.startsWith('/admin')) {
-    try {
-      const verifyUrl = new URL('/api/verify-session', requestUrl);
-      const verifyRes = await fetch(verifyUrl, {
-        headers: { cookie: request.headers.get('cookie') || '' },
-      });
-      const data = await verifyRes.json();
+    const MAX_RETRIES = 2;
+    const TIMEOUT_MS = 5000;
+    let lastError: unknown = null;
 
-      // Fail-closed: any invalid session (mismatch, error, expired) kicks the user to login.
-      // Previously only 'session_mismatch' triggered a redirect, which let stale/invalid
-      // cookies slip through if the API returned another reason or errored out.
-      if (!data.valid) {
-        const response = NextResponse.redirect(loginUrl);
-        response.cookies.delete('session');
-        response.cookies.delete('sessionToken');
-        return response;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+        const verifyUrl = new URL('/api/verify-session', requestUrl);
+        const verifyRes = await fetch(verifyUrl, {
+          headers: { cookie: request.headers.get('cookie') || '' },
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        const data = await verifyRes.json();
+
+        if (data.valid) {
+          break; // session OK, let through
+        }
+
+        // Only delete cookies on definitive auth failures, not transient errors
+        if (data.reason === 'session_mismatch' || data.reason === 'expired' || data.reason === 'user_not_found') {
+          console.log('[Middleware] session invalid (reason=' + data.reason + '), redirecting to login');
+          const response = NextResponse.redirect(loginUrl);
+          response.cookies.delete('session');
+          response.cookies.delete('sessionToken');
+          return response;
+        }
+
+        // For other reasons (admin_sdk_not_initialized, unknown), retry
+        lastError = new Error('verify-session: ' + data.reason);
+      } catch (err) {
+        lastError = err;
+        console.warn('[Middleware] verify-session attempt ' + (attempt + 1) + '/' + (MAX_RETRIES + 1) + ' failed:', err);
       }
-    } catch (err) {
-      // Fail-closed: if verify-session itself errors out (timeout, 500, network),
-      // we DO NOT let the request through. Better to force a re-login than to
-      // expose the admin panel during an auth outage.
-      console.error('[Middleware] verify-session error, forcing re-login:', err);
+    }
+
+    // All retries exhausted — only then fail closed
+    if (lastError) {
+      console.error('[Middleware] verify-session failed after ' + (MAX_RETRIES + 1) + ' attempts, forcing re-login:', lastError);
       const response = NextResponse.redirect(loginUrl);
       response.cookies.delete('session');
       response.cookies.delete('sessionToken');
