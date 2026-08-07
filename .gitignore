@@ -43,8 +43,25 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
-node_modules
-node_modules
-node_modules
-node_modules
 .gstack/
+
+# IDE / AI worktrees & payloads (purgés de l'historique)
+.kilo/
+.kilocode/
+.superpowers/
+
+# logs
+*.log
+dev-server.log
+dev-server-err.log
+
+# artifacts de dev / i18n
+diff*.txt
+full_diff.txt
+test-results.html
+tsc_errors.txt
+*.tsbuildinfo
+[Provide the ABSOLUTE, FULL path to the file being modified]
+
+# backup local (hors git)
+/scripts/backup.js
