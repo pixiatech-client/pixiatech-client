@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "studio-9205859220-a6440",
+    "site": "pixiatech-client",
     "public": "chatbot-widget/dist",
     "headers": [
       {
@@ -21,5 +21,8 @@
   "firestore": {
     "rules": "src/firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "src/storage.rules"
   }
 }

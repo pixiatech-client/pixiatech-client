@@ -1,13 +1,5 @@
 import { Estimation } from "../types";
 
-// Note: In Next.js, we should use the appropriate Google Generative AI library
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ 
-  apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || '' 
-});
-const modelName = "gemini-1.5-flash"; 
-
 export const geminiService = {
   async translateToChinese(estimation: Estimation): Promise<string> {
     const total = estimation.products.reduce((acc, p) => acc + (p.quantity * p.unitPrice), 0);
@@ -22,11 +14,13 @@ export const geminiService = {
     `;
 
     try {
-      const response = await (ai as any).models.generateContent({
-        model: modelName,
-        contents: prompt,
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: "gemini-1.5-flash", prompt }),
       });
-      return response.text || "Translation error";
+      const data = await res.json();
+      return data.text || "Translation error";
     } catch (error) {
       console.error("Gemini Error:", error);
       return "Sorry, unable to translate at the moment.";
@@ -46,11 +40,13 @@ export const geminiService = {
     `;
 
     try {
-      const response = await (ai as any).models.generateContent({
-        model: modelName,
-        contents: prompt,
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: "gemini-1.5-flash", prompt }),
       });
-      return response.text || "Error generating summary";
+      const data = await res.json();
+      return data.text || "Error generating summary";
     } catch (error) {
       console.error("Gemini Error:", error);
       return "Sorry, unable to generate the summary at the moment.";

@@ -15,9 +15,9 @@ interface ChatWidgetConfig {
 // Configuration par défaut du Widget pointant directement vers votre vrai chatbot Lumi en production
 const DEFAULT_CONFIG: Required<ChatWidgetConfig> = {
   position: 'right',
-  iframeUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app/chat-widget',
-  avatarUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app/bot-avatars/pixia_robot.webm',
-  posterUrl: 'https://studio--studio-9205859220-a6440.us-central1.hosted.app/bot-avatars/010.webp',
+  iframeUrl: 'https://pixiatech-client.us-central1.hosted.app/chat-widget',
+  avatarUrl: 'https://pixiatech-client.us-central1.hosted.app/bot-avatars/pixia_robot.webm',
+  posterUrl: 'https://pixiatech-client.us-central1.hosted.app/bot-avatars/010.webp',
   entranceAnimation: true,
   tooltipText: 'Besoin d\'aide ? Discutons !',
   lang: ''

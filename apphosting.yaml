@@ -27,20 +27,31 @@ env:
 
   # Firebase Admin SDK — required for session cookie creation
   - variable: ADMIN_PROJECT_ID
-    value: studio-9205859220-a6440
+    value: pixiatech-client
     availability:
       - RUNTIME
 
+  # TODO: remplacer par l'email du nouveau service account Admin Firebase du projet pixiatech-client
+  # (à récupérer après la création du SA côté cible)
   - variable: ADMIN_CLIENT_EMAIL
-    value: firebase-adminsdk-fbsvc@studio-9205859220-a6440.iam.gserviceaccount.com
+    value: placeholder@pixiatech-client.iam.gserviceaccount.com
     availability:
       - RUNTIME
 
   # ADMIN_PRIVATE_KEY must be stored in Google Secret Manager.
   # Create it once with:
-  #   gcloud secrets create ADMIN_PRIVATE_KEY --project=studio-9205859220-a6440
-  #   gcloud secrets versions add ADMIN_PRIVATE_KEY --data-file=private_key.txt --project=studio-9205859220-a6440
+  #   gcloud secrets create ADMIN_PRIVATE_KEY --project=pixiatech-client
+  #   gcloud secrets versions add ADMIN_PRIVATE_KEY --data-file=private_key.txt --project=pixiatech-client
   - variable: ADMIN_PRIVATE_KEY
     secret: ADMIN_PRIVATE_KEY
+    availability:
+      - RUNTIME
+
+  # Gemini API key (server-side route /api/gemini) must be stored in Secret Manager.
+  # Create it once with:
+  #   gcloud secrets create GEMINI_API_KEY --project=pixiatech-client
+  #   gcloud secrets versions add GEMINI_API_KEY --data-file=gemini_key.txt --project=pixiatech-client
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
     availability:
       - RUNTIME

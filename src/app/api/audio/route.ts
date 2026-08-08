@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 const ALLOWED_HOSTS = new Set<string>([
   'firebasestorage.googleapis.com',
   'storage.googleapis.com',
-  'studio-9205859220-a6440.firebasestorage.app',
+  'pixiatech-client.firebasestorage.app',
 ]);
 
 function isPrivateOrLoopback(hostname: string): boolean {

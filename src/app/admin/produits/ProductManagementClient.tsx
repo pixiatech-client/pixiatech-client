@@ -1,5 +1,4 @@
 "use client";
-import { GoogleGenAI } from "@google/genai";
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
@@ -832,7 +831,7 @@ interface AISettings {
 const DEFAULT_AI_SETTINGS: AISettings = {
   enabled: true,
   provider: 'gemini',
-  apiKey: process.env.GEMINI_API_KEY || '',
+  apiKey: '',
   model: 'gemini-3-flash-preview',
   maxTokens: 2048,
   pdfMaxSize: 10,
@@ -945,23 +944,30 @@ const AISettingsSheet = ({
   };
 
   const handleTest = async () => {
-    if (!localSettings.apiKey) {
-      setTestStatus('error');
-      setTimeout(() => setTestStatus('idle'), 3000);
-      return;
-    }
     setTestStatus('testing');
     try {
       if (localSettings.provider === 'gemini') {
-        const ai = new GoogleGenAI({ apiKey: localSettings.apiKey });
-        // Simple test call to verify key
-        await ai.models.generateContent({
-          model: localSettings.model || "gemini-3-flash-preview",
-          contents: [{ parts: [{ text: "test" }] }],
-          config: { maxOutputTokens: 1 }
+        // La clé est détenue côté serveur (Secret Manager) via /api/gemini
+        const res = await fetch('/api/gemini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: localSettings.model || "gemini-3-flash-preview",
+            prompt: "test",
+            maxTokens: 1,
+          }),
         });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Gemini test failed');
+        }
       } else {
         // For OpenAI/Anthropic, we try to fetch models as a test
+        if (!localSettings.apiKey) {
+          setTestStatus('error');
+          setTimeout(() => setTestStatus('idle'), 3000);
+          return;
+        }
         await fetchModels(localSettings.provider, localSettings.apiKey);
       }
       setTestStatus('success');
@@ -5390,22 +5396,21 @@ export default function ProductManagementClient() {
           let data;
 
           if (aiSettings.provider === 'gemini') {
-            const ai = new GoogleGenAI({ apiKey: aiSettings.apiKey });
-            const result = await ai.models.generateContent({
-              model: aiSettings.model || "gemini-3-flash-preview",
-              contents: [
-                {
-                  parts: [
-                    { text: prompt },
-                    { inlineData: { data: base64Data, mimeType: "application/pdf" } }
-                  ]
-                }
-              ],
-              config: {
+            const res = await fetch('/api/gemini', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: aiSettings.model || "gemini-3-flash-preview",
+                prompt,
+                inlineData: { data: base64Data, mimeType: "application/pdf" },
+                maxTokens: aiSettings.maxTokens,
                 responseMimeType: "application/json",
-                maxOutputTokens: aiSettings.maxTokens
-              }
+              }),
             });
+            const result = await res.json();
+            if (!res.ok) {
+              throw new Error(result.error || 'Gemini analysis failed');
+            }
             data = JSON.parse(result.text || '{}');
           } else {
             // Placeholder for other providers

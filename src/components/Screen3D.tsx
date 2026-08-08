@@ -303,7 +303,7 @@ function Screen({
     const isYouTube = videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'));
     const resolvedUrl = isYouTube 
       ? '/youtube-video.mp4' 
-      : (videoUrl || 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.firebasestorage.app/o/uploads%2F1765799832313_Devis%20Ecran.mp4?alt=media&token=99eec72d-0dab-4adb-bf36-061263381e09');
+      : (videoUrl || 'https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2F1765799832313_Devis%20Ecran.mp4?alt=media');
 
     video.src = resolvedUrl;
     video.loop = true;

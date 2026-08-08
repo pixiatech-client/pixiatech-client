@@ -27,7 +27,7 @@ import { validatePhone } from '@/lib/phone-validation';
  */
 function getBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '');
-  const firebaseUrl = 'https://studio--studio-9205859220-a6440.us-central1.hosted.app';
+  const firebaseUrl = 'https://pixiatech-client.us-central1.hosted.app';
   const isProduction = process.env.NODE_ENV === 'production';
 
   if (envUrl && !envUrl.includes('localhost')) {
@@ -87,9 +87,9 @@ async function urlToDataUri(url: string | undefined): Promise<string> {
 export async function getPdfSettings(rawUrls = false): Promise<PdfSettings> {
   const { adminDb } = getFirebaseAdmin();
   const defaultSettings: PdfSettings = {
-    logoUrl: "https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Flogo.png?alt=media&token=8544c77c-6554-46c5-ac33-0c464c8d50d0",
+    logoUrl: "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2Flogo.png?alt=media",
     logoWidth: 190,
-    backgroundUrl: "https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Fbackground.jpg?alt=media&token=0a32d431-1554-4648-9b88-be9c73eac09f",
+    backgroundUrl: "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2Fbackground.jpg?alt=media",
     companyName: "PIXIATECH",
     siret: "123 456 789 00010 100",
     capital: "100000€",

@@ -32,13 +32,17 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isLoggedIn() && (isOwner(userId) || isAdmin());
-      allow write: if isLoggedIn() && (isOwner(userId) || isAdmin());
+      // Only the owner or an admin can read a user doc. Listing all users is
+      // restricted to admins to avoid leaking every user's email/role/phone.
+      allow get: if isLoggedIn() && (isOwner(userId) || isAdmin() || isCommercial() || isFournisseur());
       allow list: if isAdmin();
+      allow write: if isLoggedIn() && (isOwner(userId) || isAdmin());
     }
 
     match /roles/{roleId} {
-      allow get, list: if isLoggedIn();
+      // Only admins can list all role definitions; everyone can fetch a single role by id.
+      allow get: if isLoggedIn();
+      allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
@@ -52,22 +56,24 @@ service cloud.firestore {
 
     match /products/{productId} {
       allow read: if true;
-      allow write: if isLoggedIn();
+      allow list: if isLoggedIn();
+      allow write: if isAdmin();
     }
 
     match /characteristics/{charId} {
       allow read: if true;
-      allow write: if isLoggedIn();
+      allow list: if isLoggedIn();
+      allow write: if isAdmin();
     }
 
     match /boutique_products/{productId} {
-      allow read: if true;
-      allow write: if isLoggedIn();
+      allow read, list: if true;
+      allow write: if isAdmin();
     }
 
     match /boutique_characteristics/{charId} {
-      allow read: if true;
-      allow write: if isLoggedIn();
+      allow read, list: if true;
+      allow write: if isAdmin();
     }
 
     match /sale_orders/{orderId} {
@@ -85,9 +91,31 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Accessible via Admin SDK (server-side) only; locked down for defense-in-depth.
+    match /customers/{customerId} {
+      allow read, list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /magic_links/{linkId} {
+      allow read, list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /tracking_providers/{providerId} {
+      allow read, list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /tracking_cache/{trackingNumber} {
+      allow read, list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
     match /product_specs/{productId} {
       allow read: if true;
-      allow write: if isLoggedIn();
+      allow list: if isLoggedIn();
+      allow write: if isAdmin();
     }
 
     match /cities/{cityId} {
@@ -98,42 +126,49 @@ service cloud.firestore {
 
     match /zones/{zoneId} {
       allow read: if true;
+      allow list: if isLoggedIn();
       allow write: if isAdmin();
     }
 
     match /settings/{settingId} {
       allow read: if true;
+      allow list: if isLoggedIn();
       allow write: if isAdmin();
     }
 
     match /uploads/{uploadId} {
       allow read: if true;
+      allow list: if isLoggedIn();
       allow create, delete: if isLoggedIn() && isAdmin();
     }
 
     match /notifications/{notificationId} {
-      allow get: if isLoggedIn() && resource.data.userId == request.auth.uid;
-      allow list: if isLoggedIn();
+      // Users can only list their own notifications, not everyone's.
+      allow get: if isLoggedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isLoggedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isLoggedIn();
       allow update, delete: if isLoggedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    match /chats {
-      allow list: if true;
+    match /promo_codes/{codeId} {
+      allow read, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /system_messages/{messageId} {
+      allow read, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     match /chats/{chatId} {
-      allow read: if true;
-      allow create: if true;
-      allow update: if true;
-      allow delete: if true;
+      allow read, list, update: if isLoggedIn() && (request.auth.uid in resource.data.participants || isAdmin() || isCommercial());
+      allow create: if isLoggedIn() && (request.auth.uid in request.resource.data.participants || isAdmin() || isCommercial());
+      allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        allow read: if true;
-        allow list: if true;
-        allow create: if true;
-        allow update: if true;
-        allow delete: if true;
+        allow read, list, create: if isLoggedIn() && (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants || isAdmin() || isCommercial());
+        allow update: if isLoggedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+        allow delete: if isAdmin();
       }
     }
   }

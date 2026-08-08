@@ -2539,9 +2539,9 @@ const pdfSettingsSchema = z.object({
 export async function getPdfSettings(rawUrls = false): Promise<PdfSettings> {
   const { adminDb } = getFirebaseAdmin();
   const defaultSettings: PdfSettings = {
-    logoUrl: "https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Flogo.png?alt=media&token=8544c77c-6554-46c5-ac33-0c464c8d50d0",
+    logoUrl: "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2Flogo.png?alt=media",
     logoWidth: 190,
-    backgroundUrl: "https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Fbackground.jpg?alt=media&token=0a32d431-1554-4648-9b88-be9c73eac09f",
+    backgroundUrl: "https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2Fbackground.jpg?alt=media",
     companyName: "PIXIATECH",
     siret: "123 456 789 00010 100",
     capital: "100000€",
@@ -3022,7 +3022,7 @@ export async function getSettings(): Promise<Settings> {
     maxRentalWidth: 6,
     maxRentalHeight: 5,
     maxProductsPerQuote: 3,
-    previewScreenImageUrl: 'https://firebasestorage.googleapis.com/v0/b/studio-9205859220-a6440.appspot.com/o/uploads%2Fpreview-screen.mp4?alt=media&token=c198b18a-40d6-4a25-950c-e2b26a6358d7',
+    previewScreenImageUrl: 'https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2Fpreview-screen.mp4?alt=media',
     emergencyStopEnabled: false,
     emergencyReturnUrl: 'https://mahboubidz.com/',
     emergencyStopMessage: "Pour des raisons de maintenance, notre outil d'estimation en ligne est actuellement suspendu. Veuillez nous excuser pour la gêne occasionnée.",
