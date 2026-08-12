@@ -10,12 +10,12 @@ import { cn } from '@/lib/utils';
 import { getAvatarUrl } from '@/lib/avatar';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAW6cWb29qnlIS8Hb8RAWlv4KDxgqw-bM8",
-  authDomain: "studio-9205859220-a6440.firebaseapp.com",
-  projectId: "studio-9205859220-a6440",
-  storageBucket: "studio-9205859220-a6440.firebasestorage.app",
-  messagingSenderId: "517372546955",
-  appId: "1:517372546955:web:f420d5047e9ab05184298e"
+  apiKey: "AIzaSyCG55rqyEmmiA8dT_kBoqYPrlgcGA7Ws94",
+  authDomain: "pixiatech-client.firebaseapp.com",
+  projectId: "pixiatech-client",
+  storageBucket: "pixiatech-client.firebasestorage.app",
+  messagingSenderId: "72844010087",
+  appId: "1:72844010087:web:5e16bf3f7d1007640feac2"
 };
 
 interface AdminPanelProps {

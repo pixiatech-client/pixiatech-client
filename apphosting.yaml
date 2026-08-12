@@ -31,10 +31,8 @@ env:
     availability:
       - RUNTIME
 
-  # TODO: remplacer par l'email du nouveau service account Admin Firebase du projet pixiatech-client
-  # (à récupérer après la création du SA côté cible)
   - variable: ADMIN_CLIENT_EMAIL
-    value: placeholder@pixiatech-client.iam.gserviceaccount.com
+    value: firebase-admin@pixiatech-client.iam.gserviceaccount.com
     availability:
       - RUNTIME
 
