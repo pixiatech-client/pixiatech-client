@@ -61,7 +61,9 @@ full_diff.txt
 test-results.html
 tsc_errors.txt
 *.tsbuildinfo
-[Provide the ABSOLUTE, FULL path to the file being modified]
 
 # backup local (hors git)
 /scripts/backup.js
+
+# widget chatbot
+/chatbot-widget/node_modules
