@@ -266,7 +266,7 @@ export default function CodesPromoPage() {
               );
             })}
           </div>
-          <Pagination current={page} total={codes.length} pageSize={PAGE_SIZE} onChange={p => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+          <Pagination current={page} total={codes.length} pageSize={PAGE_SIZE} onChange={p => { setPage(p); const el = document.getElementById('admin-main-scroll'); if (el) { el.scrollTo({ top: 0, behavior: 'smooth' }); } window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
         </>
       )}
     </div>
