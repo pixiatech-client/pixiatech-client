@@ -1481,18 +1481,22 @@ const CaracteristiquesPage = ({
 
           if (wizardSnap.exists()) {
             if (name === 'Pixel pitch') {
-              const pixelPitches = processedVariants.map(v => ({
-                id: v.id ? String(v.id) : Math.random().toString(36).substr(2, 9),
-                value: v.value,
-                recommended: (v as any).recommended || false
-              }));
+              const pixelPitches = processedVariants
+                .filter(v => v.value.trim() !== '')
+                .map(v => ({
+                  id: v.id ? String(v.id) : Math.random().toString(36).substr(2, 9),
+                  value: v.value,
+                  recommended: (v as any).recommended || false
+                }));
               await updateDoc(wizardRef, { pixelPitches });
               console.log("Wizard Sync: Pixel Pitches updated");
             } else if (name === 'Distance de visionnage') {
-              const viewingDistances = processedVariants.map(v => ({
-                id: v.id ? String(v.id) : Math.random().toString(36).substr(2, 9),
-                value: v.value
-              }));
+              const viewingDistances = processedVariants
+                .filter(v => v.value.trim() !== '')
+                .map(v => ({
+                  id: v.id ? String(v.id) : Math.random().toString(36).substr(2, 9),
+                  value: v.value
+                }));
               await updateDoc(wizardRef, { viewingDistances });
               console.log("Wizard Sync: Viewing Distances updated");
             }

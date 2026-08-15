@@ -2896,10 +2896,10 @@ const messagingSchema = z.object({
 });
 
 const settingsSchema = z.object({
-  defaultWidth: z.coerce.number().min(1, "Width must be at least 1"),
-  defaultHeight: z.coerce.number().min(1, "Height must be at least 1"),
-  maxWidth: z.coerce.number().min(1, "Max width must be at least 1"),
-  maxHeight: z.coerce.number().min(1, "Max height must be at least 1"),
+  defaultWidth: z.coerce.number().min(1, "Width must be at least 1").optional(),
+  defaultHeight: z.coerce.number().min(1, "Height must be at least 1").optional(),
+  maxWidth: z.coerce.number().min(1, "Max width must be at least 1").optional(),
+  maxHeight: z.coerce.number().min(1, "Max height must be at least 1").optional(),
   maxRentalWidth: z.coerce.number().min(1).optional(),
   maxRentalHeight: z.coerce.number().min(1).optional(),
   maxProductsPerQuote: z.coerce.number().min(1, 'Must be at least 1').optional(),
@@ -3266,10 +3266,16 @@ export async function getWizardSettings(): Promise<WizardSettings> {
         },
         viewingDistanceImageUrl: dbData?.viewingDistanceImageUrl ?? defaultSettings.viewingDistanceImageUrl,
         // Use Firestore array directly — do NOT merge with defaults to preserve user deletions
-        viewingDistances: dbData?.viewingDistances ?? defaultSettings.viewingDistances,
+        // but drop entries with an empty value so they never break wizardSettingsSchema.
+        viewingDistances: (dbData?.viewingDistances ?? defaultSettings.viewingDistances).filter(
+          (v) => v && v.value && v.value.trim() !== ''
+        ),
         pixelPitchImageUrl: dbData?.pixelPitchImageUrl ?? defaultSettings.pixelPitchImageUrl,
         // Use Firestore array directly — do NOT merge with defaults to preserve user deletions
-        pixelPitches: dbData?.pixelPitches ?? defaultSettings.pixelPitches,
+        // but drop entries with an empty value so they never break wizardSettingsSchema.
+        pixelPitches: (dbData?.pixelPitches ?? defaultSettings.pixelPitches).filter(
+          (v) => v && v.value && v.value.trim() !== ''
+        ),
       };
       return mergedData;
     } else {
@@ -3290,7 +3296,12 @@ export async function updateWizardSettings(data: unknown) {
 
   const { adminDb } = getFirebaseAdmin();
   try {
-    await adminDb.collection('settings').doc(WIZARD_SETTINGS_DOC_ID).set(result.data, { merge: true });
+    const sanitized = {
+      ...result.data,
+      viewingDistances: result.data.viewingDistances.filter((v) => v.value.trim() !== ''),
+      pixelPitches: result.data.pixelPitches.filter((v) => v.value.trim() !== ''),
+    };
+    await adminDb.collection('settings').doc(WIZARD_SETTINGS_DOC_ID).set(sanitized, { merge: true });
     revalidatePath('/admin/wizard', 'layout');
     revalidatePath('/', 'layout');
     return { success: true };
