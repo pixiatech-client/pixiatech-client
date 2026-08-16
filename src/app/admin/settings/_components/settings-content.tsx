@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, Suspense, lazy, useMemo } from 'react';
-import { getSettings } from '@/app/admin/actions';
-import type { Settings as AppSettings } from '@/lib/types';
+import { useState, useEffect, Suspense, lazy } from 'react';
+import type { LazyExoticComponent, ComponentType } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Settings,   Image as ImageIcon, FileText, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, X, MessageSquare, ShieldCheck, Zap, PenTool, CreditCard, Package } from 'lucide-react';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Loader2, Settings, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, MessageSquare, ShieldCheck, Zap, PenTool, CreditCard, Package } from 'lucide-react';
+import { Tabs } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useAdminT } from '@/hooks/useAdminT';
 
@@ -30,6 +29,25 @@ const ThemesContent = lazy(() => import('../themes/page'));
 const SignatureContent = lazy(() => import('../signature/page'));
 const PayPalContent = lazy(() => import('../paypal/page'));
 const TrackContent = lazy(() => import('../track/page'));
+
+const sectionComponents: Record<SettingsSection, LazyExoticComponent<ComponentType>> = {
+    general: GeneralContent,
+    images: GeneralContent,
+    content: GeneralContent,
+    wizard: WizardContent,
+    livraison: LivraisonContent,
+    'main-doeuvre': LaborContent,
+    pdf: PdfContent,
+    messaging: MessagingContent,
+    emergency: EmergencyContent,
+    appearance: ThemesContent,
+    'email-verification': EmailVerificationContent,
+    software: SoftwareContent,
+    flow: FlowContent,
+    signature: SignatureContent,
+    paypal: PayPalContent,
+    track: TrackContent,
+};
 
 function LoadingFallback() {
     return (
@@ -65,11 +83,10 @@ const tabsConfigDefs = [
 export function SettingsContent({ initialSection = 'general', onSectionChange }: SettingsContentProps) {
     const { t } = useAdminT();
     const tabsConfig = tabsConfigDefs.map(tab => ({ ...tab, label: t(tab.labelKey) }));
-    const [settings, setSettings] = useState<AppSettings | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [showMobileMenu, setShowMobileMenu] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
     const [currentSection, setCurrentSection] = useState<SettingsSection>(initialSection);
+    const [mountedSections, setMountedSections] = useState<SettingsSection[]>(['general']);
 
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -82,67 +99,36 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
         if (initialSection) {
             setCurrentSection(initialSection);
             setShowMobileMenu(false);
+            setMountedSections(prev => (prev.includes(initialSection) ? prev : [...prev, initialSection]));
         }
     }, [initialSection]);
 
+    // Warm up the remaining sections in the background so switching tabs is instant.
     useEffect(() => {
-        const fetchSettings = async () => {
-            setIsLoading(true);
-            try {
-                const fetchedSettings = await getSettings();
-                setSettings(fetchedSettings);
-            } catch (error) {
-                console.error('Error loading settings:', error);
-            } finally {
-                setIsLoading(false);
-            }
+        const toPrefetch = tabsConfigDefs.map(tab => tab.id).filter(section => section !== 'general');
+        const timers: ReturnType<typeof setTimeout>[] = [];
+        let cancelled = false;
+
+        timers.push(setTimeout(() => {
+            toPrefetch.forEach((section, i) => {
+                timers.push(setTimeout(() => {
+                    if (cancelled) return;
+                    setMountedSections(prev => (prev.includes(section) ? prev : [...prev, section]));
+                }, i * 400));
+            });
+        }, 2500));
+
+        return () => {
+            cancelled = true;
+            timers.forEach(clearTimeout);
         };
-        fetchSettings();
     }, []);
 
     const handleSectionChange = (section: SettingsSection) => {
         setCurrentSection(section);
         setShowMobileMenu(false);
+        setMountedSections(prev => (prev.includes(section) ? prev : [...prev, section]));
         onSectionChange?.(section);
-    };
-
-    const renderSection = () => {
-        if (isLoading || !settings) {
-            return <LoadingFallback />;
-        }
-
-        switch (currentSection) {
-            case 'general':
-                return <GeneralContent />;
-            case 'wizard':
-                return <WizardContent />;
-            case 'livraison':
-                return <LivraisonContent />;
-            case 'main-doeuvre':
-                return <LaborContent />;
-            case 'pdf':
-                return <PdfContent />;
-            case 'messaging':
-                return <MessagingContent />;
-            case 'emergency':
-                return <EmergencyContent />;
-            case 'appearance':
-                return <ThemesContent />;
-            case 'email-verification':
-                return <EmailVerificationContent />;
-            case 'software':
-                return <SoftwareContent />;
-            case 'flow':
-                return <FlowContent />;
-            case 'signature':
-                return <SignatureContent />;
-            case 'paypal':
-                return <PayPalContent />;
-            case 'track':
-                return <TrackContent />;
-            default:
-                return <GeneralContent />;
-        }
     };
 
     const iconColor = (tabId: string, isSelected: boolean) => {
@@ -192,8 +178,8 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
     return (
         <div className="bg-theme-app flex flex-col lg:flex-row gap-4 lg:gap-8 lg:items-start pt-2 lg:pt-4 min-h-screen">
             <div className={cn("w-full lg:w-72 flex-shrink-0 hidden lg:block")}>
-                <Tabs 
-                    value={currentSection} 
+                <Tabs
+                    value={currentSection}
                     onValueChange={(value) => handleSectionChange(value as SettingsSection)}
                     orientation="vertical"
                 >
@@ -234,7 +220,7 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                     </div>
                 </Tabs>
             </div>
-            
+
             <div className="flex-1 min-w-0 flex flex-col pt-2 lg:pt-0">
                 {!isMobile && (
                     <div className="mb-6 md:mb-8 px-4 lg:px-0">
@@ -243,11 +229,19 @@ export function SettingsContent({ initialSection = 'general', onSectionChange }:
                         </h2>
                     </div>
                 )}
-                
+
                 <div className="w-full relative min-h-[600px]">
-                    <Suspense fallback={<LoadingFallback />}>
-                        {renderSection()}
-                    </Suspense>
+                    {mountedSections.map(section => {
+                        const Component = sectionComponents[section];
+                        const isActive = section === currentSection;
+                        return (
+                            <div key={section} className={isActive ? 'block' : 'hidden'}>
+                                <Suspense fallback={<LoadingFallback />}>
+                                    <Component />
+                                </Suspense>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
