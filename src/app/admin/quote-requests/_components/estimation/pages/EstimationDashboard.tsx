@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn, normalizeSearchText } from '@/lib/utils';
@@ -19,7 +19,7 @@ import { MobileFilterDrawer } from '../components/MobileFilterDrawer';
 import { X, ShoppingBag, Calendar, Calculator, Database, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EstimationStatus, Estimation, TrackingInfo } from '../types';
-import { getQuoteRequests, getPaginatedQuotes, getQuoteCounts, updateQuoteStatus, moveQuotesToTrash, restoreQuotes, permanentDeleteQuotes, permanentDeleteAllTrashedQuotes, getUsers, getQuoteRequest, getProducts, getProductSpecs, calibrateQuoteStats } from '@/app/admin/actions';
+import { getPaginatedQuotes, getQuoteCounts, updateQuoteStatus, moveQuotesToTrash, restoreQuotes, permanentDeleteQuotes, permanentDeleteAllTrashedQuotes, getSuppliers, getQuoteRequest, getProducts, getProductSpecs, calibrateQuoteStats } from '@/app/admin/actions';
 import type { QuoteRequest, UserProfile, Product, ProductSpec } from '@/lib/types';
 import { hasPermission, canPermanentlyDelete } from '@/lib/permissions';
 import { useI18n } from '@/lib/i18n';
@@ -319,20 +319,21 @@ const isFournisseur = userRole === 'fournisseur';
       try {
         // Phase 1 perf: only load stats at startup — products/specs load lazily on detail open
         const txType = estimationMode === 'location' ? 'rental' : 'sale';
-        const statsResult = await getQuoteCounts(isFournisseur ? (userId ?? null) : null, txType);
-        
+        const statsPromise = getQuoteCounts(isFournisseur ? (userId ?? null) : null, txType);
+
+        let suppliersPromise: Promise<UserProfile[]> = Promise.resolve([]);
+        if (isAdmin || isCommercial) {
+          suppliersPromise = getSuppliers();
+        } else if (isFournisseur) {
+          suppliersPromise = Promise.resolve([{ uid: userId, email: '', displayName: userName, photoURL: '', role: 'fournisseur' } as UserProfile]);
+        }
+
+        const [statsResult, supplierUsers] = await Promise.all([statsPromise, suppliersPromise]);
+
         // Store stats using technical keys (pending, processed, etc.) for easier lookup
         setServerTabCounts(statsResult.counts);
         setServerTabSums(statsResult.sums);
-
-        if (isAdmin || isCommercial) {
-          const usersResult = await getUsers({ limit: 100 });
-          const supplierUsers = usersResult.users.filter((u: UserProfile) => u.role === 'fournisseur');
-          setSuppliers(supplierUsers);
-        } else if (isFournisseur) {
-          const selfUser = { uid: userId, email: '', displayName: userName, photoURL: '', role: 'fournisseur' } as UserProfile;
-          setSuppliers([selfUser]);
-        }
+        setSuppliers(supplierUsers);
       } catch (err) {
         console.error("Failed to load initial estimation data:", err);
       }
@@ -1387,6 +1388,43 @@ const tabCounts = useMemo(() => {
    }, [estimations]);
 
 
+   const isMountedRef = useRef(true);
+   const productsPromiseRef = useRef<Promise<{ products: Product[]; specs: Record<string, ProductSpec[]> }> | null>(null);
+
+   useEffect(() => {
+     return () => {
+       isMountedRef.current = false;
+     };
+   }, []);
+
+   const loadProductsAndSpecs = useCallback((): Promise<{ products: Product[]; specs: Record<string, ProductSpec[]> }> => {
+     if (!productsPromiseRef.current) {
+       productsPromiseRef.current = Promise.all([
+         getProducts({ limit: 1000 }),
+         getProductSpecs(),
+       ]).then(([productsResult, specsResult]) => {
+         if (isMountedRef.current) {
+           setAllProducts(productsResult.products);
+           setAllProductSpecs(specsResult);
+           setProductsLoaded(true);
+         }
+         return { products: productsResult.products, specs: specsResult };
+       }).catch((error) => {
+         productsPromiseRef.current = null;
+         throw error;
+       });
+     }
+     return productsPromiseRef.current;
+   }, []);
+
+   // Phase 1 perf: idle prefetch of products/specs so the first detail open has zero wait
+   useEffect(() => {
+     const timer = setTimeout(() => {
+       loadProductsAndSpecs().catch(() => {});
+     }, 1500);
+     return () => clearTimeout(timer);
+   }, [loadProductsAndSpecs]);
+
    const handleEdit = useCallback(async (id: string) => {
      const estimation = estimations.find(e => e.id === id);
      if (!estimation) return;
@@ -1412,21 +1450,13 @@ const tabCounts = useMemo(() => {
        }
      }
 
-     // Phase 1 perf: lazy-load products & specs only on first detail open
-     if (!productsLoaded) {
-       try {
-         const [productsResult, specsResult] = await Promise.all([
-           getProducts({ limit: 1000 }),
-           getProductSpecs()
-         ]);
-         setAllProducts(productsResult.products);
-         setAllProductSpecs(specsResult);
-         setProductsLoaded(true);
-       } catch (err) {
-         console.error('Failed to lazy-load products/specs:', err);
-       }
+     // Phase 1 perf: single shared load path (idle prefetch or click) for products & specs
+     try {
+       await loadProductsAndSpecs();
+     } catch (error) {
+       console.error('Failed to lazy-load products/specs:', error);
      }
-   }, [estimations, fullQuotes, productsLoaded]);
+   }, [estimations, fullQuotes, loadProductsAndSpecs]);
 
    // Delete associated chat and storage when estimation is permanently deleted
    const deleteEstimationChat = async (estimationId: string) => {

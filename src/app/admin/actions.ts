@@ -1074,6 +1074,36 @@ export async function getUsers({
   }
 }
 
+export async function getSuppliers(): Promise<UserProfile[]> {
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return [];
+
+  try {
+    const snapshot = await adminDb.collection('users')
+      .where('role', '==', 'fournisseur')
+      .select('email', 'displayName', 'photoURL', 'status')
+      .get();
+
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      const supplier: Partial<UserProfile> = {
+        uid: doc.id,
+        email: data.email ?? '',
+        displayName: data.displayName ?? '',
+        photoURL: data.photoURL ?? '',
+        role: 'fournisseur',
+      };
+      if (data.status) {
+        supplier.status = data.status as 'pending' | 'approved';
+      }
+      return supplier as UserProfile;
+    });
+  } catch (error) {
+    console.error("Error fetching suppliers:", error);
+    return [];
+  }
+}
+
 export async function getUser(uid: string): Promise<UserProfile | null> {
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return null;
@@ -3386,6 +3416,7 @@ export async function saveTheme(theme: Partial<Omit<Theme, 'createdAt'>> & { nam
     }
 
     await docRef.set(dataToSave, { merge: true });
+    _themesCache = null;
 
     const savedDoc = await docRef.get();
     const savedData = savedDoc.data();
@@ -3407,6 +3438,7 @@ export async function deleteTheme(themeId: string) {
   const { adminDb } = getFirebaseAdmin();
   try {
     await adminDb.collection('themes').doc(themeId).delete();
+    _themesCache = null;
     return { success: true };
   } catch (error) {
     console.error("Error deleting theme:", error);
