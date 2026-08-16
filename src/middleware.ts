@@ -85,8 +85,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (sessionCookie && pathname.startsWith('/admin')) {
-    const MAX_RETRIES = 1;
-    const TIMEOUT_MS = 2000;
+    const MAX_RETRIES = 0;
+    const TIMEOUT_MS = 4000;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {

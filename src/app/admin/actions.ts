@@ -91,7 +91,10 @@ const WIZARD_SETTINGS_DOC_ID = 'wizard';
 
 // --- In-memory TTL caches (shared across calls within the same server process) ---
 let _settingsCache: { data: Settings; timestamp: number } | null = null;
-const SETTINGS_CACHE_TTL_MS = 30_000; // 30 seconds
+const SETTINGS_CACHE_TTL_MS = 60_000; // 60 seconds
+
+let _singleSessionCache: { value: boolean; timestamp: number } | null = null;
+const SINGLE_SESSION_CACHE_TTL_MS = 30_000; // 30 seconds
 
 let _themesCache: { data: Theme[]; timestamp: number } | null = null;
 const THEMES_CACHE_TTL_MS = 120_000; // 2 minutes
@@ -3127,6 +3130,9 @@ export async function updateSettings(data: unknown) {
     }
 
     _settingsCache = null;
+    if ('isSingleSessionEnabled' in result.data) {
+      _singleSessionCache = null;
+    }
     logAdminActivity({
       action: 'Modification paramètres',
       category: 'settings',
@@ -3613,14 +3619,20 @@ export async function verifySession() {
     const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
     const uid = decoded.uid;
 
-    // Read settings directly from Firestore to bypass the 30s cache in getSettings()
+    // Read settings directly from Firestore to bypass the 60s cache in getSettings(),
+    // but memoize the isSingleSessionEnabled flag for 30s to avoid a slow read per request.
     let isSingleSession = false;
-    try {
-      const settingsDoc = await adminDb.collection('settings').doc(SETTINGS_DOC_ID).get();
-      const settingsData = settingsDoc.data();
-      isSingleSession = settingsData?.isSingleSessionEnabled === true;
-    } catch {
-      // Fail-safe: if we can't read settings, don't enforce single session
+    if (_singleSessionCache && Date.now() - _singleSessionCache.timestamp < SINGLE_SESSION_CACHE_TTL_MS) {
+      isSingleSession = _singleSessionCache.value;
+    } else {
+      try {
+        const settingsDoc = await adminDb.collection('settings').doc(SETTINGS_DOC_ID).get();
+        const settingsData = settingsDoc.data();
+        isSingleSession = settingsData?.isSingleSessionEnabled === true;
+        _singleSessionCache = { value: isSingleSession, timestamp: Date.now() };
+      } catch {
+        // Fail-safe: if we can't read settings, don't enforce single session
+      }
     }
     if (!isSingleSession) {
       return { valid: true, uid };
