@@ -32,7 +32,7 @@ import { getContractTemplate } from '@/lib/contract-templates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp, getBlockedPeriods, getPdfSettings } from '@/app/actions/quote-actions';
-import { updateQuotePdfUrl } from '@/app/admin/actions';
+import { updateQuotePdfUrl } from '@/app/actions/public-actions';
 import { useUser } from '@/firebase';
 import { useI18n } from '@/lib/i18n';
 import { QuotePDF } from '@/app/admin/quote-pdf';

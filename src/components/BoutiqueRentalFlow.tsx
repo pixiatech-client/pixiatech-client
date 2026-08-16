@@ -10,7 +10,7 @@ import SignaturePad from './SignaturePad';
 import CityInput from './CityInput';
 import { validatePhone } from '@/lib/phone-validation';
 import { sendBoutiqueOtp, sendBoutiqueOtpWithResend, verifyBoutiqueOtp } from '@/app/actions/boutique-actions';
-import { getSettings } from '@/app/admin/actions';
+import { getSettings } from '@/app/actions/public-actions';
 import DateRangePicker from './boutique/DateRangePicker';
 
 interface BoutiqueRentalFlowProps {

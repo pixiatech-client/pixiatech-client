@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { QuoteBuilder } from '@/components/quote-builder';
 import { EmergencyStopPage } from '@/components/emergency-stop-page';
 
-import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLocations, getWizardSettings } from '@/app/admin/actions';
+import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLocations, getWizardSettings } from '@/app/actions/public-actions';
 import type { Settings, DeliverySettings, LaborSettings, Product, Locations, WizardSettings } from '@/lib/types';
 
 export default async function StepPage({ params, searchParams }: { 

@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { verifyQuoteToken } from '@/app/admin/actions';
+import { verifyQuoteToken } from '@/app/actions/public-actions';
 import { verifyQuoteOtp, verifyPendingOtp, createEstimationFromPending } from '@/app/actions/quote-actions';
 import { Loader2, CheckCircle2, XCircle, ShieldCheck, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';

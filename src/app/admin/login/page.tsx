@@ -245,10 +245,7 @@ export default function LoginPage() {
       const idToken = await userCredential.user.getIdToken();
 
       const result = await googleSignInAction({
-        uid: userCredential.user.uid,
-        email: userCredential.user.email || '',
-        displayName: userCredential.user.displayName || '',
-        photoURL: userCredential.user.photoURL || '',
+        idToken,
       });
 
       if (!result.success) {
@@ -293,8 +290,10 @@ export default function LoginPage() {
 
     setIsSavingGoogleProfile(true);
     try {
+      const idToken = auth?.currentUser ? await auth.currentUser.getIdToken() : undefined;
       const result = await updateGoogleUserProfile({
         uid: googleUser.uid,
+        idToken,
         displayName: googleDisplayName,
         phone: googlePhone,
       });

@@ -74,7 +74,8 @@ export function DynamicThemeProvider({ children }: { children: React.ReactNode }
     if (!user) return;
     setIsSaving(true);
     try {
-      await updateUser({ uid: user.uid, themeSettings });
+      const idToken = await user.getIdToken();
+      await updateUser({ uid: user.uid, themeSettings, idToken });
     } catch (error) {
       console.error('Failed to save theme:', error);
     } finally {

@@ -1,15 +1,13 @@
 
 'use server';
 
-import fs from 'fs/promises';
-import path from 'path';
-import { exec } from 'child_process';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { requireAdminFresh, requireRole } from '@/lib/auth-guards';
 import { getStorage } from 'firebase-admin/storage';
 import type { DocumentReference, DocumentSnapshot, Firestore, Query } from 'firebase-admin/firestore';
 import { createHash } from 'crypto';
@@ -127,6 +125,16 @@ export async function createSession(idToken: string) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
     console.log('[Session Action] idToken verified for uid:', uid);
+
+    // 2b. Verify user is approved in Firestore before creating session
+    if (adminDb) {
+      const userDoc = await adminDb.collection('users').doc(uid).get();
+      const userData = userDoc.data();
+      if (!userDoc.exists || userData?.status !== 'approved') {
+        console.warn('[Session Action] Login refused — user not approved:', uid);
+        return { success: false, error: 'Your account has not been approved yet. Please wait for administrator approval.' };
+      }
+    }
 
     // 3. Read single-session setting — isolated so a Firestore hiccup can't abort login
     let isSingleSession = false;
@@ -272,6 +280,7 @@ export async function revertImpersonation() {
 }
 
 export async function connectAsClient(customerId: string, customerEmail: string) {
+  await requireRole('super_admin');
   const { encrypt } = await import('@/lib/auth');
   const sessionToken = await encrypt(
     { customerId, email: customerEmail, type: 'client' },
@@ -330,6 +339,7 @@ const registerSchema = z.object({
   displayName: z.string().min(2),
   phone: z.string().min(1, 'Phone is required'),
   description: z.string().optional(),
+  setupToken: z.string().optional(),
 });
 
 function formatPhoneNumber(phone?: string): string | undefined {
@@ -359,7 +369,7 @@ export async function registerUser(data: unknown) {
     return { success: false, error: "Invalid data." };
   }
 
-  const { email, password, displayName, phone } = result.data;
+  const { email, password, displayName, phone, setupToken } = result.data;
   const { adminAuth, adminDb, FieldValue } = getFirebaseAdmin();
 
   if (!adminAuth || !adminDb) {
@@ -396,11 +406,12 @@ export async function registerUser(data: unknown) {
 
     const defaultRole = await getDefaultRole();
 
-    // First registered user automatically becomes admin
+    // First registered user becomes admin ONLY if a valid setup token is provided
     const usersSnapshot = await adminDb.collection('users').limit(1).get();
     const isFirstUser = usersSnapshot.empty;
-    const assignedRole = isFirstUser ? 'admin' : defaultRole.id;
-    const status = isFirstUser || assignedRole === 'fournisseur' ? 'approved' : 'pending';
+    const validSetupToken = process.env.ADMIN_SETUP_TOKEN && setupToken === process.env.ADMIN_SETUP_TOKEN;
+    const assignedRole = isFirstUser && validSetupToken ? 'admin' : defaultRole.id;
+    const status = (isFirstUser && validSetupToken) || assignedRole === 'fournisseur' ? 'approved' : 'pending';
 
     const formattedPhone = formatPhoneNumber(phone);
     console.log('[Register Action] Formatted phone:', formattedPhone);
@@ -478,10 +489,7 @@ export async function registerUser(data: unknown) {
 }
 
 const googleSignInSchema = z.object({
-  uid: z.string(),
-  email: z.string().email(),
-  displayName: z.string().optional(),
-  photoURL: z.string().optional(),
+  idToken: z.string(),
 });
 
 export async function handleGoogleSignIn(data: unknown) {
@@ -490,7 +498,7 @@ export async function handleGoogleSignIn(data: unknown) {
     return { success: false, error: 'Invalid data' };
   }
 
-  const { uid, email, displayName, photoURL } = result.data;
+  const { idToken } = result.data;
   const { adminDb, adminAuth, FieldValue } = getFirebaseAdmin();
 
   if (!adminDb || !adminAuth) {
@@ -498,6 +506,13 @@ export async function handleGoogleSignIn(data: unknown) {
   }
 
   try {
+    // Verify Google identity server-side — never trust client-provided uid/email
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+    const email = decodedToken.email || '';
+    const displayName = decodedToken.name || '';
+    const photoURL = decodedToken.picture || '';
+
     console.log('[Google Auth Action] Checking Firestore for user UID:', uid);
     const userDoc = await adminDb.collection('users').doc(uid).get();
 
@@ -522,11 +537,9 @@ export async function handleGoogleSignIn(data: unknown) {
     console.log('[Google Auth Action] New user detected, creating profile...');
     const defaultRole = await getDefaultRole();
 
-    // First registered user automatically becomes admin
-    const usersSnapshot = await adminDb.collection('users').limit(1).get();
-    const isFirstUser = usersSnapshot.empty;
-    const assignedRole = isFirstUser ? 'admin' : defaultRole.id;
-    const assignedStatus = isFirstUser || assignedRole === 'fournisseur' ? 'approved' : 'pending';
+    // First user via Google sign-in gets default role (admin bootstrap only via registerUser + setupToken)
+    const assignedRole = defaultRole.id;
+    const assignedStatus = assignedRole === 'fournisseur' ? 'approved' : 'pending';
 
     const userProfile = {
       uid,
@@ -585,6 +598,7 @@ export async function handleGoogleSignIn(data: unknown) {
 export async function updateGoogleUserProfile(data: unknown) {
   const schema = z.object({
     uid: z.string(),
+    idToken: z.string().optional(),
     displayName: z.string().min(1),
     phone: z.string().optional(),
   });
@@ -594,11 +608,32 @@ export async function updateGoogleUserProfile(data: unknown) {
     return { success: false, error: 'Invalid data' };
   }
 
-  const { uid, displayName, phone } = result.data;
-  const { adminDb } = getFirebaseAdmin();
+  const { uid, idToken, displayName, phone } = result.data;
+  const { adminDb, adminAuth } = getFirebaseAdmin();
 
   if (!adminDb) {
     return { success: false, error: 'Service unavailable.' };
+  }
+
+  // Verify identity: admin session or idToken
+  try {
+    try {
+      await requireAdminFresh();
+    } catch {
+      if (!idToken || !adminAuth) {
+        return { success: false, error: 'Access denied. Authentication required.' };
+      }
+      try {
+        const decoded = await adminAuth.verifyIdToken(idToken);
+        if (decoded.uid !== uid) {
+          return { success: false, error: 'Access denied. Cannot modify another user.' };
+        }
+      } catch {
+        return { success: false, error: 'Access denied. Invalid authentication token.' };
+      }
+    }
+  } catch {
+    return { success: false, error: 'Access denied.' };
   }
 
   try {
@@ -614,6 +649,7 @@ export async function updateGoogleUserProfile(data: unknown) {
 
 const updateUserSchema = z.object({
   uid: z.string(),
+  idToken: z.string().optional(),
   displayName: z.string().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
@@ -632,7 +668,7 @@ export async function updateUser(data: unknown) {
     return { success: false, error: 'Invalid data' };
   }
 
-  const { uid, ...updateData } = result.data;
+  const { uid, idToken: clientToken, ...updateData } = result.data;
   const { adminDb, adminAuth } = getFirebaseAdmin();
 
   if (!adminDb || !adminAuth) {
@@ -640,6 +676,48 @@ export async function updateUser(data: unknown) {
   }
 
   try {
+    // --- Authz: admin session (full access) or idToken (restricted self-update) ---
+    let isAdmin = false;
+    let verifiedUid: string | null = null;
+
+    try {
+      await requireAdminFresh();
+      isAdmin = true;
+    } catch {
+      // Not admin — try idToken verification for public self-update
+      if (clientToken) {
+        try {
+          const decoded = await adminAuth.verifyIdToken(clientToken);
+          verifiedUid = decoded.uid;
+        } catch {
+          return { success: false, error: 'Access denied. Invalid authentication token.' };
+        }
+      }
+    }
+
+    if (!isAdmin && !verifiedUid) {
+      return { success: false, error: 'Access denied. Authentication required.' };
+    }
+
+    // Public path: enforce uid match and restrict to safe fields
+    if (!isAdmin && verifiedUid) {
+      if (uid !== verifiedUid) {
+        return { success: false, error: 'Access denied. Cannot modify another user.' };
+      }
+      const SAFE_FIELDS = ['themeSettings', 'displayName', 'phone', 'photoURL', 'description', 'backgroundImage'];
+      const blockedFields = Object.keys(updateData).filter(
+        k => updateData[k as keyof typeof updateData] !== undefined && !SAFE_FIELDS.includes(k)
+      );
+      if (blockedFields.length > 0) {
+        return { success: false, error: `Access denied. Cannot modify: ${blockedFields.join(', ')}` };
+      }
+      // Strip admin-only fields as a safety net
+      delete updateData.role;
+      delete updateData.roleTemplate;
+      delete updateData.status;
+      delete updateData.email;
+    }
+    // --- End authz ---
     // Prepare payload for Firebase Auth update
     const authPayload: { [key: string]: any } = {};
     if (updateData.email) authPayload.email = updateData.email;
@@ -714,6 +792,7 @@ const customRoleSchema = z.object({
 });
 
 export async function createCustomRole(data: unknown) {
+  await requireRole('super_admin');
   const result = customRoleSchema.safeParse(data);
   if (!result.success) return { success: false, error: 'Invalid data' };
 
@@ -739,6 +818,7 @@ export async function createCustomRole(data: unknown) {
 }
 
 export async function updateCustomRole(roleId: string, data: unknown) {
+  await requireRole('super_admin');
   const result = customRoleSchema.safeParse(data);
   if (!result.success) return { success: false, error: 'Invalid data' };
 
@@ -761,6 +841,7 @@ export async function updateCustomRole(roleId: string, data: unknown) {
 }
 
 export async function deleteCustomRole(roleId: string) {
+  await requireRole('super_admin');
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return { success: false, error: 'Service unavailable.' };
 
@@ -798,6 +879,7 @@ const passwordSchema = z.object({
 });
 
 export async function updatePassword(data: unknown) {
+  await requireAdminFresh();
   const result = passwordSchema.safeParse(data);
   if (!result.success) {
     return { success: false, error: 'Invalid password.' };
@@ -817,6 +899,7 @@ export async function updatePassword(data: unknown) {
 }
 
 export async function deleteUsers(uids: string[]) {
+  await requireRole('super_admin');
   const { adminAuth, adminDb } = getFirebaseAdmin();
   if (!adminAuth || !adminDb) {
     return { success: false, error: 'Service unavailable.' };
@@ -846,15 +929,10 @@ export async function deleteUsers(uids: string[]) {
 
 
 export async function deleteAllUsersAndData() {
+  await requireRole('super_admin');
   const { adminAuth, adminDb } = getFirebaseAdmin();
   if (!adminAuth || !adminDb) {
     return { success: false, error: "Admin SDK not initialized" };
-  }
-
-  // Security: Only admins can delete all data
-  const adminUser = await getCurrentAdminUser();
-  if (!adminUser || 'error' in adminUser || adminUser.role !== 'admin') {
-    return { success: false, error: 'Unauthorized: Only administrators can reset the database.' };
   }
 
   try {
@@ -1199,13 +1277,52 @@ export async function resetConfiguratorStats() {
 
 // --- Quote Actions ---
 // --- File Sync Action ---
+function isPrivateOrReservedHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  if (h === 'localhost' || h === '[::1]' || h === '0.0.0.0') return true;
+  if (h === 'metadata.google.internal' || h === 'metadata.google') return true;
+  if (h.startsWith('169.254.') || h.startsWith('127.')) return true;
+  if (h.startsWith('10.')) return true;
+  if (h.startsWith('172.')) {
+    const second = parseInt(h.split('.')[1], 10);
+    if (second >= 16 && second <= 31) return true;
+  }
+  if (h.startsWith('192.168.')) return true;
+  if (h === '[fd00::]' || h.startsWith('fd')) return true;
+  if (h.endsWith('.internal') || h.endsWith('.local') || h.endsWith('.localhost')) return true;
+  return false;
+}
+
 export async function syncFileFromUrl(url: string, destinationPath: string) {
+  await requireAdminFresh();
+
+  let parsed: URL;
   try {
-    const response = await fetch(url);
+    parsed = new URL(url);
+  } catch {
+    return { success: false, error: 'URL invalide.' };
+  }
+
+  if (parsed.protocol !== 'https:') {
+    return { success: false, error: 'Seules les URLs HTTPS sont acceptées.' };
+  }
+  if (isPrivateOrReservedHost(parsed.hostname)) {
+    return { success: false, error: 'Les URLs vers des hôtes privés ou réservés sont bloquées.' };
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    const response = await fetch(parsed.href, { signal: controller.signal, redirect: 'follow' });
+    clearTimeout(timeout);
+
     if (!response.ok) {
       throw new Error(`Failed to fetch file: ${response.statusText}`);
     }
     const fileBuffer = Buffer.from(await response.arrayBuffer());
+    if (fileBuffer.length > 50 * 1024 * 1024) {
+      return { success: false, error: 'Fichier trop volumineux (max 50 Mo).' };
+    }
     const contentType = response.headers.get('content-type') || 'application/octet-stream';
 
     const { app } = getFirebaseAdmin();
@@ -1214,7 +1331,7 @@ export async function syncFileFromUrl(url: string, destinationPath: string) {
 
     await file.save(fileBuffer, {
       metadata: { contentType },
-      public: true,
+      public: false,
     });
 
     const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(destinationPath)}?alt=media`;
@@ -3135,6 +3252,7 @@ export async function getSettings(): Promise<Settings> {
 }
 
 export async function updateSettings(data: unknown) {
+  await requireAdminFresh();
   const result = settingsSchema.safeParse(data);
   if (!result.success) {
     return { success: false, error: result.error.flatten() };
@@ -3143,21 +3261,6 @@ export async function updateSettings(data: unknown) {
   const { adminDb } = getFirebaseAdmin();
   try {
     await adminDb.collection('settings').doc(SETTINGS_DOC_ID).set(result.data, { merge: true });
-
-    // Check if a YouTube URL is configured
-    const videoUrl = result.data.previewScreenVideoUrl || result.data.previewScreenImageUrl;
-    const isYouTube = videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'));
-    if (isYouTube) {
-      console.log('[updateSettings] Detected YouTube URL, triggering download...');
-      const scriptPath = path.join(process.cwd(), 'scratch', 'download_youtube.py');
-      exec(`python "${scriptPath}" "${videoUrl}"`, (error, stdout, stderr) => {
-        if (error) {
-          console.error('[updateSettings] Error running download_youtube.py:', error);
-        } else {
-          console.log('[updateSettings] download_youtube.py output:', stdout);
-        }
-      });
-    }
 
     _settingsCache = null;
     if ('isSingleSessionEnabled' in result.data) {
@@ -3764,22 +3867,13 @@ async function urlToDataUri(url: string | undefined): Promise<string> {
 }
 
 export async function impersonateUser(targetUserId: string) {
+  await requireAdminFresh();
   const { adminAuth } = getFirebaseAdmin();
 
-  const sessionCookie = (await cookies()).get('session')?.value;
-  if (!sessionCookie) {
-    return { success: false, error: 'Access denied. Invalid session.' };
-  }
-
   try {
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, false);
-
+    const sessionCookie = (await cookies()).get('session')?.value;
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie!, false);
     const originalAdminUid = decodedClaims.original_admin_uid || decodedClaims.uid;
-    const originalAdminUserRecord = await adminAuth.getUser(originalAdminUid);
-
-    if (originalAdminUserRecord.customClaims?.role !== 'admin') {
-      return { success: false, error: 'Access denied. Only an administrator can use this function.' };
-    }
 
     const impersonationToken = await adminAuth.createCustomToken(targetUserId, {
       original_admin_uid: originalAdminUid,
@@ -3844,9 +3938,9 @@ export async function getActivityLogs(options?: {
   userId?: string;
 }): Promise<ActivityLogEntry[]> {
   try {
+    await requireAdminFresh();
     const { adminDb } = getFirebaseAdmin();
-    let query: FirebaseFirestore.Query = adminDb.collection('activityLogs').orderBy('timestamp', 'desc');
-    if (options?.category) query = query.where('category', '==', options.category);
+    let query: FirebaseFirestore.Query = adminDb.collection('activityLogs').orderBy('timestamp', 'desc');    if (options?.category) query = query.where('category', '==', options.category);
     if (options?.userId) query = query.where('userId', '==', options.userId);
     if (options?.limit) query = query.limit(options.limit);
     const snap = await query.get();

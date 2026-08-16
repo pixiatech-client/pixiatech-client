@@ -7,7 +7,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import fr from '@/lib/locales/fr.json';
 import en from '@/lib/locales/en.json';
 import zhCN from '@/lib/locales/zh-CN.json';
-import { getSettings } from '@/app/admin/actions';
+import { getSettings } from '@/app/actions/public-actions';
 import { updateStatsOnCreate } from '@/lib/statsService';
 import { createHash, randomInt } from 'crypto';
 import { Timestamp } from 'firebase-admin/firestore';

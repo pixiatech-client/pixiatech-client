@@ -58,7 +58,7 @@ import SignaturePad from './SignaturePad';
 import ContractDocument from './ContractDocument';
 import { ConfiguredProduct, Product, Settings, PdfSettings, City, ProductSpec, QuoteRequest } from '@/lib/types';
 import { getPdfSettings, createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp } from '@/app/actions/quote-actions';
-import { getSettings, updateQuotePdfUrl, updateQuoteContractUrl } from '@/app/admin/actions';
+import { getSettings, updateQuotePdfUrl, updateQuoteContractUrl } from '@/app/actions/public-actions';
 import { storage } from '@/firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useI18n } from '@/lib/i18n';

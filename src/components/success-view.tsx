@@ -11,7 +11,7 @@ import type { QuoteRequest, PdfSettings, Settings, City, Product, ProductSpec } 
 import confetti from 'canvas-confetti';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n';
-import { getSettings, getQuoteRequest, getProducts, getProductSpecs } from '@/app/admin/actions';
+import { getSettings, getQuoteRequest, getProducts, getProductSpecs } from '@/app/actions/public-actions';
 import { getPdfSettings } from '@/app/actions/quote-actions';
 import { doc, getDoc } from 'firebase/firestore';
 import { firestore } from '@/firebase/config';
@@ -20,7 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase/config';
-import { updateQuotePdfUrl } from '@/app/admin/actions';
+import { updateQuotePdfUrl } from '@/app/actions/public-actions';
 
 // Loading component removed to prevent flashes
 

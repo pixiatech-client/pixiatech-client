@@ -1,4 +1,4 @@
-import { getWizardSettings } from '@/app/admin/actions';
+import { getWizardSettings } from '@/app/actions/public-actions';
 import { NextResponse } from 'next/server';
 
 export async function GET() {

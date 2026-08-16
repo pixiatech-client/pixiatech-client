@@ -1,7 +1,7 @@
 
 import { ChatWidgetClient } from '@/app/chat-widget/ChatWidgetClient';
 import type { Settings, DeliverySettings, LaborSettings, Product, Locations } from '@/lib/types';
-import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLocations } from '@/app/admin/actions';
+import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLocations } from '@/app/actions/public-actions';
 
 export const dynamic = 'force-dynamic';
 
