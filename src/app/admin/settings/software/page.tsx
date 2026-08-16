@@ -52,7 +52,7 @@ export default function SoftwareSettingsPage() {
           host: data.host || '',
           port: data.port || 587,
           user: data.user || '',
-          pass: data.pass || '',
+          pass: '',
           fromEmail: data.fromEmail || '',
           fromName: data.fromName || 'PixiaTech',
           isCustom: data.isCustom || false,

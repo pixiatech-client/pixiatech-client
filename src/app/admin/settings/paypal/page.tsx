@@ -31,7 +31,7 @@ export default function PayPalSettingsPage() {
         const data = await getPayPalSettings();
         setSettings({
           clientId: data.clientId || '',
-          clientSecret: data.clientSecret || '',
+          clientSecret: '',
           environment: data.environment || 'sandbox',
         });
       } catch (error) {

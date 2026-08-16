@@ -3281,28 +3281,64 @@ export async function updateSettings(data: unknown) {
 }
 
 export async function getSmtpSettings() {
-  return await getSmtpSettingsDb();
+  await requireAdminFresh();
+  const data = await getSmtpSettingsDb();
+  const { pass: _, ...safeData } = data;
+  return { ...safeData, hasPassword: Boolean(data.pass || data.envConfig?.hasPass) };
 }
 
 export async function updateSmtpSettings(data: any) {
-  const res = await updateSmtpSettingsDb(data);
-  if (res.success) {
-    revalidatePath('/admin/settings', 'layout');
+  await requireAdminFresh();
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Database service unavailable' };
+
+  try {
+    if (!data.pass) {
+      const existing = await adminDb.collection('settings').doc('smtp').get();
+      if (existing.exists) {
+        data.pass = existing.data()?.pass || '';
+      }
+    }
+    const res = await updateSmtpSettingsDb(data);
+    if (res.success) {
+      revalidatePath('/admin/settings', 'layout');
+    }
+    return res;
+  } catch (error: any) {
+    console.error('Error updating SMTP settings:', error);
+    return { success: false, error: error.message || 'Failed to update SMTP settings' };
   }
-  return res;
 }
 
 
 export async function getPayPalSettings() {
-  return await getPayPalSettingsDb();
+  await requireAdminFresh();
+  const data = await getPayPalSettingsDb();
+  const { clientSecret: _, ...safeData } = data;
+  return { ...safeData, hasClientSecret: Boolean(data.clientSecret) };
 }
 
 export async function updatePayPalSettings(data: any) {
-  const res = await updatePayPalSettingsDb(data);
-  if (res.success) {
-    revalidatePath('/admin/settings', 'layout');
+  await requireAdminFresh();
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return { success: false, error: 'Database service unavailable' };
+
+  try {
+    if (!data.clientSecret) {
+      const existing = await adminDb.collection('settings').doc('paypal').get();
+      if (existing.exists) {
+        data.clientSecret = existing.data()?.clientSecret || '';
+      }
+    }
+    const res = await updatePayPalSettingsDb(data);
+    if (res.success) {
+      revalidatePath('/admin/settings', 'layout');
+    }
+    return res;
+  } catch (error: any) {
+    console.error('Error updating PayPal settings:', error);
+    return { success: false, error: error.message || 'Failed to update PayPal settings' };
   }
-  return res;
 }
 
 // --- Dedicated Sidebar Config Action (for partial updates: order + logo) ---
@@ -3982,6 +4018,10 @@ async function getAuth() {
 }
 
 export async function resetEstimationCounter(newNumber: number): Promise<{ success: boolean; error?: string }> {
+  await requireAdminFresh();
+  if (!Number.isInteger(newNumber) || newNumber < 1) {
+    return { success: false, error: 'Invalid counter value. Must be a positive integer.' };
+  }
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return { success: false, error: 'Database service unavailable' };
 
