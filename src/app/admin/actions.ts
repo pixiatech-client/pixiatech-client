@@ -72,7 +72,7 @@ export async function getMembers(): Promise<Member[]> {
   }));
 }
 import { DEFAULT_PALETTES } from '@/lib/color-palettes';
-import { DocumentData, Timestamp, QueryDocumentSnapshot } from 'firebase-admin/firestore';
+import { DocumentData, Timestamp, QueryDocumentSnapshot, FieldPath } from 'firebase-admin/firestore';
 import fr from '@/lib/locales/fr.json';
 import en from '@/lib/locales/en.json';
 import { getQuoteStats, updateStatsOnStatusChange, updateStatsOnDelete, resyncStats } from '@/lib/statsService';
@@ -3658,8 +3658,13 @@ export async function verifySession() {
       isSingleSession = _singleSessionCache.value;
     } else {
       try {
-        const settingsDoc = await adminDb.collection('settings').doc(SETTINGS_DOC_ID).get();
-        const settingsData = settingsDoc.data();
+        const settingsSnap = await adminDb.collection('settings')
+          .select('isSingleSessionEnabled')
+          .where(FieldPath.documentId(), '==', SETTINGS_DOC_ID)
+          .limit(1)
+          .get();
+        let settingsData;
+        settingsSnap.forEach(doc => { settingsData = doc.data(); });
         isSingleSession = settingsData?.isSingleSessionEnabled === true;
         _singleSessionCache = { value: isSingleSession, timestamp: Date.now() };
       } catch {

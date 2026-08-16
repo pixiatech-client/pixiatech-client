@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
+import { FieldPath } from 'firebase-admin/firestore';
 
 const SETTINGS_DOC_ID = 'main';
 
@@ -26,8 +27,14 @@ export async function GET() {
     // Check if single-session is enabled
     let isSingleSession = false;
     try {
-      const settingsDoc = await adminDb.collection('settings').doc(SETTINGS_DOC_ID).get();
-      isSingleSession = settingsDoc.data()?.isSingleSessionEnabled === true;
+      const settingsSnap = await adminDb.collection('settings')
+        .select('isSingleSessionEnabled')
+        .where(FieldPath.documentId(), '==', SETTINGS_DOC_ID)
+        .limit(1)
+        .get();
+      let settingsData;
+      settingsSnap.forEach(doc => { settingsData = doc.data(); });
+      isSingleSession = settingsData?.isSingleSessionEnabled === true;
     } catch {
       // If we can't read settings, don't enforce single session
     }
