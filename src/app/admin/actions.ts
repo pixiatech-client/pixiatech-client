@@ -2872,6 +2872,7 @@ export async function getProducts(options: { page?: number; limit?: number } = {
 
 
 export async function addProduct(data: unknown) {
+  await requireAdminFresh();
   const result = productSchema.safeParse(data);
   if (!result.success) {
     return { success: false, error: { formErrors: result.error.flatten().fieldErrors } };
@@ -2895,6 +2896,7 @@ export async function addProduct(data: unknown) {
 }
 
 export async function updateProduct(data: unknown) {
+  await requireAdminFresh();
   const result = productSchema.safeParse(data);
   if (!result.success || !result.data.id) {
     return { success: false, error: result.error?.flatten() };
@@ -2919,6 +2921,10 @@ export async function updateProduct(data: unknown) {
 
 
 export async function deleteProducts(ids: string[]) {
+  await requireAdminFresh();
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 100 || !ids.every(id => typeof id === 'string' && id.length > 0)) {
+    return { success: false, error: 'Invalid ids: expected a non-empty array of strings (max 100).' };
+  }
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
     return { success: false, error: "Database service unavailable." };
@@ -2940,6 +2946,7 @@ export async function deleteProducts(ids: string[]) {
 
 
 export async function cloneProduct(id: string) {
+  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
     return { success: false, error: "Service indisponible." };
@@ -3004,6 +3011,7 @@ export async function getProductSpecs(): Promise<Record<string, ProductSpec[]>> 
 }
 
 export async function updateProductSpecs(data: unknown) {
+  await requireAdminFresh();
   const result = productSpecSchema.safeParse(data);
   if (!result.success) {
     return { success: false, error: result.error.flatten() };
