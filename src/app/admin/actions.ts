@@ -57,6 +57,7 @@ export interface Member {
 }
 
 export async function getMembers(): Promise<Member[]> {
+  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   const snap = await adminDb.collection('customers').orderBy('createdAt', 'desc').get();
   return snap.docs.map(d => ({
@@ -1073,6 +1074,7 @@ export async function getUsers({
   searchTerm?: string;
   userStatus?: 'pending' | 'approved' | null;
 }): Promise<{ users: UserProfile[]; lastId: string | null, totalCount: number }> {
+  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
     throw new Error("Admin SDK not initialized");
@@ -1153,6 +1155,7 @@ export async function getUsers({
 }
 
 export async function getSuppliers(): Promise<UserProfile[]> {
+  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return [];
 
@@ -1183,6 +1186,7 @@ export async function getSuppliers(): Promise<UserProfile[]> {
 }
 
 export async function getUser(uid: string): Promise<UserProfile | null> {
+  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return null;
 
@@ -3923,12 +3927,11 @@ export async function impersonateUser(targetUserId: string) {
 }
 
 export async function getAllUsers() {
-  const sessionCookie = (await cookies()).get('session')?.value;
-  if (!sessionCookie) return [];
+  await requireAdminFresh();
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) return [];
 
   try {
-    const { adminAuth, adminDb } = getFirebaseAdmin();
-    await adminAuth.verifySessionCookie(sessionCookie, false);
     const snap = await adminDb.collection('users').get();
     return JSON.parse(JSON.stringify(snap.docs.map(d => ({ uid: d.id, ...d.data() }))));
   } catch (error) {
