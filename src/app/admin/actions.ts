@@ -37,11 +37,13 @@ export async function getResellerLeads(): Promise<ResellerLead[]> {
 }
 
 export async function markResellerLeadNotified(id: string): Promise<void> {
+  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   await adminDb.collection('reseller_leads').doc(id).update({ notified: true });
 }
 
 export async function deleteResellerLead(id: string): Promise<void> {
+  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   await adminDb.collection('reseller_leads').doc(id).delete();
 }
@@ -1633,6 +1635,7 @@ export async function getQuoteCounts(clientSupplierId?: string, transactionType?
 // ─────────────────────────────────────────────────────────────
 
 export async function calibrateQuoteStats() {
+  await requireAdminFresh();
   const result = await resyncStats();
   if (!result) return null;
 
@@ -2726,6 +2729,7 @@ export async function getPdfSettings(rawUrls = false): Promise<PdfSettings> {
 }
 
 export async function updatePdfSettings(data: unknown) {
+  await requireAdminFresh();
   const result = pdfSettingsSchema.safeParse(data);
   if (!result.success) {
     return { success: false, error: result.error.flatten().formErrors.join(', ') || 'Validation error' };
@@ -3476,6 +3480,7 @@ export async function getWizardSettings(): Promise<WizardSettings> {
 }
 
 export async function updateWizardSettings(data: unknown) {
+  await requireAdminFresh();
   const result = wizardSettingsSchema.safeParse(data);
   if (!result.success) {
     return { success: false, error: result.error.flatten() };
@@ -3547,6 +3552,7 @@ export async function getThemes(): Promise<Theme[]> {
 }
 
 export async function saveTheme(theme: Partial<Omit<Theme, 'createdAt'>> & { name: string; colors: Theme['colors']; }) {
+  await requireAdminFresh();
   const { adminDb, FieldValue } = getFirebaseAdmin();
   try {
     let docRef;
@@ -3586,6 +3592,7 @@ export async function saveTheme(theme: Partial<Omit<Theme, 'createdAt'>> & { nam
 
 
 export async function deleteTheme(themeId: string) {
+  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   try {
     await adminDb.collection('themes').doc(themeId).delete();
@@ -3598,6 +3605,7 @@ export async function deleteTheme(themeId: string) {
 }
 
 export async function reinitializePalettes() {
+  await requireAdminFresh();
   const { adminDb, FieldValue } = getFirebaseAdmin();
   try {
     const existing = await adminDb.collection('themes').get();
@@ -3637,6 +3645,7 @@ export async function getActiveGlobalTheme(): Promise<{ themeId: string }> {
 }
 
 export async function setActiveGlobalTheme(themeId: string) {
+  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   try {
     await adminDb.collection('settings').doc(ACTIVE_THEME_DOC_ID).set({ activeThemeId: themeId }, { merge: true });
@@ -3694,6 +3703,7 @@ export const getDeliverySettings = cache(async (): Promise<DeliverySettings> => 
 });
 
 export async function updateDeliverySettings(data: unknown) {
+  await requireAdminFresh();
   const result = deliverySettingsSchema.safeParse(data);
   if (!result.success) {
     console.error("Zod validation failed:", result.error.flatten());
@@ -3750,6 +3760,7 @@ export const getLaborSettings = cache(async (): Promise<LaborSettings> => {
 });
 
 export async function updateLaborSettings(data: unknown) {
+  await requireAdminFresh();
   const result = laborSettingsSchema.safeParse(data);
   if (!result.success) {
     console.error("Zod validation failed:", result.error.flatten());
@@ -4063,6 +4074,7 @@ export async function getDisputes(): Promise<Dispute[]> {
 }
 
 export async function updateDisputeStatus(id: string, status: Dispute['status']): Promise<void> {
+  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) throw new Error('Database service unavailable');
   await adminDb.collection('disputes').doc(id).update({ status, updatedAt: new Date().toISOString() });
@@ -4077,6 +4089,14 @@ export async function getDisputeById(id: string): Promise<Dispute | null> {
 }
 
 export async function replyToDispute(id: string, text: string): Promise<void> {
+  await requireAdminFresh();
+  if (!text || typeof text !== 'string' || text.trim().length === 0) {
+    throw new Error('Reply text is required');
+  }
+  if (text.length > 5000) {
+    throw new Error('Reply text must be under 5000 characters');
+  }
+
   const { adminDb, FieldValue } = getFirebaseAdmin();
   if (!adminDb) throw new Error('Database service unavailable');
 
