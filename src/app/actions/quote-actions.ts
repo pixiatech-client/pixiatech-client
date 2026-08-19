@@ -11,6 +11,7 @@ import { getSettings } from '@/app/actions/public-actions';
 import { updateStatsOnCreate } from '@/lib/statsService';
 import { createHash, randomInt } from 'crypto';
 import { Timestamp } from 'firebase-admin/firestore';
+import { issueCapabilityCookie } from '@/lib/capability';
 import type { MessageStyle, PreviewTheme } from '@/components/verification/types';
 import { getSmtpTransport, type SmtpSettings } from '@/lib/smtpService';
 
@@ -705,6 +706,10 @@ export async function verifyQuoteOtp(quoteId: string, otpCode: string): Promise<
     if (!quoteData.emailVerified) {
       await docRef.update({ emailVerified: true });
     }
+
+    // S1-5: Issue capability cookie so the client can call updateQuotePdfUrl
+    // and updateQuoteContractUrl for this quote.
+    await issueCapabilityCookie(quoteId);
 
     return { success: true };
   } catch (error: any) {

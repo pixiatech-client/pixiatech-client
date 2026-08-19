@@ -169,6 +169,8 @@ export default function SignatureFlow({
   const [quoteId, setQuoteId] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pendingPdfUrl, setPendingPdfUrl] = useState<string | null>(null);
+  const [pendingContractUrl, setPendingContractUrl] = useState<string | null>(null);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
   const mainConfig = configuredProducts[0] || {} as ConfiguredProduct;
@@ -389,6 +391,13 @@ export default function SignatureFlow({
         if (event.data?.type === 'OTP_VERIFIED') {
           setIsOtpCompleted(true);
           setOtpError(null);
+          // S1-5: Persist pending PDF/contract URLs after OTP via email link
+          if (quoteId && pendingPdfUrl) {
+            updateQuotePdfUrl(quoteId, pendingPdfUrl).then(() => setPendingPdfUrl(null)).catch(e => console.error("Failed to persist PDF URL:", e));
+          }
+          if (quoteId && pendingContractUrl) {
+            updateQuoteContractUrl(quoteId, pendingContractUrl).then(() => setPendingContractUrl(null)).catch(e => console.error("Failed to persist contract URL:", e));
+          }
           generateAndSaveContractPdf();
           setCurrentStep('confirmation');
         }
@@ -756,6 +765,24 @@ export default function SignatureFlow({
       if (result.success) {
         setIsOtpCompleted(true);
         setOtpError(null);
+        // S1-5: Issue capability cookie was set by verifyQuoteOtp server-side.
+        // Now persist the pending PDF and contract URLs to Firestore.
+        if (pendingPdfUrl) {
+          try {
+            await updateQuotePdfUrl(quoteId, pendingPdfUrl);
+            setPendingPdfUrl(null);
+          } catch (e) {
+            console.error("Failed to persist PDF URL after OTP:", e);
+          }
+        }
+        if (pendingContractUrl) {
+          try {
+            await updateQuoteContractUrl(quoteId, pendingContractUrl);
+            setPendingContractUrl(null);
+          } catch (e) {
+            console.error("Failed to persist contract URL after OTP:", e);
+          }
+        }
         generateAndSaveContractPdf();
         setTimeout(() => {
           setCurrentStep('confirmation');
@@ -849,7 +876,8 @@ export default function SignatureFlow({
       const storageRef = ref(storage, `quotes/pdfs/${id}.pdf`);
       await uploadBytes(storageRef, blob);
       const pdfUrl = await getDownloadURL(storageRef);
-      await updateQuotePdfUrl(id, pdfUrl);
+      // S1-5: Don't call updateQuotePdfUrl here — caller must defer the
+      // Firestore update until after OTP verification (capability cookie).
       return pdfUrl;
     } catch (e) {
       console.error("Failed to upload PDF to storage:", e);
@@ -863,7 +891,8 @@ export default function SignatureFlow({
       const storageRef = ref(storage, `quotes/contracts/${id}.pdf`);
       await uploadBytes(storageRef, blob);
       const contractUrl = await getDownloadURL(storageRef);
-      await updateQuoteContractUrl(id, contractUrl);
+      // S1-5: Don't call updateQuoteContractUrl here — caller must defer the
+      // Firestore update until after OTP verification (capability cookie).
       return contractUrl;
     } catch (e) {
       console.error("Failed to upload contract PDF to storage:", e);
@@ -913,7 +942,8 @@ export default function SignatureFlow({
         isFirstPage = false;
       }
 
-      await uploadContractPdfToStorage(pdf, targetId);
+      const contractUrl = await uploadContractPdfToStorage(pdf, targetId);
+      if (contractUrl) setPendingContractUrl(contractUrl);
     } catch (e) {
       console.error("Failed to generate contract PDF:", e);
     }
@@ -932,15 +962,24 @@ export default function SignatureFlow({
         const pageCount = await renderPagesToPdf(fallback, pdf);
         if (pageCount === 0) return;
         pdf.save(`Pixiatech_Devis_${renterDetails.company.replace(/\s+/g, '_')}.pdf`);
-        if (quoteId) uploadPdfToStorage(pdf, quoteId);
+        if (quoteId) {
+          const url = await uploadPdfToStorage(pdf, quoteId);
+          if (url) {
+            setPdfUrl(url);
+            await updateQuotePdfUrl(quoteId, url);
+          }
+        }
         return;
       }
       const pageCount = await renderPagesToPdf(pdfContainer, pdf);
       if (pageCount === 0) return;
       pdf.save(`Pixiatech_Devis_${renterDetails.company.replace(/\s+/g, '_')}.pdf`);
       if (quoteId) {
-        uploadPdfToStorage(pdf, quoteId).then(url => {
-          if (url) setPdfUrl(url);
+        uploadPdfToStorage(pdf, quoteId).then(async url => {
+          if (url) {
+            setPdfUrl(url);
+            await updateQuotePdfUrl(quoteId, url);
+          }
         });
       }
     } catch (error) {
@@ -2078,7 +2117,10 @@ export default function SignatureFlow({
                             const pageCount = await renderPagesToPdf(fallback, pdf);
                             if (pageCount > 0) {
                               uploadPdfToStorage(pdf, result.id).then(url => {
-                                if (url) setPdfUrl(url);
+                                if (url) {
+                                  setPdfUrl(url);
+                                  setPendingPdfUrl(url);
+                                }
                               });
                             }
                           }

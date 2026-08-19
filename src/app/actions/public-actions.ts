@@ -30,6 +30,7 @@ import type { DocumentSnapshot, Query } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { normalizePrice } from '@/lib/pricing-engine';
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, Locations, WizardSettings } from '@/lib/types';
+import { checkQuoteCapability } from '@/lib/capability';
 
 // --- Firestore Document IDs for Settings ---
 const SETTINGS_DOC_ID = 'main';
@@ -735,6 +736,13 @@ async function processQuoteSnapshot(docSnap: DocumentSnapshot): Promise<QuoteReq
 }
 
 export async function updateQuotePdfUrl(quoteId: string, pdfUrl: string) {
+  // S1-5: Verify capability cookie (issued after OTP/token verification).
+  const hasCapability = await checkQuoteCapability(quoteId);
+  if (!hasCapability) {
+    console.warn(`[IDOR] updateQuotePdfUrl blocked: missing capability cookie for quote ${quoteId}`);
+    return { success: false, error: 'Unauthorized: email verification required before updating quote.' };
+  }
+
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return { success: false, error: 'Firestore not initialized' };
 
@@ -749,6 +757,13 @@ export async function updateQuotePdfUrl(quoteId: string, pdfUrl: string) {
 }
 
 export async function updateQuoteContractUrl(quoteId: string, contractUrl: string) {
+  // S1-5: Verify capability cookie (issued after OTP/token verification).
+  const hasCapability = await checkQuoteCapability(quoteId);
+  if (!hasCapability) {
+    console.warn(`[IDOR] updateQuoteContractUrl blocked: missing capability cookie for quote ${quoteId}`);
+    return { success: false, error: 'Unauthorized: email verification required before updating quote.' };
+  }
+
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) return { success: false, error: 'Firestore not initialized' };
 
