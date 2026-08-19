@@ -33,8 +33,10 @@ import { ProfileProvider } from '@/contexts/ProfileContext';
 
 export function LayoutProvider({
   children,
+  initialBoutiqueB2B = false,
 }: Readonly<{
   children: React.ReactNode;
+  initialBoutiqueB2B?: boolean;
 }>) {
   const pathname = usePathname();
   const router = useRouter();
@@ -80,7 +82,7 @@ export function LayoutProvider({
     <FirebaseClientProvider>
       <RoleProvider>
         <DynamicThemeProvider>
-          <ProfileProvider>
+          <ProfileProvider initialBoutiqueB2B={initialBoutiqueB2B}>
           <CartProvider>
           <div className="flex flex-col bg-background min-h-dvh">
             {isFrontendPage && !isMonComptePage && <BoutiqueHeader />}

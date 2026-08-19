@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import './globals.css';
 import { LayoutProvider } from '@/components/layout-provider';
 import { I18nProvider } from '@/lib/i18n';
+import { getSettings } from '@/app/actions/public-actions';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -38,6 +39,9 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const locale = cookieStore.get('admin-locale')?.value === 'en' ? 'en' : 'fr';
 
+  const settings = await getSettings();
+  const boutiqueB2B = settings.estimationFlow?.boutiqueB2B ?? false;
+
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body className={`${inter.variable} ${orbitron.variable} font-body antialiased min-h-[100dvh]`} suppressHydrationWarning>
@@ -45,7 +49,7 @@ export default async function RootLayout({
         <div className="flare magenta" aria-hidden="true" />
         <div className="directional-flare" aria-hidden="true" suppressHydrationWarning />
         <I18nProvider initialLocale={locale}>
-          <LayoutProvider>{children}</LayoutProvider>
+          <LayoutProvider initialBoutiqueB2B={boutiqueB2B}>{children}</LayoutProvider>
         </I18nProvider>
         <Script id="directional-flare" strategy="afterInteractive"
           dangerouslySetInnerHTML={{

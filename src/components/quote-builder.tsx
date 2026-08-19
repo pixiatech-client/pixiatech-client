@@ -281,22 +281,6 @@ export function QuoteBuilder({
         // SignatureFlow gère ses propres transitions internes
     }, []);
 
-    const refreshWizardSettings = useCallback(async () => {
-        try {
-            const response = await fetch('/api/wizard-settings', { cache: 'no-store' });
-            if (response.ok) {
-                const data = await response.json();
-                setWizardSettings(data);
-            }
-        } catch (error) {
-            console.error('Failed to refresh wizard settings:', error);
-        }
-    }, []);
-
-    useEffect(() => {
-        refreshWizardSettings();
-    }, []);
-
     const activeConfiguredProduct = useMemo(() => {
         return configuredProducts.find(p => p.id === activeConfigProductId);
     }, [configuredProducts, activeConfigProductId]);

@@ -27,19 +27,18 @@ export default async function StepPage({ params, searchParams }: {
     redirect('/');
   }
 
-  const settings: Settings = await getSettings();
-
-  if (settings.emergencyStopEnabled) {
-    return <EmergencyStopPage returnUrl={settings.emergencyReturnUrl} message={settings.emergencyStopMessage} />;
-  }
-
-  const [deliverySettings, laborSettings, productsResult, locations, wizardSettings] = await Promise.all([
+  const [settings, deliverySettings, laborSettings, productsResult, locations, wizardSettings] = await Promise.all([
+    getSettings(),
     getDeliverySettings(),
     getLaborSettings(),
     getProducts({ limit: 1000 }),
     getLocations(),
     getWizardSettings()
   ]);
+
+  if (settings.emergencyStopEnabled) {
+    return <EmergencyStopPage returnUrl={settings.emergencyReturnUrl} message={settings.emergencyStopMessage} />;
+  }
 
   const allProducts: Product[] = productsResult.products;
 

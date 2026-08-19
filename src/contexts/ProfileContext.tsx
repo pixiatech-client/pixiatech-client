@@ -1,8 +1,6 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { firestore } from '@/firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
 
 export type ProfileType = 'entreprise' | 'particulier' | null;
 
@@ -30,9 +28,9 @@ const ProfileContext = createContext<ProfileContextValue>({
 
 const STORAGE_KEY = 'pixia_profile_type';
 
-export function ProfileProvider({ children }: { children: ReactNode }) {
+export function ProfileProvider({ children, initialBoutiqueB2B = false }: { children: ReactNode; initialBoutiqueB2B?: boolean }) {
   const [hydrated, setHydrated] = useState(false);
-  const [forceB2B, setForceB2B] = useState(false);
+  const [forceB2B, setForceB2B] = useState(initialBoutiqueB2B);
 
   const [profileType, setProfileTypeState] = useState<ProfileType>(() => {
     if (typeof window !== 'undefined') {
@@ -46,16 +44,15 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setHydrated(true);
-    getDoc(doc(firestore, 'settings', 'main')).then((snap) => {
-      if (snap.exists()) {
-        const data = snap.data() as any;
-        if (data?.estimationFlow?.boutiqueB2B) {
-          setForceB2B(true);
-          setProfileTypeState('entreprise');
-          localStorage.setItem(STORAGE_KEY, 'entreprise');
-        }
-      }
-    }).catch(() => {});
+    if (initialBoutiqueB2B) {
+      setProfileTypeState('entreprise');
+      localStorage.setItem(STORAGE_KEY, 'entreprise');
+      return;
+    }
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'entreprise' || saved === 'particulier') {
+      setProfileTypeState(saved);
+    }
   }, []);
 
   const setProfileType = useCallback((type: ProfileType) => {
