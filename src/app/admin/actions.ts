@@ -987,10 +987,7 @@ export async function cleanupAnonymousUsers() {
     return { success: false, error: "Admin SDK not initialized" };
   }
 
-  const adminUser = await getCurrentAdminUser();
-  if (!adminUser || 'error' in adminUser || adminUser.role !== 'admin') {
-    return { success: false, error: 'Unauthorized.' };
-  }
+  await requireAdminFresh();
 
   try {
     const listResult = await adminAuth.listUsers(1000);
@@ -1204,17 +1201,6 @@ export async function getUser(uid: string): Promise<UserProfile | null> {
     ...data,
     createdAt: data.createdAt.toDate().toISOString(),
   } as UserProfile;
-}
-
-export async function getUserRole(sessionCookie: string): Promise<string | null> {
-  const { adminAuth } = getFirebaseAdmin();
-  if (!adminAuth) return null;
-  try {
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
-    return decodedClaims.role || null;
-  } catch (error) {
-    return null;
-  }
 }
 
 async function getDefaultRole(): Promise<UserRole> {
