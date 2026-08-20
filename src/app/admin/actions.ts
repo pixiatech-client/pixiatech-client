@@ -2770,22 +2770,16 @@ const productSchema = z.object({
 });
 
 
-export async function getProducts(options: { page?: number; limit?: number } = {}): Promise<{ products: Product[]; hasMore: boolean; rentalCount: number; saleCount: number; }> {
+export async function getProducts(options: { page?: number; limit?: number } = {}): Promise<{ products: Product[]; hasMore: boolean }> {
   const { page = 1, limit = 5 } = options;
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) {
     console.error("Firestore is not initialized for getProducts.");
-    return { products: [], hasMore: false, rentalCount: 0, saleCount: 0 };
+    return { products: [], hasMore: false };
   }
 
   try {
     const productsCollection = adminDb.collection('products');
-
-    // Get counts (flexible for both EN and FR terms)
-    const rentalSnapshot = await productsCollection.where('availableFor', 'array-contains-any', ['rental', 'location']).count().get();
-    const rentalCount = rentalSnapshot.data().count;
-    const saleSnapshot = await productsCollection.where('availableFor', 'array-contains-any', ['sale', 'vente']).count().get();
-    const saleCount = saleSnapshot.data().count;
 
     let products: Product[] = [];
     let hasMore = false;
@@ -2853,10 +2847,10 @@ export async function getProducts(options: { page?: number; limit?: number } = {
       }
     }
 
-    return { products, hasMore, rentalCount, saleCount };
+    return { products, hasMore };
   } catch (error) {
     console.error("Error fetching products from Firestore:", error);
-    return { products: [], hasMore: false, rentalCount: 0, saleCount: 0 };
+    return { products: [], hasMore: false };
   }
 }
 
