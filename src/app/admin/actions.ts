@@ -1207,10 +1207,7 @@ export async function resetPerformancePoints() {
   const { adminDb, FieldValue } = getFirebaseAdmin();
   if (!adminDb) throw new Error("Firestore not initialized");
 
-  const adminUser = await getCurrentAdminUser();
-  if (!adminUser || 'error' in adminUser || adminUser.role !== 'admin') {
-    throw new Error('Unauthorized: Only administrators can reset performance.');
-  }
+  await requireAdminFresh();
 
   try {
     await adminDb.collection('settings').doc(SETTINGS_DOC_ID).set({
@@ -1229,10 +1226,7 @@ export async function resetConfiguratorStats() {
   const { adminDb, FieldValue } = getFirebaseAdmin();
   if (!adminDb) throw new Error("Firestore not initialized");
 
-  const adminUser = await getCurrentAdminUser();
-  if (!adminUser || 'error' in adminUser || adminUser.role !== 'admin') {
-    throw new Error('Unauthorized: Only administrators can reset stats.');
-  }
+  await requireAdminFresh();
 
   try {
     await adminDb.collection('settings').doc(SETTINGS_DOC_ID).set({
@@ -2022,10 +2016,7 @@ export async function updateQuoteStatus(quoteId: string, data: Partial<QuoteRequ
   const docRef = await findQuoteRef(adminDb, quoteId);
   if (!docRef) throw new Error("Quote not found");
 
-  const adminUser = await getCurrentAdminUser();
-  if (!adminUser || 'error' in adminUser) {
-    throw new Error('Unauthorized');
-  }
+  const adminUser = await requireRole('admin', 'fournisseur');
 
   const quoteSnap = await docRef.get();
   const quoteData = quoteSnap.data();
@@ -2264,10 +2255,7 @@ export async function moveQuotesToTrash(quoteIds: string[]) {
   const { adminDb, FieldValue, Timestamp } = getFirebaseAdmin();
   if (!adminDb) throw new Error("Firestore not initialized");
 
-  const adminUser = await getCurrentAdminUser();
-  if (!adminUser || 'error' in adminUser || adminUser.role === 'fournisseur') {
-    throw new Error('Unauthorized');
-  }
+  const adminUser = await requireAdminFresh();
 
   const batch = adminDb.batch();
   const quoteNotifications: any[] = [];
@@ -2362,10 +2350,7 @@ export async function restoreQuotes(quoteIds: string[]) {
   const { adminDb, FieldValue } = getFirebaseAdmin();
   if (!adminDb) throw new Error("Firestore not initialized");
 
-  const adminUser = await getCurrentAdminUser();
-  if (!adminUser || 'error' in adminUser || adminUser.role === 'fournisseur') {
-    throw new Error('Unauthorized');
-  }
+  const adminUser = await requireAdminFresh();
 
   const batch = adminDb.batch();
   const findPromises = quoteIds.map(id => findQuoteRef(adminDb, id));
@@ -2446,10 +2431,7 @@ export async function permanentDeleteQuotes(quoteIds: string[]) {
   const { adminDb, app } = getFirebaseAdmin();
   if (!adminDb) throw new Error("Firestore not initialized");
 
-  const adminUser = await getCurrentAdminUser();
-  if (!adminUser || 'error' in adminUser || adminUser.role === 'fournisseur') {
-    throw new Error('Unauthorized');
-  }
+  const adminUser = await requireAdminFresh();
   const batch = adminDb.batch();
   const findPromises = quoteIds.map(id => findQuoteRef(adminDb, id));
   const docRefs = await Promise.all(findPromises);
@@ -2511,10 +2493,7 @@ export async function permanentDeleteAllTrashedQuotes() {
   const { adminDb } = getFirebaseAdmin();
   if (!adminDb) throw new Error("Firestore not initialized");
 
-  const adminUser = await getCurrentAdminUser();
-  if (!adminUser || 'error' in adminUser || adminUser.role === 'fournisseur') {
-    throw new Error('Unauthorized');
-  }
+  const adminUser = await requireAdminFresh();
 
   const query = adminDb.collection('quotes').where('status', '==', 'trashed');
   const snapshot = await query.get();
@@ -2573,9 +2552,9 @@ export async function updateQuoteClientDetails(quoteId: string, clientData: unkn
 
   try {
     const docRef = await findQuoteRef(adminDb, quoteId);
-    const adminUser = await getCurrentAdminUser();
+    const adminUser = await requireAdminFresh();
 
-    if (docRef && adminUser && !('error' in adminUser)) {
+    if (docRef) {
       const historyEntry: Omit<QuoteHistoryEntry, 'timestamp'> & { timestamp: Timestamp } = {
         userId: adminUser.uid,
         userName: adminUser.displayName || 'Admin',
@@ -3332,9 +3311,9 @@ const sidebarConfigSchema = z.object({
 });
 
 export async function saveSidebarConfig(data: unknown) {
-  // Verify caller is admin
-  const currentUser = await getCurrentAdminUser();
-  if (!currentUser || 'error' in currentUser || currentUser.role !== 'admin') {
+  try {
+    await requireAdminFresh();
+  } catch {
     return { success: false, error: 'Access denied. Only an administrator can modify this configuration.' };
   }
 
