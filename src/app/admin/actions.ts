@@ -1080,26 +1080,13 @@ export async function getUsers({
   }
 
   try {
-    console.log('[getUsers Action] Fetching users with params:', { limit, startAfterId, searchTerm, userStatus });
     let query: Query = adminDb.collection('users');
-    let countQuery: Query = adminDb.collection('users');
 
     if (userStatus) {
       query = query.where('status', '==', userStatus);
-      countQuery = countQuery.where('status', '==', userStatus);
     }
-
-    if (searchTerm) {
-      const endTerm = searchTerm.slice(0, -1) + String.fromCharCode(searchTerm.charCodeAt(searchTerm.length - 1) + 1);
-      query = query.where('displayName', '>=', searchTerm).where('displayName', '<', endTerm);
-    }
-
-    const totalSnapshot = await countQuery.count().get();
-    const totalCount = totalSnapshot.data().count;
-    console.log('[getUsers Action] Total count in DB:', totalCount);
 
     const snapshot = await query.get();
-    console.log('[getUsers Action] Snapshot size:', snapshot.size);
 
     if (snapshot.empty) {
       return { users: [], lastId: null, totalCount: 0 };
@@ -1116,8 +1103,6 @@ export async function getUsers({
       }));
       return { ...plainObject, uid: doc.id } as UserProfile;
     });
-
-    console.log('[getUsers Action] Mapped users count:', users.length);
 
     // Sort in memory (newest first, fallback to 0 if missing)
     users.sort((a, b) => {
@@ -1142,10 +1127,7 @@ export async function getUsers({
     }
 
     const paginatedUsers = users.slice(startIndex, startIndex + limit);
-    const lastId = paginatedUsers.length > 0 && !searchTerm ? paginatedUsers[paginatedUsers.length - 1].uid : null;
-
-    console.log('[getUsers Action] Returning paginated users:', paginatedUsers.length);
-    return { users: paginatedUsers, lastId, totalCount };
+    return { users: paginatedUsers, lastId: null, totalCount: 0 };
 
   } catch (error) {
     console.error("Error fetching users:", error);
