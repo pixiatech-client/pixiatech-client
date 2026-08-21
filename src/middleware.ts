@@ -1,28 +1,54 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Routes that may be loaded inside an iframe from external origins (e.g. WordPress).
+const IFRAME_ROUTES = ['/chat-widget', '/embed'];
+
 // Apply baseline security headers to every response (defense in depth).
 // CSP is permissive enough to keep the existing PayPal/Firebase/Three.js features working.
-function applySecurityHeaders(response: NextResponse, isHttps: boolean): NextResponse {
+function applySecurityHeaders(response: NextResponse, isHttps: boolean, isEmbeddable: boolean): NextResponse {
   response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
-  response.headers.set(
-    'Content-Security-Policy',
-    [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.paypal.com https://*.firebaseio.com https://*.googleapis.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "img-src 'self' data: blob: https:",
-      "font-src 'self' data: https://fonts.gstatic.com",
-      "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss: https://*.paypal.com",
-      "frame-src 'self' https://*.paypal.com https://www.youtube.com",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-    ].join('; ')
-  );
+
+  if (isEmbeddable) {
+    // Allow framing from any origin so WordPress (and other sites) can embed the chat widget.
+    // X-Frame-Options is removed in favour of the modern CSP frame-ancestors directive.
+    response.headers.set(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.paypal.com https://*.firebaseio.com https://*.googleapis.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "img-src 'self' data: blob: https:",
+        "font-src 'self' data: https://fonts.gstatic.com",
+        "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss: https://*.paypal.com",
+        "frame-src 'self' https://*.paypal.com https://www.youtube.com",
+        "frame-ancestors *",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+      ].join('; ')
+    );
+  } else {
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set(
+      'Content-Security-Policy',
+      [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.paypal.com https://*.firebaseio.com https://*.googleapis.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "img-src 'self' data: blob: https:",
+        "font-src 'self' data: https://fonts.gstatic.com",
+        "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss: https://*.paypal.com",
+        "frame-src 'self' https://*.paypal.com https://www.youtube.com",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+      ].join('; ')
+    );
+  }
+
   if (isHttps) {
     // Only set HSTS over HTTPS so we don't brick localhost dev
     response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -50,11 +76,12 @@ export async function middleware(request: NextRequest) {
 
   // Public pages: cache on CDN
   const publicPages = ['/', '/embed', '/chat-widget', '/quote/success', '/quote/verify'];
+  const isEmbeddable = IFRAME_ROUTES.includes(pathname);
   const isHttps = (request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol.replace(':', '')) === 'https';
   if (publicPages.includes(pathname)) {
     const response = NextResponse.next();
     response.headers.set('Cache-Control', 'public, max-age=60, s-maxage=120');
-    return applySecurityHeaders(response, isHttps);
+    return applySecurityHeaders(response, isHttps, isEmbeddable);
   }
 
   // Client espace routes: check client_session cookie
@@ -120,7 +147,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next();
-  return applySecurityHeaders(response, isHttps);
+  return applySecurityHeaders(response, isHttps, isEmbeddable);
 }
 
 export const config = {
