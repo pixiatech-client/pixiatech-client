@@ -16,7 +16,7 @@ interface SettingsContentProps {
 }
 
 const GeneralContent = lazy(() => import('../general/page'));
-const WizardContent = lazy(() => import('../../wizard/page'));
+const WizardContent = lazy(() => import('../wizard/page'));
 const LivraisonContent = lazy(() => import('../../_components/delivery-redirect'));
 const LaborContent = lazy(() => import('../../labor/page'));
 const PdfContent = lazy(() => import('../../pdf-settings/page'));

@@ -3435,7 +3435,7 @@ export async function updateWizardSettings(data: unknown) {
       pixelPitches: result.data.pixelPitches.filter((v) => v.value.trim() !== ''),
     };
     await adminDb.collection('settings').doc(WIZARD_SETTINGS_DOC_ID).set(sanitized, { merge: true });
-    revalidatePath('/admin/wizard', 'layout');
+    revalidatePath('/admin/settings/wizard', 'layout');
     revalidatePath('/', 'layout');
     return { success: true };
   } catch (error) {

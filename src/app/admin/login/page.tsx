@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import {
   AlertTriangle,
@@ -81,6 +81,9 @@ export default function LoginPage() {
   const [googleDisplayName, setGoogleDisplayName] = useState('');
   const [googlePhone, setGooglePhone] = useState('');
   const [isSavingGoogleProfile, setIsSavingGoogleProfile] = useState(false);
+
+  const prefersReducedMotion = useReducedMotion();
+  const motionDuration = prefersReducedMotion ? 0 : undefined;
 
   const signupCountry = useMemo(() => detectCountryConfig(signupPhone), [signupPhone]);
   const googleCountry = useMemo(() => detectCountryConfig(googlePhone), [googlePhone]);
@@ -322,11 +325,11 @@ export default function LoginPage() {
           <motion.div
             initial={{ opacity: 0, x: -32 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.45, ease: 'easeOut' }}
+            transition={{ duration: motionDuration ?? 0.45, ease: 'easeOut' }}
             className="hidden lg:block"
           >
             <div className="max-w-xl space-y-6">
-              <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5">
                 <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/50 px-3 py-1.5 text-xs font-semibold text-slate-600">
                   <ShieldCheck className="h-3.5 w-3.5 mr-0.5" />
                   {locale === 'zh-CN' ? '管理空间 (ADMIN SPACE)' : t('Admin Space')}
@@ -335,7 +338,7 @@ export default function LoginPage() {
                 <button
                   onClick={() => setLocale(locale === 'zh-CN' ? 'en' : 'zh-CN')}
                   className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/50 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white transition-colors"
-                  title={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
+                  aria-label={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/flags/cn.svg" alt="CN" className="h-3.5 w-5 rounded-[2px] object-cover" />
@@ -388,7 +391,7 @@ export default function LoginPage() {
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: 'easeOut', delay: 0.05 }}
+            transition={{ duration: motionDuration ?? 0.45, ease: 'easeOut', delay: prefersReducedMotion ? 0 : 0.05 }}
             className="mx-auto w-full max-w-md"
           >
             <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white/95 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur">
@@ -396,7 +399,7 @@ export default function LoginPage() {
                 <button
                   onClick={() => setLocale(locale === 'zh-CN' ? 'en' : 'zh-CN')}
                   className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/50 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-white transition-colors"
-                  title={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
+                  aria-label={locale === 'zh-CN' ? 'Switch to English' : '切换到中文'}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/flags/cn.svg" alt="CN" className="h-3.5 w-5 rounded-[2px] object-cover" />
@@ -425,11 +428,11 @@ export default function LoginPage() {
                   }}>
                     <TabsList activeTab={authMode} className="rounded-2xl border border-slate-200 bg-slate-100 p-1.5">
                       <TabsTrigger value="login" className="rounded-xl py-2.5 text-sm font-bold data-[state=active]:bg-black data-[state=active]:text-white">
-                        <LogIn className={`mr-2 h-4 w-4 transition-colors ${authMode === 'login' ? 'text-blue-500' : 'text-slate-400'}`} />
+                        <LogIn className={`mr-2 h-4 w-4 transition-colors ${authMode === 'login' ? 'text-blue-500' : 'text-slate-400'}`} aria-hidden="true" />
                         {t('Login')}
                       </TabsTrigger>
                       <TabsTrigger value="signup" className="rounded-xl py-2.5 text-sm font-bold data-[state=active]:bg-black data-[state=active]:text-white">
-                        <UserPlus className={`mr-2 h-4 w-4 transition-colors ${authMode === 'signup' ? 'text-emerald-600' : 'text-slate-400'}`} />
+                        <UserPlus className={`mr-2 h-4 w-4 transition-colors ${authMode === 'signup' ? 'text-emerald-600' : 'text-slate-400'}`} aria-hidden="true" />
                         {t('Sign up')}
                       </TabsTrigger>
                     </TabsList>
@@ -439,7 +442,7 @@ export default function LoginPage() {
 
               <div className="px-6 pb-6 pt-6 sm:px-8 sm:pb-8">
                 {signupSuccess && authMode === 'login' && (
-                  <div className="mb-4 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                  <div className="mb-4 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">
                     <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>{signupSuccess}</span>
                   </div>
@@ -452,7 +455,7 @@ export default function LoginPage() {
                       initial={{ opacity: 0, x: 18 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -18 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ duration: motionDuration ?? 0.2 }}
                       onSubmit={handleLogin}
                       className="space-y-4"
                     >
@@ -513,7 +516,7 @@ export default function LoginPage() {
                       </div>
 
                       {loginError && (
-                        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
                           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                           <span>{loginError}</span>
                         </div>
@@ -543,7 +546,7 @@ export default function LoginPage() {
                       initial={{ opacity: 0, x: 18 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -18 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ duration: motionDuration ?? 0.2 }}
                       onSubmit={handleSignup}
                       className="space-y-4"
                     >
@@ -643,7 +646,7 @@ export default function LoginPage() {
                       </div>
 
                       {signupError && (
-                        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
                           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                           <span>{signupError}</span>
                         </div>
@@ -674,6 +677,7 @@ export default function LoginPage() {
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: motionDuration ?? 0.3 }}
                     className="space-y-4"
                   >
                     <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
@@ -751,6 +755,7 @@ export default function LoginPage() {
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: motionDuration ?? 0.3 }}
                     className="space-y-4"
                   >
                     <div className="flex flex-col items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-8 text-center">
@@ -778,7 +783,7 @@ export default function LoginPage() {
 
                 {!showGoogleProfileForm && !showPendingMessage && (
                   <>
-                    <div className="relative mt-6 flex items-center">
+                    <div className="relative mt-6 flex items-center" role="separator" aria-hidden="true">
                       <div className="flex-1 border-t border-slate-200" />
                       <span className="px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">{t('or')}</span>
                       <div className="flex-1 border-t border-slate-200" />

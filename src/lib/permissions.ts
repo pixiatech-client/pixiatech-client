@@ -164,7 +164,7 @@ export function canAccessRoute(role: UserRole | undefined, route: string): boole
     '/admin/users': ['users:list'],
     '/admin/quote-requests': ['quotes:list'],
     '/admin/settings': ['settings:read'],
-    '/admin/wizard': ['settings:read'],
+    '/admin/settings/wizard': ['settings:read'],
     '/admin/delivery': ['delivery:list'],
     '/admin/labor': ['labor:list'],
     '/admin/pdf-settings': ['settings:read'],
