@@ -371,11 +371,11 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
   };
 
   return (
-    <div className="flex flex-col md:flex-row flex-1 bg-[#FAF8F5] md:h-full md:overflow-hidden">
+    <div className="flex flex-col md:flex-row flex-1 bg-[#F5F5F5] md:h-full md:overflow-hidden">
       <div className="flex-1 flex flex-col min-w-0 h-full relative">
         <main
           ref={mainRef}
-          className="flex-1 md:overflow-y-auto flex flex-col bg-[#FAF8F5] relative scrollbar-hide overflow-x-hidden"
+          className="flex-1 md:overflow-y-auto flex flex-col bg-[#F5F5F5] relative scrollbar-hide overflow-x-hidden"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -474,7 +474,7 @@ function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigSta
   switch (state.step) {
     case 1: return <StepProjectType state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
     case 2: return <StepEnvironment state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
-    case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} t={t} locale={locale} />;
+    case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} products={products} t={t} locale={locale} />;
     case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} products={products} t={t} locale={locale} />;
     case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} t={t} />;
     case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} products={products} t={t} locale={locale} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
@@ -684,12 +684,41 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
   );
 }
 
-export function StepViewingDistance({ state, updateState, userProfile, wizardSettings, t, locale = 'en' }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, t: any, locale?: string }) {
+export function StepViewingDistance({ state, updateState, userProfile, wizardSettings, products, t, locale = 'en' }: { state: ConfigState, updateState: any, userProfile: UserProfile | null, wizardSettings: WizardSettings, products?: Product[], t: any, locale?: string }) {
   const allDistances = wizardSettings?.viewingDistances || [];
   const uniqueDistances = Array.from(new Map(allDistances.map(d => [d.value, d])).values());
-  const viewingDistances = uniqueDistances;
   const viewingDistanceImageUrl = wizardSettings?.viewingDistanceImageUrl;
   const mainImage = viewingDistanceImageUrl || "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=90&w=2000";
+
+  // Build set of distances that have at least one valid pixel pitch via products
+  const matchedProducts = (products || []).filter(p => {
+    if (p.isHidden) return false;
+    const prodModes = p.availableFor || [];
+    const targetMode: 'sale' | 'rental' = state.projectType === 'location' ? 'rental' : 'sale';
+    const matchesMode = prodModes.includes(targetMode);
+    const prodTypes = p.type || [];
+    const targetType: 'indoor' | 'outdoor' | 'showcase' =
+      state.environment === 'interieur' ? 'indoor'
+        : state.environment === 'semi-exterieur' ? 'showcase'
+          : 'outdoor';
+    const matchesEnv = prodTypes.includes(targetType);
+    return matchesMode && matchesEnv;
+  });
+
+  const distancesWithPitches = new Set<string>();
+  matchedProducts.forEach(p => {
+    if (p.distancePitches) {
+      Object.keys(p.distancePitches).forEach(dist => {
+        const pitches = p.distancePitches[dist] || [];
+        if (pitches.length > 0) distancesWithPitches.add(dist);
+      });
+    } else {
+      const distances = p.distance ? p.distance.split(',').map((s: string) => s.trim()) : [];
+      distances.forEach(dist => distancesWithPitches.add(dist));
+    }
+  });
+
+  const viewingDistances = uniqueDistances;
 
   return (
     <div className="flex flex-col space-y-4 bg-transparent">
@@ -724,27 +753,33 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
           <div className="space-y-3 py-1">
             {/* Small Buttons Grid */}
             <div className="grid grid-cols-2 gap-3">
-              {viewingDistances.map((d) => (
-                <div key={d.id} className="relative">
-                  <button
-                    onClick={() => updateState({ viewingDistance: d.value })}
-                    className={cn(
-                      "group w-full py-4 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
-                      state.viewingDistance === d.value
-                        ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]"
-                        : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
-                    )}
-                  >
-                    <span>{d.value}</span>
-                    <div className={cn(
-                      "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0",
-                      state.viewingDistance === d.value ? "border-[#c6ff00] bg-[#c6ff00] text-black" : "border-slate-200 group-hover:border-black"
-                    )}>
-                      {state.viewingDistance === d.value && <Check className="w-3 h-3" strokeWidth={4} />}
-                    </div>
-                  </button>
-                </div>
-              ))}
+              {viewingDistances.map((d) => {
+                const hasPitch = distancesWithPitches.size === 0 || distancesWithPitches.has(d.value);
+                return (
+                  <div key={d.id} className="relative">
+                    <button
+                      onClick={() => hasPitch && updateState({ viewingDistance: d.value })}
+                      disabled={!hasPitch}
+                      className={cn(
+                        "group w-full py-4 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
+                        !hasPitch
+                          ? "bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed opacity-50"
+                          : state.viewingDistance === d.value
+                            ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]"
+                            : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
+                      )}
+                    >
+                      <span>{d.value}</span>
+                      <div className={cn(
+                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0",
+                        !hasPitch ? "border-gray-300" : state.viewingDistance === d.value ? "border-[#c6ff00] bg-[#c6ff00] text-black" : "border-slate-200 group-hover:border-black"
+                      )}>
+                        {state.viewingDistance === d.value && hasPitch && <Check className="w-3 h-3" strokeWidth={4} />}
+                      </div>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -876,11 +911,11 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
 
         {/* Right: Selection */}
         <div className="w-full space-y-4">
-          {pixelPitches.length > 0 ? (
-            <div className="space-y-3 py-1">
-              {/* Small Buttons Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                {pixelPitches.map((p) => (
+          <div className="space-y-3 py-1">
+            <div className="grid grid-cols-2 gap-3">
+              {(pixelPitches.length > 0 ? pixelPitches : uniquePitches).map((p) => {
+                const isMatched = pixelPitches.some(mp => mp.id === p.id);
+                return (
                   <div key={p.id} className="relative">
                     <button
                       onClick={() => updateState({ pixelPitch: p.value })}
@@ -888,7 +923,9 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
                         "group w-full py-3 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
                         state.pixelPitch === p.value
                           ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]"
-                          : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
+                          : isMatched
+                            ? "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
+                            : "bg-white/20 backdrop-blur-sm border-slate-200/60 text-slate-400 opacity-50 hover:opacity-70"
                       )}
                     >
                       <div className="flex items-center gap-1.5">
@@ -913,59 +950,10 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
                       </div>
                     </button>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          ) : (
-            <div className="bg-gradient-to-br from-emerald-50/95 to-blue-50/60 backdrop-blur-md border border-emerald-200/80 rounded-[2.5rem] p-8 text-center shadow-[0_20px_40px_rgba(16,185,129,0.05)] max-w-md mx-auto space-y-4 relative overflow-hidden">
-              {/* Premium Gradient Top Border */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-blue-500" />
-              
-              {/* Pulsing Colored Icon Container */}
-              <div className="w-14 h-14 bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm border border-emerald-500/20 relative">
-                <div className="absolute inset-0 rounded-2xl bg-emerald-500/5 animate-ping opacity-75" />
-                <Info className="w-6 h-6 relative z-10" />
-              </div>
-
-              <div className="space-y-2 relative z-10">
-                <h4 className="text-sm font-black text-emerald-800 uppercase tracking-wider">
-                  {locale === 'fr' ? "Configuration sur mesure requise" : "Custom Configuration Required"}
-                </h4>
-                <p className="text-xs text-emerald-900/85 leading-relaxed font-medium">
-                  {locale === 'fr' ? (
-                    <>
-                      Aucun modèle de Pixel Pitch standard n'est pré-configuré pour la distance de visionnage{" "}
-                      <span className="font-extrabold px-1.5 py-0.5 bg-emerald-100/80 text-emerald-800 rounded-md border border-emerald-200 whitespace-nowrap">
-                        {state.viewingDistance || ''}
-                      </span>{" "}
-                      avec vos critères actuels.
-                    </>
-                  ) : (
-                    <>
-                      No standard Pixel Pitch models are pre-configured for a viewing distance of{" "}
-                      <span className="font-extrabold px-1.5 py-0.5 bg-emerald-100/80 text-emerald-800 rounded-md border border-emerald-200 whitespace-nowrap">
-                        {state.viewingDistance || ''}
-                      </span>{" "}
-                      under your current criteria.
-                    </>
-                  )}
-                </p>
-
-                <div className="pt-4 mt-4 border-t border-emerald-200/60 space-y-2">
-                  <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">
-                    {locale === 'fr'
-                      ? "Besoin d'une solution personnalisée ?"
-                      : "Need a custom solution?"}
-                  </p>
-                  <p className="text-[10px] text-slate-600 leading-relaxed font-medium">
-                    {locale === 'fr'
-                      ? "Nos ingénieurs conçoivent des écrans LED sur mesure. Contactez notre équipe commerciale pour étudier votre projet."
-                      : "Our engineering team designs bespoke LED displays. Contact our sales team to discuss your custom project."}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

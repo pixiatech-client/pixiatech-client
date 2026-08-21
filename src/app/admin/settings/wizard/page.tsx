@@ -76,7 +76,7 @@ export default function WizardPage() {
       </div>
 
       {/* Project Types */}
-      <Card className="rounded-xl border border-slate-200/60">
+      <Card className="rounded-xl border border-slate-200/60 bg-transparent">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold">{t('Project Types')}</CardTitle>
           <CardDescription>{t('Configure the available project types in the wizard.')}</CardDescription>
@@ -84,7 +84,7 @@ export default function WizardPage() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {Object.entries(settings.projectTypes).map(([key, value]) => (
-              <div key={key} className="space-y-3 p-4 bg-slate-50 rounded-xl">
+              <div key={key} className="space-y-3 p-4 bg-white/50 rounded-xl">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Switch
@@ -115,7 +115,7 @@ export default function WizardPage() {
       </Card>
 
       {/* Environments */}
-      <Card className="rounded-xl border border-slate-200/60">
+      <Card className="rounded-xl border border-slate-200/60 bg-transparent">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold">{t('Environments')}</CardTitle>
           <CardDescription>{t('Configure images for each environment.')}</CardDescription>
@@ -141,7 +141,7 @@ export default function WizardPage() {
         </CardContent>
       </Card>
       {/* Application Images */}
-      <Card className="rounded-xl border border-slate-200/60">
+      <Card className="rounded-xl border border-slate-200/60 bg-transparent">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold">{t('Application Images')}</CardTitle>
           <CardDescription>{t('Configure the background screen image and dimensions video.')}</CardDescription>
@@ -167,7 +167,7 @@ export default function WizardPage() {
       </Card>
 
       {/* Step Images */}
-      <Card className="rounded-xl border border-slate-200/60">
+      <Card className="rounded-xl border border-slate-200/60 bg-transparent">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold">{t('Step Images')}</CardTitle>
           <CardDescription>{t('Configure images displayed in the Viewing Distance and Pixel Pitch steps.')}</CardDescription>

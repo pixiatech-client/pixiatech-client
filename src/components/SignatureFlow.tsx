@@ -1039,7 +1039,7 @@ export default function SignatureFlow({
     : null;
 
   return (
-    <div className="w-full flex-1 flex flex-col bg-[#f8fafc] text-zinc-800 font-sans antialiased">
+    <div className="w-full flex flex-col bg-[#f8fafc] text-zinc-800 font-sans antialiased">
       
       {/* Header removed - workflow has its own step system */}
 
@@ -1102,7 +1102,7 @@ export default function SignatureFlow({
       )}
 
       {/* Main app viewport wrapping specific steps */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 md:py-8 flex flex-col gap-6">
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-4 md:py-5 flex flex-col gap-4">
 
         {/* STEP 1: RÉSUMÉ DE L'ESTIMATION (Forms and customizable details card) */}
         {currentStep === 'informations' && (
@@ -2790,7 +2790,7 @@ export default function SignatureFlow({
       </main>
 
       {/* Primary footer bottom credits & links */}
-      <footer className="w-full border-t border-[#e2e8f0] py-3 px-4 text-center mt-auto space-y-2">
+      <footer className="w-full border-t border-[#e2e8f0] py-3 px-4 text-center space-y-2">
         <div className="flex justify-center flex-wrap gap-x-6 gap-y-2 text-xs text-zinc-400 font-semibold uppercase tracking-wider">
           <a href="https://pixiatech.com/gestion-cookies/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">{t('signature.footerSecurity')}</a>
           <span>•</span>
