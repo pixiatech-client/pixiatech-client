@@ -1030,7 +1030,7 @@ export default function SignatureFlow({
       tileHeight: p.tileHeight || prod?.tileHeight || 0,
       pricePerTile: p.pricePerTile || prod?.pricePerTile || 0,
       nombreEcrans: calc?.dalles || p.quantity || 1,
-      dimensionsEnabled: !!(p.width && p.height),
+      dimensionsEnabled: !!prod?.hasDimensions,
     };
   });
   const foundCity = CITIES.find(c => c.id === selectedCityId);

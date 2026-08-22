@@ -90,6 +90,7 @@ export type ConfiguredProduct = {
   pricePerTile?: number;
   nombreEcrans?: number;
   dimensionsEnabled?: boolean;
+  hasDimensions?: boolean;
   installationPhoto?: string;
   // Screen layout fields
   screenLayout?: ScreenLayout;

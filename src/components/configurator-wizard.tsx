@@ -271,6 +271,7 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
         if (isMulti) {
           const configuredProductsList: ConfiguredProduct[] = prev.selectedProducts.map((productId, idx) => {
             const productQty = prev.quantities?.[productId] || 1;
+            const catProd = allProducts.find(p => p.id === productId);
             return {
               id: `config_${Date.now()}_${idx}`,
               productId: productId,
@@ -293,6 +294,7 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
               cabinetAngle: prev.cabinetAngle,
               curveLeft: prev.isCurved ? prev.curveLeft : undefined,
               curveRight: prev.isCurved ? prev.curveRight : undefined,
+              hasDimensions: catProd?.hasDimensions,
             };
           });
           onComplete(configuredProductsList as any);
@@ -320,6 +322,7 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
             cabinetAngle: prev.cabinetAngle,
             curveLeft: prev.isCurved ? prev.curveLeft : undefined,
             curveRight: prev.isCurved ? prev.curveRight : undefined,
+            hasDimensions: matchingProduct?.hasDimensions,
           };
           onComplete(configuredProduct);
         }

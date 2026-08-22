@@ -232,24 +232,12 @@ export function computeQuoteTotal(
   } = options;
 
   const productsSubtotal = products.reduce((acc, p) => {
-    let unitPrice = p.unitPrice || 0;
-    if (p.dimensionsEnabled && p.tileWidth && p.tileHeight && p.pricePerTile) {
-      const tilesPerWidth = Math.ceil(((p.width || 0) * 100) / (p.tileWidth || 1));
-      const tilesPerHeight = Math.ceil(((p.height || 0) * 100) / (p.tileHeight || 1));
-      const totalTiles = tilesPerWidth * tilesPerHeight;
-      unitPrice = totalTiles * (p.pricePerTile || 0);
-    }
+    const unitPrice = p.unitPrice || 0;
     return acc + ((p.quantity || 0) * unitPrice);
   }, 0);
 
   const productsDiscountedTotal = products.reduce((acc, p) => {
-    let unitPrice = p.unitPrice || 0;
-    if (p.dimensionsEnabled && p.tileWidth && p.tileHeight && p.pricePerTile) {
-      const tilesPerWidth = Math.ceil(((p.width || 0) * 100) / (p.tileWidth || 1));
-      const tilesPerHeight = Math.ceil(((p.height || 0) * 100) / (p.tileHeight || 1));
-      const totalTiles = tilesPerWidth * tilesPerHeight;
-      unitPrice = totalTiles * (p.pricePerTile || 0);
-    }
+    const unitPrice = p.unitPrice || 0;
     const lineBaseTotal = (p.quantity || 0) * unitPrice;
     let durationFactor = p.transactionType === 'rental' ? (p.rentalDuration || 1) : 1;
     const lineTotal = lineBaseTotal * durationFactor;

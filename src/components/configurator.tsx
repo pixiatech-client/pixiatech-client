@@ -314,6 +314,7 @@ export function Configurator({
         transactionType: filters.transactionType!,
         rentalDuration: 1,
         rentalUnit: 'day',
+        hasDimensions: firstProduct.hasDimensions,
         rentalPeriod: filters.transactionType === 'rental' ? {
           from: new Date(),
           to: new Date(),
