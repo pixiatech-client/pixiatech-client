@@ -104,6 +104,25 @@ const specColors = ['blue', 'violet', 'fuchsia', 'emerald', 'sky', 'orange', 'te
 
 type MediaItem = { type: 'image'; url: string } | { type: 'video'; url: string };
 
+function getYouTubeId(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+function YouTubeEmbed({ url, className }: { url: string; className?: string }) {
+  const id = getYouTubeId(url);
+  if (!id) return null;
+  return (
+    <iframe
+      src={`https://www.youtube.com/embed/${id}?autoplay=1&rel=0`}
+      className={className}
+      allow="autoplay; encrypted-media"
+      allowFullScreen
+      onClick={(e) => e.stopPropagation()}
+    />
+  );
+}
+
 function Lightbox({ items, index, onClose, onPrev, onNext }: { items: MediaItem[]; index: number; onClose: () => void; onPrev: () => void; onNext: () => void }) {
   const dragStartX = useRef(0);
   const dragOffset = useRef(0);
@@ -164,13 +183,17 @@ function Lightbox({ items, index, onClose, onPrev, onNext }: { items: MediaItem[
 
       {current ? (
         current.type === 'video' ? (
-          <video
-            ref={videoRef}
-            src={current.url}
-            controls
-            className="max-w-[90vw] max-h-[85vh] rounded-2xl select-none"
-            onClick={(e) => e.stopPropagation()}
-          />
+          getYouTubeId(current.url) ? (
+            <YouTubeEmbed url={current.url} className="max-w-[90vw] max-h-[85vh] rounded-2xl select-none aspect-video" />
+          ) : (
+            <video
+              ref={videoRef}
+              src={current.url}
+              controls
+              className="max-w-[90vw] max-h-[85vh] rounded-2xl select-none"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )
         ) : (
           <img
             src={current.url}
@@ -1212,14 +1235,20 @@ export default function ProductDetailPage() {
                 <div className="cursor-pointer w-full aspect-[4/3] overflow-hidden rounded-xl" onClick={() => { setSelectedVariant(null); openLightbox(selectedMedia); }}>
                   {effectiveMedia ? (
                     effectiveMedia.type === 'video' ? (
-                      <video
-                        src={effectiveMedia.url}
-                        className="w-full h-full object-contain"
-                        autoPlay
-                        muted
-                        playsInline
-                        preload="metadata"
-                      />
+                      getYouTubeId(effectiveMedia.url) ? (
+                        <div className="w-full h-full">
+                          <YouTubeEmbed url={effectiveMedia.url} className="w-full h-full rounded-xl" />
+                        </div>
+                      ) : (
+                        <video
+                          src={effectiveMedia.url}
+                          className="w-full h-full object-contain"
+                          autoPlay
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                      )
                     ) : (
                       <img
                         src={effectiveMedia.url}
@@ -1276,13 +1305,21 @@ export default function ProductDetailPage() {
                                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center z-10">
                                       <Play size={20} className="text-white fill-white" />
                                     </div>
-                                    <video
-                                      src={item.url}
-                                      className={`w-full h-full object-cover ${selectedMedia !== realIdx ? 'opacity-50' : ''}`}
-                                      muted
-                                      playsInline
-                                      preload="metadata"
-                                    />
+                                    {getYouTubeId(item.url) ? (
+                                      <img
+                                        src={`https://img.youtube.com/vi/${getYouTubeId(item.url)}/mqdefault.jpg`}
+                                        className={`w-full h-full object-cover ${selectedMedia !== realIdx ? 'opacity-50' : ''}`}
+                                        alt=""
+                                      />
+                                    ) : (
+                                      <video
+                                        src={item.url}
+                                        className={`w-full h-full object-cover ${selectedMedia !== realIdx ? 'opacity-50' : ''}`}
+                                        muted
+                                        playsInline
+                                        preload="metadata"
+                                      />
+                                    )}
                                   </div>
                                 ) : (
                                   <img
@@ -1461,8 +1498,8 @@ export default function ProductDetailPage() {
                           }}
                         >
                           <ul className="py-1">
-                            {displayVariants.map((v) => (
-                              <li key={v.name}>
+                            {displayVariants.map((v, vIdx) => (
+                              <li key={`${v.name}-${vIdx}`}>
                                 <button
                                   onMouseEnter={() => { setHoveredVariant(v); setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
                                   onMouseLeave={() => setHoveredVariant(null)}
@@ -1486,8 +1523,8 @@ export default function ProductDetailPage() {
                     </div>
                   ) : (
                     <div ref={variantWrapRef1} className="flex flex-wrap gap-2">
-                      {displayVariants.map((v) => (
-                        <button key={v.name} 
+                      {displayVariants.map((v, vIdx) => (
+                        <button key={`${v.name}-${vIdx}`}
                           onMouseEnter={() => setHoveredVariant(v)}
                           onMouseLeave={() => setHoveredVariant(null)}
                           onClick={() => { setSelectedVariant(v); committedVariantRef.current = v; const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
@@ -1813,8 +1850,8 @@ export default function ProductDetailPage() {
                         }}
                       >
                         <ul className="py-1">
-                          {displayVariants.map((v) => (
-                            <li key={v.name}>
+                          {displayVariants.map((v, vIdx) => (
+                            <li key={`${v.name}-${vIdx}`}>
                               <button
                                 onMouseEnter={() => { setHoveredVariant(v); setSelectedVariant(v); const imgIdx = mediaItems.findIndex(m => m.type === 'image' && m.url === v.image); if (imgIdx >= 0) setSelectedMedia(imgIdx); }}
                                 onMouseLeave={() => setHoveredVariant(null)}
@@ -1838,9 +1875,9 @@ export default function ProductDetailPage() {
                   </div>
                 ) : (
                   <div ref={variantWrapRef2} className="flex flex-wrap gap-2">
-                    {displayVariants.map((v) => (
+                    {displayVariants.map((v, vIdx) => (
                       <button
-                        key={v.name}
+                        key={`${v.name}-${vIdx}`}
                         onMouseEnter={() => setHoveredVariant(v)}
                         onMouseLeave={() => setHoveredVariant(null)}
                         onClick={() => {
