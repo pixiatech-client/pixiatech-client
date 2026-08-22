@@ -3,10 +3,12 @@
  * Utility to preload images to improve UX and avoid layout shifts or loading flickers.
  */
 const imageCache = new Map<string, boolean>();
+const VIDEO_EXT = /\.(mp4|webm|mov|avi|mkv|m3u8)(\?|$)/i;
 
 export function preloadImage(src: string): Promise<void> {
   if (!src || typeof window === 'undefined') return Promise.resolve();
   if (imageCache.has(src)) return Promise.resolve();
+  if (VIDEO_EXT.test(src)) return Promise.resolve();
 
   return new Promise((resolve, reject) => {
     const img = new Image();

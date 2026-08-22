@@ -156,10 +156,6 @@ export function QuoteBuilder({
     const [installationCost, setInstallationCost] = useState(0);
     const [techniciansRequired, setTechniciansRequired] = useState(0);
     const [currentStep, setCurrentStep] = useState<number>(() => {
-      const saved = loadQuoteState();
-      if (saved && saved.currentStep > 0) {
-        return saved.currentStep;
-      }
       if (initialWorkflowStep) {
         return ROUTE_STEP_MAP[initialWorkflowStep] || 1;
       }
@@ -246,7 +242,8 @@ export function QuoteBuilder({
 
     useEffect(() => {
         const saved = loadQuoteState();
-        const step = ROUTE_STEP_MAP[initialWorkflowStep ?? ''];
+        const step = initialWorkflowStep ? ROUTE_STEP_MAP[initialWorkflowStep] : undefined;
+        const isHomeLoad = !initialWorkflowStep;
 
         if (saved) {
             setConfiguredProducts(saved.configuredProducts ?? []);
@@ -260,10 +257,20 @@ export function QuoteBuilder({
             setInstallationCost(saved.installationCost);
             setTechniciansRequired(saved.techniciansRequired);
             setIncludeDelivery(saved.includeDelivery);
-            setActiveMode(saved.activeMode);
             setIsSubmitting(saved.isSubmitting);
-            if (saved.isSignatureFlowActive && saved.configuredProducts?.length > 0) {
-                setIsSignatureFlowActive(true);
+
+            if (isHomeLoad) {
+                setActiveMode('selection');
+                setCurrentStep(1);
+                setIsSignatureFlowActive(false);
+            } else {
+                setActiveMode(saved.activeMode);
+                if (saved.currentStep > 0) {
+                    setCurrentStep(saved.currentStep);
+                }
+                if (saved.isSignatureFlowActive && saved.configuredProducts?.length > 0) {
+                    setIsSignatureFlowActive(true);
+                }
             }
         }
 

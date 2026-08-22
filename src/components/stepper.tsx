@@ -49,7 +49,7 @@ export function Stepper({ currentStep, onStepClick, steps }: StepperProps) {
                 >
                   <Icon className="h-5 w-5" />
                 </button>
-                <p className={cn(
+                <p suppressHydrationWarning className={cn(
                     "mt-2 text-xs font-semibold text-center",
                      isActive ? "text-primary" : "text-muted-foreground",
                      isMobile && "hidden"
