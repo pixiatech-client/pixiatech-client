@@ -7,10 +7,12 @@ import { EmergencyStopPage } from '@/components/emergency-stop-page';
 import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLocations, getWizardSettings } from '@/app/actions/public-actions';
 import type { Settings, DeliverySettings, LaborSettings, Product, Locations, WizardSettings } from '@/lib/types';
 
-export default async function StepPage({ params, searchParams }: { 
-  params: { step?: string[] },
-  searchParams?: { otp?: string; id?: string; token?: string; step?: string; [key: string]: string | string[] | undefined }
+export default async function StepPage(props: { 
+  params: Promise<{ step?: string[] }>,
+  searchParams?: Promise<{ otp?: string; id?: string; token?: string; step?: string; [key: string]: string | string[] | undefined }>
 }) {
+  const params = await props.params;
+  const searchParams = props.searchParams ? await props.searchParams : undefined;
   const stepName = params.step?.[0];
 
   // OTP verification: redirect to dedicated verify page

@@ -17,6 +17,7 @@ import { buildSupplierEmailHtml } from '@/lib/email-templates';
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry, Dispute } from '@/lib/types';
 import { normalizePrice } from '@/lib/pricing-engine';
 import { normalizeSearchText } from '@/lib/utils';
+import { clearSettingsCache } from '@/app/actions/public-actions';
 
 export interface ResellerLead {
   id: string;
@@ -3224,6 +3225,7 @@ export async function updateSettings(data: unknown) {
     await adminDb.collection('settings').doc(SETTINGS_DOC_ID).set(result.data, { merge: true });
 
     _settingsCache = null;
+    clearSettingsCache();
     if ('isSingleSessionEnabled' in result.data) {
       _singleSessionCache = null;
     }

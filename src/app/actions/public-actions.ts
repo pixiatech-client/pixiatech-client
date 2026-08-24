@@ -44,6 +44,10 @@ const ACTIVE_THEME_DOC_ID = 'global';
 let _settingsCache: { data: Settings; timestamp: number } | null = null;
 const SETTINGS_CACHE_TTL_MS = 60_000; // 60 seconds
 
+export async function clearSettingsCache(): Promise<void> {
+  _settingsCache = null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Settings
 // ─────────────────────────────────────────────────────────────────────────────

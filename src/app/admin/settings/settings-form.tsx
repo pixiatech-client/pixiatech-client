@@ -487,7 +487,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                 <p className="text-xs text-slate-500">{t('Video and fallback image for the 3D screen simulator.')}</p>
                 <div className="space-y-2">
                     <Label>{t('Video URL')}</Label>
-                    <p className="text-xs text-slate-500">{t('Direct video URL (MP4, WebM). YouTube/Vimeo are not supported.')}</p>
+                    <p className="text-xs text-slate-500">{t('Accepts direct video URLs (MP4, WebM), Firebase Storage links, YouTube and Vimeo URLs.')}</p>
                     <Controller name="previewScreenVideoUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
                 </div>
                 <div className="space-y-2">

@@ -6,10 +6,11 @@ import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLoc
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function EmbedPage({ searchParams }: PageProps) {
+export default async function EmbedPage(props: PageProps) {
+  const searchParams = await props.searchParams;
   const settings: Settings = await getSettings();
   
   const langQuery = typeof searchParams.lang === 'string' ? searchParams.lang : 'en';

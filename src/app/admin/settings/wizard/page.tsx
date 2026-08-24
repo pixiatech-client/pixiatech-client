@@ -12,6 +12,7 @@ import { getWizardSettings, updateWizardSettings, getSettings, updateSettings } 
 import type { WizardSettings, PixelPitchOption, ViewingDistanceOption, Settings as AppSettings } from '@/lib/types';
 import { InputWithUpload } from '../_components/input-with-upload';
 import { useAdminT } from '@/hooks/useAdminT';
+import { detectVideoSource } from '@/lib/video-source';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
@@ -62,12 +63,7 @@ export default function WizardPage() {
 
   const validateVideoUrl = (url: string): boolean => {
     if (!url) return true;
-    try {
-      new URL(url);
-    } catch {
-      return false;
-    }
-    return true;
+    return detectVideoSource(url).type !== 'none';
   };
 
   const handleSave = async () => {
@@ -232,12 +228,26 @@ export default function WizardPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label className="text-xs font-bold uppercase text-slate-400">{t('Video URL')}</Label>
-            <p className="text-xs text-slate-500">{t('Direct video URL (MP4, WebM). YouTube/Vimeo are not supported.')}</p>
+            <p className="text-xs text-slate-500">{t('Accepts direct video URLs (MP4, WebM), Firebase Storage links, YouTube and Vimeo URLs.')}</p>
             <InputWithUpload
               placeholder="https://..."
               value={appSettings.previewScreenVideoUrl || ''}
               onChange={(newUrl) => setAppSettings(prev => prev ? { ...prev, previewScreenVideoUrl: newUrl } : null)}
             />
+            {(() => {
+              const source = detectVideoSource(appSettings.previewScreenVideoUrl);
+              if (source.type === 'none') return null;
+              const label = source.type === 'youtube'
+                ? t('Detected source: YouTube')
+                : source.type === 'vimeo'
+                  ? t('Detected source: Vimeo')
+                  : t('Detected source: direct video / Firebase Storage');
+              return (
+                <p className="text-xs font-medium text-emerald-600">
+                  {label}
+                </p>
+              );
+            })()}
           </div>
           <div className="space-y-2">
             <Label className="text-xs font-bold uppercase text-slate-400">{t('Fallback Image URL (3D Simulator)')}</Label>
