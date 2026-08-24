@@ -69,17 +69,21 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     window.location.reload();
   }, []);
 
-  // Fetch session cookie UID on mount (server-side verification)
+  // Fetch session cookie UID on mount + re-validate periodically
   useEffect(() => {
-    getSessionUid()
-      .then((result) => {
+    const refreshSessionUid = async () => {
+      try {
+        const result = await getSessionUid();
         setSessionUid(result.uid);
         setSessionLoading(false);
-      })
-      .catch(() => {
+        return result.uid;
+      } catch {
         setSessionUid(null);
         setSessionLoading(false);
-      });
+        return null;
+      }
+    };
+    refreshSessionUid();
   }, []);
 
   // Periodic session validity check (for single-session enforcement)
@@ -90,14 +94,38 @@ function AdminContent({ children }: { children: React.ReactNode }) {
 
     const check = async () => {
       try {
+        // Re-validate sessionUid alongside the session check
+        const uidResult = await getSessionUid().catch(() => ({ uid: null }));
+        setSessionUid(uidResult.uid);
+
         const result = await verifySession();
         if (result.valid) return;
-        if (result.reason !== 'session_mismatch') return;
 
-        // Stop polling and show the kicked modal
-        if (pollingRef.current) clearInterval(pollingRef.current);
-        setSessionCreatedAt((result as any).sessionCreatedAt ?? null);
-        setSessionKicked(true);
+        // Handle session mismatch (kicked by another tab) — show modal
+        if (result.reason === 'session_mismatch') {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          setSessionCreatedAt((result as any).sessionCreatedAt ?? null);
+          setSessionKicked(true);
+          return;
+        }
+
+        // Handle expired/revoked session — redirect to login with message
+        const expiredReasons = [
+          'expired', 'error', 'unknown_error',
+          'auth/session-cookie-expired', 'auth/session-cookie-revoked',
+          'auth/id-token-expired', 'auth/id-token-revoked',
+          'auth/argument-error', 'auth/invalid-auth-token',
+          'user_not_found', 'no_session'
+        ];
+        if (expiredReasons.includes(result.reason)) {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          try { localStorage.clear(); } catch {}
+          try { sessionStorage.clear(); } catch {}
+          try { await signOut(getAuth()); } catch {}
+          await clearSession();
+          router.push('/admin/login?reason=session_expired');
+          return;
+        }
       } catch (err) {
         console.error('[AdminLayout] Session check error:', err);
       }
@@ -131,7 +159,23 @@ function AdminContent({ children }: { children: React.ReactNode }) {
 
   // Logout guard: only logout if genuinely unauthenticated, never during Firebase resolution race
   useEffect(() => {
-    if (isAuthPage || isUserLoading || sessionLoading || isLoggingOut) return;
+    if (isAuthPage || sessionLoading || isLoggingOut) return;
+
+    // Zombie state: Firebase is still loading (refresh in progress) but session is already
+    // dead server-side (sessionUid = null). No need to wait for Firebase — the session is gone.
+    if (isUserLoading && sessionUid === null) {
+      startLogout(async () => {
+        try { localStorage.clear(); } catch {}
+        try { sessionStorage.clear(); } catch {}
+        try { await signOut(getAuth()); } catch {}
+        await clearSession();
+        router.push('/admin/login?reason=session_expired');
+      });
+      return;
+    }
+
+    // Standard guard: wait for Firebase to resolve
+    if (isUserLoading) return;
 
     const hasSession = sessionUid !== null;
     const hasValidFirebaseUser = user && !user.isAnonymous;
@@ -163,6 +207,18 @@ function AdminContent({ children }: { children: React.ReactNode }) {
 
     // No session and no Firebase user — genuinely logged out
     if (elapsed < 5000 && !hasSession) return;
+
+    // Session cookie expired/missing but Firebase client still has stale user — redirect to login
+    if (!hasSession && hasValidFirebaseUser) {
+      startLogout(async () => {
+        try { localStorage.clear(); } catch {}
+        try { sessionStorage.clear(); } catch {}
+        try { await signOut(getAuth()); } catch {}
+        await clearSession();
+        router.push('/admin/login?reason=session_expired');
+      });
+      return;
+    }
 
     // Both session cookie AND Firebase user are gone — genuinely logged out
     if (!hasSession && !hasValidFirebaseUser) {
