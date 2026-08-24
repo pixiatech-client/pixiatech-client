@@ -574,8 +574,8 @@ function Screen({
 
     return (
       <group position={[0, 0, 0]}>
-        {/* Render backing cabinet frames gapless */}
-        {cabinetGeometry && columns.map((colAngle, ix) => (
+        {/* Render backing cabinet frames gapless — DÉSACTIVÉ POUR TEST (caisson = source probable des points) */}
+        {/* {cabinetGeometry && columns.map((colAngle, ix) => (
           <group key={`col-${ix}`} rotation={[0, colAngle, 0]}>
             {Array.from({ length: modulesY_360 }).map((_, iy) => (
               <mesh
@@ -588,7 +588,7 @@ function Screen({
               />
             ))}
           </group>
-        ))}
+        ))} */}
 
         {/* Render a single seamless Cylinder for the LED screens with emissive glowing materials */}
         <mesh position={[0, height / 2, 0]} castShadow>
