@@ -23,45 +23,56 @@ interface Screen3DProps {
   minDistance?: number;
 }
 
+const DALLE_DEPTH = 0.15; // Cabinet thickness 15cm
+
 function Dalle({ position, args, texture, uvOffset, uvScale, isPlaying }: { position: [number, number, number], args: [number, number], texture: THREE.Texture | null, uvOffset: [number, number], uvScale: [number, number], isPlaying: boolean }) {
-  const DEPTH = 0.15; // Reduced thickness to 15cm as requested
+  const DEPTH = DALLE_DEPTH;
+  const [w, h] = args;
   
-  const geometry = React.useMemo(() => {
-    const geo = new THREE.BoxGeometry(args[0], args[1], DEPTH);
+  // 3D Cabinet chassis (back frame)
+  const chassisGeometry = React.useMemo(() => {
+    return new THREE.BoxGeometry(w, h, DEPTH);
+  }, [w, h, DEPTH]);
+
+  // Front active LED display surface (PlaneGeometry with custom UV mapping)
+  const displayGeometry = React.useMemo(() => {
+    const geo = new THREE.PlaneGeometry(w, h);
     const uvs = geo.attributes.uv;
-    for (let i = 16; i < 20; i++) {
-        const u = uvs.getX(i);
-        const v = uvs.getY(i);
-        uvs.setXY(i, u * uvScale[0] + uvOffset[0], v * uvScale[1] + uvOffset[1]);
+    for (let i = 0; i < uvs.count; i++) {
+      const u = uvs.getX(i);
+      const v = uvs.getY(i);
+      uvs.setXY(i, u * uvScale[0] + uvOffset[0], v * uvScale[1] + uvOffset[1]);
     }
     return geo;
-  }, [args, uvOffset, uvScale]);
+  }, [w, h, uvOffset, uvScale]);
 
-  const materials = React.useMemo(() => {
-    const blackMaterial = new THREE.MeshStandardMaterial({ 
+  const chassisMaterial = React.useMemo(() => {
+    return new THREE.MeshStandardMaterial({ 
       color: "#050505", 
       roughness: 0.9, 
       metalness: 0.1 
     });
-    
-    const ledMaterial = new THREE.MeshBasicMaterial({
+  }, []);
+
+  const ledMaterial = React.useMemo(() => {
+    return new THREE.MeshBasicMaterial({
       color: texture && isPlaying ? "#ffffff" : "#050505",
       map: texture && isPlaying ? texture : null,
+      toneMapped: false,
+      side: THREE.FrontSide
     });
-
-    return [
-      blackMaterial, // right
-      blackMaterial, // left
-      blackMaterial, // top
-      blackMaterial, // bottom
-      ledMaterial,   // front
-      blackMaterial  // back
-    ];
   }, [texture, isPlaying]);
 
   return (
     <group position={position}>
-      <mesh geometry={geometry} material={materials} castShadow receiveShadow />
+      {/* 3D Black Chassis */}
+      <mesh geometry={chassisGeometry} material={chassisMaterial} castShadow receiveShadow />
+      {/* Front Clean LED Screen (0.5mm offset to eliminate corner bleed & shadow acne dots) */}
+      <mesh 
+        geometry={displayGeometry} 
+        material={ledMaterial} 
+        position={[0, 0, DEPTH / 2 + 0.0005]} 
+      />
     </group>
   );
 }
@@ -443,24 +454,57 @@ function Screen({
     const modulesY = Math.ceil(height / DALLE_SIZE);
     const actualDalleH = height / modulesY;
 
-    const columns = [];
-    let currentX = 0;
-    let currentZ = 0;
-    
     const wingCols = Math.round(modulesX * 0.25);
+    const totalLeftAngle = isCurved ? THREE.MathUtils.degToRad(curveLeft * 2) : 0;
+    const totalRightAngle = isCurved ? THREE.MathUtils.degToRad(curveRight * 2) : 0;
 
-    let currentAngle = isCurved ? -THREE.MathUtils.degToRad(curveLeft * 2) : 0;
-
+    // 1. Calculate orientation angle for each column
+    const angles: number[] = [];
+    let currentAngle = isCurved ? -totalLeftAngle : 0;
     for (let ix = 0; ix < modulesX; ix++) {
-      let angleStep = 0;
-
+      angles.push(currentAngle);
       if (isCurved && wingCols > 0) {
         if (ix < wingCols) {
-          angleStep = THREE.MathUtils.degToRad(curveLeft * 2) / wingCols;
+          currentAngle += totalLeftAngle / wingCols;
         } else if (ix >= modulesX - wingCols) {
-          angleStep = THREE.MathUtils.degToRad(curveRight * 2) / wingCols;
+          currentAngle += totalRightAngle / wingCols;
         }
       }
+    }
+
+    // 2. Continuous front-hinge placement:
+    // Every column's front face begins exactly where the previous column's front face ends (J_i).
+    // The 3D center of the cabinet box is offset by -DEPTH/2 along the front normal so that
+    // the front LED faces meet edge-to-edge seamlessly with 0 mm gap or step.
+    const colPlacements: { x: number; z: number; angle: number }[] = [];
+    let jointX = 0;
+    let jointZ = 0;
+
+    for (let ix = 0; ix < modulesX; ix++) {
+      const angle = angles[ix];
+      const dirX = Math.cos(angle);
+      const dirZ = -Math.sin(angle);
+      const normX = Math.sin(angle);
+      const normZ = Math.cos(angle);
+
+      // Center of column cabinet box
+      const centerX = jointX + (actualDalleW / 2) * dirX - (DALLE_DEPTH / 2) * normX;
+      const centerZ = jointZ + (actualDalleW / 2) * dirZ - (DALLE_DEPTH / 2) * normZ;
+
+      colPlacements.push({ x: centerX, z: centerZ, angle });
+
+      // Step front hinge point to the right edge of this column
+      jointX += actualDalleW * dirX;
+      jointZ += actualDalleW * dirZ;
+    }
+
+    // Centering offsets
+    const midX = jointX / 2;
+    const midZ = colPlacements.reduce((acc, c) => acc + c.z, 0) / modulesX;
+
+    const columns = [];
+    for (let ix = 0; ix < modulesX; ix++) {
+      const { x, z, angle } = colPlacements[ix];
 
       const tiles = [];
       for (let iy = 0; iy < modulesY; iy++) {
@@ -483,23 +527,19 @@ function Screen({
       }
 
       columns.push(
-        <group key={`col-${ix}`} position={[currentX, 0, currentZ]} rotation={[0, currentAngle, 0]}>
+        <group key={`col-${ix}`} position={[x - midX, 0, z - midZ]} rotation={[0, angle, 0]}>
           {tiles}
         </group>
       );
-
-      currentX += Math.cos(currentAngle) * actualDalleW;
-      currentZ -= Math.sin(currentAngle) * actualDalleW;
-      currentAngle += angleStep;
     }
 
     return (
-      <group position={[-currentX / 2, 0, -currentZ / 2]}>
+      <group position={[0, 0, 0]}>
         {columns}
         
         <DimensionLine 
-          start={new THREE.Vector3(0, height + 0.5, 0)} 
-          end={new THREE.Vector3(currentX, height + 0.5, currentZ)} 
+          start={new THREE.Vector3(-midX, height + 0.5, -midZ)} 
+          end={new THREE.Vector3(jointX - midX, height + 0.5, jointZ - midZ)} 
           label={t('screen3d.width', { value: width.toFixed(2) })} 
           color="#1e293b"
           isDarkMode={isDarkMode}
@@ -507,8 +547,8 @@ function Screen({
         />
         
         <DimensionLine 
-          start={new THREE.Vector3(-0.9, 0, 0)} 
-          end={new THREE.Vector3(-0.9, height, 0)} 
+          start={new THREE.Vector3(-midX - 0.9, 0, -midZ)} 
+          end={new THREE.Vector3(-midX - 0.9, height, -midZ)} 
           label={t('screen3d.height', { value: height.toFixed(2) })} 
           color="#1e293b"
           isDarkMode={isDarkMode}
