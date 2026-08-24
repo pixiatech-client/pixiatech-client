@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft,
@@ -226,7 +226,23 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
   }, [wizardSettings]);
 
   const updateState = useCallback((updates: Partial<ConfigState>) => {
-    setState(prev => ({ ...prev, ...updates }));
+    setState(prev => {
+      const next = { ...prev, ...updates };
+      // Reset downstream selections when upstream changes
+      if (updates.projectType && updates.projectType !== prev.projectType) {
+        next.environment = undefined as any;
+        next.viewingDistance = undefined as any;
+        next.pixelPitch = undefined as any;
+      }
+      if (updates.environment && updates.environment !== prev.environment) {
+        next.viewingDistance = undefined as any;
+        next.pixelPitch = undefined as any;
+      }
+      if (updates.viewingDistance && updates.viewingDistance !== prev.viewingDistance) {
+        next.pixelPitch = undefined as any;
+      }
+      return next;
+    });
   }, []);
 
   // Expose setIsInteracting to steps via a window hack or props
@@ -236,18 +252,23 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
 
   const nextStep = useCallback(() => {
     setState(prev => {
+      // Guards: block advancement if current step has no valid selection
+      if (prev.step === 1) {
+        const hasProducts = allProducts.some(p =>
+          !p.isHidden && p.availableFor?.includes(prev.projectType === 'location' ? 'rental' : 'sale')
+        );
+        if (!hasProducts) return prev;
+      }
+      if (prev.step === 2 && !prev.environment) return prev;
+      if (prev.step === 3 && !prev.viewingDistance) return prev;
+      if (prev.step === 4 && !prev.pixelPitch) return prev;
       if (prev.step === 6 && prev.projectType === 'location' && (!prev.rentalStartDate || !prev.rentalEndDate)) {
         return prev;
       }
       if (prev.step === 8) {
         const isMulti = prev.selectionMode === 'multi';
-        if (!isMulti && !prev.selectedProduct) return prev; // Prevent completion without selection
+        if (!isMulti && !prev.selectedProduct) return prev;
         if (isMulti && (!prev.selectedProducts || prev.selectedProducts.length === 0)) return prev;
-
-        const matchingProduct = allProducts.find(p =>
-          p.availableFor.includes((prev.projectType === 'vente' ? 'sale' : 'rental') as 'sale' | 'rental') &&
-          p.type.includes(prev.environment as any)
-        );
 
         const isRental = prev.projectType === 'location';
 
@@ -299,7 +320,8 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
           });
           onComplete(configuredProductsList as any);
         } else {
-          const productId = prev.selectedProduct !== null ? String(prev.selectedProduct) : (matchingProduct?.id ?? allProducts[0]?.id ?? 'fallback-product-id');
+          const productId = prev.selectedProduct !== null ? String(prev.selectedProduct) : (allProducts[0]?.id ?? 'fallback-product-id');
+          const matchingProduct = allProducts.find(p => p.id === productId);
           const configuredProduct: ConfiguredProduct = {
             id: `config_${Date.now()}`,
             productId: productId,
@@ -335,30 +357,128 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
 
   useEffect(() => {
     if (state.step === 1 && wizardSettings?.projectTypes) {
-      const { vente, location } = wizardSettings.projectTypes;
-      if (vente && location) {
-        // Check if exactly one is enabled
-        if (vente.enabled && !location.enabled) {
-          updateState({ projectType: 'vente' });
-          nextStep();
-        } else if (!vente.enabled && location.enabled) {
-          updateState({ projectType: 'location' });
-          nextStep();
-        }
+      const hasRentalProducts = allProducts.some(p => !p.isHidden && p.availableFor?.includes('rental'));
+      const hasSaleProducts = allProducts.some(p => !p.isHidden && p.availableFor?.includes('sale'));
+      const isLocationEnabled = !!wizardSettings.projectTypes.location?.enabled && hasRentalProducts;
+      const isVenteEnabled = !!wizardSettings.projectTypes.vente?.enabled && hasSaleProducts;
+      if (isLocationEnabled && !isVenteEnabled) {
+        updateState({ projectType: 'location' });
+        nextStep();
+      } else if (!isLocationEnabled && isVenteEnabled) {
+        updateState({ projectType: 'vente' });
+        nextStep();
       }
     }
-  }, [wizardSettings?.projectTypes, state.step, updateState, nextStep]);
+  }, [wizardSettings?.projectTypes, state.step, updateState, nextStep, allProducts]);
+
+  // --- Compute available options for steps 2/3/4 (same logic as step components) ---
+  const targetMode: 'sale' | 'rental' = state.projectType === 'location' ? 'rental' : 'sale';
+  const envTypeMap: Record<string, 'indoor' | 'outdoor' | 'showcase'> = {
+    interieur: 'indoor',
+    'semi-exterieur': 'showcase',
+    exterieur: 'outdoor',
+  };
+  const targetType: 'indoor' | 'outdoor' | 'showcase' =
+    state.environment === 'interieur' ? 'indoor'
+      : state.environment === 'semi-exterieur' ? 'showcase'
+        : 'outdoor';
+
+  // Step 2: available environments
+  const availableEnvIds = useMemo(() => {
+    const ids = new Set<string>();
+    allProducts.forEach(p => {
+      if (p.isHidden) return;
+      if (!p.availableFor?.includes(targetMode)) return;
+      (p.type || []).forEach(t => {
+        const wizardKey = Object.entries(envTypeMap).find(([, v]) => v === t)?.[0];
+        if (wizardKey) ids.add(wizardKey);
+      });
+    });
+    return ids;
+  }, [allProducts, targetMode]);
+
+  // Step 3: available viewing distances
+  const distancesWithPitches = useMemo(() => {
+    const matched = allProducts.filter(p => {
+      if (p.isHidden) return false;
+      if (!p.availableFor?.includes(targetMode)) return false;
+      return (p.type || []).includes(targetType);
+    });
+    const dists = new Set<string>();
+    matched.forEach(p => {
+      if (p.distancePitches) {
+        Object.keys(p.distancePitches).forEach(dist => {
+          const pitches = p.distancePitches[dist] || [];
+          if (pitches.length > 0) dists.add(dist);
+        });
+      } else {
+        (p.distance ? p.distance.split(',').map((s: string) => s.trim()) : []).forEach(dist => dists.add(dist));
+      }
+    });
+    return dists;
+  }, [allProducts, targetMode, targetType]);
+
+  // Step 4: available pixel pitches
+  const compatiblePitches = useMemo(() => {
+    const matched = allProducts.filter(p => {
+      if (p.isHidden) return false;
+      if (!p.availableFor?.includes(targetMode)) return false;
+      return (p.type || []).includes(targetType);
+    });
+    const pitches = new Set<string>();
+    matched.forEach(p => {
+      if (p.distancePitches) {
+        const pitchesForDist = p.distancePitches[state.viewingDistance] || [];
+        pitchesForDist.forEach(pitch => pitches.add(pitch));
+      } else {
+        const distances = p.distance ? p.distance.split(',').map((s: string) => s.trim()) : [];
+        if (distances.includes(state.viewingDistance)) {
+          (p.pitch ? p.pitch.split(',').map((s: string) => s.trim()) : []).forEach(pitch => pitches.add(pitch));
+        }
+      }
+    });
+    return pitches;
+  }, [allProducts, targetMode, targetType, state.viewingDistance]);
+
+  // Auto-select step 2 (Environment) if only 1 option — no auto-advance, user clicks "Suivant"
+  useEffect(() => {
+    if (state.step === 2 && !state.environment && availableEnvIds.size === 1) {
+      const onlyEnv = Array.from(availableEnvIds)[0] as Environment;
+      updateState({ environment: onlyEnv });
+    }
+  }, [state.step, state.environment, availableEnvIds, updateState]);
+
+  // Auto-select step 3 (ViewingDistance) if only 1 option — no auto-advance, user clicks "Suivant"
+  useEffect(() => {
+    if (state.step === 3 && !state.viewingDistance && distancesWithPitches.size === 1) {
+      const onlyDist = Array.from(distancesWithPitches)[0];
+      updateState({ viewingDistance: onlyDist });
+    }
+  }, [state.step, state.viewingDistance, distancesWithPitches, updateState]);
+
+  // Auto-select step 4 (PixelPitch) if only 1 option — no auto-advance, user clicks "Suivant"
+  useEffect(() => {
+    if (state.step === 4 && !state.pixelPitch && compatiblePitches.size === 1) {
+      const onlyPitch = Array.from(compatiblePitches)[0];
+      updateState({ pixelPitch: onlyPitch });
+    }
+  }, [state.step, state.pixelPitch, compatiblePitches, updateState]);
 
   const prevStep = () => {
     if (state.step === 1) {
       onBack();
-    } else if (state.step === 2 &&
-      wizardSettings?.projectTypes?.vente &&
-      wizardSettings?.projectTypes?.location &&
-      ((wizardSettings.projectTypes.vente.enabled && !wizardSettings.projectTypes.location.enabled) ||
-        (!wizardSettings.projectTypes.vente.enabled && wizardSettings.projectTypes.location.enabled))) {
-      // If step 1 was automatically skipped, pressing back on step 2 should trigger onBack
-      onBack();
+    } else if (state.step === 2) {
+      // Check if step 1 was auto-skipped (same logic as auto-select effect)
+      const hasRentalProducts = allProducts.some(p => !p.isHidden && p.availableFor?.includes('rental'));
+      const hasSaleProducts = allProducts.some(p => !p.isHidden && p.availableFor?.includes('sale'));
+      const isLocationEnabled = !!wizardSettings?.projectTypes?.location?.enabled && hasRentalProducts;
+      const isVenteEnabled = !!wizardSettings?.projectTypes?.vente?.enabled && hasSaleProducts;
+      if ((isLocationEnabled && !isVenteEnabled) || (!isLocationEnabled && isVenteEnabled)) {
+        onBack();
+      } else {
+        setDirection(-1);
+        setState(prev => ({ ...prev, step: Math.max(prev.step - 1, 1) }));
+      }
     } else {
       setDirection(-1);
       setState(prev => ({ ...prev, step: Math.max(prev.step - 1, 1) }));
@@ -419,31 +539,33 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
                       </button>
 
                       {/* Bouton Suivant (Capsule Noire) */}
-                      <button
-                        onClick={nextStep}
-                        disabled={
+                      {(() => {
+                        const isNextDisabled =
+                          (state.step === 1 && !allProducts.some(p => !p.isHidden && p.availableFor?.includes(state.projectType === 'location' ? 'rental' : 'sale'))) ||
+                          (state.step === 2 && !state.environment) ||
                           (state.step === 3 && !state.viewingDistance) ||
                           (state.step === 4 && !state.pixelPitch) ||
                           (state.step === 8 && (state.selectionMode === 'multi' ? (!state.selectedProducts || state.selectedProducts.length === 0) : !state.selectedProduct)) ||
-                          (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate))
-                        }
-                        className={cn(
-                          "flex-1 h-12 bg-black rounded-[18px] flex items-center px-6 transition-all duration-300 group active:scale-[0.98] overflow-hidden relative",
-                          ((state.step === 3 && !state.viewingDistance) ||
-                            (state.step === 4 && !state.pixelPitch) ||
-                            (state.step === 8 && (state.selectionMode === 'multi' ? (!state.selectedProducts || state.selectedProducts.length === 0) : !state.selectedProduct)) ||
-                            (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate))) &&
-                          "opacity-50 cursor-not-allowed grayscale"
-                        )}
-                      >
-                        <div className="absolute inset-0 bg-black group-hover:bg-gray-900 transition-colors duration-300"></div>
-                        <span className="relative z-10 text-white font-black uppercase tracking-[0.3em] text-[10px] ml-2 transition-colors duration-300 group-hover:text-[#c6ff00]">
-                          {state.step === 8 ? t('common.finish') : t('common.next')}
-                        </span>
-                        <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center transition-all duration-300 group-hover:bg-[#c6ff00] group-hover:scale-105">
-                          <ChevronRight size={14} strokeWidth={3} className="text-white group-hover:text-black transition-colors duration-300" />
-                        </div>
-                      </button>
+                          (state.step === 6 && state.projectType === 'location' && (!state.rentalStartDate || !state.rentalEndDate));
+                        return (
+                          <button
+                            onClick={nextStep}
+                            disabled={isNextDisabled}
+                            className={cn(
+                              "flex-1 h-12 bg-black rounded-[18px] flex items-center px-6 transition-all duration-300 group active:scale-[0.98] overflow-hidden relative",
+                              isNextDisabled && "opacity-50 cursor-not-allowed grayscale pointer-events-none"
+                            )}
+                          >
+                            <div className="absolute inset-0 bg-black group-hover:bg-gray-900 transition-colors duration-300"></div>
+                            <span className="relative z-10 text-white font-black uppercase tracking-[0.3em] text-[10px] ml-2 transition-colors duration-300 group-hover:text-[#c6ff00]">
+                              {state.step === 8 ? t('common.finish') : t('common.next')}
+                            </span>
+                            <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center transition-all duration-300 group-hover:bg-[#c6ff00] group-hover:scale-105">
+                              <ChevronRight size={14} strokeWidth={3} className="text-white group-hover:text-black transition-colors duration-300" />
+                            </div>
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 </footer>
@@ -475,8 +597,8 @@ function getStepTitle(step: number, projectType: ProjectType, t: any): string {
 
 function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigState>) => void, userProfile: UserProfile | null, wizardSettings: WizardSettings, settings: Settings, products: Product[], setIsInteracting: (val: boolean) => void, t: any, locale?: string) {
   switch (state.step) {
-    case 1: return <StepProjectType state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
-    case 2: return <StepEnvironment state={state} updateState={updateState} wizardSettings={wizardSettings} t={t} />;
+    case 1: return <StepProjectType state={state} updateState={updateState} wizardSettings={wizardSettings} products={products} t={t} />;
+    case 2: return <StepEnvironment state={state} updateState={updateState} wizardSettings={wizardSettings} products={products} t={t} />;
     case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} products={products} t={t} locale={locale} />;
     case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} products={products} t={t} locale={locale} />;
     case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} t={t} />;
@@ -487,8 +609,28 @@ function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigSta
   }
 }
 
-export function StepEnvironment({ state, updateState, wizardSettings, t }: { state: ConfigState, updateState: any, wizardSettings: WizardSettings, t: any }) {
+export function StepEnvironment({ state, updateState, wizardSettings, products, t }: { state: ConfigState, updateState: any, wizardSettings: WizardSettings, products?: Product[], t: any }) {
   const environments = wizardSettings?.environments;
+
+  // Filter environments: only show those with at least 1 compatible product
+  const targetMode: 'sale' | 'rental' = state.projectType === 'location' ? 'rental' : 'sale';
+  const envTypeMap: Record<string, 'indoor' | 'outdoor' | 'showcase'> = {
+    interieur: 'indoor',
+    'semi-exterieur': 'showcase',
+    exterieur: 'outdoor',
+  };
+  const availableEnvIds = new Set<string>();
+  if (products) {
+    products.forEach(p => {
+      if (p.isHidden) return;
+      if (!p.availableFor.includes(targetMode)) return;
+      (p.type || []).forEach(t => {
+        const wizardKey = Object.entries(envTypeMap).find(([, v]) => v === t)?.[0];
+        if (wizardKey) availableEnvIds.add(wizardKey);
+      });
+    });
+  }
+
   const envs = [
     {
       id: 'interieur',
@@ -638,17 +780,20 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
         <div className="w-full space-y-3">
           {envs.map((env) => {
             const isSelected = state.environment === env.id;
+            const isAvailable = availableEnvIds.has(env.id);
             const colors = selectionColors[env.id as keyof typeof selectionColors];
 
             return (
               <div
                 key={env.id}
-                onClick={() => updateState({ environment: env.id as Environment })}
+                onClick={() => isAvailable && updateState({ environment: env.id as Environment })}
                 className={cn(
-                  "p-4 rounded-2xl border-2 transition-all duration-300 cursor-pointer flex flex-col relative group",
-                  isSelected
-                    ? `${colors.border} ${colors.bg} shadow-sm`
-                    : `border-slate-200 bg-[#FAF8F5] hover:shadow-lg hover:-translate-y-1 ${colors.hoverBorder}`
+                  "p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col relative group",
+                  !isAvailable
+                    ? "border-slate-100 bg-slate-50 opacity-40 cursor-not-allowed"
+                    : isSelected
+                      ? `${colors.border} ${colors.bg} shadow-sm cursor-pointer`
+                      : `border-slate-200 bg-[#FAF8F5] hover:shadow-lg hover:-translate-y-1 ${colors.hoverBorder} cursor-pointer`
                 )}
               >
                 {isSelected && (
@@ -656,8 +801,9 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
                     <Check className="w-4 h-4 text-white" strokeWidth={3} />
                   </div>
                 )}
+
                 <div className="flex justify-between items-start mb-2">
-                  <div className="w-16 h-16 flex items-center justify-center shrink-0">
+                  <div className={cn("w-16 h-16 flex items-center justify-center shrink-0", !isAvailable && "opacity-50")}>
                     {env.icon}
                   </div>
                   <div className="flex flex-col items-center mr-12 mt-1">
@@ -670,7 +816,7 @@ export function StepEnvironment({ state, updateState, wizardSettings, t }: { sta
                 <div>
                   <h3 className={cn(
                     "font-bold text-xl text-black mb-2 transition-colors",
-                    !isSelected && {
+                    !isSelected && isAvailable && {
                       'group-hover:text-[#82c4e6]': env.id === 'interieur',
                       'group-hover:text-amber-400': env.id === 'semi-exterieur',
                       'group-hover:text-teal-400': env.id === 'exterieur',
@@ -757,7 +903,7 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
             {/* Small Buttons Grid */}
             <div className="grid grid-cols-2 gap-3">
               {viewingDistances.map((d) => {
-                const hasPitch = distancesWithPitches.size === 0 || distancesWithPitches.has(d.value);
+                const hasPitch = distancesWithPitches.has(d.value);
                 return (
                   <div key={d.id} className="relative">
                     <button
@@ -839,9 +985,9 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
   const mainImage = pixelPitchImageUrl || "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&q=90&w=2000"; // City skyline
 
   // Mock technical details based on pitch and dimensions
-  const pitchValue = parseFloat(state.pixelPitch.replace('P', '')) || 0;
-  const resX = Math.round((state.width * 1000) / pitchValue);
-  const resY = Math.round((state.height * 1000) / pitchValue);
+  const pitchValue = state.pixelPitch ? parseFloat(state.pixelPitch.replace('P', '')) || 0 : 0;
+  const resX = state.width ? Math.round((state.width * 1000) / (pitchValue || 1)) : 0;
+  const resY = state.height ? Math.round((state.height * 1000) / (pitchValue || 1)) : 0;
   const brightness = state.environment === 'exterieur' ? '5500 nits' : state.environment === 'semi-exterieur' ? '3500 nits' : '1200 nits';
 
   const marketingEquivalents: Record<string, string> = {
@@ -915,47 +1061,56 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
         {/* Right: Selection */}
         <div className="w-full space-y-4">
           <div className="space-y-3 py-1">
-            <div className="grid grid-cols-2 gap-3">
-              {(pixelPitches.length > 0 ? pixelPitches : uniquePitches).map((p) => {
-                const isMatched = pixelPitches.some(mp => mp.id === p.id);
-                return (
-                  <div key={p.id} className="relative">
-                    <button
-                      onClick={() => updateState({ pixelPitch: p.value })}
-                      className={cn(
-                        "group w-full py-3 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
-                        state.pixelPitch === p.value
-                          ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]"
-                          : isMatched
-                            ? "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
-                            : "bg-white/20 backdrop-blur-sm border-slate-200/60 text-slate-400 opacity-50 hover:opacity-70"
-                      )}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>{p.value}</span>
-                        {marketingEquivalents[p.value] && (
-                          <>
-                            <span className="opacity-50">•</span>
-                            <span className={cn(
-                              "text-[10px] normal-case tracking-normal font-bold",
-                              state.pixelPitch === p.value ? "text-[#c6ff00]" : "text-slate-400"
-                            )}>
-                              {marketingEquivalents[p.value]}
-                            </span>
-                          </>
+            {pixelPitches.length === 0 ? (
+              <div className="text-center py-10 space-y-3">
+                <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto" />
+                <p className="text-sm font-bold text-slate-500">
+                  {t('wizard.pixelPitch.noCompatible') || 'Aucun pixel pitch compatible pour cette configuration.'}
+                </p>
+                <p className="text-xs text-slate-400">
+                  {t('wizard.pixelPitch.goBackHint') || 'Revenez en arrière pour modifier vos choix.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {pixelPitches.map((p) => {
+                  return (
+                    <div key={p.id} className="relative">
+                      <button
+                        onClick={() => updateState({ pixelPitch: p.value })}
+                        className={cn(
+                          "group w-full py-3 px-6 rounded-2xl border-2 font-black uppercase tracking-widest text-xs transition-all flex items-center justify-between",
+                          state.pixelPitch === p.value
+                            ? "bg-black border-black text-[#c6ff00] shadow-2xl scale-[1.02]"
+                            : "bg-white/40 backdrop-blur-md border-white/50 text-slate-500 hover:border-black"
                         )}
-                      </div>
-                      <div className={cn(
-                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0",
-                        state.pixelPitch === p.value ? "border-[#c6ff00] bg-[#c6ff00] text-black" : "border-slate-200 group-hover:border-black"
-                      )}>
-                        {state.pixelPitch === p.value && <Check className="w-3 h-3" strokeWidth={4} />}
-                      </div>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span>{p.value}</span>
+                          {marketingEquivalents[p.value] && (
+                            <>
+                              <span className="opacity-50">•</span>
+                              <span className={cn(
+                                "text-[10px] normal-case tracking-normal font-bold",
+                                state.pixelPitch === p.value ? "text-[#c6ff00]" : "text-slate-400"
+                              )}>
+                                {marketingEquivalents[p.value]}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        <div className={cn(
+                          "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0",
+                          state.pixelPitch === p.value ? "border-[#c6ff00] bg-[#c6ff00] text-black" : "border-slate-200 group-hover:border-black"
+                        )}>
+                          {state.pixelPitch === p.value && <Check className="w-3 h-3" strokeWidth={4} />}
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
