@@ -65,13 +65,14 @@ function Dalle({ position, args, texture, uvOffset, uvScale, isPlaying }: { posi
 
   return (
     <group position={position}>
-      {/* 3D Black Chassis */}
-      <mesh geometry={chassisGeometry} material={chassisMaterial} castShadow receiveShadow />
-      {/* Front Clean LED Screen (0.5mm offset to eliminate corner bleed & shadow acne dots) */}
+      {/* 3D Black Chassis (Temporairement désactivé pour diagnostic) */}
+      {/* <mesh geometry={chassisGeometry} material={chassisMaterial} castShadow /> */}
+      
+      {/* Front Clean LED Screen (Surface vidéo seule) */}
       <mesh 
         geometry={displayGeometry} 
         material={ledMaterial} 
-        position={[0, 0, DEPTH / 2 + 0.0005]} 
+        position={[0, 0, DEPTH / 2 + 0.001]} 
       />
     </group>
   );
@@ -325,6 +326,9 @@ function Screen({
     const handleSuccess = () => {
       const tex = new THREE.VideoTexture(video);
       tex.colorSpace = THREE.SRGBColorSpace;
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.generateMipmaps = false;
       tex.flipY = true; 
       setTexture(tex);
       setIsPlaying(true);
@@ -587,7 +591,7 @@ function Screen({
         ))}
 
         {/* Render a single seamless Cylinder for the LED screens with emissive glowing materials */}
-        <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+        <mesh position={[0, height / 2, 0]} castShadow>
           <cylinderGeometry 
             args={[
               screenRadius, // radiusTop
