@@ -23,18 +23,14 @@ interface Screen3DProps {
   minDistance?: number;
 }
 
-const DALLE_DEPTH = 0.15; // Cabinet thickness 15cm
+const DALLE_DEPTH = 0.15; // Cabinet reference depth for column placement calculation
+const PANEL_THICKNESS = 0.003; // 3mm thin physical panel
 
 function Dalle({ position, args, texture, uvOffset, uvScale, isPlaying }: { position: [number, number, number], args: [number, number], texture: THREE.Texture | null, uvOffset: [number, number], uvScale: [number, number], isPlaying: boolean }) {
   const DEPTH = DALLE_DEPTH;
   const [w, h] = args;
-  
-  // 3D Cabinet chassis (back frame)
-  const chassisGeometry = React.useMemo(() => {
-    return new THREE.BoxGeometry(w, h, DEPTH);
-  }, [w, h, DEPTH]);
 
-  // Front active LED display surface (PlaneGeometry with custom UV mapping)
+  // Front active LED display surface with custom UV mapping
   const displayGeometry = React.useMemo(() => {
     const geo = new THREE.PlaneGeometry(w, h);
     const uvs = geo.attributes.uv;
@@ -46,14 +42,12 @@ function Dalle({ position, args, texture, uvOffset, uvScale, isPlaying }: { posi
     return geo;
   }, [w, h, uvOffset, uvScale]);
 
-  const chassisMaterial = React.useMemo(() => {
-    return new THREE.MeshStandardMaterial({ 
-      color: "#050505", 
-      roughness: 0.9, 
-      metalness: 0.1 
-    });
-  }, []);
+  // Thin 3mm back panel geometry (no z-fighting risk — separate mesh, different Z)
+  const backGeometry = React.useMemo(() => {
+    return new THREE.PlaneGeometry(w, h);
+  }, [w, h]);
 
+  // Front face: VideoTexture (FrontSide only — never bleeds to back)
   const ledMaterial = React.useMemo(() => {
     return new THREE.MeshBasicMaterial({
       color: texture && isPlaying ? "#ffffff" : "#050505",
@@ -63,17 +57,23 @@ function Dalle({ position, args, texture, uvOffset, uvScale, isPlaying }: { posi
     });
   }, [texture, isPlaying]);
 
+  // Back face: solid black (FrontSide — faces backward)
+  const backMaterial = React.useMemo(() => {
+    return new THREE.MeshBasicMaterial({
+      color: "#050505",
+      side: THREE.FrontSide
+    });
+  }, []);
+
+  const frontZ = DEPTH / 2 + 0.001;
+  const backZ = frontZ - PANEL_THICKNESS;
+
   return (
     <group position={position}>
-      {/* 3D Black Chassis (Temporairement désactivé pour diagnostic) */}
-      {/* <mesh geometry={chassisGeometry} material={chassisMaterial} castShadow /> */}
-      
-      {/* Front Clean LED Screen (Surface vidéo seule) */}
-      <mesh 
-        geometry={displayGeometry} 
-        material={ledMaterial} 
-        position={[0, 0, DEPTH / 2 + 0.001]} 
-      />
+      {/* Front LED surface — VideoTexture, front face only */}
+      <mesh geometry={displayGeometry} material={ledMaterial} position={[0, 0, frontZ]} />
+      {/* Back face — black, rotated 180° so it faces backward */}
+      <mesh geometry={backGeometry} material={backMaterial} position={[0, 0, backZ]} rotation={[0, Math.PI, 0]} />
     </group>
   );
 }
