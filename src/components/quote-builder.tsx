@@ -129,6 +129,7 @@ interface QuoteBuilderProps {
   locations: Locations;
   wizardSettings: WizardSettings;
   workflowStep?: string;
+  initialWizardStep?: number;
 }
 
 export function QuoteBuilder({
@@ -139,6 +140,7 @@ export function QuoteBuilder({
     locations,
     wizardSettings: initialWizardSettings,
     workflowStep: initialWorkflowStep,
+    initialWizardStep: deepLinkWizardStep,
 }: QuoteBuilderProps) {
     const { t, locale, setLocale } = useI18n();
     
@@ -178,8 +180,8 @@ export function QuoteBuilder({
 
 
     const isMobile = useIsMobile();
-    const [activeMode, setActiveMode] = useState<'selection' | 'wizard' | 'manual'>('selection');
-    const [initialWizardStep, setInitialWizardStep] = useState(1);
+    const [activeMode, setActiveMode] = useState<'selection' | 'wizard' | 'manual'>(deepLinkWizardStep ? 'wizard' : 'selection');
+    const [initialWizardStep, setInitialWizardStep] = useState(deepLinkWizardStep || 1);
 
     const auth = useAuth();
     const { user, isUserLoading } = useUser();
@@ -233,7 +235,6 @@ export function QuoteBuilder({
         }
     }, [configuredProducts.length, activeMode]);
 
-
     useEffect(() => {
         if (!isUserLoading && !user) {
             signInAnonymously(auth);
@@ -243,7 +244,7 @@ export function QuoteBuilder({
     useEffect(() => {
         const saved = loadQuoteState();
         const step = initialWorkflowStep ? ROUTE_STEP_MAP[initialWorkflowStep] : undefined;
-        const isHomeLoad = !initialWorkflowStep;
+        const isHomeLoad = !initialWorkflowStep && !deepLinkWizardStep;
 
         if (saved) {
             setConfiguredProducts(saved.configuredProducts ?? []);
@@ -271,6 +272,14 @@ export function QuoteBuilder({
                 if (saved.isSignatureFlowActive && saved.configuredProducts?.length > 0) {
                     setIsSignatureFlowActive(true);
                 }
+            }
+
+            // Deep-link override: force wizard mode and step from URL param
+            if (deepLinkWizardStep) {
+                setActiveMode('wizard');
+                setCurrentStep(deepLinkWizardStep);
+                setInitialWizardStep(deepLinkWizardStep);
+                setIsSignatureFlowActive(false);
             }
         }
 
@@ -461,6 +470,15 @@ export function QuoteBuilder({
         setIsSubmitting(false);
         setIsSignatureFlowActive(false);
     }, []);
+
+    // Listen for wizard-reset event from BoutiqueHeader when already on /
+    useEffect(() => {
+        const handleWizardReset = () => {
+            handleGoToModeSelection();
+        };
+        window.addEventListener('wizard-reset', handleWizardReset);
+        return () => window.removeEventListener('wizard-reset', handleWizardReset);
+    }, [handleGoToModeSelection]);
 
 
 
@@ -712,6 +730,7 @@ export function QuoteBuilder({
                 width={activeConfiguredProduct?.width ?? initialSettings.defaultWidth}
                 height={activeConfiguredProduct?.height ?? initialSettings.defaultHeight}
                 screenImageUrl={initialSettings.previewScreenImageUrl}
+                fallbackImageUrl={initialSettings.previewScreenHomeFallbackImageUrl}
             />
         );
 

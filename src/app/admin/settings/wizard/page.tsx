@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, RefreshCw, Image, Sparkles } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, Image, Sparkles, ExternalLink } from 'lucide-react';
 import { getWizardSettings, updateWizardSettings, getSettings, updateSettings } from '@/app/admin/actions';
 import type { WizardSettings, PixelPitchOption, ViewingDistanceOption, Settings as AppSettings } from '@/lib/types';
 import { InputWithUpload } from '../_components/input-with-upload';
@@ -33,8 +33,63 @@ export default function WizardPage() {
     });
   }, []);
 
+  const validateImageUrl = (url: string): boolean => {
+    if (!url) return true;
+    if (/youtube\.com|youtu\.be|vimeo\.com/i.test(url)) {
+      return false;
+    }
+    try {
+      new URL(url);
+    } catch {
+      return false;
+    }
+    return true;
+  };
+
+  const validateFallbackImageUrl = (url: string): boolean => {
+    if (!url) return true;
+    try {
+      new URL(url);
+    } catch {
+      return false;
+    }
+    const path = new URL(url).pathname.toLowerCase();
+    if (!/\.(jpg|jpeg|png|webp|gif|svg|avif)(\?.*)?$/.test(path)) {
+      return false;
+    }
+    return true;
+  };
+
+  const validateVideoUrl = (url: string): boolean => {
+    if (!url) return true;
+    try {
+      new URL(url);
+    } catch {
+      return false;
+    }
+    return true;
+  };
+
   const handleSave = async () => {
     if (!settings || !appSettings) return;
+
+    if (appSettings.previewScreenImageUrl && !validateImageUrl(appSettings.previewScreenImageUrl)) {
+      toast({ title: t('Error'), description: t('Home page image URL is not valid. YouTube/Vimeo URLs are not accepted in this field.'), variant: 'destructive' });
+      return;
+    }
+    if (appSettings.previewScreenVideoUrl && !validateVideoUrl(appSettings.previewScreenVideoUrl)) {
+      toast({ title: t('Error'), description: t('3D simulator video URL is not valid.'), variant: 'destructive' });
+      return;
+    }
+    if (appSettings.previewScreenFallbackImageUrl && !validateFallbackImageUrl(appSettings.previewScreenFallbackImageUrl)) {
+      toast({ title: t('Error'), description: t('3D simulator fallback image URL is not valid.'), variant: 'destructive' });
+      return;
+    }
+    if (appSettings.previewScreenHomeFallbackImageUrl && !validateFallbackImageUrl(appSettings.previewScreenHomeFallbackImageUrl)) {
+      toast({ title: t('Error'), description: t('Home page fallback image URL is not valid.'), variant: 'destructive' });
+      return;
+    }
+
     setIsSaving(true);
     try {
       const [wizardResult, appResult] = await Promise.all([
@@ -140,15 +195,16 @@ export default function WizardPage() {
           </div>
         </CardContent>
       </Card>
-      {/* Application Images */}
+      {/* Home Page Preview */}
       <Card className="rounded-xl border border-slate-200/60 bg-transparent">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold">{t('Application Images')}</CardTitle>
-          <CardDescription>{t('Configure the background screen image and dimensions video.')}</CardDescription>
+          <CardTitle className="text-lg font-bold">{t('Home Page Preview')}</CardTitle>
+          <CardDescription>{t('Configure the home page image or video displayed on the configurator home screen.')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase text-slate-400">{t('Screen Image (URL)')}</Label>
+            <Label className="text-xs font-bold uppercase text-slate-400">{t('Preview URL')}</Label>
+            <p className="text-xs text-slate-500">{t('Accepts image URLs (PNG, JPG) and video URLs (MP4, WebM).')}</p>
             <InputWithUpload
               placeholder="https://..."
               value={appSettings.previewScreenImageUrl || ''}
@@ -156,12 +212,52 @@ export default function WizardPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase text-slate-400">{t('Screen Dimensions (Video URL)')}</Label>
+            <Label className="text-xs font-bold uppercase text-slate-400">{t('Fallback Image URL (Home Page)')}</Label>
+            <p className="text-xs text-slate-500">{t('Image displayed when the video is unavailable or fails to load.')}</p>
+            <InputWithUpload
+              placeholder="https://..."
+              value={appSettings.previewScreenHomeFallbackImageUrl || ''}
+              onChange={(newUrl) => setAppSettings(prev => prev ? { ...prev, previewScreenHomeFallbackImageUrl: newUrl } : null)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 3D Simulator */}
+      <Card className="rounded-xl border border-slate-200/60 bg-transparent">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-bold">{t('3D Simulator')}</CardTitle>
+          <CardDescription>{t('Video and fallback image for the 3D screen simulator.')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase text-slate-400">{t('Video URL')}</Label>
+            <p className="text-xs text-slate-500">{t('Direct video URL (MP4, WebM). YouTube/Vimeo are not supported.')}</p>
             <InputWithUpload
               placeholder="https://..."
               value={appSettings.previewScreenVideoUrl || ''}
               onChange={(newUrl) => setAppSettings(prev => prev ? { ...prev, previewScreenVideoUrl: newUrl } : null)}
             />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase text-slate-400">{t('Fallback Image URL (3D Simulator)')}</Label>
+            <p className="text-xs text-slate-500">{t('Image displayed when the video is unavailable or fails to load.')}</p>
+            <InputWithUpload
+              placeholder="https://..."
+              value={appSettings.previewScreenFallbackImageUrl || ''}
+              onChange={(newUrl) => setAppSettings(prev => prev ? { ...prev, previewScreenFallbackImageUrl: newUrl } : null)}
+            />
+          </div>
+          {/* Simulator Link */}
+          <div className="pt-2">
+            <Button
+              variant="outline"
+              className="w-full justify-between"
+              onClick={() => window.open('/?step=5', '_blank')}
+            >
+              <span>{t('View 3D Simulator')}</span>
+              <ExternalLink className="w-4 h-4" />
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -575,6 +575,7 @@ export default function StepDimensions({
               isDarkMode={isDarkMode}
               setIsDarkMode={setIsDarkMode}
               videoUrl={settings?.previewScreenVideoUrl || settings?.previewScreenImageUrl}
+              fallbackImageUrl={settings?.previewScreenFallbackImageUrl}
               t={t}
               maxDistance={settings?.zoomMaxDistance}
               minDistance={settings?.zoomMinDistance}

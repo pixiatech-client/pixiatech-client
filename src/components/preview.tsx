@@ -8,6 +8,7 @@ interface PreviewProps {
   width: number; // meters
   height: number; // meters
   screenImageUrl?: string;
+  fallbackImageUrl?: string;
   humanScaleImageUrl?: string;
   humanPosition?: "side" | "front";
   noAnimation?: boolean;
@@ -20,6 +21,7 @@ export default function Preview({
   width,
   height,
   screenImageUrl,
+  fallbackImageUrl,
   humanScaleImageUrl,
   humanPosition = "front",
   noAnimation = false,
@@ -65,19 +67,42 @@ export default function Preview({
   );
 
   const isVideo = !!screenImageUrl && /\.(mp4|webm|mov)(\?.*)?$/i.test(screenImageUrl.split("?")[0]);
+  const isYouTube = !!screenImageUrl && /youtube\.com|youtu\.be|vimeo\.com/i.test(screenImageUrl);
+  const [videoFailed, setVideoFailed] = useState(false);
+
+  const effectiveImageUrl = videoFailed && fallbackImageUrl ? fallbackImageUrl : screenImageUrl;
 
   let screenElement: React.ReactNode = null;
-  if (screenImageUrl) {
-    if (isVideo) {
+  if (effectiveImageUrl) {
+    const effectiveIsVideo = !videoFailed && isVideo;
+    const effectiveIsYouTube = !videoFailed && isYouTube;
+
+    if (effectiveIsYouTube) {
+      screenElement = (
+        <div
+          style={{ width: `${screenWidthPx}px`, height: `${screenHeightPx}px` }}
+          className="flex-shrink-0 shadow-lg bg-slate-200 border rounded flex items-center justify-center text-center text-xs text-slate-500 p-4"
+        >
+          {fallbackImageUrl
+            ? t('La vidéo YouTube/Vimeo n\'est pas supportée. L\'image de secours est affichée.')
+            : t('Les URLs YouTube/Vimeo ne sont supportées que dans le simulateur 3D, pas dans les images de prévisualisation.')}
+        </div>
+      );
+    } else if (effectiveIsVideo) {
       screenElement = (
         <div className="relative">
           <video
-            src={screenImageUrl}
+            src={effectiveImageUrl}
             autoPlay
             loop
             muted
             playsInline
             controlsList="nodownload"
+            onError={() => {
+              if (fallbackImageUrl) {
+                setVideoFailed(true);
+              }
+            }}
             style={{ width: `${screenWidthPx}px`, height: `${screenHeightPx}px`, objectFit: "cover" }}
             className="flex-shrink-0 shadow-lg relative overflow-hidden border rounded bg-black pointer-events-none select-none"
           />
@@ -90,7 +115,7 @@ export default function Preview({
           style={{ width: `${screenWidthPx}px`, height: `${screenHeightPx}px`, position: "relative" }}
           className="flex-shrink-0 shadow-lg overflow-hidden border rounded bg-black"
         >
-          <Image src={screenImageUrl} alt={t('common.screenContent')} fill className="object-cover pointer-events-none select-none" draggable={false} />
+          <Image src={effectiveImageUrl} alt={t('common.screenContent')} fill className="object-cover pointer-events-none select-none" draggable={false} />
           <div className="absolute inset-0 z-10" />
         </div>
       );

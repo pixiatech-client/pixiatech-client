@@ -3012,6 +3012,8 @@ const settingsSchema = z.object({
   maxProductsPerQuote: z.coerce.number().min(1, 'Must be at least 1').optional(),
   previewScreenImageUrl: z.string().optional(),
   previewScreenVideoUrl: z.string().optional(),
+  previewScreenFallbackImageUrl: z.string().optional(),
+  previewScreenHomeFallbackImageUrl: z.string().optional(),
   emergencyStopEnabled: z.boolean().optional(),
   emergencyReturnUrl: z.string().optional(),
   emergencyStopMessage: z.string().optional(),
@@ -3089,12 +3091,14 @@ const wizardEnvironmentSettingSchema = z.object({
 const viewingDistanceOptionSchema = z.object({
   id: z.string(),
   value: z.string().min(1, "Value cannot be empty."),
+  imageUrl: z.string().optional(),
   recommended: z.boolean().optional(),
 });
 
 const pixelPitchOptionSchema = z.object({
   id: z.string(),
   value: z.string().min(1, "Value cannot be empty."),
+  imageUrl: z.string().optional(),
   recommended: z.boolean(),
 });
 
@@ -3129,7 +3133,7 @@ export async function getSettings(): Promise<Settings> {
     maxRentalWidth: 6,
     maxRentalHeight: 5,
     maxProductsPerQuote: 3,
-    previewScreenImageUrl: 'https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2Fpreview-screen.mp4?alt=media',
+    previewScreenImageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=90&w=2000',
     emergencyStopEnabled: false,
     emergencyReturnUrl: 'https://mahboubidz.com/',
     emergencyStopMessage: "Pour des raisons de maintenance, notre outil d'estimation en ligne est actuellement suspendu. Veuillez nous excuser pour la gêne occasionnée.",
@@ -3734,7 +3738,7 @@ export async function getSessionUid() {
 
   try {
     const { adminAuth } = getFirebaseAdmin();
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
     return { uid: decoded.uid };
   } catch {
     return { uid: null };
@@ -3751,7 +3755,7 @@ export async function verifySession() {
   }
 
   try {
-    const decoded = await adminAuth.verifySessionCookie(sessionCookie, false);
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
     const uid = decoded.uid;
 
     // Read settings directly from Firestore to bypass the 60s cache in getSettings(),
@@ -3809,9 +3813,10 @@ export async function verifySession() {
     }
 
     return { valid: true, uid };
-  } catch (error) {
-    console.error('[verifySession] Error:', error);
-    return { valid: false, reason: 'error' };
+  } catch (error: any) {
+    const code = error?.code || error?.message || 'unknown_error';
+    console.error('[verifySession] Error:', code);
+    return { valid: false, reason: code };
   }
 }
 

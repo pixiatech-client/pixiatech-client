@@ -63,7 +63,7 @@ export async function getSettings(): Promise<Settings> {
     maxRentalWidth: 6,
     maxRentalHeight: 5,
     maxProductsPerQuote: 3,
-    previewScreenImageUrl: 'https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2Fpreview-screen.mp4?alt=media',
+    previewScreenImageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=90&w=2000',
     emergencyStopEnabled: false,
     emergencyReturnUrl: 'https://mahboubidz.com/',
     emergencyStopMessage: "Pour des raisons de maintenance, notre outil d'estimation en ligne est actuellement suspendu. Veuillez nous excuser pour la gêne occasionnée.",

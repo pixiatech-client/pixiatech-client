@@ -18,6 +18,7 @@ interface Screen3DProps {
   isDarkMode: boolean;
   setIsDarkMode: (val: boolean) => void;
   videoUrl?: string;
+  fallbackImageUrl?: string;
   t: any;
   maxDistance?: number;
   minDistance?: number;
@@ -284,6 +285,7 @@ function Screen({
   curveRight, 
   isDarkMode, 
   videoUrl,
+  fallbackImageUrl,
   setControlsEnabled,
   t
 }: Screen3DProps & { 
@@ -292,7 +294,7 @@ function Screen({
   setControlsEnabled: (val: boolean) => void;
 }) {
   const meshRef = useRef<THREE.Group>(null);
-  const [texture, setTexture] = React.useState<THREE.VideoTexture | null>(null);
+  const [texture, setTexture] = React.useState<THREE.Texture | null>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [hasError, setHasError] = React.useState(false);
 
@@ -300,12 +302,15 @@ function Screen({
     const video = document.createElement('video');
     video.crossOrigin = 'anonymous';
     
+    // YouTube/Vimeo cannot be used as THREE.VideoTexture sources
     const isYouTube = videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'));
-    const resolvedUrl = isYouTube 
-      ? '/youtube-video.mp4' 
-      : (videoUrl || 'https://firebasestorage.googleapis.com/v0/b/pixiatech-client.firebasestorage.app/o/uploads%2F1765799832313_Devis%20Ecran.mp4?alt=media');
+    const isVimeo = videoUrl && videoUrl.includes('vimeo.com');
+    if (isYouTube || isVimeo || !videoUrl) {
+      setHasError(true);
+      return video;
+    }
 
-    video.src = resolvedUrl;
+    video.src = videoUrl;
     video.loop = true;
     video.muted = true;
     video.playsInline = true;
@@ -324,11 +329,8 @@ function Screen({
     video.addEventListener('playing', handleSuccess);
     
     video.play().catch((err) => {
-      console.warn("Retrying with backup source due to:", err.message);
-      if (video.src !== 'https://vjs.zencdn.net/v/oceans.mp4') {
-        video.src = 'https://vjs.zencdn.net/v/oceans.mp4';
-        video.play().catch(() => setHasError(true));
-      }
+      console.warn("Video play failed, using fallback:", err.message);
+      setHasError(true);
     });
 
     return video;
@@ -342,6 +344,21 @@ function Screen({
       v.load();
     };
   }, [startVideo]);
+
+  // Load fallback image when video fails
+  React.useEffect(() => {
+    if (!hasError || !fallbackImageUrl) return;
+    const loader = new THREE.TextureLoader();
+    loader.crossOrigin = 'anonymous';
+    loader.load(
+      fallbackImageUrl,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        setTexture(tex);
+        setIsPlaying(true);
+      }
+    );
+  }, [hasError, fallbackImageUrl]);
 
   const DALLE_SIZE = 0.5;
 

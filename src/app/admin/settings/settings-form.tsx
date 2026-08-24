@@ -49,6 +49,8 @@ const settingsSchema = z.object({
   zoomMinDistance: z.coerce.number().min(0.1, 'Must be at least 0.1').optional(),
   previewScreenImageUrl: z.string().optional(),
   previewScreenVideoUrl: z.string().optional(),
+  previewScreenFallbackImageUrl: z.string().optional(),
+  previewScreenHomeFallbackImageUrl: z.string().optional(),
   emergencyStopEnabled: z.boolean().optional(),
   emergencyReturnUrl: z.string().optional(),
   emergencyStopMessage: z.string().optional(),
@@ -157,7 +159,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
     const sectionFields: Record<string, string[]> = {
       general: ['defaultWidth', 'defaultHeight', 'maxWidth', 'maxHeight', 'maxRentalWidth', 'maxRentalHeight', 'maxProductsPerQuote', 'isEmailVerificationEnabled', 'isPriceHidden', 'isSingleSessionEnabled', 'isWizardBotEnabled', 'isGuidedConfigEnabled', 'estimationFlow'],
       emergency: ['emergencyStopEnabled', 'emergencyReturnUrl', 'emergencyStopMessage'],
-      images: ['previewScreenImageUrl', 'previewScreenVideoUrl'],
+      images: ['previewScreenImageUrl', 'previewScreenVideoUrl', 'previewScreenFallbackImageUrl', 'previewScreenHomeFallbackImageUrl'],
       content: ['congratulationsTitle', 'congratulationsMessage', 'deliveryTitle', 'deliveryMessage', 'installationTitle', 'installationMessage', 'disclaimerMessage', 'quoteFormNotesPlaceholder', 'isDeliveryStepEnabled', 'isInstallationStepEnabled'],
       messaging: ['messaging'],
       software: ['hintBubble', 'lightThemeId', 'darkThemeId'],
@@ -465,15 +467,34 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
         )}
         
         {section === 'images' && (
+            <div className="space-y-6">
             <div className="space-y-4">
-            <h3 className="font-medium">{t('Application Images')}</h3>
-            <div className="space-y-2">
-                <Label>{t('Screen Image (URL)')}</Label>
-                <Controller name="previewScreenImageUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
+                <h3 className="font-medium">{t('Home Page Preview')}</h3>
+                <p className="text-xs text-slate-500">{t('Configure the home page image or video displayed on the configurator home screen.')}</p>
+                <div className="space-y-2">
+                    <Label>{t('Preview URL')}</Label>
+                    <p className="text-xs text-slate-500">{t('Accepts image URLs (PNG, JPG) and video URLs (MP4, WebM).')}</p>
+                    <Controller name="previewScreenImageUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
+                </div>
+                <div className="space-y-2">
+                    <Label>{t('Fallback Image URL (Home Page)')}</Label>
+                    <p className="text-xs text-slate-500">{t('Image displayed when the video is unavailable or fails to load.')}</p>
+                    <Controller name="previewScreenHomeFallbackImageUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
+                </div>
             </div>
-            <div className="space-y-2">
-                <Label>{t('Screen Dimensions (Video URL)')}</Label>
-                <Controller name="previewScreenVideoUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
+            <div className="space-y-4">
+                <h3 className="font-medium">{t('3D Simulator')}</h3>
+                <p className="text-xs text-slate-500">{t('Video and fallback image for the 3D screen simulator.')}</p>
+                <div className="space-y-2">
+                    <Label>{t('Video URL')}</Label>
+                    <p className="text-xs text-slate-500">{t('Direct video URL (MP4, WebM). YouTube/Vimeo are not supported.')}</p>
+                    <Controller name="previewScreenVideoUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
+                </div>
+                <div className="space-y-2">
+                    <Label>{t('Fallback Image URL (3D Simulator)')}</Label>
+                    <p className="text-xs text-slate-500">{t('Image displayed when the video is unavailable or fails to load.')}</p>
+                    <Controller name="previewScreenFallbackImageUrl" control={form.control} render={({ field }) => <InputWithUpload value={field.value} onChange={field.onChange} placeholder="https://..." />} />
+                </div>
             </div>
             </div>
         )}

@@ -168,6 +168,8 @@ export type Settings = {
   maxProductsPerQuote?: number;
   previewScreenImageUrl?: string;
   previewScreenVideoUrl?: string;
+  previewScreenFallbackImageUrl?: string;
+  previewScreenHomeFallbackImageUrl?: string;
   emergencyStopEnabled?: boolean;
   emergencyReturnUrl?: string;
   emergencyStopMessage?: string;

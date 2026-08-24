@@ -93,7 +93,11 @@ export default function LoginPage() {
     if (urlError) {
       setLoginError(decodeURIComponent(urlError));
     }
-  }, [searchParams]);
+    const reason = searchParams.get('reason');
+    if (reason === 'session_expired') {
+      setLoginError(t('Your session has expired. Please log in again.'));
+    }
+  }, [searchParams, t]);
 
   useEffect(() => {
     console.log('[Login] Mounted, auth=', !!auth, 'sessionCookie=', document.cookie.includes('session='));

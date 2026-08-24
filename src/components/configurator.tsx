@@ -746,6 +746,7 @@ export function Configurator({
                 width={activeConfig?.width ?? 4}
                 height={activeConfig?.height ?? 3}
                 screenImageUrl={settings.previewScreenImageUrl}
+                fallbackImageUrl={settings.previewScreenHomeFallbackImageUrl}
             />
         </div>
         

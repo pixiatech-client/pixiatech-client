@@ -132,7 +132,9 @@ export async function middleware(request: NextRequest) {
         }
 
         // Only delete cookies on definitive auth failures ('session_mismatch', 'expired', 'user_not_found')
-        if (data.reason === 'session_mismatch' || data.reason === 'expired' || data.reason === 'user_not_found') {
+        // Also match Firebase error codes: auth/session-cookie-expired, auth/session-cookie-revoked
+        const invalidReasons = ['session_mismatch', 'expired', 'user_not_found', 'auth/session-cookie-expired', 'auth/session-cookie-revoked'];
+        if (invalidReasons.includes(data.reason)) {
           console.log('[Middleware] session invalid (reason=' + data.reason + '), redirecting to login');
           const response = NextResponse.redirect(loginUrl);
           response.cookies.delete('session');

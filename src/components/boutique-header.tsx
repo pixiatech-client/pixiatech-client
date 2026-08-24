@@ -151,7 +151,13 @@ export function BoutiqueHeader() {
             <nav className="flex flex-col flex-1 px-6 pt-8 pb-6 gap-1">
                 <Link
                   href="/"
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={(e) => {
+                    setMobileMenuOpen(false);
+                    if (pathname === '/') {
+                      e.preventDefault();
+                      window.dispatchEvent(new Event('wizard-reset'));
+                    }
+                  }}
                   className={cn(
                     "py-3 text-2xl font-medium transition-colors",
                     pathname === '/'
@@ -219,6 +225,12 @@ export function BoutiqueHeader() {
         <div className="hidden md:flex items-center space-x-8">
           <Link
             href="/"
+            onClick={(e) => {
+              if (pathname === '/') {
+                e.preventDefault();
+                window.dispatchEvent(new Event('wizard-reset'));
+              }
+            }}
             className={cn(
               "font-medium nav-link text-sm",
               pathname === '/' ? 'text-[#007bff]' : 'text-white'

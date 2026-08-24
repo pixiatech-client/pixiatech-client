@@ -9,7 +9,7 @@ import type { Settings, DeliverySettings, LaborSettings, Product, Locations, Wiz
 
 export default async function StepPage({ params, searchParams }: { 
   params: { step?: string[] },
-  searchParams?: { otp?: string; id?: string; token?: string; [key: string]: string | string[] | undefined }
+  searchParams?: { otp?: string; id?: string; token?: string; step?: string; [key: string]: string | string[] | undefined }
 }) {
   const stepName = params.step?.[0];
 
@@ -26,6 +26,10 @@ export default async function StepPage({ params, searchParams }: {
   if (stepName) {
     redirect('/');
   }
+
+  // Deep-link: ?step=N opens wizard directly at step N
+  const wizardStepParam = searchParams?.step;
+  const wizardInitialStep = wizardStepParam ? Math.min(8, Math.max(1, parseInt(wizardStepParam as string, 10) || 1)) : undefined;
 
   const [settings, deliverySettings, laborSettings, productsResult, locations, wizardSettings] = await Promise.all([
     getSettings(),
@@ -51,6 +55,7 @@ export default async function StepPage({ params, searchParams }: {
         allProducts={allProducts}
         locations={locations}
         wizardSettings={wizardSettings}
+        initialWizardStep={wizardInitialStep}
       />
     </div>
   );
