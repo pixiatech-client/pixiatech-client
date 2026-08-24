@@ -442,9 +442,12 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
 
   // Auto-select step 2 (Environment) if only 1 option — no auto-advance, user clicks "Suivant"
   useEffect(() => {
-    if (state.step === 2 && !state.environment && availableEnvIds.size === 1) {
+    if (state.step === 2 && availableEnvIds.size === 1) {
       const onlyEnv = Array.from(availableEnvIds)[0] as Environment;
-      updateState({ environment: onlyEnv });
+      // Auto-select if nothing valid is selected, or if current selection is disabled
+      if (!state.environment || !availableEnvIds.has(state.environment)) {
+        updateState({ environment: onlyEnv });
+      }
     }
   }, [state.step, state.environment, availableEnvIds, updateState]);
 
