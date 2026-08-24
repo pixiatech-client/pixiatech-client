@@ -605,6 +605,28 @@ function Screen({
           <primitive object={ledMaterial} attach="material" />
         </mesh>
 
+        {/* Black finishing surface — opposite face to the video.
+            Extérieur (isConvex_360=true)  : 3mm inside video radius, BackSide  → black visible from inside.
+            Intérieur (isConvex_360=false) : 3mm outside video radius, FrontSide → black visible from outside.
+            MeshBasicMaterial only — no lighting, no shadow acne, no artifacts. */}
+        <mesh position={[0, height / 2, 0]}>
+          <cylinderGeometry
+            args={[
+              isConvex_360 ? screenRadius - 0.003 : screenRadius + 0.003,
+              isConvex_360 ? screenRadius - 0.003 : screenRadius + 0.003,
+              height,
+              modulesX_360 * 8,
+              1,
+              true
+            ]}
+          />
+          <meshBasicMaterial
+            color="#050505"
+            side={isConvex_360 ? THREE.BackSide : THREE.FrontSide}
+          />
+        </mesh>
+
+
         <DimensionLine 
           start={new THREE.Vector3(-R_360, height + 0.5, 0)} 
           end={new THREE.Vector3(R_360, height + 0.5, 0)} 
