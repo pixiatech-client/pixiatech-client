@@ -2662,7 +2662,35 @@ const ProduitPage = ({
   const [upsellOpen, setUpsellOpen] = useState(false);
   const upsellDropdownRef = useRef<HTMLDivElement>(null);
   const [openVariantIdx, setOpenVariantIdx] = useState<number | null>(0);
+  const [variantFind, setVariantFind] = useState('');
+  const [variantReplace, setVariantReplace] = useState('');
   const specItemsPerPage = 6;
+
+  const variantMatchCount = React.useMemo(() => {
+    if (!variantFind.trim()) return 0;
+    const search = variantFind.toLowerCase();
+    return variants.reduce((count, v) => {
+      let n = count;
+      if (v.name?.toLowerCase().includes(search)) n++;
+      if (v.description?.toLowerCase().includes(search)) n++;
+      if (v.reference?.toLowerCase().includes(search)) n++;
+      return n;
+    }, 0);
+  }, [variants, variantFind]);
+
+  const applyVariantReplaceAll = () => {
+    if (!variantFind.trim()) return;
+    const search = variantFind;
+    const replace = variantReplace;
+    setVariants(variants.map(v => ({
+      ...v,
+      name: v.name?.split(search).join(replace) ?? v.name,
+      description: v.description?.split(search).join(replace) ?? v.description,
+      reference: v.reference?.split(search).join(replace) ?? v.reference,
+    })));
+    setVariantFind('');
+    setVariantReplace('');
+  };
 
   // Use wizard settings as the authoritative source for distance/pitch options.
   // This prevents stale data from the characteristics collection options (which may have old seeded values)
@@ -3718,6 +3746,50 @@ const ProduitPage = ({
                     </div>
                   </SortableContext>
                 </DndContext>
+              </div>
+            )}
+
+            {/* Recherche / Remplacement global dans les variantes */}
+            {activeSpace === 'boutique' && variants.length > 1 && (
+              <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3 shadow-none md:shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
+                    <Search className="w-5 h-5 text-slate-400" />
+                  </div>
+                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t('admin.productManagement.findReplaceVariants')}</h4>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      value={variantFind}
+                      onChange={e => setVariantFind(e.target.value)}
+                      placeholder={t('admin.productManagement.findPlaceholder')}
+                      className="w-full h-9 pl-9 pr-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-slate-400"
+                    />
+                  </div>
+                  <div className="relative flex-1">
+                    <input
+                      value={variantReplace}
+                      onChange={e => setVariantReplace(e.target.value)}
+                      placeholder={t('admin.productManagement.replacePlaceholder')}
+                      className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-slate-400"
+                    />
+                  </div>
+                  <button
+                    onClick={applyVariantReplaceAll}
+                    disabled={!variantFind.trim() || variantMatchCount === 0}
+                    className="h-9 px-4 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2 shrink-0"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    {t('admin.productManagement.replaceAll')}
+                  </button>
+                </div>
+                {variantFind.trim() && (
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                    {t('admin.productManagement.nMatches', { n: variantMatchCount })}
+                  </p>
+                )}
               </div>
             )}
 
