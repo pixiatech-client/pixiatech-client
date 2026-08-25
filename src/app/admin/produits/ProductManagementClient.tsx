@@ -2644,7 +2644,14 @@ const ProduitPage = ({
     return list.filter((sc: any) => {
       const charDef = characteristics.find((c: any) => c.id === sc.id);
       if (!charDef) return false;
-      return normalizeSearchText(charDef.name).includes(normalizeSearchText(searchTerm));
+      if (normalizeSearchText(charDef.name).includes(normalizeSearchText(searchTerm))) return true;
+      if (sc.value && normalizeSearchText(sc.value).includes(normalizeSearchText(searchTerm))) return true;
+      const opts: string[] = Array.isArray(charDef.options)
+        ? charDef.options
+        : Array.isArray(charDef.variants)
+          ? charDef.variants.map((v: any) => v.value)
+          : [];
+      return opts.some((opt: string) => normalizeSearchText(opt).includes(normalizeSearchText(searchTerm)));
     });
   }, [selectedChars, searchTerm, characteristics]);
 
@@ -5172,7 +5179,15 @@ export default function ProductManagementClient() {
 
   const availableChars = characteristics.filter(c => !selectedChars.some(sc => sc.id === c.id));
   const filteredAvailableChars = charPanelSearch.trim()
-    ? availableChars.filter(c => normalizeSearchText(c.name).includes(normalizeSearchText(charPanelSearch)))
+    ? availableChars.filter(c => {
+        if (normalizeSearchText(c.name).includes(normalizeSearchText(charPanelSearch))) return true;
+        const opts: string[] = Array.isArray(c.options)
+          ? c.options
+          : Array.isArray(c.variants)
+            ? c.variants.map((v: any) => v.value)
+            : [];
+        return opts.some((opt: string) => normalizeSearchText(opt).includes(normalizeSearchText(charPanelSearch)));
+      })
     : availableChars;
 
   const [mode, setMode] = useState<('vente' | 'location' | 'sur-commande')[]>(['vente']);
