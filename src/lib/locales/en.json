@@ -1077,6 +1077,8 @@
             "deselectAll": "Deselect all",
             "nAvailable": "{n} available",
             "addToSheet": "Add to sheet",
+            "addCharacteristics": "Add characteristics",
+            "selectItemsToAdd": "SELECT ITEMS TO ADD TO THE SHEET",
             "searchCharacteristic": "Search for a characteristic...",
             "apiKeyPlaceholder": "Enter your {provider} key",
             "noMappingConfig": "Please configure the \"Viewing Distance\" and \"Pixel pitch\" characteristics for this product.",

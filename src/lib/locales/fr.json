@@ -1013,6 +1013,8 @@
             "deselectAll": "Tout désélectionner",
             "nAvailable": "{n} disponible(s)",
             "addToSheet": "Ajouter à la fiche",
+            "addCharacteristics": "Ajouter des caractéristiques",
+            "selectItemsToAdd": "SÉLECTIONNEZ LES ÉLÉMENTS À AJOUTER À LA FICHE",
             "searchCharacteristic": "Rechercher une caractéristique...",
             "apiKeyPlaceholder": "Entrez votre clé {provider}",
             "noMappingConfig": "Veuillez configurer les caractéristiques \"Distance de visionnage\" et \"Pitch pixel\" pour ce produit.",

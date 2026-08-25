@@ -6890,8 +6890,8 @@ export default function ProductManagementClient() {
                   {/* Header */}
                   <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
-                      <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Add characteristics</h3>
-                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">SELECT ITEMS TO ADD TO THE SHEET</p>
+                      <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{t('admin.productManagement.addCharacteristics')}</h3>
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">{t('admin.productManagement.selectItemsToAdd')}</p>
                     </div>
                     <button onClick={() => setShowCharPanel(false)} className="p-3 bg-white hover:bg-slate-100 rounded-2xl transition-colors shadow-sm">
                       <X className="w-5 h-5 text-slate-500" />
