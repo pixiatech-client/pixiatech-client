@@ -1262,7 +1262,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                   {/* ── Steps ── */}
                   {step === STEP.DIMENSIONS && !isTyping && renderBotStep(STEP.DIMENSIONS,
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-                      <StepDimensions state={configState} updateState={(u) => setConfigState(prev => ({ ...prev, ...u }))} settings={settings} t={t} isInChat={true} />
+                      <StepDimensions state={configState} updateState={(u) => setConfigState(prev => ({ ...prev, ...u }))} settings={settings} projectType={configState.projectType} t={t} isInChat={true} />
                       <div className="px-6 pb-6">
                         <Button onClick={handleDimensionsSubmit} disabled={!configState.width || !configState.height} className="w-full h-14 font-black rounded-xl bg-black hover:bg-[#B3E140] text-white hover:text-black uppercase tracking-wider text-xs shadow-xl active:scale-95 transition-all">
                           {t('bot.confirmDimensions')} <ArrowRight size={16} className="ml-2" />

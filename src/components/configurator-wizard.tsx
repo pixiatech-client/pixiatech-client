@@ -127,6 +127,49 @@ function HorizontalStepper({ currentStep, onStepClick, isMobile, t }: { currentS
   );
 }
 
+/** Resolve the admin-configured max dimensions for the current screen mode and project type. */
+function resolveMaxDimensions(
+  settings: Settings | undefined,
+  projectType: 'vente' | 'location',
+  isCurved: boolean,
+  is360: boolean,
+): { maxWidth: number; maxHeight: number; maxDiameter: number; curveMin: number; curveMax: number } {
+  const mode = projectType === 'location' ? settings?.estimationFlow?.rental : settings?.estimationFlow?.sale;
+  const fallbackMaxW = settings?.maxWidth ?? 20;
+  const fallbackMaxH = settings?.maxHeight ?? 10;
+
+  if (is360) {
+    return {
+      maxWidth: mode?.screen360?.maxDiameter ?? fallbackMaxW,
+      maxHeight: mode?.screen360?.maxHeight ?? fallbackMaxH,
+      maxDiameter: mode?.screen360?.maxDiameter ?? 10,
+      curveMin: mode?.curvedScreen?.curveMin ?? -30,
+      curveMax: mode?.curvedScreen?.curveMax ?? 30,
+    };
+  }
+  if (isCurved) {
+    return {
+      maxWidth: mode?.curvedScreen?.maxWidth ?? fallbackMaxW,
+      maxHeight: mode?.curvedScreen?.maxHeight ?? fallbackMaxH,
+      maxDiameter: mode?.screen360?.maxDiameter ?? 10,
+      curveMin: mode?.curvedScreen?.curveMin ?? -30,
+      curveMax: mode?.curvedScreen?.curveMax ?? 30,
+    };
+  }
+  return {
+    maxWidth: mode?.flatScreen?.maxWidth ?? fallbackMaxW,
+    maxHeight: mode?.flatScreen?.maxHeight ?? fallbackMaxH,
+    maxDiameter: mode?.screen360?.maxDiameter ?? 10,
+    curveMin: mode?.curvedScreen?.curveMin ?? -30,
+    curveMax: mode?.curvedScreen?.curveMax ?? 30,
+  };
+}
+
+/** Clamp a value to [min, max]. */
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
 export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, wizardSettings, initialStep = 1, initialConfiguredProduct }: ConfiguratorWizardProps) {
   const { t, locale } = useI18n();
   const [state, setState] = useState<ConfigState>(() => {
@@ -143,12 +186,16 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
       const pixelPitch = prod?.pitch || INITIAL_STATE.pixelPitch;
       const viewingDistance = prod?.distance || INITIAL_STATE.viewingDistance;
 
+      const dims = resolveMaxDimensions(settings, projectType, initialConfiguredProduct.isCurved || false, initialConfiguredProduct.is360 || false);
+      const w0 = initialConfiguredProduct.width || INITIAL_STATE.width;
+      const h0 = initialConfiguredProduct.height || INITIAL_STATE.height;
+
       return {
         ...INITIAL_STATE,
         step: initialStep,
         projectType,
-        width: initialConfiguredProduct.width,
-        height: initialConfiguredProduct.height,
+        width: clamp(w0, 0.5, dims.maxWidth),
+        height: clamp(h0, 0.5, dims.maxHeight),
         quantity: initialConfiguredProduct.quantity || 1,
         selectedProduct: initialConfiguredProduct.productId,
         selectedProducts: [initialConfiguredProduct.productId],
@@ -168,9 +215,12 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
         curveRight: initialConfiguredProduct.curveRight || 0,
       };
     }
+    const defaultDims = resolveMaxDimensions(settings, INITIAL_STATE.projectType, INITIAL_STATE.isCurved, INITIAL_STATE.is360);
     return {
       ...INITIAL_STATE,
       step: initialStep,
+      width: clamp(INITIAL_STATE.width, 0.5, defaultDims.maxWidth),
+      height: clamp(INITIAL_STATE.height, 0.5, defaultDims.maxHeight),
       viewingDistance: INITIAL_STATE.viewingDistance,
       pixelPitch: INITIAL_STATE.pixelPitch
     };
@@ -180,6 +230,17 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
   const [isInteracting, setIsInteracting] = useState(false);
   const [direction, setDirection] = useState(0);
   const mainRef = useRef<HTMLElement>(null);
+
+  // Re-clamp dimensions when settings, projectType, or screen mode change
+  useEffect(() => {
+    const { maxWidth, maxHeight } = resolveMaxDimensions(settings, state.projectType, state.isCurved, state.is360);
+    setState(prev => {
+      const clampedW = clamp(prev.width, 0.5, maxWidth);
+      const clampedH = clamp(prev.height, 0.5, maxHeight);
+      if (clampedW === prev.width && clampedH === prev.height) return prev;
+      return { ...prev, width: clampedW, height: clampedH };
+    });
+  }, [settings, state.projectType, state.isCurved, state.is360]);
 
   // Scroll to top on step change
   useEffect(() => {
@@ -604,7 +665,7 @@ function renderStep(state: ConfigState, updateState: (updates: Partial<ConfigSta
     case 2: return <StepEnvironment state={state} updateState={updateState} wizardSettings={wizardSettings} products={products} t={t} />;
     case 3: return <StepViewingDistance state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} products={products} t={t} locale={locale} />;
     case 4: return <StepPixelPitch state={state} updateState={updateState} userProfile={userProfile} wizardSettings={wizardSettings} products={products} t={t} locale={locale} />;
-    case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} t={t} />;
+    case 5: return <StepDimensions state={state} updateState={updateState} settings={settings} setIsInteracting={setIsInteracting} projectType={state.projectType} t={t} />;
     case 6: return state.projectType === 'location' ? <StepRentalDatesAndPhoto state={state} updateState={updateState} products={products} t={t} locale={locale} /> : <StepInstallationPhoto state={state} updateState={updateState} t={t} />;
     case 7: return <StepSummary state={state} t={t} locale={locale} />;
     case 8: return <StepFinal state={state} updateState={updateState} products={products} settings={settings} t={t} locale={locale!} hideBackButton={true} />;

@@ -42,6 +42,7 @@ interface StepDimensionsProps {
   setIsDarkMode?: (val: boolean) => void;
   t: (key: string, params?: any) => string;
   settings?: any;
+  projectType?: 'vente' | 'location';
   isInChat?: boolean;
 }
 
@@ -53,6 +54,7 @@ export default function StepDimensions({
   setIsDarkMode: externalSetIsDarkMode,
   t,
   settings,
+  projectType = 'vente',
   isInChat = false
 }: StepDimensionsProps) {
 
@@ -61,19 +63,20 @@ export default function StepDimensions({
   const isDarkMode = externalIsDarkMode !== undefined ? externalIsDarkMode : localIsDarkMode;
   const setIsDarkMode = externalSetIsDarkMode !== undefined ? externalSetIsDarkMode : setLocalIsDarkMode;
 
+  const mode = projectType === 'location' ? settings?.estimationFlow?.rental : settings?.estimationFlow?.sale;
   const maxWidth = state.is360
-    ? (settings?.estimationFlow?.sale?.screen360?.maxDiameter ?? settings?.maxWidth ?? 20)
+    ? (mode?.screen360?.maxDiameter ?? settings?.maxWidth ?? 20)
     : state.isCurved
-      ? (settings?.estimationFlow?.sale?.curvedScreen?.maxWidth ?? settings?.maxWidth ?? 20)
-      : (settings?.estimationFlow?.sale?.flatScreen?.maxWidth ?? settings?.maxWidth ?? 20);
+      ? (mode?.curvedScreen?.maxWidth ?? settings?.maxWidth ?? 20)
+      : (mode?.flatScreen?.maxWidth ?? settings?.maxWidth ?? 20);
   const maxHeight = state.is360
-    ? (settings?.estimationFlow?.sale?.screen360?.maxHeight ?? settings?.maxHeight ?? 10)
+    ? (mode?.screen360?.maxHeight ?? settings?.maxHeight ?? 10)
     : state.isCurved
-      ? (settings?.estimationFlow?.sale?.curvedScreen?.maxHeight ?? settings?.maxHeight ?? 10)
-      : (settings?.estimationFlow?.sale?.flatScreen?.maxHeight ?? settings?.maxHeight ?? 10);
-  const maxDiameter = settings?.estimationFlow?.sale?.screen360?.maxDiameter ?? 10;
-  const curveMin = settings?.estimationFlow?.sale?.curvedScreen?.curveMin ?? -30;
-  const curveMax = settings?.estimationFlow?.sale?.curvedScreen?.curveMax ?? 30;
+      ? (mode?.curvedScreen?.maxHeight ?? settings?.maxHeight ?? 10)
+      : (mode?.flatScreen?.maxHeight ?? settings?.maxHeight ?? 10);
+  const maxDiameter = mode?.screen360?.maxDiameter ?? 10;
+  const curveMin = mode?.curvedScreen?.curveMin ?? -30;
+  const curveMax = mode?.curvedScreen?.curveMax ?? 30;
 
   // Detect desktop breakpoint (xl = 1280px) to apply fixed height on mobile/tablet
   const [isDesktop, setIsDesktop] = React.useState(false);
@@ -152,7 +155,7 @@ export default function StepDimensions({
               <div className="p-1 bg-slate-900/5 backdrop-blur-md rounded-xl border border-slate-900/10 flex gap-1">
                 <button
                   type="button"
-                  onClick={() => handleUpdateState({ isCurved: false, is360: false, curveLeft: 0, curveRight: 0, width: 12.0, height: 6.5 })}
+                  onClick={() => handleUpdateState({ isCurved: false, is360: false, curveLeft: 0, curveRight: 0, width: Math.min(12.0, maxWidth), height: Math.min(6.5, maxHeight) })}
                   className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all duration-300 font-bold text-[10px] sm:text-xs ${!state.isCurved && !state.is360
                       ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
                       : 'text-slate-400 hover:bg-white/50'
@@ -163,7 +166,7 @@ export default function StepDimensions({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleUpdateState({ isCurved: true, is360: false, width: 12.0, height: 6.5 })}
+                  onClick={() => handleUpdateState({ isCurved: true, is360: false, width: Math.min(12.0, maxWidth), height: Math.min(6.5, maxHeight) })}
                   className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all duration-300 font-bold text-[10px] sm:text-xs ${state.isCurved && !state.is360
                       ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
                       : 'text-slate-400 hover:bg-white/50'
@@ -181,7 +184,7 @@ export default function StepDimensions({
                     handleUpdateState({
                       isCurved: false,
                       is360: true,
-                      height: 2.5,
+                      height: Math.min(2.5, maxHeight),
                       diameter: defaultD,
                       cabinetAngle: -angleStepDeg,
                       curveLeft: 0,

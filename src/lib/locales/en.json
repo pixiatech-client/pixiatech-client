@@ -2006,11 +2006,6 @@
         "installation": "Installation",
         "totalEstimate": "Estimated Total",
         "installationTitle": "Installation",
-    "screen3d": {
-        "width": "WIDTH: {value} M",
-        "height": "HEIGHT: {value} M",
-        "diameter": "DIAMETER: {value} M"
-    },
     "recommended": "Recommended",
         "installationQuestion": "Would you like to include installation by our technicians?",
         "includeInstallation": "Yes, include installation",
@@ -2468,5 +2463,10 @@
         "quantityPlaceholder": "E.g.: 10",
         "priceOnRequest": "Price on request",
         "quoteInfo": "Order processed within 48h max, you will be contacted by email."
+    },
+    "screen3d": {
+        "width": "WIDTH: {value} M",
+        "height": "HEIGHT: {value} M",
+        "diameter": "DIAMETER: {value} M"
     }
 }
