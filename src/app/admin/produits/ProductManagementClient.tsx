@@ -42,6 +42,8 @@ import {
   ref, uploadBytes, getDownloadURL, deleteObject
 } from './firebase';
 import TipTapEditor from '@/components/TipTapEditor';
+import { Switch } from '@/components/ui/switch';
+import { parseProductPdf, type ParsedProductData } from '@/lib/product-pdf-parser';
 
 // --- Variant type ---
 interface ProductVariant {
@@ -2651,8 +2653,15 @@ const ProduitPage = ({
   setDownloadCustomIcon3,
   showIconPicker2,
   setShowIconPicker2,
-  showIconPicker3,
-  setShowIconPicker3
+   showIconPicker3,
+   setShowIconPicker3,
+   pdfImportMode,
+   setPdfImportMode,
+   handlePdfImportToggle,
+   isParsingPdf,
+   pdfParseError,
+   importPdfFile,
+   setImportPdfFile,
 }: any) => {
   const { t } = useI18n();
   const [specPage, setSpecPage] = useState(1);
@@ -2737,7 +2746,7 @@ const ProduitPage = ({
     }
   }, [filteredSpecs.length, specPage]);
 
-  // Fallback: init primaryDistance if still empty and distancePitches has data
+  // Restore primaryDistance if it was previously mapped (editing existing product)
   useEffect(() => {
     if (primaryDistance) return;
     const firstMapped = Object.keys(distancePitches || {}).find(
@@ -2745,9 +2754,8 @@ const ProduitPage = ({
     );
     if (firstMapped && availableDistances.includes(firstMapped)) {
       setPrimaryDistance(firstMapped);
-    } else if (availableDistances.length > 0) {
-      setPrimaryDistance(availableDistances[0]);
     }
+    // Never auto-select: new products stay at "Sélectionner"
   }, [availableDistances, distancePitches, primaryDistance, setPrimaryDistance]);
 
   // Close upsell dropdown on outside click
@@ -3903,6 +3911,16 @@ const ProduitPage = ({
                     <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t('admin.productManagement.productSheet')}</h4>
                   </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                    {pdfImportMode ? 'Import PDF' : 'Mode manuel'}
+                  </span>
+                  <Switch
+                    checked={pdfImportMode}
+                    onCheckedChange={handlePdfImportToggle}
+                    className="data-[state=checked]:bg-[#18181B]"
+                  />
+                </div>
               </div>
 
               {/* Tab buttons */}
@@ -3933,39 +3951,83 @@ const ProduitPage = ({
                     accept={mediaType === 'photo' ? 'image/*' : 'video/*'}
                   />
                   <input type="file" ref={pdfInputRef} onChange={handlePdfChange} className="hidden" accept="application/pdf" />
+
+                  {pdfImportMode && (
+                    <div className="mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl text-center">
+                      <p className="text-[10px] font-bold text-blue-700 uppercase tracking-widest">
+                        Mode import activé — le PDF sera analysé automatiquement
+                      </p>
+                    </div>
+                  )}
+
+                  {isParsingPdf && (
+                    <div className="mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-500 rounded-full animate-spin" />
+                      <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">
+                        Analyse du PDF en cours...
+                      </p>
+                    </div>
+                  )}
+
+                  {pdfParseError && (
+                    <div className="mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded-xl">
+                      <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest text-center">
+                        {pdfParseError}
+                      </p>
+                    </div>
+                  )}
+
                   <div onClick={triggerPdfUpload} className={cn(
                     "border-2 border-dashed rounded-[2rem] p-6 md:p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group",
-                    (pdfUrl || uploadedPdf)
+                    (pdfImportMode ? importPdfFile : (pdfUrl || uploadedPdf))
                       ? "border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50"
                       : "border-slate-200 hover:bg-slate-50"
                   )}>
                     <div className={cn(
                       "w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors",
-                      (pdfUrl || uploadedPdf) ? "bg-emerald-100" : "bg-slate-50 group-hover:bg-blue-50"
+                      (pdfImportMode ? importPdfFile : (pdfUrl || uploadedPdf)) ? "bg-emerald-100" : "bg-slate-50 group-hover:bg-blue-50"
                     )}>
-                      {(pdfUrl || uploadedPdf) ? (
+                      {(pdfImportMode ? importPdfFile : (pdfUrl || uploadedPdf)) ? (
                         <Check className="w-8 h-8 text-emerald-600" />
                       ) : (
                         <Plus className="w-8 h-8 text-slate-300 group-hover:text-blue-500" />
                       )}
                     </div>
                     <span className="text-xs font-black text-slate-900 uppercase tracking-widest mb-1">
-                      {(pdfUrl || uploadedPdf) ? t('admin.productManagement.techSheetAdded') : t('admin.productManagement.addProductSheet')}
+                      {pdfImportMode
+                        ? (importPdfFile ? 'PDF import sélectionné' : 'Sélectionner le PDF à importer')
+                        : ((pdfUrl || uploadedPdf) ? t('admin.productManagement.techSheetAdded') : t('admin.productManagement.addProductSheet'))
+                      }
                     </span>
                     <span className="text-[9px] text-slate-400 uppercase tracking-widest">
-                      {(pdfUrl || uploadedPdf) ? (uploadedPdf ? uploadedPdf.name : t('admin.productManagement.fileSaved')) : t('admin.productManagement.officialTechSheet')}
+                      {pdfImportMode
+                        ? (importPdfFile ? `${importPdfFile.name} — Analyse terminée` : 'Le PDF sera analysé et le formulaire prérempli')
+                        : ((pdfUrl || uploadedPdf) ? (uploadedPdf ? uploadedPdf.name : t('admin.productManagement.fileSaved')) : t('admin.productManagement.officialTechSheet'))
+                      }
                     </span>
 
-                    {(pdfUrl || uploadedPdf) && (
+                    {(pdfImportMode ? importPdfFile : (pdfUrl || uploadedPdf)) && (
                       <div className="flex gap-2 mt-4" onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => window.open(uploadedPdf ? URL.createObjectURL(uploadedPdf) : pdfUrl, '_blank')}
+                          onClick={() => window.open(
+                            pdfImportMode
+                              ? (importPdfFile ? URL.createObjectURL(importPdfFile) : '')
+                              : (uploadedPdf ? URL.createObjectURL(uploadedPdf) : pdfUrl),
+                            '_blank'
+                          )}
                           className="px-3 py-1.5 bg-white border border-emerald-200 text-emerald-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-600 hover:text-white transition-all"
                         >
                           {t('admin.productManagement.viewPdf')}
                         </button>
                         <button
-                          onClick={() => { setPdfUrl(''); setUploadedPdf(null); }}
+                          onClick={() => {
+                            if (pdfImportMode) {
+                              setImportPdfFile(null);
+                            } else {
+                              setPdfUrl('');
+                              setUploadedPdf(null);
+                            }
+                          }}
                           className="px-3 py-1.5 bg-white border border-red-200 text-red-600 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all"
                         >
                           {t('admin.productManagement.delete')}
@@ -5760,11 +5822,17 @@ export default function ProductManagementClient() {
     setAiSettings(newSettings);
   };
 
-  // PDF State
+  // PDF State — Technical Sheet (mode OFF)
+  const [pdfImportMode, setPdfImportMode] = useState(false);
   const [uploadedPdf, setUploadedPdf] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string>('');
   const [pdfError, setPdfError] = useState<string>('');
   const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  // PDF State — Import mode (mode ON) — separate from technical sheet
+  const [importPdfFile, setImportPdfFile] = useState<File | null>(null);
+  const [isParsingPdf, setIsParsingPdf] = useState(false);
+  const [pdfParseError, setPdfParseError] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [aiSuggestion, setAiSuggestion] = useState<{ name: string, variants: string[] } | null>(null);
@@ -5969,20 +6037,130 @@ export default function ProductManagementClient() {
     galleryFileInputRef.current?.click();
   };
 
-  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const applyParsedData = (data: ParsedProductData) => {
+    // Product name
+    if (data.productName) setProductName(data.productName);
+
+    // Sale mode
+    if (data.saleMode) {
+      setMode([data.saleMode]);
+    }
+
+    // Badge
+    if (data.badge) {
+      setBadges([data.badge]);
+    }
+
+    // Environment
+    if (data.environment && data.environment.length > 0) {
+      setEnvironment(data.environment);
+    }
+
+    // Short description
+    if (data.shortDescription) {
+      setDescription(data.shortDescription);
+    }
+
+    // Detailed description
+    if (data.detailedDescription) {
+      setDescriptionDetaillee(data.detailedDescription);
+    }
+
+    // Variants — map ParsedVariant to ProductVariant
+    if (data.variants && data.variants.length > 0) {
+      const mappedVariants: ProductVariant[] = data.variants.map((v, i) => ({
+        name: v.name,
+        description: v.description || '',
+        price: 0,
+        reference: v.reference || '',
+        image: '',
+        order: i,
+        active: true,
+      }));
+      setVariants(mappedVariants);
+    }
+
+    // Technical specifications → selectedChars
+    // Match existing characteristics by name, add unmatched as new
+    if (data.technicalSpecifications) {
+      const specs = data.technicalSpecifications;
+      const newChars: any[] = [];
+      Object.keys(specs).forEach((key) => {
+        const existing = characteristics.find(
+          (c) => normalizeSearchText(c.name) === normalizeSearchText(key)
+        );
+        if (existing) {
+          setSelectedChars((prev) => {
+            const filtered = prev.filter((c) => c.id !== existing.id);
+            return [...filtered, { id: existing.id, value: specs[key] }];
+          });
+        } else {
+          const newChar = {
+            id: `char-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            name: key.toUpperCase(),
+            iconName: 'spec',
+            variants: [{ id: 1, value: specs[key] }],
+            options: [specs[key]],
+            color: 'text-slate-400',
+            locked: false,
+            uid: user?.uid || '',
+          };
+          newChars.push(newChar);
+        }
+      });
+      if (newChars.length > 0) {
+        setCharacteristics((prev) => [...prev, ...newChars]);
+        setSelectedChars((prev) => [
+          ...prev,
+          ...newChars.map((c: any) => ({ id: c.id, value: c.variants[0].value })),
+        ]);
+      }
+    }
+  };
+
+  const handlePdfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.size > aiSettings.pdfMaxSize * 1024 * 1024) {
         setPdfError(`File exceeds the ${aiSettings.pdfMaxSize} MB limit.`);
-        setUploadedPdf(null);
+        return;
       } else if (file.type !== 'application/pdf') {
         setPdfError('Please select a PDF file.');
-        setUploadedPdf(null);
+        return;
+      }
+
+      setPdfError('');
+
+      if (pdfImportMode) {
+        // IMPORT MODE: file is used for parsing only — NOT saved as fiche technique
+        setImportPdfFile(file);
+        setPdfParseError('');
+        setIsParsingPdf(true);
+        try {
+          const parsed = await parseProductPdf(file);
+          applyParsedData(parsed);
+        } catch (err) {
+          console.error('PDF parse error:', err);
+          setPdfParseError(err instanceof Error ? err.message : 'Erreur lors de l\'analyse du PDF.');
+        } finally {
+          setIsParsingPdf(false);
+        }
       } else {
+        // NORMAL MODE: file is the technical sheet (fiche technique)
         setUploadedPdf(file);
-        setPdfError('');
       }
     }
+  };
+
+  const handlePdfImportToggle = (on: boolean) => {
+    setPdfImportMode(on);
+    if (!on) {
+      // Switching OFF: clear import-only state
+      setImportPdfFile(null);
+      setIsParsingPdf(false);
+      setPdfParseError('');
+    }
+    // Never touch uploadedPdf/pdfUrl — the technical sheet is independent
   };
 
   const triggerPdfUpload = () => {
@@ -6896,8 +7074,15 @@ export default function ProductManagementClient() {
                      setDownloadCustomIcon3={setDownloadCustomIcon3}
                      showIconPicker2={showIconPicker2}
                      setShowIconPicker2={setShowIconPicker2}
-                     showIconPicker3={showIconPicker3}
-                     setShowIconPicker3={setShowIconPicker3}
+                      showIconPicker3={showIconPicker3}
+                      setShowIconPicker3={setShowIconPicker3}
+                      pdfImportMode={pdfImportMode}
+                      setPdfImportMode={setPdfImportMode}
+                      handlePdfImportToggle={handlePdfImportToggle}
+                      isParsingPdf={isParsingPdf}
+                      pdfParseError={pdfParseError}
+                      importPdfFile={importPdfFile}
+                      setImportPdfFile={setImportPdfFile}
                     />
               </motion.div>
             )}
