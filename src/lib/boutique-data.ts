@@ -124,7 +124,7 @@ import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
 async function fetchCharacteristicsMap(): Promise<Record<string, string>> {
   try {
-    const snap = await getDocs(collection(firestore, 'boutique_characteristics'));
+    const snap = await getDocs(collection(firestore, 'characteristics'));
     const map: Record<string, string> = {};
     snap.forEach((d) => {
       const name = d.data().name;

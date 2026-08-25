@@ -4757,7 +4757,8 @@ export default function ProductManagementClient() {
   const [wizardSettings, setWizardSettings] = useState<{ viewingDistances: string[], pixelPitches: string[] }>({ viewingDistances: [], pixelPitches: [] });
   const [activeSpace, setActiveSpace] = useState<'boutique' | 'configuration'>('configuration');
   const prodCol = useMemo(() => activeSpace === 'boutique' ? 'boutique_products' : 'products', [activeSpace]);
-  const charCol = useMemo(() => activeSpace === 'boutique' ? 'boutique_characteristics' : 'characteristics', [activeSpace]);
+  // Source unique partagée : les deux espaces utilisent la même liste de caractéristiques
+  const charCol = 'characteristics';
 
   const handleFirestoreError = (error: any, action: string, collection: string) => {
     console.error(`Firestore error ${action} ${collection}:`, error);
@@ -4909,30 +4910,50 @@ export default function ProductManagementClient() {
     })();
   }, [user, activeSpace, hasDuplicatedBoutique]);
 
-  // Sync characteristics to boutique_characteristics when switching to boutique
-  const [hasSyncedBoutiqueChars, setHasSyncedBoutiqueChars] = useState(false);
+  // Fusion unique des caractéristiques : rapatrie dans `characteristics` les
+  // caractéristiques présentes uniquement dans `boutique_characteristics`
+  // (IDs préservés pour que les références selectedChars restent valides).
+  // Idempotent : ne fait rien si tout est déjà fusionné.
   useEffect(() => {
-    if (!user || activeSpace !== 'boutique' || hasSyncedBoutiqueChars) return;
+    if (!user) return;
     (async () => {
       try {
-        const boutiqueCharsSnap = await getDocs(collection(db, 'boutique_characteristics'));
-        const configCharsSnap = await getDocs(collection(db, 'characteristics'));
-        const boutiqueNames = new Set(boutiqueCharsSnap.docs.map(d => d.data().name));
-        for (const d of configCharsSnap.docs) {
-          const data = d.data();
-          if (!boutiqueNames.has(data.name)) {
-            await setDoc(doc(db, 'boutique_characteristics', d.id), {
+        const [boutiqueSnap, configSnap] = await Promise.all([
+          getDocs(collection(db, 'boutique_characteristics')),
+          getDocs(collection(db, 'characteristics')),
+        ]);
+        const configByName = new Map<string, any>();
+        configSnap.forEach(d => { const n = d.data().name; if (n) configByName.set(n, d); });
+        const configById = new Set(configSnap.docs.map(d => d.id));
+
+        for (const b of boutiqueSnap.docs) {
+          const data = b.data();
+          if (!data.name) continue;
+          const existing = configByName.get(data.name);
+          if (!existing) {
+            // Caractéristique exclusive à la Boutique → copie avec son ID d'origine
+            await setDoc(doc(db, 'characteristics', b.id), {
               ...data,
               uid: user?.uid || 'system',
             });
+            configByName.set(data.name, b);
+          } else if (!configById.has(b.id)) {
+            // Doublon par nom avec ID différent → union des options dans le doc existant
+            const ex = existing.data();
+            const exOpts: string[] = Array.isArray(ex.options) ? ex.options : (ex.variants || []).map((v: any) => v.value);
+            const bOpts: string[] = Array.isArray(data.options) ? data.options : (data.variants || []).map((v: any) => v.value);
+            const merged = Array.from(new Set([...exOpts, ...bOpts]));
+            const changed = merged.length !== exOpts.length;
+            if (changed) {
+              await setDoc(doc(db, 'characteristics', existing.id), { options: merged }, { merge: true });
+            }
           }
         }
       } catch (e) {
-        console.error('Boutique characteristics sync error:', e);
+        console.error('Characteristics merge error:', e);
       }
-      setHasSyncedBoutiqueChars(true);
     })();
-  }, [user, activeSpace, hasSyncedBoutiqueChars]);
+  }, [user]);
 
   const [selectedChars, setSelectedChars] = useState<any[]>([]);
   const [showCharPanel, setShowCharPanel] = useState(false);
