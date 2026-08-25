@@ -17,7 +17,7 @@ import {
   Download, File, Folder, Music, Printer, Bluetooth, Wifi, Tablet, Laptop, Mouse, Keyboard,
   Headphones, Speaker, Mic, Heart, Home, Clock, MapPin, HelpCircle, CheckCircle, XCircle,
   Share2, Edit, MessageSquare, Bell, Gift, CreditCard, Award, BookOpen,
-  Menu, Send, Navigation, ZoomIn, ZoomOut, Minus as MinusIcon
+  Menu, Send, Navigation, ZoomIn, ZoomOut, Minus as MinusIcon, Unlink
 } from 'lucide-react';
 import { cn, normalizeSearchText } from '@/lib/utils';
 import {
@@ -2237,6 +2237,7 @@ interface DistancePitchSelectorProps {
   setDistancePitches: (val: Record<string, string[]>) => void;
   selectedDistance: string;
   setSelectedDistance: (val: string) => void;
+  showToggle?: boolean;
 }
 
 function DistancePitchSelector({
@@ -2246,9 +2247,11 @@ function DistancePitchSelector({
   setDistancePitches,
   selectedDistance,
   setSelectedDistance,
+  showToggle = false,
 }: DistancePitchSelectorProps) {
   const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
+  const [autoMap, setAutoMap] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Handle outside click to close the dropdown
@@ -2266,8 +2269,23 @@ function DistancePitchSelector({
 
   const currentPitches = selectedDistance ? (distancePitches[selectedDistance] || []) : [];
 
+  // Auto-map: when autoMap is ON and distance changes, select the pitch at the same index
+  useEffect(() => {
+    if (!autoMap || !selectedDistance) return;
+    const distIdx = availableDistances.indexOf(selectedDistance);
+    if (distIdx >= 0 && distIdx < availablePitches.length) {
+      const pitch = availablePitches[distIdx];
+      const current = distancePitches[selectedDistance] || [];
+      if (current.length !== 1 || current[0] !== pitch) {
+        setDistancePitches({ ...distancePitches, [selectedDistance]: [pitch] });
+      }
+    }
+  }, [autoMap, selectedDistance]);
+
   const togglePitch = (pitch: string) => {
     if (!selectedDistance) return;
+    // If autoMap is ON, turn it off when user manually toggles
+    if (autoMap) setAutoMap(false);
     const current = distancePitches[selectedDistance] || [];
     const updated = current.includes(pitch)
       ? current.filter((p) => p !== pitch)
@@ -2298,6 +2316,30 @@ function DistancePitchSelector({
       <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1 block mb-3">
         {t('admin.productManagement.distancePixelMapping')}
       </span>
+
+      {showToggle && (
+        <div className="flex items-center gap-3 px-1 mb-3">
+          <button
+            type="button"
+            onClick={() => setAutoMap(!autoMap)}
+            className={cn(
+              "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+              autoMap ? "bg-blue-500" : "bg-slate-600"
+            )}
+          >
+            <span className={cn(
+              "pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out",
+              autoMap ? "translate-x-4" : "translate-x-0"
+            )} />
+          </button>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            {autoMap ? t('admin.productManagement.autoMapOn') : t('admin.productManagement.autoMapOff')}
+          </span>
+          {autoMap && <Unlink className="w-3 h-3 text-blue-400" />}
+        </div>
+      )}
+
+      {(showToggle ? autoMap : true) && (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Card 1: Distance de visionnage */}
         <div className="bg-[#0f172a] text-white rounded-2xl p-4 flex flex-col justify-between shadow-xl relative border border-slate-800">
@@ -2458,6 +2500,7 @@ function DistancePitchSelector({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
@@ -2886,6 +2929,7 @@ const ProduitPage = ({
               setDistancePitches={setDistancePitches}
               selectedDistance={primaryDistance}
               setSelectedDistance={setPrimaryDistance}
+              showToggle={activeSpace === 'boutique'}
             />
 
             {/* Technical Specs Grid */}
@@ -3178,10 +3222,10 @@ const ProduitPage = ({
                       {(downloadIcon3 || downloadCustomIcon3) && (
                         <button onClick={() => { setDownloadIcon3(''); setDownloadCustomIcon3(''); }} className="text-[10px] text-red-500 hover:text-red-700 font-semibold">Retirer</button>
                       )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+          </div>
+        </div>
+      </div>
+    </div>
             )}
 
             {/* Icon picker modal for Bouton A */}

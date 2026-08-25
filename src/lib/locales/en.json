@@ -1045,6 +1045,8 @@
             "variantPlaceholder": "E.g.: 2 meters, 4 meters...",
             "addImageIcon": "Add an image/icon",
             "distancePixelMapping": "Distance → Pixel Pitch Mapping",
+            "autoMapOn": "Sync ON — select a distance to auto-select the pitch",
+            "autoMapOff": "Sync OFF — grids are independent",
             "allTypes": "All types",
             "filterByType": "Filter by type",
             "sortBy": "Sort by",

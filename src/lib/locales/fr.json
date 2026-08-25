@@ -981,6 +981,8 @@
             "variantPlaceholder": "Ex : 2 mètres, 4 mètres...",
             "addImageIcon": "Ajouter une image/icône",
             "distancePixelMapping": "Mapping Distance de visionnage → Pitch pixel",
+            "autoMapOn": "Synchronisation ON — sélectionnez une distance pour auto-sélectionner le pitch",
+            "autoMapOff": "Synchronisation OFF — grilles indépendantes",
             "allTypes": "Tous les types",
             "filterByType": "Filtrer par type",
             "sortBy": "Trier par",
