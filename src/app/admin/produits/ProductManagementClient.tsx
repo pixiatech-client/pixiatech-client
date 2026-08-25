@@ -3758,7 +3758,7 @@ const ProduitPage = ({
                   </div>
                   <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t('admin.productManagement.findReplaceVariants')}</h4>
                 </div>
-                <div className="flex flex-col gap-2 max-w-lg">
+                <div className="flex flex-col gap-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">{t('admin.productManagement.findPlaceholder')}</label>
                   <div className="relative">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -3766,30 +3766,36 @@ const ProduitPage = ({
                       value={variantFind}
                       onChange={e => setVariantFind(e.target.value)}
                       placeholder={t('admin.productManagement.findPlaceholder')}
-                      className="w-full h-9 pl-9 pr-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-slate-400"
+                      className="w-full h-9 pl-9 pr-9 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-slate-400"
                     />
+                    {variantFind && (
+                      <button onClick={() => setVariantFind('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => { setVariantFind(variantReplace); setVariantReplace(variantFind); }}
-                    className="self-center w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600"
-                    title={t('admin.productManagement.swapValues')}
-                  >
-                    <ChevronsUpDown className="w-4 h-4" />
-                  </button>
 
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">{t('admin.productManagement.replacePlaceholder')}</label>
-                  <div className="relative">
-                    <input
-                      value={variantReplace}
-                      onChange={e => setVariantReplace(e.target.value)}
-                      placeholder={t('admin.productManagement.replacePlaceholder')}
-                      className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-slate-400"
-                    />
+                  <div className="flex gap-2 items-stretch">
+                    <div className="relative flex-1 min-w-0">
+                      <input
+                        value={variantReplace}
+                        onChange={e => setVariantReplace(e.target.value)}
+                        placeholder={t('admin.productManagement.replacePlaceholder')}
+                        className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-slate-400"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setVariantFind(variantReplace); setVariantReplace(variantFind); }}
+                      className="h-9 px-3 flex items-center gap-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-lg text-[10px] font-bold text-slate-500 hover:text-slate-700 transition-colors shrink-0"
+                    >
+                      <ChevronsUpDown className="w-3.5 h-3.5" />
+                      {t('admin.productManagement.swapButtonLabel')}
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-3 max-w-lg">
+                <div className="flex items-center justify-between gap-3">
                   <button
                     onClick={applyVariantReplaceAll}
                     disabled={!variantFind.trim() || variantMatchCount === 0}
