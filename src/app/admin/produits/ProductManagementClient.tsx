@@ -3758,8 +3758,9 @@ const ProduitPage = ({
                   </div>
                   <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t('admin.productManagement.findReplaceVariants')}</h4>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="relative flex-1">
+                <div className="flex flex-col gap-2 max-w-lg">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">{t('admin.productManagement.findPlaceholder')}</label>
+                  <div className="relative">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       value={variantFind}
@@ -3768,7 +3769,18 @@ const ProduitPage = ({
                       className="w-full h-9 pl-9 pr-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-slate-400"
                     />
                   </div>
-                  <div className="relative flex-1">
+
+                  <button
+                    type="button"
+                    onClick={() => { setVariantFind(variantReplace); setVariantReplace(variantFind); }}
+                    className="self-center w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors text-slate-400 hover:text-slate-600"
+                    title={t('admin.productManagement.swapValues')}
+                  >
+                    <ChevronsUpDown className="w-4 h-4" />
+                  </button>
+
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">{t('admin.productManagement.replacePlaceholder')}</label>
+                  <div className="relative">
                     <input
                       value={variantReplace}
                       onChange={e => setVariantReplace(e.target.value)}
@@ -3776,6 +3788,8 @@ const ProduitPage = ({
                       className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-slate-400"
                     />
                   </div>
+                </div>
+                <div className="flex items-center justify-between gap-3 max-w-lg">
                   <button
                     onClick={applyVariantReplaceAll}
                     disabled={!variantFind.trim() || variantMatchCount === 0}
@@ -3784,12 +3798,13 @@ const ProduitPage = ({
                     <RefreshCw className="w-3.5 h-3.5" />
                     {t('admin.productManagement.replaceAll')}
                   </button>
+                  {variantFind.trim() && variantMatchCount > 0 && (
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold text-blue-500 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 shrink-0">
+                      <Info className="w-3 h-3" />
+                      {t('admin.productManagement.nMatches', { n: variantMatchCount })}
+                    </span>
+                  )}
                 </div>
-                {variantFind.trim() && (
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">
-                    {t('admin.productManagement.nMatches', { n: variantMatchCount })}
-                  </p>
-                )}
               </div>
             )}
 

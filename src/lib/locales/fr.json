@@ -1020,6 +1020,7 @@
             "replacePlaceholder": "Remplacer par...",
             "replaceAll": "Remplacer tout",
             "nMatches": "{n} correspondance(s) trouvée(s)",
+            "swapValues": "Inverser les deux valeurs",
             "searchCharacteristic": "Rechercher une caractéristique...",
             "apiKeyPlaceholder": "Entrez votre clé {provider}",
             "noMappingConfig": "Veuillez configurer les caractéristiques \"Distance de visionnage\" et \"Pitch pixel\" pour ce produit.",

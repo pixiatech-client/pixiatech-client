@@ -1083,6 +1083,7 @@
             "replacePlaceholder": "Replace with...",
             "replaceAll": "Replace all",
             "nMatches": "{n} match(es) found",
+            "swapValues": "Swap both values",
             "apiKeyPlaceholder": "Enter your {provider} key",
             "noMappingConfig": "Please configure the \"Viewing Distance\" and \"Pixel pitch\" characteristics for this product.",
             "selectLabel": "Select...",
