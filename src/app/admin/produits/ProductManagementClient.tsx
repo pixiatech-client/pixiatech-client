@@ -1648,6 +1648,117 @@ const CaracteristiquesPage = ({
     setEditingId(null);
   };
 
+  // --- Deduplication des caractéristiques ---
+  const [isDeduping, setIsDeduping] = useState(false);
+
+  const handleDeduplicate = async () => {
+    if (!user) return;
+    setIsDeduping(true);
+
+    try {
+      // Re-read characteristics fresh from Firestore (real-time state may be stale)
+      const charsSnap = await getDocs(collection(db, collectionName));
+      const allChars = charsSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+
+      // Group by normalized name (case-insensitive, accent-insensitive)
+      const groups = new Map<string, any[]>();
+      for (const c of allChars) {
+        if (!c.name) continue;
+        const normalized = normalizeSearchText(c.name);
+        if (!groups.has(normalized)) groups.set(normalized, []);
+        groups.get(normalized)!.push(c);
+      }
+
+      let removedCount = 0;
+
+      for (const [normalized, entries] of groups) {
+        if (entries.length <= 1) continue;
+
+        // Pick canonical entry: prefer locked, then pinned, then most options, then oldest ID
+        entries.sort((a, b) => {
+          if (a.locked && !b.locked) return -1;
+          if (!a.locked && b.locked) return 1;
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          const aOpts = Array.isArray(a.options) ? a.options.length : (a.variants || []).length;
+          const bOpts = Array.isArray(b.options) ? b.options.length : (b.variants || []).length;
+          if (bOpts !== aOpts) return bOpts - aOpts;
+          return a.id.localeCompare(b.id);
+        });
+
+        const canonical = entries[0];
+        const duplicates = entries.slice(1);
+
+        // Merge all options/variants from duplicates into canonical
+        const canonicalOpts: string[] = Array.isArray(canonical.options) ? canonical.options : (canonical.variants || []).map((v: any) => v.value);
+        const canonicalVariants: any[] = Array.isArray(canonical.variants) ? canonical.variants : canonicalOpts.map((v: string, i: number) => ({ id: String(i), value: v }));
+
+        let mergedOpts = [...canonicalOpts];
+        let mergedVariants = [...canonicalVariants];
+
+        for (const dup of duplicates) {
+          const dupOpts: string[] = Array.isArray(dup.options) ? dup.options : (dup.variants || []).map((v: any) => v.value);
+          for (const opt of dupOpts) {
+            if (!mergedOpts.some(o => normalizeSearchText(o) === normalizeSearchText(opt))) {
+              mergedOpts.push(opt);
+              mergedVariants.push({ id: String(Date.now() + Math.random()), value: opt });
+            }
+          }
+        }
+
+        // Update canonical with merged options
+        const mergedData: any = { options: mergedOpts, variants: mergedVariants };
+        // Also merge customIcon if canonical doesn't have one
+        if (!canonical.customIcon) {
+          const iconSource = duplicates.find(d => d.customIcon);
+          if (iconSource) mergedData.customIcon = iconSource.customIcon;
+        }
+        await updateDoc(doc(db, collectionName, canonical.id), mergedData);
+
+        // Update all product references from duplicate IDs to canonical ID
+        const productCollections = ['products', 'boutique_products'];
+        for (const prodCol of productCollections) {
+          const prodSnap = await getDocs(collection(db, prodCol));
+          for (const prodDoc of prodSnap.docs) {
+            const prodData = prodDoc.data();
+            if (!Array.isArray(prodData.selectedChars)) continue;
+
+            let changed = false;
+            const updatedChars = prodData.selectedChars.map((sc: any) => {
+              const isDup = duplicates.some(d => String(d.id) === String(sc.id));
+              if (isDup) {
+                changed = true;
+                return { ...sc, id: canonical.id };
+              }
+              return sc;
+            });
+
+            if (changed) {
+              await updateDoc(doc(db, prodCol, prodDoc.id), { selectedChars: updatedChars });
+            }
+          }
+        }
+
+        // Delete duplicate entries
+        for (const dup of duplicates) {
+          await deleteDoc(doc(db, collectionName, dup.id));
+          removedCount++;
+        }
+      }
+
+      if (removedCount === 0) {
+        toast({ title: t('admin.productManagement.dedupNoDuplicates'), description: t('admin.productManagement.dedupNoDuplicatesDesc'), variant: "success" });
+      } else {
+        toast({ title: t('admin.productManagement.dedupFound', { count: removedCount }), description: '', variant: "success" });
+      }
+    } catch (error) {
+      console.error('Deduplication error:', error);
+      toast({ title: 'Erreur', description: String(error), variant: 'destructive' });
+    } finally {
+      setIsDeduping(false);
+    }
+  };
+
   return (
     <div className="w-full pb-32 md:pb-0">
       <div className="bg-transparent md:bg-theme-card md:border md:border-theme-card-border md:rounded-[3rem] p-0 md:p-10 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
@@ -1727,6 +1838,14 @@ const CaracteristiquesPage = ({
                 <Tag className="w-4 h-4 text-slate-500" /> {t('admin.productManagement.availableCharacteristics')} ({filteredCharacteristics.length})
               </h3>
               <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDeduplicate}
+                  disabled={isDeduping}
+                  className="w-10 h-10 flex items-center justify-center bg-amber-50 text-amber-600 rounded-full hover:bg-[#131E3F] hover:text-white transition-all shadow-sm group disabled:opacity-50"
+                  title={t('admin.productManagement.dedupCharacteristics')}
+                >
+                  {isDeduping ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5 transition-colors group-hover:text-[#a3e635]" />}
+                </button>
                 <button
                   onClick={async () => {
                     setIsSaving(true);
@@ -4832,7 +4951,7 @@ export default function ProductManagementClient() {
 
       // Auto-seeding core characteristics if missing
       const coreNames = ['Pixel pitch', 'Distance de visionnage', 'Puissance maximale'];
-      const missingNames = coreNames.filter(name => !chars.some((c: any) => c.name === name));
+      const missingNames = coreNames.filter(name => !chars.some((c: any) => normalizeSearchText(c.name) === normalizeSearchText(name)));
 
       if (missingNames.length > 0) {
         // Use a static flag to prevent multiple seeding calls in the same session
@@ -4914,6 +5033,7 @@ export default function ProductManagementClient() {
   // caractéristiques présentes uniquement dans `boutique_characteristics`
   // (IDs préservés pour que les références selectedChars restent valides).
   // Idempotent : ne fait rien si tout est déjà fusionné.
+  // 2026-08: Amélioré pour gérer les doublons par nom normalisé (insensible à la casse).
   useEffect(() => {
     if (!user) return;
     (async () => {
@@ -4922,21 +5042,24 @@ export default function ProductManagementClient() {
           getDocs(collection(db, 'boutique_characteristics')),
           getDocs(collection(db, 'characteristics')),
         ]);
-        const configByName = new Map<string, any>();
-        configSnap.forEach(d => { const n = d.data().name; if (n) configByName.set(n, d); });
+
+        // Index by normalized name for case-insensitive matching
+        const configByNormalizedName = new Map<string, any>();
+        configSnap.forEach(d => { const n = d.data().name; if (n) configByNormalizedName.set(normalizeSearchText(n), d); });
         const configById = new Set(configSnap.docs.map(d => d.id));
 
         for (const b of boutiqueSnap.docs) {
           const data = b.data();
           if (!data.name) continue;
-          const existing = configByName.get(data.name);
+          const normalized = normalizeSearchText(data.name);
+          const existing = configByNormalizedName.get(normalized);
           if (!existing) {
             // Caractéristique exclusive à la Boutique → copie avec son ID d'origine
             await setDoc(doc(db, 'characteristics', b.id), {
               ...data,
               uid: user?.uid || 'system',
             });
-            configByName.set(data.name, b);
+            configByNormalizedName.set(normalized, b);
           } else if (!configById.has(b.id)) {
             // Doublon par nom avec ID différent → union des options dans le doc existant
             const ex = existing.data();
@@ -4947,6 +5070,78 @@ export default function ProductManagementClient() {
             if (changed) {
               await setDoc(doc(db, 'characteristics', existing.id), { options: merged }, { merge: true });
             }
+          }
+        }
+
+        // Also deduplicate within characteristics itself (case-insensitive)
+        const freshConfig = await getDocs(collection(db, 'characteristics'));
+        const byNormalizedName = new Map<string, any[]>();
+        freshConfig.forEach(d => {
+          const n = d.data().name;
+          if (!n) return;
+          const normalized = normalizeSearchText(n);
+          if (!byNormalizedName.has(normalized)) byNormalizedName.set(normalized, []);
+          byNormalizedName.get(normalized)!.push(d);
+        });
+
+        for (const [, entries] of byNormalizedName) {
+          if (entries.length <= 1) continue;
+          // Pick canonical: prefer locked, then pinned, then most options
+          entries.sort((a: any, b: any) => {
+            const ad = a.data(), bd = b.data();
+            if (ad.locked && !bd.locked) return -1;
+            if (!ad.locked && bd.locked) return 1;
+            if (ad.isPinned && !bd.isPinned) return -1;
+            if (!ad.isPinned && bd.isPinned) return 1;
+            return (bd.data?.options?.length || 0) - (ad.data?.options?.length || 0);
+          });
+          const canonical = entries[0];
+          const canonicalData = canonical.data();
+          const canonicalOpts: string[] = Array.isArray(canonicalData.options) ? canonicalData.options : [];
+
+          let mergedOpts = [...canonicalOpts];
+          let changed = false;
+
+          for (const dup of entries.slice(1)) {
+            const dupData = dup.data();
+            const dupOpts: string[] = Array.isArray(dupData.options) ? dupData.options : [];
+            for (const opt of dupOpts) {
+              if (!mergedOpts.some(o => normalizeSearchText(o) === normalizeSearchText(opt))) {
+                mergedOpts.push(opt);
+                changed = true;
+              }
+            }
+          }
+
+          if (changed) {
+            await updateDoc(doc(db, 'characteristics', canonical.id), { options: mergedOpts });
+          }
+
+          // Update product references for duplicates
+          const duplicates = entries.slice(1);
+          const productCollections = ['products', 'boutique_products'];
+          for (const prodColName of productCollections) {
+            const prodSnap = await getDocs(collection(db, prodColName));
+            for (const prodDoc of prodSnap.docs) {
+              const prodData = prodDoc.data();
+              if (!Array.isArray(prodData.selectedChars)) continue;
+              let productChanged = false;
+              const updatedChars = prodData.selectedChars.map((sc: any) => {
+                if (duplicates.some((d: any) => String(d.id) === String(sc.id))) {
+                  productChanged = true;
+                  return { ...sc, id: canonical.id };
+                }
+                return sc;
+              });
+              if (productChanged) {
+                await updateDoc(doc(db, prodColName, prodDoc.id), { selectedChars: updatedChars });
+              }
+            }
+          }
+
+          // Delete duplicates
+          for (const dup of entries.slice(1)) {
+            await deleteDoc(doc(db, 'characteristics', dup.id));
           }
         }
       } catch (e) {

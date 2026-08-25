@@ -1102,7 +1102,13 @@
             "splitCell": "Split cell",
             "toggleHeaderRow": "Toggle header row",
             "toggleHeaderColumn": "Toggle header column",
-            "deleteTable": "Delete table"
+            "deleteTable": "Delete table",
+            "dedupCharacteristics": "Clean duplicates",
+            "dedupCharacteristicsDesc": "Analyze and merge duplicate characteristics. Options will be merged and product references updated automatically.",
+            "dedupNoDuplicates": "No duplicates found!",
+            "dedupNoDuplicatesDesc": "All characteristics are unique.",
+            "dedupFound": "{count} duplicate(s) found and removed.",
+            "dedupProcessing": "Analyzing duplicates..."
         },
         "quoteDetails": {
             "loading": "Loading estimation...",

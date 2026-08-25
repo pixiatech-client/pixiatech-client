@@ -1038,7 +1038,13 @@
             "splitCell": "Diviser cellule",
             "toggleHeaderRow": "Entête de ligne",
             "toggleHeaderColumn": "Entête de colonne",
-            "deleteTable": "Supprimer le tableau"
+            "deleteTable": "Supprimer le tableau",
+            "dedupCharacteristics": "Nettoyer les doublons",
+            "dedupCharacteristicsDesc": "Analyser et fusionner les caractéristiques en double. Les options seront fusionnées et les références produits mises à jour automatiquement.",
+            "dedupNoDuplicates": "Aucun doublon détecté !",
+            "dedupNoDuplicatesDesc": "Toutes les caractéristiques sont uniques.",
+            "dedupFound": "{count} doublon(s) trouvé(s) et supprimé(s).",
+            "dedupProcessing": "Analyse des doublons en cours..."
         },
         "quoteDetails": {
             "loading": "Chargement de l'estimation…",
