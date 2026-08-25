@@ -428,7 +428,7 @@ export async function getWizardSettings(): Promise<WizardSettings> {
         // Use Firestore array directly — do NOT merge with defaults to preserve user deletions
         // but drop entries with an empty value so they never break wizardSettingsSchema.
         pixelPitches: (dbData?.pixelPitches ?? defaultSettings.pixelPitches).filter(
-          (v) => v && v.value && v.value.trim() !== ''
+          (v) => v && v.value && v.value.trim() !== '' && v.value.trim().toUpperCase() !== 'NON APPLICABLE'
         ),
       };
       return mergedData;

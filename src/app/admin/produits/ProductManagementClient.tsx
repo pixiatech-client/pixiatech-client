@@ -5002,7 +5002,8 @@ export default function ProductManagementClient() {
           .filter(Boolean);
         const pixelPitches: string[] = (data.pixelPitches || [])
           .map((p: any) => (typeof p === 'string' ? p : p?.value || ''))
-          .filter(Boolean);
+          .filter(Boolean)
+          .filter((v: string) => v.toUpperCase() !== 'NON APPLICABLE');
         setWizardSettings({ viewingDistances, pixelPitches });
       }
     });
@@ -5162,6 +5163,46 @@ export default function ProductManagementClient() {
           const data = charDoc.data();
           if (data.name && data.name !== data.name.toUpperCase()) {
             await updateDoc(doc(db, 'characteristics', charDoc.id), { name: data.name.toUpperCase() });
+          }
+        }
+
+        // Remove "NON APPLICABLE" from PIXEL PITCH options in characteristics
+        const pitchChars = finalConfig.docs.filter(d => normalizeSearchText(d.data().name || '') === normalizeSearchText('PIXEL PITCH'));
+        for (const pitchDoc of pitchChars) {
+          const pitchData = pitchDoc.data();
+          let changed = false;
+          const cleanedData: any = {};
+          if (Array.isArray(pitchData.options)) {
+            const filtered = pitchData.options.filter((o: string) => o.trim().toUpperCase() !== 'NON APPLICABLE');
+            if (filtered.length !== pitchData.options.length) {
+              cleanedData.options = filtered;
+              changed = true;
+            }
+          }
+          if (Array.isArray(pitchData.variants)) {
+            const filtered = pitchData.variants.filter((v: any) => v.value?.trim().toUpperCase() !== 'NON APPLICABLE');
+            if (filtered.length !== pitchData.variants.length) {
+              cleanedData.variants = filtered;
+              changed = true;
+            }
+          }
+          if (changed) {
+            await updateDoc(doc(db, 'characteristics', pitchDoc.id), cleanedData);
+          }
+        }
+
+        // Remove "NON APPLICABLE" from wizard settings pixelPitches
+        const wizardDoc = await getDoc(doc(db, 'settings', 'wizard'));
+        if (wizardDoc.exists()) {
+          const wData = wizardDoc.data() as any;
+          if (Array.isArray(wData.pixelPitches)) {
+            const filtered = wData.pixelPitches.filter((p: any) => {
+              const val = (typeof p === 'string' ? p : p?.value || '').trim().toUpperCase();
+              return val !== 'NON APPLICABLE';
+            });
+            if (filtered.length !== wData.pixelPitches.length) {
+              await updateDoc(doc(db, 'settings', 'wizard'), { pixelPitches: filtered });
+            }
           }
         }
       } catch (e) {
