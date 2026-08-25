@@ -337,8 +337,8 @@ const MobileProductCard = React.memo(({
   const imageUrl = getSafeImageUrl(product);
 
   // Extract key chars for badges
-  const pitchChar = product.selectedChars?.find((c: any) => c.name === 'Pixel pitch' || c.id === 'char-1');
-  const distanceChar = product.selectedChars?.find((c: any) => c.name === 'Distance de visionnage' || c.id === 'char-0');
+  const pitchChar = product.selectedChars?.find((c: any) => c.name === 'PIXEL PITCH' || c.id === 'char-1');
+  const distanceChar = product.selectedChars?.find((c: any) => c.name === 'DISTANCE DE VISIONNAGE' || c.id === 'char-0');
 
   return (
     <div className="w-full bg-transparent flex flex-col gap-6 relative transition-all duration-300">
@@ -1364,7 +1364,7 @@ const CaracteristiquesPage = ({
   ];
 
   const handleEdit = (char: any) => {
-    setName(char.name);
+    setName(char.name?.toUpperCase() || '');
     setSelectedIcon(getIcon(char.iconName));
     setCustomIcon(char.customIcon || null);
     setSelectedColor(char.color || 'text-blue-400');
@@ -1388,7 +1388,7 @@ const CaracteristiquesPage = ({
       alert(t('admin.productManagement.characteristicLocked'));
       return;
     }
-    if (char?.name === 'Distance de visionnage' || char?.name === 'Pixel pitch') {
+    if (char?.name === 'DISTANCE DE VISIONNAGE' || char?.name === 'PIXEL PITCH') {
       alert(t('admin.productManagement.characteristicLockedRequired'));
       return;
     }
@@ -1445,6 +1445,7 @@ const CaracteristiquesPage = ({
     setIsSaving(true);
 
     try {
+      const normalizedName = name.trim().toUpperCase();
       const processedVariants = variants.map((v) => {
         return {
           id: v.id.toString(),
@@ -1453,7 +1454,7 @@ const CaracteristiquesPage = ({
       });
 
       const charData: any = {
-        name,
+        name: normalizedName,
         iconName: ICON_LIBRARY.find(i => i.icon === selectedIcon)?.name || 'settings',
         customIcon,
         color: selectedColor,
@@ -1474,13 +1475,13 @@ const CaracteristiquesPage = ({
 
       // --- WIZARD SYNC BRIDGE ---
       // Automatically update the official Wizard settings if these core specs change
-      if (name === 'Pixel pitch' || name === 'Distance de visionnage') {
+      if (normalizedName === 'PIXEL PITCH' || normalizedName === 'DISTANCE DE VISIONNAGE') {
         try {
           const wizardRef = doc(db, "settings", "wizard");
           const wizardSnap = await getDoc(wizardRef);
 
           if (wizardSnap.exists()) {
-            if (name === 'Pixel pitch') {
+            if (normalizedName === 'PIXEL PITCH') {
               const pixelPitches = processedVariants
                 .filter(v => v.value.trim() !== '')
                 .map(v => ({
@@ -1490,7 +1491,7 @@ const CaracteristiquesPage = ({
                 }));
               await updateDoc(wizardRef, { pixelPitches });
               console.log("Wizard Sync: Pixel Pitches updated");
-            } else if (name === 'Distance de visionnage') {
+            } else if (normalizedName === 'DISTANCE DE VISIONNAGE') {
               const viewingDistances = processedVariants
                 .filter(v => v.value.trim() !== '')
                 .map(v => ({
@@ -1522,7 +1523,7 @@ const CaracteristiquesPage = ({
     const examples = [
       {
         id: 'char-luminosite',
-        name: "Luminosité",
+        name: "LUMINOSITÉ",
         iconName: "luminosité",
         color: "text-yellow-400",
         variants: [
@@ -1536,7 +1537,7 @@ const CaracteristiquesPage = ({
       },
       {
         id: 'char-refresh',
-        name: "Fréquence de rafraîchissement",
+        name: "FRÉQUENCE DE RAFRAÎCHISSEMENT",
         iconName: "activité",
         color: "text-blue-400",
         variants: [
@@ -1550,7 +1551,7 @@ const CaracteristiquesPage = ({
       },
       {
         id: 'char-protection',
-        name: "Indice de protection",
+        name: "INDICE DE PROTECTION",
         iconName: "couches",
         color: "text-green-400",
         variants: [
@@ -1563,7 +1564,7 @@ const CaracteristiquesPage = ({
       },
       {
         id: 'char-resolution',
-        name: "Résolution",
+        name: "RÉSOLUTION",
         iconName: "monitor",
         color: "text-purple-400",
         variants: [
@@ -1576,7 +1577,7 @@ const CaracteristiquesPage = ({
       },
       {
         id: 'char-conso-max',
-        name: "Consommation Max",
+        name: "CONSOMMATION MAX",
         iconName: "zap",
         color: "text-red-400",
         variants: [
@@ -1589,7 +1590,7 @@ const CaracteristiquesPage = ({
       },
       {
         id: 'char-conso-moy',
-        name: "Consommation Moyenne",
+        name: "CONSOMMATION MOYENNE",
         iconName: "zap",
         color: "text-orange-400",
         variants: [
@@ -1604,7 +1605,7 @@ const CaracteristiquesPage = ({
 
     // Save to Firestore
     for (const ex of examples) {
-      if (!characteristics.some(c => c.name === ex.name)) {
+      if (!characteristics.some(c => normalizeSearchText(c.name) === normalizeSearchText(ex.name))) {
         try {
           const { id: exId, ...data } = ex;
           const finalId = exId || `char-${ex.name.replace(/\s+/g, '-').toLowerCase()}`;
@@ -1671,7 +1672,7 @@ const CaracteristiquesPage = ({
 
       let removedCount = 0;
 
-      for (const [normalized, entries] of groups) {
+      for (const [normalized, entries] of Array.from(groups.entries())) {
         if (entries.length <= 1) continue;
 
         // Pick canonical entry: prefer locked, then pinned, then most options, then oldest ID
@@ -1849,7 +1850,7 @@ const CaracteristiquesPage = ({
                 <button
                   onClick={async () => {
                     setIsSaving(true);
-                    const coreNames = ['Pixel pitch', 'Distance de visionnage', 'Puissance maximale'];
+                    const coreNames = ['PIXEL PITCH', 'DISTANCE DE VISIONNAGE', 'PUISSANCE MAXIMALE'];
                     for (const name of coreNames) {
                       if (!characteristics.some(c => c.name === name)) {
                         const defaultChar = MOCK_CHARACTERISTICS.find(c => c.name === name);
@@ -1866,9 +1867,9 @@ const CaracteristiquesPage = ({
                           });
 
                           // --- BRIDGE SYNC ON SEED ---
-                          if (name === 'Pixel pitch' || name === 'Distance de visionnage') {
+                          if (name === 'PIXEL PITCH' || name === 'DISTANCE DE VISIONNAGE') {
                             const wizardRef = doc(db, "settings", "wizard");
-                            if (name === 'Pixel pitch') {
+                            if (name === 'PIXEL PITCH') {
                               await updateDoc(wizardRef, {
                                 pixelPitches: data.variants.map((v: any) => ({ ...v, id: String(v.id) }))
                               });
@@ -1954,7 +1955,7 @@ const CaracteristiquesPage = ({
                           editingId === char.id
                             ? "border-theme-sidebar-active-bg ring-1 ring-theme-sidebar-active-bg"
                             : "border-theme-card-border hover:bg-[#131E3F] hover:border-[#131E3F]",
-                          (char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && !editingId && "bg-orange-50/50 border-orange-100"
+                          (char.locked || ['PIXEL PITCH', 'DISTANCE DE VISIONNAGE'].includes(char.name)) && !editingId && "bg-orange-50/50 border-orange-100"
                         )}
                         onClick={() => handleEdit(char)}
                       >
@@ -1980,7 +1981,7 @@ const CaracteristiquesPage = ({
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
-                          {!char.locked && !['Pixel pitch', 'Distance de visionnage'].includes(char.name) && (
+                          {!char.locked && !['PIXEL PITCH', 'DISTANCE DE VISIONNAGE'].includes(char.name) && (
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDelete(char.id); }}
                               className="p-2 text-slate-400 group-hover:text-white hover:!text-red-500 hover:bg-white/10 rounded-lg transition-colors"
@@ -1989,7 +1990,7 @@ const CaracteristiquesPage = ({
                               <Trash2 className="w-4 h-4" />
                             </button>
                           )}
-                          {(char.locked || ['Pixel pitch', 'Distance de visionnage'].includes(char.name)) && (
+                          {(char.locked || ['PIXEL PITCH', 'DISTANCE DE VISIONNAGE'].includes(char.name)) && (
                             <div className="p-2 text-slate-300 group-hover:text-white/20 cursor-not-allowed" title={t('admin.productManagement.systemCharLocked')}>
                               <Trash2 className="w-4 h-4" />
                             </div>
@@ -2069,11 +2070,11 @@ const CaracteristiquesPage = ({
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      disabled={editingId && ['Pixel pitch', 'Distance de visionnage'].includes(characteristics.find(c => c.id === editingId)?.name)}
+                      disabled={editingId && ['PIXEL PITCH', 'DISTANCE DE VISIONNAGE'].includes(characteristics.find(c => c.id === editingId)?.name)}
                       placeholder={t('admin.productManagement.charNamePlaceholder')}
                       className={cn(
                         "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition-all",
-                        editingId && ['Pixel pitch', 'Distance de visionnage'].includes(characteristics.find(c => c.id === editingId)?.name) && "opacity-60 cursor-not-allowed"
+                        editingId && ['PIXEL PITCH', 'DISTANCE DE VISIONNAGE'].includes(characteristics.find(c => c.id === editingId)?.name) && "opacity-60 cursor-not-allowed"
                       )}
                     />
                   </div>
@@ -2623,8 +2624,8 @@ const ProduitPage = ({
   // Use wizard settings as the authoritative source for distance/pitch options.
   // This prevents stale data from the characteristics collection options (which may have old seeded values)
   // from overriding the live options configured in the wizard settings.
-  const distanceCharDef = (characteristics || []).find((c: any) => c.name === 'Distance de visionnage');
-  const pitchCharDef = (characteristics || []).find((c: any) => c.name === 'Pixel pitch');
+  const distanceCharDef = (characteristics || []).find((c: any) => c.name === 'DISTANCE DE VISIONNAGE');
+  const pitchCharDef = (characteristics || []).find((c: any) => c.name === 'PIXEL PITCH');
   const availableDistances = (wizardSettings?.viewingDistances?.length ?? 0) > 0
     ? wizardSettings.viewingDistances
     : (distanceCharDef?.options || []);
@@ -2637,7 +2638,7 @@ const ProduitPage = ({
     const list = (selectedChars || []).filter((sc: any) => {
       const charDef = characteristics.find((c: any) => c.id === sc.id);
       if (!charDef) return false;
-      return charDef.name !== 'Distance de visionnage' && charDef.name !== 'Pixel pitch';
+      return charDef.name !== 'DISTANCE DE VISIONNAGE' && charDef.name !== 'PIXEL PITCH';
     });
     if (!searchTerm.trim()) return list;
     return list.filter((sc: any) => {
@@ -2936,7 +2937,7 @@ const ProduitPage = ({
                             <button onClick={(e) => { e.stopPropagation(); setCharacteristics(characteristics.map((c: any) => c.id === sc.id ? { ...c, isPinned: !c.isPinned } : c)); }} className={cn("p-1.5 rounded-lg transition-colors", charDef.isPinned ? "text-[#a3e635] bg-[#a3e635]/10" : "text-slate-500 hover:text-[#a3e635]")}>
                               <Pin className="w-4 h-4" />
                             </button>
-                            {!['Distance de visionnage', 'Pixel pitch'].includes(charDef.name) && (
+                            {!['DISTANCE DE VISIONNAGE', 'PIXEL PITCH'].includes(charDef.name) && (
                               <button onClick={() => setSelectedChars((prev: any[]) => prev.filter(c => c.id !== sc.id))} className="p-1 text-slate-500 hover:text-red-500 rounded-lg"><X className="w-4 h-4" /></button>
                             )}
                           </div>
@@ -4578,7 +4579,7 @@ const MOCK_USER = {
 const MOCK_CHARACTERISTICS = [
   {
     id: 'char-0',
-    name: 'Distance de visionnage',
+    name: 'DISTANCE DE VISIONNAGE',
     iconName: 'distance',
     color: 'text-cyan-400',
     variants: [
@@ -4597,7 +4598,7 @@ const MOCK_CHARACTERISTICS = [
   },
   {
     id: 'char-1',
-    name: 'Pixel pitch',
+    name: 'PIXEL PITCH',
     iconName: 'pixel',
     color: 'text-blue-400',
     variants: [
@@ -4622,7 +4623,7 @@ const MOCK_CHARACTERISTICS = [
   },
   {
     id: 'char-2',
-    name: 'Luminosité',
+    name: 'LUMINOSITÉ',
     iconName: 'luminosité',
     color: 'text-yellow-400',
     variants: [
@@ -4637,7 +4638,7 @@ const MOCK_CHARACTERISTICS = [
   },
   {
     id: 'char-3',
-    name: 'Indice de protection',
+    name: 'INDICE DE PROTECTION',
     iconName: 'couches',
     color: 'text-green-400',
     variants: [
@@ -4651,7 +4652,7 @@ const MOCK_CHARACTERISTICS = [
   },
   {
     id: 'char-4',
-    name: 'Résolution',
+    name: 'RÉSOLUTION',
     iconName: 'monitor',
     color: 'text-purple-400',
     variants: [
@@ -4665,7 +4666,7 @@ const MOCK_CHARACTERISTICS = [
   },
   {
     id: 'char-5',
-    name: 'Consommation Max',
+    name: 'CONSOMMATION MAX',
     iconName: 'zap',
     color: 'text-red-400',
     variants: [
@@ -4678,7 +4679,7 @@ const MOCK_CHARACTERISTICS = [
   },
   {
     id: 'char-6',
-    name: 'Consommation Moyenne',
+    name: 'CONSOMMATION MOYENNE',
     iconName: 'zap',
     color: 'text-orange-400',
     variants: [
@@ -4947,10 +4948,13 @@ export default function ProductManagementClient() {
     // Listen to characteristics
     const qChars = query(collection(db, charCol), orderBy("name", "asc"));
     const unsubChars = onSnapshot(qChars, async (snapshot) => {
-      const chars = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const chars = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return { id: doc.id, ...data, name: (data.name || '').toUpperCase() };
+      });
 
       // Auto-seeding core characteristics if missing
-      const coreNames = ['Pixel pitch', 'Distance de visionnage', 'Puissance maximale'];
+      const coreNames = ['PIXEL PITCH', 'DISTANCE DE VISIONNAGE', 'PUISSANCE MAXIMALE'];
       const missingNames = coreNames.filter(name => !chars.some((c: any) => normalizeSearchText(c.name) === normalizeSearchText(name)));
 
       if (missingNames.length > 0) {
@@ -5084,7 +5088,7 @@ export default function ProductManagementClient() {
           byNormalizedName.get(normalized)!.push(d);
         });
 
-        for (const [, entries] of byNormalizedName) {
+        for (const [, entries] of Array.from(byNormalizedName.entries())) {
           if (entries.length <= 1) continue;
           // Pick canonical: prefer locked, then pinned, then most options
           entries.sort((a: any, b: any) => {
@@ -5142,6 +5146,15 @@ export default function ProductManagementClient() {
           // Delete duplicates
           for (const dup of entries.slice(1)) {
             await deleteDoc(doc(db, 'characteristics', dup.id));
+          }
+        }
+
+        // Normalize all characteristic names to UPPERCASE
+        const finalConfig = await getDocs(collection(db, 'characteristics'));
+        for (const charDoc of finalConfig.docs) {
+          const data = charDoc.data();
+          if (data.name && data.name !== data.name.toUpperCase()) {
+            await updateDoc(doc(db, 'characteristics', charDoc.id), { name: data.name.toUpperCase() });
           }
         }
       } catch (e) {
@@ -5347,12 +5360,12 @@ export default function ProductManagementClient() {
       const distVal = Object.keys(savedPitches).filter(k => (savedPitches[k] || []).length > 0).join(', ');
       const pitchVal = Array.from(new Set(Object.values(savedPitches).flat())).join(', ');
 
-      const distCharDef = characteristics.find(c => c.name === 'Distance de visionnage');
-      const pitchCharDef = characteristics.find(c => c.name === 'Pixel pitch');
+      const distCharDef = characteristics.find(c => c.name === 'DISTANCE DE VISIONNAGE');
+      const pitchCharDef = characteristics.find(c => c.name === 'PIXEL PITCH');
 
       const filteredSelectedChars = (selectedChars || []).filter(c => {
         const charDef = characteristics.find(cd => cd.id === c.id);
-        return charDef?.name !== 'Distance de visionnage' && charDef?.name !== 'Pixel pitch';
+        return charDef?.name !== 'DISTANCE DE VISIONNAGE' && charDef?.name !== 'PIXEL PITCH';
       }).map(c => ({
         id: String(c.id || ''),
         value: String(c.value || '')
@@ -5394,7 +5407,7 @@ export default function ProductManagementClient() {
         distancePitches: savedPitches,
         power: String(selectedChars.find(c => {
           const charDef = characteristics.find(cd => cd.id === c.id);
-          return charDef?.name === 'Puissance maximale';
+          return charDef?.name === 'PUISSANCE MAXIMALE';
         })?.value || ''),
         surfaceMinRequise: String(surfaceMinRequise || '0'),
         surfaceMaxLocation: String(surfaceMaxLocation || '0'),
@@ -5670,12 +5683,12 @@ export default function ProductManagementClient() {
           }
 
           if (data.newCharacteristic) {
-            const exists = characteristics.some(c => c.name.toLowerCase() === data.newCharacteristic.name.toLowerCase());
+            const exists = characteristics.some(c => normalizeSearchText(c.name) === normalizeSearchText(data.newCharacteristic.name));
             if (!exists) {
               if (aiSettings.autoCreateCharacteristics) {
                 const newChar = {
                   id: `char-${Date.now()}`,
-                  name: data.newCharacteristic.name,
+                  name: data.newCharacteristic.name.toUpperCase(),
                   iconName: 'puissance',
                   variants: data.newCharacteristic.variants.map((v: string, i: number) => ({ id: i + 1, value: v })),
                   options: data.newCharacteristic.variants,
@@ -5881,15 +5894,15 @@ export default function ProductManagementClient() {
         // Fallback for legacy data or if selectedChars is missing
         const initialChars = [];
         if (editingProduct.pitch) {
-          const charDef = characteristics.find(c => c.name === 'Pixel pitch');
+          const charDef = characteristics.find(c => c.name === 'PIXEL PITCH');
           if (charDef) initialChars.push({ id: charDef.id, value: editingProduct.pitch });
         }
         if (editingProduct.distance) {
-          const charDef = characteristics.find(c => c.name === 'Distance de visionnage');
+          const charDef = characteristics.find(c => c.name === 'DISTANCE DE VISIONNAGE');
           if (charDef) initialChars.push({ id: charDef.id, value: editingProduct.distance });
         }
         if (editingProduct.power) {
-          const charDef = characteristics.find(c => c.name === 'Puissance maximale');
+          const charDef = characteristics.find(c => c.name === 'PUISSANCE MAXIMALE');
           if (charDef) initialChars.push({ id: charDef.id, value: editingProduct.power });
         }
         setSelectedChars(initialChars);
@@ -5904,11 +5917,11 @@ export default function ProductManagementClient() {
         // Fallback mapping for legacy products without distancePitches
         const legacyDist = editingProduct.distance || (editingProduct.selectedChars && Array.isArray(editingProduct.selectedChars) ? editingProduct.selectedChars.find((c: any) => {
           const charDef = characteristics.find(cd => cd.id === c.id);
-          return charDef?.name === 'Distance de visionnage';
+          return charDef?.name === 'DISTANCE DE VISIONNAGE';
         })?.value : null);
         const legacyPitch = editingProduct.pitch || (editingProduct.selectedChars && Array.isArray(editingProduct.selectedChars) ? editingProduct.selectedChars.find((c: any) => {
           const charDef = characteristics.find(cd => cd.id === c.id);
-          return charDef?.name === 'Pixel pitch';
+          return charDef?.name === 'PIXEL PITCH';
         })?.value : null);
         
         if (legacyDist && legacyPitch) {
@@ -6019,7 +6032,7 @@ export default function ProductManagementClient() {
       const pinnedChars = characteristics.filter(c => c.isPinned).map(c => ({ id: c.id, value: c.options[0] }));
 
       // Force add Distance de visionnage and Pixel pitch for new products (required characteristics)
-      const requiredCharNames = ['Distance de visionnage', 'Pixel pitch'];
+      const requiredCharNames = ['DISTANCE DE VISIONNAGE', 'PIXEL PITCH'];
       const existingIds = pinnedChars.map(c => c.id);
       const requiredChars = characteristics.filter(c =>
         requiredCharNames.includes(c.name) && !existingIds.includes(c.id)
@@ -6731,7 +6744,7 @@ export default function ProductManagementClient() {
                       onClick={() => {
                         const newChar = {
                           id: Date.now(),
-                          name: aiSuggestion.name,
+                          name: aiSuggestion.name.toUpperCase(),
                           options: aiSuggestion.variants,
                           icon: Settings2,
                           color: 'text-blue-400',
