@@ -2286,8 +2286,6 @@ function DistancePitchSelector({
 
   const togglePitch = (pitch: string) => {
     if (!selectedDistance) return;
-    // If autoMap is ON, turn it off when user manually toggles
-    if (autoMap) setAutoMap(false);
     const current = distancePitches[selectedDistance] || [];
     const updated = current.includes(pitch)
       ? current.filter((p) => p !== pitch)
@@ -2323,7 +2321,15 @@ function DistancePitchSelector({
         <div className="flex items-center gap-3 px-1 mb-3">
           <button
             type="button"
-            onClick={() => setAutoMap(!autoMap)}
+            onClick={() => {
+              const next = !autoMap;
+              setAutoMap(next);
+              if (next) {
+                // Reset to empty when turning sync ON
+                setSelectedDistance('');
+                setDistancePitches({});
+              }
+            }}
             className={cn(
               "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
               autoMap ? "bg-blue-500" : "bg-slate-600"
