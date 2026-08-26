@@ -6405,18 +6405,8 @@ export default function ProductManagementClient() {
       setDownloadLabel3('');
       setDownloadUrl3('');
 
-      // Set pinned characteristics by default for new products
-      const pinnedChars = characteristics.filter(c => c.isPinned).map(c => ({ id: c.id, value: c.options[0] }));
-
-      // Force add Distance de visionnage and Pixel pitch for new products (required characteristics)
-      const requiredCharNames = ['DISTANCE DE VISIONNAGE', 'PIXEL PITCH'];
-      const existingIds = pinnedChars.map(c => c.id);
-      const requiredChars = characteristics.filter(c =>
-        requiredCharNames.includes(c.name) && !existingIds.includes(c.id)
-      );
-      const allChars = [...pinnedChars, ...requiredChars.map(c => ({ id: c.id, value: c.options[0] }))];
-
-      setSelectedChars(allChars);
+      // New product: start with empty specs — user adds them manually
+      setSelectedChars([]);
       setDistancePitches({});
       setPrimaryDistance('');
       setPhotoUrl('');
