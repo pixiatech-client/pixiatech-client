@@ -44,6 +44,9 @@ import {
 import TipTapEditor from '@/components/TipTapEditor';
 import { Switch } from '@/components/ui/switch';
 import { parseProductPdf, type ParsedProductData } from '@/lib/product-pdf-parser';
+import { uploadImageFull } from '@/lib/uploadImage';
+import { MediaProgress } from '@/components/ui/media-progress';
+import type { MediaUploadState, MediaStatus } from '@/hooks/use-media-upload';
 
 // --- Variant type ---
 interface ProductVariant {
@@ -2566,6 +2569,7 @@ const ProduitPage = ({
   setActivePage,
   user,
   isSaving,
+  mediaProgress,
   aiSettings,
   setAiSettings,
   handleFileChange,
@@ -4071,6 +4075,10 @@ const ProduitPage = ({
                   {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus className="w-5 h-5 text-theme-sidebar-active-text" />}
                   {editingProduct ? t('admin.productManagement.saveChanges') : t('admin.productManagement.addToCatalog')}
                 </button>
+                {/* Media progress during save */}
+                {isSaving && mediaProgress.status !== 'idle' && (
+                  <MediaProgress state={mediaProgress} />
+                )}
                 <button
                   onClick={() => { setEditingProduct(null); setActivePage('gestion'); }}
                   className="w-full h-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] hover:text-slate-900 transition-colors border border-transparent hover:border-slate-200 rounded-xl"
@@ -5020,6 +5028,16 @@ export default function ProductManagementClient() {
   const [user, setUser] = useState<any>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [mediaProgress, setMediaProgress] = useState<MediaUploadState>({
+    status: 'idle',
+    progress: 0,
+    originalSize: 0,
+    optimizedSize: 0,
+    url: '',
+    error: '',
+    fileName: '',
+    isVideo: false,
+  });
   const [authView, setAuthView] = useState<'login' | 'signup' | 'forgot-password'>('login');
   const [rememberMe, setRememberMe] = useState(true);
   const [resetEmailSent, setResetEmailSent] = useState(false);
@@ -5578,16 +5596,38 @@ export default function ProductManagementClient() {
 
       // Handle Concurrent Photo Upload
       if (uploadedPhoto) {
-        const photoRef = ref(storage, `products/photos/${Date.now()}_${uploadedPhoto.name}`);
-        const uploadResult = await uploadBytes(photoRef, uploadedPhoto);
-        finalPhotoUrl = await getDownloadURL(uploadResult.ref);
+        setMediaProgress({ status: 'uploading', progress: 0, originalSize: uploadedPhoto.size, optimizedSize: 0, url: '', error: '', fileName: uploadedPhoto.name, isVideo: false });
+        const photoResult = await uploadImageFull({
+          file: uploadedPhoto,
+          optimize: true,
+          onProgress: (pct) => {
+            setMediaProgress(prev => ({
+              ...prev,
+              progress: pct,
+              status: pct < 10 ? 'uploading' : 'processing',
+            }));
+          },
+        });
+        finalPhotoUrl = photoResult.url;
+        setMediaProgress(prev => ({ ...prev, status: 'completed', progress: 100, optimizedSize: photoResult.optimizedSize ?? prev.originalSize }));
       }
 
       // Handle Concurrent Video Upload
       if (uploadedVideo) {
-        const videoRef = ref(storage, `products/videos/${Date.now()}_${uploadedVideo.name}`);
-        const uploadResult = await uploadBytes(videoRef, uploadedVideo);
-        finalVideoUrl = await getDownloadURL(uploadResult.ref);
+        setMediaProgress({ status: 'uploading', progress: 0, originalSize: uploadedVideo.size, optimizedSize: 0, url: '', error: '', fileName: uploadedVideo.name, isVideo: true });
+        const videoResult = await uploadImageFull({
+          file: uploadedVideo,
+          optimize: true,
+          onProgress: (pct) => {
+            setMediaProgress(prev => ({
+              ...prev,
+              progress: pct,
+              status: pct < 10 ? 'uploading' : 'processing',
+            }));
+          },
+        });
+        finalVideoUrl = videoResult.url;
+        setMediaProgress(prev => ({ ...prev, status: 'completed', progress: 100, optimizedSize: videoResult.optimizedSize ?? prev.originalSize }));
       } else if (videoUrl && !isVideoUrl(videoUrl) && !uploadedPhoto && finalPhotoUrl === videoUrl) {
         // Migration/Cleanup logic: if videoUrl was used as image placeholder, separate them
         finalVideoUrl = '';
@@ -5602,17 +5642,66 @@ export default function ProductManagementClient() {
 
       // Handle Gallery Photos & Videos Upload
       const finalGalleryUrls: any[] = [];
-      for (const item of galleryUrls) {
+      for (let i = 0; i < galleryUrls.length; i++) {
+        const item = galleryUrls[i];
         if (item.url.startsWith('data:')) {
+          const isVid = item.type === 'video';
+          const ext = isVid ? 'mp4' : 'jpg';
+          const fileName = `galerie_${i + 1}.${ext}`;
+          setMediaProgress({ status: 'uploading', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName, isVideo: isVid });
           const blob = await (await fetch(item.url)).blob();
-          const ext = item.type === 'video' ? 'mp4' : 'jpg';
-          const galleryRef = ref(storage, `products/gallery/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
-          const uploadResult = await uploadBytes(galleryRef, blob);
-          finalGalleryUrls.push({ url: await getDownloadURL(uploadResult.ref), type: item.type });
+          const formData = new FormData();
+          formData.append('file', blob, `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
+          const res = await fetch('/api/media/optimize', { method: 'POST', body: formData });
+          if (!res.ok) throw new Error(`Gallery upload failed: ${res.status}`);
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('text/event-stream')) {
+            // SSE stream — read progress
+            const reader = res.body?.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let resultData: any = null;
+            if (reader) {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const events = buffer.split('\n\n');
+                buffer = events.pop() || '';
+                for (const evt of events) {
+                  const lines = evt.split('\n');
+                  let eventType = '';
+                  let eventData = '';
+                  for (const line of lines) {
+                    if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+                    else if (line.startsWith('data: ')) eventData = line.slice(6);
+                  }
+                  if (!eventType || !eventData) continue;
+                  const parsed = JSON.parse(eventData);
+                  if (eventType === 'progress') {
+                    setMediaProgress(prev => ({ ...prev, progress: parsed.progress ?? 50, status: parsed.progress < 10 ? 'uploading' : 'processing' }));
+                  } else if (eventType === 'result') {
+                    resultData = parsed;
+                  } else if (eventType === 'error') {
+                    throw new Error(parsed.error || 'Gallery optimization failed');
+                  }
+                }
+              }
+            }
+            if (resultData) {
+              finalGalleryUrls.push({ url: resultData.url, type: item.type });
+              setMediaProgress(prev => ({ ...prev, status: 'completed', progress: 100, optimizedSize: resultData.optimizedSize }));
+            }
+          } else {
+            // Fallback JSON
+            const data = await res.json();
+            finalGalleryUrls.push({ url: data.url, type: item.type });
+          }
         } else {
           finalGalleryUrls.push({ url: item.url, type: item.type });
         }
       }
+      setMediaProgress({ status: 'idle', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName: '', isVideo: false });
 
       // Keep only the currently selected distance mapping; discard stale ones
       const savedPitches = primaryDistance && distancePitches?.[primaryDistance]
@@ -5750,6 +5839,7 @@ export default function ProductManagementClient() {
       });
     } finally {
       setIsSaving(false);
+      setMediaProgress({ status: 'idle', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName: '', isVideo: false });
     }
   };
 
@@ -6990,6 +7080,7 @@ export default function ProductManagementClient() {
                   setActivePage={handlePageChange}
                   user={user}
                   isSaving={isSaving}
+                   mediaProgress={mediaProgress}
                   aiSettings={aiSettings}
                   setAiSettings={setAiSettings}
                    handleFileChange={handleFileChange}

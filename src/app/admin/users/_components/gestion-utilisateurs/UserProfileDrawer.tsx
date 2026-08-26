@@ -8,10 +8,12 @@ import { User, UserRole, UserStatus } from './types';
 import { StatusBadge } from './StatusBadge';
 import { RoleBadge } from './RoleBadge';
 import { CustomSelect } from '@/components/ui/custom-select';
-import { uploadImage } from '@/lib/uploadImage';
+import { uploadImageFull } from '@/lib/uploadImage';
 import { useRoles } from '@/contexts/RoleContext';
 import { CreateRoleDrawer } from './CreateRoleDrawer';
 import { useAdminT } from '@/hooks/useAdminT';
+import { useMediaUpload } from '@/hooks/use-media-upload';
+import { MediaProgress } from '@/components/ui/media-progress';
 
 interface UserProfileDrawerProps {
   isOpen: boolean;
@@ -25,8 +27,9 @@ interface UserProfileDrawerProps {
 export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = false, onRoleChanged }: UserProfileDrawerProps) {
   const [formData, setFormData] = useState<Partial<User>>({});
   const [password, setPassword] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
   const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false);
+  const { upload: uploadBg, reset: resetBg, ...bgMediaState } = useMediaUpload();
+  const { upload: uploadAvatar, reset: resetAvatar, ...avatarMediaState } = useMediaUpload();
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
@@ -145,7 +148,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                   <X size={20} />
                 </button>
 
-                {isUploading && (
+                {(bgMediaState.status === 'uploading' || bgMediaState.status === 'processing') && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
                     <div className="flex items-center gap-3 text-white">
                       <Loader2 className="w-6 h-6 animate-spin" />
@@ -165,15 +168,14 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                      setIsUploading(true);
                       try {
-                        const url = await uploadImage(file);
-                        setFormData({ ...formData, backgroundImage: url });
-                        toast.success(t('Background image uploaded'));
+                        const url = await uploadBg(file);
+                        if (url) {
+                          setFormData({ ...formData, backgroundImage: url });
+                          toast.success(t('Background image uploaded'));
+                        }
                       } catch (err) {
                         toast.error(t('Upload error'));
-                      } finally {
-                        setIsUploading(false);
                       }
                     }
                   }}
@@ -205,15 +207,14 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          setIsUploading(true);
                           try {
-                            const url = await uploadImage(file);
-                            setFormData({ ...formData, avatar: url });
-                            toast.success(t('Avatar uploaded'));
+                            const url = await uploadAvatar(file);
+                            if (url) {
+                              setFormData({ ...formData, avatar: url });
+                              toast.success(t('Avatar uploaded'));
+                            }
                           } catch (err) {
                             toast.error(t('Upload error'));
-                          } finally {
-                            setIsUploading(false);
                           }
                         }
                       }}
@@ -229,6 +230,10 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                     {isAddMode ? t('Create an account that will be pending validation.') : t('Edit information and password')}
                   </p>
                 </div>
+
+                {/* Media upload progress indicators */}
+                <MediaProgress state={bgMediaState} className="mb-4" onRetry={resetBg} />
+                <MediaProgress state={avatarMediaState} className="mb-4" onRetry={resetAvatar} />
 
                 <div className="space-y-10">
                   {/* BASIC INFO */}

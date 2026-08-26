@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2, Trash2 } from 'lucide-react';
 import { useAdminT } from '@/hooks/useAdminT';
-import { uploadImage } from '@/lib/uploadImage';
+import { useMediaUpload } from '@/hooks/use-media-upload';
+import { MediaProgress } from '@/components/ui/media-progress';
 import Image from 'next/image';
 
 interface InputWithUploadProps {
@@ -19,27 +20,27 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
   const { toast } = useToast();
   const { t } = useAdminT();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const { upload, reset, ...mediaState } = useMediaUpload();
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
     try {
-      const downloadURL = await uploadImage(file);
-      onChange(downloadURL);
-      toast({ variant: 'success', title: t('Upload successful') });
+      const url = await upload(file);
+      if (url) {
+        onChange(url);
+        toast({ variant: 'success', title: t('Upload successful') });
+      }
     } catch (error) {
       console.error('Upload failed', error);
       toast({ variant: 'destructive', title: t('Upload error'), description: (error as Error).message });
-    } finally {
-      setIsUploading(false);
     }
   };
 
   const handleRemoveImage = () => {
     onChange('');
+    reset();
   };
 
   return (
@@ -56,10 +57,14 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
             variant="outline"
             size="icon"
             onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
+            disabled={mediaState.status === 'uploading' || mediaState.status === 'processing'}
             title={t('Upload a file')}
           >
-            {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            {(mediaState.status === 'uploading' || mediaState.status === 'processing') ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
           </Button>
           {value && (
               <Button
@@ -94,6 +99,17 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
            )}
         </div>
       )}
+      {/* Media progress indicator */}
+      <MediaProgress
+        state={mediaState}
+        className="w-full"
+        onRetry={() => {
+          const input = fileInputRef.current;
+          if (input?.files?.[0]) {
+            handleFileChange({ target: { files: input.files } } as any);
+          }
+        }}
+      />
     </div>
   );
 }
