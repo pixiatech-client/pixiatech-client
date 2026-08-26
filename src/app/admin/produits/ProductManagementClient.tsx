@@ -5833,10 +5833,10 @@ export default function ProductManagementClient() {
         value: String(c.value || '')
       }));
 
-      if (distCharDef) {
+      if (distCharDef && distVal && distVal.trim()) {
         filteredSelectedChars.push({ id: String(distCharDef.id), value: distVal });
       }
-      if (pitchCharDef) {
+      if (pitchCharDef && pitchVal && pitchVal.trim()) {
         filteredSelectedChars.push({ id: String(pitchCharDef.id), value: pitchVal });
       }
 
@@ -5935,7 +5935,6 @@ export default function ProductManagementClient() {
         });
       }
 
-      resetProductForm();
       setActivePage('gestion');
       setEditingProduct(null);
       setPrimaryDistance('');

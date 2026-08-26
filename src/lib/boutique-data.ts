@@ -143,7 +143,9 @@ function buildSpecs(data: any, charNameMap: Record<string, string>): Record<stri
   // Resolve selectedChars through characteristics name map (only selected specs)
   if (Array.isArray(data.selectedChars)) {
     for (const sc of data.selectedChars) {
-      const name = charNameMap[sc.id] || sc.id;
+      if (!sc.value || !String(sc.value).trim()) continue;
+      const name = charNameMap[sc.id];
+      if (!name) continue;
       s[name] = sc.value;
     }
   }
