@@ -2673,6 +2673,7 @@ const ProduitPage = ({
     importPdfFile,
     setImportPdfFile,
     handleCancelEdit,
+    resetProductForm,
 }: any) => {
   const { t } = useI18n();
   const [specPage, setSpecPage] = useState(1);
@@ -2881,13 +2882,13 @@ const ProduitPage = ({
                     />
                   )}
                   <Package className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('sur-commande') ? "text-amber-400" : "text-slate-400")} />
-                  <span className="z-20 whitespace-nowrap">Sur commande</span>
+                  <span className="z-20 whitespace-nowrap">{t('admin.productManagement.onOrder')}</span>
                 </button>
               </div>
               {mode.includes('sur-commande') && (
                 <div className="flex items-center gap-1.5 px-1 pt-1">
                   <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
-                  <span className="text-[9px] text-amber-600 font-semibold">Les options vente et location sont désactivées pour ce produit</span>
+                  <span className="text-[9px] text-amber-600 font-semibold">{t('admin.productManagement.saleAndRentalDisabled')}</span>
                 </div>
               )}
             </div>
@@ -2914,12 +2915,12 @@ const ProduitPage = ({
                 </>
               ) : (
                 <>
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Badges</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.badges')}</label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { id: 'populaire', label: 'Populaires', icon: TrendingUp, activeColor: 'text-orange-400' },
-                      { id: 'nouveaute', label: 'Nouveautés', icon: Sparkles, activeColor: 'text-blue-400' },
-                      { id: 'promotion', label: 'Promotion', icon: Tag, activeColor: 'text-red-400' },
+                      { id: 'populaire', label: t('admin.productManagement.badgePopular'), icon: TrendingUp, activeColor: 'text-orange-400' },
+                      { id: 'nouveaute', label: t('admin.productManagement.badgeNewArrival'), icon: Sparkles, activeColor: 'text-blue-400' },
+                      { id: 'promotion', label: t('admin.productManagement.badgePromotion'), icon: Tag, activeColor: 'text-red-400' },
                     ].map((badge) => {
                       const isActive = badges.includes(badge.id);
                       return (
@@ -3085,18 +3086,18 @@ const ProduitPage = ({
                     <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                   </div>
                   <div className="flex flex-col">
-                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">Téléchargements & Évaluation</h4>
-                    <span className="text-[9px] text-slate-400 font-medium">Boutons boutique et note étoiles</span>
+                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">{t('admin.productManagement.downloadsAndRating')}</h4>
+                    <span className="text-[9px] text-slate-400 font-medium">{t('admin.productManagement.downloadsAndRatingSub')}</span>
                   </div>
                 </div>
 
                 {/* Section Évaluation */}
                 <div className="space-y-3">
-                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Évaluation (Étoiles)</h5>
+                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{t('admin.productManagement.ratingSection')}</h5>
                   <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-slate-50/50">
                     <div className="space-y-0.5">
-                      <span className="text-[11px] font-bold text-slate-800">Afficher la note étoiles</span>
-                      <p className="text-[9px] text-slate-400 leading-tight">Afficher les étoiles sur le produit</p>
+                      <span className="text-[11px] font-bold text-slate-800">{t('admin.productManagement.showStarRating')}</span>
+                      <p className="text-[9px] text-slate-400 leading-tight">{t('admin.productManagement.showStarRatingHelp')}</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -3112,7 +3113,7 @@ const ProduitPage = ({
                   {showRating && (
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Note (ex: 4.8)</label>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.ratingLabel')}</label>
                         <input
                           type="number"
                           min="0"
@@ -3124,7 +3125,7 @@ const ProduitPage = ({
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Nombre d'avis</label>
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.reviewCount')}</label>
                         <input
                           type="number"
                           min="0"
@@ -3139,11 +3140,11 @@ const ProduitPage = ({
 
                 {/* Section Téléchargements */}
                 <div className="space-y-3 pt-1">
-                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Bouton de téléchargement principal</h5>
+                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{t('admin.productManagement.mainDownloadButton')}</h5>
                   <div className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-slate-50/50">
                     <div className="space-y-0.5">
-                      <span className="text-[11px] font-bold text-slate-800">Activer le bouton télécharger</span>
-                      <p className="text-[9px] text-slate-400 leading-tight">Téléchargement de l'image du produit</p>
+                      <span className="text-[11px] font-bold text-slate-800">{t('admin.productManagement.enableDownloadButton')}</span>
+                      <p className="text-[9px] text-slate-400 leading-tight">{t('admin.productManagement.enableDownloadButtonHelp')}</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -3158,7 +3159,7 @@ const ProduitPage = ({
 
                   {downloadEnabled && (
                     <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Nom du bouton (ex: DOWNLOAD)</label>
+                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.downloadButtonName')}</label>
                       <input
                         type="text"
                         placeholder="DOWNLOAD"
@@ -3172,10 +3173,10 @@ const ProduitPage = ({
 
                 {/* Boutons d'applications additionnels */}
                 <div className="space-y-3 pt-1">
-                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Boutons additionnels (Lien Store / Apps)</h5>
+                  <h5 className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{t('admin.productManagement.additionalButtons')}</h5>
                   
                   <div className="p-3 rounded-2xl border border-slate-100 bg-slate-50/30 space-y-1">
-                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Lien Google Play Store</label>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{t('admin.productManagement.googlePlayStoreLink')}</label>
                     <input
                       type="text"
                       placeholder="https://play.google.com/store/apps/details?id=..."
@@ -3186,7 +3187,7 @@ const ProduitPage = ({
                   </div>
 
                   <div className="p-3 rounded-2xl border border-slate-100 bg-slate-50/30 space-y-1">
-                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Lien Apple App Store</label>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{t('admin.productManagement.appleAppStoreLink')}</label>
                     <input
                       type="text"
                       placeholder="https://apps.apple.com/app/..."
@@ -3197,18 +3198,18 @@ const ProduitPage = ({
                   </div>
 
                   <div className="p-3 rounded-2xl border border-slate-100 bg-slate-50/30 space-y-2">
-                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Bouton personnalisé A</label>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{t('admin.productManagement.customButtonA')}</label>
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         type="text"
-                        placeholder="Nom du bouton"
+                        placeholder={t('admin.productManagement.buttonNamePlaceholder')}
                         value={downloadLabel2}
                         onChange={(e) => setDownloadLabel2(e.target.value)}
                         className="w-full h-8 bg-white border border-slate-200 rounded-xl px-2.5 text-xs font-semibold outline-none focus:border-slate-300"
                       />
                       <input
                         type="text"
-                        placeholder="Lien (https://...)"
+                        placeholder={t('admin.productManagement.linkPlaceholder')}
                         value={downloadUrl2}
                         onChange={(e) => setDownloadUrl2(e.target.value)}
                         className="w-full h-8 bg-white border border-slate-200 rounded-xl px-2.5 text-xs font-semibold outline-none focus:border-slate-300"
@@ -3226,27 +3227,27 @@ const ProduitPage = ({
                         ) : (
                           <Settings2 className="w-4 h-4" />
                         )}
-                        Icône
+                        {t('admin.productManagement.icon')}
                       </button>
                       {(downloadIcon2 || downloadCustomIcon2) && (
-                        <button onClick={() => { setDownloadIcon2(''); setDownloadCustomIcon2(''); }} className="text-[10px] text-red-500 hover:text-red-700 font-semibold">Retirer</button>
+                        <button onClick={() => { setDownloadIcon2(''); setDownloadCustomIcon2(''); }} className="text-[10px] text-red-500 hover:text-red-700 font-semibold">{t('admin.productManagement.removeIcon')}</button>
                       )}
                     </div>
                   </div>
 
                   <div className="p-3 rounded-2xl border border-slate-100 bg-slate-50/30 space-y-2">
-                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Bouton personnalisé B</label>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{t('admin.productManagement.customButtonB')}</label>
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         type="text"
-                        placeholder="Nom du bouton"
+                        placeholder={t('admin.productManagement.buttonNamePlaceholder')}
                         value={downloadLabel3}
                         onChange={(e) => setDownloadLabel3(e.target.value)}
                         className="w-full h-8 bg-white border border-slate-200 rounded-xl px-2.5 text-xs font-semibold outline-none focus:border-slate-300"
                       />
                       <input
                         type="text"
-                        placeholder="Lien (https://...)"
+                        placeholder={t('admin.productManagement.linkPlaceholder')}
                         value={downloadUrl3}
                         onChange={(e) => setDownloadUrl3(e.target.value)}
                         className="w-full h-8 bg-white border border-slate-200 rounded-xl px-2.5 text-xs font-semibold outline-none focus:border-slate-300"
@@ -3264,10 +3265,10 @@ const ProduitPage = ({
                         ) : (
                           <Settings2 className="w-4 h-4" />
                         )}
-                        Icône
+                        {t('admin.productManagement.icon')}
                       </button>
                       {(downloadIcon3 || downloadCustomIcon3) && (
-                        <button onClick={() => { setDownloadIcon3(''); setDownloadCustomIcon3(''); }} className="text-[10px] text-red-500 hover:text-red-700 font-semibold">Retirer</button>
+                        <button onClick={() => { setDownloadIcon3(''); setDownloadCustomIcon3(''); }} className="text-[10px] text-red-500 hover:text-red-700 font-semibold">{t('admin.productManagement.removeIcon')}</button>
                       )}
           </div>
         </div>
@@ -3281,7 +3282,7 @@ const ProduitPage = ({
                 <div onClick={() => setShowIconPicker2(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
                 <div className="bg-white rounded-3xl p-6 w-full max-w-md relative z-10 shadow-2xl border border-slate-200">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-slate-900">Icône - Bouton A</h3>
+                    <h3 className="text-xl font-bold text-slate-900">{t('admin.productManagement.iconPickerTitleA')}</h3>
                     <button onClick={() => setShowIconPicker2(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                       <X className="w-5 h-5 text-slate-500" />
                     </button>
@@ -3303,13 +3304,13 @@ const ProduitPage = ({
                     </div>
                   </div>
                   <div className="mt-4 pt-4 border-t border-slate-100">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Téléverser une icône personnalisée</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">{t('admin.productManagement.uploadCustomIconLabel')}</label>
                     <input type="file" id="icon-upload-2" className="hidden" accept="image/*" onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) { const reader = new FileReader(); reader.onloadend = () => { setDownloadCustomIcon2(reader.result as string); setDownloadIcon2(''); setShowIconPicker2(false); }; reader.readAsDataURL(file); }
                     }} />
                     <label htmlFor="icon-upload-2" className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-[#131E3F] hover:text-white transition-all text-sm font-bold text-slate-600 group">
-                      <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Téléverser
+                      <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> {t('admin.productManagement.upload')}
                     </label>
                   </div>
                 </div>
@@ -3322,7 +3323,7 @@ const ProduitPage = ({
                 <div onClick={() => setShowIconPicker3(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
                 <div className="bg-white rounded-3xl p-6 w-full max-w-md relative z-10 shadow-2xl border border-slate-200">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-slate-900">Icône - Bouton B</h3>
+                    <h3 className="text-xl font-bold text-slate-900">{t('admin.productManagement.iconPickerTitleB')}</h3>
                     <button onClick={() => setShowIconPicker3(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                       <X className="w-5 h-5 text-slate-500" />
                     </button>
@@ -3344,13 +3345,13 @@ const ProduitPage = ({
                     </div>
                   </div>
                   <div className="mt-4 pt-4 border-t border-slate-100">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">Téléverser une icône personnalisée</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 block">{t('admin.productManagement.uploadCustomIconLabel')}</label>
                     <input type="file" id="icon-upload-3" className="hidden" accept="image/*" onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) { const reader = new FileReader(); reader.onloadend = () => { setDownloadCustomIcon3(reader.result as string); setDownloadIcon3(''); setShowIconPicker3(false); }; reader.readAsDataURL(file); }
                     }} />
                     <label htmlFor="icon-upload-3" className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl cursor-pointer hover:bg-[#131E3F] hover:text-white transition-all text-sm font-bold text-slate-600 group">
-                      <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> Téléverser
+                      <Upload className="w-4 h-4 group-hover:text-[#a3e635] transition-colors" /> {t('admin.productManagement.upload')}
                     </label>
                   </div>
                 </div>
@@ -3409,13 +3410,13 @@ const ProduitPage = ({
                   {normalizePrice(prixVente) === 0 && (
                     <div className="bg-purple-950/40 p-4 rounded-2xl border border-purple-500/20 relative group overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-purple-400/5 to-transparent pointer-events-none" />
-                      <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2 block">Affichage du prix</label>
+                      <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2 block">{t('admin.productManagement.priceDisplay')}</label>
                       <div className="grid grid-cols-2 gap-2">
                         {[
-                          { value: 'zero', label: '0 €', sub: 'Affiche le prix réel' },
-                          { value: 'free', label: 'Gratuit', sub: 'Affiche "Gratuit"' },
-                          { value: 'multiprice', label: 'Tarifs multiples', sub: 'Affiche "Tarifs multiples"' },
-                          { value: 'quote', label: 'Sur devis', sub: 'Affiche "Sur devis"' },
+                          { value: 'zero', label: '0 €', sub: t('admin.productManagement.priceDisplayZeroSub') },
+                          { value: 'free', label: t('admin.productManagement.priceDisplayFree'), sub: t('admin.productManagement.priceDisplayFreeSub') },
+                          { value: 'multiprice', label: t('admin.productManagement.priceDisplayMultipleRates'), sub: t('admin.productManagement.priceDisplayMultipleRatesSub') },
+                          { value: 'quote', label: t('admin.productManagement.priceDisplayQuote'), sub: t('admin.productManagement.priceDisplayQuoteSub') },
                         ].map(opt => (
                           <button
                             key={opt.value}
@@ -3432,7 +3433,7 @@ const ProduitPage = ({
                           </button>
                         ))}
                       </div>
-                      <div className="text-[9px] text-purple-400/40 mt-2 font-medium italic tracking-tight">Définit l'affichage quand le prix est à 0 €</div>
+                      <div className="text-[9px] text-purple-400/40 mt-2 font-medium italic tracking-tight">{t('admin.productManagement.priceDisplayHelp')}</div>
                     </div>
                   )}
 
@@ -3446,7 +3447,7 @@ const ProduitPage = ({
                       <NumberInput
                         value={stock}
                         onChange={(val) => setStock(String(val ?? ''))}
-                        placeholder="Ex : 250"
+                        placeholder={t('admin.productManagement.stockPlaceholder')}
                         isDark
                       />
                     </div>
@@ -3493,13 +3494,13 @@ const ProduitPage = ({
                   <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 shadow-[0_0_15px_rgba(0,0,0,0.15)]">
                     <div className="text-xs font-black text-white uppercase tracking-tight flex items-center gap-1.5 mb-3">
                       <ShoppingBag className="w-4 h-4 text-emerald-400" />
-                      Produits complémentaires (upsell)
+                      {t('admin.productManagement.upsellProducts')}
                       {upsellFor.length > 0 && (
                         <span className="ml-auto text-[10px] font-normal text-emerald-400">{upsellFor.length} sélectionné{upsellFor.length > 1 ? 's' : ''}</span>
                       )}
                     </div>
                     <div className="text-[9px] text-slate-400 mb-2 leading-tight">
-                      Ces produits seront proposés en complément dans le panier, même s'ils sont masqués de la boutique.
+                      {t('admin.productManagement.upsellHelp')}
                     </div>
                     <div className="relative" ref={upsellDropdownRef}>
                       <button
@@ -3509,8 +3510,8 @@ const ProduitPage = ({
                       >
                         <span className="truncate">
                           {upsellFor.length > 0
-                            ? `${upsellFor.length} produit${upsellFor.length > 1 ? 's' : ''} sélectionné${upsellFor.length > 1 ? 's' : ''}`
-                            : 'Sélectionner des produits…'}
+                            ? t('admin.productManagement.upsellSelectedCount', { count: upsellFor.length })
+                            : t('admin.productManagement.upsellSelectProducts')}
                         </span>
                         <ChevronDown className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200", upsellOpen && "rotate-180")} />
                       </button>
@@ -3529,7 +3530,7 @@ const ProduitPage = ({
                                 type="text"
                                 value={upsellSearch}
                                 onChange={(e) => setUpsellSearch(e.target.value)}
-                                placeholder="Rechercher un produit…"
+                                placeholder={t('admin.productManagement.searchProductPlaceholder')}
                                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500/50 transition-colors"
                               />
                             </div>
@@ -3580,7 +3581,7 @@ const ProduitPage = ({
                                 </button>
                               ))}
                               {allProducts.filter(p => p.id !== editingProduct?.id).filter(p => !upsellSearch || normalizeSearchText(p.name).includes(normalizeSearchText(upsellSearch))).length === 0 && (
-                                <p className="text-[10px] text-slate-500 text-center py-6">Aucun produit trouvé</p>
+                                <p className="text-[10px] text-slate-500 text-center py-6">{t('admin.productManagement.noProductFound')}</p>
                               )}
                             </div>
                           </motion.div>
@@ -3746,8 +3747,8 @@ const ProduitPage = ({
                       <ImageIcon className="w-5 h-5 text-slate-400" />
                     </div>
                     <div className="flex flex-col">
-                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Galerie photos</h4>
-                      <span className="text-[9px] text-slate-400 font-medium">Photos suppl\u00E9mentaires</span>
+                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t('admin.productManagement.photoGallery')}</h4>
+                      <span className="text-[9px] text-slate-400 font-medium">{t('admin.productManagement.additionalPhotos')}</span>
                     </div>
                   </div>
                 </div>
@@ -3759,14 +3760,15 @@ const ProduitPage = ({
                         <GalleryImage key={item.url} item={item} idx={idx} onRemove={() => removeGalleryImage(idx)} />
                       ))}
                       <button onClick={triggerGalleryUpload} className="w-[calc(33.333%-6px)] aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
-                        <Plus className="w-5 h-5 text-slate-300" />
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Ajouter</span>
+                         <Plus className="w-5 h-5 text-slate-300" />
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.add')}</span>
                       </button>
                     </div>
                   </SortableContext>
                 </DndContext>
               </div>
             )}
+
 
             {/* Recherche / Remplacement global dans les variantes */}
             {activeSpace === 'boutique' && variants.length > 1 && (
@@ -3840,7 +3842,7 @@ const ProduitPage = ({
                   <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
                     <Tag className="w-5 h-5 text-slate-400" />
                   </div>
-                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">Variantes</h4>
+                   <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t('admin.productManagement.variants')}</h4>
                 </div>
                 {variants.length > 0 && (
                   <div className="space-y-2">
@@ -3859,7 +3861,7 @@ const ProduitPage = ({
                               )}
                             </div>
                             <div className="flex-1 text-left min-w-0">
-                              <div className="text-xs font-bold text-slate-800 truncate">{v.name || '(sans nom)'}</div>
+                              <div className="text-xs font-bold text-slate-800 truncate">{v.name || t('admin.productManagement.variantUntitled')}</div>
                               {v.price > 0 && <div className="text-[10px] font-semibold text-slate-400">{v.price.toFixed(2)} €</div>}
                             </div>
                             {isOpen ? <ChevronUp className="w-4 h-4 text-slate-400 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />}
@@ -3868,35 +3870,35 @@ const ProduitPage = ({
                             <div className="px-3 pb-3 space-y-2 border-t border-slate-100 pt-2">
                               <div className="grid grid-cols-[1fr_80px] gap-2 items-end">
                                 <div>
-                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Nom du bouton</label>
+                                   <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.variantButtonName')}</label>
                                   <input value={v.name} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], name: e.target.value }; setVariants(n); }} placeholder="ex: L, XL, XXL" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
                                 </div>
                                 <div>
-                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Prix (€)</label>
+                                   <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.variantPrice')}</label>
                                   <input type="number" value={v.price || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], price: Number(e.target.value) }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
                                 </div>
                               </div>
                               <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Valeur affichée</label>
+                                   <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.variantDisplayValue')}</label>
                                   <input value={v.description || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], description: e.target.value }; setVariants(n); }} placeholder="ex: 80x100 cm" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
                                 </div>
                                 <div>
-                                  <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Référence</label>
+                                   <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.variantReference')}</label>
                                   <input value={v.reference || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], reference: e.target.value }; setVariants(n); }} placeholder="ex: REF-L" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
                                 </div>
                               </div>
                               <div>
-                                <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Photo / Vidéo associée</label>
+                                 <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.variantAssociatedMedia')}</label>
                                 <select value={v.image} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], image: e.target.value }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400">
-                                  <option value="">Aucune</option>
+                                   <option value="">{t('admin.productManagement.variantMediaNone')}</option>
                                   {galleryUrls.map((item, gi) => (
                                     <option key={item.url} value={item.url}>{item.type === 'video' ? '[Video]' : '[Photo]'} {gi + 1}</option>
                                   ))}
                                 </select>
                               </div>
                               <button onClick={() => setVariants(prev => prev.filter((_, j) => j !== i))} className="w-full h-8 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors flex items-center justify-center gap-1">
-                                <Trash2 className="w-3 h-3" /> Supprimer cette variante
+                                 <Trash2 className="w-3 h-3" /> {t('admin.productManagement.deleteVariant')}
                               </button>
                             </div>
                           )}
@@ -3906,7 +3908,7 @@ const ProduitPage = ({
                   </div>
                 )}
                 <button onClick={() => setVariants(prev => [...prev, { name: '', description: '', price: 0, reference: '', image: '', order: prev.length, active: true }])} className="w-full h-10 bg-white border border-slate-200 border-dashed rounded-xl text-slate-600 font-black text-[10px] uppercase tracking-widest hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                  <Plus className="w-4 h-4" /> Ajouter une variante
+                   <Plus className="w-4 h-4" /> {t('admin.productManagement.addVariant')}
                 </button>
               </div>
             )}
@@ -3924,7 +3926,7 @@ const ProduitPage = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                    {pdfImportMode ? 'Import PDF' : 'Mode manuel'}
+                    {pdfImportMode ? 'Import PDF' : t('admin.productManagement.manualMode')}
                   </span>
                   <Switch
                     checked={pdfImportMode}
@@ -3947,7 +3949,7 @@ const ProduitPage = ({
                         : "text-slate-400 hover:text-slate-600"
                     )}
                   >
-                    {tab === 'pdf' ? 'PDF' : tab === 'description' ? 'Description' : 'Description détaillée'}
+                    {tab === 'pdf' ? 'PDF' : tab === 'description' ? t('admin.productManagement.tabDescription') : t('admin.productManagement.tabDetailedDescription')}
                   </button>
                 ))}
               </div>
@@ -3966,7 +3968,7 @@ const ProduitPage = ({
                   {pdfImportMode && (
                     <div className="mb-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl text-center">
                       <p className="text-[10px] font-bold text-blue-700 uppercase tracking-widest">
-                        Mode import activé — le PDF sera analysé automatiquement
+                        {t('admin.productManagement.importModeActivated')}
                       </p>
                     </div>
                   )}
@@ -3975,7 +3977,7 @@ const ProduitPage = ({
                     <div className="mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center gap-2">
                       <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-500 rounded-full animate-spin" />
                       <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">
-                        Analyse du PDF en cours...
+                        {t('admin.productManagement.pdfAnalyzing')}
                       </p>
                     </div>
                   )}
@@ -4006,13 +4008,13 @@ const ProduitPage = ({
                     </div>
                     <span className="text-xs font-black text-slate-900 uppercase tracking-widest mb-1">
                       {pdfImportMode
-                        ? (importPdfFile ? 'PDF import sélectionné' : 'Sélectionner le PDF à importer')
+                        ? (importPdfFile ? t('admin.productManagement.pdfImportSelected') : t('admin.productManagement.selectPdfToImport'))
                         : ((pdfUrl || uploadedPdf) ? t('admin.productManagement.techSheetAdded') : t('admin.productManagement.addProductSheet'))
                       }
                     </span>
                     <span className="text-[9px] text-slate-400 uppercase tracking-widest">
                       {pdfImportMode
-                        ? (importPdfFile ? `${importPdfFile.name} — Analyse terminée` : 'Le PDF sera analysé et le formulaire prérempli')
+                        ? (importPdfFile ? t('admin.productManagement.pdfAnalysisComplete', { filename: importPdfFile.name }) : t('admin.productManagement.pdfAutoFillHelp'))
                         : ((pdfUrl || uploadedPdf) ? (uploadedPdf ? uploadedPdf.name : t('admin.productManagement.fileSaved')) : t('admin.productManagement.officialTechSheet'))
                       }
                     </span>
@@ -4054,7 +4056,7 @@ const ProduitPage = ({
                   <input
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Courte description du produit..."
+                    placeholder={t('admin.productManagement.shortDescriptionPlaceholder')}
                     className="w-full h-12 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-300 transition-colors"
                   />
                 </div>
@@ -4062,7 +4064,7 @@ const ProduitPage = ({
 
               {activeSpace === 'boutique' && ficheTab === 'detail' && (
                 <div className="flex-1">
-                  <TipTapEditor value={descriptionDetaillee} onChange={setDescriptionDetaillee} placeholder="Description détaillée du produit..." />
+                  <TipTapEditor value={descriptionDetaillee} onChange={setDescriptionDetaillee} placeholder={t('admin.productManagement.detailedDescriptionPlaceholder')} />
                 </div>
               )}
 
@@ -4081,6 +4083,12 @@ const ProduitPage = ({
                   <MediaProgress state={mediaProgress} />
                 )}
                 <button
+                  onClick={resetProductForm}
+                  className="w-full h-10 text-[10px] font-black text-amber-600 uppercase tracking-[0.3em] hover:text-amber-800 transition-colors border border-amber-200 hover:border-amber-400 rounded-xl"
+                >
+                  {t('admin.productManagement.reset')}
+                </button>
+                <button
                   onClick={handleCancelEdit}
                   className="w-full h-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] hover:text-slate-900 transition-colors border border-transparent hover:border-slate-200 rounded-xl"
                 >
@@ -4097,7 +4105,7 @@ const ProduitPage = ({
                     ) : (
                       <Copy className="w-4 h-4" />
                     )}
-                    Copier vers {activeSpace === 'boutique' ? 'Configuration guidée' : 'Boutique'}
+                    {t('admin.productManagement.copyTo')} {activeSpace === 'boutique' ? t('admin.productManagement.spaceGuidedConfiguration') : t('admin.productManagement.spaceStore')}
                   </button>
                 )}
               </div>
@@ -4194,13 +4202,13 @@ const ProduitPage = ({
                             />
                           )}
                           <Package className={cn("w-3.5 h-3.5 z-20 transition-colors", mode.includes('sur-commande') ? "text-amber-400" : "text-slate-400")} />
-                          <span className="z-20 whitespace-nowrap">Sur commande</span>
+                          <span className="z-20 whitespace-nowrap">{t('admin.productManagement.onOrder')}</span>
                         </button>
                       </div>
                       {mode.includes('sur-commande') && (
                         <div className="flex items-center gap-1.5 px-1">
                           <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
-                          <span className="text-[10px] text-amber-600 font-semibold">Vente et location désactivés</span>
+                          <span className="text-[10px] text-amber-600 font-semibold">{t('admin.productManagement.saleAndRentalDisabledShort')}</span>
                         </div>
                       )}
                     </div>
@@ -4233,12 +4241,12 @@ const ProduitPage = ({
                       </>
                     ) : (
                       <>
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Badges</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.badges')}</label>
                         <div className="grid grid-cols-3 gap-2">
                           {[
-                            { id: 'populaire', label: 'Populaires', icon: TrendingUp, activeColor: 'text-orange-400' },
-                            { id: 'nouveaute', label: 'Nouveautés', icon: Sparkles, activeColor: 'text-blue-400' },
-                            { id: 'promotion', label: 'Promotion', icon: Tag, activeColor: 'text-red-400' },
+                            { id: 'populaire', label: t('admin.productManagement.badgePopular'), icon: TrendingUp, activeColor: 'text-orange-400' },
+                            { id: 'nouveaute', label: t('admin.productManagement.badgeNewArrival'), icon: Sparkles, activeColor: 'text-blue-400' },
+                            { id: 'promotion', label: t('admin.productManagement.badgePromotion'), icon: Tag, activeColor: 'text-red-400' },
                           ].map((badge) => {
                             const isActive = badges.includes(badge.id);
                             return (
@@ -4295,7 +4303,7 @@ const ProduitPage = ({
                 {/* Galerie photos (Mobile, Boutique only) */}
                 {activeSpace === 'boutique' && (
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Galerie photos</label>
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">{t('admin.productManagement.photoGallery')}</label>
                     <input type="file" ref={galleryFileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*,video/mp4,video/webm,video/quicktime" multiple />
                     <DndContext collisionDetection={closestCenter} onDragEnd={(e) => { if (e.active && e.over && e.active.id !== e.over.id) { setGalleryUrls((items) => { const ids = items.map(i => i.url); const oldIdx = ids.indexOf(String(e.active.id)); const newIdx = ids.indexOf(String(e.over.id)); return arrayMove(items, oldIdx, newIdx); }); } }}>
                       <SortableContext items={galleryUrls.map(i => i.url)}>
@@ -4305,7 +4313,7 @@ const ProduitPage = ({
                           ))}
                           <button onClick={triggerGalleryUpload} className="w-[calc(33.333%-6px)] aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-slate-400 transition-colors">
                             <Plus className="w-5 h-5 text-slate-300" />
-                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Ajouter</span>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.add')}</span>
                           </button>
                         </div>
                       </SortableContext>
@@ -4330,6 +4338,13 @@ const ProduitPage = ({
                 className="w-12 h-12 rounded-[16px] bg-black text-white flex items-center justify-center transition-all hover:bg-[#c6ff00] hover:text-black shadow-lg shrink-0"
               >
                 <ChevronLeft size={20} strokeWidth={3} />
+              </button>
+              <button
+                onClick={resetProductForm}
+                className="w-12 h-12 rounded-[16px] bg-amber-500 text-white flex items-center justify-center transition-all hover:bg-amber-600 shadow-lg shrink-0"
+                title={t('admin.productManagement.reset')}
+              >
+                <RefreshCw size={16} strokeWidth={3} />
               </button>
               <button
                 onClick={handleSaveProduct}
@@ -5141,6 +5156,13 @@ export default function ProductManagementClient() {
     setUploadedPhoto(null);
     setUploadedVideo(null);
     setUploadedPdf(null);
+    setPdfImportMode(false);
+    setImportPdfFile(null);
+    setIsParsingPdf(false);
+    setPdfParseError('');
+    setIsAnalyzing(false);
+    setAnalysisProgress(0);
+    setAiSuggestion(null);
     setMediaProgress({ status: 'idle', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName: '', isVideo: false });
     lastInitializedProductId.current = undefined as any;
   };
@@ -7088,6 +7110,7 @@ export default function ProductManagementClient() {
                    products={products}
                     handleSaveProduct={handleSaveProduct}
                    handleCancelEdit={handleCancelEdit}
+                   resetProductForm={resetProductForm}
                   setActivePage={handlePageChange}
                   user={user}
                   isSaving={isSaving}
