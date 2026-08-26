@@ -35,6 +35,15 @@ const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 const VIDEO_TIMEOUT_MS = 120_000;
 
+async function checkCodecAvailable(codec: string): Promise<boolean> {
+  try {
+    const { stdout } = await execFileAsync(FFMPEG_PATH, ['-encoders']);
+    return stdout.includes(codec);
+  } catch {
+    return false;
+  }
+}
+
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff']);
 const VIDEO_TYPES = new Set(['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-matroska']);
 
@@ -102,7 +111,7 @@ async function optimizeVideoWithProgress(
   outputPath: string,
   sendEvent: (event: string, data: any) => void,
   signal?: AbortSignal,
-): Promise<void> {
+): Promise<{ outputFormat: string; outputMime: string }> {
   if (signal?.aborted) throw new Error('Video optimization cancelled');
 
   // --- Probe audio stream ---
@@ -141,13 +150,50 @@ async function optimizeVideoWithProgress(
 
   if (signal?.aborted) throw new Error('Video optimization cancelled');
 
+  // Detect available video/audio codecs
+  const hasVP9 = await checkCodecAvailable('libvpx-vp9');
+  const hasVP8 = await checkCodecAvailable('libvpx');
+  const hasOpus = await checkCodecAvailable('libopus');
+  const hasAac = await checkCodecAvailable('aac');
+
+  let vCodec = 'libvpx-vp9';
+  let vExtra: string[] = ['-crf', '35', '-b:v', '0'];
+  let outputFormat = 'webm';
+  let outputMime = 'video/webm';
+  if (hasVP9) {
+    vCodec = 'libvpx-vp9';
+    vExtra = ['-crf', '35', '-b:v', '0'];
+  } else if (hasVP8) {
+    vCodec = 'libvpx';
+    vExtra = ['-crf', '35', '-b:v', '0'];
+    console.warn('[media/optimize] libvpx-vp9 not available, falling back to libvpx');
+  } else {
+    console.warn('[media/optimize] No VP8/VP9 codec found, falling back to mpeg4 with mp4 container');
+    vCodec = 'mpeg4';
+    vExtra = ['-q:v', '5'];
+    outputFormat = 'mp4';
+    outputMime = 'video/mp4';
+  }
+
+  let aCodec = 'libopus';
+  if (hasOpus) {
+    aCodec = 'libopus';
+  } else if (hasAac) {
+    aCodec = 'aac';
+    if (outputFormat === 'webm') { outputFormat = 'mp4'; outputMime = 'video/mp4'; }
+    console.warn('[media/optimize] libopus not available, falling back to aac');
+  } else {
+    console.warn('[media/optimize] No Opus/AAC codec found, skipping audio');
+  }
+
   const args = [
     '-i', inputPath,
-    '-c:v', 'libvpx-vp9', '-crf', '35', '-b:v', '0',
-    '-f', 'webm', '-y',
+    '-c:v', vCodec, ...vExtra,
+    '-f', outputFormat, '-y',
     '-progress', 'pipe:1',
   ];
-  if (hasAudio) args.push('-c:a', 'libopus', '-b:a', '128k');
+  if (hasAudio && (hasOpus || hasAac)) args.push('-c:a', aCodec, '-b:a', '128k');
+  if (!hasAudio || (!hasOpus && !hasAac)) args.push('-an');
   args.push(outputPath);
 
   console.log(`[media/optimize] Starting FFmpeg: ${FFMPEG_PATH} ${args.join(' ')}`);
@@ -192,9 +238,9 @@ async function optimizeVideoWithProgress(
       if (killed) return;
       if (code === 0) {
         console.log('[media/optimize] FFmpeg completed successfully');
-        resolve();
+        resolve({ outputFormat, outputMime });
       } else {
-        const msg = `FFmpeg exited with code ${code}: ${stderr.slice(0, 300)}`;
+        const msg = `FFmpeg exited with code ${code}: ${stderr.slice(-800)}`;
         console.error('[media/optimize]', msg);
         reject(new Error(msg));
       }
@@ -296,6 +342,7 @@ export async function POST(request: NextRequest) {
       }
 
       let optimizedBuffer: Buffer;
+      let videoOutputMime = 'video/webm';
 
       if (kind === 'image') {
         sendEvent('progress', { progress: 10, phase: 'processing' });
@@ -313,7 +360,8 @@ export async function POST(request: NextRequest) {
 
         await writeFile(inputTmp, buffer);
         sendEvent('progress', { progress: 10, phase: 'processing' });
-        await optimizeVideoWithProgress(inputTmp, outputTmp, sendEvent, signal);
+        const { outputMime } = await optimizeVideoWithProgress(inputTmp, outputTmp, sendEvent, signal);
+        videoOutputMime = outputMime;
         sendEvent('progress', { progress: 95, phase: 'uploading' });
         optimizedBuffer = await readFile(outputTmp);
       }
@@ -326,7 +374,7 @@ export async function POST(request: NextRequest) {
       const fileRef = bucket.file(storagePath);
 
       await fileRef.save(optimizedBuffer, {
-        metadata: { contentType: kind === 'image' ? 'image/webp' : 'video/webm' },
+        metadata: { contentType: kind === 'image' ? 'image/webp' : videoOutputMime },
       });
 
       const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media`;
