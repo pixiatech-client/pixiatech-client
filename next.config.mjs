@@ -9,6 +9,7 @@ const nextConfig = {
       scheduler: './node_modules/scheduler/index.js',
     },
   },
+  serverExternalPackages: ['ffmpeg-static', 'ffprobe-static'],
   experimental: {
     serverActions: {
       bodySizeLimit: '4.5mb',

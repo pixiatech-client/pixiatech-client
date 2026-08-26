@@ -8,6 +8,8 @@ interface UploadImageOptions {
   optimize?: boolean;
   /** Progress callback: receives 0–100 during upload/compression phases */
   onProgress?: (pct: number) => void;
+  /** AbortSignal to cancel the upload */
+  signal?: AbortSignal;
 }
 
 interface UploadImageResult {
@@ -39,7 +41,7 @@ export async function uploadImageFull(
       ? { file: fileOrOptions, optimize: false }
       : fileOrOptions;
 
-  const { file, optimize = false, onProgress } = opts;
+  const { file, optimize = false, onProgress, signal } = opts;
 
   // Fast path: direct upload (existing behavior)
   if (!optimize) {
@@ -59,6 +61,7 @@ export async function uploadImageFull(
   const res = await fetch('/api/media/optimize', {
     method: 'POST',
     body: formData,
+    signal,
   });
 
   if (!res.ok) {
@@ -69,7 +72,6 @@ export async function uploadImageFull(
   // Read SSE stream
   const contentType = res.headers.get('content-type') || '';
   if (!contentType.includes('text/event-stream')) {
-    // Fallback: old-style JSON response (shouldn't happen but be safe)
     const data = await res.json();
     onProgress?.(100);
     return { url: data.url, originalSize: data.originalSize, optimizedSize: data.optimizedSize };
@@ -82,32 +84,32 @@ export async function uploadImageFull(
   let buffer = '';
   let resultData: any = null;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
+      buffer += decoder.decode(value, { stream: true });
 
-    // Parse SSE events
-    const events = buffer.split('\n\n');
-    buffer = events.pop() || '';
+      // Parse SSE events
+      const events = buffer.split('\n\n');
+      buffer = events.pop() || '';
 
-    for (const evt of events) {
-      const lines = evt.split('\n');
-      let eventType = '';
-      let eventData = '';
+      for (const evt of events) {
+        const lines = evt.split('\n');
+        let eventType = '';
+        let eventData = '';
 
-      for (const line of lines) {
-        if (line.startsWith('event: ')) {
-          eventType = line.slice(7).trim();
-        } else if (line.startsWith('data: ')) {
-          eventData = line.slice(6);
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith('data: ')) {
+            eventData = line.slice(6);
+          }
         }
-      }
 
-      if (!eventType || !eventData) continue;
+        if (!eventType || !eventData) continue;
 
-      try {
         const parsed = JSON.parse(eventData);
 
         if (eventType === 'progress') {
@@ -115,18 +117,29 @@ export async function uploadImageFull(
         } else if (eventType === 'result') {
           resultData = parsed;
         } else if (eventType === 'error') {
+          // Propagate the real error from the server — never mask it
+          if (parsed.cancelled) {
+            const err = new Error(parsed.error || 'Operation cancelled');
+            err.name = 'AbortError';
+            throw err;
+          }
           throw new Error(parsed.error || 'Optimization failed');
         }
-      } catch (err: any) {
-        if (err.message === 'Optimization failed' || err.message.startsWith('Missing') || err.message.startsWith('Unsupported') || err.message.startsWith('File too large') || err.message.startsWith('File content')) {
-          throw err;
-        }
-        // JSON parse error — skip malformed event
       }
     }
+  } catch (err: any) {
+    // AbortError from fetch signal or from SSE error event
+    if (err.name === 'AbortError' || err.message === 'Operation cancelled') {
+      const abortErr = new Error('Upload cancelled');
+      abortErr.name = 'AbortError';
+      throw abortErr;
+    }
+    throw err;
+  } finally {
+    reader.releaseLock();
   }
 
-  if (!resultData) throw new Error('No result received from optimization');
+  if (!resultData) throw new Error('No result received from optimization — the server may have disconnected');
 
   onProgress?.(100);
   return {

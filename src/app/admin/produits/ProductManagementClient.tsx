@@ -5111,6 +5111,10 @@ export default function ProductManagementClient() {
   };
 
   const resetProductForm = () => {
+    // Abort any in-flight operation
+    saveAbortControllerRef.current?.abort();
+    saveAbortControllerRef.current = null;
+    setIsSaving(false);
     setProductName('');
     setMode(['vente']);
     setEnvironment(['exterieur']);
@@ -5168,6 +5172,10 @@ export default function ProductManagementClient() {
   };
 
   const handleCancelEdit = () => {
+    // Abort any in-flight save/upload operation
+    saveAbortControllerRef.current?.abort();
+    saveAbortControllerRef.current = null;
+    setIsSaving(false);
     resetProductForm();
     setEditingProduct(null);
     setActivePage('gestion');
@@ -5668,6 +5676,13 @@ export default function ProductManagementClient() {
       });
       return;
     }
+    // Cancel any previous in-flight save operation
+    saveAbortControllerRef.current?.abort();
+    const generation = ++saveGenerationRef.current;
+    const controller = new AbortController();
+    saveAbortControllerRef.current = controller;
+    const signal = controller.signal;
+
     setIsSaving(true);
 
     try {
@@ -5681,7 +5696,9 @@ export default function ProductManagementClient() {
         const photoResult = await uploadImageFull({
           file: uploadedPhoto,
           optimize: true,
+          signal,
           onProgress: (pct) => {
+            if (saveGenerationRef.current !== generation) return;
             setMediaProgress(prev => ({
               ...prev,
               progress: pct,
@@ -5699,7 +5716,9 @@ export default function ProductManagementClient() {
         const videoResult = await uploadImageFull({
           file: uploadedVideo,
           optimize: true,
+          signal,
           onProgress: (pct) => {
+            if (saveGenerationRef.current !== generation) return;
             setMediaProgress(prev => ({
               ...prev,
               progress: pct,
@@ -5724,57 +5743,69 @@ export default function ProductManagementClient() {
       // Handle Gallery Photos & Videos Upload
       const finalGalleryUrls: any[] = [];
       for (let i = 0; i < galleryUrls.length; i++) {
+        if (signal.aborted) throw new Error('Upload cancelled');
+        if (saveGenerationRef.current !== generation) return;
         const item = galleryUrls[i];
         if (item.url.startsWith('data:')) {
           const isVid = item.type === 'video';
           const ext = isVid ? 'mp4' : 'jpg';
           const fileName = `galerie_${i + 1}.${ext}`;
+          if (saveGenerationRef.current !== generation) return;
           setMediaProgress({ status: 'uploading', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName, isVideo: isVid });
           const blob = await (await fetch(item.url)).blob();
           const formData = new FormData();
           formData.append('file', blob, `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
-          const res = await fetch('/api/media/optimize', { method: 'POST', body: formData });
+          const res = await fetch('/api/media/optimize', { method: 'POST', body: formData, signal });
           if (!res.ok) throw new Error(`Gallery upload failed: ${res.status}`);
           const contentType = res.headers.get('content-type') || '';
           if (contentType.includes('text/event-stream')) {
-            // SSE stream — read progress
             const reader = res.body?.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
             let resultData: any = null;
             if (reader) {
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buffer += decoder.decode(value, { stream: true });
-                const events = buffer.split('\n\n');
-                buffer = events.pop() || '';
-                for (const evt of events) {
-                  const lines = evt.split('\n');
-                  let eventType = '';
-                  let eventData = '';
-                  for (const line of lines) {
-                    if (line.startsWith('event: ')) eventType = line.slice(7).trim();
-                    else if (line.startsWith('data: ')) eventData = line.slice(6);
-                  }
-                  if (!eventType || !eventData) continue;
-                  const parsed = JSON.parse(eventData);
-                  if (eventType === 'progress') {
-                    setMediaProgress(prev => ({ ...prev, progress: parsed.progress ?? 50, status: parsed.progress < 10 ? 'uploading' : 'processing' }));
-                  } else if (eventType === 'result') {
-                    resultData = parsed;
-                  } else if (eventType === 'error') {
-                    throw new Error(parsed.error || 'Gallery optimization failed');
+              try {
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  buffer += decoder.decode(value, { stream: true });
+                  const events = buffer.split('\n\n');
+                  buffer = events.pop() || '';
+                  for (const evt of events) {
+                    const lines = evt.split('\n');
+                    let eventType = '';
+                    let eventData = '';
+                    for (const line of lines) {
+                      if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+                      else if (line.startsWith('data: ')) eventData = line.slice(6);
+                    }
+                    if (!eventType || !eventData) continue;
+                    const parsed = JSON.parse(eventData);
+                    if (eventType === 'progress') {
+                      if (saveGenerationRef.current !== generation) return;
+                      setMediaProgress(prev => ({ ...prev, progress: parsed.progress ?? 50, status: parsed.progress < 10 ? 'uploading' : 'processing' }));
+                    } else if (eventType === 'result') {
+                      resultData = parsed;
+                    } else if (eventType === 'error') {
+                      if (parsed.cancelled) {
+                        const err = new Error(parsed.error || 'Upload cancelled');
+                        err.name = 'AbortError';
+                        throw err;
+                      }
+                      throw new Error(parsed.error || 'Gallery optimization failed');
+                    }
                   }
                 }
+              } finally {
+                reader.releaseLock();
               }
             }
+            if (saveGenerationRef.current !== generation) return;
             if (resultData) {
               finalGalleryUrls.push({ url: resultData.url, type: item.type });
               setMediaProgress(prev => ({ ...prev, status: 'completed', progress: 100, optimizedSize: resultData.optimizedSize }));
             }
           } else {
-            // Fallback JSON
             const data = await res.json();
             finalGalleryUrls.push({ url: data.url, type: item.type });
           }
@@ -5913,15 +5944,24 @@ export default function ProductManagementClient() {
       setPhotoUrl('');
       setVideoUrl('');
     } catch (error: any) {
-      console.error('Error saving product:', error);
-      toast({
-        title: t('admin.productManagement.saveErrorToast'),
-        description: error.message || t('admin.productManagement.saveErrorDesc'),
-        variant: "destructive"
-      });
+      // Don't show toast for voluntary cancellations
+      if (error.name === 'AbortError' || error.message === 'Upload cancelled' || error.message === 'Video optimization cancelled') {
+        console.log('[ProductManagement] Save operation cancelled');
+      } else {
+        console.error('Error saving product:', error);
+        toast({
+          title: t('admin.productManagement.saveErrorToast'),
+          description: error.message || t('admin.productManagement.saveErrorDesc'),
+          variant: "destructive"
+        });
+      }
     } finally {
-      setIsSaving(false);
-      setMediaProgress({ status: 'idle', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName: '', isVideo: false });
+      // Only reset if this is still the current operation (not superseded by a new save)
+      if (saveGenerationRef.current === generation) {
+        saveAbortControllerRef.current = null;
+        setIsSaving(false);
+        setMediaProgress({ status: 'idle', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName: '', isVideo: false });
+      }
     }
   };
 
@@ -6380,6 +6420,11 @@ export default function ProductManagementClient() {
   // Ref to track which product ID has already been initialized, preventing
   // the form from re-resetting when characteristics load asynchronously (F5 race condition fix).
   const lastInitializedProductId = useRef<string | null>(undefined as any);
+
+  // AbortController for current save/upload operation — allows cancellation
+  const saveAbortControllerRef = useRef<AbortController | null>(null);
+  // Generation counter — incremented on each new save; prevents stale callbacks from affecting new state
+  const saveGenerationRef = useRef(0);
 
   // Pre-fill form when editing — only re-runs when editingProduct actually changes (by ID).
   // Characteristics are used only for legacy fallback paths; they do NOT trigger re-initialization.

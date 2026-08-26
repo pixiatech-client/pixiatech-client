@@ -33,6 +33,7 @@ export function useMediaUpload() {
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
+    abortRef.current = null;
     setState(INITIAL_STATE);
   }, []);
 
@@ -43,7 +44,6 @@ export function useMediaUpload() {
 
     const isVideo = file.type.startsWith('video/');
 
-    // Initial state: uploading to server
     setState({
       status: 'uploading',
       progress: 0,
@@ -56,15 +56,14 @@ export function useMediaUpload() {
     });
 
     try {
-      // uploadImageFull will stream SSE progress back via onProgress
       const result = await uploadImageFull({
         file,
         optimize: true,
+        signal: controller.signal,
         onProgress: (pct) => {
-          // Determine phase from progress: <10 = uploading, 10-90 = processing, >90 = uploading result
           let status: MediaStatus = 'processing';
           if (pct < 10) status = 'uploading';
-          else if (pct >= 95) status = 'uploading'; // uploading result to Firebase
+          else if (pct >= 95) status = 'uploading';
 
           setState(prev => ({
             ...prev,
@@ -74,7 +73,6 @@ export function useMediaUpload() {
         },
       });
 
-      // Completed
       setState({
         status: 'completed',
         progress: 100,
@@ -102,5 +100,5 @@ export function useMediaUpload() {
     }
   }, []);
 
-  return { ...state, upload, reset };
+  return { ...state, upload, reset, abort: () => abortRef.current?.abort() };
 }
