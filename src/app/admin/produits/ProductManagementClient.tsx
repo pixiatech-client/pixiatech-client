@@ -2667,11 +2667,12 @@ const ProduitPage = ({
    setShowIconPicker3,
    pdfImportMode,
    setPdfImportMode,
-   handlePdfImportToggle,
-   isParsingPdf,
-   pdfParseError,
-   importPdfFile,
-   setImportPdfFile,
+    handlePdfImportToggle,
+    isParsingPdf,
+    pdfParseError,
+    importPdfFile,
+    setImportPdfFile,
+    handleCancelEdit,
 }: any) => {
   const { t } = useI18n();
   const [specPage, setSpecPage] = useState(1);
@@ -4080,7 +4081,7 @@ const ProduitPage = ({
                   <MediaProgress state={mediaProgress} />
                 )}
                 <button
-                  onClick={() => { setEditingProduct(null); setActivePage('gestion'); }}
+                  onClick={handleCancelEdit}
                   className="w-full h-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] hover:text-slate-900 transition-colors border border-transparent hover:border-slate-200 rounded-xl"
                 >
                   {t('admin.productManagement.cancel')}
@@ -4325,7 +4326,7 @@ const ProduitPage = ({
           <div className="relative p-1.5 bg-black/20 backdrop-blur-md border border-white/50 rounded-[24px] shadow-2xl pointer-events-auto">
             <div className="relative z-10 flex items-center gap-2 w-full">
               <button
-                onClick={() => { setEditingProduct(null); setActivePage('gestion'); }}
+                onClick={handleCancelEdit}
                 className="w-12 h-12 rounded-[16px] bg-black text-white flex items-center justify-center transition-all hover:bg-[#c6ff00] hover:text-black shadow-lg shrink-0"
               >
                 <ChevronLeft size={20} strokeWidth={3} />
@@ -5068,6 +5069,7 @@ export default function ProductManagementClient() {
     setActivePage(newPage);
     // Clear editing product when navigating away from the form
     if (newPage !== 'produit') {
+      resetProductForm();
       setEditingProduct(null);
       setPrimaryDistance('');
     }
@@ -5087,9 +5089,66 @@ export default function ProductManagementClient() {
   };
 
   const startNewProduct = () => {
+    resetProductForm();
     setEditingProduct(null);
     setActivePage('produit');
     setPrimaryDistance('');
+  };
+
+  const resetProductForm = () => {
+    setProductName('');
+    setMode(['vente']);
+    setEnvironment(['exterieur']);
+    setScreenType('flat');
+    setBadges([]);
+    setGalleryUrls([]);
+    setDescription('');
+    setDescriptionDetaillee('');
+    setVariants([]);
+    setPrixVente('1250');
+    setOldPrice('');
+    setPrixLocationHeure('');
+    setPrixLocationJour('');
+    setSurfaceMaxLocation('');
+    setRentalStock('');
+    setRentalQuantity('1');
+    setStock('');
+    setSurfaceMinRequise('0');
+    setLargeurDalle('50');
+    setHauteurDalle('50');
+    setPrixDalle('20');
+    setDimensionsEnabled(false);
+    setSurface(9.00);
+    setIsHidden(false);
+    setUpsellFor([]);
+    setRating('5');
+    setShowRating(true);
+    setReviews('0');
+    setDownloadEnabled(true);
+    setDownloadLabel('');
+    setPlayStoreUrl('');
+    setAppStoreUrl('');
+    setDownloadLabel2('');
+    setDownloadUrl2('');
+    setDownloadLabel3('');
+    setDownloadUrl3('');
+    setSelectedChars([]);
+    setDistancePitches({});
+    setPrimaryDistance('');
+    setPhotoUrl('');
+    setVideoUrl('');
+    setPdfUrl('');
+    setUploadedPhoto(null);
+    setUploadedVideo(null);
+    setUploadedPdf(null);
+    setMediaProgress({ status: 'idle', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName: '', isVideo: false });
+    lastInitializedProductId.current = undefined as any;
+  };
+
+  const handleCancelEdit = () => {
+    resetProductForm();
+    setEditingProduct(null);
+    setActivePage('gestion');
   };
 
   const openCopyModal = (target: 'boutique' | 'configuration') => {
@@ -5823,6 +5882,7 @@ export default function ProductManagementClient() {
         });
       }
 
+      resetProductForm();
       setActivePage('gestion');
       setEditingProduct(null);
       setPrimaryDistance('');
@@ -6454,57 +6514,7 @@ export default function ProductManagementClient() {
       setDownloadCustomIcon3(editingProduct.downloadCustomIcon3 || '');
     } else {
       // Reset form for new product creation
-      setProductName('');
-      setMode(['vente']);
-      setEnvironment(['exterieur']);
-      setScreenType('flat');
-      setBadges([]);
-      setGalleryUrls([]);
-      setDescription('');
-      setDescriptionDetaillee('');
-      setVariants([]);
-      setPrixVente('1250');
-      setOldPrice('');
-
-      // Reset technical/pricing specs
-      setPrixLocationHeure('');
-      setPrixLocationJour('');
-      setSurfaceMaxLocation('');
-      setRentalStock('');
-      setRentalQuantity('1');
-      setStock('');
-      setSurfaceMinRequise('0');
-      setLargeurDalle('50');
-      setHauteurDalle('50');
-      setPrixDalle('20');
-      setDimensionsEnabled(false);
-      setSurface(9.00);
-      setIsHidden(false);
-      setUpsellFor([]);
-
-      // Reset rating & downloads custom properties
-      setRating('5');
-      setShowRating(true);
-      setReviews('0');
-      setDownloadEnabled(true);
-      setDownloadLabel('');
-      setPlayStoreUrl('');
-      setAppStoreUrl('');
-      setDownloadLabel2('');
-      setDownloadUrl2('');
-      setDownloadLabel3('');
-      setDownloadUrl3('');
-
-      // New product: start with empty specs — user adds them manually
-      setSelectedChars([]);
-      setDistancePitches({});
-      setPrimaryDistance('');
-      setPhotoUrl('');
-      setVideoUrl('');
-      setPdfUrl('');
-      setUploadedPhoto(null);
-      setUploadedVideo(null);
-      setUploadedPdf(null);
+      resetProductForm();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingProduct]); // Only re-init when the product being edited changes, NOT when characteristics loads async
@@ -7076,7 +7086,8 @@ export default function ProductManagementClient() {
                    upsellFor={upsellFor}
                    setUpsellFor={setUpsellFor}
                    products={products}
-                   handleSaveProduct={handleSaveProduct}
+                    handleSaveProduct={handleSaveProduct}
+                   handleCancelEdit={handleCancelEdit}
                   setActivePage={handlePageChange}
                   user={user}
                   isSaving={isSaving}
