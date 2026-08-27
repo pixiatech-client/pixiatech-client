@@ -3929,8 +3929,8 @@ const ProduitPage = ({
                     {pdfImportMode ? 'Import PDF' : t('admin.productManagement.manualMode')}
                   </span>
                   <Switch
-                    checked={pdfImportMode}
-                    onCheckedChange={handlePdfImportToggle}
+                    checked={!pdfImportMode}
+                    onCheckedChange={(on) => handlePdfImportToggle(!on)}
                     className="data-[state=checked]:bg-[#18181B]"
                   />
                 </div>
@@ -5194,7 +5194,7 @@ export default function ProductManagementClient() {
   const [productName, setProductName] = useState('');
   const [characteristics, setCharacteristics] = useState<any[]>([]);
   const [wizardSettings, setWizardSettings] = useState<{ viewingDistances: string[], pixelPitches: string[] }>({ viewingDistances: [], pixelPitches: [] });
-  const [activeSpace, setActiveSpace] = useState<'boutique' | 'configuration'>('configuration');
+  const [activeSpace, setActiveSpace] = useState<'boutique' | 'configuration'>('boutique');
   const prodCol = useMemo(() => activeSpace === 'boutique' ? 'boutique_products' : 'products', [activeSpace]);
   // Source unique partagée : les deux espaces utilisent la même liste de caractéristiques
   const charCol = 'characteristics';
@@ -6161,25 +6161,31 @@ export default function ProductManagementClient() {
           }
 
           if (data.newCharacteristic) {
-            const exists = characteristics.some(c => normalizeSearchText(c.name) === normalizeSearchText(data.newCharacteristic.name));
-            if (!exists) {
-              if (aiSettings.autoCreateCharacteristics) {
-                const newChar = {
-                  id: `char-${Date.now()}`,
+            const existingChar = characteristics.find(c => normalizeSearchText(c.name) === normalizeSearchText(data.newCharacteristic.name));
+            if (existingChar) {
+              setSelectedChars(prev => prev.some(c => c.id === existingChar.id)
+                ? prev
+                : [...prev, { id: existingChar.id, value: data.newCharacteristic.variants[0] }]);
+            } else if (aiSettings.autoCreateCharacteristics) {
+                const newCharData = {
                   name: data.newCharacteristic.name.toUpperCase(),
                   iconName: 'puissance',
-                  variants: data.newCharacteristic.variants.map((v: string, i: number) => ({ id: i + 1, value: v })),
+                  customIcon: null,
+                  variants: data.newCharacteristic.variants.map((v: string, i: number) => ({ id: String(i + 1), value: v })),
                   options: data.newCharacteristic.variants,
                   color: 'text-blue-400',
+                  border: 'focus:border-blue-400',
                   locked: false,
+                  isPinned: false,
                   uid: user.uid
                 };
+                const charRef = await addDoc(collection(db, charCol), newCharData);
+                const newChar = { id: charRef.id, ...newCharData };
                 setCharacteristics(prev => [...prev, newChar]);
                 setSelectedChars(prev => [...prev, { id: newChar.id, value: data.newCharacteristic.variants[0] }]);
               } else {
                 setAiSuggestion(data.newCharacteristic);
               }
-            }
           }
 
           setAnalysisProgress(100);
@@ -6254,7 +6260,7 @@ export default function ProductManagementClient() {
     galleryFileInputRef.current?.click();
   };
 
-  const applyParsedData = (data: ParsedProductData) => {
+  const applyParsedData = async (data: ParsedProductData) => {
     // Product name
     if (data.productName) setProductName(data.productName);
 
@@ -6298,11 +6304,11 @@ export default function ProductManagementClient() {
     }
 
     // Technical specifications → selectedChars
-    // Match existing characteristics by name, add unmatched as new
+    // Match existing characteristics by name, persist unmatched as new (same path as the manual CaracteristiquesPage)
     if (data.technicalSpecifications) {
       const specs = data.technicalSpecifications;
       const newChars: any[] = [];
-      Object.keys(specs).forEach((key) => {
+      for (const key of Object.keys(specs)) {
         const existing = characteristics.find(
           (c) => normalizeSearchText(c.name) === normalizeSearchText(key)
         );
@@ -6312,19 +6318,22 @@ export default function ProductManagementClient() {
             return [...filtered, { id: existing.id, value: specs[key] }];
           });
         } else {
-          const newChar = {
-            id: `char-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          const newCharData = {
             name: key.toUpperCase(),
             iconName: 'spec',
-            variants: [{ id: 1, value: specs[key] }],
+            customIcon: null,
+            variants: [{ id: '1', value: specs[key] }],
             options: [specs[key]],
             color: 'text-slate-400',
+            border: 'focus:border-slate-400',
             locked: false,
-            uid: user?.uid || '',
+            isPinned: false,
+            uid: user?.uid || 'system',
           };
-          newChars.push(newChar);
+          const charRef = await addDoc(collection(db, charCol), newCharData);
+          newChars.push({ id: charRef.id, ...newCharData });
         }
-      });
+      }
       if (newChars.length > 0) {
         setCharacteristics((prev) => [...prev, ...newChars]);
         setSelectedChars((prev) => [
@@ -6355,7 +6364,7 @@ export default function ProductManagementClient() {
         setIsParsingPdf(true);
         try {
           const parsed = await parseProductPdf(file);
-          applyParsedData(parsed);
+          await applyParsedData(parsed);
         } catch (err) {
           console.error('PDF parse error:', err);
           setPdfParseError(err instanceof Error ? err.message : 'Erreur lors de l\'analyse du PDF.');
