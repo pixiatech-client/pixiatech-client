@@ -37,7 +37,7 @@ import { useUser } from '@/firebase';
 import { useI18n } from '@/lib/i18n';
 import { QuotePDF } from '@/app/admin/quote-pdf';
 import confetti from 'canvas-confetti';
-import { calculatePromotionPercent, computeProductLineTotal, computeProductUnitPrice } from '@/lib/pricing-engine';
+import { calculatePromotionPercent, computeProductLineTotal, computeProductUnitPrice, computeLaborCost } from '@/lib/pricing-engine';
 
 import type { QuoteDetails } from '@/lib/types';
 
@@ -188,6 +188,14 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   }, [selectedProduct, configState.width, configState.height, configState.projectType, configState.quantity]);
 
   const totalQuote = lineTotal;
+
+  // Installation / techniciens : calculés par le moteur partagé. Sans règles
+  // labor configurées, installationCost = 0 et techniciansRequired = 0.
+  const totalArea = area * (configState.quantity || 1);
+  const laborCost = computeLaborCost(laborSettings, totalArea);
+  const installationCost = includeInstallation ? laborCost.installationCost : 0;
+  const techniciansRequired = includeInstallation ? laborCost.techniciansRequired : 0;
+  const totalQuoteWithFees = totalQuote + installationCost;
 
   const totalQuantity = configState.quantity || 1;
   const activePack: Pack = React.useMemo(() => ({
@@ -740,11 +748,11 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           }] : [],
           transactionType: configState.projectType === 'vente' ? 'sale' : 'rental',
           includeInstallation,
-          installationCost: includeInstallation ? 0 : 0,
-          techniciansRequired: includeInstallation ? 1 : 0,
+          installationCost,
+          techniciansRequired,
           includeDelivery: false,
           deliveryCost: 0,
-          totalQuote,
+          totalQuote: totalQuoteWithFees,
           width: configState.width,
           height: configState.height,
           productName: selectedProduct?.name ?? '',
@@ -1954,9 +1962,9 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             productName: selectedProduct?.name || '',
                             lineTotal,
                           }] : [],
-                          installationCost: includeInstallation ? 0 : 0,
+                          installationCost,
                           deliveryCost: 0,
-                          totalQuote,
+                          totalQuote: totalQuoteWithFees,
                           transactionType: configState.projectType === 'vente' ? 'sale' : 'rental',
                           lang: locale as 'fr' | 'en',
                           width: configState.width,
@@ -1964,7 +1972,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                           productName: selectedProduct?.name ?? '',
                           screenType: 'indoor',
                           includeInstallation,
-                          techniciansRequired: includeInstallation ? 1 : 0,
+                          techniciansRequired,
                           includeDelivery: false,
                           rentalPeriod: configState.rentalStartDate && configState.rentalEndDate
                             ? { from: new Date(configState.rentalStartDate), to: new Date(configState.rentalEndDate) }

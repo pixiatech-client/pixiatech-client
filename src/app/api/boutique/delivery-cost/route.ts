@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import type { DeliverySettings, City } from '@/lib/types';
+import { computeDeliveryCostDetails } from '@/lib/pricing-engine';
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,13 +12,14 @@ export async function GET(req: NextRequest) {
 
     const { adminDb } = getFirebaseAdmin();
 
-    // 1. Read delivery settings
+    // 1. Read delivery settings — configuration sûre : AUCUN tarif par défaut
+    //    n'est inventé tant que l'administrateur n'a rien configuré.
     const settingsDoc = await adminDb.collection('settings').doc('delivery').get();
     const defaults: DeliverySettings = {
-      defaultFee: 600,
+      defaultFee: 0,
       isDefaultFeeEnabled: false,
       isFreeDeliveryEnabled: false,
-      freeDeliveryThreshold: 10000,
+      freeDeliveryThreshold: 0,
       deliveryFeeRules: [],
       isTotalFreeDeliveryEnabled: false,
       unconfiguredZoneMessage: '',
@@ -26,17 +28,7 @@ export async function GET(req: NextRequest) {
       ? { ...defaults, ...settingsDoc.data() }
       : defaults;
 
-    // 2. Check total free delivery
-    if (settings.isTotalFreeDeliveryEnabled) {
-      return NextResponse.json({ deliveryCost: 0, label: 'Livraison offerte', isFree: true });
-    }
-
-    // 3. Check free delivery threshold
-    if (settings.isFreeDeliveryEnabled && subtotal >= settings.freeDeliveryThreshold) {
-      return NextResponse.json({ deliveryCost: 0, label: 'Livraison offerte', isFree: true });
-    }
-
-    // 4. Look up city by postal code
+    // 2. Look up city by postal code / name
     let matchedCity: City | null = null;
     if (postcode || city) {
       const citiesQuery = adminDb.collection('cities');
@@ -48,40 +40,28 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 5. Find matching delivery fee rule
-    let deliveryCost = settings.defaultFee;
+    // 3. Calculate via the shared pricing engine — the SINGLE source of truth.
+    const { cost: deliveryCost, reason } = computeDeliveryCostDetails(settings, {
+      subtotal,
+      zoneId: matchedCity?.zoneId ?? null,
+      cityId: matchedCity?.id ?? null,
+    });
 
-    if (matchedCity?.zoneId && settings.deliveryFeeRules.length > 0) {
-      // First try city-specific rule
-      const cityRule = settings.deliveryFeeRules.find(
-        r => r.zoneId === matchedCity!.zoneId && r.cityId === matchedCity!.id
-      );
-      if (cityRule) {
-        deliveryCost = cityRule.fee;
-      } else {
-        // Then try zone-wide rule
-        const zoneRule = settings.deliveryFeeRules.find(
-          r => r.zoneId === matchedCity!.zoneId && !r.cityId
-        );
-        if (zoneRule) {
-          deliveryCost = zoneRule.fee;
-        }
-      }
-    } else if (settings.isDefaultFeeEnabled) {
-      deliveryCost = settings.defaultFee;
-    } else {
-      deliveryCost = 0;
-    }
-
-    // 6. If no zone matched and no default fee, cost is 0
-    if (!matchedCity?.zoneId && !settings.isDefaultFeeEnabled) {
-      deliveryCost = 0;
+    let label = `Livraison Express`;
+    let isFree = false;
+    if (reason === 'total-free' || reason === 'threshold-free' || (reason === 'rule' && deliveryCost === 0)) {
+      label = 'Livraison offerte';
+      isFree = true;
+    } else if (reason === 'unconfigured') {
+      // Aucun tarif configuré : coût 0 mais la zone n'est PAS "offerte" —
+      // c'est un état non configuré, signalé honnêtement au client.
+      label = settings.unconfiguredZoneMessage || 'Livraison gratuite';
     }
 
     return NextResponse.json({
       deliveryCost,
-      label: deliveryCost === 0 ? 'Livraison offerte' : `Livraison Express`,
-      isFree: deliveryCost === 0,
+      label,
+      isFree,
       zoneName: matchedCity?.zoneId || null,
     });
 

@@ -56,7 +56,7 @@ import { Pack, RenterDetails, Step, StepId } from '@/lib/signature-types';
 import { CITIES } from '@/lib/cities';
 import SignaturePad from './SignaturePad';
 import ContractDocument from './ContractDocument';
-import { ConfiguredProduct, Product, Settings, PdfSettings, City, ProductSpec, QuoteRequest } from '@/lib/types';
+import { ConfiguredProduct, Product, Settings, PdfSettings, City, ProductSpec, QuoteRequest, DeliverySettings, LaborSettings } from '@/lib/types';
 import { getPdfSettings, createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp } from '@/app/actions/quote-actions';
 import { getSettings, updateQuotePdfUrl, updateQuoteContractUrl } from '@/app/actions/public-actions';
 import { storage } from '@/firebase/config';
@@ -69,7 +69,7 @@ import html2canvas from 'html2canvas';
 import confetti from 'canvas-confetti';
 import { QuotePDF } from '@/app/admin/quote-pdf';
 import { BlurredPrice } from '@/components/ui/blurred-price';
-import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR, computeProductUnitPrice, computeProductLineTotal, calculateTilesCount } from '@/lib/pricing-engine';
+import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR, computeProductUnitPrice, computeProductLineTotal, calculateTilesCount, computeDeliveryCost, computeLaborCost } from '@/lib/pricing-engine';
 
 // Available professional LED packs for template selection
 const SEED_PACKS: Pack[] = [
@@ -150,6 +150,8 @@ interface SignatureFlowProps {
   allProducts: Product[];
   settings?: Settings;
   userId: string;
+  deliverySettings: DeliverySettings;
+  laborSettings: LaborSettings;
   onNewQuote: () => void;
   onBackToConfigurator: () => void;
   onStepChange?: (step: StepId) => void;
@@ -160,6 +162,8 @@ export default function SignatureFlow({
   allProducts,
   settings,
   userId,
+  deliverySettings,
+  laborSettings,
   onNewQuote,
   onBackToConfigurator,
   onStepChange
@@ -194,7 +198,7 @@ export default function SignatureFlow({
   const [selectedCityId, setSelectedCityId] = useState<string>('');
   const [citySearchQuery, setCitySearchQuery] = useState<string>('');
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState<boolean>(false);
-  const [isInstallationIncluded, setIsInstallationIncluded] = useState<boolean>(true);
+  const [isInstallationIncluded, setIsInstallationIncluded] = useState<boolean>(false);
   const [isInstallationAccordionOpen, setIsInstallationAccordionOpen] = useState<boolean>(true);
   const showRentalPeriodSection = projectMode === 'location';
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -512,24 +516,22 @@ export default function SignatureFlow({
   };
 
   // ============================================
-  // CALCULS CONTRACTUELS - COMMENTAIRES DÉVELOPPEUR
+  // CALCULS CONTRACTUELS
   // ============================================
   // Variables principales :
   // - surface = width * height (m²)
-  // - dalles = surface * 4 (nombre de dalles LED 50x50cm par m²)
+  // - dalles = surface * 4 (nombre de dalles LED 50x50cm par m², ou taille réelle)
   // - quantity = nombre d'écrans identiques
   // - projectMode = 'vente' ou 'location'
   //
   // Formules :
-  // - Prix unitaire vente : 2000€ TTC / m²
-  // - Prix unitaire location : 12€ TTC / m² / mois
-  // - subtotalProducts = surface * pricePerSqm
-  // - deliveryFee = 250€ par écran
-  // - techniciansCount = max(1, ceil(surface / 40)) = 1 technicien par 40m²
-  // - installationFee = techniciansCount * 50€ (seulement si isInstallationIncluded = true)
-  // - totalAmount = (subtotalProducts * quantity) + (deliveryFee * quantity) + (installationFee * quantity)
-  //
-  // Caution/Dépôt location = 50% du sous-total matériel
+  // - Prix unitaire vente : 2000€ TTC / m² (prix produit, non modifié)
+  // - Prix unitaire location : 12€ TTC / m² / mois (prix produit, non modifié)
+  // - deliveryCost : calculé par le moteur partagé (computeDeliveryCost)
+  //   depuis la configuration admin Firestore. Aucun tarif n'est inventé ici.
+  // - installationCost / techniciansRequired : calculés par le moteur partagé
+  //   (computeLaborCost) depuis les règles labor admin. Aucun tarif n'est inventé ici.
+  // - totalAmount = subtotalProducts + deliveryCost + installationCost
   // ============================================
 
   // Live Calculations based on all configured products
@@ -576,11 +578,27 @@ export default function SignatureFlow({
   const totalSurface = productCalculations.reduce((sum, pc) => sum + pc.surface * pc.quantity, 0);
   const totalDalles = productCalculations.reduce((sum, pc) => sum + pc.dalles * pc.quantity, 0);
   const totalSubtotalProducts = productCalculations.reduce((sum, pc) => sum + pc.subtotal * pc.quantity, 0);
-  const totalDeliveryFee = configuredProducts.reduce((sum, p) => sum + 250 * (p.quantity || 1), 0);
-  
-  const techniciansCount = Math.max(1, Math.ceil(totalSurface / 40));
-  const installationFee = isInstallationIncluded ? (techniciansCount * 50) : 0;
-  const totalAmount = totalSubtotalProducts + totalDeliveryFee + installationFee;
+  const selectedCity = CITIES.find(c => c.id === selectedCityId);
+  // Coût de livraison : calculé par le moteur partagé. Sans configuration admin,
+  // il vaut 0 (jamais un tarif inventé). Le sélecteur de ville statique ne
+  // porte pas de zoneId, donc seuls le tarif par défaut et les seuils de
+  // livraison offerte s'appliquent ici ; les règles zone/ville s'appliquent
+  // dans le flux boutique (adresses Firestore, via l'API delivery-cost).
+  const deliveryCost = computeDeliveryCost(
+    deliverySettings,
+    {
+      subtotal: totalSubtotalProducts,
+      zoneId: null,
+      cityId: selectedCityId || null,
+    }
+  );
+
+  // Installation / techniciens : calculés par le moteur partagé. Sans règles
+  // labor configurées, installationCost = 0 et techniciansRequired = 0.
+  const laborCost = computeLaborCost(laborSettings, totalSurface);
+  const techniciansCount = laborCost.techniciansRequired;
+  const installationFee = isInstallationIncluded ? laborCost.installationCost : 0;
+  const totalAmount = totalSubtotalProducts + deliveryCost + installationFee;
 
   const mainProduct = allProducts.find(p => p.id === productCalculations[0]?.productId);
   const productPhoto = mainProduct?.imageUrl || mainProduct?.image || null;
@@ -1033,9 +1051,8 @@ export default function SignatureFlow({
       dimensionsEnabled: !!prod?.hasDimensions,
     };
   });
-  const foundCity = CITIES.find(c => c.id === selectedCityId);
-  const selectedCityForPdf: City | null = foundCity
-    ? { id: foundCity.id, name: foundCity.name, postalCode: foundCity.postalCode }
+  const selectedCityForPdf: City | null = selectedCity
+    ? { id: selectedCity.id, name: selectedCity.name, postalCode: selectedCity.postalCode }
     : null;
 
   return (
@@ -1564,7 +1581,7 @@ export default function SignatureFlow({
                     <div className="flex justify-between items-center text-zinc-400">
                       <span>{t('signature.delivery')}</span>
                       <span className="text-zinc-800 font-bold font-mono">
-                        <BlurredPrice price={`${fmtPrice(totalDeliveryFee)} €`} isPriceHidden={isPriceHidden} />
+                        <BlurredPrice price={`${fmtPrice(deliveryCost)} €`} isPriceHidden={isPriceHidden} />
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-zinc-400">
@@ -2088,8 +2105,8 @@ export default function SignatureFlow({
                           installationCost: installationFee,
                           techniciansRequired: techniciansCount,
                           includeDelivery: true,
-                          deliveryCost: totalDeliveryFee,
-                          totalQuote: totalSubtotalProducts,
+                          deliveryCost,
+                          totalQuote: totalAmount,
                           width: productCalculations[0]?.width || 0,
                           height: productCalculations[0]?.height || 0,
                           productName: productItems[0]?.productName || '',
@@ -2559,7 +2576,7 @@ export default function SignatureFlow({
                   <div className="flex justify-between items-center text-zinc-400">
                     <span>{t('signature.delivery')}</span>
                     <span className="text-zinc-800 font-bold font-mono">
-                      <BlurredPrice price={`${fmtPrice(totalDeliveryFee)} €`} isPriceHidden={isPriceHidden} />
+                      <BlurredPrice price={`${fmtPrice(deliveryCost)} €`} isPriceHidden={isPriceHidden} />
                     </span>
                   </div>
                   <div className="flex justify-between items-center text-zinc-400">
@@ -2737,8 +2754,8 @@ export default function SignatureFlow({
               },
               products: productItems as any,
               installationCost: installationFee,
-              deliveryCost: totalDeliveryFee,
-              totalQuote: totalSubtotalProducts,
+              deliveryCost,
+              totalQuote: totalAmount,
               transactionType: projectMode === 'vente' ? 'sale' : 'rental',
               lang: locale as 'fr' | 'en',
               width: productCalculations[0]?.width || 0,

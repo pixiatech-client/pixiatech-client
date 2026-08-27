@@ -1,6 +1,101 @@
+import type { DeliverySettings, LaborSettings } from '@/lib/types';
+
 export const DEFAULT_SALE_PRICE_PER_SQM = 2000;
 export const DEFAULT_RENTAL_PRICE_PER_DAY = 12;
 export const DEFAULT_RENTAL_PRICE_PER_HOUR = 1.5;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COÛTS LIVRAISON / INSTALLATION / TECHNICIENS — SOURCE DE VÉRITÉ UNIQUE
+//
+// Règles applicables :
+//  - Tout coût vaut 0 tant que l'administrateur ne l'a pas configuré explicitement
+//    dans Firestore (settings/delivery, settings/labor).
+//  - Aucun tarif par défaut caché (600 €, 250 €, 50 €, 1 tech / 40 m², etc.).
+//  - Ces fonctions sont pures : elles ne lisent pas Firestore et n'écrivent rien.
+//    quote-builder, SignatureFlow, WizardBotFlow, les API et les actions serveur
+//    doivent toutes passer par ces fonctions.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface DeliveryCostInput {
+  subtotal?: number;
+  zoneId?: string | null;
+  cityId?: string | null;
+}
+
+export type DeliveryCostReason =
+  | 'total-free'      // livraison offerte globale (configurée)
+  | 'threshold-free'  // livraison offerte au-delà du seuil (configuré)
+  | 'rule'            // règle zone / ville explicite (peut être 0 si la zone est offerte)
+  | 'default'         // tarif par défaut explicitement activé
+  | 'unconfigured';   // AUCUNE règle configurée → 0 et rien n'est inventé
+
+export interface DeliveryCostDetails {
+  cost: number;
+  reason: DeliveryCostReason;
+}
+
+function resolveDeliveryCost(settings: DeliverySettings, input: DeliveryCostInput): DeliveryCostDetails {
+  const subtotal = input.subtotal ?? 0;
+
+  // Livraison offerte globale (configurée par l'administrateur).
+  if (settings.isTotalFreeDeliveryEnabled) return { cost: 0, reason: 'total-free' };
+
+  // Livraison offerte au-delà d'un seuil (configurée par l'administrateur).
+  if (settings.isFreeDeliveryEnabled && subtotal >= (settings.freeDeliveryThreshold ?? 0)) {
+    return { cost: 0, reason: 'threshold-free' };
+  }
+
+  // Règles zone / ville explicitement configurées par l'administrateur.
+  if (input.zoneId && settings.deliveryFeeRules?.length) {
+    const cityRule = settings.deliveryFeeRules.find(
+      r => r.zoneId === input.zoneId && r.cityId && r.cityId === input.cityId
+    );
+    if (cityRule) return { cost: cityRule.fee ?? 0, reason: 'rule' };
+
+    const zoneRule = settings.deliveryFeeRules.find(
+      r => r.zoneId === input.zoneId && !r.cityId
+    );
+    if (zoneRule) return { cost: zoneRule.fee ?? 0, reason: 'rule' };
+  }
+
+  // Tarif par défaut — uniquement si explicitement activé par l'administrateur.
+  if (settings.isDefaultFeeEnabled) return { cost: settings.defaultFee ?? 0, reason: 'default' };
+
+  return { cost: 0, reason: 'unconfigured' };
+}
+
+export function computeDeliveryCost(settings: DeliverySettings, input: DeliveryCostInput = {}): number {
+  return resolveDeliveryCost(settings, input).cost;
+}
+
+export function computeDeliveryCostDetails(settings: DeliverySettings, input: DeliveryCostInput = {}): DeliveryCostDetails {
+  return resolveDeliveryCost(settings, input);
+}
+
+export interface LaborCostResult {
+  installationCost: number;
+  techniciansRequired: number;
+}
+
+export function computeLaborCost(settings: LaborSettings, totalArea: number): LaborCostResult {
+  const rules = settings.rules ?? [];
+  if (totalArea <= 0 || rules.length === 0) {
+    return { installationCost: 0, techniciansRequired: 0 };
+  }
+
+  const applicableRule = [...rules]
+    .sort((a, b) => b.minSqM - a.minSqM)
+    .find(rule => totalArea >= rule.minSqM);
+
+  if (!applicableRule) {
+    return { installationCost: 0, techniciansRequired: 0 };
+  }
+
+  return {
+    installationCost: applicableRule.price ?? 0,
+    techniciansRequired: applicableRule.technicians ?? 0,
+  };
+}
 
 export function normalizePrice(value: string | number | undefined | null): number {
   if (value == null || value === '') return 0;
@@ -201,6 +296,7 @@ export interface QuoteOptions {
   laborDiscount?: number;
   taxRate?: number;
   globalDiscount?: number;
+  techniciansCount?: number;
 }
 
 export interface QuoteTotal {
@@ -254,7 +350,10 @@ export function computeQuoteTotal(
   const finalTotal = totalTTC - (totalTTC * globalDiscount / 100);
 
   const totalArea = products.reduce((acc, p) => acc + ((p.width || 0) * (p.height || 0) * (p.quantity || 1)), 0);
-  const techniciansCount = Math.max(1, Math.ceil(totalArea / 40));
+  // Nombre de techniciens : jamais déduit d'une règle cachée (ex. 1 / 40 m²).
+  // Il doit toujours provenir des règles labor configurées (computeLaborCost) et être
+  // transmis explicitement par l'appelant. Valeur sûre : 0.
+  const techniciansCount = options.techniciansCount ?? 0;
 
   return {
     productsSubtotal,

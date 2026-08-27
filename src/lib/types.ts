@@ -258,6 +258,13 @@ export type LaborRule = {
 
 export type LaborSettings = {
   rules: LaborRule[];
+  // Structure préparée pour la future configuration "techniciens" depuis l'admin.
+  // Chaque champ est OPTIONNEL : tant qu'il n'est pas renseigné, aucun coût n'est
+  // inventé (le moteur de calcul partagé renvoie 0).
+  hourlyRate?: number;
+  perTechnicianFee?: number;
+  travelFee?: number;
+  estimatedDuration?: number;
 };
 
 export type PdfSettings = {

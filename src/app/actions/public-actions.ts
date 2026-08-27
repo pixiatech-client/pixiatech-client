@@ -28,7 +28,7 @@ import { createHash } from 'crypto';
 import { Timestamp } from 'firebase-admin/firestore';
 import type { DocumentSnapshot, Query } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { normalizePrice } from '@/lib/pricing-engine';
+import { normalizePrice, computeDeliveryCost, computeLaborCost } from '@/lib/pricing-engine';
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, Locations, WizardSettings } from '@/lib/types';
 import { checkQuoteCapability } from '@/lib/capability';
 
@@ -152,11 +152,13 @@ export async function getSettings(): Promise<Settings> {
 
 export const getDeliverySettings = cache(async (): Promise<DeliverySettings> => {
   const { adminDb } = getFirebaseAdmin();
+  // Configuration sûre par défaut : AUCUN tarif n'est inventé. Une lecture reste
+  // une lecture — aucun document Firestore n'est créé en écriture ici.
   const defaults: DeliverySettings = {
-    defaultFee: 600,
+    defaultFee: 0,
     isDefaultFeeEnabled: false,
     isFreeDeliveryEnabled: false,
-    freeDeliveryThreshold: 10000,
+    freeDeliveryThreshold: 0,
     deliveryFeeRules: [],
     isTotalFreeDeliveryEnabled: false,
     unconfiguredZoneMessage: "Cette zone n’est pas encore configurée dans notre système. Un tarif personnalisé vous sera communiqué rapidement après vérification."
@@ -166,10 +168,8 @@ export const getDeliverySettings = cache(async (): Promise<DeliverySettings> => 
     const docSnap = await docRef.get();
     if (docSnap.exists) {
       return { ...defaults, ...docSnap.data() };
-    } else {
-      await docRef.set(defaults);
-      return defaults;
     }
+    return defaults;
   } catch (error) {
     console.error("Error fetching delivery settings from Firestore:", error);
     return defaults;
@@ -178,23 +178,18 @@ export const getDeliverySettings = cache(async (): Promise<DeliverySettings> => 
 
 export const getLaborSettings = cache(async (): Promise<LaborSettings> => {
   const { adminDb } = getFirebaseAdmin();
+  // Configuration sûre par défaut : aucune règle d'installation n'est inventée.
+  // Une lecture reste une lecture — aucun document Firestore n'est créé ici.
   const defaults: LaborSettings = {
-    rules: [
-      { id: 'default_1', minSqM: 2, technicians: 2, price: 200 },
-      { id: 'rule_1762391030432', minSqM: 4, technicians: 3, price: 300 },
-      { id: 'rule_1762391040555', minSqM: 8, technicians: 4, price: 400 },
-      { id: 'rule_1762593299199', minSqM: 10, technicians: 5, price: 500 },
-    ],
+    rules: [],
   };
   try {
     const docRef = adminDb.collection('settings').doc(LABOR_DOC_ID);
     const docSnap = await docRef.get();
     if (docSnap.exists) {
       return docSnap.data() as LaborSettings;
-    } else {
-      await docRef.set(defaults);
-      return defaults;
     }
+    return defaults;
   } catch (error) {
     console.error("Error fetching labor settings from Firestore:", error);
     return defaults;
@@ -641,16 +636,18 @@ async function processQuoteSnapshot(docSnap: DocumentSnapshot): Promise<QuoteReq
 
   const productsRaw = data.products || data.quoteDetails?.products || [];
   const totalArea = productsRaw.reduce((sum: number, p: any) => sum + ((p.width || 0) * (p.height || 0) * (p.quantity || 1)), 0);
-  const applicableLaborRule = laborSettings.rules
-    .slice()
-    .sort((a, b) => b.minSqM - a.minSqM)
-    .find(rule => totalArea >= rule.minSqM);
 
-  const installationCost = data.includeInstallation ? (applicableLaborRule?.price || 0) : 0;
+  // Calcul unifié via le moteur de pricing partagé : AUCUN tarif n'est inventé.
+  const laborCost = computeLaborCost(laborSettings, totalArea);
+  const installationCost = data.includeInstallation ? (laborCost.installationCost ?? 0) : 0;
 
   let deliveryCost = 0;
   if (data.includeDelivery) {
-    deliveryCost = deliverySettings.defaultFee;
+    deliveryCost = computeDeliveryCost(deliverySettings, {
+      subtotal: data.productsSubtotal ?? data.subtotal ?? 0,
+      zoneId: data.selectedZoneId ?? null,
+      cityId: data.selectedCityId ?? null,
+    });
   }
 
   const structuredQuote: QuoteRequest = {

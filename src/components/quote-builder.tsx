@@ -31,7 +31,7 @@ import { ConfiguratorModeSelection } from './configurator-mode-selection';
 import { preloadImages } from '@/lib/image-preload';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import SignatureFlow from './SignatureFlow';
-import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR, computeProductLineTotal } from '@/lib/pricing-engine';
+import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR, computeProductLineTotal, computeLaborCost } from '@/lib/pricing-engine';
 
 
 
@@ -150,7 +150,7 @@ export function QuoteBuilder({
 
     const [baseQuote, setBaseQuote] = useState(0);
 
-    const [includeInstallation, setIncludeInstallation] = useState(true);
+    const [includeInstallation, setIncludeInstallation] = useState(false);
     const [deliveryCost, setDeliveryCost] = useState(0);
     const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
     const [unconfiguredCityQuery, setUnconfiguredCityQuery] = useState<string | undefined>(undefined);
@@ -163,7 +163,7 @@ export function QuoteBuilder({
       }
       return 1;
     });
-    const [includeDelivery, setIncludeDelivery] = useState(true);
+    const [includeDelivery, setIncludeDelivery] = useState(false);
 
     const [previewMode, setPreviewMode] = useState<PreviewMode>('dimension');
     const [mediaUrl, setMediaUrl] = useState<string | null>(null);
@@ -340,25 +340,18 @@ export function QuoteBuilder({
         }, 0);
     }, [configuredProducts, allProducts]);
 
-    useEffect(() => {
-        if (totalArea > 0 && isInstallationStepEnabled) {
-            const applicableRule = laborSettings.rules
-                .slice()
-                .sort((a, b) => b.minSqM - a.minSqM)
-                .find(rule => totalArea >= rule.minSqM);
-
-            if (applicableRule) {
-                setInstallationCost(applicableRule.price);
-                setTechniciansRequired(applicableRule.technicians);
-            } else {
-                setInstallationCost(0);
-                setTechniciansRequired(0);
-            }
-        } else {
-            setInstallationCost(0);
-            setTechniciansRequired(0);
-        }
-    }, [totalArea, laborSettings.rules, isInstallationStepEnabled]);
+useEffect(() => {
+    if (totalArea > 0 && isInstallationStepEnabled) {
+      // Calcul via le moteur partagé (source de vérité unique). Sans règles
+      // labor configurées, installationCost = 0 et techniciansRequired = 0.
+      const { installationCost: cost, techniciansRequired: techs } = computeLaborCost(laborSettings, totalArea);
+      setInstallationCost(cost);
+      setTechniciansRequired(techs);
+    } else {
+      setInstallationCost(0);
+      setTechniciansRequired(0);
+    }
+  }, [totalArea, laborSettings, isInstallationStepEnabled]);
 
     const totalQuoteForStep = useMemo(() => {
         let total = baseQuote;
@@ -637,7 +630,7 @@ export function QuoteBuilder({
         setConfiguredProducts([]);
         setActiveConfigProductId(null);
         setBaseQuote(0);
-        setIncludeInstallation(true);
+        setIncludeInstallation(false);
         setDeliveryCost(0);
         setSelectedCityId(null);
         setUnconfiguredCityQuery(undefined);
@@ -645,7 +638,7 @@ export function QuoteBuilder({
         setInstallationCost(0);
         setTechniciansRequired(0);
         setCurrentStep(1);
-        setIncludeDelivery(true);
+        setIncludeDelivery(false);
         setPreviewMode('dimension');
         setMediaUrl(null);
         setMediaType(null);
@@ -667,14 +660,14 @@ export function QuoteBuilder({
             configuredProducts: products,
             activeConfigProductId: products[0]?.id,
             baseQuote: 0,
-            includeInstallation: true,
+            includeInstallation: false,
             deliveryCost: 0,
             selectedCityId: null,
             unconfiguredCityQuery: undefined,
             isDeliveryCostFinal: false,
             installationCost: 0,
             techniciansRequired: 0,
-            includeDelivery: true,
+            includeDelivery: false,
             activeMode: 'wizard',
             initialWizardStep: 1,
             isSubmitting: false,
@@ -792,6 +785,8 @@ export function QuoteBuilder({
                 allProducts={allProducts}
                 settings={initialSettings}
                 userId={user?.uid || 'anonymous'}
+                deliverySettings={deliverySettings}
+                laborSettings={laborSettings}
                 onNewQuote={handleNewQuote}
                 onBackToConfigurator={() => {
                     setIsSignatureFlowActive(false);
