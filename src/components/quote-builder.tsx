@@ -787,6 +787,7 @@ useEffect(() => {
                 userId={user?.uid || 'anonymous'}
                 deliverySettings={deliverySettings}
                 laborSettings={laborSettings}
+                locations={locations}
                 onNewQuote={handleNewQuote}
                 onBackToConfigurator={() => {
                     setIsSignatureFlowActive(false);

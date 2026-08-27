@@ -14,7 +14,7 @@ import { createHash } from 'crypto';
 import nodemailer from 'nodemailer';
 import { buildSupplierEmailHtml } from '@/lib/email-templates';
 
-import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry, Dispute } from '@/lib/types';
+import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry, Dispute, PriceSnapshot } from '@/lib/types';
 import { normalizePrice, computeDeliveryCost, computeLaborCost } from '@/lib/pricing-engine';
 import { normalizeSearchText } from '@/lib/utils';
 import { clearSettingsCache } from '@/app/actions/public-actions';
@@ -1374,20 +1374,29 @@ async function processQuoteSnapshot(docSnap: DocumentSnapshot): Promise<QuoteReq
   const data = docSnap.data();
   if (!data) return null;
 
+  const productsRaw = data.products || data.quoteDetails?.products || [];
+
+  // SNAPSHOT PRIORITAIRE : montants FIGÉS au moment du calcul (immutable), aucun
+  // recalcul. Fallback legacy (devis antérieurs au snapshot) : recalcule avec les
+  // settings courants — jamais de montant inventé au-delà des règles du moteur.
+  const snapshot: PriceSnapshot | null = data.priceSnapshot ?? null;
+
   const [laborSettings, deliverySettings] = await Promise.all([
     getLaborSettings(),
     getDeliverySettings()
   ]);
 
-  const productsRaw = data.products || data.quoteDetails?.products || [];
   const totalArea = productsRaw.reduce((sum: number, p: any) => sum + ((p.width || 0) * (p.height || 0) * (p.quantity || 1)), 0);
 
   // Calcul unifié via le moteur de pricing partagé : AUCUN tarif n'est inventé.
   const laborCost = computeLaborCost(laborSettings, totalArea);
-  const installationCost = data.includeInstallation ? (laborCost.installationCost ?? 0) : 0;
 
-  let deliveryCost = 0;
-  if (data.includeDelivery) {
+  let installationCost = snapshot ? snapshot.installation.cost : (data.includeInstallation ? (laborCost.installationCost ?? 0) : 0);
+  let deliveryCost = snapshot ? snapshot.delivery.cost : 0;
+  let techniciansRequired = snapshot ? snapshot.installation.techniciansRequired : (data.techniciansRequired || 0);
+  let totalQuote = snapshot ? snapshot.total : data.totalQuote;
+
+  if (!snapshot && data.includeDelivery) {
     deliveryCost = computeDeliveryCost(deliverySettings, {
       subtotal: data.productsSubtotal ?? data.subtotal ?? 0,
       zoneId: data.selectedZoneId ?? null,
@@ -1432,9 +1441,10 @@ async function processQuoteSnapshot(docSnap: DocumentSnapshot): Promise<QuoteReq
         rentalEndTime: p.rentalEndTime,
       };
     }),
-    installationCost: data.installationCost ?? data.quoteDetails?.installationCost ?? installationCost,
-    deliveryCost: data.deliveryCost ?? data.quoteDetails?.deliveryCost ?? deliveryCost,
-    totalQuote: data.totalQuote,
+    installationCost: snapshot ? snapshot.installation.cost : (data.installationCost ?? data.quoteDetails?.installationCost ?? installationCost),
+    deliveryCost: snapshot ? snapshot.delivery.cost : (data.deliveryCost ?? data.quoteDetails?.deliveryCost ?? deliveryCost),
+    totalQuote,
+    priceSnapshot: snapshot ?? undefined,
     createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
     isRead: data.isRead,
     status: data.status || 'pending',
@@ -1456,7 +1466,7 @@ async function processQuoteSnapshot(docSnap: DocumentSnapshot): Promise<QuoteReq
     screenType: data.screenType,
     productName: data.productName,
     lang: data.lang,
-    techniciansRequired: data.techniciansRequired || 0,
+    techniciansRequired,
     supplierId: data.supplierId,
     trackingNumber: data.trackingNumber,
     assignedAt: data.assignedAt?.toDate ? data.assignedAt.toDate() : undefined,

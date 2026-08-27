@@ -1,8 +1,34 @@
-import type { DeliverySettings, LaborSettings } from '@/lib/types';
+import type { DeliverySettings, LaborSettings, DeliveryCostReason } from '@/lib/types';
+
+// Ré-exporté depuis types.ts pour compatibilité avec les consommateurs existants.
+export type { DeliveryCostReason };
 
 export const DEFAULT_SALE_PRICE_PER_SQM = 2000;
 export const DEFAULT_RENTAL_PRICE_PER_DAY = 12;
 export const DEFAULT_RENTAL_PRICE_PER_HOUR = 1.5;
+
+// Version du moteur de pricing — TOUJOURS incrémenter en cas de changement de
+// la moindre règle de calcul (production, livraison, installation, TVA).
+// Elle est gelée dans les PriceSnapshot pour garantir l'immutabilité des devis
+// validés après une évolution du moteur.
+export const PRICING_ENGINE_VERSION = '1.0.0';
+
+// Normalisation monétaire : centrale, utilisée par le moteur et les snapshots.
+export function roundMoney(amount: number): number {
+  if (!isFinite(amount)) return 0;
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
+}
+
+// Dépôt de sécurité — règle métier partagée (P1.1). Location : 50 % du total.
+export function computeDeposit(total: number, transactionType: 'sale' | 'rental'): number {
+  return transactionType === 'rental' ? roundMoney(total * 0.5) : 0;
+}
+
+// Échéancier de paiement standard (60 % à la commande / 40 % au solde).
+export function computePaymentSchedule(total: number): { firstPayment: number; remainingPayment: number } {
+  const firstPayment = roundMoney(total * 0.6);
+  return { firstPayment, remainingPayment: roundMoney(total - firstPayment) };
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COÛTS LIVRAISON / INSTALLATION / TECHNICIENS — SOURCE DE VÉRITÉ UNIQUE
@@ -21,13 +47,6 @@ export interface DeliveryCostInput {
   zoneId?: string | null;
   cityId?: string | null;
 }
-
-export type DeliveryCostReason =
-  | 'total-free'      // livraison offerte globale (configurée)
-  | 'threshold-free'  // livraison offerte au-delà du seuil (configuré)
-  | 'rule'            // règle zone / ville explicite (peut être 0 si la zone est offerte)
-  | 'default'         // tarif par défaut explicitement activé
-  | 'unconfigured';   // AUCUNE règle configurée → 0 et rien n'est inventé
 
 export interface DeliveryCostDetails {
   cost: number;

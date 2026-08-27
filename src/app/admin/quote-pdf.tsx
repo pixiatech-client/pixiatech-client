@@ -172,10 +172,13 @@ export function QuotePDF({ id, request, settings, selectedCity, globalSettings, 
     const currentTheme = THEMES.find(t => t.id === settings.themeId) || THEMES[0];
     
     const products = request.products || [];
-    const sousTotal = request.totalQuote || products.reduce((sum, p) => sum + (p.lineTotal || 0), 0);
-    const installation = request.installationCost || 0;
-    const livraison = request.deliveryCost || 0;
-    const totalHT = sousTotal + installation + livraison;
+    // SNAPSHOT PRIORITAIRE : montants FIGÉS du devis (immutable). Fallback legacy :
+    // devis antérieurs au snapshot (recalculés à la lecture, jamais inventés).
+    const snapshot = request.priceSnapshot;
+    const sousTotal = snapshot ? snapshot.productsSubtotal : (request.totalQuote || products.reduce((sum, p) => sum + (p.lineTotal || 0), 0));
+    const installation = snapshot ? snapshot.installation.cost : (request.installationCost || 0);
+    const livraison = snapshot ? snapshot.delivery.cost : (request.deliveryCost || 0);
+    const totalHT = snapshot ? snapshot.total : (sousTotal + installation + livraison);
     
     // Technical Data calculations (Aggregated)
     const totalArea = products.reduce((sum, p) => sum + ((p.width || 0) * (p.height || 0) * (p.quantity || 1)), 0);

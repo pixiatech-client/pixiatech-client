@@ -1,6 +1,6 @@
 'use server';
 
-import type { QuoteDetails, PdfSettings } from '@/lib/types';
+import type { QuoteDetails, PdfSettings, PriceSnapshot } from '@/lib/types';
 import { z } from 'zod';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
@@ -542,6 +542,7 @@ export async function createQuoteWithContract(
     rentalStartTime?: string;
     rentalEndTime?: string;
     configuratorType?: 'guided' | 'manual' | 'lumi';
+    priceSnapshot?: PriceSnapshot;
   },
   signatureDataUrl: string
 ): Promise<{ success: boolean; id?: string; otpCode?: string; error?: string }> {

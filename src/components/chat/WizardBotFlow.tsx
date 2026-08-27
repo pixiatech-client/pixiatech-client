@@ -37,7 +37,10 @@ import { useUser } from '@/firebase';
 import { useI18n } from '@/lib/i18n';
 import { QuotePDF } from '@/app/admin/quote-pdf';
 import confetti from 'canvas-confetti';
-import { calculatePromotionPercent, computeProductLineTotal, computeProductUnitPrice, computeLaborCost } from '@/lib/pricing-engine';
+import { calculatePromotionPercent, computeProductLineTotal, computeProductUnitPrice, computeLaborCost, computeDeliveryCostDetails, computeDeposit } from '@/lib/pricing-engine';
+import { resolveDestination } from '@/lib/delivery-resolver';
+import { buildPriceSnapshot } from '@/lib/price-snapshot';
+import { CITIES } from '@/lib/cities';
 
 import type { QuoteDetails } from '@/lib/types';
 
@@ -67,6 +70,8 @@ const STEP = {
   FORM_EMAIL: 12,
   FORM_PHONE: 27,
   FORM_ADDRESS: 28,
+  DELIVERY: 30,
+  DELIVERY_CHOICE: 31,
   CONTRAT: 20,
   SECURITE: 21,
   FELICITATIONS: 22,
@@ -115,6 +120,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const [formPhone, setFormPhone] = useState('');
   const [formAddress, setFormAddress] = useState('');
   const [formEmail, setFormEmail] = useState('');
+  const [formDeliveryCity, setFormDeliveryCity] = useState('');
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [signatureValidated, setSignatureValidated] = useState(false);
   const [otpCode, setOtpCode] = useState('');
@@ -122,6 +128,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const [otpVerified, setOtpVerified] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [includeInstallation, setIncludeInstallation] = useState(false);
+  const [includeDelivery, setIncludeDelivery] = useState(false);
   const [contractAccepted, setContractAccepted] = useState(false);
   const [contractReadApproved, setContractReadApproved] = useState(false);
   const [isSubmittingContract, setIsSubmittingContract] = useState(false);
@@ -195,7 +202,45 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
   const laborCost = computeLaborCost(laborSettings, totalArea);
   const installationCost = includeInstallation ? laborCost.installationCost : 0;
   const techniciansRequired = includeInstallation ? laborCost.techniciansRequired : 0;
-  const totalQuoteWithFees = totalQuote + installationCost;
+
+  // Livraison : résolution de destination unifiée puis coût via le moteur partagé.
+  const deliveryDestination = resolveDestination(
+    { cityName: formDeliveryCity.trim() || undefined },
+    locations?.villes ?? null,
+    CITIES
+  );
+  const deliveryDetails = computeDeliveryCostDetails(deliverySettings, {
+    subtotal: totalQuote,
+    zoneId: deliveryDestination.zoneId,
+    cityId: deliveryDestination.cityId,
+  });
+  const deliveryCost = deliveryDetails.cost;
+  const deliveryFee = includeDelivery ? deliveryCost : 0;
+  const totalQuoteWithFees = totalQuote + installationCost + deliveryFee;
+
+  // SNAPSHOT DE PRIX — figé APRÈS le calcul moteur, persisté avec le devis.
+  const flowTaxMode = settings.estimationFlow?.taxMode ?? 'ht';
+  const flowTaxEnabled = settings.estimationFlow?.taxEnabled ?? false;
+  const flowTaxRate = flowTaxEnabled ? (settings.estimationFlow?.taxRate ?? 0) : 0;
+  const priceSnapshot = buildPriceSnapshot({
+    transactionType: configState.projectType === 'vente' ? 'sale' : 'rental',
+    productsSubtotal: totalQuote,
+    deliveryDetails,
+    labor: { installationCost: laborCost.installationCost, techniciansRequired: laborCost.techniciansRequired },
+    includeDelivery,
+    includeInstallation,
+    tax: { enabled: flowTaxEnabled, rate: flowTaxRate, mode: flowTaxMode },
+    destination: deliveryDestination.resolved
+      ? {
+          cityId: deliveryDestination.cityId,
+          zoneId: deliveryDestination.zoneId,
+          cityName: deliveryDestination.cityName,
+          postcode: deliveryDestination.postcode,
+          resolved: deliveryDestination.resolved,
+          fallbackUsed: deliveryDestination.fallbackUsed,
+        }
+      : null,
+  });
 
   const totalQuantity = configState.quantity || 1;
   const activePack: Pack = React.useMemo(() => ({
@@ -203,13 +248,13 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     name: selectedProduct?.name || (configState.projectType === 'vente' ? 'Caissons LED Série Extra Plat' : 'Location Écran LED Sur-Mesure'),
     surface: `${area.toFixed(2)} m²`,
     price: Math.round(totalQuote),
-    deposit: Math.round(totalQuote * 0.5),
+    deposit: computeDeposit(priceSnapshot.total, configState.projectType === 'vente' ? 'sale' : 'rental'),
     description: `Configuration de 1 produit(s) LED (${totalQuantity} écran(s) au total)`,
     specs: [
       `Quantité totale d'écrans : ${totalQuantity}`,
       `Surface totale d'affichage : ${area.toFixed(2)} m²`,
     ]
-  }), [selectedProduct, configState.projectType, area, totalQuote, totalQuantity]);
+  }), [selectedProduct, configState.projectType, area, totalQuote, totalQuantity, priceSnapshot]);
 
   const renterDetails = React.useMemo(() => ({
     company: formCompany || userProfile?.displayName || 'bilama',
@@ -347,6 +392,8 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
       case STEP.FORM_COMPANY: return '/bot-avatars/22.webp';
       case STEP.FORM_PHONE: return '/bot-avatars/009.webp';
       case STEP.FORM_ADDRESS: return '/bot-avatars/013.webp';
+      case STEP.DELIVERY: return '/bot-avatars/013.webp';
+      case STEP.DELIVERY_CHOICE: return '/bot-avatars/29.webp';
       case STEP.INSTALLATION: return '/bot-avatars/33.webp';
       case STEP.CONTRAT: return '/bot-avatars/24.webp';
       case STEP.SECURITE: return '/bot-avatars/35.webp';
@@ -750,9 +797,10 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
           includeInstallation,
           installationCost,
           techniciansRequired,
-          includeDelivery: false,
-          deliveryCost: 0,
+          includeDelivery,
+          deliveryCost: deliveryFee,
           totalQuote: totalQuoteWithFees,
+          priceSnapshot,
           width: configState.width,
           height: configState.height,
           productName: selectedProduct?.name ?? '',
@@ -978,9 +1026,48 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
     setIsSubmittingContract(false);
     takeSnapshot();
     pushUserMessage(formAddress);
-    pushBotMessage(t('bot.promptInstallation'), undefined, 800, '/bot-avatars/29.webp', () => {
-      updateStep(STEP.INSTALLATION);
-    }, 'bot.promptInstallation');
+    pushBotMessage(t('bot.delivery'), undefined, 800, '/bot-avatars/013.webp', () => {
+      updateStep(STEP.DELIVERY);
+    }, 'bot.delivery');
+  };
+
+  const handleFormDeliveryCity = () => {
+    if (!formDeliveryCity.trim() || formDeliveryCity.trim().length < 2) {
+      const newCount = errorCount + 1;
+      setErrorCount(newCount);
+      if (newCount >= 3) {
+        pushBotMessage(t('bot.errorHelp'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorHelp');
+      } else {
+        pushBotMessage(t('bot.errorAddressShort'), undefined, 800, '/bot-avatars/007.webp', undefined, 'bot.errorAddressShort');
+      }
+      return;
+    }
+    setErrorCount(0);
+    takeSnapshot();
+    pushUserMessage(formDeliveryCity);
+    pushBotMessage(t('bot.installation', { city: formDeliveryCity }), undefined, 800, '/bot-avatars/29.webp', () => {
+      updateStep(STEP.DELIVERY_CHOICE);
+    }, 'bot.installation');
+  };
+
+  const handleDeliveryChoice = (include: boolean) => {
+    setIncludeDelivery(include);
+    takeSnapshot();
+    if (include) {
+      pushUserMessage(locale === 'fr' ? '✅ Oui, inclure la livraison' : '✅ Yes, include delivery');
+      pushBotMessage(t('bot.deliveryIncluded'), undefined, 600, '/bot-avatars/29.webp', () => {
+        pushBotMessage(t('bot.promptInstallation'), undefined, 800, '/bot-avatars/33.webp', () => {
+          updateStep(STEP.INSTALLATION);
+        }, 'bot.promptInstallation');
+      }, 'bot.deliveryIncluded');
+    } else {
+      pushUserMessage(locale === 'fr' ? '❌ Non, sans livraison' : '❌ No delivery');
+      pushBotMessage(t('bot.deliveryExcluded'), undefined, 600, '/bot-avatars/29.webp', () => {
+        pushBotMessage(t('bot.promptInstallation'), undefined, 800, '/bot-avatars/33.webp', () => {
+          updateStep(STEP.INSTALLATION);
+        }, 'bot.promptInstallation');
+      }, 'bot.deliveryExcluded');
+    }
   };
 
   const handleInstallation = (include: boolean) => {
@@ -1697,6 +1784,40 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                     </motion.div>
                   )}
 
+                  {step === STEP.DELIVERY && !isTyping && renderBotStep(STEP.DELIVERY,
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2">
+                      <Input type="text" placeholder={t('quoteForm.cityPlaceholder')} value={formDeliveryCity} onChange={e => setFormDeliveryCity(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleFormDeliveryCity()} className="h-12 rounded-2xl font-bold" />
+                      <Button onClick={handleFormDeliveryCity} disabled={!formDeliveryCity.trim()} className="h-12 w-12 rounded-2xl bg-black hover:bg-[#B3E140] p-0 flex items-center justify-center shrink-0 text-white hover:text-black active:scale-95 transition-all"><ArrowRight size={20} /></Button>
+                    </motion.div>
+                  )}
+
+                  {step === STEP.DELIVERY_CHOICE && !isTyping && renderBotStep(STEP.DELIVERY_CHOICE,
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3 bg-white rounded-3xl shadow-lg border border-slate-100 p-4">
+                      <h3 className="font-black text-sm uppercase tracking-widest text-slate-800">{t('signature.deliveryTitle')}</h3>
+                      <p className="text-sm text-slate-600">{t('signature.deliveryQuestion')}</p>
+                      <Button
+                        onClick={() => handleDeliveryChoice(true)}
+                        className="w-full h-14 rounded-2xl bg-black hover:bg-[#B3E140] text-white hover:text-black font-black uppercase tracking-wider shadow-md active:scale-95 transition-all text-sm"
+                      >
+                        ✅ {t('signature.includeDelivery')}
+                      </Button>
+                      <p className="text-xs text-slate-500 -mt-2">{t('signature.includeDeliveryDesc')}</p>
+                      <Button
+                        onClick={() => handleDeliveryChoice(false)}
+                        variant="outline"
+                        className="w-full h-14 rounded-2xl border-slate-200 text-slate-600 hover:text-orange-500 hover:border-orange-300 font-bold text-sm"
+                      >
+                        ❌ {t('signature.excludeDelivery')}
+                      </Button>
+                      <p className="text-xs text-slate-500 -mt-2">{t('signature.excludeDeliveryDesc')}</p>
+                      {includeDelivery ? (
+                        <p className="text-xs text-slate-600 mt-1">{t('signature.costTech', { cost: deliveryCost.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}</p>
+                      ) : (
+                        <p className="text-xs text-slate-600 mt-1">{t('signature.deliveryFree')}</p>
+                      )}
+                    </motion.div>
+                  )}
+
                   {step === STEP.INSTALLATION && !isTyping && renderBotStep(STEP.INSTALLATION,
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3 bg-white rounded-3xl shadow-lg border border-slate-100 p-4">
                       <h3 className="font-black text-sm uppercase tracking-widest text-slate-800">{locale === 'fr' ? 'Installation' : 'Installation'}</h3>
@@ -1963,8 +2084,9 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             lineTotal,
                           }] : [],
                           installationCost,
-                          deliveryCost: 0,
+                          deliveryCost: deliveryFee,
                           totalQuote: totalQuoteWithFees,
+                          priceSnapshot,
                           transactionType: configState.projectType === 'vente' ? 'sale' : 'rental',
                           lang: locale as 'fr' | 'en',
                           width: configState.width,
@@ -1973,7 +2095,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                           screenType: 'indoor',
                           includeInstallation,
                           techniciansRequired,
-                          includeDelivery: false,
+                          includeDelivery,
                           rentalPeriod: configState.rentalStartDate && configState.rentalEndDate
                             ? { from: new Date(configState.rentalStartDate), to: new Date(configState.rentalEndDate) }
                             : undefined,

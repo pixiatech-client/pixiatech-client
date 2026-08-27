@@ -53,10 +53,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import { validatePhone } from '@/lib/phone-validation';
 import { Pack, RenterDetails, Step, StepId } from '@/lib/signature-types';
-import { CITIES } from '@/lib/cities';
 import SignaturePad from './SignaturePad';
 import ContractDocument from './ContractDocument';
-import { ConfiguredProduct, Product, Settings, PdfSettings, City, ProductSpec, QuoteRequest, DeliverySettings, LaborSettings } from '@/lib/types';
+import { ConfiguredProduct, Product, Settings, PdfSettings, City, ProductSpec, QuoteRequest, DeliverySettings, LaborSettings, Locations } from '@/lib/types';
+import { CITIES } from '@/lib/cities';
+import { resolveDestination } from '@/lib/delivery-resolver';
+import { buildPriceSnapshot } from '@/lib/price-snapshot';
 import { getPdfSettings, createQuoteWithContract, verifyQuoteOtp, resendQuoteOtp } from '@/app/actions/quote-actions';
 import { getSettings, updateQuotePdfUrl, updateQuoteContractUrl } from '@/app/actions/public-actions';
 import { storage } from '@/firebase/config';
@@ -69,7 +71,7 @@ import html2canvas from 'html2canvas';
 import confetti from 'canvas-confetti';
 import { QuotePDF } from '@/app/admin/quote-pdf';
 import { BlurredPrice } from '@/components/ui/blurred-price';
-import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR, computeProductUnitPrice, computeProductLineTotal, calculateTilesCount, computeDeliveryCost, computeLaborCost } from '@/lib/pricing-engine';
+import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR, computeProductUnitPrice, computeProductLineTotal, calculateTilesCount, computeDeliveryCostDetails, computeLaborCost, computeDeposit, computePaymentSchedule } from '@/lib/pricing-engine';
 
 // Available professional LED packs for template selection
 const SEED_PACKS: Pack[] = [
@@ -152,6 +154,7 @@ interface SignatureFlowProps {
   userId: string;
   deliverySettings: DeliverySettings;
   laborSettings: LaborSettings;
+  locations?: Locations | null;
   onNewQuote: () => void;
   onBackToConfigurator: () => void;
   onStepChange?: (step: StepId) => void;
@@ -164,6 +167,7 @@ export default function SignatureFlow({
   userId,
   deliverySettings,
   laborSettings,
+  locations,
   onNewQuote,
   onBackToConfigurator,
   onStepChange
@@ -199,6 +203,9 @@ export default function SignatureFlow({
   const [citySearchQuery, setCitySearchQuery] = useState<string>('');
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState<boolean>(false);
   const [isInstallationIncluded, setIsInstallationIncluded] = useState<boolean>(false);
+  // Choix métier explicite de livraison (jamais hardcodé). Défaut : non inclus,
+  // aucun coût n'est imposé tant que l'utilisateur n'a pas choisi.
+  const [isDeliveryIncluded, setIsDeliveryIncluded] = useState<boolean>(false);
   const [isInstallationAccordionOpen, setIsInstallationAccordionOpen] = useState<boolean>(true);
   const showRentalPeriodSection = projectMode === 'location';
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -578,27 +585,40 @@ export default function SignatureFlow({
   const totalSurface = productCalculations.reduce((sum, pc) => sum + pc.surface * pc.quantity, 0);
   const totalDalles = productCalculations.reduce((sum, pc) => sum + pc.dalles * pc.quantity, 0);
   const totalSubtotalProducts = productCalculations.reduce((sum, pc) => sum + pc.subtotal * pc.quantity, 0);
-  const selectedCity = CITIES.find(c => c.id === selectedCityId);
+  const selectedCity = CITIES.find(c => c.id === selectedCityId) || undefined;
+  // RÉSOLUTION CENTRALISÉE ville → zone → règle → tarif (même résultat qu'en
+  // boutique). Catalogue prioritaire : Firestore (locations.villes, portent les
+  // vrais ids + zoneId) ; secours : liste statique CITIES.
+  const destination = resolveDestination(
+    {
+      cityId: selectedCityId || undefined,
+      postcode: renterDetails.postcode,
+      cityName: renterDetails.city,
+    },
+    locations?.villes ?? null,
+    CITIES
+  );
   // Coût de livraison : calculé par le moteur partagé. Sans configuration admin,
-  // il vaut 0 (jamais un tarif inventé). Le sélecteur de ville statique ne
-  // porte pas de zoneId, donc seuls le tarif par défaut et les seuils de
-  // livraison offerte s'appliquent ici ; les règles zone/ville s'appliquent
-  // dans le flux boutique (adresses Firestore, via l'API delivery-cost).
-  const deliveryCost = computeDeliveryCost(
+  // il vaut 0 (jamais un tarif inventé). Les règles zone/ville (deliveryFeeRules)
+  // s'appliquent ici comme en boutique grâce à la résolution de zone ci-dessus.
+  const deliveryDetails = computeDeliveryCostDetails(
     deliverySettings,
     {
       subtotal: totalSubtotalProducts,
-      zoneId: null,
-      cityId: selectedCityId || null,
+      zoneId: destination.zoneId,
+      cityId: destination.cityId,
     }
   );
+  const deliveryCost = deliveryDetails.cost;
+  const deliveryUnconfigured = destination.fallbackUsed;
 
   // Installation / techniciens : calculés par le moteur partagé. Sans règles
   // labor configurées, installationCost = 0 et techniciansRequired = 0.
   const laborCost = computeLaborCost(laborSettings, totalSurface);
   const techniciansCount = laborCost.techniciansRequired;
   const installationFee = isInstallationIncluded ? laborCost.installationCost : 0;
-  const totalAmount = totalSubtotalProducts + deliveryCost + installationFee;
+  const deliveryFee = isDeliveryIncluded ? deliveryCost : 0;
+  const totalAmount = totalSubtotalProducts + deliveryFee + installationFee;
 
   const mainProduct = allProducts.find(p => p.id === productCalculations[0]?.productId);
   const productPhoto = mainProduct?.imageUrl || mainProduct?.image || null;
@@ -664,12 +684,34 @@ export default function SignatureFlow({
   };
   const totalQuantity = configuredProducts.reduce((sum, p) => sum + (p.quantity || 1), 0);
 
+  // SNAPSHOT DE PRIX — figé APRÈS le calcul moteur. Persisté avec le devis,
+  // lu par le récap / QuotePDF / contrat / processQuoteSnapshot (immutable).
+  const priceSnapshot = buildPriceSnapshot({
+    transactionType: projectMode === 'vente' ? 'sale' : 'rental',
+    productsSubtotal: totalSubtotalProducts,
+    deliveryDetails,
+    labor: { installationCost: laborCost.installationCost, techniciansRequired: laborCost.techniciansRequired },
+    includeDelivery: isDeliveryIncluded,
+    includeInstallation: isInstallationIncluded,
+    tax: { enabled: flowSettings.taxEnabled, rate: taxRate, mode: displayMode },
+    destination: destination.resolved
+      ? {
+          cityId: destination.cityId,
+          zoneId: destination.zoneId,
+          cityName: destination.cityName,
+          postcode: destination.postcode,
+          resolved: destination.resolved,
+          fallbackUsed: destination.fallbackUsed,
+        }
+      : null,
+  });
+
   const activePack: Pack = {
     id: 'custom-led-78',
     name: projectMode === 'vente' ? 'Caissons LED Série Extra Plat' : 'Location Écran LED Sur-Mesure',
     surface: `${totalSurface.toFixed(2)} m²`,
     price: Math.round(totalSubtotalProducts),
-    deposit: Math.round(totalSubtotalProducts * 0.5),
+    deposit: computeDeposit(priceSnapshot.total, projectMode === 'vente' ? 'sale' : 'rental'),
     description: `Configuration de ${productCount} produit(s) LED (${totalQuantity} écran(s) au total)`,
     specs: [
       `Nombre de produits configurés : ${productCount}`,
@@ -1581,7 +1623,7 @@ export default function SignatureFlow({
                     <div className="flex justify-between items-center text-zinc-400">
                       <span>{t('signature.delivery')}</span>
                       <span className="text-zinc-800 font-bold font-mono">
-                        <BlurredPrice price={`${fmtPrice(deliveryCost)} €`} isPriceHidden={isPriceHidden} />
+                        <BlurredPrice price={isDeliveryIncluded ? `${fmtPrice(deliveryFee)} €` : '0 €'} isPriceHidden={isPriceHidden} />
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-zinc-400">
@@ -1624,6 +1666,81 @@ export default function SignatureFlow({
                     </div>
                   </div>
 
+                </div>
+
+                {/* Delivery Preference Card — choix EXPLICITE de livraison (jamais hardcodé) */}
+                <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-6 shadow-sm space-y-5">
+                  <div className="flex items-center gap-3 border-b border-zinc-100 pb-4">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-105 flex items-center justify-center text-blue-600 shrink-0">
+                      <Truck size={18} className="stroke-[2.5]" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-extrabold text-zinc-950 text-sm uppercase tracking-wide">{t('signature.deliveryTitle')}</h3>
+                      </div>
+                      <p className="text-[10px] text-zinc-400 font-medium">{t('signature.deliveryQuestion')}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 text-xs font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setIsDeliveryIncluded(true)}
+                      className={`w-full text-left block border rounded-2xl p-4 cursor-pointer transition-all ${
+                        isDeliveryIncluded
+                          ? 'border-blue-600 bg-blue-50/10 shadow-xs'
+                          : 'border-zinc-200 hover:border-zinc-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-0.5">
+                          <span className="font-extrabold text-zinc-950 text-sm block">{t('signature.includeDelivery')}</span>
+                          <span className="text-zinc-500 font-medium text-xs block">{t('signature.includeDeliveryDesc')}</span>
+                        </div>
+                        <div className="pt-1">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                            isDeliveryIncluded ? 'border-blue-600' : 'border-zinc-300'
+                          }`}>
+                            {isDeliveryIncluded && <div className="w-2.5 h-2.5 rounded-full bg-blue-600"></div>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {isDeliveryIncluded && (
+                        <div className="mt-4 pt-4 border-t border-zinc-100 space-y-1 text-zinc-800 font-medium animate-fade-in text-xs leading-relaxed">
+                          {deliveryUnconfigured ? (
+                            <p className="text-amber-700 font-semibold">{t('signature.deliveryUnconfiguredHint')}</p>
+                          ) : (
+                            <p className="text-sm font-black text-zinc-955">{t('signature.costTech', { cost: `${fmtPrice(deliveryFee)} €` })}</p>
+                          )}
+                        </div>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsDeliveryIncluded(false)}
+                      className={`w-full text-left block border rounded-2xl p-4 cursor-pointer transition-all ${
+                        !isDeliveryIncluded
+                          ? 'border-blue-600 bg-blue-50/10 shadow-xs'
+                          : 'border-zinc-200 hover:border-zinc-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-0.5">
+                          <span className="font-extrabold text-zinc-955 text-sm block">{t('signature.excludeDelivery')}</span>
+                          <span className="text-zinc-500 font-medium text-xs block">{t('signature.excludeDeliveryDesc')}</span>
+                        </div>
+                        <div className="pt-1">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                            !isDeliveryIncluded ? 'border-blue-600' : 'border-zinc-300'
+                          }`}>
+                            {!isDeliveryIncluded && <div className="w-2.5 h-2.5 rounded-full bg-blue-600"></div>}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Installation Preference Card (Image 1 and 2 centerpiece) */}
@@ -1973,7 +2090,7 @@ export default function SignatureFlow({
                         <span className="text-zinc-400">{t('signature.deposit60')}</span>
                         <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
                           <BlurredPrice 
-                            price={`${fmtPrice(Math.round(totalAmount * 0.6))}€ ${taxLabel}`} 
+                            price={`${fmtPrice(computePaymentSchedule(totalAmount).firstPayment)}€ ${taxLabel}`} 
                             isPriceHidden={isPriceHidden} 
                             overlayClassName="text-white text-xs"
                           />
@@ -1983,7 +2100,7 @@ export default function SignatureFlow({
                         <span className="text-zinc-400">{t('signature.balance40')}</span>
                         <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
                           <BlurredPrice 
-                            price={`${fmtPrice(Math.round(totalAmount * 0.4))}€ ${taxLabel}`} 
+                            price={`${fmtPrice(computePaymentSchedule(totalAmount).remainingPayment)}€ ${taxLabel}`} 
                             isPriceHidden={isPriceHidden} 
                             overlayClassName="text-white text-xs"
                           />
@@ -2104,9 +2221,10 @@ export default function SignatureFlow({
                           includeInstallation: isInstallationIncluded,
                           installationCost: installationFee,
                           techniciansRequired: techniciansCount,
-                          includeDelivery: true,
-                          deliveryCost,
+                          includeDelivery: isDeliveryIncluded,
+                          deliveryCost: deliveryFee,
                           totalQuote: totalAmount,
+                          priceSnapshot,
                           width: productCalculations[0]?.width || 0,
                           height: productCalculations[0]?.height || 0,
                           productName: productItems[0]?.productName || '',
@@ -2754,8 +2872,9 @@ export default function SignatureFlow({
               },
               products: productItems as any,
               installationCost: installationFee,
-              deliveryCost,
+              deliveryCost: deliveryFee,
               totalQuote: totalAmount,
+              priceSnapshot,
               transactionType: projectMode === 'vente' ? 'sale' : 'rental',
               lang: locale as 'fr' | 'en',
               width: productCalculations[0]?.width || 0,
@@ -2764,7 +2883,7 @@ export default function SignatureFlow({
               screenType: (productCalculations[0]?.product?.type?.[0] || 'indoor') as 'indoor' | 'outdoor' | 'showcase',
               includeInstallation: isInstallationIncluded,
               techniciansRequired: techniciansCount,
-              includeDelivery: true,
+              includeDelivery: isDeliveryIncluded,
               rentalPeriod: projectMode === 'location' && rentalStartDate && rentalEndDate ? { from: new Date(rentalStartDate), to: new Date(rentalEndDate) } : undefined,
               rentalStartTime: projectMode === 'location' ? rentalStartTime : undefined,
               rentalEndTime: projectMode === 'location' ? rentalEndTime : undefined,

@@ -133,6 +133,7 @@ export type QuoteDetails = {
   lang: 'fr' | 'en' | 'zh-CN';
   sitePhoto?: string;
   taxRate?: number;
+  priceSnapshot?: PriceSnapshot;
   configuratorType?: 'guided' | 'manual' | 'lumi';
   // Screen layout propagated from wizard
   screenLayout?: ScreenLayout;
@@ -248,6 +249,80 @@ export type City = {
 
 export type Locations = {
     villes: City[];
+};
+
+export type DeliveryCostReason =
+  | 'total-free'      // livraison offerte globale (configurée)
+  | 'threshold-free'  // livraison offerte au-delà du seuil (configuré)
+  | 'rule'            // règle zone / ville explicite (peut être 0 si la zone est offerte)
+  | 'default'         // tarif par défaut explicitement activé
+  | 'unconfigured';   // AUCUNE règle configurée → 0 et rien n'est inventé
+
+export type PriceSnapshotDestination = {
+  cityId: string | null;
+  zoneId: string | null;
+  cityName: string;
+  postcode: string;
+  resolved: boolean;
+  fallbackUsed?: boolean;
+};
+
+export type PriceSnapshotTax = {
+  rate: number;
+  amount: number;
+  mode: 'ht' | 'ttc';
+  enabled: boolean;
+};
+
+export type PriceSnapshotDelivery = {
+  included: boolean;
+  cost: number;
+  reason: DeliveryCostReason;
+  label: string;
+  destination?: PriceSnapshotDestination;
+};
+
+export type PriceSnapshotInstallation = {
+  included: boolean;
+  cost: number;
+  techniciansRequired: number;
+};
+
+export type PriceSnapshotPaymentScheduleEntry = {
+  label: string;
+  amount: number;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PriceSnapshot — photographie figée et versionnée du prix CALCULÉ par le
+// moteur partagé (pricing-engine.ts). Créée APRÈS le calcul (jamais avant) et
+// persistée telle quelle : aucun consommateur (récap, contrat, QuotePDF,
+// commandes PayPal, processQuoteSnapshot) ne recalcule un montant à partir de
+// champs épars — il lit snapshot.total / snapshot.delivery.cost / etc.
+// Une fois le devis validé/signé, le snapshot est IMMUABLE : toute modification
+// ultérieure des tarifs admin (livraison, installation, TVA, produit) produit un
+// NOUVEAU snapshot/version et n'altère jamais un montant de devis déjà créé.
+// ─────────────────────────────────────────────────────────────────────────────
+export type PriceSnapshot = {
+  version: number;                 // version du schéma de snapshot
+  engineVersion: string;           // version du moteur de pricing (pricing-engine)
+  calculatedAt: string;            // ISO
+  currency: 'EUR';
+  transactionType: 'sale' | 'rental';
+
+  destination: PriceSnapshotDestination | null;
+
+  productsSubtotal: number;        // HT (produits × quantité)
+
+  delivery: PriceSnapshotDelivery;
+  installation: PriceSnapshotInstallation;
+
+  tax: PriceSnapshotTax;
+
+  subtotal: number;                // total HT (hors taxes)
+  total: number;                   // total TTC final
+  deposit: number;                 // dépôt selon règle métier
+  paymentSchedule: PriceSnapshotPaymentScheduleEntry[];
 };
 
 export type LaborRule = {
