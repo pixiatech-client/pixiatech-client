@@ -5,7 +5,7 @@ import { ArrowRight, ShoppingBag, Zap } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { SparklesText } from '@/components/ui/sparkles-text';
 
-export function ConfiguratorModeSelection({ onSelectGuide }: { onSelectGuide?: () => void }) {
+export function ConfiguratorModeSelection({ onSelectGuide, showGuide = true, showShop = true }: { onSelectGuide?: () => void; showGuide?: boolean; showShop?: boolean }) {
   const { t } = useI18n();
 
   return (
@@ -28,6 +28,7 @@ export function ConfiguratorModeSelection({ onSelectGuide }: { onSelectGuide?: (
 
       <div className="space-y-6 w-full">
         {/* Configuration Guidée */}
+        {showGuide !== false && (
         <motion.div
           onClick={() => onSelectGuide?.()}
           whileTap={{ scale: 0.98 }}
@@ -47,8 +48,10 @@ export function ConfiguratorModeSelection({ onSelectGuide }: { onSelectGuide?: (
             </div>
           </div>
         </motion.div>
+        )}
 
         {/* Achat de produits */}
+        {showShop !== false && (
         <motion.div
           onClick={() => window.location.href = '/boutique'}
           whileTap={{ scale: 0.98 }}
@@ -70,6 +73,7 @@ export function ConfiguratorModeSelection({ onSelectGuide }: { onSelectGuide?: (
             </div>
           </div>
         </motion.div>
+        )}
       </div>
     </motion.div>
   );

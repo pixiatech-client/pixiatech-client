@@ -3038,6 +3038,7 @@ const settingsSchema = z.object({
   isWizardBotEnabled: z.boolean().optional(),
   isGuidedConfigEnabled: z.boolean().optional(),
   isManualConfigEnabled: z.boolean().optional(),
+  isBoutiqueEnabled: z.boolean().optional(),
   hintBubble: hintBubbleSchema.optional(),
   lightThemeId: z.string().optional(),
   darkThemeId: z.string().optional(),
@@ -3156,6 +3157,7 @@ export async function getSettings(): Promise<Settings> {
     zoomMaxDistance: 50,
     zoomMinDistance: 0.5,
     isWizardBotEnabled: true,
+    isBoutiqueEnabled: true,
     hintBubble: {
       enabled: true,
       text: "Pour démarrer, veuillez cliquer sur<br /> le bouton <b>+ Ajouter un produit</b>.",

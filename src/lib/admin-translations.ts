@@ -505,6 +505,8 @@ const adminTranslations: Record<string, string> = {
   'Show or hide the installation step.': 'Afficher ou masquer l\'étape d\'installation.',
   'Enable Wizard Bot Flow': 'Activer le flux Wizard Bot',
   'Allows using the conversational chatbot to guide customers.': 'Permet d\'utiliser le chatbot conversationnel pour guider les clients.',
+  'Boutique': 'Boutique',
+  'Allows customers to purchase products directly from the catalog.': 'Permet aux clients d\'acheter des produits directement depuis le catalogue.',
   'If disabled, customers go directly to the PDF.': 'Si désactivé, les clients vont directement au PDF.',
   'Hide price and show animation': 'Masquer le prix et afficher l\'animation',
   'Replaces the price with an animated "Estimating..." text.': 'Remplace le prix par un texte animé "Estimation en cours...".',

@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from 'usehooks-ts';
 
-export function BoutiqueHeader() {
+export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const { itemCount } = useCart();
@@ -167,6 +167,7 @@ export function BoutiqueHeader() {
                 >
                   {t('header.home')}
                 </Link>
+                {boutiqueEnabled && (
                 <Link
                   href="/boutique"
                   onClick={() => setMobileMenuOpen(false)}
@@ -179,6 +180,7 @@ export function BoutiqueHeader() {
                 >
                   {t('header.shop')}
                 </Link>
+                )}
                 <a
                   href="https://pixiatech.com/contact"
                   target="_blank"
@@ -238,6 +240,7 @@ export function BoutiqueHeader() {
           >
             {t('header.home')}
           </Link>
+          {boutiqueEnabled && (
           <Link
             href="/boutique"
             className={cn(
@@ -247,6 +250,7 @@ export function BoutiqueHeader() {
           >
             {t('header.shop')}
           </Link>
+          )}
           <a
             href="https://pixiatech.com/contact"
             target="_blank"
@@ -278,6 +282,7 @@ export function BoutiqueHeader() {
           </button>
 
           {/* Cart */}
+          {boutiqueEnabled && (
           <Link
             href="/boutique/panier"
             className="relative text-white/70 hover:text-white nav-link"
@@ -290,6 +295,7 @@ export function BoutiqueHeader() {
               </span>
             )}
           </Link>
+          )}
 
           {/* Auth */}
           {session.loggedIn ? (

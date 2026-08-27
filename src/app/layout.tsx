@@ -40,6 +40,7 @@ export default async function RootLayout({
 
   const settings = await getSettings();
   const boutiqueB2B = settings.estimationFlow?.boutiqueB2B ?? false;
+  const boutiqueEnabled = settings.isBoutiqueEnabled !== false;
 
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
@@ -48,7 +49,7 @@ export default async function RootLayout({
         <div className="flare magenta" aria-hidden="true" />
         <div className="directional-flare" aria-hidden="true" suppressHydrationWarning />
         <I18nProvider initialLocale={locale}>
-          <LayoutProvider initialBoutiqueB2B={boutiqueB2B}>{children}</LayoutProvider>
+          <LayoutProvider initialBoutiqueB2B={boutiqueB2B} initialBoutiqueEnabled={boutiqueEnabled}>{children}</LayoutProvider>
         </I18nProvider>
         <Script id="directional-flare" strategy="afterInteractive"
           dangerouslySetInnerHTML={{

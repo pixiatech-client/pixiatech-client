@@ -34,9 +34,11 @@ import { ProfileProvider } from '@/contexts/ProfileContext';
 export function LayoutProvider({
   children,
   initialBoutiqueB2B = false,
+  initialBoutiqueEnabled = true,
 }: Readonly<{
   children: React.ReactNode;
   initialBoutiqueB2B?: boolean;
+  initialBoutiqueEnabled?: boolean;
 }>) {
   const pathname = usePathname();
   const router = useRouter();
@@ -57,12 +59,17 @@ export function LayoutProvider({
         { title: 'Paramètres', icon: Settings },
         { title: 'Déconnexion', icon: LogOut, className: 'text-red-500 hover:text-red-600' },
       ]
-    : [
-        { title: 'Accueil', icon: Home },
-        { title: 'Boutique', icon: Store },
-        { title: 'Panier', icon: ShoppingBag },
-        { title: 'Compte', icon: User },
-      ];
+    : initialBoutiqueEnabled
+      ? [
+          { title: 'Accueil', icon: Home },
+          { title: 'Boutique', icon: Store },
+          { title: 'Panier', icon: ShoppingBag },
+          { title: 'Compte', icon: User },
+        ]
+      : [
+          { title: 'Accueil', icon: Home },
+          { title: 'Compte', icon: User },
+        ];
 
   const handleBottomNavChange = (index: number | null) => {
     if (index === null) return;
@@ -72,7 +79,9 @@ export function LayoutProvider({
     }
     const routes = isMonCompteProtected
       ? ['/mon-compte/tableau-de-bord', '/mon-compte/commandes', '/mon-compte/parametres']
-      : ['/', '/boutique', '/boutique/panier', '/mon-compte/commandes'];
+      : initialBoutiqueEnabled
+        ? ['/', '/boutique', '/boutique/panier', '/mon-compte/commandes']
+        : ['/', '/mon-compte/commandes'];
     router.push(routes[index]);
   };
 
@@ -85,7 +94,7 @@ export function LayoutProvider({
           <ProfileProvider initialBoutiqueB2B={initialBoutiqueB2B}>
           <CartProvider>
           <div className="flex flex-col bg-background min-h-dvh">
-            {isFrontendPage && !isMonComptePage && <BoutiqueHeader />}
+            {isFrontendPage && !isMonComptePage && <BoutiqueHeader boutiqueEnabled={initialBoutiqueEnabled} />}
             {isFrontendPage ? (
               <div className={`flex flex-col flex-1 ${isMonComptePage ? '' : 'pt-[72px]'} ${showBottomNav ? 'pb-20' : ''}`}>
                 <SiteBanners />

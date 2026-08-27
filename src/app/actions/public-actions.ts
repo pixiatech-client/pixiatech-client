@@ -87,6 +87,7 @@ export async function getSettings(): Promise<Settings> {
     zoomMaxDistance: 50,
     zoomMinDistance: 0.5,
     isWizardBotEnabled: true,
+    isBoutiqueEnabled: true,
     hintBubble: {
       enabled: true,
       text: "Pour démarrer, veuillez cliquer sur<br /> le bouton <b>+ Ajouter un produit</b>.",

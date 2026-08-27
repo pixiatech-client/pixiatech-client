@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings, TranslatedString, Theme } from '@/lib/types';
 import { updateSettings } from '../actions';
 import { Switch } from '@/components/ui/switch';
-import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, ShieldCheck, LogOut } from 'lucide-react';
+import { AlertCircle, MailCheck, EyeOff, Sun, Moon, Bot, Zap, Eye, Server, Play, AlertTriangle, ShieldCheck, LogOut, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -69,6 +69,7 @@ const settingsSchema = z.object({
   isSingleSessionEnabled: z.boolean().optional(),
   isWizardBotEnabled: z.boolean().optional(),
   isGuidedConfigEnabled: z.boolean().optional(),
+  isBoutiqueEnabled: z.boolean().optional(),
 
   hintBubble: hintBubbleSchema.optional(),
   lightThemeId: z.string().optional(),
@@ -124,6 +125,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       isSingleSessionEnabled: initialSettings.isSingleSessionEnabled ?? false,
       isWizardBotEnabled: initialSettings.isWizardBotEnabled ?? true,
       isGuidedConfigEnabled: initialSettings.isGuidedConfigEnabled ?? true,
+      isBoutiqueEnabled: initialSettings.isBoutiqueEnabled ?? true,
 
       estimationFlow: {
         ...initialSettings.estimationFlow,
@@ -157,7 +159,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
     const sectionKey = (Object.entries(sectionLabels) as [string, string][]).find(([, label]) => label === sectionName)?.[0] || sectionName;
 
     const sectionFields: Record<string, string[]> = {
-      general: ['defaultWidth', 'defaultHeight', 'maxWidth', 'maxHeight', 'maxRentalWidth', 'maxRentalHeight', 'maxProductsPerQuote', 'isEmailVerificationEnabled', 'isPriceHidden', 'isSingleSessionEnabled', 'isWizardBotEnabled', 'isGuidedConfigEnabled', 'estimationFlow'],
+      general: ['defaultWidth', 'defaultHeight', 'maxWidth', 'maxHeight', 'maxRentalWidth', 'maxRentalHeight', 'maxProductsPerQuote', 'isEmailVerificationEnabled', 'isPriceHidden', 'isSingleSessionEnabled', 'isWizardBotEnabled', 'isGuidedConfigEnabled', 'isBoutiqueEnabled', 'estimationFlow'],
       emergency: ['emergencyStopEnabled', 'emergencyReturnUrl', 'emergencyStopMessage'],
       images: ['previewScreenImageUrl', 'previewScreenVideoUrl', 'previewScreenFallbackImageUrl', 'previewScreenHomeFallbackImageUrl'],
       content: ['congratulationsTitle', 'congratulationsMessage', 'deliveryTitle', 'deliveryMessage', 'installationTitle', 'installationMessage', 'disclaimerMessage', 'quoteFormNotesPlaceholder', 'isDeliveryStepEnabled', 'isInstallationStepEnabled'],
@@ -222,6 +224,11 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       });
     }
   };
+
+  const hasOtherAccessMode = (exclude: 'isWizardBotEnabled' | 'isGuidedConfigEnabled' | 'isBoutiqueEnabled') =>
+    (['isWizardBotEnabled', 'isGuidedConfigEnabled', 'isBoutiqueEnabled'] as const)
+      .filter((key) => key !== exclude)
+      .some((key) => form.getValues(key));
 
   const sectionLabels: Record<SettingsSection, string> = {
       general: t('General'),
@@ -358,16 +365,13 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                           id="isWizardBotEnabled"
                           checked={field.value}
                           onCheckedChange={(checked) => {
-                            if (!checked) {
-                              const guided = form.getValues('isGuidedConfigEnabled');
-                              if (!guided) {
-                                toast({
-                                  title: t("Action unavailable"),
-                                  description: t("You must leave at least one access option enabled."),
-                                  variant: "destructive",
-                                });
-                                return;
-                              }
+                            if (!checked && !hasOtherAccessMode('isWizardBotEnabled')) {
+                              toast({
+                                title: t("Action unavailable"),
+                                description: t("You must leave at least one access option enabled."),
+                                variant: "destructive",
+                              });
+                              return;
                             }
                             field.onChange(checked);
                             autoSaveField('isWizardBotEnabled', checked);
@@ -396,19 +400,51 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
                           id="isGuidedConfigEnabled"
                           checked={field.value}
                           onCheckedChange={(checked) => {
-                            if (!checked) {
-                              const bot = form.getValues('isWizardBotEnabled');
-                              if (!bot) {
-                                toast({
-                                  title: t("Action unavailable"),
-                                  description: t("You must leave at least one access option enabled."),
-                                  variant: "destructive",
-                                });
-                                return;
-                              }
+                            if (!checked && !hasOtherAccessMode('isGuidedConfigEnabled')) {
+                              toast({
+                                title: t("Action unavailable"),
+                                description: t("You must leave at least one access option enabled."),
+                                variant: "destructive",
+                              });
+                              return;
                             }
                             field.onChange(checked);
                             autoSaveField('isGuidedConfigEnabled', checked);
+                          }}
+                        />
+                      )}
+                    />
+                  </div>
+
+                  {/* Option 3: Boutique */}
+                  <div className="flex items-center justify-between rounded-lg border border-amber-100 bg-white p-4 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-amber-100/50 rounded-lg">
+                        <ShoppingBag className="h-5 w-5 text-amber-700" />
+                      </div>
+                      <div>
+                        <Label htmlFor="isBoutiqueEnabled" className="font-semibold text-slate-800">{t('Boutique')}</Label>
+                        <p className="text-sm text-slate-500">{t('Allows customers to purchase products directly from the catalog.')}</p>
+                      </div>
+                    </div>
+                    <Controller
+                      control={form.control}
+                      name="isBoutiqueEnabled"
+                      render={({ field }) => (
+                        <Switch
+                          id="isBoutiqueEnabled"
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            if (!checked && !hasOtherAccessMode('isBoutiqueEnabled')) {
+                              toast({
+                                title: t("Action unavailable"),
+                                description: t("You must leave at least one access option enabled."),
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            field.onChange(checked);
+                            autoSaveField('isBoutiqueEnabled', checked);
                           }}
                         />
                       )}

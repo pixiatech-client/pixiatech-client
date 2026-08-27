@@ -682,7 +682,7 @@ useEffect(() => {
 
         if (originalStep === 1) {
             if (activeMode === 'selection') {
-                return <ConfiguratorModeSelection onSelectGuide={() => setActiveMode('wizard')} />;
+                return <ConfiguratorModeSelection showGuide={initialSettings.isGuidedConfigEnabled !== false} showShop={initialSettings.isBoutiqueEnabled !== false} onSelectGuide={() => setActiveMode('wizard')} />;
             }
             if (activeMode === 'wizard') {
                 return <ConfiguratorWizard onComplete={handleWizardComplete} onBack={handleGoToModeSelection} allProducts={allProducts} settings={initialSettings} wizardSettings={wizardSettings} initialStep={initialWizardStep} />;
