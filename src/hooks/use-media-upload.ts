@@ -77,6 +77,13 @@ export function useMediaUpload() {
         file,
         optimize: true,
         signal: controller.signal,
+        onUploadProgress: (pct) => {
+          setState(prev => ({
+            ...prev,
+            progress: pct,
+            status: 'uploading',
+          }));
+        },
         onProgress: (pct) => {
           let status: MediaStatus = 'processing';
           if (pct < 10) status = 'uploading';

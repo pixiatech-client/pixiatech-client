@@ -43,6 +43,15 @@ const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 const VIDEO_TIMEOUT_MS = 300_000;
 
+/**
+ * Signaux = terminaison par interruption externe (retryable).
+ * Les signaux "crash" (SIGABRT, SIGSEGV...) restent des erreurs réelles.
+ */
+const INTERRUPT_SIGNALS = new Set<string>([
+  'SIGTERM', 'SIGINT', 'SIGHUP', 'SIGQUIT', 'SIGKILL', 'SIGUSR1', 'SIGUSR2',
+  'SIGPIPE', 'SIGSTOP', 'SIGTSTP', 'SIGCONT', 'SIGTTIN', 'SIGTTOU', 'SIGWINCH',
+]);
+
 /** Map étape -> code d'erreur stable (diagnostic). */
 function stageToCode(stage: string | undefined): UploadErrorCode {
   switch (stage) {
@@ -224,8 +233,10 @@ async function optimizeVideoWithProgress(
 
   return new Promise((resolve, reject) => {
     const proc = spawn(FFMPEG_PATH, args, { timeout: VIDEO_TIMEOUT_MS });
+    const procStartedAt = Date.now();
     let stderr = '';
     let killed = false;
+    let timeoutTriggered = false;
 
     const onAbort = () => {
       killed = true;
@@ -257,12 +268,31 @@ async function optimizeVideoWithProgress(
 
     proc.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
 
-    proc.on('close', (code) => {
+    proc.on('close', (code, closeSignal) => {
       signal?.removeEventListener('abort', onAbort);
+      const elapsedMs = Date.now() - procStartedAt;
+      const interruptedBySignalParam = typeof closeSignal === 'string' && INTERRUPT_SIGNALS.has(closeSignal);
+      const interruptedBySignalMarker = /Exiting normally, received signal \d+/.test(stderr);
+      const interrupted = interruptedBySignalParam || interruptedBySignalMarker;
+      console.info(
+        `[media/optimize] FFMPEG_CLOSE_DIAG code=${code} closeSignal=${closeSignal ?? 'null'} ` +
+        `killed=${proc.killed} abortTriggered=${killed} timeoutTriggered=${timeoutTriggered} ` +
+        `timedOutByElapsed=${elapsedMs >= VIDEO_TIMEOUT_MS} interrupted=${interrupted} ` +
+        `interruptedBySignal=${interruptedBySignalParam} interruptedByStderrMarker=${interruptedBySignalMarker} ` +
+        `elapsedMs=${elapsedMs}`,
+      );
       if (killed) return;
       if (code === 0) {
         console.log('[media/optimize] FFmpeg completed successfully');
         resolve({ outputFormat, outputMime });
+      } else if (interrupted) {
+        const msg = `FFmpeg interrupted (code=${code}, signal=${closeSignal ?? 'unknown'}): ${stderr.slice(-300)}`;
+        console.error('[media/optimize]', msg);
+        reject(new MediaUploadError({
+          code: CODES.FFMPEG_INTERRUPTED,
+          stage: 'video_processing',
+          technicalMessage: msg,
+        }));
       } else {
         const msg = `FFmpeg exited with code ${code}: ${stderr.slice(-800)}`;
         console.error('[media/optimize]', msg);
@@ -276,6 +306,7 @@ async function optimizeVideoWithProgress(
       if (err.code === 'ENOENT') {
         reject(new Error(`FFmpeg unavailable: ${FFMPEG_PATH} not found — install ffmpeg or add ffmpeg-static`));
       } else if (err.code === 'ETIMEDOUT') {
+        timeoutTriggered = true;
         reject(new Error(`FFmpeg timed out after ${VIDEO_TIMEOUT_MS / 1000}s`));
       } else {
         reject(new Error(`FFmpeg error: ${err.message}`));

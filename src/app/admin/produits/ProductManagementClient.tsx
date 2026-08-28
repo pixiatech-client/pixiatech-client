@@ -47,6 +47,7 @@ import { parseProductPdf, type ParsedProductData } from '@/lib/product-pdf-parse
 import { uploadImageFull } from '@/lib/uploadImage';
 import { generateUploadId, getUploadIdForSignal, logUpload, MediaUploadError } from '@/lib/media-upload-diag';
 import { MediaProgress } from '@/components/ui/media-progress';
+import { VideoUploadOverlay } from '@/components/ui/video-upload-overlay';
 import type { MediaUploadState, MediaStatus } from '@/hooks/use-media-upload';
 
 // Référence temporelle pour les durées dans les logs de diagnostic
@@ -2574,6 +2575,8 @@ const ProduitPage = ({
   user,
   isSaving,
   mediaProgress,
+  mainVideoUpload,
+  setMainVideoUpload,
   aiSettings,
   setAiSettings,
   handleFileChange,
@@ -3712,6 +3715,16 @@ const ProduitPage = ({
                       <RefreshCw className="w-4 h-4 text-blue-500" />
                       <span className="text-[10px] font-black uppercase tracking-widest">{t('admin.productManagement.replaceVideo')}</span>
                     </button>
+
+                    {mainVideoUpload.status !== 'idle' && (
+                      <VideoUploadOverlay
+                        status={mainVideoUpload.status}
+                        progress={mainVideoUpload.progress}
+                        originalSize={uploadedVideo?.size}
+                        errorMessage={mainVideoUpload.errorMessage}
+                        onRetry={() => { void handleSaveProduct(); }}
+                      />
+                    )}
                   </div>
                 )}
                 <div className="absolute top-4 left-4 px-4 py-2 bg-black/60 backdrop-blur-md text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10 z-20 pointer-events-none">{t('admin.productManagement.mediaPreview')}</div>
@@ -5058,6 +5071,9 @@ export default function ProductManagementClient() {
     fileName: '',
     isVideo: false,
   });
+  // État dédié à l'upload MÉDIA PRINCIPAL (aperçu) — indépendant des uploads de
+  // galerie qui réutilisent `mediaProgress` pour ne pas afficher l'overlay à tort.
+  const [mainVideoUpload, setMainVideoUpload] = useState<{ status: 'idle' | 'uploading' | 'processing' | 'error'; progress: number; errorMessage?: string }>({ status: 'idle', progress: 0 });
   const [authView, setAuthView] = useState<'login' | 'signup' | 'forgot-password'>('login');
   const [rememberMe, setRememberMe] = useState(true);
   const [resetEmailSent, setResetEmailSent] = useState(false);
@@ -5181,6 +5197,7 @@ export default function ProductManagementClient() {
     setAnalysisProgress(0);
     setAiSuggestion(null);
     setMediaProgress({ status: 'idle', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName: '', isVideo: false });
+    setMainVideoUpload({ status: 'idle', progress: 0 });
     lastInitializedProductId.current = undefined as any;
   };
 
@@ -5740,21 +5757,49 @@ export default function ProductManagementClient() {
       // Handle Concurrent Video Upload
       if (uploadedVideo) {
         setMediaProgress({ status: 'uploading', progress: 0, originalSize: uploadedVideo.size, optimizedSize: 0, url: '', error: '', fileName: uploadedVideo.name, isVideo: true });
-        const videoResult = await uploadImageFull({
-          file: uploadedVideo,
-          optimize: true,
-          signal,
-          onProgress: (pct) => {
-            if (saveGenerationRef.current !== generation) return;
-            setMediaProgress(prev => ({
-              ...prev,
-              progress: pct,
-              status: pct < 10 ? 'uploading' : 'processing',
-            }));
-          },
-        });
-        finalVideoUrl = videoResult.url;
-        setMediaProgress(prev => ({ ...prev, status: 'completed', progress: 100, optimizedSize: videoResult.optimizedSize ?? prev.originalSize }));
+        setMainVideoUpload({ status: 'uploading', progress: 0 });
+        try {
+          const videoResult = await uploadImageFull({
+            file: uploadedVideo,
+            optimize: true,
+            signal,
+            onUploadProgress: (pct) => {
+              if (saveGenerationRef.current !== generation) return;
+              setMainVideoUpload(prev => ({ ...prev, status: 'uploading', progress: pct }));
+              setMediaProgress(prev => ({
+                ...prev,
+                progress: pct,
+                status: 'uploading',
+              }));
+            },
+            onProgress: (pct) => {
+              if (saveGenerationRef.current !== generation) return;
+              setMainVideoUpload(prev => ({ ...prev, status: pct < 10 ? 'uploading' : 'processing', progress: pct }));
+              setMediaProgress(prev => ({
+                ...prev,
+                progress: pct,
+                status: pct < 10 ? 'uploading' : 'processing',
+              }));
+            },
+          });
+          finalVideoUrl = videoResult.url;
+          setMainVideoUpload({ status: 'idle', progress: 0 });
+          setMediaProgress(prev => ({ ...prev, status: 'completed', progress: 100, optimizedSize: videoResult.optimizedSize ?? prev.originalSize }));
+        } catch (videoErr: any) {
+          const isVoluntaryVideo =
+            videoErr?.name === 'AbortError' ||
+            videoErr?.code === 'UPLOAD_ABORTED' ||
+            videoErr?.message === 'Upload cancelled' ||
+            videoErr?.message === 'Video optimization cancelled';
+          if (!isVoluntaryVideo) {
+            setMainVideoUpload({
+              status: 'error',
+              progress: 0,
+              errorMessage: (videoErr?.userMessage as string | undefined) || videoErr?.message || undefined,
+            });
+          }
+          throw videoErr;
+        }
       } else if (videoUrl && !isVideoUrl(videoUrl) && !uploadedPhoto && finalPhotoUrl === videoUrl) {
         // Migration/Cleanup logic: if videoUrl was used as image placeholder, separate them
         finalVideoUrl = '';
@@ -6015,7 +6060,9 @@ export default function ProductManagementClient() {
           description = `${description}${diagSuffix}`;
         }
         toast({
-          title: t('admin.productManagement.saveErrorToast'),
+          title: error?.code === 'UPLOAD_FFMPEG_INTERRUPTED'
+            ? t('admin.productManagement.saveInterruptedToast')
+            : t('admin.productManagement.saveErrorToast'),
           description,
           variant: "destructive"
         });
@@ -7233,7 +7280,9 @@ export default function ProductManagementClient() {
                   setActivePage={handlePageChange}
                   user={user}
                   isSaving={isSaving}
-                   mediaProgress={mediaProgress}
+                    mediaProgress={mediaProgress}
+                    mainVideoUpload={mainVideoUpload}
+                    setMainVideoUpload={setMainVideoUpload}
                   aiSettings={aiSettings}
                   setAiSettings={setAiSettings}
                    handleFileChange={handleFileChange}

@@ -1023,6 +1023,8 @@
             "duplicateSuccessDesc": "« {name} » has been successfully duplicated.",
             "saveErrorToast": "Save error",
             "saveErrorDesc": "An error occurred while saving.",
+            "saveInterruptedToast": "Processing interrupted",
+            "saveInterruptedDesc": "Please try again — the source video is preserved.",
             "databaseError": "Database error",
             "aiDisabled": "AI is disabled in settings.",
             "apiKeyRequired": "Please configure your API key in AI settings.",

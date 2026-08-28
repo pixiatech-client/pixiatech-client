@@ -959,6 +959,8 @@
             "duplicateSuccessDesc": "« {name} » a été dupliqué avec succès.",
             "saveErrorToast": "Erreur de sauvegarde",
             "saveErrorDesc": "Une erreur est survenue lors de la sauvegarde.",
+            "saveInterruptedToast": "Traitement interrompu",
+            "saveInterruptedDesc": "Veuillez réessayer — la vidéo source est conservée.",
             "databaseError": "Erreur de base de données",
             "aiDisabled": "L'IA est désactivée dans les paramètres.",
             "apiKeyRequired": "Veuillez configurer votre clé API dans les paramètres IA.",

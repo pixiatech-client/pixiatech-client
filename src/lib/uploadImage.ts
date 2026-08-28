@@ -17,6 +17,8 @@ interface UploadImageOptions {
   optimize?: boolean;
   /** Progress callback: receives 0–100 during upload/compression phases */
   onProgress?: (pct: number) => void;
+  /** Real transfer progress: bytes actually sent to the server (0–100 + byte counts) */
+  onUploadProgress?: (pct: number, loadedBytes: number, totalBytes: number) => void;
   /** AbortSignal to cancel the upload */
   signal?: AbortSignal;
 }
@@ -26,6 +28,97 @@ interface UploadImageResult {
   originalSize?: number;
   optimizedSize?: number;
   uploadId?: string;
+}
+
+interface XhrPostResult {
+  status: number;
+  statusText: string;
+  ok: boolean;
+  contentType: string;
+}
+
+/**
+ * POST FormData via XMLHttpRequest pour obtenir une progression réelle du
+ * téléversement (xhr.upload.onprogress). Le corps et les en-têtes restent
+ * identiques à l'ancien `fetch` ; seule la manière de suivre le transfert change.
+ */
+function xhrPostWithProgress(opts: {
+  url: string;
+  body: FormData;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+  onUploadProgress?: (loaded: number, total: number) => void;
+  onResponseChunk?: (chunk: string) => void;
+}): Promise<XhrPostResult> {
+  let onSignalAbort: (() => void) | null = null;
+
+  const promise = new Promise<XhrPostResult>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', opts.url);
+    if (opts.headers) {
+      for (const [key, value] of Object.entries(opts.headers)) {
+        xhr.setRequestHeader(key, value);
+      }
+    }
+    xhr.responseType = 'text';
+
+    if (opts.onUploadProgress) {
+      xhr.upload.onprogress = (event: ProgressEvent) => {
+        if (event.lengthComputable) opts.onUploadProgress!(event.loaded, event.total);
+      };
+    }
+
+    let cursor = 0;
+    const flushChunk = () => {
+      if (!opts.onResponseChunk) return;
+      const text = xhr.responseText || '';
+      if (text.length > cursor) {
+        opts.onResponseChunk(text.slice(cursor));
+        cursor = text.length;
+      }
+    };
+
+    xhr.onprogress = flushChunk;
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === XMLHttpRequest.LOADING) flushChunk();
+    };
+
+    xhr.onload = () => {
+      flushChunk();
+      resolve({
+        status: xhr.status,
+        statusText: xhr.statusText,
+        ok: xhr.status >= 200 && xhr.status < 300,
+        contentType: xhr.getResponseHeader('content-type') || '',
+      });
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Network error during upload'));
+    };
+
+    xhr.onabort = () => {
+      const err = new Error('Upload cancelled');
+      (err as any).name = 'AbortError';
+      (err as any).code = 'ABORTED';
+      reject(err);
+    };
+
+    onSignalAbort = () => xhr.abort();
+
+    if (opts.signal) {
+      if (opts.signal.aborted) xhr.abort();
+      else opts.signal.addEventListener('abort', onSignalAbort, { once: true });
+    }
+
+    xhr.send(opts.body);
+  });
+
+  promise.finally(() => {
+    if (opts.signal && onSignalAbort) opts.signal.removeEventListener('abort', onSignalAbort);
+  });
+
+  return promise;
 }
 
 /**
@@ -52,7 +145,7 @@ export async function uploadImageFull(
       ? { file: fileOrOptions, optimize: false }
       : fileOrOptions;
 
-  const { file, optimize = false, onProgress, signal } = opts;
+  const { file, optimize = false, onProgress, onUploadProgress, signal } = opts;
 
   const uploadId = generateUploadId();
   const startedAt = Date.now();
@@ -88,6 +181,8 @@ export async function uploadImageFull(
     }
 
     // Optimized path: server-side compression via SSE stream
+    // Transport : XMLHttpRequest (au lieu de fetch) pour pouvoir mesurer la
+    // progression réelle des octets envoyés via xhr.upload.onprogress.
     log('FORMDATA_START', { fields: 1 });
     const formData = new FormData();
     formData.append('file', file);
@@ -100,23 +195,96 @@ export async function uploadImageFull(
       uploadId,
     });
 
-    let res: Response;
+    let res: XhrPostResult;
+    let rawBody = '';
+    let resultData: any = null;
+    let serverError: MediaUploadError | null = null;
+    let sseBuffer = '';
+
+    const processSseChunk = (chunk: string) => {
+      rawBody += chunk;
+      sseBuffer += chunk;
+      const events = sseBuffer.split('\n\n');
+      sseBuffer = events.pop() || '';
+      for (const evt of events) {
+        const lines = evt.split('\n');
+        let eventType = '';
+        let eventData = '';
+        for (const line of lines) {
+          if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+          else if (line.startsWith('data: ')) eventData = line.slice(6);
+        }
+        if (!eventType || !eventData) continue;
+        let parsed: any;
+        try {
+          parsed = JSON.parse(eventData);
+        } catch {
+          continue;
+        }
+        if (eventType === 'progress') {
+          onProgress?.(parsed.progress ?? 50);
+          if (shouldLogProgress(lastProgressLog, Date.now(), parsed.progress ?? 0)) {
+            lastProgressLog = { value: parsed.progress ?? 0, at: Date.now() };
+            log('SSE_PROGRESS', {
+              percentage: parsed.progress ?? 0,
+              elapsedMs: Date.now() - startedAt,
+            });
+          }
+        } else if (eventType === 'result') {
+          resultData = parsed;
+          log('SSE_RESULT', {
+            elapsedMs: Date.now() - startedAt,
+            optimizedSize: parsed?.optimizedSize,
+          });
+        } else if (eventType === 'error') {
+          serverError = new MediaUploadError({
+            code: parsed?.code || CODES.UNKNOWN,
+            stage: parsed?.stage || 'server',
+            uploadId: parsed?.uploadId || uploadId,
+            userMessage: parsed?.userMessage,
+            technicalMessage: parsed?.error || 'Optimization failed',
+            name: parsed?.cancelled ? 'AbortError' : undefined,
+          });
+          log('SSE_ERROR', {
+            stage: serverError.stage,
+            errorName: serverError.name,
+            errorMessage: serverError.technicalMessage,
+            elapsedMs: Date.now() - startedAt,
+          });
+        }
+      }
+    };
+
     try {
-      res = await fetch('/api/media/optimize', {
-        method: 'POST',
+      res = await xhrPostWithProgress({
+        url: '/api/media/optimize',
         body: formData,
-        signal,
         headers: {
           'x-upload-id': uploadId,
         },
+        signal,
+        onUploadProgress: (loaded, total) => {
+          if (total <= 0) return;
+          const pct = Math.min(100, Math.round((loaded / total) * 100));
+          onUploadProgress?.(pct, loaded, total);
+          if (shouldLogProgress(lastProgressLog, Date.now(), pct)) {
+            lastProgressLog = { value: pct, at: Date.now() };
+            log('UPLOAD_PROGRESS', {
+              loadedBytes: loaded,
+              totalBytes: total,
+              percentage: pct,
+              elapsedMs: Date.now() - startedAt,
+            });
+          }
+        },
+        onResponseChunk: processSseChunk,
       });
     } catch (err: any) {
-      // Abort ou erreur réseau sur le fetch lui-même
       const isAbort = err?.name === 'AbortError';
       log('ERROR', {
         stage: 'transport',
         errorName: err?.name || 'Unknown',
-        errorMessage: err?.message || 'fetch failed',
+        errorMessage: err?.message || 'xhr failed',
         elapsedMs: Date.now() - startedAt,
       });
       if (isAbort) {
@@ -141,12 +309,20 @@ export async function uploadImageFull(
       status: res.status,
       statusText: res.statusText,
       elapsedMs: Date.now() - startedAt,
-      contentType: res.headers.get('content-type') || '',
+      contentType: res.contentType,
     });
 
+    if (serverError) throw serverError;
+
     if (!res.ok) {
-      const body = await res.json().catch(() => ({ error: 'Upload failed' }));
-      const msg: string = body.error || `HTTP ${res.status}`;
+      const msg: string = (() => {
+        try {
+          const body = JSON.parse(rawBody);
+          return body?.error || `HTTP ${res.status}`;
+        } catch {
+          return `HTTP ${res.status}`;
+        }
+      })();
       log('ERROR', {
         stage: 'http',
         errorName: 'HTTPError',
@@ -163,9 +339,8 @@ export async function uploadImageFull(
     }
 
     // Read SSE stream
-    const contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('text/event-stream')) {
-      const data = await res.json();
+    if (!res.contentType.includes('text/event-stream')) {
+      const data = JSON.parse(rawBody);
       log('SUCCESS', {
         totalElapsedMs: Date.now() - startedAt,
         originalSize: data?.originalSize,
@@ -176,111 +351,6 @@ export async function uploadImageFull(
     }
 
     log('SSE_CONNECT', { elapsedMs: Date.now() - startedAt });
-
-    const reader = res.body?.getReader();
-    if (!reader) throw new Error('No response body');
-
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let resultData: any = null;
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        // Parse SSE events
-        const events = buffer.split('\n\n');
-        buffer = events.pop() || '';
-
-        for (const evt of events) {
-          const lines = evt.split('\n');
-          let eventType = '';
-          let eventData = '';
-
-          for (const line of lines) {
-            if (line.startsWith('event: ')) {
-              eventType = line.slice(7).trim();
-            } else if (line.startsWith('data: ')) {
-              eventData = line.slice(6);
-            }
-          }
-
-          if (!eventType || !eventData) continue;
-
-          const parsed = JSON.parse(eventData);
-
-          if (eventType === 'progress') {
-            onProgress?.(parsed.progress ?? 50);
-            if (shouldLogProgress(lastProgressLog, Date.now(), parsed.progress ?? 0)) {
-              lastProgressLog = { value: parsed.progress ?? 0, at: Date.now() };
-              log('SSE_PROGRESS', {
-                percentage: parsed.progress ?? 0,
-                elapsedMs: Date.now() - startedAt,
-              });
-            }
-          } else if (eventType === 'result') {
-            resultData = parsed;
-            log('SSE_RESULT', {
-              elapsedMs: Date.now() - startedAt,
-              optimizedSize: parsed?.optimizedSize,
-            });
-          } else if (eventType === 'error') {
-            const err = new MediaUploadError({
-              code: parsed?.code || CODES.UNKNOWN,
-              stage: parsed?.stage || 'server',
-              uploadId: parsed?.uploadId || uploadId,
-              userMessage: parsed?.userMessage,
-              technicalMessage: parsed?.error || 'Optimization failed',
-              name: parsed?.cancelled ? 'AbortError' : undefined,
-            });
-            log('SSE_ERROR', {
-              stage: err.stage,
-              errorName: err.name,
-              errorMessage: err.technicalMessage,
-              elapsedMs: Date.now() - startedAt,
-            });
-            throw err;
-          }
-        }
-      }
-    } catch (err: any) {
-      // AbortError from fetch signal or from SSE error event
-      if (err instanceof MediaUploadError) {
-        if (err.code === CODES.ABORTED) {
-          log('SSE_END', { elapsedMs: Date.now() - startedAt });
-          throw err;
-        }
-        log('SSE_END', { elapsedMs: Date.now() - startedAt });
-        throw err;
-      }
-      if (err?.name === 'AbortError' || err?.message === 'Operation cancelled') {
-        log('ERROR', {
-          stage: 'sse',
-          errorName: 'AbortError',
-          errorMessage: 'Upload cancelled',
-          elapsedMs: Date.now() - startedAt,
-        });
-        throw new MediaUploadError({
-          code: CODES.ABORTED,
-          stage: 'sse',
-          uploadId,
-          name: 'AbortError',
-          technicalMessage: 'Operation cancelled',
-        });
-      }
-      log('ERROR', {
-        stage: 'sse',
-        errorName: err?.name || 'Unknown',
-        errorMessage: err?.message || 'SSE read failed',
-        elapsedMs: Date.now() - startedAt,
-      });
-      throw err;
-    } finally {
-      reader.releaseLock();
-    }
 
     if (!resultData) {
       const msg = 'No result received from optimization — the server may have disconnected';
