@@ -4,6 +4,12 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { upsertCustomer } from '@/lib/customers';
 import { createMagicLink } from '@/lib/magic-link';
 import { getSmtpTransport } from '@/lib/smtpService';
+import {
+  PaypalAmountError,
+  resolveOfferAmount,
+  assertCompleted,
+  getPaypalCaptureId,
+} from '@/lib/paypal-amount';
 
 // Auth gate: a valid session cookie must be present to prevent anonymous abuse.
 // PayPal orderId alone is not enough — it can leak through logs/network traces.
@@ -90,34 +96,31 @@ export async function POST(req: NextRequest) {
       return unauthorizedResponse();
     }
 
-    const { orderId, quoteId, promoDocId } = await req.json();
+    const { orderId, quoteId, promoCode, promoDocId } = await req.json();
     if (!orderId || !quoteId) {
       return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
     }
 
     const { adminDb, FieldValue } = getFirebaseAdmin();
-    const docRef = adminDb.collection('quote_requests').doc(quoteId);
-    const doc = await docRef.get();
 
-    if (!doc.exists) {
-      return NextResponse.json({ error: 'Devis introuvable' }, { status: 404 });
-    }
-
-    const quote = doc.data()!;
-    if (quote.status !== 'accepted') {
-      return NextResponse.json({ error: 'Ce devis n\'est pas en attente de paiement' }, { status: 400 });
-    }
+    // Montant attendu résolu côté serveur (quote_requests.finalPrice − promo serveur).
+    const resolved = await resolveOfferAmount(quoteId, { promoCode, promoDocId });
+    const quote = resolved.quote;
 
     const capture = await capturePayPalOrder(orderId);
-    const paypalCaptureId = capture?.purchase_units?.[0]?.payments?.captures?.[0]?.id || capture?.id || '';
-    const amountPaid = quote.finalPrice || 0;
+
+    // Refuse toute divergence entre le montant réellement capturé et l'attendu,
+    // AVANT toute création de commande ou changement de statut.
+    const capturedAmount = assertCompleted(capture, resolved.amount);
+
+    const paypalCaptureId = getPaypalCaptureId(capture);
     const now = new Date().toISOString();
     const origin = req.nextUrl.origin;
 
-    // Apply promo code usage
-    if (promoDocId) {
+    // Compte réel de la promo, uniquement après capture vérifiée.
+    if (resolved.promoId) {
       try {
-        await adminDb.collection('promo_codes').doc(promoDocId).update({
+        await adminDb.collection('promo_codes').doc(resolved.promoId).update({
           currentUses: FieldValue.increment(1),
         });
       } catch (e) {
@@ -150,20 +153,23 @@ export async function POST(req: NextRequest) {
     }
 
     // Update quote status
-    await docRef.update({
+    await adminDb.collection('quote_requests').doc(quoteId).update({
       status: 'awaiting_delivery',
       paypalOrderId: orderId,
       paypalCaptureId,
+      amountPaid: capturedAmount,
+      amountSource: resolved.source,
+      promoCode: resolved.promoCode || '',
       customerId,
       updatedAt: now,
     });
 
-    // Create sale order
+    // Create sale order — montants autorisés côté serveur.
     await adminDb.collection('sale_orders').add({
       productId: quote.productId,
       productName: quote.productName,
       productImage: quote.productImage || '',
-      productPrice: quote.finalPrice || 0,
+      productPrice: resolved.subtotal,
       quantity: quote.quantity || 1,
       customerName: quote.customerName,
       customerEmail: quote.customerEmail,
@@ -177,8 +183,13 @@ export async function POST(req: NextRequest) {
       deliveryCost: 0,
       paypalOrderId: orderId,
       paypalCaptureId,
-      amountPaid,
+      amountPaid: capturedAmount,
+      subtotal: resolved.subtotal,
+      discount: resolved.discount,
       vat: 0,
+      totalCaptured: capturedAmount,
+      amountSource: resolved.source,
+      promoCode: resolved.promoCode || '',
       status: 'commande',
       createdAt: now,
       updatedAt: now,
@@ -187,6 +198,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: 'COMPLETED', isNewCustomer: !!customerId });
   } catch (err: any) {
     console.error('[CapturePayment] Error:', err);
+    if (err instanceof PaypalAmountError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

@@ -11,6 +11,7 @@ import { useCart, type CartItem } from '@/contexts/CartContext';
 import { useI18n } from '@/lib/i18n';
 import { formatPrice } from '@/lib/boutique-data';
 import { calculateCheckout } from '@/lib/checkout-calculations';
+import type { BoutiqueAmountInput } from '@/lib/paypal-amount';
 import { useProfile } from '@/contexts/ProfileContext';
 import type { PdfSettings } from '@/lib/types';
 import { InvoiceButton } from '@/components/invoice-button';
@@ -45,7 +46,7 @@ function ConfettiEffect() {
   return null;
 }
 
-function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, vatValidated }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string>; deliveryCost: number; vatValidated: boolean }) {
+function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, vatValidated, paymentContext }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string>; deliveryCost: number; vatValidated: boolean; paymentContext: BoutiqueAmountInput }) {
   const [{ isResolved, isRejected }] = usePayPalScriptReducer();
   const [error, setError] = useState<string | null>(null);
 
@@ -73,10 +74,11 @@ function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, va
       <PayPalButtons
         fundingSource={FUNDING.PAYPAL}
         createOrder={async () => {
+          // Le montant est résolu côté serveur depuis le panier reconstruit.
           const res = await fetch('/api/paypal/create-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount: total }),
+            body: JSON.stringify({ cart: paymentContext }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error);
@@ -91,6 +93,8 @@ function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, va
               productImage: i.image,
               productPrice: i.price,
               quantity: i.quantity,
+              variantName: i.variantName,
+              variantReference: i.variantReference,
               renterDetails: i.renterDetails,
               rentalStartDate: i.rentalStartDate,
               rentalEndDate: i.rentalEndDate,
@@ -105,11 +109,13 @@ function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, va
               productImage: i.image,
               productPrice: i.price,
               quantity: i.quantity,
+              variantName: i.variantName,
+              variantReference: i.variantReference,
             }));
             const res = await fetch('/api/paypal/capture-order', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderId: data.orderID, rentalItems, purchaseItems, delivery: { ...delivery, vatValidated }, deliveryCost }),
+              body: JSON.stringify({ orderId: data.orderID, cart: paymentContext, rentalItems, purchaseItems, delivery: { ...delivery, vatValidated } }),
             });
             const capture = await res.json();
             if (!res.ok) throw new Error(capture.error);
@@ -449,15 +455,33 @@ export default function CheckoutPage() {
   const vatLabel = calc.vatLabel;
   const discount = promo ? subtotal - totalAfterDiscount : 0;
 
+  // Contexte envoyé au serveur pour la résolution du montant (jamais d'`amount` client).
+  const paymentContext: BoutiqueAmountInput = {
+    items: items.map(i => ({
+      productId: i.productId,
+      productPrice: i.price,
+      quantity: i.quantity,
+      type: i.type,
+      variantName: i.variantName,
+      variantReference: i.variantReference,
+      rentalStartDate: i.rentalStartDate,
+      rentalEndDate: i.rentalEndDate,
+      rentalStartTime: i.rentalStartTime,
+      rentalEndTime: i.rentalEndTime,
+    })),
+    delivery: {
+      postcode: delivery.postcode,
+      city: delivery.city,
+      country: delivery.country || 'FR',
+    },
+    clientType: profileType,
+    vatValidated,
+    promoCode: promo?.code || null,
+    promoDocId: promo?.promoDocId || null,
+  };
+
   const handlePay = (isNew?: boolean) => {
     if (isNew !== undefined) setIsNewCustomer(isNew);
-    if (promo?.promoDocId) {
-      fetch('/api/promo/use', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ promoDocId: promo.promoDocId }),
-      }).catch(() => {});
-    }
     clearCart();
     setStep('confirmation');
   };
@@ -1216,11 +1240,12 @@ export default function CheckoutPage() {
                 {paymentMethod === 'card' ? (
                   <PayPalCardFieldsProvider
                     style={cardFieldStyle}
-                    createOrder={async () => {
+createOrder={async () => {
+                      // Le montant est résolu côté serveur depuis le panier reconstruit.
                       const res = await fetch('/api/paypal/create-order', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ amount: total }),
+                        body: JSON.stringify({ cart: paymentContext }),
                       });
                       const data = await res.json();
                       if (!res.ok) throw new Error(data.error);
@@ -1231,7 +1256,9 @@ export default function CheckoutPage() {
                         console.log('CardFields onApprove:', data);
                         const rentalItems = items.filter(i => i.type === 'rental').map(i => ({
                           productId: i.productId, productName: i.name, productImage: i.image,
-                          productPrice: i.price, quantity: i.quantity, renterDetails: i.renterDetails,
+                          productPrice: i.price, quantity: i.quantity,
+                          variantName: i.variantName, variantReference: i.variantReference,
+                          renterDetails: i.renterDetails,
                           rentalStartDate: i.rentalStartDate, rentalEndDate: i.rentalEndDate,
                           rentalStartTime: i.rentalStartTime, rentalEndTime: i.rentalEndTime,
                           additionalNotes: i.additionalNotes || '', contractSignedAt: i.contractSignedAt || null,
@@ -1239,11 +1266,12 @@ export default function CheckoutPage() {
                         const purchaseItems = items.filter(i => i.type === 'purchase').map(i => ({
                           productId: i.productId, productName: i.name, productImage: i.image,
                           productPrice: i.price, quantity: i.quantity,
+                          variantName: i.variantName, variantReference: i.variantReference,
                         }));
                         const res = await fetch('/api/paypal/capture-order', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderId: data.orderID, rentalItems, purchaseItems, delivery: { ...delivery, vatValidated: vatValidated }, deliveryCost }),
+                          body: JSON.stringify({ orderId: data.orderID, cart: paymentContext, rentalItems, purchaseItems, delivery: { ...delivery, vatValidated: vatValidated } }),
                         });
                         const capture = await res.json();
                         if (!res.ok) throw new Error(capture.error);
@@ -1262,7 +1290,7 @@ export default function CheckoutPage() {
                   </PayPalCardFieldsProvider>
                 ) : (
                   isDeliveryComplete ? (
-                    <PayPalButtonGroup total={total} handlePay={handlePay} items={items} delivery={delivery} deliveryCost={deliveryCost} vatValidated={vatValidated} />
+                    <PayPalButtonGroup total={total} handlePay={handlePay} items={items} delivery={delivery} deliveryCost={deliveryCost} vatValidated={vatValidated} paymentContext={paymentContext} />
                   ) : (
                     <div className="bg-gray-50/50 border border-dashed border-gray-200 rounded-xl p-6 text-center">
                       <MapPin size={24} className="mx-auto text-gray-300 mb-2" />

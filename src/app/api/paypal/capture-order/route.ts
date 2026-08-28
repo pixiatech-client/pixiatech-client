@@ -4,6 +4,13 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { upsertCustomer } from '@/lib/customers';
 import { createMagicLink } from '@/lib/magic-link';
 import { getSmtpTransport } from '@/lib/smtpService';
+import {
+  PaypalAmountError,
+  resolveBoutiqueAmount,
+  assertCompleted,
+  getPaypalCaptureId,
+} from '@/lib/paypal-amount';
+import type { BoutiqueAmountInput, ResolvedAmount } from '@/lib/paypal-amount';
 
 // Lightweight auth gate: at least one valid session cookie must be present.
 // This blocks anonymous abuse of the capture endpoint (order creation, customer
@@ -55,17 +62,54 @@ function buildWelcomeEmailHtml(linkUrl: string, expiresInMinutes: number): strin
 </html>`;
 }
 
+function itemKey(item: any, type: 'purchase' | 'rental'): string {
+  return `${item.productId}|${type}|${item.variantReference || item.variantName || ''}`;
+}
+
+function serverUnitPrice(resolved: ResolvedAmount, item: any, type: 'purchase' | 'rental'): number {
+  const found = resolved.items?.find((i) => i.key === itemKey(item, type));
+  return found ? found.serverPrice : item.productPrice;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const authErr = await requireAuthenticatedSession(req);
     if (authErr) return authErr;
 
-    const { orderId, rentalItems, purchaseItems, delivery, deliveryCost } = await req.json();
-    const deliveryCostNum = typeof deliveryCost === 'number' ? deliveryCost : 0;
+    const { orderId, cart, rentalItems, purchaseItems, delivery, promoCode, promoDocId } = await req.json();
+    if (!cart) {
+      return NextResponse.json({ error: 'Contexte de paiement manquant' }, { status: 400 });
+    }
+
     const capture = await capturePayPalOrder(orderId);
-    const paypalCaptureId = capture?.purchase_units?.[0]?.payments?.captures?.[0]?.id || capture?.id || '';
-    const { adminDb } = getFirebaseAdmin();
+
+    // Montant attendu reconstruit côté serveur — jamais depuis le client.
+    const resolved = await resolveBoutiqueAmount({
+      items: cart.items,
+      delivery: cart.delivery || delivery,
+      clientType: cart.clientType,
+      vatValidated: cart.vatValidated ?? delivery?.vatValidated,
+      promoCode: cart.promoCode ?? promoCode,
+      promoDocId: cart.promoDocId ?? promoDocId,
+    } as BoutiqueAmountInput);
+
+    // Refuse toute divergence entre le montant réellement capturé et l'attendu.
+    const capturedAmount = assertCompleted(capture, resolved.amount);
+
+    const { adminDb, FieldValue } = getFirebaseAdmin();
+    const paypalCaptureId = getPaypalCaptureId(capture);
     const now = new Date().toISOString();
+
+    // Increment real promo usage ONLY once the capture is verified
+    if (resolved.promoId) {
+      try {
+        await adminDb.collection('promo_codes').doc(resolved.promoId).update({
+          currentUses: FieldValue.increment(1),
+        });
+      } catch (e) {
+        console.warn('[CaptureOrder] Failed to increment promo uses:', e);
+      }
+    }
 
     // Use delivery data from frontend if provided, fall back to PayPal payer/shipping info
     const payer = capture?.payer;
@@ -124,11 +168,12 @@ export async function POST(req: NextRequest) {
             console.error('Missing renterDetails for item:', item.productId);
             continue;
           }
+          const unitPrice = serverUnitPrice(resolved, item, 'rental');
           const ref = await adminDb.collection('rental_orders').add({
             productId: item.productId,
             productName: item.productName,
             productImage: item.productImage,
-            productPrice: item.productPrice,
+            productPrice: unitPrice,
             quantity: item.quantity,
             renterCompany: rd.company || '',
             renterRepresentative: rd.representative || '',
@@ -148,8 +193,13 @@ export async function POST(req: NextRequest) {
             emailVerifiedAt: now,
             paypalOrderId: orderId,
             paypalCaptureId,
-            amountPaid: item.productPrice * item.quantity,
-            deliveryCost: deliveryCostNum,
+            amountPaid: Math.round(unitPrice * item.quantity * 100) / 100,
+            subtotal: resolved.subtotal,
+            discount: resolved.discount,
+            deliveryCost: resolved.deliveryCost,
+            vat: resolved.vat,
+            totalCaptured: capturedAmount,
+            amountSource: resolved.source,
             status: 'pending_validation',
             userId: null,
             customerId,
@@ -167,11 +217,12 @@ export async function POST(req: NextRequest) {
     if (purchaseItems && purchaseItems.length > 0) {
       for (const item of purchaseItems) {
         try {
+          const unitPrice = serverUnitPrice(resolved, item, 'purchase');
           const ref = await adminDb.collection('sale_orders').add({
             productId: item.productId,
             productName: item.productName,
             productImage: item.productImage,
-            productPrice: item.productPrice,
+            productPrice: unitPrice,
             quantity: item.quantity,
             customerName,
             customerEmail,
@@ -189,9 +240,14 @@ export async function POST(req: NextRequest) {
             customerId,
             paypalOrderId: orderId,
             paypalCaptureId,
-            amountPaid: item.productPrice * item.quantity,
-            vat: 0,
-            deliveryCost: deliveryCostNum,
+            amountPaid: Math.round(unitPrice * item.quantity * 100) / 100,
+            subtotal: resolved.subtotal,
+            discount: resolved.discount,
+            vat: resolved.vat,
+            deliveryCost: resolved.deliveryCost,
+            totalCaptured: capturedAmount,
+            amountSource: resolved.source,
+            promoCode: resolved.promoCode || '',
             status: 'commande',
             createdAt: now,
             updatedAt: now,
@@ -205,6 +261,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ...capture, rentalOrderIds, saleOrderIds, isNewCustomer });
   } catch (err: any) {
+    if (err instanceof PaypalAmountError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

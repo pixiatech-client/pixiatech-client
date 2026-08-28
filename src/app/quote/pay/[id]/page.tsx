@@ -25,7 +25,7 @@ function ConfettiEffect() {
   return null;
 }
 
-function PayPalButtonGroup({ total, onSuccess }: { total: number; onSuccess: () => void }) {
+function PayPalButtonGroup({ total, quoteId, promoCode, onSuccess }: { total: number; quoteId: string; promoCode?: string | null; onSuccess: () => void }) {
   const [{ isResolved, isRejected }] = usePayPalScriptReducer();
   const [error, setError] = useState<string | null>(null);
 
@@ -53,10 +53,11 @@ function PayPalButtonGroup({ total, onSuccess }: { total: number; onSuccess: () 
       <PayPalButtons
         fundingSource={FUNDING.PAYPAL}
         createOrder={async () => {
+          // Le montant est résolu côté serveur (quote_requests.finalPrice − promo serveur).
           const res = await fetch('/api/paypal/create-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ amount: total }),
+            body: JSON.stringify({ quoteRequestId: quoteId, promoCode: promoCode || undefined }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error);
@@ -65,10 +66,9 @@ function PayPalButtonGroup({ total, onSuccess }: { total: number; onSuccess: () 
         onApprove={async (data) => {
           try {
             setError(null);
-            const quoteId = window.location.pathname.split('/').pop();
-              const body: Record<string, any> = { orderId: data.orderID, quoteId };
-              if ((window as any).__promoDocId) body.promoDocId = (window as any).__promoDocId;
-              const res = await fetch('/api/quote-requests/capture-payment', {
+            const body: Record<string, any> = { orderId: data.orderID, quoteId };
+            if (promoCode) body.promoCode = promoCode;
+            const res = await fetch('/api/quote-requests/capture-payment', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(body),
@@ -146,7 +146,6 @@ export default function QuotePayPage() {
       const data = await res.json();
       if (data.valid) {
         setPromoData({ discount: data.discount, promoDocId: data.promoDocId, code: promoCode.trim().toUpperCase() });
-        (window as any).__promoDocId = data.promoDocId;
         setPromoCode('');
       } else {
         setPromoError(data.error || 'Code invalide');
@@ -160,7 +159,6 @@ export default function QuotePayPage() {
   const handleRemovePromo = () => {
     setPromoData(null);
     setPromoError('');
-    delete (window as any).__promoDocId;
   };
 
   const handleSuccess = () => {
@@ -378,7 +376,7 @@ export default function QuotePayPage() {
                 <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <Shield className="w-4 h-4 text-gray-400" /> Paiement
                 </h2>
-                <PayPalButtonGroup total={total} onSuccess={handleSuccess} />
+                <PayPalButtonGroup total={total} quoteId={id} promoCode={promoData?.code} onSuccess={handleSuccess} />
               </div>
             </div>
 
