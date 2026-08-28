@@ -45,8 +45,12 @@ import TipTapEditor from '@/components/TipTapEditor';
 import { Switch } from '@/components/ui/switch';
 import { parseProductPdf, type ParsedProductData } from '@/lib/product-pdf-parser';
 import { uploadImageFull } from '@/lib/uploadImage';
+import { generateUploadId, getUploadIdForSignal, logUpload, MediaUploadError } from '@/lib/media-upload-diag';
 import { MediaProgress } from '@/components/ui/media-progress';
 import type { MediaUploadState, MediaStatus } from '@/hooks/use-media-upload';
+
+// Référence temporelle pour les durées dans les logs de diagnostic
+const DIAG_MOUNT_TS = Date.now();
 
 // --- Variant type ---
 interface ProductVariant {
@@ -3929,8 +3933,8 @@ const ProduitPage = ({
                     {pdfImportMode ? 'Import PDF' : t('admin.productManagement.manualMode')}
                   </span>
                   <Switch
-                    checked={!pdfImportMode}
-                    onCheckedChange={(on) => handlePdfImportToggle(!on)}
+                    checked={pdfImportMode}
+                    onCheckedChange={handlePdfImportToggle}
                     className="data-[state=checked]:bg-[#18181B]"
                   />
                 </div>
@@ -5101,6 +5105,8 @@ export default function ProductManagementClient() {
     }
     if (!dist && product?.distance) dist = product.distance;
     setPrimaryDistance(dist);
+    // En édition : afficher la fiche technique existante (mode import désactivé)
+    setPdfImportMode(false);
   };
 
   const startNewProduct = () => {
@@ -5112,7 +5118,14 @@ export default function ProductManagementClient() {
 
   const resetProductForm = () => {
     // Abort any in-flight operation
-    saveAbortControllerRef.current?.abort();
+    const abortCtrl = saveAbortControllerRef.current;
+    logUpload({
+      id: getUploadIdForSignal(abortCtrl?.signal) || 'no_active_upload',
+      side: 'CLIENT',
+      stage: 'ABORT',
+      payload: { reason: 'reset', source: 'resetProductForm', elapsedMs: Date.now() - DIAG_MOUNT_TS },
+    });
+    abortCtrl?.abort();
     saveAbortControllerRef.current = null;
     setIsSaving(false);
     setProductName('');
@@ -5160,7 +5173,7 @@ export default function ProductManagementClient() {
     setUploadedPhoto(null);
     setUploadedVideo(null);
     setUploadedPdf(null);
-    setPdfImportMode(false);
+    setPdfImportMode(true);
     setImportPdfFile(null);
     setIsParsingPdf(false);
     setPdfParseError('');
@@ -5173,7 +5186,14 @@ export default function ProductManagementClient() {
 
   const handleCancelEdit = () => {
     // Abort any in-flight save/upload operation
-    saveAbortControllerRef.current?.abort();
+    const abortCtrl = saveAbortControllerRef.current;
+    logUpload({
+      id: getUploadIdForSignal(abortCtrl?.signal) || 'no_active_upload',
+      side: 'CLIENT',
+      stage: 'ABORT',
+      payload: { reason: 'cancel-edit', source: 'handleCancelEdit', elapsedMs: Date.now() - DIAG_MOUNT_TS },
+    });
+    abortCtrl?.abort();
     saveAbortControllerRef.current = null;
     setIsSaving(false);
     resetProductForm();
@@ -5677,7 +5697,14 @@ export default function ProductManagementClient() {
       return;
     }
     // Cancel any previous in-flight save operation
-    saveAbortControllerRef.current?.abort();
+    const prevAbortCtrl = saveAbortControllerRef.current;
+    logUpload({
+      id: getUploadIdForSignal(prevAbortCtrl?.signal) || 'no_active_upload',
+      side: 'CLIENT',
+      stage: 'ABORT',
+      payload: { reason: 'new-save', source: 'handleSaveProduct:start', elapsedMs: Date.now() - DIAG_MOUNT_TS },
+    });
+    prevAbortCtrl?.abort();
     const generation = ++saveGenerationRef.current;
     const controller = new AbortController();
     saveAbortControllerRef.current = controller;
@@ -5752,10 +5779,16 @@ export default function ProductManagementClient() {
           const fileName = `galerie_${i + 1}.${ext}`;
           if (saveGenerationRef.current !== generation) return;
           setMediaProgress({ status: 'uploading', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName, isVideo: isVid });
+          const gid = generateUploadId();
+          const galleryStartAt = Date.now();
+          logUpload({ id: gid, side: 'CLIENT', stage: 'START', payload: { fileName, fileSize: 0, mimeType: isVid ? 'video/mp4' : 'image/jpeg' } });
           const blob = await (await fetch(item.url)).blob();
+          logUpload({ id: gid, side: 'CLIENT', stage: 'FORMDATA_READY', payload: { blobSize: blob.size } });
           const formData = new FormData();
           formData.append('file', blob, `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
-          const res = await fetch('/api/media/optimize', { method: 'POST', body: formData, signal });
+          logUpload({ id: gid, side: 'CLIENT', stage: 'REQUEST_START', payload: { endpoint: '/api/media/optimize', method: 'POST', fileSize: blob.size } });
+          const res = await fetch('/api/media/optimize', { method: 'POST', body: formData, signal, headers: { 'x-upload-id': gid } });
+          logUpload({ id: gid, side: 'CLIENT', stage: 'RESPONSE', payload: { status: res.status, statusText: res.statusText, elapsedMs: Date.now() - galleryStartAt, contentType: res.headers.get('content-type') || '' } });
           if (!res.ok) throw new Error(`Gallery upload failed: ${res.status}`);
           const contentType = res.headers.get('content-type') || '';
           if (contentType.includes('text/event-stream')) {
@@ -5786,13 +5819,25 @@ export default function ProductManagementClient() {
                       setMediaProgress(prev => ({ ...prev, progress: parsed.progress ?? 50, status: parsed.progress < 10 ? 'uploading' : 'processing' }));
                     } else if (eventType === 'result') {
                       resultData = parsed;
+                      logUpload({ id: gid, side: 'CLIENT', stage: 'SSE_RESULT', payload: { elapsedMs: Date.now() - galleryStartAt, optimizedSize: parsed?.optimizedSize } });
                     } else if (eventType === 'error') {
+                      logUpload({ id: gid, side: 'CLIENT', stage: 'SSE_ERROR', payload: { stage: parsed?.stage, errorMessage: parsed?.error, elapsedMs: Date.now() - galleryStartAt } });
                       if (parsed.cancelled) {
-                        const err = new Error(parsed.error || 'Upload cancelled');
-                        err.name = 'AbortError';
-                        throw err;
+                        throw new MediaUploadError({
+                          code: 'UPLOAD_ABORTED',
+                          stage: parsed?.stage || 'server',
+                          uploadId: parsed?.uploadId || gid,
+                          name: 'AbortError',
+                          technicalMessage: parsed?.error || 'Upload cancelled',
+                        });
                       }
-                      throw new Error(parsed.error || 'Gallery optimization failed');
+                      throw new MediaUploadError({
+                        code: parsed?.code || 'UPLOAD_UNKNOWN_ERROR',
+                        stage: parsed?.stage || 'server',
+                        uploadId: parsed?.uploadId || gid,
+                        userMessage: parsed?.userMessage,
+                        technicalMessage: parsed?.error || 'Gallery optimization failed',
+                      });
                     }
                   }
                 }
@@ -5944,13 +5989,34 @@ export default function ProductManagementClient() {
       setVideoUrl('');
     } catch (error: any) {
       // Don't show toast for voluntary cancellations
-      if (error.name === 'AbortError' || error.message === 'Upload cancelled' || error.message === 'Video optimization cancelled') {
-        console.log('[ProductManagement] Save operation cancelled');
+      const isVoluntary =
+        error?.name === 'AbortError' ||
+        error?.code === 'UPLOAD_ABORTED' ||
+        error?.message === 'Upload cancelled' ||
+        error?.message === 'Video optimization cancelled' ||
+        error?.message === 'Optimization cancelled';
+      if (isVoluntary) {
+        console.log('[ProductManagement] Save operation cancelled', { uploadId: error?.uploadId });
       } else {
-        console.error('Error saving product:', error);
+        console.error('[ProductManagement] Save error:', error);
+        // Un toast unique, message compréhensible (jamais de stack trace).
+        // `userMessage` provient de l'erreur normalisée si disponible.
+        const userMessage: string =
+          (error && (error as any).userMessage as string | undefined) ||
+          error?.message ||
+          t('admin.productManagement.saveErrorDesc');
+        let description = userMessage;
+        const uploadId = (error as any)?.uploadId as string | undefined;
+        if (uploadId) {
+          const diagSuffix =
+            process.env.NODE_ENV === 'development'
+              ? `\nÉtape : ${(error as any)?.stage || 'inconnue'} — ID : ${uploadId}`
+              : `\nCode diagnostic : ${uploadId}`;
+          description = `${description}${diagSuffix}`;
+        }
         toast({
           title: t('admin.productManagement.saveErrorToast'),
-          description: error.message || t('admin.productManagement.saveErrorDesc'),
+          description,
           variant: "destructive"
         });
       }
@@ -6040,7 +6106,7 @@ export default function ProductManagementClient() {
   };
 
   // PDF State — Technical Sheet (mode OFF)
-  const [pdfImportMode, setPdfImportMode] = useState(false);
+  const [pdfImportMode, setPdfImportMode] = useState(true);
   const [uploadedPdf, setUploadedPdf] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string>('');
   const [pdfError, setPdfError] = useState<string>('');

@@ -2,6 +2,9 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { uploadImageFull } from '@/lib/uploadImage';
+import { getUploadIdForSignal, logUpload } from '@/lib/media-upload-diag';
+
+const DIAG_MOUNT_TS = Date.now();
 
 export type MediaStatus = 'idle' | 'uploading' | 'processing' | 'completed' | 'error';
 
@@ -32,13 +35,27 @@ export function useMediaUpload() {
   const abortRef = useRef<AbortController | null>(null);
 
   const reset = useCallback(() => {
-    abortRef.current?.abort();
+    const prev = abortRef.current;
+    logUpload({
+      id: getUploadIdForSignal(prev?.signal) || 'no_active_upload',
+      side: 'CLIENT',
+      stage: 'ABORT',
+      payload: { reason: 'reset', source: 'useMediaUpload.reset', elapsedMs: Date.now() - DIAG_MOUNT_TS },
+    });
+    prev?.abort();
     abortRef.current = null;
     setState(INITIAL_STATE);
   }, []);
 
   const upload = useCallback(async (file: File): Promise<string> => {
-    abortRef.current?.abort();
+    const prev = abortRef.current;
+    logUpload({
+      id: getUploadIdForSignal(prev?.signal) || 'no_active_upload',
+      side: 'CLIENT',
+      stage: 'ABORT',
+      payload: { reason: 'new-upload', source: 'useMediaUpload.upload', elapsedMs: Date.now() - DIAG_MOUNT_TS },
+    });
+    prev?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -100,5 +117,21 @@ export function useMediaUpload() {
     }
   }, []);
 
-  return { ...state, upload, reset, abort: () => abortRef.current?.abort() };
+  return {
+    ...state,
+    upload,
+    reset,
+    abort: () => {
+      const c = abortRef.current;
+      if (c) {
+        logUpload({
+          id: getUploadIdForSignal(c.signal) || 'no_active_upload',
+          side: 'CLIENT',
+          stage: 'ABORT',
+          payload: { reason: 'user-action', source: 'useMediaUpload.abort', elapsedMs: Date.now() - DIAG_MOUNT_TS },
+        });
+        c.abort();
+      }
+    },
+  };
 }

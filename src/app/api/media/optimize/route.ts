@@ -3,6 +3,14 @@ export const dynamic = 'force-dynamic';
 import { NextRequest } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getStorage } from 'firebase-admin/storage';
+import {
+  generateUploadId,
+  logUpload,
+  MediaUploadError,
+  shouldLogProgress,
+  UPLOAD_ERROR_CODES as CODES,
+  type UploadErrorCode,
+} from '@/lib/media-upload-diag';
 import sharp from 'sharp';
 import { spawn } from 'child_process';
 import { writeFile, unlink, readFile } from 'fs/promises';
@@ -33,7 +41,23 @@ const FFPROBE_PATH = resolveFFprobePath();
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024;
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
-const VIDEO_TIMEOUT_MS = 120_000;
+const VIDEO_TIMEOUT_MS = 300_000;
+
+/** Map étape -> code d'erreur stable (diagnostic). */
+function stageToCode(stage: string | undefined): UploadErrorCode {
+  switch (stage) {
+    case 'formdata_parse':
+      return CODES.FORMDATA_PARSE;
+    case 'validation':
+      return CODES.VALIDATION;
+    case 'video_processing':
+      return CODES.FFMPEG;
+    case 'storage':
+      return CODES.STORAGE;
+    default:
+      return CODES.UNKNOWN;
+  }
+}
 
 async function checkCodecAvailable(codec: string): Promise<boolean> {
   try {
@@ -157,12 +181,12 @@ async function optimizeVideoWithProgress(
   const hasAac = await checkCodecAvailable('aac');
 
   let vCodec = 'libvpx-vp9';
-  let vExtra: string[] = ['-crf', '35', '-b:v', '0'];
+  let vExtra: string[] = ['-crf', '35', '-b:v', '0', '-cpu-used', '5', '-row-mt', '1'];
   let outputFormat = 'webm';
   let outputMime = 'video/webm';
   if (hasVP9) {
     vCodec = 'libvpx-vp9';
-    vExtra = ['-crf', '35', '-b:v', '0'];
+    vExtra = ['-crf', '35', '-b:v', '0', '-cpu-used', '5', '-row-mt', '1'];
   } else if (hasVP8) {
     vCodec = 'libvpx';
     vExtra = ['-crf', '35', '-b:v', '0'];
@@ -260,6 +284,43 @@ async function optimizeVideoWithProgress(
   });
 }
 
+// --- Stratégie B : bypass du ré-encodage si le fichier est déjà au format cible ---
+// Compatible = conteneur WebM + codec vidéo VP9 + audio absent ou Opus (sortie exacte du pipeline).
+// Toute erreur de probe ou critère non rempli → fallback encode (comportement inchangé).
+async function probeWebmCompatibility(
+  ffprobePath: string,
+  inputPath: string,
+): Promise<{ compatible: boolean; container: string; vcodec: string; acodec: string }> {
+  try {
+    const { stdout } = await execFileAsync(ffprobePath, [
+      '-v', 'error',
+      '-show_entries', 'stream=codec_type,codec_name:format=format_name',
+      '-of', 'json', inputPath,
+    ]);
+    const data = JSON.parse(stdout);
+    const container: string = data?.format?.format_name || '';
+    const streams: Array<{ codec_type?: string; codec_name?: string }> = data?.streams || [];
+    let vcodec = '';
+    let acodec = '';
+    let audioCount = 0;
+    for (const s of streams) {
+      if (s.codec_type === 'video') vcodec = s.codec_name || '';
+      if (s.codec_type === 'audio') {
+        audioCount += 1;
+        acodec = s.codec_name || '';
+      }
+    }
+    const compatible =
+      container.includes('webm') &&
+      vcodec === 'vp9' &&
+      (audioCount === 0 || (audioCount === 1 && acodec === 'opus'));
+    return { compatible, container, vcodec, acodec };
+  } catch (err: any) {
+    console.warn('[media/optimize] Compatibility probe failed (falling back to encode):', err?.message || err);
+    return { compatible: false, container: '', vcodec: '', acodec: '' };
+  }
+}
+
 function randomPath(kind: 'image' | 'video'): string {
   const ts = Date.now();
   const rand = randomBytes(8).toString('hex');
@@ -278,6 +339,24 @@ export async function POST(request: NextRequest) {
   const tmpFiles: string[] = [];
   const signal = request.signal;
 
+  // --- Contexte de diagnostic : uploadId transmis par le client ou généré ---
+  const uploadId = request.headers.get('x-upload-id') || generateUploadId();
+  const startedAt = Date.now();
+  let stage: string | undefined;
+  let currentKind: 'image' | 'video' | null = null;
+  let lastProgressLog: { value: number; at: number } | undefined;
+
+  const log = (s: string, payload?: Record<string, unknown>) =>
+    logUpload({ id: uploadId, side: 'SERVER', stage: s, payload });
+
+  log('REQUEST_START', {
+    method: request.method,
+    contentType: request.headers.get('content-type') || '',
+    contentLength: request.headers.get('content-length') || '',
+    userAgent: (request.headers.get('user-agent') || '').slice(0, 120),
+    timestamp: new Date().toISOString(),
+  });
+
   const encoder = new TextEncoder();
   let controllerRef: ReadableStreamDefaultController | null = null;
 
@@ -294,6 +373,16 @@ export async function POST(request: NextRequest) {
         controllerRef.enqueue(encoder.encode(payload));
       } catch {}
     }
+    // Log de progression associé au uploadId (throttle : palier de 5 % / 500 ms)
+    if (event === 'progress' && typeof data?.progress === 'number') {
+      if (shouldLogProgress(lastProgressLog, Date.now(), data.progress)) {
+        lastProgressLog = { value: data.progress, at: Date.now() };
+        log(currentKind === 'video' ? 'FFMPEG_PROGRESS' : 'IMAGE_PROGRESS', {
+          percentage: data.progress,
+          elapsedMs: Date.now() - startedAt,
+        });
+      }
+    }
   }
 
   const response = new Response(stream, {
@@ -307,27 +396,87 @@ export async function POST(request: NextRequest) {
   (async () => {
     try {
       if (signal?.aborted) {
-        sendEvent('error', { error: 'Request cancelled' });
+        log('ERROR', { stage: 'pre-parse', errorName: 'AbortError', errorMessage: 'Request cancelled', totalElapsedMs: Date.now() - startedAt });
+        sendEvent('error', { error: 'Request cancelled', cancelled: true, code: CODES.ABORTED, uploadId, stage: 'pre-parse' });
         return;
       }
 
-      const formData = await request.formData();
+      stage = 'formdata_parse';
+      const fdStart = Date.now();
+      log('FORMDATA_PARSE_START', { contentLengthHint: request.headers.get('content-length') || '' });
+      let formData: FormData;
+      try {
+        formData = await request.formData();
+        log('FORMDATA_PARSE_SUCCESS', {
+          elapsedMs: Date.now() - fdStart,
+          numberOfFields: Array.from(formData.keys()).length,
+        });
+      } catch (parseErr: any) {
+        const cause = (parseErr as any)?.cause;
+        log('FORMDATA_PARSE_ERROR', {
+          elapsedMs: Date.now() - fdStart,
+          errorName: parseErr?.name,
+          errorMessage: parseErr?.message,
+          stack: parseErr?.stack,
+          causeMessage: cause?.message,
+          causeCode: cause?.code,
+        });
+        throw new MediaUploadError({
+          code: CODES.FORMDATA_PARSE,
+          stage: 'formdata_parse',
+          uploadId,
+          cause: parseErr,
+          technicalMessage: `Failed to parse body as FormData. (${cause?.message || parseErr?.message})`,
+          userMessage: "Le serveur n'a pas reçu correctement la vidéo.",
+        });
+      }
+
       const file = formData.get('file') as File | null;
+      stage = 'validation';
       if (!file) {
-        sendEvent('error', { error: 'Missing file' });
+        log('VALIDATION_ERROR', { reason: 'missing-file' });
+        sendEvent('error', {
+          error: 'Missing file',
+          code: CODES.VALIDATION,
+          uploadId,
+          stage,
+          userMessage: "Aucun fichier n'a été reçu.",
+        });
         return;
       }
+
+      log('FILE_RECEIVED', {
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+      });
+
+      log('VALIDATION_START', { fileName: file.name, fileSize: file.size });
 
       const kind = getMediaKind(file.type);
       if (!kind) {
-        sendEvent('error', { error: `Unsupported type: ${file.type}` });
+        log('VALIDATION_ERROR', { reason: 'unsupported-type', mimeType: file.type });
+        sendEvent('error', {
+          error: `Unsupported type: ${file.type}`,
+          code: CODES.VALIDATION,
+          uploadId,
+          stage,
+          userMessage: "Le format de ce fichier n'est pas pris en charge.",
+        });
         return;
       }
 
       const originalSize = file.size;
       const maxSize = kind === 'image' ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE;
       if (originalSize > maxSize) {
-        sendEvent('error', { error: `File too large: ${(originalSize / 1024 / 1024).toFixed(1)} MB (max ${maxSize / 1024 / 1024} MB)` });
+        log('VALIDATION_ERROR', { reason: 'too-large', fileSize: originalSize, maxSize });
+        sendEvent('error', {
+          error: `File too large: ${(originalSize / 1024 / 1024).toFixed(1)} MB (max ${maxSize / 1024 / 1024} MB)`,
+          code: CODES.VALIDATION,
+          uploadId,
+          stage,
+          userMessage: "Ce fichier est trop volumineux pour être traité directement.",
+        });
         return;
       }
 
@@ -337,21 +486,44 @@ export async function POST(request: NextRequest) {
       const buffer = Buffer.from(arrayBuffer);
 
       if (!verifyMagicBytes(buffer, file.type)) {
-        sendEvent('error', { error: 'File content does not match declared type' });
+        log('VALIDATION_ERROR', { reason: 'magic-bytes-mismatch', mimeType: file.type });
+        sendEvent('error', {
+          error: 'File content does not match declared type',
+          code: CODES.VALIDATION,
+          uploadId,
+          stage,
+          userMessage: "Le contenu du fichier ne correspond pas au format déclaré.",
+        });
         return;
       }
+
+      log('VALIDATION_SUCCESS', { fileSize: buffer.length });
+      currentKind = kind;
+      log('MEDIA_TYPE_DETECTED', {
+        kind,
+        mime: file.type,
+        ext: kind === 'video' ? videoExtFromMime(file.type) : undefined,
+      });
 
       let optimizedBuffer: Buffer;
       let videoOutputMime = 'video/webm';
 
       if (kind === 'image') {
-        sendEvent('progress', { progress: 10, phase: 'processing' });
+        stage = 'image_processing';
+        log('IMAGE_PROCESS_START', { inputSize: buffer.length });
+        sendEvent('progress', { progress: 10, phase: 'processing', uploadId });
+        const imageStart = Date.now();
         optimizedBuffer = await optimizeImage(buffer);
-        sendEvent('progress', { progress: 90, phase: 'uploading' });
+        log('IMAGE_PROCESS_SUCCESS', {
+          outputSize: optimizedBuffer.length,
+          elapsedMs: Date.now() - imageStart,
+        });
+        sendEvent('progress', { progress: 90, phase: 'uploading', uploadId });
       } else {
+        stage = 'video_processing';
         if (signal?.aborted) throw new Error('Video optimization cancelled');
 
-        sendEvent('progress', { progress: 5, phase: 'processing' });
+        sendEvent('progress', { progress: 5, phase: 'processing', uploadId });
         const id = randomBytes(8).toString('hex');
         const origExt = videoExtFromMime(file.type);
         const inputTmp = join(tmpdir(), `opt_in_${id}.${origExt}`);
@@ -359,15 +531,54 @@ export async function POST(request: NextRequest) {
         tmpFiles.push(inputTmp, outputTmp);
 
         await writeFile(inputTmp, buffer);
-        sendEvent('progress', { progress: 10, phase: 'processing' });
-        const { outputMime } = await optimizeVideoWithProgress(inputTmp, outputTmp, sendEvent, signal);
-        videoOutputMime = outputMime;
-        sendEvent('progress', { progress: 95, phase: 'uploading' });
-        optimizedBuffer = await readFile(outputTmp);
+
+        let bypassed = false;
+        if (file.type === 'video/webm') {
+          const probe = await probeWebmCompatibility(FFPROBE_PATH, inputTmp);
+          log('COMPATIBILITY_PROBE', {
+            inputFormat: origExt,
+            container: probe.container,
+            vcodec: probe.vcodec,
+            acodec: probe.acodec,
+            compatible: probe.compatible,
+          });
+          if (probe.compatible) {
+            bypassed = true;
+            console.log('[media/optimize] Input already WebM/VP9-compatible — skipping re-encode');
+            log('SKIP_REENCODE', {
+              inputFormat: origExt,
+              container: probe.container,
+              vcodec: probe.vcodec,
+              acodec: probe.acodec,
+              inputSize: buffer.length,
+            });
+            optimizedBuffer = buffer;
+            videoOutputMime = 'video/webm';
+            sendEvent('progress', { progress: 10, phase: 'processing', uploadId });
+            sendEvent('progress', { progress: 95, phase: 'uploading', uploadId });
+          }
+        }
+
+        if (!bypassed) {
+          const ffmpegStart = Date.now();
+          log('FFMPEG_START', { inputSize: buffer.length, inputFormat: origExt });
+          sendEvent('progress', { progress: 10, phase: 'processing', uploadId });
+          const { outputMime } = await optimizeVideoWithProgress(inputTmp, outputTmp, sendEvent, signal);
+          log('FFMPEG_SUCCESS', {
+            outputFormat: outputMime,
+            elapsedMs: Date.now() - ffmpegStart,
+          });
+          videoOutputMime = outputMime;
+          sendEvent('progress', { progress: 95, phase: 'uploading', uploadId });
+          optimizedBuffer = await readFile(outputTmp);
+        }
       }
 
       if (signal?.aborted) throw new Error('Video optimization cancelled');
 
+      stage = 'storage';
+      log('STORAGE_UPLOAD_START', { kind, outputSize: optimizedBuffer.length });
+      const storageStart = Date.now();
       const { app } = getFirebaseAdmin();
       const bucket = getStorage(app).bucket();
       const storagePath = randomPath(kind);
@@ -377,23 +588,70 @@ export async function POST(request: NextRequest) {
         metadata: { contentType: kind === 'image' ? 'image/webp' : videoOutputMime },
       });
 
+      log('STORAGE_UPLOAD_SUCCESS', {
+        path: storagePath,
+        outputSize: optimizedBuffer.length,
+        elapsedMs: Date.now() - storageStart,
+      });
+
       const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media`;
 
       console.log(`[media/optimize] Success: ${kind} (${(originalSize / 1024).toFixed(0)}KB → ${(optimizedBuffer.length / 1024).toFixed(0)}KB)`);
+      log('SUCCESS', {
+        totalElapsedMs: Date.now() - startedAt,
+        originalSize,
+        finalSize: optimizedBuffer.length,
+      });
 
       sendEvent('result', {
         url,
         originalSize,
         optimizedSize: optimizedBuffer.length,
         type: kind,
+        uploadId,
       });
     } catch (err: any) {
-      if (err.message === 'Video optimization cancelled' || err.name === 'AbortError') {
-        console.log('[media/optimize] Operation cancelled');
-        sendEvent('error', { error: 'Video optimization cancelled', cancelled: true });
+      const totalElapsedMs = Date.now() - startedAt;
+      let mue: MediaUploadError;
+
+      if (err instanceof MediaUploadError) {
+        mue = err;
       } else {
-        console.error('[media/optimize]', err);
-        sendEvent('error', { error: err.message || 'Internal server error' });
+        const isTimeout = String(err?.message || '').includes('timed out') || err?.code === 'ETIMEDOUT';
+        const code: UploadErrorCode = isTimeout ? CODES.TIMEOUT : stageToCode(stage);
+        mue = new MediaUploadError({
+          code,
+          stage,
+          uploadId,
+          cause: err,
+          technicalMessage: err?.message || 'Internal server error',
+        });
+      }
+
+      log('ERROR', {
+        stage: mue.stage,
+        errorName: err?.name || mue.name,
+        errorMessage: err?.message || mue.technicalMessage,
+        code: mue.code,
+        totalElapsedMs,
+      });
+
+      if (mue.code === CODES.ABORTED || err?.message === 'Video optimization cancelled' || err?.name === 'AbortError') {
+        sendEvent('error', {
+          error: 'Video optimization cancelled',
+          cancelled: true,
+          code: mue.code,
+          uploadId: mue.uploadId,
+          stage: mue.stage,
+        });
+      } else {
+        sendEvent('error', {
+          error: mue.technicalMessage,
+          code: mue.code,
+          uploadId: mue.uploadId,
+          stage: mue.stage,
+          userMessage: mue.userMessage,
+        });
       }
     } finally {
       await cleanupFiles(tmpFiles);
