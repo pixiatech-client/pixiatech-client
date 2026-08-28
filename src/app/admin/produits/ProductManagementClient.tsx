@@ -44,7 +44,7 @@ import {
 import TipTapEditor from '@/components/TipTapEditor';
 import { Switch } from '@/components/ui/switch';
 import { parseProductPdf, type ParsedProductData } from '@/lib/product-pdf-parser';
-import { uploadImageFull } from '@/lib/uploadImage';
+import { optimizeStagedVideo, stageVideoFile, unstageVideoFile, uploadImageFull } from '@/lib/uploadImage';
 import { generateUploadId, getUploadIdForSignal, logUpload, MediaUploadError } from '@/lib/media-upload-diag';
 import { MediaProgress } from '@/components/ui/media-progress';
 import { VideoUploadOverlay } from '@/components/ui/video-upload-overlay';
@@ -2575,6 +2575,7 @@ const ProduitPage = ({
   user,
   isSaving,
   mediaProgress,
+  onRetryMainVideo,
   mainVideoUpload,
   setMainVideoUpload,
   aiSettings,
@@ -3722,7 +3723,7 @@ const ProduitPage = ({
                         progress={mainVideoUpload.progress}
                         originalSize={uploadedVideo?.size}
                         errorMessage={mainVideoUpload.errorMessage}
-                        onRetry={() => { void handleSaveProduct(); }}
+                        onRetry={onRetryMainVideo}
                       />
                     )}
                   </div>
@@ -5074,6 +5075,9 @@ export default function ProductManagementClient() {
   // État dédié à l'upload MÉDIA PRINCIPAL (aperçu) — indépendant des uploads de
   // galerie qui réutilisent `mediaProgress` pour ne pas afficher l'overlay à tort.
   const [mainVideoUpload, setMainVideoUpload] = useState<{ status: 'idle' | 'uploading' | 'processing' | 'error'; progress: number; errorMessage?: string }>({ status: 'idle', progress: 0 });
+  // PROGRESSION #1 : identifiant de la source brut déjà téléversée (PC → serveur)
+  // à l'ouverture. Consommé par handleSaveProduct (phase 2 = optimisation), sinon null.
+  const [stagedSourceUploadId, setStagedSourceUploadId] = useState<string | null>(null);
   const [authView, setAuthView] = useState<'login' | 'signup' | 'forgot-password'>('login');
   const [rememberMe, setRememberMe] = useState(true);
   const [resetEmailSent, setResetEmailSent] = useState(false);
@@ -5143,6 +5147,8 @@ export default function ProductManagementClient() {
     });
     abortCtrl?.abort();
     saveAbortControllerRef.current = null;
+    stageAbortControllerRef.current?.abort();
+    stageAbortControllerRef.current = null;
     setIsSaving(false);
     setProductName('');
     setMode(['vente']);
@@ -5212,6 +5218,8 @@ export default function ProductManagementClient() {
     });
     abortCtrl?.abort();
     saveAbortControllerRef.current = null;
+    stageAbortControllerRef.current?.abort();
+    stageAbortControllerRef.current = null;
     setIsSaving(false);
     resetProductForm();
     setEditingProduct(null);
@@ -5722,6 +5730,9 @@ export default function ProductManagementClient() {
       payload: { reason: 'new-save', source: 'handleSaveProduct:start', elapsedMs: Date.now() - DIAG_MOUNT_TS },
     });
     prevAbortCtrl?.abort();
+    // Un téléversement brut (phase 1) encore en cours est annulé : au clic
+    // « Ajouter au catalogue », seule la phase 2 (optimisation) doit continuer.
+    stageAbortControllerRef.current?.abort();
     const generation = ++saveGenerationRef.current;
     const controller = new AbortController();
     saveAbortControllerRef.current = controller;
@@ -5758,31 +5769,49 @@ export default function ProductManagementClient() {
       if (uploadedVideo) {
         setMediaProgress({ status: 'uploading', progress: 0, originalSize: uploadedVideo.size, optimizedSize: 0, url: '', error: '', fileName: uploadedVideo.name, isVideo: true });
         setMainVideoUpload({ status: 'uploading', progress: 0 });
+        // PROGRESSION #1 déjà faite à l'ouverture ? → phase 2 (optimisation de la
+        // source stagée, sans re-transfert). Sinon → fallback historique inchangé.
+        const stagedId = stagedSourceUploadId;
         try {
-          const videoResult = await uploadImageFull({
-            file: uploadedVideo,
-            optimize: true,
-            signal,
-            onUploadProgress: (pct) => {
-              if (saveGenerationRef.current !== generation) return;
-              setMainVideoUpload(prev => ({ ...prev, status: 'uploading', progress: pct }));
-              setMediaProgress(prev => ({
-                ...prev,
-                progress: pct,
-                status: 'uploading',
-              }));
-            },
-            onProgress: (pct) => {
-              if (saveGenerationRef.current !== generation) return;
-              setMainVideoUpload(prev => ({ ...prev, status: pct < 10 ? 'uploading' : 'processing', progress: pct }));
-              setMediaProgress(prev => ({
-                ...prev,
-                progress: pct,
-                status: pct < 10 ? 'uploading' : 'processing',
-              }));
-            },
-          });
+          const videoResult = stagedId
+            ? await optimizeStagedVideo({
+                sourceUploadId: stagedId,
+                signal,
+                onProgress: (pct) => {
+                  if (saveGenerationRef.current !== generation) return;
+                  setMainVideoUpload(prev => ({ ...prev, status: pct < 10 ? 'uploading' : 'processing', progress: pct }));
+                  setMediaProgress(prev => ({
+                    ...prev,
+                    progress: pct,
+                    status: pct < 10 ? 'uploading' : 'processing',
+                  }));
+                },
+              })
+            : await uploadImageFull({
+                file: uploadedVideo,
+                optimize: true,
+                signal,
+                onUploadProgress: (pct) => {
+                  if (saveGenerationRef.current !== generation) return;
+                  setMainVideoUpload(prev => ({ ...prev, status: 'uploading', progress: pct }));
+                  setMediaProgress(prev => ({
+                    ...prev,
+                    progress: pct,
+                    status: 'uploading',
+                  }));
+                },
+                onProgress: (pct) => {
+                  if (saveGenerationRef.current !== generation) return;
+                  setMainVideoUpload(prev => ({ ...prev, status: pct < 10 ? 'uploading' : 'processing', progress: pct }));
+                  setMediaProgress(prev => ({
+                    ...prev,
+                    progress: pct,
+                    status: pct < 10 ? 'uploading' : 'processing',
+                  }));
+                },
+              });
           finalVideoUrl = videoResult.url;
+          if (stagedId) setStagedSourceUploadId(null);
           setMainVideoUpload({ status: 'idle', progress: 0 });
           setMediaProgress(prev => ({ ...prev, status: 'completed', progress: 100, optimizedSize: videoResult.optimizedSize ?? prev.originalSize }));
         } catch (videoErr: any) {
@@ -5797,6 +5826,12 @@ export default function ProductManagementClient() {
               progress: 0,
               errorMessage: (videoErr?.userMessage as string | undefined) || videoErr?.message || undefined,
             });
+            // Issue définitive : la source stagée a été supprimée côté serveur →
+            // un réessai repart du fichier local, pas d'une source fantôme.
+            // (FFMPEG_INTERRUPTED est retryable : la source est conservée serveur.)
+            if (stagedId && videoErr?.code !== 'UPLOAD_FFMPEG_INTERRUPTED') {
+              setStagedSourceUploadId(null);
+            }
           }
           throw videoErr;
         }
@@ -6077,6 +6112,16 @@ export default function ProductManagementClient() {
     }
   };
 
+  // Réessai de l'overlay vidéo : phase 1 (téléversement brut) si la source n'est
+  // pas encore stagée, sinon phase 2 (optimisation) via handleSaveProduct.
+  const handleRetryMainVideo = () => {
+    if (uploadedVideo && !stagedSourceUploadId) {
+      void startStageVideo(uploadedVideo);
+    } else {
+      void handleSaveProduct();
+    }
+  };
+
   const handleDuplicateProduct = async (product: any) => {
     try {
       const { id, ...prodData } = product;
@@ -6320,6 +6365,55 @@ export default function ProductManagementClient() {
     }
   };
 
+  // PROGRESSION #1 — téléverse le fichier BRUT (MP4) vers le serveur dès
+  // l'Ouverture, avec une progression réelle 0 → 100 %. À 100 %, l'overlay est
+  // refermé, la vidéo est disponible dans le formulaire et le `sourceUploadId`
+  // est conservé pour la phase 2 (optimisation FFmpeg au clic « Ajouter »).
+  const startStageVideo = async (file: File) => {
+    // Annule un éventuel téléversement brut précédent (remplacement pendant l'envoi)
+    stageAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    stageAbortControllerRef.current = controller;
+    const signal = controller.signal;
+
+    setMainVideoUpload({ status: 'uploading', progress: 0 });
+    try {
+      const result = await stageVideoFile({
+        file,
+        signal,
+        onUploadProgress: (pct) => {
+          if (signal.aborted) return;
+          setMainVideoUpload(prev => ({ ...prev, status: 'uploading', progress: pct }));
+        },
+      });
+      if (signal.aborted) return;
+      setStagedSourceUploadId(result.sourceUploadId);
+      setMainVideoUpload({ status: 'idle', progress: 0 });
+    } catch (err: any) {
+      if (signal.aborted) return; // annulé volontairement (reset / remplacement)
+      setMainVideoUpload({
+        status: 'error',
+        progress: 0,
+        errorMessage: (err?.userMessage as string | undefined) || err?.message || undefined,
+      });
+    } finally {
+      if (stageAbortControllerRef.current === controller) {
+        stageAbortControllerRef.current = null;
+      }
+    }
+  };
+
+  // Libère côté serveur la source temporaire quand la vidéo est retirée du
+  // formulaire (bouton poubelle, saisie d'une URL, reset) — idempotent.
+  useEffect(() => {
+    if (!uploadedVideo && stagedSourceUploadId) {
+      const id = stagedSourceUploadId;
+      setStagedSourceUploadId(null);
+      setMainVideoUpload({ status: 'idle', progress: 0 });
+      void unstageVideoFile(id);
+    }
+  }, [uploadedVideo, stagedSourceUploadId]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -6332,6 +6426,12 @@ export default function ProductManagementClient() {
         } else {
           setUploadedVideo(file);
           setVideoUrl(url);
+          // PROGRESSION #1 : démarre le téléversement brut PC → serveur dès l'ouverture.
+          if (stagedSourceUploadId) {
+            void unstageVideoFile(stagedSourceUploadId);
+            setStagedSourceUploadId(null);
+          }
+          void startStageVideo(file);
         }
       };
       reader.readAsDataURL(file);
@@ -6344,7 +6444,11 @@ export default function ProductManagementClient() {
       if (e.target.value) setUploadedPhoto(null);
     } else {
       setVideoUrl(e.target.value);
-      if (e.target.value) setUploadedVideo(null);
+      if (e.target.value) {
+        setUploadedVideo(null);
+        // Saisie d'une URL : annule un éventuel téléversement brut en cours.
+        stageAbortControllerRef.current?.abort();
+      }
     }
   };
 
@@ -6544,6 +6648,9 @@ export default function ProductManagementClient() {
 
   // AbortController for current save/upload operation — allows cancellation
   const saveAbortControllerRef = useRef<AbortController | null>(null);
+  // AbortController de la PROGRESSION #1 (téléversement brut à l'ouverture) —
+  // séparé du save afin que l'abandon soit indépendant de handleSaveProduct.
+  const stageAbortControllerRef = useRef<AbortController | null>(null);
   // Generation counter — incremented on each new save; prevents stale callbacks from affecting new state
   const saveGenerationRef = useRef(0);
 
@@ -7283,6 +7390,7 @@ export default function ProductManagementClient() {
                     mediaProgress={mediaProgress}
                     mainVideoUpload={mainVideoUpload}
                     setMainVideoUpload={setMainVideoUpload}
+                    onRetryMainVideo={handleRetryMainVideo}
                   aiSettings={aiSettings}
                   setAiSettings={setAiSettings}
                    handleFileChange={handleFileChange}

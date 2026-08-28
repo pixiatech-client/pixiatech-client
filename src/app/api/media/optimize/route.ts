@@ -11,6 +11,7 @@ import {
   UPLOAD_ERROR_CODES as CODES,
   type UploadErrorCode,
 } from '@/lib/media-upload-diag';
+import { deleteStagedSource, readStagedSource, type StagedSourceInfo } from '@/lib/media-stage';
 import sharp from 'sharp';
 import { spawn } from 'child_process';
 import { writeFile, unlink, readFile } from 'fs/promises';
@@ -425,6 +426,10 @@ export async function POST(request: NextRequest) {
   });
 
   (async () => {
+    // Source stagée + conservée en cas d'issue retryable — visible aussi par
+    // le catch/finally (déclarés hors du try).
+    let stagedSource: StagedSourceInfo | null = null;
+    let keepStagedSource = false;
     try {
       if (signal?.aborted) {
         log('ERROR', { stage: 'pre-parse', errorName: 'AbortError', errorMessage: 'Request cancelled', totalElapsedMs: Date.now() - startedAt });
@@ -432,109 +437,155 @@ export async function POST(request: NextRequest) {
         return;
       }
 
-      stage = 'formdata_parse';
-      const fdStart = Date.now();
-      log('FORMDATA_PARSE_START', { contentLengthHint: request.headers.get('content-length') || '' });
-      let formData: FormData;
-      try {
-        formData = await request.formData();
-        log('FORMDATA_PARSE_SUCCESS', {
-          elapsedMs: Date.now() - fdStart,
-          numberOfFields: Array.from(formData.keys()).length,
-        });
-      } catch (parseErr: any) {
-        const cause = (parseErr as any)?.cause;
-        log('FORMDATA_PARSE_ERROR', {
-          elapsedMs: Date.now() - fdStart,
-          errorName: parseErr?.name,
-          errorMessage: parseErr?.message,
-          stack: parseErr?.stack,
-          causeMessage: cause?.message,
-          causeCode: cause?.code,
-        });
-        throw new MediaUploadError({
-          code: CODES.FORMDATA_PARSE,
-          stage: 'formdata_parse',
-          uploadId,
-          cause: parseErr,
-          technicalMessage: `Failed to parse body as FormData. (${cause?.message || parseErr?.message})`,
-          userMessage: "Le serveur n'a pas reçu correctement la vidéo.",
+      // --- PROGRESSION #1 : source déjà téléversée en brut via /api/media/upload ---
+      // Si l'en-tête `x-source-upload-id` est présent, la source est lue depuis la
+      // zone de staging (SANS re-transfert depuis le client ni FFmpeg ici).
+      const stagedSourceId = request.headers.get('x-source-upload-id');
+      if (stagedSourceId) {
+        stage = 'staged_source';
+        log('STAGED_SOURCE_LOOKUP', { sourceUploadId: stagedSourceId });
+        stagedSource = await readStagedSource(stagedSourceId);
+        if (!stagedSource) {
+          log('STAGED_SOURCE_MISSING', { sourceUploadId: stagedSourceId });
+          sendEvent('error', {
+            error: 'Staged source not found',
+            code: CODES.VALIDATION,
+            uploadId,
+            stage,
+            userMessage: "La vidéo source n'est plus disponible. Veuillez la re-sélectionner.",
+          });
+          return;
+        }
+        log('STAGED_SOURCE_FOUND', {
+          sourceUploadId: stagedSourceId,
+          fileSize: stagedSource.size,
+          mimeType: stagedSource.mime,
+          fileName: stagedSource.originalName,
         });
       }
 
-      const file = formData.get('file') as File | null;
-      stage = 'validation';
-      if (!file) {
-        log('VALIDATION_ERROR', { reason: 'missing-file' });
-        sendEvent('error', {
-          error: 'Missing file',
-          code: CODES.VALIDATION,
-          uploadId,
-          stage,
-          userMessage: "Aucun fichier n'a été reçu.",
+      let file: File | null = null;
+      let kind: 'image' | 'video' | null = null;
+      let originalSize = 0;
+      let buffer: Buffer | null = null;
+
+      if (stagedSource) {
+        // Branche "déjà stagé" : pas de parse FormData, pas de validation fichier,
+        // le fichier brut est lu directement depuis le disque lors du traitement.
+        kind = 'video';
+        originalSize = stagedSource.size;
+        currentKind = 'video';
+        log('MEDIA_TYPE_DETECTED', {
+          kind,
+          mime: stagedSource.mime,
+          ext: videoExtFromMime(stagedSource.mime),
+          source: 'staged',
         });
-        return;
-      }
+      } else {
+        stage = 'formdata_parse';
+        const fdStart = Date.now();
+        log('FORMDATA_PARSE_START', { contentLengthHint: request.headers.get('content-length') || '' });
+        let formData: FormData;
+        try {
+          formData = await request.formData();
+          log('FORMDATA_PARSE_SUCCESS', {
+            elapsedMs: Date.now() - fdStart,
+            numberOfFields: Array.from(formData.keys()).length,
+          });
+        } catch (parseErr: any) {
+          const cause = (parseErr as any)?.cause;
+          log('FORMDATA_PARSE_ERROR', {
+            elapsedMs: Date.now() - fdStart,
+            errorName: parseErr?.name,
+            errorMessage: parseErr?.message,
+            stack: parseErr?.stack,
+            causeMessage: cause?.message,
+            causeCode: cause?.code,
+          });
+          throw new MediaUploadError({
+            code: CODES.FORMDATA_PARSE,
+            stage: 'formdata_parse',
+            uploadId,
+            cause: parseErr,
+            technicalMessage: `Failed to parse body as FormData. (${cause?.message || parseErr?.message})`,
+            userMessage: "Le serveur n'a pas reçu correctement la vidéo.",
+          });
+        }
 
-      log('FILE_RECEIVED', {
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type,
-      });
+        file = formData.get('file') as File | null;
+        stage = 'validation';
+        if (!file) {
+          log('VALIDATION_ERROR', { reason: 'missing-file' });
+          sendEvent('error', {
+            error: 'Missing file',
+            code: CODES.VALIDATION,
+            uploadId,
+            stage,
+            userMessage: "Aucun fichier n'a été reçu.",
+          });
+          return;
+        }
 
-      log('VALIDATION_START', { fileName: file.name, fileSize: file.size });
-
-      const kind = getMediaKind(file.type);
-      if (!kind) {
-        log('VALIDATION_ERROR', { reason: 'unsupported-type', mimeType: file.type });
-        sendEvent('error', {
-          error: `Unsupported type: ${file.type}`,
-          code: CODES.VALIDATION,
-          uploadId,
-          stage,
-          userMessage: "Le format de ce fichier n'est pas pris en charge.",
+        log('FILE_RECEIVED', {
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType: file.type,
         });
-        return;
-      }
 
-      const originalSize = file.size;
-      const maxSize = kind === 'image' ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE;
-      if (originalSize > maxSize) {
-        log('VALIDATION_ERROR', { reason: 'too-large', fileSize: originalSize, maxSize });
-        sendEvent('error', {
-          error: `File too large: ${(originalSize / 1024 / 1024).toFixed(1)} MB (max ${maxSize / 1024 / 1024} MB)`,
-          code: CODES.VALIDATION,
-          uploadId,
-          stage,
-          userMessage: "Ce fichier est trop volumineux pour être traité directement.",
+        log('VALIDATION_START', { fileName: file.name, fileSize: file.size });
+
+        kind = getMediaKind(file.type);
+        if (!kind) {
+          log('VALIDATION_ERROR', { reason: 'unsupported-type', mimeType: file.type });
+          sendEvent('error', {
+            error: `Unsupported type: ${file.type}`,
+            code: CODES.VALIDATION,
+            uploadId,
+            stage,
+            userMessage: "Le format de ce fichier n'est pas pris en charge.",
+          });
+          return;
+        }
+
+        originalSize = file.size;
+        const maxSize = kind === 'image' ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE;
+        if (originalSize > maxSize) {
+          log('VALIDATION_ERROR', { reason: 'too-large', fileSize: originalSize, maxSize });
+          sendEvent('error', {
+            error: `File too large: ${(originalSize / 1024 / 1024).toFixed(1)} MB (max ${maxSize / 1024 / 1024} MB)`,
+            code: CODES.VALIDATION,
+            uploadId,
+            stage,
+            userMessage: "Ce fichier est trop volumineux pour être traité directement.",
+          });
+          return;
+        }
+
+        console.log(`[media/optimize] Processing ${kind}: ${file.name} (${(originalSize / 1024 / 1024).toFixed(1)} MB)`);
+
+        const arrayBuffer = await file.arrayBuffer();
+        buffer = Buffer.from(arrayBuffer);
+
+        if (!verifyMagicBytes(buffer, file.type)) {
+          log('VALIDATION_ERROR', { reason: 'magic-bytes-mismatch', mimeType: file.type });
+          sendEvent('error', {
+            error: 'File content does not match declared type',
+            code: CODES.VALIDATION,
+            uploadId,
+            stage,
+            userMessage: "Le contenu du fichier ne correspond pas au format déclaré.",
+          });
+          return;
+        }
+
+        log('VALIDATION_SUCCESS', { fileSize: buffer.length });
+        currentKind = kind;
+        log('MEDIA_TYPE_DETECTED', {
+          kind,
+          mime: file.type,
+          ext: kind === 'video' ? videoExtFromMime(file.type) : undefined,
         });
-        return;
       }
-
-      console.log(`[media/optimize] Processing ${kind}: ${file.name} (${(originalSize / 1024 / 1024).toFixed(1)} MB)`);
-
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-
-      if (!verifyMagicBytes(buffer, file.type)) {
-        log('VALIDATION_ERROR', { reason: 'magic-bytes-mismatch', mimeType: file.type });
-        sendEvent('error', {
-          error: 'File content does not match declared type',
-          code: CODES.VALIDATION,
-          uploadId,
-          stage,
-          userMessage: "Le contenu du fichier ne correspond pas au format déclaré.",
-        });
-        return;
-      }
-
-      log('VALIDATION_SUCCESS', { fileSize: buffer.length });
-      currentKind = kind;
-      log('MEDIA_TYPE_DETECTED', {
-        kind,
-        mime: file.type,
-        ext: kind === 'video' ? videoExtFromMime(file.type) : undefined,
-      });
 
       let optimizedBuffer: Buffer;
       let videoOutputMime = 'video/webm';
@@ -544,7 +595,7 @@ export async function POST(request: NextRequest) {
         log('IMAGE_PROCESS_START', { inputSize: buffer.length });
         sendEvent('progress', { progress: 10, phase: 'processing', uploadId });
         const imageStart = Date.now();
-        optimizedBuffer = await optimizeImage(buffer);
+        optimizedBuffer = await optimizeImage(buffer!);
         log('IMAGE_PROCESS_SUCCESS', {
           outputSize: optimizedBuffer.length,
           elapsedMs: Date.now() - imageStart,
@@ -556,15 +607,28 @@ export async function POST(request: NextRequest) {
 
         sendEvent('progress', { progress: 5, phase: 'processing', uploadId });
         const id = randomBytes(8).toString('hex');
-        const origExt = videoExtFromMime(file.type);
-        const inputTmp = join(tmpdir(), `opt_in_${id}.${origExt}`);
-        const outputTmp = join(tmpdir(), `opt_out_${id}.webm`);
-        tmpFiles.push(inputTmp, outputTmp);
+        const sourceMime = stagedSource ? stagedSource.mime : file!.type;
+        const origExt = videoExtFromMime(sourceMime);
 
-        await writeFile(inputTmp, buffer);
+        // Entrée FFmpeg : source brut déjà sur disque (staging) OU fichier FormData écrit en tmp.
+        let inputTmp: string;
+        const outputTmp = join(tmpdir(), `opt_out_${id}.webm`);
+        tmpFiles.push(outputTmp);
+
+        if (stagedSource) {
+          // La source est déjà sur disque. Elle n'est PAS poussée dans tmpFiles :
+          // sa suppression est décidée à la fin de la route (succès / erreur définitive),
+          // et conservée si l'issue est retryable (abort / interruption FFmpeg).
+          inputTmp = stagedSource.path;
+          log('STAGED_INPUT_READY', { inputPath: inputTmp, inputSize: stagedSource.size });
+        } else {
+          inputTmp = join(tmpdir(), `opt_in_${id}.${origExt}`);
+          tmpFiles.push(inputTmp);
+          await writeFile(inputTmp, buffer!);
+        }
 
         let bypassed = false;
-        if (file.type === 'video/webm') {
+        if (sourceMime === 'video/webm') {
           const probe = await probeWebmCompatibility(FFPROBE_PATH, inputTmp);
           log('COMPATIBILITY_PROBE', {
             inputFormat: origExt,
@@ -581,9 +645,9 @@ export async function POST(request: NextRequest) {
               container: probe.container,
               vcodec: probe.vcodec,
               acodec: probe.acodec,
-              inputSize: buffer.length,
+              inputSize: originalSize,
             });
-            optimizedBuffer = buffer;
+            optimizedBuffer = stagedSource ? await readFile(stagedSource.path) : buffer!;
             videoOutputMime = 'video/webm';
             sendEvent('progress', { progress: 10, phase: 'processing', uploadId });
             sendEvent('progress', { progress: 95, phase: 'uploading', uploadId });
@@ -592,7 +656,7 @@ export async function POST(request: NextRequest) {
 
         if (!bypassed) {
           const ffmpegStart = Date.now();
-          log('FFMPEG_START', { inputSize: buffer.length, inputFormat: origExt });
+          log('FFMPEG_START', { inputSize: originalSize, inputFormat: origExt, source: stagedSource ? 'staged' : 'post' });
           sendEvent('progress', { progress: 10, phase: 'processing', uploadId });
           const { outputMime } = await optimizeVideoWithProgress(inputTmp, outputTmp, sendEvent, signal);
           log('FFMPEG_SUCCESS', {
@@ -668,6 +732,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (mue.code === CODES.ABORTED || err?.message === 'Video optimization cancelled' || err?.name === 'AbortError') {
+        keepStagedSource = true;
         sendEvent('error', {
           error: 'Video optimization cancelled',
           cancelled: true,
@@ -676,6 +741,10 @@ export async function POST(request: NextRequest) {
           stage: mue.stage,
         });
       } else {
+        if (mue.code === CODES.FFMPEG_INTERRUPTED) {
+          // Interruption retryable : conserver la source pour un réessai sans re-transfert.
+          keepStagedSource = true;
+        }
         sendEvent('error', {
           error: mue.technicalMessage,
           code: mue.code,
@@ -686,6 +755,13 @@ export async function POST(request: NextRequest) {
       }
     } finally {
       await cleanupFiles(tmpFiles);
+      if (stagedSource && !keepStagedSource) {
+        const removed = await deleteStagedSource(stagedSource.sourceUploadId);
+        log(removed ? 'STAGE_CLEANUP' : 'STAGE_CLEANUP_ALREADY_GONE', {
+          sourceUploadId: stagedSource.sourceUploadId,
+          reason: 'definitive-outcome',
+        });
+      }
       try { controllerRef?.close(); } catch {}
     }
   })();
