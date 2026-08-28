@@ -2338,6 +2338,7 @@
         "popular": "Popular",
         "newArrivals": "New arrivals",
         "sortPopular": "Popular",
+        "sortNewest": "Newest",
         "sortPriceAsc": "Price: low to high",
         "sortPriceDesc": "Price: high to low",
         "noProductsFound": "No products found",

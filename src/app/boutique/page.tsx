@@ -268,7 +268,7 @@ export default function BoutiquePage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
   const [transactionType, setTransactionType] = useState<'all' | 'sale' | 'rental' | 'sur-commande'>('all');
-  const [sortBy, setSortBy] = useState<'recent' | 'price-asc' | 'price-desc'>('recent');
+  const [sortBy, setSortBy] = useState<'newest' | 'recent' | 'price-asc' | 'price-desc'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
@@ -341,7 +341,9 @@ export default function BoutiquePage() {
       result = result.filter(p => p.rating >= minRating);
     }
 
-    if (sortBy === 'price-asc') {
+    if (sortBy === 'newest') {
+      result.sort((a, b) => (Date.parse(b.createdAt ?? '') || 0) - (Date.parse(a.createdAt ?? '') || 0));
+    } else if (sortBy === 'price-asc') {
       result.sort((a, b) => a.price - b.price);
     } else if (sortBy === 'price-desc') {
       result.sort((a, b) => b.price - a.price);
@@ -465,7 +467,7 @@ export default function BoutiquePage() {
               onClick={() => setSortOpen(!sortOpen)}
               className="flex items-center gap-1.5 bg-white border border-transparent hover:border-gray-200 rounded-full px-3 sm:px-4 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all duration-300 cursor-pointer"
             >
-              {sortBy === 'recent' ? t('boutique.sortPopular') : sortBy === 'price-asc' ? t('boutique.sortPriceAsc') : t('boutique.sortPriceDesc')}
+              {sortBy === 'newest' ? t('boutique.sortNewest') : sortBy === 'recent' ? t('boutique.sortPopular') : sortBy === 'price-asc' ? t('boutique.sortPriceAsc') : t('boutique.sortPriceDesc')}
               <ChevronDown size={13} className="text-gray-400 transition-transform duration-300" style={{ transform: sortOpen ? 'rotate(180deg)' : undefined }} />
             </button>
             {/* Desktop dropdown */}
@@ -478,6 +480,7 @@ export default function BoutiquePage() {
                   className="hidden md:block absolute right-0 top-full mt-1 z-50 w-48 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden"
                 >
                   {[
+                    { value: 'newest', label: t('boutique.sortNewest') },
                     { value: 'recent', label: t('boutique.sortPopular') },
                     { value: 'price-asc', label: t('boutique.sortPriceAsc') },
                     { value: 'price-desc', label: t('boutique.sortPriceDesc') },
@@ -519,6 +522,7 @@ export default function BoutiquePage() {
                     </div>
                     <div className="p-3">
                       {[
+                        { value: 'newest', label: t('boutique.sortNewest') },
                         { value: 'recent', label: t('boutique.sortPopular') },
                         { value: 'price-asc', label: t('boutique.sortPriceAsc') },
                         { value: 'price-desc', label: t('boutique.sortPriceDesc') },

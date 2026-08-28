@@ -37,6 +37,7 @@ export interface Product {
   upsellFor?: string[];
   quoteOnly?: boolean;
   showRating?: boolean;
+  createdAt?: string;
   downloadEnabled?: boolean;
   downloadLabel?: string;
   playStoreUrl?: string;
@@ -197,6 +198,7 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     quoteOnly: !!data.quoteOnly || data.availableFor?.includes('sur-commande') || false,
     isHidden: !!data.isHidden,
     showRating: data.showRating !== false,
+    createdAt: data.createdAt || data.date || data.updatedAt || '',
     downloadEnabled: data.downloadEnabled !== false,
     downloadLabel: data.downloadLabel || '',
     playStoreUrl: data.playStoreUrl || '',

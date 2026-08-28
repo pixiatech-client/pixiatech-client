@@ -6060,13 +6060,10 @@ export default function ProductManagementClient() {
         });
       }
 
-      setActivePage('gestion');
-      setEditingProduct(null);
-      setPrimaryDistance('');
-      setUploadedPhoto(null);
-      setUploadedVideo(null);
-      setPhotoUrl('');
-      setVideoUrl('');
+      // Retour à la liste via le même chemin que le bouton retour :
+      // synchronise prevActivePage (direction de transition) et reset la fiche
+      // avant le début de l'animation, pour éviter tout re-rendu en plein vol.
+      handlePageChange('gestion');
     } catch (error: any) {
       // Don't show toast for voluntary cancellations
       const isVoluntary =
@@ -6807,7 +6804,7 @@ export default function ProductManagementClient() {
       setDownloadUrl3(editingProduct.downloadUrl3 || '');
       setDownloadIcon3(editingProduct.downloadIcon3 || '');
       setDownloadCustomIcon3(editingProduct.downloadCustomIcon3 || '');
-    } else {
+    } else if (activePage === 'produit') {
       // Reset form for new product creation
       resetProductForm();
     }
