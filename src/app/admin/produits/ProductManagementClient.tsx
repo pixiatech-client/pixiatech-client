@@ -20,6 +20,7 @@ import {
   Menu, Send, Navigation, ZoomIn, ZoomOut, Minus as MinusIcon, Unlink
 } from 'lucide-react';
 import { cn, normalizeSearchText } from '@/lib/utils';
+import { mergeVariantValues, ensureCharacteristicVariant } from '@/lib/characteristic-variants';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -6315,12 +6316,24 @@ export default function ProductManagementClient() {
             setEnvironment(data.type as any);
           }
 
-          if (data.newCharacteristic) {
+          if (data.newCharacteristic && data.newCharacteristic.name) {
+            const candidateValues = (data.newCharacteristic.variants || [])
+              .map((v: any) => String(v).trim())
+              .filter(Boolean);
             const existingChar = characteristics.find(c => normalizeSearchText(c.name) === normalizeSearchText(data.newCharacteristic.name));
             if (existingChar) {
-              setSelectedChars(prev => prev.some(c => c.id === existingChar.id)
-                ? prev
-                : [...prev, { id: existingChar.id, value: data.newCharacteristic.variants[0] }]);
+              // Caractéristique existante : on conserve TOUTES ses variantes et on
+              // ajoute celles du PDF absentes (déduplication), puis sélection auto.
+              if (candidateValues.length > 0) {
+                const merged = mergeVariantValues(existingChar, candidateValues);
+                if (merged.changed) {
+                  await updateDoc(doc(db, charCol, existingChar.id), { options: merged.options, variants: merged.variants });
+                  setCharacteristics(prev => prev.map(c => c.id === existingChar.id ? { ...(c as any), options: merged.options, variants: merged.variants } : c));
+                }
+                setSelectedChars(prev => prev.some(c => c.id === existingChar.id)
+                  ? prev.map(c => c.id === existingChar.id ? { ...(c as any), value: candidateValues[0] } : c)
+                  : [...prev, { id: existingChar.id, value: candidateValues[0] }]);
+              }
             } else if (aiSettings.autoCreateCharacteristics) {
                 const newCharData = {
                   name: data.newCharacteristic.name.toUpperCase(),
@@ -6522,22 +6535,31 @@ export default function ProductManagementClient() {
     if (data.technicalSpecifications) {
       const specs = data.technicalSpecifications;
       const newChars: any[] = [];
+      const amended: Record<string, { options: string[]; variants: any[] }> = {};
+      const selections: { id: string; value: string }[] = [];
+
       for (const key of Object.keys(specs)) {
+        const value = String(specs[key]).trim();
         const existing = characteristics.find(
           (c) => normalizeSearchText(c.name) === normalizeSearchText(key)
         );
         if (existing) {
-          setSelectedChars((prev) => {
-            const filtered = prev.filter((c) => c.id !== existing.id);
-            return [...filtered, { id: existing.id, value: specs[key] }];
-          });
+          // Caractéristique existante : on conserve TOUTES ses variantes et on ajoute
+          // uniquement la valeur du PDF si elle est absente (déduplication). Rien n'est
+          // écrasé, puis la valeur est sélectionnée automatiquement.
+          const effective = { ...existing, ...(amended[existing.id] || {}) };
+          const ensured = ensureCharacteristicVariant(effective, value);
+          if (ensured.changed) {
+            amended[existing.id] = { options: ensured.options, variants: ensured.variants };
+          }
+          selections.push({ id: existing.id, value });
         } else {
           const newCharData = {
             name: key.toUpperCase(),
             iconName: 'spec',
             customIcon: null,
-            variants: [{ id: '1', value: specs[key] }],
-            options: [specs[key]],
+            variants: [{ id: '1', value }],
+            options: [value],
             color: 'text-slate-400',
             border: 'focus:border-slate-400',
             locked: false,
@@ -6546,15 +6568,41 @@ export default function ProductManagementClient() {
           };
           const charRef = await addDoc(collection(db, charCol), newCharData);
           newChars.push({ id: charRef.id, ...newCharData });
+          selections.push({ id: charRef.id, value });
         }
       }
-      if (newChars.length > 0) {
-        setCharacteristics((prev) => [...prev, ...newChars]);
-        setSelectedChars((prev) => [
-          ...prev,
-          ...newChars.map((c: any) => ({ id: c.id, value: c.variants[0].value })),
-        ]);
+
+      // Persiste les nouvelles variantes ajoutées aux caractéristiques existantes
+      const amendmentIds = Object.keys(amended);
+      for (const id of amendmentIds) {
+        await updateDoc(doc(db, charCol, id), amended[id]);
       }
+
+      if (amendmentIds.length > 0 || newChars.length > 0) {
+        setCharacteristics((prev) => {
+          let next = prev;
+          if (amendmentIds.length > 0) {
+            next = next.map((c) => {
+              const a = amended[(c as any).id];
+              return a ? { ...(c as any), ...a } : c;
+            });
+          }
+          if (newChars.length > 0) next = [...next, ...newChars];
+          return next;
+        });
+      }
+
+      // Sélection automatique : si la même caractéristique apparaît plusieurs fois,
+      // seule la dernière valeur du PDF est retenue (pas de doublon dans selectedChars).
+      const lastSelection = new Map<string, string>();
+      for (const s of selections) lastSelection.set(s.id, s.value);
+      setSelectedChars((prev) => {
+        const selectedIds = new Set(lastSelection.keys());
+        return [
+          ...prev.filter((c) => !selectedIds.has(c.id as string)),
+          ...Array.from(lastSelection, ([id, value]) => ({ id, value })),
+        ];
+      });
     }
   };
 
