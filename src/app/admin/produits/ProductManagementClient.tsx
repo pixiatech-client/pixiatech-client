@@ -4404,7 +4404,7 @@ const GestionProduits = ({
   t: (key: string, options?: any) => string;
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('manual');
+  const [sortBy, setSortBy] = useState('date');
   const [filterType, setFilterType] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [prevPage, setPrevPage] = useState(1);
@@ -4459,7 +4459,7 @@ const GestionProduits = ({
     return matchesSearch && matchesType;
   }).sort((a, b) => {
     if (sortBy === 'name') return a.name.localeCompare(b.name);
-    if (sortBy === 'date') return new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (sortBy === 'date') return (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0);
     const priceA = parseFloat((a.price || '0').toString().replace(/[^\d]/g, '')) || 0;
     const priceB = parseFloat((b.price || '0').toString().replace(/[^\d]/g, '')) || 0;
     if (sortBy === 'price') return priceB - priceA;
