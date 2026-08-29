@@ -4,8 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { ShoppingBag, Trash2, Minus, Plus, Heart, Truck, ArrowRight, ArrowLeft, Tag, ChevronDown, CreditCard, Landmark, Shield, Info, User, Building2, X } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { formatPrice, fetchUpsellProducts, getModeBadge } from '@/lib/boutique-data';
+import { formatPrice, fetchUpsellProducts, getModeBadge, fetchBoutiqueProduct } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
+import type { CartItem } from '@/contexts/CartContext';
+import { isProductOutOfStockForSale } from '@/lib/product-status';
 import { ActionButton, formatProductPriceLabel } from '@/components/boutique/ProductActionButton';
 import { toast } from 'sonner';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -40,12 +42,6 @@ function QtySelector({ value, onMinus, onPlus }: { value: number; onMinus: () =>
   );
 }
 
-function cartModeBadge(type: string): { label: string; colors: string } | null {
-  if (type === 'rental') return { label: 'Location', colors: 'bg-blue-500 text-white' };
-  if (type === 'purchase') return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
-  return null;
-}
-
 export default function CartPage() {
   const router = useRouter();
   const { items, savedItems, addItem, removeItem, updateQuantity, itemCount, subtotal, promo, promoError, applyPromo, removePromo, totalAfterDiscount, clearCart, saveItem, unsaveItem, moveToCart, isSaved } = useCart();
@@ -54,6 +50,43 @@ export default function CartPage() {
   const [upsellProducts, setUpsellProducts] = useState<Product[]>([]);
   const [showInfo, setShowInfo] = useState(false);
   const { profileType, setProfileType, showHT, showTTC, priceLabel, isB2B, forceB2B } = useProfile();
+  const [liveProducts, setLiveProducts] = useState<Record<string, Product | null>>({});
+
+  useEffect(() => {
+    const ids = new Set<string>();
+    items.forEach(i => { if (i.type === 'purchase') ids.add(i.productId); });
+    savedItems.forEach(i => { if (i.type === 'purchase') ids.add(i.productId); });
+    const idArr = Array.from(ids);
+    if (idArr.length === 0) { setLiveProducts({}); return; }
+    let active = true;
+    Promise.all(idArr.map(async (id) => {
+      try {
+        const p = await fetchBoutiqueProduct(id);
+        return [id, p] as const;
+      } catch {
+        return [id, null] as const;
+      }
+    })).then((entries) => {
+      if (!active) return;
+      const map: Record<string, Product | null> = {};
+      entries.forEach(([id, p]) => { map[id] = p; });
+      setLiveProducts(map);
+    });
+    return () => { active = false; };
+  }, [items, savedItems]);
+
+  const liveBadge = (item: CartItem): { label: string; colors: string } | null => {
+    if (item.type === 'rental') return { label: 'Location', colors: 'bg-blue-500 text-white' };
+    const liveP = liveProducts[item.productId];
+    if (liveP && isProductOutOfStockForSale(liveP)) return { label: 'Rupture de stock', colors: 'bg-red-500 text-white' };
+    return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
+  };
+
+  const canMoveSavedToCart = (item: CartItem): boolean => {
+    if (item.type !== 'purchase') return true;
+    const liveP = liveProducts[item.productId];
+    return !(liveP && isProductOutOfStockForSale(liveP));
+  };
 
   useEffect(() => {
     const cartIds = items.map(i => i.productId);
@@ -120,7 +153,7 @@ export default function CartPage() {
                         <img src="/no-product.webp" alt={item.name} className="w-full h-full object-cover" />
                       )}
                       {(() => {
-                        const b = cartModeBadge(item.type);
+                        const b = liveBadge(item);
                         return b ? (
                           <div className="absolute top-1.5 right-1.5 z-10">
                             <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-sm ${b.colors}`}>{b.label}</span>
@@ -326,57 +359,79 @@ export default function CartPage() {
                   <h2 className="font-bold text-gray-900 text-lg">Articles sauvegardés ({savedItems.length})</h2>
                 </div>
                 <div className="space-y-3">
-                  {savedItems.map((item) => (
-                    <div key={item.productId + '-' + item.type + '-' + (item.variantName || '')} className="bg-white rounded-2xl border border-gray-200/70 p-4 flex items-center gap-4 transition-all hover:shadow-sm">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0 relative">
-                        {(item.variantImage || item.image) ? (
-                          <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <img src="/no-product.webp" alt={item.name} className="w-full h-full object-cover" />
-                        )}
-                        {(() => {
-                          const b = cartModeBadge(item.type);
-                          return b ? (
-                            <div className="absolute top-0.5 right-0.5 z-10">
-                              <span className={`px-1 py-0.5 rounded text-[7px] font-black uppercase tracking-wider shadow-sm ${b.colors}`}>{b.label}</span>
-                            </div>
-                          ) : null;
-                        })()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-gray-900 truncate">{item.name}</h4>
-                        <p className="text-xs text-gray-400">{item.category}</p>
-                        {item.variantName && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold bg-gray-100 text-gray-600 mt-1">
-                            {item.variantName}
-                          </span>
-                        )}
-                      </div>
-                      {item.price > 0 && (
-                        <div className="text-sm font-bold text-gray-900 shrink-0">{formatPrice(item.price)}</div>
-                      )}
-                      {item.price > 0 || (item.variantPrice ?? 0) > 0 ? (
-                        <button
-                          onClick={() => moveToCart(item)}
-                          className="shrink-0 flex items-center gap-1.5 bg-gray-900 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-colors"
-                        >
-                          <ShoppingBag size={13} />
-                          Remettre au panier
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => router.push(`/boutique/produit/${item.productId}`)}
-                          className="shrink-0 flex items-center gap-1.5 bg-gray-900 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-colors"
-                        >
-                          <ShoppingBag size={13} />
-                          Plus d'infos
-                        </button>
-                      )}
-                      <button onClick={() => unsaveItem(item.productId, item.type, item.variantName)} className="shrink-0 text-gray-400 hover:text-red-500 transition-colors">
-                        <Trash2 size={14} />
+                  {savedItems.map((item) => {
+                    const outOfStock = !canMoveSavedToCart(item);
+                    const hasPrice = item.price > 0 || (item.variantPrice ?? 0) > 0;
+                    const addToCartButton = hasPrice ? (
+                      <button
+                        onClick={() => {
+                          if (outOfStock) {
+                            toast.error('Produit en rupture de stock');
+                            return;
+                          }
+                          moveToCart(item);
+                        }}
+                        disabled={outOfStock}
+                        className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${outOfStock ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-900 text-white hover:bg-gray-800'}`}
+                      >
+                        <ShoppingBag size={13} />
+                        {outOfStock ? 'Indisponible' : 'Remettre au panier'}
                       </button>
-                    </div>
-                  ))}
+                    ) : (
+                      <button
+                        onClick={() => router.push(`/boutique/produit/${item.productId}`)}
+                        className="shrink-0 flex items-center gap-1.5 bg-gray-900 text-white px-3 py-2 rounded-xl text-xs font-semibold hover:bg-gray-800 transition-colors"
+                      >
+                        <ShoppingBag size={13} />
+                        Plus d'infos
+                      </button>
+                    );
+                    return (
+                      <div key={item.productId + '-' + item.type + '-' + (item.variantName || '')} className="bg-white rounded-2xl border border-gray-200/70 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 transition-all hover:shadow-sm">
+                        {/* Photo — plus grande, rien ne la recouvre */}
+                        <div className="w-24 h-24 xl:w-28 xl:h-28 shrink-0 rounded-xl overflow-hidden bg-gray-100 border border-gray-200/60">
+                          {(item.variantImage || item.image) ? (
+                            <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <img src="/no-product.webp" alt={item.name} className="w-full h-full object-cover" />
+                          )}
+                        </div>
+
+                        {/* Informations — badge hors image, sous le titre */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm sm:text-base font-bold text-gray-900 truncate leading-snug">{item.name}</h4>
+                          <p className="text-xs text-gray-400 truncate mt-0.5">{item.category}</p>
+                          {item.variantName && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600 mt-1.5">
+                              {item.variantName}
+                            </span>
+                          )}
+                          {outOfStock && (
+                            <span className="mt-2 inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-red-50 text-red-600 border border-red-200">
+                              Rupture de stock
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Prix + actions */}
+                        <div className="shrink-0 flex items-center justify-between gap-2 sm:flex-col sm:items-end sm:gap-2.5">
+                          {item.price > 0 && (
+                            <div className="text-sm font-bold text-gray-900">{formatPrice(item.price)}</div>
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            {addToCartButton}
+                            <button
+                              onClick={() => unsaveItem(item.productId, item.type, item.variantName)}
+                              aria-label={`Retirer ${item.name} des favoris`}
+                              className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 text-gray-400 hover:text-red-500 hover:border-red-300 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
