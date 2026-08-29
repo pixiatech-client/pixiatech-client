@@ -7,6 +7,7 @@ import {
   UPLOAD_ERROR_CODES as CODES,
 } from '@/lib/media-upload-diag';
 import { stageFile, deleteStagedSource, sweepStaging } from '@/lib/media-stage';
+import { rateLimitExceeded } from '@/lib/rate-limit';
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 
@@ -33,6 +34,10 @@ function verifyMagicBytes(buffer: Buffer, declaredMime: string): boolean {
  * l'en-tête `x-source-upload-id`. DELETE libère la source temporaire.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (rateLimitExceeded(request, 40, 200)) {
+    return NextResponse.json({ error: 'Trop de téléversements, veuillez réessayer plus tard' }, { status: 429 });
+  }
+
   const uploadId = request.headers.get('x-upload-id') || generateUploadId();
   const startedAt = Date.now();
   let stage: string | undefined;

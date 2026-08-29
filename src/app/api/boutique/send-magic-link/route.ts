@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { findCustomerByEmail } from '@/lib/customers';
 import { createMagicLink } from '@/lib/magic-link';
 import { getSmtpTransport } from '@/lib/smtpService';
+import { rateLimitExceeded } from '@/lib/rate-limit';
 
 function buildMagicLinkEmailHtml(linkUrl: string, expiresInMinutes: number): string {
   return `
@@ -39,6 +40,10 @@ function buildMagicLinkEmailHtml(linkUrl: string, expiresInMinutes: number): str
 
 export async function POST(req: NextRequest) {
   try {
+    if (rateLimitExceeded(req, 6, 240, 60_000)) {
+      return NextResponse.json({ error: 'Trop de demandes de lien, veuillez réessayer plus tard' }, { status: 429 });
+    }
+
     const { email } = await req.json();
     if (!email || typeof email !== 'string') {
       return NextResponse.json({ error: 'Email requis' }, { status: 400 });

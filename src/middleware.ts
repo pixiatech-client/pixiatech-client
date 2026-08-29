@@ -62,7 +62,6 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('session')?.value;
   const clientSession = request.cookies.get('client_session')?.value;
-  console.log('[Middleware] path=', pathname, 'session=', !!sessionCookie, 'client_session=', !!clientSession);
 
   // Resolve public base URL — Cloud Run exposes 0.0.0.0:8080 internally;
   // x-forwarded-host / x-forwarded-proto carry the real public domain.

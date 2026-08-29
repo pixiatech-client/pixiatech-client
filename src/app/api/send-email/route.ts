@@ -3,8 +3,13 @@ import nodemailer from 'nodemailer';
 import { buildSecureEmailHtml } from '@/lib/email-templates';
 import { getSmtpSettings } from '@/lib/smtpService';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { rateLimitExceeded } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  if (rateLimitExceeded(request, 20, 300)) {
+    return NextResponse.json({ error: 'Trop d\'envois, veuillez réessayer plus tard' }, { status: 429 });
+  }
+
   // Auth check: verify session cookie
   const sessionCookie = request.cookies.get('session')?.value;
   if (!sessionCookie) {
@@ -81,6 +86,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, messageId: result.messageId });
   } catch (error: any) {
     console.error('[API/send-email] Error:', error);
-    return NextResponse.json({ success: false, error: error.message || 'Failed to send email' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to send email' }, { status: 500 });
   }
 }

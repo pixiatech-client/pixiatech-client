@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getStorage } from 'firebase-admin/storage';
 import {
@@ -12,6 +12,7 @@ import {
   type UploadErrorCode,
 } from '@/lib/media-upload-diag';
 import { deleteStagedSource, readStagedSource, type StagedSourceInfo } from '@/lib/media-stage';
+import { rateLimitExceeded } from '@/lib/rate-limit';
 import sharp from 'sharp';
 import { spawn } from 'child_process';
 import { writeFile, unlink, readFile } from 'fs/promises';
@@ -368,6 +369,10 @@ async function cleanupFiles(files: string[]) {
 }
 
 export async function POST(request: NextRequest) {
+  if (rateLimitExceeded(request, 24, 120)) {
+    return NextResponse.json({ error: 'Trop de requêtes de compression, veuillez réessayer plus tard' }, { status: 429 });
+  }
+
   const tmpFiles: string[] = [];
   const signal = request.signal;
 

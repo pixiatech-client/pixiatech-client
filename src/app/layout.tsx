@@ -19,8 +19,22 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: 'PixiaTech | Estimation',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://pixiatech.com'),
+  title: {
+    default: 'PixiaTech | Estimation',
+    template: '%s | PixiaTech',
+  },
   description: 'Générez des estimations pour des écrans LED',
+  openGraph: {
+    title: 'PixiaTech | Estimation',
+    description: 'Générez des estimations pour des écrans LED',
+    type: 'website',
+    siteName: 'PixiaTech',
+    images: [{ url: '/favicon-512.png', width: 512, height: 512 }],
+  },
+  icons: {
+    icon: [{ url: '/favicon.ico?v=3', sizes: 'any', type: 'image/x-icon' }],
+  },
 };
 
 // Viewport séparé pour Next.js 14+ — empêche le navigateur de compenser

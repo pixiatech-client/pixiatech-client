@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
+import { rateLimitExceeded } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,9 @@ const ALLOWED_MODELS = new Set([
   'gemini-2.5-flash-preview-tts',
   'gemini-2.5-flash-image',
 ]);
+
+const MAX_PROMPT_LENGTH = 12_000;
+const MAX_INLINE_DATA_BYTES = 12 * 1024 * 1024;
 
 interface GeminiRequest {
   model?: string;
@@ -26,6 +30,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'GEMINI_API_KEY is not configured' }, { status: 500 });
   }
 
+  if (rateLimitExceeded(request, 40, 300)) {
+    return NextResponse.json({ error: 'Trop de requêtes, veuillez réessayer plus tard' }, { status: 429 });
+  }
+
   let body: GeminiRequest;
   try {
     body = await request.json();
@@ -35,6 +43,12 @@ export async function POST(request: Request) {
 
   if (!body.prompt || typeof body.prompt !== 'string') {
     return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
+  }
+  if (body.prompt.length > MAX_PROMPT_LENGTH) {
+    return NextResponse.json({ error: 'Prompt trop long' }, { status: 400 });
+  }
+  if (body.inlineData && body.inlineData.data.length > MAX_INLINE_DATA_BYTES) {
+    return NextResponse.json({ error: 'Pièce jointe trop volumineuse' }, { status: 400 });
   }
 
   const model = body.model || 'gemini-3-flash-preview';
@@ -67,6 +81,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ text: result.text || '' });
   } catch (err: any) {
     console.error('[gemini] Error:', err);
-    return NextResponse.json({ error: err?.message || 'Gemini API error' }, { status: 502 });
+    return NextResponse.json({ error: 'Erreur de l\'API d\'IA' }, { status: 502 });
   }
 }

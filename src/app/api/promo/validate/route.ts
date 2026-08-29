@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { rateLimitExceeded } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    if (rateLimitExceeded(req, 30, 200)) {
+      return NextResponse.json({ valid: false, error: 'Trop de tentatives, veuillez réessayer plus tard' }, { status: 429 });
+    }
+
     const { code, cartTotal } = await req.json();
     if (!code || typeof code !== 'string') {
       return NextResponse.json({ valid: false, error: 'Code requis' }, { status: 400 });

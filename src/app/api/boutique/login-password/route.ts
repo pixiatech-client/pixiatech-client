@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { findCustomerByEmail, updateCustomer } from '@/lib/customers';
 import { encrypt } from '@/lib/auth';
+import { rateLimitExceeded } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    if (rateLimitExceeded(req, 10, 120)) {
+      return NextResponse.json({ error: 'Trop de tentatives, veuillez réessayer plus tard' }, { status: 429 });
+    }
+
     const { email, password } = await req.json();
     if (!email || !password) {
       return NextResponse.json({ error: 'Email et mot de passe requis' }, { status: 400 });
