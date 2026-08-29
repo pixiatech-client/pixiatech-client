@@ -1326,9 +1326,7 @@ export default function ProductDetailPage() {
                                 )}
                               </>
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-200">
-                                <ShoppingBag size={16} />
-                              </div>
+                              <img src="/no-product.webp" alt={product.name} className="w-full h-full object-cover bg-slate-50" />
                             )}
                           </button>
                         );
@@ -1679,7 +1677,11 @@ export default function ProductDetailPage() {
                     {upsellProducts.map((p) => (
                       <div key={p.id} className="bg-white rounded-2xl border border-gray-200/70 p-4 group hover:shadow-md transition-all duration-300">
                         <div onClick={() => router.push(`/boutique/produit/${p.id}`)} className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-4 cursor-pointer relative">
-                          <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${p.image})` }} />
+                          {p.image ? (
+                            <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${p.image})` }} />
+                          ) : (
+                            <img src="/no-product.webp" alt={p.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                          )}
                           {(() => {
                             const b = getModeBadge(p);
                             return b ? (

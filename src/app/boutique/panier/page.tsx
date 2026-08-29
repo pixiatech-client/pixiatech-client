@@ -332,9 +332,7 @@ export default function CartPage() {
                         {(item.variantImage || item.image) ? (
                           <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-300">
-                            <ShoppingBag size={16} />
-                          </div>
+                          <img src="/no-product.webp" alt={item.name} className="w-full h-full object-cover" />
                         )}
                         {(() => {
                           const b = cartModeBadge(item.type);
@@ -390,7 +388,11 @@ export default function CartPage() {
                   {upsellProducts.map((p) => (
                     <div key={p.id} className="bg-white rounded-2xl border border-gray-200/70 p-4 group hover:shadow-md transition-all duration-300">
                       <div onClick={() => router.push(`/boutique/produit/${p.id}`)} className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-4 cursor-pointer relative">
-                        <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${p.image})` }} />
+                        {p.image ? (
+                          <div className="w-full h-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${p.image})` }} />
+                        ) : (
+                          <img src="/no-product.webp" alt={p.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        )}
                         {(() => {
                           const b = getModeBadge(p);
                           return b ? (
