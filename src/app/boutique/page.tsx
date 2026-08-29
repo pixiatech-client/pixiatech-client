@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProducts, getModeBadge } from '@/lib/boutique-data';
+import { isProductOutOfStockForSale } from '@/lib/product-status';
 import type { Product } from '@/lib/boutique-data';
 import { PriceDisplay, ActionButton } from '@/components/boutique/ProductActionButton';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -360,7 +361,7 @@ export default function BoutiquePage() {
     const p = product ?? (e as Product);
     const evt = 'stopPropagation' in e ? e as React.MouseEvent : null;
     if (evt) evt.stopPropagation();
-    if (p.stock !== undefined && p.stock <= 0 && p.availableFor?.includes('sale')) {
+    if (isProductOutOfStockForSale(p)) {
       toast.error(t('boutique.outOfStock'));
       return;
     }
@@ -619,27 +620,29 @@ export default function BoutiquePage() {
         ) : (
           <>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-            {filteredProducts.slice(0, displayCount).map((product, idx) => (
+            {filteredProducts.slice(0, displayCount).map((product, idx) => {
+              const outOfStock = isProductOutOfStockForSale(product);
+              return (
               <article
                 key={product.id}
                 style={{ animationDelay: `${idx * 0.08}s` }}
-                className={`product-card-entry w-full bg-white p-3 sm:p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative flex flex-col ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'opacity-70' : ''}`}
+                className={`product-card-entry w-full bg-white p-3 sm:p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative flex flex-col ${outOfStock ? 'opacity-70' : ''}`}
               >
                 <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }} className="block relative mb-3 group">
-                  {product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') && (
+                  {outOfStock && (
                     <div className="absolute inset-0 rounded-xl border border-red-500 pointer-events-none z-10" />
                   )}
                   {product.image ? (
                     <img
                       alt={product.name}
                       src={product.image}
-                      className={`rounded-xl w-full aspect-[1/1] object-cover bg-gray-50 ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'grayscale' : ''}`}
+                      className={`rounded-xl w-full aspect-[1/1] object-cover bg-gray-50 ${outOfStock ? 'grayscale' : ''}`}
                     />
                   ) : (
                     <img
                       src="/no-product.webp"
                       alt={product.name}
-                      className={`rounded-xl w-full aspect-[1/1] object-cover bg-gray-100 ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'grayscale' : ''}`}
+                      className={`rounded-xl w-full aspect-[1/1] object-cover bg-gray-100 ${outOfStock ? 'grayscale' : ''}`}
                     />
                   )}
                   {(() => {
@@ -734,7 +737,8 @@ export default function BoutiquePage() {
                 </div>
 
               </article>
-            ))}
+              );
+            })}
           </div>
           {filteredProducts.length > displayCount && (
             <div ref={sentinelRef} className="h-10" />

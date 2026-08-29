@@ -6,6 +6,7 @@ import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Do
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, fetchUpsellProducts, formatPrice, getModeBadge } from '@/lib/boutique-data';
+import { isProductOutOfStockForSale, normalizeStockQuantity } from '@/lib/product-status';
 import { ActionButton, formatProductPriceLabel } from '@/components/boutique/ProductActionButton';
 import { firestore } from '@/firebase/config';
 import { doc, getDoc } from 'firebase/firestore';
@@ -447,8 +448,8 @@ export default function ProductDetailPage() {
     : mediaItems[selectedMedia];
   const effectiveOldPrice = product?.oldPrice && (!selectedVariant || selectedVariant.price < product.oldPrice) ? product.oldPrice : undefined;
   const displayVariants = (product?.variants || []).filter(v => v.active && v.name);
-  const availableStock = product?.stock ?? 10;
-  const isOutOfStock = availableStock <= 0;
+  const availableStock = normalizeStockQuantity(product?.stock ?? null);
+  const isOutOfStock = isProductOutOfStockForSale(product ?? {});
 
   useEffect(() => {
     if (!lightboxOpen) return;

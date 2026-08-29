@@ -1,4 +1,5 @@
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getSaleBlockReason } from '@/lib/product-status';
 import { computeDeliveryCostDetails } from '@/lib/pricing-engine';
 import { calculateCheckout } from '@/lib/checkout-calculations';
 import type { ProfileType } from '@/lib/checkout-calculations';
@@ -366,6 +367,16 @@ export async function resolveBoutiqueAmount(input: BoutiqueAmountInput): Promise
     }
 
     const data = productSnap.data() || {};
+
+    // Garde serveur : une vente directe est refusée si la quantité en stock
+    // est <= 0 (statut piloté uniquement par stockQuantity). Survole les
+    // sur-commandes et locations (stock de vente non applicable).
+    if (item.type !== 'rental') {
+      const blockReason = getSaleBlockReason(data);
+      if (blockReason) {
+        throw new PaypalAmountError(`${blockReason} (${item.productId})`, 409);
+      }
+    }
 
     let baseUnit: number;
     if (item.variantReference || item.variantName) {

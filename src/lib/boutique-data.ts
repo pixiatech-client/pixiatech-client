@@ -122,6 +122,7 @@ export function getProduct(id: string) {
 
 import { firestore } from '@/firebase/config';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { isProductOutOfStockForSale } from './product-status';
 
 async function fetchCharacteristicsMap(): Promise<Record<string, string>> {
   try {
@@ -307,7 +308,7 @@ export interface ModeBadgeInfo {
 export function getModeBadge(product: Product): ModeBadgeInfo | null {
   const avail = product.availableFor ?? [];
   if (avail.includes('sur-commande')) return { label: 'Sur commande', colors: 'bg-amber-500 text-white' };
-  if (avail.includes('sale') && product.stock !== undefined && product.stock <= 0) return { label: 'Rupture de stock', colors: 'bg-red-500 text-white' };
+  if (avail.includes('sale') && isProductOutOfStockForSale(product)) return { label: 'Rupture de stock', colors: 'bg-red-500 text-white' };
   if (avail.includes('sale')) return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
   if (avail.includes('rental')) return { label: 'Location', colors: 'bg-blue-500 text-white' };
   return null;
