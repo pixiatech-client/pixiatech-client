@@ -117,9 +117,7 @@ export default function CartPage() {
                       {(item.variantImage || item.image) ? (
                         <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300">
-                          <ShoppingBag size={24} />
-                        </div>
+                        <img src="/no-product.webp" alt={item.name} className="w-full h-full object-cover" />
                       )}
                       {(() => {
                         const b = cartModeBadge(item.type);

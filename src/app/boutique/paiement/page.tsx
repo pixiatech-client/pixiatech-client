@@ -664,9 +664,7 @@ export default function CheckoutPage() {
                                 {(item.variantImage || item.image) ? (
                                   <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover rounded-xl" />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <span className="text-[8px] font-bold text-white/40">N/A</span>
-                                  </div>
+                                  <img src="/no-product.webp" alt={item.name} className="w-full h-full object-cover rounded-xl" />
                                 )}
                               </div>
                               {(() => {
@@ -1323,9 +1321,7 @@ createOrder={async () => {
                         {(item.variantImage || item.image) ? (
                           <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-300">
-                            <ShoppingBag size={16} />
-                          </div>
+                          <img src="/no-product.webp" alt={item.name} className="w-full h-full object-cover" />
                         )}
                         {(() => {
                           const b = checkoutModeBadge(item.type);

@@ -407,9 +407,7 @@ export default function BoutiquePage() {
                       {p.image ? (
                         <img src={p.image} alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200 flex-shrink-0" />
                       ) : (
-                        <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
-                          <ShoppingBag className="w-5 h-5 text-gray-400" />
-                        </div>
+                        <img src="/no-product.webp" alt={p.name} className="w-12 h-12 rounded-lg object-cover bg-gray-200 flex-shrink-0" />
                       )}
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-gray-600 transition-colors">{p.name}</p>
@@ -638,9 +636,11 @@ export default function BoutiquePage() {
                       className={`rounded-xl w-full aspect-[1/1] object-cover bg-gray-50 ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'grayscale' : ''}`}
                     />
                   ) : (
-                    <div className={`rounded-xl w-full aspect-[1/1] flex items-center justify-center bg-gray-100 text-gray-300 ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'grayscale' : ''}`}>
-                      <ShoppingBag size={32} />
-                    </div>
+                    <img
+                      src="/no-product.webp"
+                      alt={product.name}
+                      className={`rounded-xl w-full aspect-[1/1] object-cover bg-gray-100 ${product.stock !== undefined && product.stock <= 0 && product.availableFor?.includes('sale') ? 'grayscale' : ''}`}
+                    />
                   )}
                   {(() => {
                     const modeBadge = getModeBadge(product);

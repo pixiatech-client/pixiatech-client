@@ -204,9 +204,7 @@ function Lightbox({ items, index, onClose, onPrev, onNext }: { items: MediaItem[
           />
         )
       ) : (
-        <div className="max-w-[90vw] max-h-[85vh] flex items-center justify-center text-white/50">
-          <ShoppingBag size={64} />
-        </div>
+        <img src="/no-product.webp" alt="" className="max-w-[90vw] max-h-[85vh] object-contain rounded-2xl select-none" />
       )}
     </div>
   );
@@ -1257,9 +1255,7 @@ export default function ProductDetailPage() {
                       />
                     )
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-300">
-                      <ShoppingBag size={48} />
-                    </div>
+                    <img src="/no-product.webp" alt={product.name} className="w-full h-full object-cover bg-slate-50" />
                   )}
                 </div>
               </div>
