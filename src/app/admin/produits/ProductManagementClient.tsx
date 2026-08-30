@@ -46,7 +46,7 @@ import TipTapEditor from '@/components/TipTapEditor';
 import { Switch } from '@/components/ui/switch';
 import { parseProductPdf, type ParsedProductData } from '@/lib/product-pdf-parser';
 import { optimizeStagedVideo, stageVideoFile, unstageVideoFile, uploadImageFull } from '@/lib/uploadImage';
-import { generateUploadId, getUploadIdForSignal, logUpload, MediaUploadError } from '@/lib/media-upload-diag';
+import { getUploadIdForSignal, logUpload } from '@/lib/media-upload-diag';
 import { MediaProgress } from '@/components/ui/media-progress';
 import { VideoUploadOverlay } from '@/components/ui/video-upload-overlay';
 import type { MediaUploadState, MediaStatus } from '@/hooks/use-media-upload';
@@ -69,6 +69,8 @@ interface ProductVariant {
 interface GalleryItem {
   url: string;
   type: 'image' | 'video';
+  /** Fichier original conservé à la sélection (jamais re-fetché via data URL). */
+  file?: File;
 }
 
 const isVideoUrl = (url: string | undefined | null): boolean => {
@@ -84,7 +86,7 @@ function normalizeGalleryItems(items: any[]): GalleryItem[] {
   return (items || []).map((item: any) =>
     typeof item === 'string'
       ? { url: item, type: isVideoUrl(item) ? 'video' as const : 'image' as const }
-      : { url: item.url, type: item.type || 'image' }
+      : { url: item.url, type: item.type || 'image', file: item.file }
   );
 }
 
@@ -5849,96 +5851,57 @@ export default function ProductManagementClient() {
       }
 
       // Handle Gallery Photos & Videos Upload
+      // Même pipeline fiable que la photo principale (uploadImageFull → XHR +
+      // erreurs normalisées MediaUploadError) au lieu d'un fetch/SSE manuel.
       const finalGalleryUrls: any[] = [];
+      const galleryUrlByDataUrl = new Map<string, string>();
       for (let i = 0; i < galleryUrls.length; i++) {
         if (signal.aborted) throw new Error('Upload cancelled');
         if (saveGenerationRef.current !== generation) return;
         const item = galleryUrls[i];
-        if (item.url.startsWith('data:')) {
+        if (item.file) {
+          // Même pipeline fiable que la photo principale : le File original est
+          // envoyé via uploadImageFull (XHR). Jamais de fetch(data:) → CSP OK.
           const isVid = item.type === 'video';
           const ext = isVid ? 'mp4' : 'jpg';
           const fileName = `galerie_${i + 1}.${ext}`;
           if (saveGenerationRef.current !== generation) return;
-          setMediaProgress({ status: 'uploading', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName, isVideo: isVid });
-          const gid = generateUploadId();
-          const galleryStartAt = Date.now();
-          logUpload({ id: gid, side: 'CLIENT', stage: 'START', payload: { fileName, fileSize: 0, mimeType: isVid ? 'video/mp4' : 'image/jpeg' } });
-          const blob = await (await fetch(item.url)).blob();
-          logUpload({ id: gid, side: 'CLIENT', stage: 'FORMDATA_READY', payload: { blobSize: blob.size } });
-          const formData = new FormData();
-          formData.append('file', blob, `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`);
-          logUpload({ id: gid, side: 'CLIENT', stage: 'REQUEST_START', payload: { endpoint: '/api/media/optimize', method: 'POST', fileSize: blob.size } });
-          const res = await fetch('/api/media/optimize', { method: 'POST', body: formData, signal, headers: { 'x-upload-id': gid } });
-          logUpload({ id: gid, side: 'CLIENT', stage: 'RESPONSE', payload: { status: res.status, statusText: res.statusText, elapsedMs: Date.now() - galleryStartAt, contentType: res.headers.get('content-type') || '' } });
-          if (!res.ok) throw new Error(`Gallery upload failed: ${res.status}`);
-          const contentType = res.headers.get('content-type') || '';
-          if (contentType.includes('text/event-stream')) {
-            const reader = res.body?.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-            let resultData: any = null;
-            if (reader) {
-              try {
-                while (true) {
-                  const { done, value } = await reader.read();
-                  if (done) break;
-                  buffer += decoder.decode(value, { stream: true });
-                  const events = buffer.split('\n\n');
-                  buffer = events.pop() || '';
-                  for (const evt of events) {
-                    const lines = evt.split('\n');
-                    let eventType = '';
-                    let eventData = '';
-                    for (const line of lines) {
-                      if (line.startsWith('event: ')) eventType = line.slice(7).trim();
-                      else if (line.startsWith('data: ')) eventData = line.slice(6);
-                    }
-                    if (!eventType || !eventData) continue;
-                    const parsed = JSON.parse(eventData);
-                    if (eventType === 'progress') {
-                      if (saveGenerationRef.current !== generation) return;
-                      setMediaProgress(prev => ({ ...prev, progress: parsed.progress ?? 50, status: parsed.progress < 10 ? 'uploading' : 'processing' }));
-                    } else if (eventType === 'result') {
-                      resultData = parsed;
-                      logUpload({ id: gid, side: 'CLIENT', stage: 'SSE_RESULT', payload: { elapsedMs: Date.now() - galleryStartAt, optimizedSize: parsed?.optimizedSize } });
-                    } else if (eventType === 'error') {
-                      logUpload({ id: gid, side: 'CLIENT', stage: 'SSE_ERROR', payload: { stage: parsed?.stage, errorMessage: parsed?.error, elapsedMs: Date.now() - galleryStartAt } });
-                      if (parsed.cancelled) {
-                        throw new MediaUploadError({
-                          code: 'UPLOAD_ABORTED',
-                          stage: parsed?.stage || 'server',
-                          uploadId: parsed?.uploadId || gid,
-                          name: 'AbortError',
-                          technicalMessage: parsed?.error || 'Upload cancelled',
-                        });
-                      }
-                      throw new MediaUploadError({
-                        code: parsed?.code || 'UPLOAD_UNKNOWN_ERROR',
-                        stage: parsed?.stage || 'server',
-                        uploadId: parsed?.uploadId || gid,
-                        userMessage: parsed?.userMessage,
-                        technicalMessage: parsed?.error || 'Gallery optimization failed',
-                      });
-                    }
-                  }
-                }
-              } finally {
-                reader.releaseLock();
-              }
-            }
-            if (saveGenerationRef.current !== generation) return;
-            if (resultData) {
-              finalGalleryUrls.push({ url: resultData.url, type: item.type });
-              setMediaProgress(prev => ({ ...prev, status: 'completed', progress: 100, optimizedSize: resultData.optimizedSize }));
-            }
-          } else {
-            const data = await res.json();
-            finalGalleryUrls.push({ url: data.url, type: item.type });
-          }
+          setMediaProgress({ status: 'uploading', progress: 0, originalSize: item.file.size, optimizedSize: 0, url: '', error: '', fileName, isVideo: isVid });
+          const result = await uploadImageFull({
+            file: item.file,
+            optimize: true,
+            signal,
+            onProgress: (pct) => {
+              if (saveGenerationRef.current !== generation) return;
+              setMediaProgress(prev => ({ ...prev, progress: pct, status: pct < 10 ? 'uploading' : 'processing' }));
+            },
+          });
+          finalGalleryUrls.push({ url: result.url, type: item.type });
+          galleryUrlByDataUrl.set(item.url, result.url);
+          setMediaProgress(prev => ({ ...prev, status: 'completed', progress: 100, optimizedSize: result.optimizedSize }));
+        } else if (item.url.startsWith('data:')) {
+          // Item galerie en base64 sans File conservé : impossible de le
+          // re-télécharger (CSP bloque fetch(data:)) et interdit de l'écrire
+          // tel quel (limite 1 MiB Firestore). Échec explicite plutôt que
+          // perte silencieuse de l'image.
+          throw new Error(`Gallery item ${i + 1} has no retained file`);
         } else {
           finalGalleryUrls.push({ url: item.url, type: item.type });
         }
       }
+
+      // Variantes : l'image d'une variante référence l'URL d'un item de galerie.
+      // Tant que la galerie n'est pas envoyée, c'est une data URL base64 : la
+      // remapper vers l'URL Storage réelle obtenue au-dessus évite d'écrire du
+      // base64 dans Firestore (limite 1 MiB / document) et de casser l'affichage
+      // côté boutique. Une référence orpheline est neutralisée (`image: ''`).
+      const finalVariants = variants.map(v => {
+        if (v.image && v.image.startsWith('data:')) {
+          const realUrl = galleryUrlByDataUrl.get(v.image);
+          return { ...v, image: realUrl || '' };
+        }
+        return v;
+      });
       setMediaProgress({ status: 'idle', progress: 0, originalSize: 0, optimizedSize: 0, url: '', error: '', fileName: '', isVideo: false });
 
       // Keep only the currently selected distance mapping; discard stale ones
@@ -6017,7 +5980,7 @@ export default function ProductManagementClient() {
         galleryUrls: finalGalleryUrls,
         description: description,
         descriptionDetaillee: descriptionDetaillee,
-        variants: variants,
+        variants: finalVariants,
         rating: Number(rating) || 5,
         showRating: showRating !== false,
         reviews: Number(reviews) || 0,
@@ -6472,7 +6435,9 @@ export default function ProductManagementClient() {
         const type = file.type.startsWith('video/') ? 'video' : 'image';
         const reader = new FileReader();
         reader.onloadend = () => {
-          setGalleryUrls((prev) => [...prev, { url: reader.result as string, type }]);
+          // La data URL sert uniquement à l'aperçu/sélection de variante : le
+          // File original est conservé pour l'upload, jamais re-fetché.
+          setGalleryUrls((prev) => [...prev, { url: reader.result as string, type, file }]);
         };
         reader.readAsDataURL(file);
       });
