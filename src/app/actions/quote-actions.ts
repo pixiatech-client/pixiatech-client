@@ -167,7 +167,8 @@ export async function testSmtpConnection(
   config?: SmtpSettings
 ): Promise<{ success: boolean; message: string; details?: Record<string, any> }> {
   try {
-    const { transporter, fromHeader, host, user, pass, port } = await getSmtpTransport(config);
+    const effectiveConfig = config && config.pass ? config : undefined;
+    const { transporter, fromHeader, host, user, pass, port } = await getSmtpTransport(effectiveConfig);
 
     if (!host || !user || !pass) {
       return {
