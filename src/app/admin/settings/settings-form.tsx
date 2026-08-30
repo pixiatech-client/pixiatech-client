@@ -19,7 +19,6 @@ import { useAdminT } from '@/hooks/useAdminT';
 import { InputWithUpload } from './_components/input-with-upload';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { testSmtpConnection } from '@/app/actions/quote-actions';
 
 
 const translatedStringSchema = z.object({

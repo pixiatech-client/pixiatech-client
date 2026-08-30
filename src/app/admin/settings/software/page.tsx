@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { testSmtpConnection } from '@/app/actions/quote-actions';
 import { getSmtpSettings, updateSmtpSettings } from '@/app/admin/actions';
 import { Server, Mail, Shield, Eye, EyeOff, Save, RefreshCw, Bug, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { useAdminT } from '@/hooks/useAdminT';
@@ -116,9 +115,28 @@ export default function SoftwareSettingsPage() {
     setSmtpTestResult(null);
     
     try {
-      const result = await testSmtpConnection(testEmail, smtpSettings);
+      const res = await fetch('/api/debug/smtp-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: testEmail }),
+      });
+      const data = await res.json();
+      const result = {
+        success: !!data.success,
+        message: data.success
+          ? `SMTP connection successful. Test email sent to ${testEmail}.`
+          : data.error || t('SMTP test failed'),
+        details: {
+          to: data.to,
+          host: data.host,
+          port: data.port,
+          messageId: data.messageId,
+          duration: data.duration,
+          logs: data.logs || [],
+        },
+      };
       setSmtpTestResult(result);
-      
+
       if (result.success) {
         toast({
           title: t('SMTP test successful'),
