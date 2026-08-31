@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, EmailAuthProvider, linkWithCredential } from 'firebase/auth';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -36,11 +36,21 @@ function getFirebaseErrorMessage(error: any, fallback: string, t: (s: string) =>
     case 'auth/user-not-found':
     case 'auth/wrong-password':
     case 'auth/invalid-credential':
+    case 'auth/invalid-login-credentials':
       return t('Incorrect email or password.');
     case 'auth/too-many-requests':
       return t('Too many attempts. Please try again in a few moments.');
     case 'auth/network-request-failed':
       return t('Network issue. Check your connection and try again.');
+    case 'auth/email-already-in-use':
+      return t('An account already exists with this email. Please log in instead.');
+    case 'auth/credential-already-in-use':
+    case 'auth/provider-already-linked':
+      return t('This sign-in method is already linked to your account.');
+    case 'auth/popup-blocked':
+      return t('The sign-in popup was blocked. Please allow popups for this site and try again.');
+    case 'auth/popup-closed-by-user':
+      return t('Google sign-in was cancelled.');
     default:
       return fallback;
   }
@@ -81,6 +91,19 @@ export default function LoginPage() {
   const [googleDisplayName, setGoogleDisplayName] = useState('');
   const [googlePhone, setGooglePhone] = useState('');
   const [isSavingGoogleProfile, setIsSavingGoogleProfile] = useState(false);
+
+  const [showLinkExistingAccount, setShowLinkExistingAccount] = useState(false);
+  const [pendingLinkEmail, setPendingLinkEmail] = useState('');
+  const [pendingLinkCredential, setPendingLinkCredential] = useState<any>(null);
+  const [linkPassword, setLinkPassword] = useState('');
+  const [showLinkPassword, setShowLinkPassword] = useState(false);
+  const [isLinking, setIsLinking] = useState(false);
+
+  const [showAddPassword, setShowAddPassword] = useState(false);
+  const [addPassword, setAddPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showAddPasswordField, setShowAddPasswordField] = useState(false);
+  const [isAddingPassword, setIsAddingPassword] = useState(false);
 
   const prefersReducedMotion = useReducedMotion();
   const motionDuration = prefersReducedMotion ? 0 : undefined;
@@ -173,7 +196,7 @@ export default function LoginPage() {
         throw new Error(loginResult.error || t('Session creation failed.'));
       }
     } catch (error: any) {
-      const errorMessage = getFirebaseErrorMessage(error, error.message || t('An error occurred. Please try again.'), t);
+      const errorMessage = getFirebaseErrorMessage(error, t(error.message || 'An error occurred. Please try again.'), t);
       setLoginError(errorMessage);
     } finally {
       setIsLoggingIn(false);
@@ -229,7 +252,7 @@ export default function LoginPage() {
       setSignupPhone('');
     } catch (error: any) {
       console.error('Signup failed:', error);
-      setSignupError(error?.message || t('An error occurred during registration.'));
+      setSignupError(t(error?.message || t('An error occurred during registration.')));
     } finally {
       setIsSigningUp(false);
     }
@@ -276,18 +299,80 @@ export default function LoginPage() {
         } else {
           setShowPendingMessage(true);
         }
-
-        await signOut(auth);
+        // Keep the client Firebase session for the pending/profile flow so the user can
+        // add a password on the SAME UID. No server session cookie is created for a
+        // non-approved account, so /admin stays protected.
       }
     } catch (error: any) {
       console.error('Google sign-in failed:', error);
-      if (error?.code === 'auth/popup-closed-by-user') {
-        setLoginError(t('Sign-in cancelled.'));
+      if (error?.code === 'auth/account-exists-with-different-credential') {
+        const email = error?.email;
+        const credential = GoogleAuthProvider.credentialFromError(error);
+        if (email && credential) {
+          // An account already exists for this email under a different sign-in method.
+          // Keep the SAME UID by linking Google to the existing account after the user
+          // authenticates with their existing email/password. Never create a second UID.
+          setLoginError('');
+          setPendingLinkEmail(email);
+          setPendingLinkCredential(credential);
+          setLinkPassword('');
+          setShowLinkExistingAccount(true);
+        } else {
+          setLoginError(getFirebaseErrorMessage(error, t('An error occurred with Google.'), t));
+        }
       } else {
-        setLoginError(getFirebaseErrorMessage(error, t('An error occurred with Google.'), t));
+        setLoginError(getFirebaseErrorMessage(error, t(error?.message || 'An error occurred with Google.'), t));
       }
     } finally {
       setIsSigningInWithGoogle(false);
+    }
+  };
+
+  const handleLinkExistingAccount = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoginError(null);
+    setSignupError(null);
+    if (!auth) {
+      setLoginError(t('The authentication service is not available.'));
+      return;
+    }
+    if (!pendingLinkEmail || !pendingLinkCredential) {
+      setLoginError(t('An error occurred with Google.'));
+      return;
+    }
+    setIsLinking(true);
+    try {
+      // Authenticate the existing email/password account => same UID as the existing account.
+      const existingUser = await signInWithEmailAndPassword(auth, pendingLinkEmail, linkPassword);
+      // Attach the Google credential already obtained from the failed first attempt.
+      await linkWithCredential(existingUser.user, pendingLinkCredential);
+      // Same UID preserved; Google is now linked to the existing account.
+      const idToken = await existingUser.user.getIdToken();
+      const result = await googleSignInAction({ idToken });
+      if (!result.success) {
+        throw new Error(t(result.error || 'Error during Google sign-in.'));
+      }
+      setShowLinkExistingAccount(false);
+      const uid = existingUser.user.uid;
+      if (result.status === 'approved') {
+        const loginResult = await loginAndRedirect(idToken);
+        if ('redirect' in loginResult) {
+          window.location.href = '/admin';
+        } else {
+          throw new Error(t(loginResult.error || 'Session creation failed.'));
+        }
+      } else {
+        setGoogleUser({ uid, ...result.userData });
+        setGoogleDisplayName(result.userData?.displayName || existingUser.user.displayName || '');
+        setGooglePhone(result.userData?.phone || '');
+        setShowPendingMessage(true);
+        // Keep the client session so the user can add a password on the SAME UID if desired.
+      }
+    } catch (error: any) {
+      console.error('Linking existing account failed:', error);
+      setLoginError(getFirebaseErrorMessage(error, error?.message || t('Linking failed. Please try again.'), t));
+    } finally {
+      setIsLinking(false);
     }
   };
 
@@ -315,6 +400,46 @@ export default function LoginPage() {
       setLoginError(error?.message || t('Error during update.'));
     } finally {
       setIsSavingGoogleProfile(false);
+    }
+  };
+
+  const handleAddPassword = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoginError(null);
+    setSignupError(null);
+    if (!auth?.currentUser) {
+      setLoginError(t('The authentication service is not available.'));
+      return;
+    }
+    if (addPassword.length < 6) {
+      setLoginError(t('Password must be at least 6 characters.'));
+      return;
+    }
+    if (addPassword !== confirmPassword) {
+      setLoginError(t('Passwords do not match.'));
+      return;
+    }
+    const email = auth.currentUser.email || googleUser?.email || '';
+    if (!email) {
+      setLoginError(t('A valid email is required to add a password.'));
+      return;
+    }
+    setIsAddingPassword(true);
+    try {
+      // Attach a "password" provider to the CURRENT user (Google UID preserved).
+      // Never creates a second UID and never touches the Firestore profile.
+      const credential = EmailAuthProvider.credential(email, addPassword);
+      await linkWithCredential(auth.currentUser, credential);
+      setShowAddPassword(false);
+      setAddPassword('');
+      setConfirmPassword('');
+      setLoginError('');
+      setShowPendingMessage(true);
+    } catch (error: any) {
+      console.error('Add password failed:', error);
+      setLoginError(getFirebaseErrorMessage(error, error?.message || t('An error occurred while adding your password.'), t));
+    } finally {
+      setIsAddingPassword(false);
     }
   };
 
@@ -776,16 +901,212 @@ export default function LoginPage() {
                         onClick={() => {
                           setShowPendingMessage(false);
                           setGoogleUser(null);
+                          if (auth) signOut(auth);
                         }}
                         className="mt-2 text-sm font-semibold text-amber-600 hover:text-amber-800"
                       >
                         {t('Back to login')}
                       </button>
+                      <button
+                        onClick={() => {
+                          setShowPendingMessage(false);
+                          setShowAddPassword(true);
+                          setAddPassword('');
+                          setConfirmPassword('');
+                        }}
+                        className="text-sm font-semibold text-amber-600 hover:text-amber-800"
+                      >
+                        {t('Add a password to your Google account')}
+                      </button>
                     </div>
                   </motion.div>
                 )}
 
-                {!showGoogleProfileForm && !showPendingMessage && (
+                {showLinkExistingAccount && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: motionDuration ?? 0.3 }}
+                    className="space-y-4"
+                  >
+                    <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                      <p className="font-bold">{t('An account already exists with this email')}</p>
+                      <p className="mt-1 text-xs">{t('Sign in with your existing password to link your Google account. Your account and its permissions will be kept.')}</p>
+                    </div>
+                    <form onSubmit={handleLinkExistingAccount} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="link-email">
+                          {t('Email')}
+                        </label>
+                        <div className="relative">
+                          <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <input
+                            id="link-email"
+                            type="email"
+                            value={pendingLinkEmail}
+                            readOnly
+                            className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-100 pl-12 pr-4 text-sm text-slate-500 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="link-password">
+                          {t('Password')}
+                        </label>
+                        <div className="relative">
+                          <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <input
+                            id="link-password"
+                            type={showLinkPassword ? 'text' : 'password'}
+                            required
+                            value={linkPassword}
+                            onChange={(event) => setLinkPassword(event.target.value)}
+                            placeholder={t('••••••••')}
+                            className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowLinkPassword((value) => !value)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
+                            aria-label={showLinkPassword ? t('Hide password') : t('Show password')}
+                          >
+                            {showLinkPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isLinking || !linkPassword}
+                        className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-black text-sm font-bold text-white shadow-lg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 transition-all"
+                      >
+                        {isLinking ? (
+                          <>
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            {t('Linking...')}
+                          </>
+                        ) : (
+                          t('Sign in and link Google')
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isLinking}
+                        onClick={() => {
+                          setShowLinkExistingAccount(false);
+                          setPendingLinkEmail('');
+                          setPendingLinkCredential(null);
+                          setLinkPassword('');
+                        }}
+                        className="w-full text-center text-sm font-semibold text-slate-500 hover:text-slate-800"
+                      >
+                        {t('Cancel')}
+                      </button>
+                    </form>
+                  </motion.div>
+                )}
+
+                {showAddPassword && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: motionDuration ?? 0.3 }}
+                    className="space-y-4"
+                  >
+                    <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                      <p className="font-bold">{t('Add a password to your Google account')}</p>
+                      <p className="mt-1 text-xs">{t('This lets you log in with your email and password too. Your Google account stays the same.')}</p>
+                    </div>
+                    <form onSubmit={handleAddPassword} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="addpw-email">
+                          {t('Email')}
+                        </label>
+                        <div className="relative">
+                          <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <input
+                            id="addpw-email"
+                            type="email"
+                            value={googleUser?.email || auth?.currentUser?.email || ''}
+                            readOnly
+                            className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-100 pl-12 pr-4 text-sm text-slate-500 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="addpw-password">
+                          {t('New password')}
+                        </label>
+                        <div className="relative">
+                          <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <input
+                            id="addpw-password"
+                            type={showAddPasswordField ? 'text' : 'password'}
+                            required
+                            minLength={6}
+                            value={addPassword}
+                            onChange={(event) => setAddPassword(event.target.value)}
+                            placeholder={t('Minimum 6 characters')}
+                            className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="ml-1 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500" htmlFor="addpw-confirm">
+                          {t('Confirm password')}
+                        </label>
+                        <div className="relative">
+                          <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <input
+                            id="addpw-confirm"
+                            type={showAddPasswordField ? 'text' : 'password'}
+                            required
+                            minLength={6}
+                            value={confirmPassword}
+                            onChange={(event) => setConfirmPassword(event.target.value)}
+                            placeholder={t('Repeat your password')}
+                            className="h-14 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowAddPasswordField((value) => !value)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700"
+                            aria-label={showAddPasswordField ? t('Hide password') : t('Show password')}
+                          >
+                            {showAddPasswordField ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isAddingPassword || !addPassword || !confirmPassword}
+                        className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-black text-sm font-bold text-white shadow-lg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 transition-all"
+                      >
+                        {isAddingPassword ? (
+                          <>
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            {t('Saving...')}
+                          </>
+                        ) : (
+                          t('Add password')
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isAddingPassword}
+                        onClick={() => {
+                          setShowAddPassword(false);
+                          setAddPassword('');
+                          setConfirmPassword('');
+                        }}
+                        className="w-full text-center text-sm font-semibold text-slate-500 hover:text-slate-800"
+                      >
+                        {t('Cancel')}
+                      </button>
+                    </form>
+                  </motion.div>
+                )}
+
+                {!showGoogleProfileForm && !showPendingMessage && !showLinkExistingAccount && !showAddPassword && (
                   <>
                     <div className="relative mt-6 flex items-center" role="separator" aria-hidden="true">
                       <div className="flex-1 border-t border-slate-200" />

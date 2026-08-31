@@ -31,12 +31,24 @@ service cloud.firestore {
       return isLoggedIn() && userDocExists() && getUserRole() == "fournisseur";
     }
 
+    function isSelfProfileUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'blockedUsers',
+        'mutedUsers',
+        'notificationsBlocked',
+        'pinnedUserIds',
+        'settings',
+      ]);
+    }
+
     match /users/{userId} {
       // Only the owner or an admin can read a user doc. Listing all users is
       // restricted to admins to avoid leaking every user's email/role/phone.
       allow get: if isLoggedIn() && (isOwner(userId) || isAdmin() || isCommercial() || isFournisseur());
       allow list: if isAdmin();
-      allow write: if isLoggedIn() && (isOwner(userId) || isAdmin());
+      allow create: if isAdmin();
+      allow update: if isLoggedIn() && ((isOwner(userId) && isSelfProfileUpdate()) || isAdmin());
+      allow delete: if isAdmin();
     }
 
     match /roles/{roleId} {

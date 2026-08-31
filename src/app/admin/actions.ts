@@ -520,6 +520,27 @@ export async function handleGoogleSignIn(data: unknown) {
     console.log('[Google Auth Action] Checking Firestore for user UID:', uid);
     const userDoc = await adminDb.collection('users').doc(uid).get();
 
+    // Defense-in-depth: enforce "1 email = 1 account". If Firebase Auth already has a
+    // user under a DIFFERENT UID for this email and no profile exists for the Google UID,
+    // we must NOT create a second Firestore profile (which would fragment role/status).
+    if (!userDoc.exists && email) {
+      try {
+        const existingByEmail = await adminAuth.getUserByEmail(email);
+        if (existingByEmail.uid !== uid) {
+          console.log(
+            '[Google Auth Action] Email', email,
+            'already registered under UID', existingByEmail.uid,
+            '- refusing to create duplicate profile for UID', uid
+          );
+          return { success: false, error: 'A user with this email already exists.' };
+        }
+      } catch (lookupError: any) {
+        if (lookupError.code !== 'auth/user-not-found') {
+          throw lookupError;
+        }
+      }
+    }
+
     if (userDoc.exists) {
       console.log('[Google Auth Action] Existing user found.');
       const userData = userDoc.data();
@@ -1189,7 +1210,22 @@ export async function getUser(uid: string): Promise<UserProfile | null> {
 async function getDefaultRole(): Promise<UserRole> {
   const { adminDb } = getFirebaseAdmin();
   const rolesRef = adminDb.collection('roles');
-  const snapshot = await rolesRef.where('isDefault', '==', true).limit(1).get();
+
+  // Explicit default: the "commercial" role, never the first isDefault document
+  // (which could be "admin").
+  const commercialRef = rolesRef.doc('commercial');
+  const commercialSnap = await commercialRef.get();
+
+  if (commercialSnap.exists) {
+    return { id: commercialSnap.id, ...commercialSnap.data() } as UserRole;
+  }
+
+  // Deterministic fallback: first default role by stable document-id order.
+  const snapshot = await rolesRef
+    .where('isDefault', '==', true)
+    .orderBy(FieldPath.documentId())
+    .limit(1)
+    .get();
 
   if (!snapshot.empty) {
     const doc = snapshot.docs[0];
@@ -1198,9 +1234,8 @@ async function getDefaultRole(): Promise<UserRole> {
 
   // This should ideally not be reached if the database is seeded correctly.
   // If it is, we create a default "Commercial" role.
-  const commercialRoleRef = rolesRef.doc('commercial');
   const commercialRole: Omit<UserRole, 'id'> = { name: 'Commercial', color: '#f97316', isDefault: true };
-  await commercialRoleRef.set(commercialRole);
+  await commercialRef.set(commercialRole);
   return { id: 'commercial', ...commercialRole };
 }
 
