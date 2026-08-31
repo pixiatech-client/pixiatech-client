@@ -84,6 +84,11 @@ const adminTranslationsZhCN: Record<string, string> = {
   'An error occurred while adding your password.': '添加密码时发生错误。',
   'Linking failed. Please try again.': '关联失败，请重试。',
   'A user with this email already exists.': '已存在使用此邮箱的用户。',
+  'This email address is already in use.': '此电子邮箱地址已被使用。',
+  'This phone number is already in use.': '此电话号码已被使用。',
+  'The phone number format is invalid. Please use an international format.': '电话号码格式无效。请使用国际格式。',
+  'Please check your information and try again.': '请检查您的信息后重试。',
+  'Service temporarily unavailable. Please try again later.': '服务暂时不可用，请稍后重试。',
 
   // Supplier Dashboard
   'Estimates to process': '待处理报价',

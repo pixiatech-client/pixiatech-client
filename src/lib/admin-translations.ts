@@ -872,6 +872,11 @@ const adminTranslations: Record<string, string> = {
   'An error occurred while adding your password.': 'Une erreur est survenue lors de l\'ajout de votre mot de passe.',
   'Linking failed. Please try again.': 'La liaison a échoué. Veuillez réessayer.',
   'A user with this email already exists.': 'Un utilisateur avec cet email existe déjà.',
+  'This email address is already in use.': 'Cette adresse e-mail est déjà utilisée.',
+  'This phone number is already in use.': 'Ce numéro de téléphone est déjà utilisé.',
+  'The phone number format is invalid. Please use an international format.': 'Le format du numéro de téléphone est invalide. Veuillez utiliser un format international.',
+  'Please check your information and try again.': 'Veuillez vérifier vos informations et réessayer.',
+  'Service temporarily unavailable. Please try again later.': 'Service temporairement indisponible. Veuillez réessayer plus tard.',
 
   // Product Management
   'Add a product': 'Ajouter un produit',

@@ -56,6 +56,24 @@ function getFirebaseErrorMessage(error: any, fallback: string, t: (s: string) =>
   }
 }
 
+function normalizeServerError(message: string | null | undefined, t: (s: string) => string): string {
+  if (!message) return t('An error occurred during registration.');
+  switch (message) {
+    case 'A user with this email already exists.':
+      return t('This email address is already in use.');
+    case 'A user with this phone number already exists.':
+      return t('This phone number is already in use.');
+    case 'The phone number format is invalid. Please use an international format (e.g., +33612345678).':
+      return t('The phone number format is invalid. Please use an international format.');
+    case 'Invalid data.':
+      return t('Please check your information and try again.');
+    case 'Service unavailable.':
+      return t('Service temporarily unavailable. Please try again later.');
+    default:
+      return t(message);
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -252,7 +270,7 @@ export default function LoginPage() {
       setSignupPhone('');
     } catch (error: any) {
       console.error('Signup failed:', error);
-      setSignupError(t(error?.message || t('An error occurred during registration.')));
+      setSignupError(normalizeServerError(error?.message, t));
     } finally {
       setIsSigningUp(false);
     }
