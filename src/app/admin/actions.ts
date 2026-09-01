@@ -3599,34 +3599,6 @@ export async function deleteTheme(themeId: string) {
   }
 }
 
-export async function reinitializePalettes() {
-  try {
-    const { adminDb, FieldValue } = getFirebaseAdmin();
-    await requireAdminFresh();
-    const existing = await adminDb.collection('themes').get();
-    const batch = adminDb.batch();
-    existing.docs.forEach(doc => batch.delete(doc.ref));
-    DEFAULT_PALETTES.forEach(palette => {
-      const docRef = adminDb.collection('themes').doc();
-      batch.set(docRef, {
-        ...palette,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-    });
-    await batch.commit();
-    _themesCache = null;
-    try {
-      revalidatePath('/admin/settings/themes', 'layout');
-    } catch (revalidateErr) {
-      console.warn('revalidatePath themes failed (non fatal):', revalidateErr);
-    }
-    return { success: true };
-  } catch (error) {
-    console.error("Error reinitializing palettes:", error);
-    return { success: false, error: (error as Error).message };
-  }
-}
-
 const ACTIVE_THEME_DOC_ID = 'global';
 
 export async function getActiveGlobalTheme(): Promise<{ themeId: string }> {
