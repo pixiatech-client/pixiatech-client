@@ -828,6 +828,7 @@ const adminTranslations: Record<string, string> = {
   'Your account is pending approval by an administrator.': 'Votre compte est en attente d\'approbation par un administrateur.',
   'Your account has been suspended.': 'Votre compte a été suspendu.',
   'Session creation failed.': 'La création de session a échoué.',
+  'Your session has expired. Please log in again.': 'Votre session a expiré. Veuillez vous reconnecter.',
   'An error occurred. Please try again.': 'Une erreur est survenue. Veuillez réessayer.',
   'Error during Google sign-in.': 'Erreur lors de la connexion avec Google.',
   'An error occurred with Google.': 'Une erreur est survenue avec Google.',

@@ -32,6 +32,7 @@ const adminTranslationsZhCN: Record<string, string> = {
   'Your account is pending approval by an administrator.': '您的账户正在等待管理员批准。',
   'Your account has been suspended.': '您的账户已被暂停。',
   'Session creation failed.': '会话创建失败。',
+  'Your session has expired. Please log in again.': '会话已过期。请重新登录。',
   'An error occurred. Please try again.': '发生错误。请重试。',
   'Error during Google sign-in.': 'Google登录时发生错误。',
   'An error occurred with Google.': 'Google发生错误。',
