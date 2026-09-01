@@ -54,7 +54,6 @@ import { SettingsContent } from '../settings/_components/settings-content';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FloatingCalculator } from './FloatingCalculator';
 import { ResetApplicationDialog } from './ResetApplicationDialog';
-import { APP_VERSION } from '@/lib/build-info';
 
 const mapRoleToUserRoleEnum = (role: string | undefined): UserRoleEnum => {
   switch (role) {
@@ -606,17 +605,6 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         )}>
           {children}
         </main>
-
-        {pathname !== '/admin/messages' && (
-          <footer className="mt-auto border-t border-slate-200/80 bg-white/60 px-4 py-3 md:px-6 text-xs text-slate-500 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span className="font-medium text-slate-600 dark:text-slate-400">
-              © {new Date().getFullYear()} PixiaTech
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800/80 px-2.5 py-0.5 font-mono text-[11px] font-medium text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
-              PixiaTech — Version {APP_VERSION}
-            </span>
-          </footer>
-        )}
       </div>
 
       {/* ── Calculatrice flottante (toujours au premier plan, draggable) ── */}

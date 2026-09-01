@@ -763,11 +763,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             {!isCompact ? (
-              <div className="px-2 pt-1 pb-1 text-center text-[11px] font-mono text-slate-400 dark:text-slate-500 opacity-80 select-none">
-                Version {APP_VERSION}
+              <div className="px-2 pt-2 pb-1 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 opacity-90 select-none">
+                © {new Date().getFullYear()} PixiaTech
+                <div className="text-[10px] font-mono opacity-70">Version {APP_VERSION}</div>
               </div>
             ) : (
-              <div className="pt-1 text-center text-[10px] font-mono text-slate-400 dark:text-slate-500 opacity-80 select-none" title={`Version ${APP_VERSION}`}>
+              <div className="pt-2 text-center text-[10px] font-mono text-slate-400 dark:text-slate-500 opacity-80 select-none" title={`© ${new Date().getFullYear()} PixiaTech — Version ${APP_VERSION}`}>
                 v{APP_VERSION}
               </div>
             )}
