@@ -31,10 +31,13 @@ export const metadata: Metadata = {
     description: 'Générez des estimations pour des écrans LED',
     type: 'website',
     siteName: 'PixiaTech',
-    images: [{ url: '/favicon-512.png', width: 512, height: 512 }],
   },
   icons: {
-    icon: [{ url: '/favicon.ico?v=3', sizes: 'any', type: 'image/x-icon' }],
+    icon: [
+      { url: '/favicon.ico', sizes: 'any', type: 'image/x-icon' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
   },
 };
 
@@ -63,6 +66,9 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`scroll-smooth${isDark ? ' dark' : ''}`} suppressHydrationWarning>
       <head>
+        {/* Favicon forcé explicitement pour tous les environnements (local + production) */}
+        <link rel="icon" href="/favicon.ico" sizes="any" type="image/x-icon" />
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
         <style dangerouslySetInnerHTML={{ __html: themeCss }} />
       </head>
       <body className={`${inter.variable} ${orbitron.variable} font-body antialiased min-h-[100dvh]${isDark ? ' dark-theme' : ' light-theme'}`} suppressHydrationWarning>

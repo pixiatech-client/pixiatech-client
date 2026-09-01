@@ -3361,6 +3361,10 @@ const sidebarConfigSchema = z.object({
     letter: z.string(),
     color: z.string(),
     image: z.string().nullable(),
+    compactImage: z.string().nullable().optional(),
+    displayMode: z.enum(['text_image', 'image_only']).optional(),
+    showRoleBadge: z.boolean().optional(),
+    favicon: z.string().nullable().optional(),
   }).optional(),
 });
 

@@ -25,6 +25,9 @@ import {
   ClipboardList,
   Tag,
   AlertTriangle,
+  Globe,
+  Image as ImageIcon,
+  Type,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
@@ -48,18 +51,19 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   imagesSub: '/admin/settings/wizard',
   appearanceSub: '/admin/settings/themes',
   wizardSub: '/admin/settings/wizard',
-  deliverySub: '/admin/settings/livraison',
+  livraisonSub: '/admin/settings/livraison',
   laborSub: '/admin/settings/main-doeuvre',
   pdfSub: '/admin/settings/pdf',
   emergencySub: '/admin/settings/emergency',
+  software: '/admin/settings/software',
   produit: '/admin/produits',
   boutique: '/admin/boutique',
   'codes-promo': '/admin/codes-promo',
   membres: '/admin/membres',
   messages: '/admin/messages',
-  notifications: '/admin/notification',
-  'alertes-systeme': '/admin/alertes-systeme',
-  'litiges-sub': '/admin/litiges',
+  notification: '/admin/notifications',
+  alertesSysteme: '/admin/alertes-systeme',
+  litigesSub: '/admin/litiges',
   paypal: '/admin/settings/paypal',
 };
 
@@ -74,7 +78,8 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/history': 'history',
   '/admin/settings': 'settings',
   '/admin/settings/general': 'settingsMain',
-  '/admin/settings/images': 'wizardSub',
+  '/admin/settings/images': 'imagesSub',
+  '/admin/settings/appearance': 'appearanceSub',
   '/admin/settings/themes': 'appearanceSub',
   '/admin/settings/wizard': 'wizardSub',
   '/admin/settings/livraison': 'deliverySub',
@@ -83,9 +88,9 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/settings/emergency': 'emergencySub',
   '/admin/settings/software': 'software',
   '/admin/messages': 'messages',
-  '/admin/notification': 'notifications',
-  '/admin/alertes-systeme': 'alertes-systeme',
-  '/admin/litiges': 'litiges-sub',
+  '/admin/notifications': 'notification',
+  '/admin/alertes-systeme': 'alertesSysteme',
+  '/admin/litiges': 'litigesSub',
 };
 
 export type SettingsSection = 'general' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'emergency' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content';
@@ -101,12 +106,20 @@ interface SidebarProps {
     letter: string;
     color: string;
     image: string | null;
+    compactImage?: string | null;
+    displayMode?: 'text_image' | 'image_only';
+    showRoleBadge?: boolean;
+    favicon?: string | null;
   };
   setLogoConfig: React.Dispatch<React.SetStateAction<{
     text: string;
     letter: string;
     color: string;
     image: string | null;
+    compactImage?: string | null;
+    displayMode?: 'text_image' | 'image_only';
+    showRoleBadge?: boolean;
+    favicon?: string | null;
   }>>;
   onOpenAccountDrawer: () => void;
   onLogout?: () => void;
@@ -151,6 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [isEditingOrder, setIsEditingOrder] = useState(false);
   const [isEditingLogo, setIsEditingLogo] = useState(false);
+  const [modalPreviewTab, setModalPreviewTab] = useState<'expanded' | 'compact' | 'favicon'>('expanded');
   const [tempLogoConfig, setTempLogoConfig] = useState(logoConfig);
   const [expandedSubmenu, setExpandedSubmenu] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -183,31 +197,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [firestore]);
 
   const activeView = useMemo(() => {
-    // Check if on user's own profile page first (most specific)
     if (userId && pathname === `/admin/users/${userId}`) {
       return 'profile';
     }
-
-    // Dashboard exact match
     if (pathname === '/admin') return 'dashboard';
-
-    // Check exact route match
     if (ROUTE_TO_VIEW[pathname]) {
       return ROUTE_TO_VIEW[pathname];
     }
-
-    // Check prefix match (for sub-routes)
     for (const [route, view] of Object.entries(ROUTE_TO_VIEW)) {
       if (route !== '/admin' && pathname.startsWith(route)) {
         return view;
       }
     }
-
-    // Fallback for profile sub-routes not matching user's own profile
     if (pathname.startsWith('/admin/users/')) {
       return 'users';
     }
-
     return 'dashboard';
   }, [pathname, userId]);
 
@@ -253,20 +257,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         const newItems = initialItems.filter(item => !initialOrder.includes(item.id));
         setItems([...orderedItems, ...newItems]);
     } else {
-      setItems(initialItems);
+        setItems(initialItems);
     }
-  }, [initialItems, initialOrder]);
+  }, [initialOrder, initialItems]);
 
-  // We no longer save to localStorage for everyone.
-  // We'll save to Firestore when the user finishes editing.
   const handleToggleEditOrder = () => {
     if (isEditingOrder) {
-      // Saving
-      if (role === UserRole.ADMINISTRATEUR && onSaveOrder) {
-        onSaveOrder(items.map(item => item.id));
-      }
+        setIsEditingOrder(false);
+        if (role === UserRole.ADMINISTRATEUR && onSaveOrder) {
+            const currentOrderIds = items.map((item: any) => item.id);
+            onSaveOrder(currentOrderIds);
+        }
+    } else {
+        setIsEditingOrder(true);
     }
-    setIsEditingOrder(!isEditingOrder);
   };
 
   const toggleState = () => {
@@ -297,11 +301,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  const handleCompactLogoImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTempLogoConfig(prev => ({ ...prev, compactImage: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleFaviconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTempLogoConfig(prev => ({ ...prev, favicon: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const openLogoModal = () => {
+    setTempLogoConfig({
+      text: logoConfig.text || 'BOT LUMI',
+      letter: logoConfig.letter || 'B',
+      color: logoConfig.color || 'bg-blue-600',
+      image: logoConfig.image || null,
+      compactImage: logoConfig.compactImage || null,
+      displayMode: logoConfig.displayMode || 'text_image',
+      showRoleBadge: logoConfig.showRoleBadge !== false,
+      favicon: logoConfig.favicon || null,
+    });
+    setModalPreviewTab('expanded');
+    setIsEditingLogo(true);
+  };
+
   const saveLogoConfig = () => {
     setLogoConfig(tempLogoConfig);
     setIsEditingLogo(false);
     if (role === UserRole.ADMINISTRATEUR && onSaveLogo) {
-        onSaveLogo(tempLogoConfig);
+      onSaveLogo(tempLogoConfig);
     }
     toast.success(t('admin.sidebar.logoUpdated'));
   };
@@ -325,19 +366,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const filteredItems = items.filter((item: any) => {
     if (item.roles && !item.roles.includes(role)) return false;
     
-    // Messaging visibility logic
     if (item.id === 'messages') {
       if (!settings?.messaging?.enabled) return false;
-      
-      // Admins always see messages
       if (role === UserRole.ADMINISTRATEUR) return true;
-      
-      // Check commercial access
       if (role === UserRole.COMMERCIAL && !settings?.messaging?.allowCommercialMessaging) {
         return false;
       }
-      
-      // Check supplier access
       if (role === UserRole.FOURNISSEUR && !settings?.messaging?.allowSupplierMessaging) {
         return false;
       }
@@ -357,10 +391,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className={`${sidebarClasses} ${isHidden ? 'overflow-hidden pointer-events-none' : 'overflow-visible pointer-events-auto'}`}
     >
-      {/* Floating Sidebar Controls (Stacked with matching theme backgrounds - No shadows, No borders) */}
       {!isHidden && (
         <div className="absolute right-[-18px] top-[195px] flex flex-col gap-3 z-[101]">
-          {/* Hide Button Container */}
           <div className="p-1 rounded-full bg-theme-sidebar-bg">
             <button
               onClick={hideSidebar}
@@ -376,8 +408,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }`} />
             </button>
           </div>
-
-          {/* Reduce/Expand Button Container */}
           <div className="p-1 rounded-full bg-theme-sidebar-bg">
             <button
               onClick={toggleState}
@@ -402,7 +432,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
       <div className={`${isCompact ? 'w-20' : 'w-64'} flex-1 flex flex-col transition-all duration-300`}>
-        {/* Header / Logo */}
         <div className="p-6 flex items-start justify-between relative group/logo">
           <AnimatePresence mode="wait">
             {!isCompact && (
@@ -410,35 +439,57 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                className="flex items-center gap-3 cursor-pointer group/logowrapper"
+                className="flex items-center gap-3 cursor-pointer group/logowrapper w-full min-w-0 pr-6"
                 onClick={() => {
                   if (role === UserRole.ADMINISTRATEUR) {
-                    setTempLogoConfig(logoConfig);
-                    setIsEditingLogo(true);
+                    openLogoModal();
                   }
                 }}
               >
-                {logoConfig.image ? (
-                  <img src={logoConfig.image} alt={t('common.logo')} className="w-8 h-8 rounded-lg object-cover shadow-lg group-hover/logowrapper:ring-2 group-hover/logowrapper:ring-blue-500 transition-all" />
-                ) : (
-                  <div className={`w-8 h-8 ${logoConfig.color} rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20 group-hover/logowrapper:scale-110 transition-transform`}>
-                    {logoConfig.letter}
+                {logoConfig.displayMode === 'image_only' && logoConfig.image ? (
+                  <div className="flex flex-col gap-1 w-full min-w-0">
+                    <img
+                      src={logoConfig.image}
+                      alt={t('common.logo')}
+                      className="max-h-12 w-auto max-w-[180px] object-contain transition-all group-hover/logowrapper:opacity-90"
+                    />
+                    {userRoleName && (logoConfig.showRoleBadge !== false) && (
+                      <div
+                        className="flex items-center gap-1.5 px-2 py-0.5 rounded-full w-fit mt-1"
+                        style={{ backgroundColor: userRoleColor || '#3b82b6', boxShadow: `0 4px 6px -1px ${userRoleColor || '#3b82b6'}33` }}
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        <span className="text-[8px] font-bold text-white uppercase tracking-[0.15em] whitespace-nowrap">
+                          {t('admin.sidebar.userRoleSpace', { roleName: userRoleName })}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="flex flex-col">
-                  <span className="font-bold text-xl tracking-tight group-hover/logowrapper:text-blue-600 transition-colors">{logoConfig.text}</span>
-                  {userRoleName && (
-                    <div
-                      className="flex items-center gap-1.5 px-2 py-0.5 rounded-full w-fit -mt-0.5"
-                      style={{ backgroundColor: userRoleColor || '#3b82b6', boxShadow: `0 4px 6px -1px ${userRoleColor || '#3b82b6'}33` }}
-                    >
-                      <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                      <span className="text-[8px] font-bold text-white uppercase tracking-[0.15em] whitespace-nowrap">
-                        {t('admin.sidebar.userRoleSpace', { roleName: userRoleName })}
-                      </span>
+                ) : (
+                  <>
+                    {logoConfig.image ? (
+                      <img src={logoConfig.image} alt={t('common.logo')} className="w-8 h-8 rounded-lg object-cover shadow-lg group-hover/logowrapper:ring-2 group-hover/logowrapper:ring-blue-500 transition-all shrink-0" />
+                    ) : (
+                      <div className={`w-8 h-8 ${logoConfig.color} rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20 group-hover/logowrapper:scale-110 transition-transform shrink-0`}>
+                        {logoConfig.letter}
+                      </div>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-bold text-xl tracking-tight group-hover/logowrapper:text-blue-600 transition-colors truncate">{logoConfig.text}</span>
+                      {userRoleName && (logoConfig.showRoleBadge !== false) && (
+                        <div
+                          className="flex items-center gap-1.5 px-2 py-0.5 rounded-full w-fit -mt-0.5"
+                          style={{ backgroundColor: userRoleColor || '#3b82b6', boxShadow: `0 4px 6px -1px ${userRoleColor || '#3b82b6'}33` }}
+                        >
+                          <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                          <span className="text-[8px] font-bold text-white uppercase tracking-[0.15em] whitespace-nowrap">
+                            {t('admin.sidebar.userRoleSpace', { roleName: userRoleName })}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </motion.div>
             )}
             {isCompact && (
@@ -450,13 +501,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className={`flex items-center justify-center group/logowrapper ${role === UserRole.ADMINISTRATEUR ? 'cursor-pointer' : 'cursor-default'}`}
                 onClick={() => {
                   if (role === UserRole.ADMINISTRATEUR) {
-                    setTempLogoConfig(logoConfig);
-                    setIsEditingLogo(true);
+                    openLogoModal();
                   }
                 }}
               >
-                {logoConfig.image ? (
-                  <img src={logoConfig.image} alt={t('common.logo')} className={`w-8 h-8 rounded-lg object-cover shadow-lg mx-auto transition-all ${role === UserRole.ADMINISTRATEUR ? 'group-hover/logowrapper:ring-2 group-hover/logowrapper:ring-blue-500' : ''}`} />
+                {(logoConfig.compactImage || logoConfig.image) ? (
+                  <img
+                    src={logoConfig.compactImage || logoConfig.image!}
+                    alt={t('common.logo')}
+                    className={`w-8 h-8 object-contain mx-auto transition-all ${role === UserRole.ADMINISTRATEUR ? 'group-hover/logowrapper:opacity-80' : ''}`}
+                  />
                 ) : (
                   <div className={`w-8 h-8 ${logoConfig.color} rounded-lg flex items-center justify-center text-white font-bold mx-auto shadow-lg shadow-blue-500/20 transition-transform ${role === UserRole.ADMINISTRATEUR ? 'group-hover/logowrapper:scale-110' : ''}`}>
                     {logoConfig.letter}
@@ -465,21 +519,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </motion.div>
             )}
           </AnimatePresence>
-          {/* Edit Logo Button */}
+
+          {/* Edit Logo Button: subtle, fully invisible by default (opacity-0), pushed to the top right corner */}
           {!isCompact && !isEditingOrder && (
             <button
-              onClick={() => {
-                setTempLogoConfig(logoConfig);
-                setIsEditingLogo(true);
-              }}
-              className="p-1.5 bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg opacity-20 group-hover/logo:opacity-100 transition-all hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-200 dark:hover:border-blue-500/30 group/editbtn"
-               title={t('admin.editLogo')}
+              onClick={openLogoModal}
+              className="absolute right-3 top-5 p-1.5 bg-white/90 dark:bg-zinc-800/90 hover:bg-blue-50 dark:hover:bg-blue-500/20 border border-gray-200/80 dark:border-white/10 rounded-lg opacity-0 group-hover/logo:opacity-100 transition-all duration-200 shadow-sm group/editbtn z-10"
+              title={t('admin.editLogo')}
             >
-              <Edit2 className="w-3.5 h-3.5 text-gray-400 group-hover/editbtn:text-blue-600 transition-colors" />
+              <Edit2 className="w-3.5 h-3.5 text-gray-400 group-hover/editbtn:text-blue-600 dark:group-hover/editbtn:text-blue-400 transition-colors" />
             </button>
           )}
 
-          {/* Logo Editing Modal */}
           <AnimatePresence>
             {isEditingLogo && (
               <>
@@ -488,48 +539,176 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setIsEditingLogo(false)}
-                  className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]"
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
                 />
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95, y: -20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -20 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  className="fixed inset-0 flex items-center justify-center z-[9999] pointer-events-none"
+                  className="fixed inset-0 flex items-center justify-center z-[9999] pointer-events-none p-4"
                 >
-                <div className="w-full max-w-md bg-white dark:bg-[#1c1c1e] border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl p-6 overflow-y-auto max-h-[90vh] pointer-events-auto mx-4">
-                  <div className="flex items-center justify-between mb-8">
+                <div className="w-full max-w-lg bg-white dark:bg-[#18181b] border border-gray-200 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col max-h-[92vh]">
+                  <div className="px-6 py-5 border-b border-gray-100 dark:border-white/10 flex items-center justify-between shrink-0 bg-gray-50/50 dark:bg-white/[0.02]">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('admin.logoConfigTitle')}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('admin.logoConfigDesc')}</p>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        {t('admin.logoConfigTitle')}
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('admin.logoConfigDesc')}</p>
                     </div>
                     <button
                       onClick={() => setIsEditingLogo(false)}
-                      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+                      className="p-2 rounded-xl hover:bg-gray-200/60 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
                     >
                       <X className="w-5 h-5" />
                     </button>
                   </div>
 
-                  <div className="space-y-6">
-                    {/* Preview Section */}
-                    <div className="p-6 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-4 min-h-[120px]">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{t('admin.livePreview')}</span>
-                      <div className="flex items-center justify-center gap-3 scale-110 origin-center w-full overflow-hidden px-4">
-                        {tempLogoConfig.image ? (
-                          <img src={tempLogoConfig.image} alt={t('common.preview')} className="w-10 h-10 rounded-lg object-cover shadow-lg shrink-0" />
-                        ) : (
-                          <div className={`w-10 h-10 ${tempLogoConfig.color} rounded-lg flex items-center justify-center text-white font-bold shadow-lg shrink-0`}>
-                            {tempLogoConfig.letter}
-                          </div>
-                        )}
-                        <span className="font-bold text-2xl tracking-tight dark:text-white truncate">{tempLogoConfig.text}</span>
+                  <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+                    {/* Live Preview with subtabs */}
+                    <div className="p-4 bg-gradient-to-b from-gray-50 to-gray-100/70 dark:from-white/5 dark:to-white/[0.02] rounded-2xl border border-gray-200/80 dark:border-white/10 flex flex-col items-center justify-center gap-3">
+                      <div className="w-full flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{t('admin.livePreview')}</span>
+                        <div className="flex items-center gap-1 p-0.5 bg-gray-200/60 dark:bg-white/10 rounded-lg text-[10px] font-semibold">
+                          <button
+                            type="button"
+                            onClick={() => setModalPreviewTab('expanded')}
+                            className={`px-2 py-0.5 rounded-md transition-all ${modalPreviewTab === 'expanded' ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-gray-500 dark:text-gray-400'}`}
+                          >
+                            {t('admin.previewExpanded')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setModalPreviewTab('compact')}
+                            className={`px-2 py-0.5 rounded-md transition-all ${modalPreviewTab === 'compact' ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-gray-500 dark:text-gray-400'}`}
+                          >
+                            {t('admin.previewCompact')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setModalPreviewTab('favicon')}
+                            className={`px-2 py-0.5 rounded-md transition-all ${modalPreviewTab === 'favicon' ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-gray-500 dark:text-gray-400'}`}
+                          >
+                            Favicon
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {modalPreviewTab === 'expanded' && (
+                        <div className="w-full max-w-xs bg-white dark:bg-[#202024] p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm flex items-center justify-between">
+                          {tempLogoConfig.displayMode === 'image_only' && tempLogoConfig.image ? (
+                            <div className="flex flex-col gap-1 w-full items-start">
+                              <img
+                                src={tempLogoConfig.image}
+                                alt={t('common.preview')}
+                                className="max-h-10 w-auto max-w-full object-contain rounded"
+                              />
+                              {userRoleName && (tempLogoConfig.showRoleBadge !== false) && (
+                                <div
+                                  className="flex items-center gap-1.5 px-2 py-0.5 rounded-full w-fit mt-1"
+                                  style={{ backgroundColor: userRoleColor || '#3b82b6', boxShadow: `0 4px 6px -1px ${userRoleColor || '#3b82b6'}33` }}
+                                >
+                                  <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                  <span className="text-[8px] font-bold text-white uppercase tracking-[0.15em] whitespace-nowrap">
+                                    {t('admin.sidebar.userRoleSpace', { roleName: userRoleName })}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3 min-w-0 w-full">
+                              {tempLogoConfig.image ? (
+                                <img src={tempLogoConfig.image} alt={t('common.preview')} className="w-9 h-9 rounded-lg object-cover shadow-sm shrink-0" />
+                              ) : (
+                                <div className={`w-9 h-9 ${tempLogoConfig.color} rounded-lg flex items-center justify-center text-white font-bold shadow-sm shrink-0`}>
+                                  {tempLogoConfig.letter}
+                                </div>
+                              )}
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-bold text-lg tracking-tight dark:text-white truncate">{tempLogoConfig.text || 'BOT LUMI'}</span>
+                                {userRoleName && (tempLogoConfig.showRoleBadge !== false) && (
+                                  <div
+                                    className="flex items-center gap-1.5 px-2 py-0.5 rounded-full w-fit -mt-0.5"
+                                    style={{ backgroundColor: userRoleColor || '#3b82b6', boxShadow: `0 4px 6px -1px ${userRoleColor || '#3b82b6'}33` }}
+                                  >
+                                    <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                    <span className="text-[8px] font-bold text-white uppercase tracking-[0.15em] whitespace-nowrap">
+                                      {t('admin.sidebar.userRoleSpace', { roleName: userRoleName })}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {modalPreviewTab === 'compact' && (
+                        <div className="w-16 h-16 bg-white dark:bg-[#202024] p-3 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm flex items-center justify-center">
+                          {(tempLogoConfig.compactImage || tempLogoConfig.image) ? (
+                            <img
+                              src={tempLogoConfig.compactImage || tempLogoConfig.image!}
+                              alt={t('common.preview')}
+                              className="w-10 h-10 rounded-lg object-cover shadow-sm"
+                            />
+                          ) : (
+                            <div className={`w-10 h-10 ${tempLogoConfig.color} rounded-lg flex items-center justify-center text-white font-bold shadow-sm`}>
+                              {tempLogoConfig.letter}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {modalPreviewTab === 'favicon' && (
+                        <div className="w-full max-w-xs flex items-center gap-2 bg-gray-200/80 dark:bg-black/40 px-3 py-2 rounded-t-lg border-b border-gray-300 dark:border-white/10 text-[11px] text-gray-600 dark:text-gray-300 font-medium truncate">
+                          {tempLogoConfig.favicon ? (
+                            <img src={tempLogoConfig.favicon} alt="Favicon" className="w-4 h-4 object-contain shrink-0 rounded-sm" />
+                          ) : (
+                            <img src="/favicon.ico" alt="Favicon" className="w-4 h-4 object-contain shrink-0 rounded-sm" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+                          )}
+                          <span className="truncate">{tempLogoConfig.text || 'PixiaTech'} — Administration</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Mode d'affichage Switch */}
+                    <div>
+                      <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
+                        {t('admin.displayMode')}
+                      </label>
+                      <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 dark:bg-white/5 rounded-2xl border border-gray-200/60 dark:border-white/10">
+                        <button
+                          type="button"
+                          onClick={() => setTempLogoConfig(prev => ({ ...prev, displayMode: 'text_image' }))}
+                          className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                            tempLogoConfig.displayMode !== 'image_only'
+                              ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200/50 dark:border-white/10'
+                              : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                          }`}
+                        >
+                          <Type className="w-3.5 h-3.5" />
+                          <span>{t('admin.modeTextImage')}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setTempLogoConfig(prev => ({ ...prev, displayMode: 'image_only' }))}
+                          className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                            tempLogoConfig.displayMode === 'image_only'
+                              ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm border border-gray-200/50 dark:border-white/10'
+                              : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                          }`}
+                        >
+                          <ImageIcon className="w-3.5 h-3.5" />
+                          <span>{t('admin.modeImageOnly')}</span>
+                        </button>
                       </div>
                     </div>
 
-                    {/* Text Input */}
+                    {/* Nom de l'application */}
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t('admin.appName')}</label>
+                      <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">
+                        {t('admin.appName')}
+                      </label>
                       <input
                         type="text"
                         placeholder={t('admin.sidebar.appNamePlaceholder')}
@@ -539,44 +718,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Letter Input */}
-                      {!tempLogoConfig.image && (
-                        <div>
-                          <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t('admin.initial')}</label>
-                          <input
-                            type="text"
-                            maxLength={1}
-                            placeholder={t('admin.sidebar.initialPlaceholder')}
-                            value={tempLogoConfig.letter}
-                            onChange={(e) => setTempLogoConfig(prev => ({ ...prev, letter: e.target.value.toUpperCase() }))}
-                            className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white text-center font-bold focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
-                          />
-                        </div>
-                      )}
-
-                      {/* Color Picker */}
-                      {!tempLogoConfig.image && (
-                        <div className="col-span-2">
-                          <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t('admin.brandColor')}</label>
-                          <div className="flex flex-wrap gap-2.5">
-                            {logoColors.map((color) => (
-                              <button
-                                key={color}
-                                onClick={() => setTempLogoConfig(prev => ({ ...prev, color }))}
-                                className={`w-8 h-8 rounded-lg ${color} transition-all hover:scale-110 flex items-center justify-center shadow-sm ${tempLogoConfig.color === color ? 'ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-[#1c1c1e] scale-110' : 'opacity-80 hover:opacity-100'}`}
-                              >
-                                {tempLogoConfig.color === color && <Check className="w-4 h-4 text-white" />}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Image Upload */}
+                    {/* 1. Image du Logo (Menu Déployé) */}
                     <div>
-                      <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t('admin.customImage')}</label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          {t('admin.customImage')}
+                        </label>
+                        {tempLogoConfig.displayMode === 'image_only' && !tempLogoConfig.image && (
+                          <span className="text-[10px] text-amber-500 font-semibold">
+                            (Image requise pour ce mode)
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-3">
                         <label className="flex-1 flex items-center justify-center gap-3 px-4 py-3 bg-gray-50 dark:bg-white/5 border border-dashed border-gray-300 dark:border-white/20 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 transition-all group/upload">
                           <Upload className="w-4 h-4 text-gray-400 group-hover/upload:text-blue-500" />
@@ -585,9 +738,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </label>
                         {tempLogoConfig.image && (
                           <button
+                            type="button"
                             onClick={() => setTempLogoConfig(prev => ({ ...prev, image: null }))}
                             className="p-3 bg-rose-50 dark:bg-rose-500/10 text-rose-500 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors"
-                             title={t('admin.removeImage')}
+                            title={t('admin.removeImage')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -595,16 +749,154 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </div>
                     </div>
 
-                    {/* Save Button */}
-                    <div className="pt-4">
+                    {/* 2. Icône Menu Réduit (Optionnelle) */}
+                    <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 space-y-2">
+                      <div>
+                        <span className="text-xs font-bold text-gray-900 dark:text-white block">
+                          {t('admin.compactLogoImage')}
+                        </span>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                          {t('admin.compactLogoImageDesc')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 pt-1">
+                        <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 shadow-sm overflow-hidden p-1">
+                          {(tempLogoConfig.compactImage || tempLogoConfig.image) ? (
+                            <img src={tempLogoConfig.compactImage || tempLogoConfig.image!} alt="Compact Icon" className="w-full h-full object-cover rounded-lg" />
+                          ) : (
+                            <div className={`w-full h-full ${tempLogoConfig.color} rounded-lg flex items-center justify-center text-white text-xs font-bold`}>
+                              {tempLogoConfig.letter}
+                            </div>
+                          )}
+                        </div>
+                        <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white dark:bg-zinc-800 border border-dashed border-gray-300 dark:border-white/20 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700/50 transition-all group/cicon">
+                          <Upload className="w-3.5 h-3.5 text-gray-400 group-hover/cicon:text-blue-500" />
+                          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('admin.uploadImage')}</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={handleCompactLogoImageUpload} />
+                        </label>
+                        {tempLogoConfig.compactImage && (
+                          <button
+                            type="button"
+                            onClick={() => setTempLogoConfig(prev => ({ ...prev, compactImage: null }))}
+                            className="p-2.5 bg-rose-50 dark:bg-rose-500/10 text-rose-500 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors shrink-0"
+                            title={t('admin.removeImage')}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Initiale & Couleur (si pas d'image et mode texte) */}
+                    {!tempLogoConfig.image && tempLogoConfig.displayMode !== 'image_only' && (
+                      <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5">
+                        <div>
+                          <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t('admin.initial')}</label>
+                          <input
+                            type="text"
+                            maxLength={1}
+                            placeholder={t('admin.sidebar.initialPlaceholder')}
+                            value={tempLogoConfig.letter}
+                            onChange={(e) => setTempLogoConfig(prev => ({ ...prev, letter: e.target.value.toUpperCase() }))}
+                            className="w-full px-4 py-2.5 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-900 dark:text-white text-center font-bold focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+                          />
+                        </div>
+
+                        <div className="col-span-2">
+                          <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">{t('admin.brandColor')}</label>
+                          <div className="flex flex-wrap gap-2.5">
+                            {logoColors.map((color) => (
+                              <button
+                                key={color}
+                                type="button"
+                                onClick={() => setTempLogoConfig(prev => ({ ...prev, color }))}
+                                className={`w-7 h-7 rounded-lg ${color} transition-all hover:scale-110 flex items-center justify-center shadow-sm ${tempLogoConfig.color === color ? 'ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-[#1c1c1e] scale-110' : 'opacity-80 hover:opacity-100'}`}
+                              >
+                                {tempLogoConfig.color === color && <Check className="w-3.5 h-3.5 text-white" />}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Switch Espace Administrateur (Badge de Rôle) */}
+                    <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 flex items-center justify-between gap-4">
+                      <div className="space-y-0.5">
+                        <span className="text-sm font-bold text-gray-900 dark:text-white block">
+                          {t('admin.roleBadgeTitle')}
+                        </span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                          {t('admin.roleBadgeDesc')}
+                        </p>
+                      </div>
                       <button
-                        onClick={saveLogoConfig}
-                        className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-base shadow-xl shadow-blue-600/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                        type="button"
+                        role="switch"
+                        aria-checked={tempLogoConfig.showRoleBadge !== false}
+                        onClick={() => setTempLogoConfig(prev => ({ ...prev, showRoleBadge: prev.showRoleBadge === false ? true : false }))}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          tempLogoConfig.showRoleBadge !== false ? 'bg-blue-600' : 'bg-gray-300 dark:bg-zinc-700'
+                        }`}
                       >
-                        <Check className="w-5 h-5" />
-                        {t('admin.saveChanges')}
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                            tempLogoConfig.showRoleBadge !== false ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
                       </button>
                     </div>
+
+                    {/* Favicon du site (favicon.ico / .png) */}
+                    <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 space-y-3">
+                      <div>
+                        <span className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                          <Globe className="w-4 h-4 text-blue-500" />
+                          {t('admin.faviconSectionTitle')}
+                        </span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {t('admin.faviconSectionDesc')}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0 shadow-sm overflow-hidden p-1.5">
+                          {tempLogoConfig.favicon ? (
+                            <img src={tempLogoConfig.favicon} alt="Favicon" className="w-full h-full object-contain rounded" />
+                          ) : (
+                            <img src="/favicon.ico" alt="Favicon" className="w-full h-full object-contain rounded" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+                          )}
+                        </div>
+                        
+                        <label className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-white dark:bg-zinc-800 border border-dashed border-gray-300 dark:border-white/20 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700/50 transition-all group/fav">
+                          <Upload className="w-3.5 h-3.5 text-gray-400 group-hover/fav:text-blue-500" />
+                          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{t('admin.uploadFavicon')}</span>
+                          <input type="file" accept=".ico,.png,.svg,image/x-icon,image/png,image/svg+xml" className="hidden" onChange={handleFaviconUpload} />
+                        </label>
+
+                        {tempLogoConfig.favicon && (
+                          <button
+                            type="button"
+                            onClick={() => setTempLogoConfig(prev => ({ ...prev, favicon: null }))}
+                            className="p-2.5 bg-rose-50 dark:bg-rose-500/10 text-rose-500 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors shrink-0"
+                            title={t('admin.removeFavicon')}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-5 border-t border-gray-100 dark:border-white/10 bg-gray-50/50 dark:bg-white/[0.02] shrink-0">
+                    <button
+                      type="button"
+                      onClick={saveLogoConfig}
+                      className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-xl shadow-blue-600/25 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      {t('admin.saveChanges')}
+                    </button>
                   </div>
                 </div>
                 </motion.div>

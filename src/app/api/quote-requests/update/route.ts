@@ -56,7 +56,7 @@ export async function PATCH(req: NextRequest) {
 <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%">
 <tr>
 <td style="vertical-align:middle">
-<img src="${baseUrl}/favicon-512.png" alt="PIXIATECH" width="40" height="40" style="vertical-align:middle;margin-right:10px;border-radius:8px"/><span style="font-size:22px;font-weight:800;color:#000000;vertical-align:middle">PIXIATECH</span>
+<span style="font-size:22px;font-weight:800;color:#000000;vertical-align:middle">PIXIATECH</span>
 </td>
 </tr>
 </table>

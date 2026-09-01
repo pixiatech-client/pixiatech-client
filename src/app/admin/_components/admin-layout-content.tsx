@@ -75,6 +75,10 @@ const DEFAULT_LOGO_CONFIG = {
   letter: 'B',
   color: 'bg-blue-600',
   image: null as string | null,
+  compactImage: null as string | null,
+  displayMode: 'text_image' as 'text_image' | 'image_only',
+  showRoleBadge: true,
+  favicon: null as string | null,
 };
 
 const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor, userProfile, roles, logout, mainNavItems, secondaryNavItems, activeSettingsSection, onSettingsSectionChange, isSettingsPage, role, onOpenAccountDrawer, initialSettings }: { children: React.ReactNode, pageTitle: string, pageSubtitle: string, headerColor: string, userProfile: any, roles: any[], logout: any, mainNavItems: any[], secondaryNavItems: any[], activeSettingsSection?: SettingsSection, onSettingsSectionChange?: (section: SettingsSection) => void, isSettingsPage?: boolean, role?: UserRoleEnum, onOpenAccountDrawer?: () => void, initialSettings?: AppSettings | null }) => {
@@ -202,6 +206,10 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
       try {
         const result = await saveSidebarConfig({ logoConfig: newConfig });
         if (result.success) {
+          if (newConfig.favicon) {
+            const links = document.querySelectorAll("link[rel*='icon']");
+            links.forEach((l) => ((l as HTMLLinkElement).href = newConfig.favicon));
+          }
           sonnerToast.success(t('Logo saved successfully!'), {
             description: t('The change is applied for all users.'),
           });

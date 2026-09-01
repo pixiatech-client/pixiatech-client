@@ -200,6 +200,10 @@ export type Settings = {
     letter: string;
     color: string;
     image: string | null;
+    compactImage?: string | null;
+    displayMode?: 'text_image' | 'image_only';
+    showRoleBadge?: boolean;
+    favicon?: string | null;
   };
   messaging?: MessagingSettings;
   performanceResetAt?: string;
