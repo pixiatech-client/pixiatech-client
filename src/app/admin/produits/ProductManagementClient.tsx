@@ -1775,7 +1775,7 @@ const CaracteristiquesPage = ({
 
   return (
     <div className="w-full pb-32 md:pb-0">
-      <div className="bg-transparent md:bg-theme-card md:border md:border-theme-card-border md:rounded-[3rem] p-0 md:p-10 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
+      <div className="bg-transparent md:bg-theme-card md:border md:border-theme-card-border md:rounded-[3rem] p-0 md:p-4 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
         <AnimatePresence>
           {showIconPicker && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -2797,7 +2797,7 @@ const ProduitPage = ({
 
   return (
     <div className="w-full pb-32 md:pb-0">
-      <div className="bg-transparent md:bg-theme-card md:border md:border-theme-card-border md:rounded-[3rem] p-0 md:p-6 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
+      <div className="bg-transparent md:bg-theme-card md:border md:border-theme-card-border md:rounded-[3rem] p-0 md:p-4 md:shadow-xl md:max-w-[1400px] mx-auto transition-all duration-500">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
           {/* Left Column: Technical Specs & Core Settings */}
@@ -5109,6 +5109,8 @@ export default function ProductManagementClient() {
     }
     setPrevActivePage(activePage);
     setActivePage(newPage);
+    const scroller = document.getElementById('admin-main-scroll');
+    if (scroller) scroller.scrollTo({ top: 0 }); else window.scrollTo({ top: 0 });
     // Clear editing product when navigating away from the form
     if (newPage !== 'produit') {
       resetProductForm();
@@ -7173,7 +7175,7 @@ export default function ProductManagementClient() {
   return (
     <div className="min-h-screen bg-transparent font-sans text-slate-900">
       <main className="min-h-screen transition-all duration-300">
-        <div className="max-w-[1400px] mx-auto p-0 md:p-8">
+        <div className="max-w-[1400px] mx-auto p-0 md:p-4">
           {/* Switch espace : Boutique / Configuration guidée */}
           <div className="flex items-center justify-center md:justify-start mb-3">
             <div className="relative flex bg-slate-100/80 p-0.5 rounded-xl border border-slate-200 overflow-hidden shadow-sm">
@@ -7207,7 +7209,7 @@ export default function ProductManagementClient() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-4">
             <div className="relative flex bg-slate-100/80 p-1 rounded-2xl border border-slate-200 w-full md:w-auto overflow-hidden shadow-sm">
               {[
                 { id: 'gestion', label: t('admin.productManagement.managementTitle'), icon: Package },
