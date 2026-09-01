@@ -307,7 +307,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const sidebarClasses = `
-    admin-sidebar fixed lg:sticky top-0 z-[1000] min-h-screen transition-colors duration-300 flex flex-col
+    admin-sidebar fixed lg:sticky top-0 z-[1000] h-dvh transition-colors duration-300 flex flex-col
     bg-theme-sidebar-bg text-theme-sidebar-text border-theme-sidebar-border
     border-r
   `;
@@ -614,7 +614,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 px-4 overflow-y-auto custom-scrollbar py-4">
+        <div className="flex-1 px-4 overflow-y-auto custom-scrollbar py-4 min-h-0">
           <div className="flex items-center justify-between mb-4 px-2">
             {!isCompact && (
               <span className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
@@ -733,14 +733,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
               );
             })}
           </Reorder.Group>
-          {/* Footer Actions (moved inside scroll container) */}
-          <div className={`mt-6 pt-4 border-t ${isDark ? 'border-white/5' : 'border-gray-100'} space-y-4`}>
-          {/* Theme/Controls Section Empty as per personalization request */}
+        </div>
 
-          <div className="flex flex-col gap-2">
-            {/* Old State Toggle & Hide Buttons Removed */}
-          </div>
-
+        {/* Footer Actions (toujours visible, hors zone scrollable) */}
+        <div className="px-4 pb-4">
+          <div className={`pt-4 border-t ${isDark ? 'border-white/5' : 'border-gray-100'}`}>
             <button
               onClick={onLogout}
               onMouseEnter={() => isCompact && setHoveredItem('logout')}
@@ -763,12 +760,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             {!isCompact ? (
-              <div className="px-2 pt-2 pb-1 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 opacity-90 select-none">
-                © {new Date().getFullYear()} PixiaTech
-                <div className="text-[10px] font-mono opacity-70">Version {APP_VERSION}</div>
+              <div className="mt-2 px-2 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 opacity-90 select-none whitespace-nowrap">
+                © {new Date().getFullYear()} PixiaTech | <span className="font-mono">Version {APP_VERSION}</span>
               </div>
             ) : (
-              <div className="pt-2 text-center text-[10px] font-mono text-slate-400 dark:text-slate-500 opacity-80 select-none" title={`© ${new Date().getFullYear()} PixiaTech — Version ${APP_VERSION}`}>
+              <div className="mt-2 text-center text-[10px] font-mono text-slate-400 dark:text-slate-500 opacity-80 select-none" title={`© ${new Date().getFullYear()} PixiaTech — Version ${APP_VERSION}`}>
                 v{APP_VERSION}
               </div>
             )}
