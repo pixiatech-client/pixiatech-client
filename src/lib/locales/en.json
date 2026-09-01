@@ -677,6 +677,13 @@
             "updateNow": "Update now",
             "purging": "Purging…",
             "reloading": "Reloading…",
+            "completedRedirect": "Done! Redirecting…",
+            "status": {
+                "pending": "Pending",
+                "running": "In progress…",
+                "completed": "Completed",
+                "error": "Failed"
+            },
             "step": {
                 "caches": "Clear browser caches",
                 "storage": "Clear local storage (localStorage / sessionStorage)",

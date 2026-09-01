@@ -504,8 +504,10 @@ export async function logout() {
 /** Clear stale session cookie without revoking tokens or redirecting.
  *  Used by the layout guard to break cookie/Firebase mismatch loops. */
 export async function clearSession() {
-  (await cookies()).delete('session');
-  (await cookies()).delete('sessionToken');
+  const cookieStore = await cookies();
+  cookieStore.delete('session');
+  cookieStore.delete('sessionToken');
+  cookieStore.delete('client_session');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

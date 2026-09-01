@@ -32,6 +32,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUser, useFirestore } from '@/firebase';
 import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 import { useI18n } from '@/lib/i18n';
+import { APP_VERSION } from '@/lib/build-info';
 
 export type SidebarState = 'expanded' | 'compact' | 'hidden';
 export type SidebarTheme = 'light' | 'dark';
@@ -760,6 +761,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </motion.div>
               )}
             </button>
+
+            {!isCompact ? (
+              <div className="px-2 pt-1 pb-1 text-center text-[11px] font-mono text-slate-400 dark:text-slate-500 opacity-80 select-none">
+                Version {APP_VERSION}
+              </div>
+            ) : (
+              <div className="pt-1 text-center text-[10px] font-mono text-slate-400 dark:text-slate-500 opacity-80 select-none" title={`Version ${APP_VERSION}`}>
+                v{APP_VERSION}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -677,6 +677,13 @@
             "updateNow": "Mettre à jour maintenant",
             "purging": "Purge en cours…",
             "reloading": "Rechargement…",
+            "completedRedirect": "Terminé ! Redirection…",
+            "status": {
+                "pending": "En attente",
+                "running": "En cours…",
+                "completed": "Terminé",
+                "error": "Échoué"
+            },
             "step": {
                 "caches": "Vider les caches navigateur",
                 "storage": "Vider le stockage local (localStorage / sessionStorage)",

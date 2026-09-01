@@ -3,7 +3,7 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
@@ -17,8 +17,11 @@ export function initializeFirebase() {
   }
 
   const auth = getAuth(firebaseApp);
-  const { setPersistence, browserLocalPersistence } = require('firebase/auth');
-  setPersistence(auth, browserLocalPersistence);
+  try {
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
+  } catch {
+    // Ignore persistence setup errors
+  }
   
   const firestore = getFirestore(firebaseApp);
   const storage = getStorage(firebaseApp);

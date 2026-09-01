@@ -1,12 +1,22 @@
 'use client';
 
 import { signOut, getAuth } from 'firebase/auth';
+import { clearSession } from '@/app/admin/actions';
 
 export type ResetStep = 'caches' | 'storage' | 'session' | 'reload';
+export type StepStatus = 'pending' | 'running' | 'completed' | 'error';
+
+export interface StepEvent {
+  step: ResetStep;
+  status: StepStatus;
+  error?: string;
+}
+
+export type StepProgressCallback = (event: StepEvent) => void;
 
 export interface ResetOptions {
   /**
-   * true = purge radicale manuelle : vide storage local + sessionNav + IndexedDB (Firebase) + signOut.
+   * true = purge radicale manuelle : vide storage local + sessionNav + cookies + IndexedDB (Firebase) + signOut.
    * false = mise à jour de version : vide uniquement les caches navigateur et recharge,
    *         on conserve la session et le storage (non destructif).
    */
@@ -25,101 +35,156 @@ export interface ResetOptions {
 }
 
 /**
- * Purge de l'état local du navigateur uniquement.
+ * Purge de l'état local du navigateur et des cookies de session uniquement.
  * NE supprime JAMAIS de données métier côté serveur (Firestore / Storage).
  */
 export async function resetApplication(
   options: ResetOptions = {},
-  onStep?: (step: ResetStep) => void
+  onProgress?: StepProgressCallback,
+  legacyOnStep?: (step: ResetStep) => void,
+  legacyOnStepDone?: (step: ResetStep) => void
 ): Promise<void> {
   const { radical = false, targetSignature } = options;
 
-  onStep?.('caches');
-  await wait(150);
+  const notify = (step: ResetStep, status: StepStatus, error?: string) => {
+    onProgress?.({ step, status, error });
+    if (status === 'running') legacyOnStep?.(step);
+    if (status === 'completed') legacyOnStepDone?.(step);
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // 1. Étape : CACHES NAVIGATEUR & SERVICE WORKERS
+  // ─────────────────────────────────────────────────────────────
+  notify('caches', 'running');
+  await wait(100);
   try {
-    if ('caches' in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
+    // 1.1 Cache Storage
+    if (typeof window !== 'undefined' && 'caches' in window) {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      } catch (e) {
+        console.warn('[resetApplication] Avertissement suppression CacheStorage:', e);
+      }
     }
-  } catch {
-    /* ignore */
+
+    // 1.2 Service Workers (désenregistrement)
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((reg) => reg.unregister()));
+      } catch (e) {
+        console.warn('[resetApplication] Avertissement désenregistrement ServiceWorker:', e);
+      }
+    }
+
+    notify('caches', 'completed');
+  } catch (err: unknown) {
+    console.warn('[resetApplication] Erreur non bloquante sur caches:', err);
+    notify('caches', 'completed');
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // 2. Étape : STOCKAGE LOCAL (LocalStorage, SessionStorage, Cookies JS)
+  // ─────────────────────────────────────────────────────────────
   if (radical) {
-    onStep?.('storage');
+    notify('storage', 'running');
+    await wait(100);
     try {
-      localStorage.clear();
-    } catch {
-      /* ignore */
-    }
-    try {
-      sessionStorage.clear();
-    } catch {
-      /* ignore */
-    }
-    await wait(150);
+      try {
+        localStorage.clear();
+      } catch (e) {
+        console.warn('[resetApplication] Avertissement localStorage.clear:', e);
+      }
 
-    onStep?.('session');
-    // Firebase Auth utilise browserLocalPersistence (IndexedDB) : un simple
-    // localStorage.clear() ne suffit pas. On se déconnecte proprement et on
-    // nettoie les bases IndexedDB de Firebase.
-    try {
-      await signOut(getAuth());
-    } catch {
-      /* ignore */
+      try {
+        sessionStorage.clear();
+      } catch (e) {
+        console.warn('[resetApplication] Avertissement sessionStorage.clear:', e);
+      }
+
+      // Nettoyage des cookies accessibles en JavaScript
+      try {
+        if (typeof document !== 'undefined' && document.cookie) {
+          const cookies = document.cookie.split(';');
+          for (const cookie of cookies) {
+            const eqPos = cookie.indexOf('=');
+            const name = eqPos > -1 ? cookie.slice(0, eqPos).trim() : cookie.trim();
+            if (name) {
+              document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+              document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[resetApplication] Avertissement purge document.cookie:', e);
+      }
+
+      notify('storage', 'completed');
+    } catch (err: unknown) {
+      console.warn('[resetApplication] Erreur storage:', err);
+      notify('storage', 'completed');
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // 3. Étape : SESSION NAVIGATEUR & FIREBASE AUTH (IndexedDB)
+    // ─────────────────────────────────────────────────────────────
+    notify('session', 'running');
+    await wait(100);
     try {
-      await clearFirebaseIndexedDB();
-    } catch {
-      /* ignore */
+      // 3.1 Suppression serveur des cookies HTTP-Only (session, sessionToken, client_session)
+      try {
+        await clearSession();
+      } catch (e) {
+        console.warn('[resetApplication] clearSession server action fallback:', e);
+      }
+
+      try {
+        await fetch('/api/auth/clear-session', { method: 'POST', cache: 'no-store' });
+      } catch (e) {
+        console.warn('[resetApplication] endpoint /api/auth/clear-session fallback:', e);
+      }
+
+      // 3.2 Déconnexion propre de Firebase Auth (vide automatiquement les identifiants locaux d'IndexedDB)
+      try {
+        const auth = getAuth();
+        await signOut(auth);
+      } catch (e) {
+        console.warn('[resetApplication] Avertissement signOut Firebase:', e);
+      }
+
+      notify('session', 'completed');
+    } catch (err: unknown) {
+      console.warn('[resetApplication] Erreur session:', err);
+      notify('session', 'completed');
     }
   } else if (targetSignature) {
-    // Mise à jour : on enregistre la nouvelle signature pour éviter de
-    // re-proposer la mise à jour au rechargement (pas de boucle).
+    // Mode mise à jour : on enregistre la nouvelle signature pour éviter de
+    // re-proposer la mise à jour au rechargement (pas de boucle infinie).
     try {
       localStorage.setItem('app-build-signature', targetSignature);
-    } catch {
-      /* ignore */
+    } catch (e) {
+      console.warn('[resetApplication] Impossible d’écrire targetSignature:', e);
     }
   }
 
-  onStep?.('reload');
-  await wait(350);
+  // ─────────────────────────────────────────────────────────────
+  // 4. Étape : REDIRECTION OU RECHARGEMENT
+  // ─────────────────────────────────────────────────────────────
+  notify('reload', 'running');
+  await wait(200);
+  notify('reload', 'completed');
 
   if (radical) {
-    // Purge radicale : après signOut + nettoyage, on redirige DIRECTEMENT vers la
-    // page de connexion. N'utilise surtout pas location.reload() qui resterait sur
-    // /admin, laissant la sidebar/le contenu admin visibles après déconnexion.
+    // Purge radicale : redirection DIRECTE vers /admin/login sans coquille admin
     const target = options.redirectTo || '/admin/login';
-    window.location.href = target;
+    window.location.replace(target);
   } else {
-    // Mise à jour : non destructive, on recharge simplement la page avec la
-    // nouvelle version (la session et le storage sont conservés).
+    // Mise à jour : rechargement propre
     window.location.reload();
   }
 }
 
-async function clearFirebaseIndexedDB() {
-  if (typeof indexedDB === 'undefined') return;
-  let databases: IDBDatabaseInfo[] = [];
-  try {
-    databases = await indexedDB.databases();
-  } catch {
-    return;
-  }
-  await Promise.all(
-    databases
-      .map((d) => d.name)
-      .filter((name): name is string => !!name && /firebase/i.test(name))
-      .map((name) => new Promise<void>((resolve) => {
-        const req = indexedDB.deleteDatabase(name);
-        req.onsuccess = () => resolve();
-        req.onerror = () => resolve();
-        req.onblocked = () => resolve();
-      }))
-  );
-}
-
-function wait(ms: number) {
+function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

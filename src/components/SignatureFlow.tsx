@@ -64,6 +64,7 @@ import { getSettings, updateQuotePdfUrl, updateQuoteContractUrl } from '@/app/ac
 import { storage } from '@/firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useI18n } from '@/lib/i18n';
+import { APP_VERSION } from '@/lib/build-info';
 import { jsPDF } from 'jspdf';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { FloatingFooterNav } from '@/components/ui/floating-footer-nav';
@@ -2935,7 +2936,7 @@ export default function SignatureFlow({
           <a href="https://pixiatech.com/mentions-legales/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">{t('signature.footerPolicy')}</a>
         </div>
         <div className="text-[10px] text-zinc-400 font-mono tracking-widest">
-          {t('signature.accessRestricted')} | @ 2026 PIXIA TECH. {t('signature.allRightsReserved')}
+          {t('signature.accessRestricted')} | © 2026 PIXIA TECH — Version {APP_VERSION}. {t('signature.allRightsReserved')}
         </div>
       </footer>
 
