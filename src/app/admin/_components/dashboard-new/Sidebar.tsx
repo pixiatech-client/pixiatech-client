@@ -133,6 +133,7 @@ interface SidebarProps {
   selectedSettingsSection?: SettingsSection;
   onSaveOrder?: (newOrder: string[]) => void;
   onSaveLogo?: (newConfig: SidebarProps['logoConfig']) => void;
+  onCheckUpdate?: () => void;
   initialOrder?: string[];
 }
 
@@ -156,6 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   selectedSettingsSection,
   onSaveOrder,
   onSaveLogo,
+  onCheckUpdate,
   initialOrder
 }) => {
   const { t, locale } = useI18n();
@@ -1052,11 +1054,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
 
             {!isCompact ? (
-              <div className="mt-2 px-2 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 opacity-90 select-none whitespace-nowrap">
+              <div
+                onClick={onCheckUpdate}
+                role={onCheckUpdate ? 'button' : undefined}
+                tabIndex={onCheckUpdate ? 0 : undefined}
+                className={`mt-2 px-2 text-center text-[11px] font-medium text-slate-400 dark:text-slate-500 opacity-90 select-none whitespace-nowrap transition-colors ${
+                  onCheckUpdate ? 'cursor-pointer hover:text-blue-500 dark:hover:text-blue-400 hover:opacity-100' : ''
+                }`}
+                title={onCheckUpdate ? "Cliquer pour vérifier les mises à jour" : `© ${new Date().getFullYear()} PixiaTech — Version ${APP_VERSION}`}
+              >
                 © {new Date().getFullYear()} PixiaTech | <span className="font-mono">Version {APP_VERSION}</span>
               </div>
             ) : (
-              <div className="mt-2 text-center text-[10px] font-mono text-slate-400 dark:text-slate-500 opacity-80 select-none" title={`© ${new Date().getFullYear()} PixiaTech — Version ${APP_VERSION}`}>
+              <div
+                onClick={onCheckUpdate}
+                role={onCheckUpdate ? 'button' : undefined}
+                tabIndex={onCheckUpdate ? 0 : undefined}
+                className={`mt-2 text-center text-[10px] font-mono text-slate-400 dark:text-slate-500 opacity-80 select-none transition-colors ${
+                  onCheckUpdate ? 'cursor-pointer hover:text-blue-500 dark:hover:text-blue-400 hover:opacity-100' : ''
+                }`}
+                title={onCheckUpdate ? "Cliquer pour vérifier les mises à jour" : `© ${new Date().getFullYear()} PixiaTech — Version ${APP_VERSION}`}
+              >
                 v{APP_VERSION}
               </div>
             )}

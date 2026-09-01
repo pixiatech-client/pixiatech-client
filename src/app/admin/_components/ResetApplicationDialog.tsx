@@ -188,7 +188,7 @@ export function ResetApplicationDialog({
                 key={step}
                 className={cn(
                   'flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3 transition-all duration-200',
-                  isDone && 'border-emerald-300 bg-emerald-50/80 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/30',
+                  isDone && 'border-[#95D00A] bg-[#95D00A]/10 text-emerald-950 dark:border-[#95D00A]/50 dark:bg-[#95D00A]/15 dark:text-emerald-100',
                   isActive && 'border-blue-300 bg-blue-50/80 text-blue-950 shadow-sm ring-1 ring-blue-400/30 dark:border-blue-800 dark:bg-blue-950/30',
                   isError && 'border-rose-300 bg-rose-50/80 text-rose-950 dark:border-rose-800 dark:bg-rose-950/30',
                   !isDone && !isActive && !isError && 'border-slate-200 bg-slate-50/50 text-slate-700 dark:border-slate-800 dark:bg-slate-900/40'
@@ -198,7 +198,7 @@ export function ResetApplicationDialog({
                   <span
                     className={cn(
                       'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-xs font-semibold transition-all duration-200',
-                      isDone && 'border-emerald-600 bg-emerald-600 text-white shadow-sm',
+                      isDone && 'border-[#95D00A] bg-[#95D00A] text-white shadow-sm',
                       isActive && 'border-blue-600 bg-blue-600 text-white shadow-sm',
                       isError && 'border-rose-600 bg-rose-600 text-white shadow-sm',
                       !isDone && !isActive && !isError && 'border-slate-300 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-500'
@@ -217,7 +217,7 @@ export function ResetApplicationDialog({
                   <span
                     className={cn(
                       'text-sm transition-colors duration-200 leading-snug',
-                      isDone && 'font-semibold text-emerald-900 dark:text-emerald-300',
+                      isDone && 'font-semibold text-[#3a5502] dark:text-[#95D00A]',
                       isActive && 'font-semibold text-blue-900 dark:text-blue-200',
                       isError && 'font-semibold text-rose-900 dark:text-rose-300',
                       !isDone && !isActive && !isError && 'font-medium text-slate-600 dark:text-slate-400'
@@ -234,7 +234,7 @@ export function ResetApplicationDialog({
                 <span
                   className={cn(
                     'text-[11px] font-semibold shrink-0 px-2 py-0.5 rounded-md transition-colors',
-                    isDone && 'bg-emerald-100/80 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200',
+                    isDone && 'bg-[#95D00A]/15 text-[#3a5502] dark:bg-[#95D00A]/20 dark:text-[#95D00A]',
                     isActive && 'bg-blue-100/80 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200 animate-pulse',
                     isError && 'bg-rose-100/80 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200',
                     !isDone && !isActive && !isError && 'text-slate-400 dark:text-slate-500'

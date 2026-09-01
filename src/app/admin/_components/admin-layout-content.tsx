@@ -324,6 +324,33 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const checkUpdateManually = async () => {
+    try {
+      sonnerToast.loading(t('admin.checkingUpdate') || 'Vérification des mises à jour...', { id: 'manual-version-check' });
+      const res = await fetch('/api/app/version', { cache: 'no-store' });
+      if (!res.ok) {
+        sonnerToast.error(t('admin.checkUpdateFailed') || 'Impossible de contacter le serveur.', { id: 'manual-version-check' });
+        return;
+      }
+      const data = await res.json();
+      const latestVersion = `${data.version}`;
+      const sig = `${data.signature}`;
+      const installedVersion = APP_VERSION;
+
+      if (isVersionNewer(latestVersion, installedVersion)) {
+        sonnerToast.dismiss('manual-version-check');
+        setCurrentVersion(installedVersion);
+        setNewVersion(latestVersion);
+        setNewSignature(sig);
+        setResetMode('version');
+        setResetDialogOpen(true);
+      } else {
+        sonnerToast.success(`Votre application est à jour (v${installedVersion})`, { id: 'manual-version-check' });
+      }
+    } catch {
+      sonnerToast.error('Erreur de connexion au serveur.', { id: 'manual-version-check' });
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -357,6 +384,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         initialOrder={initialSettings?.sidebarOrder}
         onSaveOrder={handleSaveOrder}
         onSaveLogo={handleSaveLogo}
+        onCheckUpdate={checkUpdateManually}
         onOpenAccountDrawer={onOpenAccountDrawer}
         onLogout={handleLogout}
         userName={userProfile?.displayName}
