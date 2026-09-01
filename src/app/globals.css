@@ -186,62 +186,26 @@
    *  PROFILS D'APPAREILS — Tableau de compatibilité
    * ═══════════════════════════════════════════════════════════════════════════
    *
-   *  [1] 📱 TÉLÉPHONE      < 768px          → Pas de zoom (mobile natif)
+   *  [1] 📱 TÉLÉPHONE      < 768px          → Pas de zoom (rendu natif)
    *  [2] 📟 TABLETTE       768px – 1024px   → Pas de zoom (rendu OK)
-   *  [3] 📓 MINI BOOK      1024px – 1280px  → zoom: 0.82  ← CORRECTIF ACTIF
-   *  [4] 💻 PC PORTABLE    1280px – 1600px  → zoom: 0.85  ← CORRECTIF ACTIF
-   *  [5] 🖥️  PC BUREAU      > 1600px         → Pas de zoom (grands écrans)
+   *  [3] 📓 MINI BOOK      1024px – 1280px  → Pas de zoom
+   *  [4] 💻 PC PORTABLE    1280px – 1600px  → Pas de zoom
+   *  [5] 🖥️  PC BUREAU      > 1600px        → Pas de zoom (grands écrans)
    *
-   *  Raison des zooms : Windows recommande 120 % de mise à l'échelle sur les
-   *  laptops. Sans correction, l'app paraît trop grande au zoom navigateur
-   *  par défaut (100 %). Le zoom CSS compense : 1 / 1.20 ≈ 83 %.
-   *  min-height empêche la bande blanche en bas (zoom réduit la hauteur CSS).
+   *  ⚠️ Les correctifs zoom: 0.82 / 0.85 ont été SUPPRIMÉS (décision produit) :
+   *  ils forçaient un « dézoom » CSS qui obligeait à régler le navigateur non
+   *  visible à 90 % pour compenser. L'app s'affiche désormais à 100 % partout.
+   *  Un DPI Windows de 120 % est géré nativement par le navigateur/OS.
    * ═══════════════════════════════════════════════════════════════════════════ */
 
-  /* [1] Téléphone ─────────────────────────────── < 768px ─── Pas de zoom */
-  /* [2] Tablette ──────────────────────────── 768–1024px ─── Pas de zoom */
+  /* Les profils [1] à [5] n'appliquent plus aucun zoom. */
 
-  /* [3] Mini Book ─────────────────────── 1024px – 1280px ─── zoom: 0.82 */
-  @media screen and (min-width: 1024px) and (max-width: 1279px) {
-    html {
-      zoom: 0.82;
-      overflow: hidden;
-    }
-    body {
-      min-height: 100dvh;
-      overflow: auto;
-    }
-    #admin-root, .admin-sidebar {
-      width: 100%;
-      max-width: 100%;
-      min-height: 100dvh;
-    }
-    #admin-root {
-      overflow: hidden;
-    }
+  /* Conteneurs admin : largeur pleine et hauteur complète, quel que soit l'écran. */
+  #admin-root, .admin-sidebar {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100dvh;
   }
-
-  /* [4] PC Portable / Laptop ──────────── 1280px – 1600px ─── zoom: 0.85 */
-  @media screen and (min-width: 1280px) and (max-width: 1600px) {
-    html {
-      zoom: 0.85;
-      overflow: hidden;
-    }
-    body {
-      min-height: 100dvh;
-      overflow: auto;
-    }
-    #admin-root, .admin-sidebar {
-      width: 100%;
-      max-width: 100%;
-      min-height: 100dvh;
-    }
-    #admin-root {
-      overflow: hidden;
-    }
-  }
-
-  /* [5] PC Bureau ──────────────────────────── > 1600px ─── Pas de zoom */
 
   /* ===== TABLEAUX / CARTES ===== */
   .table-wrapper,
