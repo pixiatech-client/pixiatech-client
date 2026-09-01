@@ -54,6 +54,8 @@ import { SettingsContent } from '../settings/_components/settings-content';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FloatingCalculator } from './FloatingCalculator';
 import { ResetApplicationDialog } from './ResetApplicationDialog';
+import { APP_VERSION } from '@/lib/build-info';
+import { isVersionNewer } from '@/lib/version';
 
 const mapRoleToUserRoleEnum = (role: string | undefined): UserRoleEnum => {
   switch (role) {
@@ -240,7 +242,9 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
 
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetMode, setResetMode] = useState<'manual' | 'version'>('manual');
-  const [currentVersion, setCurrentVersion] = useState<string>();
+  // Version réellement installée : celle embarquée dans le bundle client chargé.
+  const [currentVersion, setCurrentVersion] = useState<string>(APP_VERSION);
+  // Version disponible : celle servie au dernier /api/app/version (build du serveur).
   const [newVersion, setNewVersion] = useState<string>();
   const [newSignature, setNewSignature] = useState<string>();
   const versionCheckedRef = useRef(false);
@@ -252,9 +256,16 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
 
   // Détection automatique de nouvelle version (chargement + intervalle raisonnable).
   // Non destructif : on signale simplement la présence d'une mise à jour.
+  // RÉGLE ABSOLUE : notification UNIQUEMENT si la version disponible est
+  // STRICTEMENT supérieure (comparaison SemVer) à la version installée.
+  //   latest > current  → notification
+  //   latest === current → AUCUNE notification (serveur sur la même version que nous)
+  //   latest < current  → AUCUNE notification (rollback / cas anormal)
   useEffect(() => {
     let disposed = false;
     let timer: ReturnType<typeof setTimeout>;
+
+    const installedVersion = APP_VERSION;
 
     const checkVersion = async () => {
       try {
@@ -262,34 +273,35 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         if (!res.ok) return;
         const data = await res.json();
         if (disposed) return;
-        const nextVersion = `${data.version}`;
+        const latestVersion = `${data.version}`;
         const sig = `${data.signature}`;
-        const prevSig = localStorage.getItem('app-build-signature');
-        const prevVersion = localStorage.getItem('app-build-version');
 
-        // Une fois qu'une mise à jour a été signalée dans cette session, on ne
-        // touche plus à la signature stockée et on cesse de poller : évite la
-        // race où l'intervalle 60 s réécrirait `app-build-signature` pendant
-        // que l'utilisateur décide/valide, ce qui clobberait targetSignature
-        // et relancerait une fausse alerte au rechargement.
+        // Une seule notification par session : on cesse de poller une fois
+        // la mise à jour signalée, pour ne pas harceler l'utilisateur.
         if (versionCheckedRef.current) return;
 
-        if (prevSig && prevSig !== sig) {
-          // Nouvelle version déployée : signaler (non destructif) et stopper le polling.
-          versionCheckedRef.current = true;
-          if (timer) clearInterval(timer);
-          setCurrentVersion(prevVersion || nextVersion);
-          setNewVersion(nextVersion);
-          setNewSignature(sig);
-          setResetMode('version');
-          setResetDialogOpen(true);
+        // Comparaison SemVer réelle (pas de simple comparaison de chaînes).
+        const updateAvailable = isVersionNewer(latestVersion, installedVersion);
+
+        if (!updateAvailable) {
+          // latest === current (ou rollback) : aucune mise à jour à signaler.
+          // On mémorise quand même l'état servi pour rester cohérent.
+          localStorage.setItem('app-build-signature', sig);
+          localStorage.setItem('app-build-version', latestVersion);
+          setCurrentVersion(installedVersion);
+          setNewVersion(undefined);
+          setNewSignature(undefined);
           return;
         }
 
-        // Version courante / identique : on mémorise la signature installée.
-        localStorage.setItem('app-build-signature', sig);
-        localStorage.setItem('app-build-version', nextVersion);
-        setCurrentVersion(nextVersion);
+        // Mise à jour réellement disponible : signaler une seule fois.
+        versionCheckedRef.current = true;
+        if (timer) clearInterval(timer);
+        setCurrentVersion(installedVersion);
+        setNewVersion(latestVersion);
+        setNewSignature(sig);
+        setResetMode('version');
+        setResetDialogOpen(true);
       } catch {
         /* réseau indisponible : on retentera au prochain intervalle */
       }
