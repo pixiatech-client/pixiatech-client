@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { DEFAULT_PALETTES } from '@/lib/color-palettes';
 import { useTheme } from '@/contexts/ThemeProvider';
 import { useAdminT } from '@/hooks/useAdminT';
-import { reinitializePalettes } from '@/app/admin/actions';
 import { toast } from 'sonner';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
@@ -525,27 +524,27 @@ export function GlobalThemeSelector() {
   const handleSelect = async (name: string) => setTheme(name);
 
   const handleResetAll = async () => {
-    let res;
-    try {
-      res = await reinitializePalettes();
-    } catch (e) {
-      console.error('Erreur reinitializePalettes:', e);
-      toast.error(t('Failed to restore themes'));
-      setConfirmReset(false);
-      return;
-    }
-    if (!res.success) {
-      toast.error(t('Failed to restore themes'));
-      setConfirmReset(false);
-      return;
-    }
     const defaultTheme = DEFAULT_PALETTES.find(p => p.isDefault)?.name ?? DEFAULT_PALETTES[0].name;
+
+    // Réinitialisation locale instantanée : purge des personnalisations.
+    // Elle ne dépend d'aucune action serveur et ne peut donc jamais échouer.
+    try {
+      localStorage.removeItem(OVERRIDES_KEY);
+      localStorage.removeItem(CUSTOM_THEMES_KEY);
+    } catch (e) {
+      console.error('Erreur purge localStorage des thèmes:', e);
+    }
+    setOverrides({});
+    setCustomThemes([]);
+
+    // Applique et persiste le thème par défaut global (mise à jour partout).
     let persisted = false;
     try {
       persisted = await setTheme(defaultTheme);
     } catch (e) {
       console.error('Erreur setTheme:', e);
     }
+
     if (persisted) {
       toast.success(t('Themes restored to defaults'));
     } else {

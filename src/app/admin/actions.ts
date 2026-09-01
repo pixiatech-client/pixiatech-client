@@ -3508,8 +3508,8 @@ export async function getThemes(): Promise<Theme[]> {
     return _themesCache.data;
   }
 
-  const { adminDb, FieldValue } = getFirebaseAdmin();
   try {
+    const { adminDb, FieldValue } = getFirebaseAdmin();
     const snapshot = await adminDb.collection('themes').orderBy('createdAt', 'asc').get();
     let themes: Theme[];
     if (snapshot.empty) {
@@ -3547,8 +3547,8 @@ export async function getThemes(): Promise<Theme[]> {
 }
 
 export async function saveTheme(theme: Partial<Omit<Theme, 'createdAt'>> & { name: string; colors: Theme['colors']; }) {
-  const { adminDb, FieldValue } = getFirebaseAdmin();
   try {
+    const { adminDb, FieldValue } = getFirebaseAdmin();
     await requireAdminFresh();
     let docRef;
     if (theme.id) {
@@ -3587,8 +3587,8 @@ export async function saveTheme(theme: Partial<Omit<Theme, 'createdAt'>> & { nam
 
 
 export async function deleteTheme(themeId: string) {
-  const { adminDb } = getFirebaseAdmin();
   try {
+    const { adminDb } = getFirebaseAdmin();
     await requireAdminFresh();
     await adminDb.collection('themes').doc(themeId).delete();
     _themesCache = null;
@@ -3600,8 +3600,8 @@ export async function deleteTheme(themeId: string) {
 }
 
 export async function reinitializePalettes() {
-  const { adminDb, FieldValue } = getFirebaseAdmin();
   try {
+    const { adminDb, FieldValue } = getFirebaseAdmin();
     await requireAdminFresh();
     const existing = await adminDb.collection('themes').get();
     const batch = adminDb.batch();
@@ -3615,7 +3615,11 @@ export async function reinitializePalettes() {
     });
     await batch.commit();
     _themesCache = null;
-    revalidatePath('/admin/settings/themes', 'layout');
+    try {
+      revalidatePath('/admin/settings/themes', 'layout');
+    } catch (revalidateErr) {
+      console.warn('revalidatePath themes failed (non fatal):', revalidateErr);
+    }
     return { success: true };
   } catch (error) {
     console.error("Error reinitializing palettes:", error);
@@ -3626,9 +3630,9 @@ export async function reinitializePalettes() {
 const ACTIVE_THEME_DOC_ID = 'global';
 
 export async function getActiveGlobalTheme(): Promise<{ themeId: string }> {
-  const { adminDb } = getFirebaseAdmin();
   const defaultName = DEFAULT_PALETTES.find(p => p.isDefault)?.name || DEFAULT_PALETTES[0].name;
   try {
+    const { adminDb } = getFirebaseAdmin();
     if (_activeThemeCache && Date.now() - _activeThemeCache.timestamp < THEME_CACHE_TTL_MS) {
       return { themeId: _activeThemeCache.themeId };
     }
@@ -3644,14 +3648,20 @@ export async function getActiveGlobalTheme(): Promise<{ themeId: string }> {
 }
 
 export async function setActiveGlobalTheme(themeId: string) {
-  const { adminDb } = getFirebaseAdmin();
   try {
+    const { adminDb } = getFirebaseAdmin();
     await requireAdminFresh();
     await adminDb.collection('settings').doc(ACTIVE_THEME_DOC_ID).set({ activeThemeId: themeId }, { merge: true });
     _activeThemeCache = null;
-    await clearThemeCache();
-    await clearSettingsCache();
-    revalidatePath('/', 'layout');
+    // L'invalidation de cache / la revalidation sont non bloquantes : même si
+    // elles échouent, l'écriture du thème actif reste valide.
+    try {
+      await clearThemeCache();
+      await clearSettingsCache();
+      revalidatePath('/', 'layout');
+    } catch (postWriteErr) {
+      console.warn('Post-write invalidation failed (non fatal):', postWriteErr);
+    }
     return { success: true };
   } catch (error) {
     console.error("Error setting active theme:", error);
