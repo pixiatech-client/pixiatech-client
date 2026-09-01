@@ -664,6 +664,27 @@
         "logout": "Log out",
         "switchLanguage": "Switch to English",
         "floatingCalculator": "Calculator",
+        "reset": {
+            "title": "Reset application",
+            "shortLabel": "Reset",
+            "desc": "The steps below only purge the browser's local state (caches, storage, browser session) and reload the application.",
+            "newVersionTitle": "New version available",
+            "newVersionDesc": "A new version of the application is available:",
+            "keepData": "Your data stored on the server will not be deleted (products, orders, quotes, clients, users, images).",
+            "cancel": "Cancel",
+            "disconnectWarning": "Warning: this complete reset will sign you out and redirect you to the sign-in page.",
+            "confirmReset": "Reset",
+            "updateNow": "Update now",
+            "purging": "Purging…",
+            "reloading": "Reloading…",
+            "step": {
+                "caches": "Clear browser caches",
+                "storage": "Clear local storage (localStorage / sessionStorage)",
+                "session": "Clean browser session",
+                "reload": "Reload the application",
+                "redirect": "Redirect to the sign-in page"
+            }
+        },
         "siteAccess": "Access Site",
         "boutique": "Shop",
         "navOrders": "Orders",

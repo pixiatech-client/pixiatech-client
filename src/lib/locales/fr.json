@@ -664,6 +664,27 @@
         "logout": "Déconnexion",
         "switchLanguage": "Passer en Français",
         "floatingCalculator": "Calculatrice",
+        "reset": {
+            "title": "Réinitialiser l'application",
+            "shortLabel": "Réinitialiser",
+            "desc": "Les étapes ci-dessous purgent uniquement l'état local du navigateur (caches, stockage, session navigateur) et rechargent l'application.",
+            "newVersionTitle": "Nouvelle version disponible",
+            "newVersionDesc": "Une nouvelle version de l'application est disponible :",
+            "keepData": "Vos données enregistrées sur le serveur ne seront pas supprimées (produits, commandes, devis, clients, utilisateurs, images).",
+            "cancel": "Annuler",
+            "disconnectWarning": "Attention : cette réinitialisation complète va vous déconnecter et vous rediriger vers la page de connexion.",
+            "confirmReset": "Réinitialiser",
+            "updateNow": "Mettre à jour maintenant",
+            "purging": "Purge en cours…",
+            "reloading": "Rechargement…",
+            "step": {
+                "caches": "Vider les caches navigateur",
+                "storage": "Vider le stockage local (localStorage / sessionStorage)",
+                "session": "Nettoyer la session navigateur",
+                "reload": "Recharger l'application",
+                "redirect": "Rediriger vers la page de connexion"
+            }
+        },
         "siteAccess": "Accéder au site",
         "boutique": "Boutique",
         "navOrders": "Commandes",

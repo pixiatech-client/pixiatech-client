@@ -59,6 +59,18 @@ export function isProductOutOfStockForSale(product: StockableProduct): boolean {
   return !isProductInStock(product.stock);
 }
 
+/**
+ * True si le produit est réservé à la location (availableFor contient 'rental'
+ * et pas 'sale') : il ne peut PAS être acheté directement, un passage par le
+ * formulaire de location (dates, contrat, vérification) est obligatoire.
+ */
+export function isRentalOnlyProduct(product: StockableProduct): boolean {
+  const avail: string[] = Array.isArray(product.availableFor)
+    ? product.availableFor.map((m) => String(m).toLowerCase().replace(/[\s_-]/g, ''))
+    : [];
+  return avail.includes('rental') && !avail.includes('sale');
+}
+
 /** Message d'erreur serveur si la vente directe du produit est bloquée (ou ''). */
 export function getSaleBlockReason(product: StockableProduct): string {
   return isProductOutOfStockForSale(product) ? 'Produit en rupture de stock' : '';

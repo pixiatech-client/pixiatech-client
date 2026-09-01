@@ -123,6 +123,7 @@ export function getProduct(id: string) {
 import { firestore } from '@/firebase/config';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { isProductOutOfStockForSale } from './product-status';
+import { normalizePrice } from './pricing-engine';
 
 async function fetchCharacteristicsMap(): Promise<Record<string, string>> {
   try {
@@ -168,16 +169,25 @@ const TYPE_LABELS: Record<string, string> = {
   vitrine: 'Semi-extérieur',
 };
 
+function resolveProductPrice(data: any): number {
+  const candidates = [data.price, data.salePricePerSqM, data.pricePerTile];
+  for (const c of candidates) {
+    const n = normalizePrice(c);
+    if (n > 0) return n;
+  }
+  return 0;
+}
+
 function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {}): Product {
   const data = docSnap.data();
   const name = data.name || docSnap.id;
   const image = data.image || data.imageUrl || null;
-  const price = typeof data.price === 'number' ? data.price : parseFloat(String(data.salePricePerSqM || data.price || 0));
+  const price = resolveProductPrice(data);
   return {
     id: docSnap.id,
     name,
-    price: price || 0,
-    oldPrice: data.oldPrice || undefined,
+    price,
+    oldPrice: (normalizePrice(data.oldPrice) > 0 ? normalizePrice(data.oldPrice) : undefined),
     rating: data.rating ?? 5.0,
     reviews: data.reviews ?? 0,
     category: data.category || TYPE_LABELS[data.type?.[0]] || 'Général',
@@ -193,7 +203,9 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     availableFor: normalizeAvailableFor(data.availableFor || data.mode || ['sale', 'rental']),
     specs: buildSpecs(data, charNameMap),
     badges: data.badges || [],
-    variants: data.variants || [],
+    variants: (data.variants || []).map((v: any) =>
+      (v?.price == null || v?.price === '') ? v : ({ ...v, price: normalizePrice(v.price) })
+    ),
     stock: data.stock ?? undefined,
     upsellFor: data.upsellFor || [],
     quoteOnly: !!data.quoteOnly || data.availableFor?.includes('sur-commande') || false,

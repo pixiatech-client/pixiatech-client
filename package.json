@@ -8,7 +8,8 @@
     "start": "npx next start",
     "lint": "npx next lint",
     "build:widget": "cd chatbot-widget && npm install && npx vite build && cd .. && node -e \"require('fs').copyFileSync('chatbot-widget/dist/widget.js','public/widget.js')\"",
-    "prebuild": "npm run build:widget"
+    "build:info": "node scripts/write-build-info.mjs",
+    "prebuild": "npm run build:info && npm run build:widget"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

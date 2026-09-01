@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { toast as sonnerToast } from 'sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -32,11 +32,12 @@ import {
   Mail,
   Store,
   CreditCard,
-  MoreHorizontal
+  MoreHorizontal,
 } from 'lucide-react';
 import Link from 'next/link';
 import { logout, getThemes, getSettings, saveSidebarConfig } from '@/app/admin/actions';
 import { Button } from '@/components/ui/button';
+import { AnimatedButton } from '@/components/ui/animated-button';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebase';
 import { canAccessRoute } from '@/lib/permissions';
@@ -52,6 +53,7 @@ import { NotificationBell } from './NotificationBell';
 import { SettingsContent } from '../settings/_components/settings-content';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FloatingCalculator } from './FloatingCalculator';
+import { ResetApplicationDialog } from './ResetApplicationDialog';
 
 const mapRoleToUserRoleEnum = (role: string | undefined): UserRoleEnum => {
   switch (role) {
@@ -236,6 +238,72 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
 
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetMode, setResetMode] = useState<'manual' | 'version'>('manual');
+  const [currentVersion, setCurrentVersion] = useState<string>();
+  const [newVersion, setNewVersion] = useState<string>();
+  const [newSignature, setNewSignature] = useState<string>();
+  const versionCheckedRef = useRef(false);
+
+  const openManualReset = () => {
+    setResetMode('manual');
+    setResetDialogOpen(true);
+  };
+
+  // Détection automatique de nouvelle version (chargement + intervalle raisonnable).
+  // Non destructif : on signale simplement la présence d'une mise à jour.
+  useEffect(() => {
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const checkVersion = async () => {
+      try {
+        const res = await fetch('/api/app/version', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (disposed) return;
+        const nextVersion = `${data.version}`;
+        const sig = `${data.signature}`;
+        const prevSig = localStorage.getItem('app-build-signature');
+        const prevVersion = localStorage.getItem('app-build-version');
+
+        // Une fois qu'une mise à jour a été signalée dans cette session, on ne
+        // touche plus à la signature stockée et on cesse de poller : évite la
+        // race où l'intervalle 60 s réécrirait `app-build-signature` pendant
+        // que l'utilisateur décide/valide, ce qui clobberait targetSignature
+        // et relancerait une fausse alerte au rechargement.
+        if (versionCheckedRef.current) return;
+
+        if (prevSig && prevSig !== sig) {
+          // Nouvelle version déployée : signaler (non destructif) et stopper le polling.
+          versionCheckedRef.current = true;
+          if (timer) clearInterval(timer);
+          setCurrentVersion(prevVersion || nextVersion);
+          setNewVersion(nextVersion);
+          setNewSignature(sig);
+          setResetMode('version');
+          setResetDialogOpen(true);
+          return;
+        }
+
+        // Version courante / identique : on mémorise la signature installée.
+        localStorage.setItem('app-build-signature', sig);
+        localStorage.setItem('app-build-version', nextVersion);
+        setCurrentVersion(nextVersion);
+      } catch {
+        /* réseau indisponible : on retentera au prochain intervalle */
+      }
+    };
+
+    checkVersion();
+    timer = setInterval(checkVersion, 60000);
+    return () => {
+      disposed = true;
+      if (timer) clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const handleLogout = async () => {
     await logout();
@@ -349,7 +417,18 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
 
             <div className="flex items-center justify-end gap-3">
 
-              {/* ── 1. Calculatrice flottante ── */}
+              {/* 0. Réinitialiser / Mettre à jour l'application */}
+              <AnimatedButton
+                variant="ghost"
+                onClick={openManualReset}
+                title={t('admin.reset.title')}
+                aria-label={t('admin.reset.title')}
+                className="hidden md:inline-flex"
+              >
+                {t('admin.reset.shortLabel')}
+              </AnimatedButton>
+
+              {/* 1. Calculatrice flottante */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -532,6 +611,16 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
       <FloatingCalculator
         isOpen={isCalculatorOpen}
         onClose={() => setIsCalculatorOpen(false)}
+      />
+
+      {/* ── Réinitialisation / mise à jour de l'application ── */}
+      <ResetApplicationDialog
+        open={resetDialogOpen}
+        onOpenChange={setResetDialogOpen}
+        mode={resetMode}
+        currentVersion={currentVersion}
+        newVersion={newVersion}
+        targetSignature={newSignature}
       />
 
       <AnimatePresence>

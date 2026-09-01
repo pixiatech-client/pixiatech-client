@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProducts, getModeBadge } from '@/lib/boutique-data';
-import { isProductOutOfStockForSale } from '@/lib/product-status';
+import { isProductOutOfStockForSale, isRentalOnlyProduct } from '@/lib/product-status';
 import type { Product } from '@/lib/boutique-data';
 import { PriceDisplay, ActionButton } from '@/components/boutique/ProductActionButton';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -363,6 +363,13 @@ export default function BoutiquePage() {
     if (evt) evt.stopPropagation();
     if (isProductOutOfStockForSale(p)) {
       toast.error(t('boutique.outOfStock'));
+      return;
+    }
+    // Produit réservé à la location : jamais d'ajout direct type 'purchase'.
+    // On ouvre la fiche produit où le formulaire de location est obligatoire.
+    if (isRentalOnlyProduct(p)) {
+      if (evt) evt.preventDefault();
+      router.push(`/boutique/produit/${p.id}`);
       return;
     }
     addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' });
