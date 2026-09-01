@@ -71,6 +71,24 @@ export function isRentalOnlyProduct(product: StockableProduct): boolean {
   return avail.includes('rental') && !avail.includes('sale');
 }
 
+export interface AvailabilityProduct extends StockableProduct {
+  quoteOnly?: unknown;
+}
+
+/**
+ * True si le produit est "sur commande" / sur devis (pas de vente directe) :
+ * le bouton n'ajoute rien au panier, il ouvre la fiche produit (Plus d'infos).
+ */
+export function isQuoteOnlyProduct(product: AvailabilityProduct): boolean {
+  const avail: string[] = Array.isArray(product.availableFor)
+    ? product.availableFor.map((m) => String(m).toLowerCase().replace(/[\s_-]/g, ''))
+    : [];
+  if (avail.includes('surcommande') || avail.includes('quoterequest') || avail.includes('quoteonly')) {
+    return true;
+  }
+  return product.quoteOnly === true;
+}
+
 /** Message d'erreur serveur si la vente directe du produit est bloquée (ou ''). */
 export function getSaleBlockReason(product: StockableProduct): string {
   return isProductOutOfStockForSale(product) ? 'Produit en rupture de stock' : '';

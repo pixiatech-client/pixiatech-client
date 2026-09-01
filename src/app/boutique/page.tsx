@@ -7,9 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProducts, getModeBadge } from '@/lib/boutique-data';
-import { isProductOutOfStockForSale, isRentalOnlyProduct } from '@/lib/product-status';
+import { isProductOutOfStockForSale, isRentalOnlyProduct, isQuoteOnlyProduct } from '@/lib/product-status';
 import type { Product } from '@/lib/boutique-data';
-import { PriceDisplay, ActionButton } from '@/components/boutique/ProductActionButton';
+import { PriceDisplay, ActionButton, isProductMoreInfo } from '@/components/boutique/ProductActionButton';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useI18n } from '@/lib/i18n';
 import { calculatePromotionPercent } from '@/lib/pricing-engine';
@@ -728,7 +728,7 @@ export default function BoutiquePage() {
                         </>
                       )}
                     </div>
-                    {!(product.price > 0) && (product.priceDisplay === 'multiprice' || product.priceDisplay === 'quote') ? (
+                    {isRentalOnlyProduct(product) || isQuoteOnlyProduct(product) || isProductMoreInfo(product) ? (
                       <ActionButton product={product} onAddToCart={() => handleQuickAdd(product)} />
                     ) : (
                       <button

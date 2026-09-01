@@ -1,10 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, CalendarDays } from 'lucide-react';
 import { formatPrice } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
-import { isProductOutOfStockForSale, isRentalOnlyProduct } from '@/lib/product-status';
+import { isProductOutOfStockForSale, isRentalOnlyProduct, isQuoteOnlyProduct } from '@/lib/product-status';
 
 export function formatProductPriceLabel(product: Product): string {
   if (product.priceDisplay === 'free') return 'Gratuit';
@@ -24,7 +24,7 @@ export function PriceDisplay({ product, className }: { product: Product; classNa
 export function ActionButton({ product, onAddToCart }: { product: Product; onAddToCart: () => void }) {
   const router = useRouter();
 
-  if (isProductMoreInfo(product)) {
+  if (isQuoteOnlyProduct(product) || isProductMoreInfo(product)) {
     return (
       <button
         onClick={(e) => {
@@ -40,9 +40,9 @@ export function ActionButton({ product, onAddToCart }: { product: Product; onAdd
     );
   }
 
-  // Produit réservé à la location : "Ajouter" ne doit PAS pousser un item
-  // d'achat dans le panier, il ouvre la fiche produit où le formulaire de
-  // location (dates, contrat, signature) est obligatoire.
+  // Produit réservé à la location : "Louer" ne pousse PAS d'item d'achat dans
+  // le panier, il ouvre la fiche produit où le formulaire de location (dates,
+  // contrat, signature) est obligatoire.
   if (isRentalOnlyProduct(product)) {
     return (
       <button
@@ -54,8 +54,8 @@ export function ActionButton({ product, onAddToCart }: { product: Product; onAdd
         type="button"
         className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer w-full md:w-auto"
       >
-        <ShoppingBag size={14} />
-        Ajouter
+        <CalendarDays size={14} />
+        Louer
       </button>
     );
   }
