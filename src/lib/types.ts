@@ -194,8 +194,6 @@ export type Settings = {
   zoomMaxDistance?: number;
   zoomMinDistance?: number;
   hintBubble?: HintBubbleSettings;
-  lightThemeId?: string;
-  darkThemeId?: string;
   sidebarOrder?: string[];
   logoConfig?: {
     text: string;
@@ -372,28 +370,6 @@ export type UserRole = {
   customPermissions?: Record<string, boolean>;
 };
 
-export type ThemeSettings = {
-  cardBg: string;
-  cardBorder: string;
-  cardText: string;
-  btnPrimaryBg: string;
-  btnPrimaryText: string;
-  btnPrimaryHover: string;
-  btnSecondaryBg: string;
-  btnSecondaryText: string;
-  btnSecondaryHover: string;
-  accentPrimary: string;
-  pageBg: string;
-  navBg: string;
-  navText: string;
-  sidebarBg: string;
-  sidebarText: string;
-  sidebarBorder: string;
-  sidebarAccent: string;
-  sidebarActiveBg: string;
-  sidebarActiveText: string;
-};
-
 export type UserProfile = {
   uid: string;
   email: string;
@@ -410,7 +386,6 @@ export type UserProfile = {
   activeSessionId?: string;
   lastLoginAt?: any;
   lastLoginIp?: string;
-  themeSettings?: ThemeSettings;
 };
 
 export type NotificationFirestore = {

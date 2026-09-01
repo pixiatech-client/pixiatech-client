@@ -6,7 +6,8 @@ import { cookies } from 'next/headers';
 import './globals.css';
 import { LayoutProvider } from '@/components/layout-provider';
 import { I18nProvider } from '@/lib/i18n';
-import { getSettings } from '@/app/actions/public-actions';
+import { getSettings, getActiveGlobalTheme } from '@/app/actions/public-actions';
+import { resolveTheme, buildThemeCss } from '@/lib/theme-utils';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -52,18 +53,30 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const locale = cookieStore.get('admin-locale')?.value === 'en' ? 'en' : 'fr';
 
-  const settings = await getSettings();
+  const [settings, activeThemeResult] = await Promise.all([getSettings(), getActiveGlobalTheme()]);
+  const globalTheme = resolveTheme(activeThemeResult.themeId);
+  const themeCss = buildThemeCss(globalTheme);
+  const isDark = globalTheme.mode === 'dark';
   const boutiqueB2B = settings.estimationFlow?.boutiqueB2B ?? false;
   const boutiqueEnabled = settings.isBoutiqueEnabled !== false;
 
   return (
-    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
-      <body className={`${inter.variable} ${orbitron.variable} font-body antialiased min-h-[100dvh]`} suppressHydrationWarning>
+    <html lang="en" className={`scroll-smooth${isDark ? ' dark' : ''}`} suppressHydrationWarning>
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: themeCss }} />
+      </head>
+      <body className={`${inter.variable} ${orbitron.variable} font-body antialiased min-h-[100dvh]${isDark ? ' dark-theme' : ' light-theme'}`} suppressHydrationWarning>
         <div className="flare cyan" aria-hidden="true" />
         <div className="flare magenta" aria-hidden="true" />
         <div className="directional-flare" aria-hidden="true" suppressHydrationWarning />
         <I18nProvider initialLocale={locale}>
-          <LayoutProvider initialBoutiqueB2B={boutiqueB2B} initialBoutiqueEnabled={boutiqueEnabled}>{children}</LayoutProvider>
+          <LayoutProvider
+            initialBoutiqueB2B={boutiqueB2B}
+            initialBoutiqueEnabled={boutiqueEnabled}
+            initialThemeName={globalTheme.name}
+          >
+            {children}
+          </LayoutProvider>
         </I18nProvider>
         <Script id="directional-flare" strategy="afterInteractive"
           dangerouslySetInnerHTML={{

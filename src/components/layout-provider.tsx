@@ -27,7 +27,7 @@ function useProtectMedia() {
   }, []);
 }
 
-import { DynamicThemeProvider } from '@/contexts/DynamicThemeContext';
+import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { CartProvider } from '@/contexts/CartContext';
 import { ProfileProvider } from '@/contexts/ProfileContext';
 
@@ -35,10 +35,12 @@ export function LayoutProvider({
   children,
   initialBoutiqueB2B = false,
   initialBoutiqueEnabled = true,
+  initialThemeName,
 }: Readonly<{
   children: React.ReactNode;
   initialBoutiqueB2B?: boolean;
   initialBoutiqueEnabled?: boolean;
+  initialThemeName?: string;
 }>) {
   const pathname = usePathname();
   const router = useRouter();
@@ -90,7 +92,7 @@ export function LayoutProvider({
   return (
     <FirebaseClientProvider>
       <RoleProvider>
-        <DynamicThemeProvider>
+        <ThemeProvider initialThemeName={initialThemeName}>
           <ProfileProvider initialBoutiqueB2B={initialBoutiqueB2B}>
           <CartProvider>
           <div className="flex flex-col bg-background min-h-dvh">
@@ -125,7 +127,7 @@ export function LayoutProvider({
           </div>
           </CartProvider>
           </ProfileProvider>
-        </DynamicThemeProvider>
+        </ThemeProvider>
         <ShadcnToaster />
         <SonnerToaster 
           position="bottom-right" 

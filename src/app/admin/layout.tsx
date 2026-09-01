@@ -6,7 +6,6 @@ import { AdminLayoutContent } from './_components/admin-layout-content';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition, useCallback } from 'react';
 import { getSessionUid, clearSession, verifySession } from './actions';
-import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { signOut, getAuth } from 'firebase/auth';
 import { SessionKickedModal } from '@/components/ui/SessionKickedModal';
 import { NetworkErrorModal } from '@/components/ui/NetworkErrorModal';
@@ -293,10 +292,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeProvider>
-      <AdminContent>
-        {children}
-      </AdminContent>
-    </ThemeProvider>
+    <AdminContent>
+      {children}
+    </AdminContent>
   );
 }

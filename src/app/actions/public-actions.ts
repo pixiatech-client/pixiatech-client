@@ -29,6 +29,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import type { DocumentSnapshot, Query } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { normalizePrice, computeDeliveryCost, computeLaborCost } from '@/lib/pricing-engine';
+import { DEFAULT_PALETTES } from '@/lib/color-palettes';
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, Locations, WizardSettings, PriceSnapshot } from '@/lib/types';
 import { checkQuoteCapability } from '@/lib/capability';
 
@@ -43,9 +44,15 @@ const ACTIVE_THEME_DOC_ID = 'global';
 // --- In-memory TTL caches (shared across calls within the same server process) ---
 let _settingsCache: { data: Settings; timestamp: number } | null = null;
 const SETTINGS_CACHE_TTL_MS = 60_000; // 60 seconds
+let _activeThemeCache: { themeId: string; timestamp: number } | null = null;
+const THEME_CACHE_TTL_MS = 60_000; // 60 seconds
 
 export async function clearSettingsCache(): Promise<void> {
   _settingsCache = null;
+}
+
+export async function clearThemeCache(): Promise<void> {
+  _activeThemeCache = null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -97,8 +104,6 @@ export async function getSettings(): Promise<Settings> {
       mobileRight: 8,
       duration: 0
     },
-    lightThemeId: '',
-    darkThemeId: '',
     estimationFlow: {
       enableRentalPeriod: true,
       enableDigitalSignature: true,
@@ -444,15 +449,19 @@ export async function getWizardSettings(): Promise<WizardSettings> {
 
 export async function getActiveGlobalTheme(): Promise<{ themeId: string }> {
   const { adminDb } = getFirebaseAdmin();
+  const defaultName = DEFAULT_PALETTES.find(p => p.isDefault)?.name || DEFAULT_PALETTES[0].name;
   try {
+    if (_activeThemeCache && Date.now() - _activeThemeCache.timestamp < THEME_CACHE_TTL_MS) {
+      return { themeId: _activeThemeCache.themeId };
+    }
     const doc = await adminDb.collection('settings').doc(ACTIVE_THEME_DOC_ID).get();
     const data = doc.data();
-    const palettes = (await import('@/lib/color-palettes')).DEFAULT_PALETTES;
-    const defaultName = palettes.find(p => p.isDefault)?.name || palettes[0].name;
-    return { themeId: data?.activeThemeId || defaultName };
+    const themeId = data?.activeThemeId || defaultName;
+    _activeThemeCache = { themeId, timestamp: Date.now() };
+    return { themeId };
   } catch (error) {
     console.error("Error fetching active theme:", error);
-    return { themeId: 'Nuage' };
+    return { themeId: defaultName };
   }
 }
 

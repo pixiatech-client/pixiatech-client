@@ -35,13 +35,13 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import Link from 'next/link';
-import { logout, getThemes, getSettings, saveSidebarConfig } from '@/app/admin/actions';
+import { logout, getSettings, saveSidebarConfig } from '@/app/admin/actions';
 import { Button } from '@/components/ui/button';
 import { AnimatedButton } from '@/components/ui/animated-button';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebase';
 import { canAccessRoute } from '@/lib/permissions';
-import type { Theme, Settings as AppSettings, UserProfile, UserRole } from '@/lib/types';
+import type { Settings as AppSettings, UserProfile, UserRole } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/lib/i18n';
 import { getAvatarUrl } from '@/lib/avatar';
@@ -312,7 +312,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   const isExpanded = sidebarState === 'expanded';
 
   return (
-    <div id="admin-root" className="relative flex min-h-screen lg:h-dvh lg:overflow-hidden w-full text-theme-text bg-theme-app">
+    <div id="admin-root" className="relative flex min-h-dvh lg:h-dvh lg:overflow-hidden w-full text-theme-text bg-theme-app">
       {/* Mobile Overlay */}
       <AnimatePresence>
         {sidebarState !== 'hidden' && (
@@ -830,7 +830,6 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
   const { t } = useI18n();
 
   const [settings, setSettings] = useState<AppSettings | null>(null);
-  const [themes, setThemes] = useState<Theme[]>([]);
   const [localLoading, setLocalLoading] = useState(true);
   const [activeSettingsSection, setActiveSettingsSection] = useState<SettingsSection>('general');
   const isSettingsPage = pathname.startsWith('/admin/settings');
@@ -841,7 +840,7 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
     setActiveSettingsSection(section);
   };
 
-  // Timeout fallback - if loading takes more than 15s, display the content anyway
+  // Timeout fallback - if loading takes more than 5s, display the content anyway
   const [forceLoaded, setForceLoaded] = useState(false);
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -849,7 +848,7 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
         console.warn('Loading timeout - forcing content display');
         setForceLoaded(true);
       }
-    }, 15000);
+    }, 5000);
     return () => clearTimeout(timer);
   }, [localLoading, authLoading]);
 
@@ -879,11 +878,12 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
   const { data: roles } = useCollection<UserRole>(rolesQuery, { suppressPermissionError: true });
 
   const fetchData = useCallback(async () => {
-    if (!settings || themes.length === 0) {
+    // Settings feed the sidebar/header; themes are no longer required to display
+    // the layout — they load lazily inside the theme selector.
+    if (!settings) {
       setLocalLoading(true);
       try {
-        const [fetchedThemes, fetchedSettings] = await Promise.all([getThemes(), getSettings()]);
-        setThemes(fetchedThemes);
+        const fetchedSettings = await getSettings();
         setSettings(fetchedSettings);
       } catch (error) {
         toast({ variant: 'destructive', title: t('Error'), description: t('Unable to load initial data.') });
@@ -891,7 +891,7 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
         setLocalLoading(false);
       }
     }
-  }, [settings, themes.length, toast]);
+  }, [settings, toast]);
 
   useEffect(() => {
     fetchData();

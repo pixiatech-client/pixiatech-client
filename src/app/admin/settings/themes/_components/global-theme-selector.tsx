@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { DEFAULT_PALETTES } from '@/lib/color-palettes';
 import { useTheme } from '@/contexts/ThemeProvider';
 import { useAdminT } from '@/hooks/useAdminT';
+import { reinitializePalettes } from '@/app/admin/actions';
+import { toast } from 'sonner';
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -36,6 +38,7 @@ const SWATCH_KEYS: Array<{ key: keyof PaletteColors; label: string }> = [
 
 const OVERRIDES_KEY = 'theme-color-overrides';
 const CUSTOM_THEMES_KEY = 'theme-custom-list';
+const REMOVED_THEME_NAMES = ['Nuage', 'Noir et Or', 'Émeraude', 'SaaS', 'Nord', 'SaaS Sombre', 'Cyberpunk', 'Terre Cuite', 'Vitalité', 'PHOCEA RENT'];
 
 // ─── Color Utilities ─────────────────────────────────────────────────────────
 
@@ -491,10 +494,21 @@ export function GlobalThemeSelector() {
   const [customThemes, setCustomThemes] = useState<CustomTheme[]>([]);
   const [saveModal, setSaveModal] = useState<{ open: boolean; palette: (Palette & { isCustom?: boolean }) | null }>({ open: false, palette: null });
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string; name: string }>({ open: false, id: '', name: '' });
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
-    setOverrides(loadOverrides());
-    setCustomThemes(loadCustomThemes());
+    const customs = loadCustomThemes().filter(t => !REMOVED_THEME_NAMES.includes(t.name));
+    const overridesRaw = loadOverrides();
+    const keptIds = new Set(customs.filter(t => t.id).map(t => t.id as string));
+    const keptNames = new Set(DEFAULT_PALETTES.map(p => p.name));
+    const sanitized: Record<string, Record<string, string>> = {};
+    for (const key of Object.keys(overridesRaw)) {
+      if (keptNames.has(key) || keptIds.has(key)) sanitized[key] = overridesRaw[key];
+    }
+    if (customs.length !== loadCustomThemes().length) saveCustomThemes(customs);
+    if (Object.keys(sanitized).length !== Object.keys(overridesRaw).length) saveOverrides(sanitized);
+    setOverrides(sanitized);
+    setCustomThemes(customs);
   }, []);
 
   const getColor = useCallback((palette: Palette & { id?: string }, key: string) => {
@@ -509,6 +523,36 @@ export function GlobalThemeSelector() {
   }, [overrides]);
 
   const handleSelect = async (name: string) => setTheme(name);
+
+  const handleResetAll = async () => {
+    let res;
+    try {
+      res = await reinitializePalettes();
+    } catch (e) {
+      console.error('Erreur reinitializePalettes:', e);
+      toast.error(t('Failed to restore themes'));
+      setConfirmReset(false);
+      return;
+    }
+    if (!res.success) {
+      toast.error(t('Failed to restore themes'));
+      setConfirmReset(false);
+      return;
+    }
+    const defaultTheme = DEFAULT_PALETTES.find(p => p.isDefault)?.name ?? DEFAULT_PALETTES[0].name;
+    let persisted = false;
+    try {
+      persisted = await setTheme(defaultTheme);
+    } catch (e) {
+      console.error('Erreur setTheme:', e);
+    }
+    if (persisted) {
+      toast.success(t('Themes restored to defaults'));
+    } else {
+      toast.error(t('Failed to restore themes'));
+    }
+    setConfirmReset(false);
+  };
 
   const handleColorChange = useCallback((palette: Palette & { id?: string }, key: string, hsl: string) => {
     const paletteKey = (palette as CustomTheme).id ?? palette.name;
@@ -587,6 +631,13 @@ export function GlobalThemeSelector() {
         </p>
         <button
           type="button"
+          onClick={() => setConfirmReset(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors"
+        >
+          <RotateCcw className="w-4 h-4" /> {t('Restore defaults')}
+        </button>
+        <button
+          type="button"
           onClick={e => { e.stopPropagation(); setSaveModal({ open: true, palette: null }); }}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black text-white text-sm font-semibold hover:bg-slate-800 transition-colors shadow-sm"
         >
@@ -661,6 +712,24 @@ export function GlobalThemeSelector() {
           onConfirm={() => handleDelete(deleteConfirm.id)}
           onClose={() => setDeleteConfirm({ open: false, id: '', name: '' })}
         />
+      )}
+
+      {/* Reset all confirm */}
+      {confirmReset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setConfirmReset(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-bold text-slate-900 mb-2">{t('Restore default themes?')}</h3>
+            <p className="text-sm text-slate-500 mb-5">{t('This will overwrite the saved theme list and apply the default theme.')}</p>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setConfirmReset(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                {t('Cancel')}
+              </button>
+              <button type="button" onClick={handleResetAll} className="px-4 py-2 rounded-xl bg-black text-white text-sm font-semibold hover:bg-slate-800">
+                {t('Restore')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

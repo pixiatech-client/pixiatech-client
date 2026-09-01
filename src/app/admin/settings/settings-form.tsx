@@ -71,8 +71,6 @@ const settingsSchema = z.object({
   isBoutiqueEnabled: z.boolean().optional(),
 
   hintBubble: hintBubbleSchema.optional(),
-  lightThemeId: z.string().optional(),
-  darkThemeId: z.string().optional(),
   messaging: z.object({
     enabled: z.boolean(),
     allowCommercialMessaging: z.boolean(),
@@ -163,7 +161,7 @@ export function SettingsForm({ initialSettings, section }: SettingsFormProps) {
       images: ['previewScreenImageUrl', 'previewScreenVideoUrl', 'previewScreenFallbackImageUrl', 'previewScreenHomeFallbackImageUrl'],
       content: ['congratulationsTitle', 'congratulationsMessage', 'deliveryTitle', 'deliveryMessage', 'installationTitle', 'installationMessage', 'disclaimerMessage', 'quoteFormNotesPlaceholder', 'isDeliveryStepEnabled', 'isInstallationStepEnabled'],
       messaging: ['messaging'],
-      software: ['hintBubble', 'lightThemeId', 'darkThemeId'],
+      software: ['hintBubble'],
       'email-verification': ['emailVerification'],
       flow: ['estimationFlow'],
     };

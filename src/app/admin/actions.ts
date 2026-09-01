@@ -17,7 +17,7 @@ import { buildSupplierEmailHtml } from '@/lib/email-templates';
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry, Dispute, PriceSnapshot } from '@/lib/types';
 import { normalizePrice, computeDeliveryCost, computeLaborCost } from '@/lib/pricing-engine';
 import { normalizeSearchText } from '@/lib/utils';
-import { clearSettingsCache } from '@/app/actions/public-actions';
+import { clearSettingsCache, clearThemeCache } from '@/app/actions/public-actions';
 
 export interface ResellerLead {
   id: string;
@@ -100,6 +100,8 @@ const SINGLE_SESSION_CACHE_TTL_MS = 30_000; // 30 seconds
 
 let _themesCache: { data: Theme[]; timestamp: number } | null = null;
 const THEMES_CACHE_TTL_MS = 120_000; // 2 minutes
+let _activeThemeCache: { themeId: string; timestamp: number } | null = null;
+const THEME_CACHE_TTL_MS = 60_000; // 60 seconds
 
 // --- Session Actions ---
 
@@ -686,7 +688,6 @@ const updateUserSchema = z.object({
   role: z.string().optional(),
   roleTemplate: z.string().optional(),
   status: z.enum(['pending', 'approved', 'suspended']).optional(),
-  themeSettings: z.any().optional(),
 });
 
 export async function updateUser(data: unknown) {
@@ -731,7 +732,7 @@ export async function updateUser(data: unknown) {
       if (uid !== verifiedUid) {
         return { success: false, error: 'Access denied. Cannot modify another user.' };
       }
-      const SAFE_FIELDS = ['themeSettings', 'displayName', 'phone', 'photoURL', 'description', 'backgroundImage'];
+      const SAFE_FIELDS = ['displayName', 'phone', 'photoURL', 'description', 'backgroundImage'];
       const blockedFields = Object.keys(updateData).filter(
         k => updateData[k as keyof typeof updateData] !== undefined && !SAFE_FIELDS.includes(k)
       );
@@ -3087,8 +3088,6 @@ const settingsSchema = z.object({
   isManualConfigEnabled: z.boolean().optional(),
   isBoutiqueEnabled: z.boolean().optional(),
   hintBubble: hintBubbleSchema.optional(),
-  lightThemeId: z.string().optional(),
-  darkThemeId: z.string().optional(),
   sidebarOrder: z.array(z.string()).optional(),
   logoConfig: z.object({
     text: z.string(),
@@ -3214,8 +3213,6 @@ export async function getSettings(): Promise<Settings> {
       mobileRight: 8,
       duration: 0
     },
-    lightThemeId: '',
-    darkThemeId: '',
     estimationFlow: {
       enableRentalPeriod: true,
       enableDigitalSignature: true,
@@ -3550,9 +3547,9 @@ export async function getThemes(): Promise<Theme[]> {
 }
 
 export async function saveTheme(theme: Partial<Omit<Theme, 'createdAt'>> & { name: string; colors: Theme['colors']; }) {
-  await requireAdminFresh();
   const { adminDb, FieldValue } = getFirebaseAdmin();
   try {
+    await requireAdminFresh();
     let docRef;
     if (theme.id) {
       docRef = adminDb.collection('themes').doc(theme.id);
@@ -3590,9 +3587,9 @@ export async function saveTheme(theme: Partial<Omit<Theme, 'createdAt'>> & { nam
 
 
 export async function deleteTheme(themeId: string) {
-  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   try {
+    await requireAdminFresh();
     await adminDb.collection('themes').doc(themeId).delete();
     _themesCache = null;
     return { success: true };
@@ -3603,9 +3600,9 @@ export async function deleteTheme(themeId: string) {
 }
 
 export async function reinitializePalettes() {
-  await requireAdminFresh();
   const { adminDb, FieldValue } = getFirebaseAdmin();
   try {
+    await requireAdminFresh();
     const existing = await adminDb.collection('themes').get();
     const batch = adminDb.batch();
     existing.docs.forEach(doc => batch.delete(doc.ref));
@@ -3630,23 +3627,30 @@ const ACTIVE_THEME_DOC_ID = 'global';
 
 export async function getActiveGlobalTheme(): Promise<{ themeId: string }> {
   const { adminDb } = getFirebaseAdmin();
+  const defaultName = DEFAULT_PALETTES.find(p => p.isDefault)?.name || DEFAULT_PALETTES[0].name;
   try {
+    if (_activeThemeCache && Date.now() - _activeThemeCache.timestamp < THEME_CACHE_TTL_MS) {
+      return { themeId: _activeThemeCache.themeId };
+    }
     const doc = await adminDb.collection('settings').doc(ACTIVE_THEME_DOC_ID).get();
     const data = doc.data();
-    const palettes = (await import('@/lib/color-palettes')).DEFAULT_PALETTES;
-    const defaultName = palettes.find(p => p.isDefault)?.name || palettes[0].name;
-    return { themeId: data?.activeThemeId || defaultName };
+    const themeId = data?.activeThemeId || defaultName;
+    _activeThemeCache = { themeId, timestamp: Date.now() };
+    return { themeId };
   } catch (error) {
     console.error("Error fetching active theme:", error);
-    return { themeId: 'Nuage' };
+    return { themeId: defaultName };
   }
 }
 
 export async function setActiveGlobalTheme(themeId: string) {
-  await requireAdminFresh();
   const { adminDb } = getFirebaseAdmin();
   try {
+    await requireAdminFresh();
     await adminDb.collection('settings').doc(ACTIVE_THEME_DOC_ID).set({ activeThemeId: themeId }, { merge: true });
+    _activeThemeCache = null;
+    await clearThemeCache();
+    await clearSettingsCache();
     revalidatePath('/', 'layout');
     return { success: true };
   } catch (error) {

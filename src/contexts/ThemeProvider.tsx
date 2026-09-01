@@ -1,87 +1,84 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { DEFAULT_PALETTES } from '@/lib/color-palettes';
 import { getActiveGlobalTheme, setActiveGlobalTheme } from '@/app/admin/actions';
+import { resolveTheme, computeThemeVars, THEME_TRANSITION } from '@/lib/theme-utils';
 
 interface ThemeContextType {
   activeTheme: (typeof DEFAULT_PALETTES)[number] & { id?: string; isCustom?: boolean } | null;
-  setTheme: (themeName: string) => Promise<void>;
+  setTheme: (themeName: string) => Promise<boolean>;
   isDark: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   activeTheme: null,
-  setTheme: async () => {},
+  setTheme: async () => true,
   isDark: false,
 });
 
-const THEME_TRANSITION = 'background-color 400ms ease-out, color 400ms ease-out, border-color 400ms ease-out, box-shadow 400ms ease-out';
+const CUSTOM_THEMES_KEY = 'theme-custom-list';
+const OVERRIDES_KEY = 'theme-color-overrides';
+const REMOVED_THEME_NAMES = ['Nuage', 'Noir et Or', 'Émeraude', 'SaaS', 'Nord', 'SaaS Sombre', 'Cyberpunk', 'Terre Cuite', 'Vitalité', 'PHOCEA RENT'];
 
-const CSS_VAR_MAP: Record<string, string> = {
-  adminBackground: '--admin-bg',
-  background: '--background',
-  foreground: '--foreground',
-  primary: '--primary',
-  primaryForeground: '--primary-foreground',
-  secondary: '--secondary',
-  secondaryForeground: '--secondary-foreground',
-  accent: '--accent',
-  accentForeground: '--accent-foreground',
-  muted: '--muted',
-  mutedForeground: '--muted-foreground',
-  card: '--card',
-  cardForeground: '--card-foreground',
-  cardBorder: '--card-border',
-  popover: '--popover',
-  popoverForeground: '--popover-foreground',
-  sidebarBg: '--sidebar-bg',
-  sidebarText: '--sidebar-text',
-  sidebarBorder: '--sidebar-border',
-  sidebarActiveBg: '--sidebar-active-bg',
-  sidebarActiveText: '--sidebar-active-text',
-  sidebarAccent: '--sidebar-accent',
-  navBg: '--nav-bg',
-  navText: '--nav-text',
-  btnPrimaryBg: '--btn-primary-bg',
-  btnPrimaryText: '--btn-primary-text',
-  btnPrimaryHover: '--btn-primary-hover',
-  btnSecondaryBg: '--btn-secondary-bg',
-  btnSecondaryText: '--btn-secondary-text',
-  btnSecondaryHover: '--btn-secondary-hover',
-  success: '--success',
-  warning: '--warning',
-  error: '--error',
-  info: '--info',
-  border: '--border',
-  input: '--input',
-  ring: '--ring',
-  shadowSm: '--shadow-sm',
-  shadowMd: '--shadow-md',
-  shadowLg: '--shadow-lg',
-  radiusSm: '--radius-sm',
-  radiusMd: '--radius-md',
-  radiusLg: '--radius-lg',
-};
+function readLocalOverrides(): Record<string, Record<string, string>> {
+  if (typeof window === 'undefined') return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(OVERRIDES_KEY) ?? '{}') ?? {};
+  } catch (e) {
+    return {};
+  }
+}
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+type LocalCustomTheme = (typeof DEFAULT_PALETTES)[number] & { id?: string; isCustom?: boolean };
+
+function readLocalCustomThemes(): LocalCustomTheme[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    return JSON.parse(window.localStorage.getItem(CUSTOM_THEMES_KEY) ?? '[]') ?? [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function purgeLocalStorage() {
+  if (typeof window === 'undefined') return;
+  const customThemes = readLocalCustomThemes();
+  const keptIds = new Set(customThemes.filter(t => t.id).map(t => t.id as string));
+  const keptNames = new Set(DEFAULT_PALETTES.map(p => p.name));
+
+  const overrides = readLocalOverrides();
+  const sanitized: Record<string, Record<string, string>> = {};
+  let overridesChanged = false;
+  for (const key of Object.keys(overrides)) {
+    if (keptNames.has(key) || keptIds.has(key)) {
+      sanitized[key] = overrides[key];
+    } else {
+      overridesChanged = true;
+    }
+  }
+  if (overridesChanged) {
+    try { window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify(sanitized)); } catch (e) {}
+  }
+
+  const filtered = customThemes.filter(t => !REMOVED_THEME_NAMES.includes(t.name));
+  if (filtered.length !== customThemes.length) {
+    try { window.localStorage.setItem(CUSTOM_THEMES_KEY, JSON.stringify(filtered)); } catch (e) {}
+  }
+}
+
+export function ThemeProvider({ children, initialThemeName }: { children: React.ReactNode; initialThemeName?: string }) {
   const [activeTheme, setActiveTheme] = useState<any | null>(null);
   const [isDark, setIsDark] = useState(false);
+  const hasInitializedRef = useRef(false);
 
-  const applyTheme = useCallback((theme: typeof DEFAULT_PALETTES[number], customOverrides?: Record<string, string>) => {
+  const applyTheme = useCallback((theme: (typeof DEFAULT_PALETTES)[number], overrides?: Record<string, string>) => {
     const root = document.documentElement;
 
-    // Save original state before modifying (for cleanup)
-    const originals = {
-      htmlClasses: root.className,
-      bodyClasses: document.body.className,
-      inlineStyles: root.getAttribute('style') || '',
-      darkClass: root.classList.contains('dark'),
-    };
-    (root as any).__themeOriginals = originals;
+    // Au premier paint le serveur a déjà appliqué le thème : on n'anime rien.
+    // Les transitions ne sont activées que pour les changements suivants.
+    root.style.transition = hasInitializedRef.current ? THEME_TRANSITION : 'none';
 
-    root.style.transition = THEME_TRANSITION;
-    
     if (theme.mode === 'dark') {
       root.classList.add('dark');
       document.body.classList.add('dark-theme');
@@ -92,44 +89,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       document.body.classList.remove('dark-theme');
     }
 
-    const colors = { ...theme.colors, ...customOverrides };
-
-    // Standard tailwind variables (space-separated HSL values)
-    Object.entries(colors).forEach(([key, value]) => {
-      const cssVar = CSS_VAR_MAP[key];
-      if (cssVar) {
-        root.style.setProperty(cssVar, value as string);
-      }
-    });
-
-    // Custom theme variables (fully resolved CSS values wrapped in hsl() for colors)
-    const themeVars: Record<string, string> = {
-      '--theme-page-bg': `hsl(${colors.adminBackground})`,
-      '--theme-app-bg': `hsl(${colors.adminBackground})`,
-      '--theme-card-bg': `hsl(${colors.card})`,
-      '--theme-card-border': `hsl(${colors.cardBorder})`,
-      '--theme-card-text': `hsl(${colors.cardForeground})`,
-      '--theme-hover-bg': `hsl(${colors.secondary})`,
-      '--theme-active-bg': `hsl(${colors.btnSecondaryHover})`,
-      '--theme-text-primary': `hsl(${colors.foreground})`,
-      '--theme-text-secondary': `hsl(${colors.mutedForeground})`,
-      '--theme-icon': `hsl(${colors.mutedForeground})`,
-      '--theme-sidebar-bg': `hsl(${colors.sidebarBg})`,
-      '--theme-sidebar-text': `hsl(${colors.sidebarText})`,
-      '--theme-sidebar-border': `hsl(${colors.sidebarBorder})`,
-      '--theme-sidebar-active-bg': `hsl(${colors.sidebarActiveBg})`,
-      '--theme-sidebar-active-text': `hsl(${colors.sidebarActiveText})`,
-      '--theme-btn-primary-bg': `hsl(${colors.btnPrimaryBg})`,
-      '--theme-btn-primary-text': `hsl(${colors.btnPrimaryText})`,
-      '--theme-btn-primary-hover': `hsl(${colors.btnPrimaryHover})`,
-      '--theme-btn-secondary-bg': `hsl(${colors.btnSecondaryBg})`,
-      '--theme-btn-secondary-text': `hsl(${colors.btnSecondaryText})`,
-      '--theme-btn-secondary-hover': `hsl(${colors.btnSecondaryHover})`,
-      '--theme-nav-bg': `hsl(${colors.navBg})`,
-      '--theme-nav-text': `hsl(${colors.navText})`,
-    };
-
-    Object.entries(themeVars).forEach(([varName, varValue]) => {
+    const colors = theme.colors;
+    Object.entries(computeThemeVars(colors, overrides)).forEach(([varName, varValue]) => {
       root.style.setProperty(varName, varValue);
     });
 
@@ -137,80 +98,57 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    async function load() {
-      const { themeId } = await getActiveGlobalTheme();
-      
-      let localCustomThemes: any[] = [];
-      let localOverrides: Record<string, Record<string, string>> = {};
-      try {
-        localCustomThemes = JSON.parse(localStorage.getItem('theme-custom-list') ?? '[]');
-      } catch (e) {}
-      try {
-        localOverrides = JSON.parse(localStorage.getItem('theme-color-overrides') ?? '{}');
-      } catch (e) {}
+    let cancelled = false;
 
-      const allPalettes = [...DEFAULT_PALETTES, ...localCustomThemes];
-      const found = allPalettes.find(t => t.name === themeId || (t.id && t.id === themeId)) || allPalettes.find(p => p.isDefault) || allPalettes[0];
-      
-      if (found) {
-        const paletteKey = found.id ?? found.name;
-        const activeOverrides = localOverrides[paletteKey] ?? {};
-        setActiveTheme(found);
-        applyTheme(found, activeOverrides);
+    async function load() {
+      purgeLocalStorage();
+      const customThemes = readLocalCustomThemes();
+      const allPalettes = [...DEFAULT_PALETTES, ...customThemes];
+
+      let themeId = initialThemeName;
+      if (!themeId) {
+        const res = await getActiveGlobalTheme();
+        if (cancelled) return;
+        themeId = res.themeId;
       }
+
+      const theme = resolveTheme(themeId, allPalettes);
+      if (!theme) return;
+      const overrides = readLocalOverrides()[theme.name];
+      hasInitializedRef.current = false;
+      applyTheme(theme, overrides);
+      hasInitializedRef.current = true;
+      setActiveTheme(theme);
     }
+
     load();
 
-    // Cleanup: restore original CSS variables and classes when leaving admin
     return () => {
-      const root = document.documentElement;
-      const originals = (root as any).__themeOriginals;
-      if (originals) {
-        root.className = originals.htmlClasses;
-        document.body.className = originals.bodyClasses;
-        root.setAttribute('style', originals.inlineStyles);
-        delete (root as any).__themeOriginals;
-      } else {
-        // Fallback: remove dark class and clear inline style overrides
-        root.classList.remove('dark');
-        document.body.classList.remove('dark-theme', 'light-theme');
-        // Remove only the CSS variables that ThemeProvider sets
-        Object.values(CSS_VAR_MAP).forEach(v => root.style.removeProperty(v));
-        [
-          '--theme-page-bg', '--theme-app-bg', '--theme-card-bg', '--theme-card-border',
-          '--theme-card-text', '--theme-hover-bg', '--theme-active-bg', '--theme-text-primary',
-          '--theme-text-secondary', '--theme-icon', '--theme-sidebar-bg', '--theme-sidebar-text',
-          '--theme-sidebar-border', '--theme-sidebar-active-bg', '--theme-sidebar-active-text',
-          '--theme-btn-primary-bg', '--theme-btn-primary-text', '--theme-btn-primary-hover',
-          '--theme-btn-secondary-bg', '--theme-btn-secondary-text', '--theme-btn-secondary-hover',
-          '--theme-nav-bg', '--theme-nav-text',
-        ].forEach(v => root.style.removeProperty(v));
-        root.style.removeProperty('transition');
-      }
+      cancelled = true;
     };
-  }, [applyTheme]);
+  }, [applyTheme, initialThemeName]);
 
-  const setTheme = useCallback(async (themeName: string) => {
-    let localCustomThemes: any[] = [];
-    let localOverrides: Record<string, Record<string, string>> = {};
-    try {
-      localCustomThemes = JSON.parse(localStorage.getItem('theme-custom-list') ?? '[]');
-    } catch (e) {}
-    try {
-      localOverrides = JSON.parse(localStorage.getItem('theme-color-overrides') ?? '{}');
-    } catch (e) {}
+  const setTheme = useCallback(
+    async (themeName: string) => {
+      const customThemes = readLocalCustomThemes();
+      const allPalettes = [...DEFAULT_PALETTES, ...customThemes];
+      const theme = resolveTheme(themeName, allPalettes);
+      if (!theme) return false;
 
-    const allPalettes = [...DEFAULT_PALETTES, ...localCustomThemes];
-    const theme = allPalettes.find(t => t.name === themeName || (t.id && t.id === themeName));
-    if (!theme) return;
-
-    const paletteKey = theme.id ?? theme.name;
-    const activeOverrides = localOverrides[paletteKey] ?? {};
-
-    setActiveTheme(theme);
-    applyTheme(theme, activeOverrides);
-    await setActiveGlobalTheme(themeName);
-  }, [applyTheme]);
+      const overrides = readLocalOverrides()[theme.name];
+      hasInitializedRef.current = true;
+      applyTheme(theme, overrides);
+      setActiveTheme(theme);
+      try {
+        const res = await setActiveGlobalTheme(themeName);
+        return res?.success === true;
+      } catch (e) {
+        console.error('Error persisting global theme:', e);
+        return false;
+      }
+    },
+    [applyTheme],
+  );
 
   return (
     <ThemeContext.Provider value={{ activeTheme, setTheme, isDark }}>

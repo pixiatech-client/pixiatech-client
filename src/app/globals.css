@@ -76,6 +76,14 @@
     --theme-btn-secondary-hover: #e2e8f0;
   }
 
+  /* Échelle : base racine à 87.5 % (≈14 px) pour un rendu équivalent à 100 % de
+     zoom sur écrans Windows à DPI élevé (2× Ctrl-). À tester — les composants à
+     px fixes (max-w-[1400px], w-[360px], text-[10px], rounded-[3rem]) ne doivent
+     pas casser. Retirer cette règle si un régression apparaît. */
+  html {
+    font-size: 87.5%;
+  }
+
    /* Admin specific overrides to respect dynamic theme */
    #admin-root .bg-white:not(.static-white) {
      background-color: var(--theme-card-bg) !important;

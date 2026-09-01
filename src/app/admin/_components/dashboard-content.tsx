@@ -3,15 +3,14 @@
 import { Dashboard } from './dashboard-new/Dashboard';
 import { FournisseurDashboard } from './dashboard-new/FournisseurDashboard';
 import { CommercialDashboard } from './dashboard-new/CommercialDashboard';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/contexts/ThemeProvider';
 import { useUser } from '@/firebase';
 import { getAvatarUrl } from '@/lib/avatar';
 
 export function DashboardContent() {
-  const { theme } = useTheme();
+  const { isDark } = useTheme();
   const { userProfile } = useUser();
-  const currentTheme = theme === 'dark' ? 'dark' : 'light';
-  const isDark = currentTheme === 'dark';
+  const currentTheme = isDark ? 'dark' : 'light';
 
   const roleName = userProfile?.role === 'admin' ? 'Administrateur'
     : userProfile?.role === 'fournisseur' ? 'Fournisseur'

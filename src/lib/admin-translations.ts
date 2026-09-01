@@ -941,6 +941,11 @@ const adminTranslations: Record<string, string> = {
   'Dark': 'Sombre',
   'Category': 'Catégorie',
   'Mode': 'Mode',
+  'Restore defaults': 'Restaurer les thèmes par défaut',
+  'Restore default themes?': 'Restaurer les thèmes par défaut ?',
+  'This will overwrite the saved theme list and apply the default theme.': 'Cela écrasera la liste des thèmes enregistrée et appliquera le thème par défaut.',
+  'Themes restored to defaults': 'Thèmes restaurés par défaut',
+  'Failed to restore themes': 'Échec de la restauration des thèmes',
 
   // Flow settings — screen configuration
   'Screen configuration': 'Configuration écrans',
