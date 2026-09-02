@@ -1,6 +1,6 @@
 {
   "name": "nextn",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "dev": "npm run build:info && npx next dev -p 3000 -H 0.0.0.0",
@@ -9,6 +9,7 @@
     "lint": "npx next lint",
     "build:widget": "cd chatbot-widget && npm install && npx vite build && cd .. && node -e \"require('fs').copyFileSync('chatbot-widget/dist/widget.js','public/widget.js')\"",
     "build:info": "node scripts/write-build-info.mjs",
+    "version:bump": "node scripts/bump-version.mjs",
     "test:version": "node --experimental-strip-types scripts/test-versioning.ts",
     "prebuild": "npm run build:info && npm run build:widget"
   },
