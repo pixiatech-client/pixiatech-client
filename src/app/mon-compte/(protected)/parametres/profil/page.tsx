@@ -29,7 +29,7 @@ export default async function EditProfilPage() {
   const customer = customerSnap.exists ? (customerSnap.data() as any) : {};
 
   return (
-    <div className="relative bg-[#f8f9fa] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="relative bg-[#F5F5F5] px-4 py-8 sm:px-6 lg:px-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.08),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(37,99,235,0.05),transparent_22%)]" />
       <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/5 blur-3xl" />
 

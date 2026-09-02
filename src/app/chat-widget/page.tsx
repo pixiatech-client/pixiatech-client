@@ -25,7 +25,7 @@ export default async function ChatWidgetPage(props: PageProps) {
   const allProducts: Product[] = productsResult.products;
 
   return (
-    <main className="w-full h-screen bg-[#f8f9fb] overflow-hidden flex flex-col">
+    <main className="w-full h-screen bg-[#F5F5F5] overflow-hidden flex flex-col">
       <ChatWidgetClient 
         settings={settings}
         deliverySettings={deliverySettings}

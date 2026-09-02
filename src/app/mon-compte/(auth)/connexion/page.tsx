@@ -229,7 +229,7 @@ export default function ConnexionPage() {
   const [activeTab, setActiveTab] = useState('magic-link');
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden bg-[#f8f9fa] px-4 py-8 sm:px-6 lg:px-8">
+    <div className="relative w-full min-h-screen overflow-hidden bg-[#F5F5F5] px-4 py-8 sm:px-6 lg:px-8">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.12),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(37,99,235,0.08),transparent_22%)]" />
       <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl" />
       <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-blue-300/10 blur-3xl" />

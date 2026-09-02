@@ -15,7 +15,7 @@ function SuccessContent() {
     };
 
     return (
-        <main className="min-h-screen bg-[#f8fafc]">
+        <main className="min-h-screen bg-[#F5F5F5]">
             <SuccessView 
                 quoteId={quoteId} 
                 onNewQuote={handleNewQuote} 

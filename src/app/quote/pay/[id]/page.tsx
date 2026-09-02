@@ -168,7 +168,7 @@ export default function QuotePayPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5] p-4">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
           <p className="text-sm font-medium text-gray-600">Chargement du devis...</p>
@@ -179,7 +179,7 @@ export default function QuotePayPage() {
 
   if (error || !quote) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5] p-4">
         <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8 text-center">
           <div className="w-16 h-16 rounded-2xl bg-red-100 flex items-center justify-center mx-auto mb-4">
             <ShoppingBag className="w-8 h-8 text-red-600" />
@@ -217,7 +217,7 @@ export default function QuotePayPage() {
     };
 
     return (
-      <div className="min-h-screen flex flex-col items-center bg-gray-50 relative">
+      <div className="min-h-screen flex flex-col items-center bg-[#F5F5F5] relative">
         <ConfettiEffect />
         <div className="w-full max-w-2xl mx-auto px-4 py-8">
           {/* Success header */}
@@ -314,7 +314,7 @@ export default function QuotePayPage() {
 
   return (
     <PayPalScriptProvider options={{ clientId: paypalClientId, currency: quote.currency || 'EUR', intent: 'capture' }}>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#F5F5F5]">
         <div className="max-w-5xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
             <button onClick={() => router.push('/boutique')}

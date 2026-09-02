@@ -46,7 +46,7 @@ function RespondContent() {
   }, [id, action, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5] p-4">
       <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
         {status === 'loading' && (
           <div className="flex flex-col items-center gap-3">
@@ -77,7 +77,7 @@ function RespondContent() {
 export default function QuoteRespondPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5] p-4">
         <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
           <Loader2 className="w-10 h-10 animate-spin text-gray-400 mx-auto" />
           <p className="text-sm font-medium text-gray-600 mt-3">Chargement...</p>
