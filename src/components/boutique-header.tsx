@@ -116,6 +116,14 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
 
   const isBoutiquePage = pathname.startsWith('/boutique');
 
+  const handleGuidedConfig = (e: React.MouseEvent) => {
+    if (pathname === '/') {
+      // Déjà sur la page configurateur : on relance le mode guidé sans navigation
+      e.preventDefault();
+      window.dispatchEvent(new Event('wizard-guide'));
+    }
+  };
+
   const truncatedEmail = (session.email || '').length > 20 ? (session.email || '').slice(0, 18) + '...' : (session.email || '');
   const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -181,6 +189,16 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
                   {t('header.shop')}
                 </Link>
                 )}
+                <Link
+                  href="/?step=1"
+                  onClick={(e) => {
+                    setMobileMenuOpen(false);
+                    handleGuidedConfig(e);
+                  }}
+                  className="py-3 text-2xl font-medium transition-colors text-white/60 hover:text-white whitespace-nowrap"
+                >
+                  {t('header.guidedConfig')}
+                </Link>
                 <a
                   href="https://pixiatech.com/contact"
                   target="_blank"
@@ -251,6 +269,13 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
             {t('header.shop')}
           </Link>
           )}
+          <Link
+            href="/?step=1"
+            onClick={handleGuidedConfig}
+            className="font-medium nav-link text-sm text-white hover:opacity-80 transition-opacity whitespace-nowrap"
+          >
+            {t('header.guidedConfig')}
+          </Link>
           <a
             href="https://pixiatech.com/contact"
             target="_blank"

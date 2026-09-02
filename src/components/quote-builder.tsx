@@ -472,6 +472,35 @@ useEffect(() => {
         return () => window.removeEventListener('wizard-reset', handleWizardReset);
     }, [handleGoToModeSelection]);
 
+    // Listen for wizard-guide event: start the guided configurator directly
+    useEffect(() => {
+        const handleWizardGuide = () => {
+            setActiveMode('wizard');
+            setCurrentStep(1);
+            setInitialWizardStep(1);
+            setIsSignatureFlowActive(false);
+            saveQuoteState({
+                configuredProducts,
+                activeConfigProductId,
+                baseQuote,
+                includeInstallation,
+                deliveryCost,
+                selectedCityId,
+                unconfiguredCityQuery,
+                isDeliveryCostFinal,
+                installationCost,
+                techniciansRequired,
+                includeDelivery,
+                isSubmitting: false,
+                activeMode: 'wizard',
+                currentStep: 1,
+                isSignatureFlowActive: false,
+            });
+        };
+        window.addEventListener('wizard-guide', handleWizardGuide);
+        return () => window.removeEventListener('wizard-guide', handleWizardGuide);
+    }, [configuredProducts, activeConfigProductId, baseQuote, includeInstallation, deliveryCost, selectedCityId, unconfiguredCityQuery, isDeliveryCostFinal, installationCost, techniciansRequired, includeDelivery]);
+
 
 
     const handleBack = () => {

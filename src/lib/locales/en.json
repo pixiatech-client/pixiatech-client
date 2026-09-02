@@ -2354,6 +2354,7 @@
     "header": {
         "home": "Home",
         "shop": "Shop",
+        "guidedConfig": "Guided Configuration",
         "contactUs": "Contact Us",
         "close": "Close",
         "menu": "Menu",
