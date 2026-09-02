@@ -2476,9 +2476,11 @@
         "freeShippingMessage": "Félicitations ! Vous bénéficiez de la Livraison Express OFFERTE sur cette commande.",
         "summary": "Récapitulatif",
         "subtotal": "Sous-total",
+        "subtotalHT": "Sous-total HT",
         "expressDelivery": "Livraison Express",
         "free": "Offert",
         "vat": "TVA (20%)",
+        "vatMessage": "Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.",
         "totalToPay": "Total à payer",
         "checkout": "Passer à la caisse",
         "remove": "Retirer",
@@ -2489,6 +2491,9 @@
         "discount": "Remise"
     },
     "checkout": {
+        "totalToPay": "Total à payer",
+        "subtotalHT": "Sous-total HT",
+        "vatMessage": "Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.",
         "paypalLoadError": "Erreur de chargement PayPal",
         "paypalLoadErrorDesc": "Le SDK PayPal n'a pas pu être chargé. Veuillez réessayer.",
         "unexpectedStatus": "Statut inattendu: ",

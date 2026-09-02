@@ -10,7 +10,10 @@ export function formatProductPriceLabel(product: Product): string {
   if (product.priceDisplay === 'free') return 'Gratuit';
   if (product.priceDisplay === 'multiprice') return 'Tarifs multiples';
   if (product.priceDisplay === 'quote') return 'Sur devis';
-  return formatPrice(product.price);
+  if (isRentalOnlyProduct(product)) {
+    return `${formatPrice(product.price)} HT / jour`;
+  }
+  return `${formatPrice(product.price)} HT`;
 }
 
 export function isProductMoreInfo(product: Product): boolean {

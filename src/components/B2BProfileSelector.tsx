@@ -58,16 +58,3 @@ export function B2BProfileSelector({ onDismiss }: { onDismiss?: () => void }) {
     </div>
   );
 }
-
-export function PriceLabel() {
-  const { profileType, priceLabel, hydrated } = useProfile();
-
-  if (!hydrated) return null;
-  if (!profileType) return null;
-
-  return (
-    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-      {priceLabel}
-    </span>
-  );
-}

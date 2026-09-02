@@ -16,6 +16,8 @@ import { useProfile } from '@/contexts/ProfileContext';
 import type { PdfSettings } from '@/lib/types';
 import { InvoiceButton } from '@/components/invoice-button';
 import { getPdfSettings } from '@/app/actions/quote-actions';
+import { getDoc, doc } from 'firebase/firestore';
+import { firestore } from '@/firebase/config';
 import Image from 'next/image';
 import confetti from 'canvas-confetti';
 
@@ -301,9 +303,24 @@ export default function CheckoutPage() {
   const [isNewCustomer, setIsNewCustomer] = useState(true);
   const [productsOpen, setProductsOpen] = useState(items.length < 2);
   const [showInfo, setShowInfo] = useState(false);
-  const { profileType, setProfileType, showHT, showTTC, priceLabel, isB2B, forceB2B } = useProfile();
+  const { profileType, setProfileType, isB2B, forceB2B } = useProfile();
   const [deliveryCost, setDeliveryCost] = useState(0);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
+  const [vatRate, setVatRate] = useState(20);
+  const [vatMessage, setVatMessage] = useState('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
+  const [vatMessageEnabled, setVatMessageEnabled] = useState(true);
+
+  useEffect(() => {
+    getDoc(doc(firestore, 'settings', 'wizard')).then((snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as any;
+        const ef = data?.estimationFlow;
+        if (typeof ef?.taxRate === 'number' && ef.taxRate > 0) setVatRate(ef.taxRate);
+        if (typeof ef?.vatMessage === 'string' && ef.vatMessage.trim()) setVatMessage(ef.vatMessage);
+        if (typeof ef?.vatMessageEnabled === 'boolean') setVatMessageEnabled(ef.vatMessageEnabled);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setTxId("TXN" + Math.random().toString(36).slice(2, 10).toUpperCase());
@@ -448,6 +465,7 @@ export default function CheckoutPage() {
     profileType,
     country: delivery.country || 'FR',
     vatValidated,
+    vatRate,
   });
   const tva = calc.vat;
   const total = calc.total;
@@ -824,7 +842,7 @@ export default function CheckoutPage() {
                   )}
                 </div>
                 <h2 className="text-4xl font-[900] tracking-tighter">{formatPrice(total)}</h2>
-                <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{vatValidated && isB2B ? 'TVA autoliquidée – Achat hors taxes (HT)' : 'Prix toutes taxes comprises (TTC)'}</p>
+                <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{vatMessageEnabled ? vatMessage : (vatValidated && isB2B ? 'TVA autoliquidée – Achat hors taxes (HT)' : 'Prix toutes taxes comprises (TTC)')}</p>
               </div>
               <div className="space-y-3 mb-6 border-t border-white/20 pt-5 relative z-10">
                 {[
@@ -1397,7 +1415,7 @@ createOrder={async () => {
 
                 <div className="border-t border-gray-200/40 pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Sous-total HT</span>
+                    <span className="text-gray-500">{t('cart.subtotalHT')}</span>
                     <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
                   </div>
                   {discount > 0 && (
@@ -1426,7 +1444,7 @@ createOrder={async () => {
 
                 <div className="border-t border-gray-900 mt-4 pt-4 flex justify-between items-end mb-6">
                   <div>
-                    <p className="text-[11px] font-semibold text-gray-500 uppercase">{totalLabel}</p>
+                    <p className="text-[11px] font-semibold text-gray-500 uppercase">{t('cart.totalToPay')}</p>
                     <p className="text-xl font-bold text-gray-900">{formatPrice(total)}</p>
                   </div>
                   {!forceB2B && (
@@ -1468,6 +1486,12 @@ createOrder={async () => {
                   </div>
                   )}
                 </div>
+
+                {vatMessageEnabled && (
+                  <div className="mb-4 px-3 py-2.5 bg-gray-50 border border-gray-200/60 rounded-xl">
+                    <p className="text-[11px] text-gray-600 leading-relaxed text-center">{vatMessage}</p>
+                  </div>
+                )}
 
                 {paymentMethod === 'card' && (
                   <p className="text-center text-[11px] text-gray-400 mt-2 mb-4">

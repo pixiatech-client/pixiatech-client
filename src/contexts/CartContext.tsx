@@ -115,9 +115,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
         i.variantName === product.variantName
       );
       if (existing) {
+        const effectiveStock = product.stock !== undefined ? product.stock : existing.stock;
+        if (effectiveStock !== undefined && existing.quantity >= effectiveStock) {
+          return prev;
+        }
         return prev.map(i =>
           i.productId === product.productId && i.type === product.type && i.variantName === product.variantName
-            ? { ...i, quantity: clampQuantity(i.quantity + qty, product.stock !== undefined ? product.stock : i.stock) }
+            ? { ...i, stock: effectiveStock, quantity: clampQuantity(i.quantity + qty, effectiveStock) }
             : i
         );
       }
@@ -172,29 +176,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const moveToCart = useCallback((item: CartItem) => {
+    let canMove = true;
     setItems(prev => {
-      const base = { productId: item.productId, name: item.name, price: item.price, image: item.image, category: item.category, type: item.type, variantName: item.variantName, variantReference: item.variantReference, variantImage: item.variantImage, variantPrice: item.variantPrice };
       const existing = prev.find(i =>
         i.productId === item.productId &&
         i.type === item.type &&
         i.variantName === item.variantName
       );
       if (existing) {
+        const effectiveStock = item.stock !== undefined ? item.stock : existing.stock;
+        if (effectiveStock !== undefined && existing.quantity >= effectiveStock) {
+          canMove = false;
+          return prev;
+        }
         return prev.map(i =>
           i.productId === item.productId && i.type === item.type && i.variantName === item.variantName
-            ? { ...i, quantity: i.quantity + item.quantity }
+            ? { ...i, stock: effectiveStock, quantity: clampQuantity(i.quantity + (item.quantity || 1), effectiveStock) }
             : i
         );
       }
-      return [...prev, { ...base, quantity: item.quantity }];
+      return [...prev, { ...item, quantity: clampQuantity(item.quantity || 1, item.stock) }];
     });
-    setSavedItems(prev =>
-      prev.filter(i => !(
-        i.productId === item.productId &&
-        i.type === item.type &&
-        i.variantName === item.variantName
-      ))
-    );
+    if (canMove) {
+      setSavedItems(prev =>
+        prev.filter(i => !(
+          i.productId === item.productId &&
+          i.type === item.type &&
+          i.variantName === item.variantName
+        ))
+      );
+    }
   }, []);
 
   const isSaved = useCallback((productId: string, variantName?: string): boolean => {

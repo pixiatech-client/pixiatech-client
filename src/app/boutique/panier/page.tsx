@@ -11,6 +11,8 @@ import { isProductOutOfStockForSale } from '@/lib/product-status';
 import { ActionButton, formatProductPriceLabel } from '@/components/boutique/ProductActionButton';
 import { toast } from 'sonner';
 import { useProfile } from '@/contexts/ProfileContext';
+import { getDoc, doc } from 'firebase/firestore';
+import { firestore } from '@/firebase/config';
 
 function QtySelector({ value, onMinus, onPlus, maxQty }: { value: number; onMinus: () => void; onPlus: () => void; maxQty?: number }) {
   const [anim, setAnim] = useState(false);
@@ -59,8 +61,23 @@ export default function CartPage() {
   const [promoInput, setPromoInput] = useState('');
   const [upsellProducts, setUpsellProducts] = useState<Product[]>([]);
   const [showInfo, setShowInfo] = useState(false);
-  const { profileType, setProfileType, showHT, showTTC, priceLabel, isB2B, forceB2B } = useProfile();
+  const { profileType, setProfileType, forceB2B } = useProfile();
   const [liveProducts, setLiveProducts] = useState<Record<string, Product | null>>({});
+  const [vatRate, setVatRate] = useState(20);
+  const [vatMessage, setVatMessage] = useState('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
+  const [vatMessageEnabled, setVatMessageEnabled] = useState(true);
+
+  useEffect(() => {
+    getDoc(doc(firestore, 'settings', 'wizard')).then((snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as any;
+        const ef = data?.estimationFlow;
+        if (typeof ef?.taxRate === 'number' && ef.taxRate > 0) setVatRate(ef.taxRate);
+        if (typeof ef?.vatMessage === 'string' && ef.vatMessage.trim()) setVatMessage(ef.vatMessage);
+        if (typeof ef?.vatMessageEnabled === 'boolean') setVatMessageEnabled(ef.vatMessageEnabled);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const ids = new Set<string>();
@@ -111,7 +128,7 @@ export default function CartPage() {
     }
   }, [items]);
 
-  const tva = isB2B ? 0 : Math.round(totalAfterDiscount * 0.2);
+  const tva = Math.round(totalAfterDiscount * vatRate / 100);
   const total = totalAfterDiscount + tva;
   const discount = promo ? subtotal - totalAfterDiscount : 0;
 
@@ -204,7 +221,7 @@ export default function CartPage() {
                             </div>
                           )}
                         </div>
-                        <span className="font-bold text-gray-900 text-base ml-2 shrink-0">{formatPrice(item.price * item.quantity)}</span>
+                        <span className="font-bold text-gray-900 text-base ml-2 shrink-0">{formatPrice(item.price * item.quantity)} HT</span>
                       </div>
                       <div className="mt-auto flex flex-wrap items-end justify-between gap-3">
                         <div className="flex flex-col gap-1.5">
@@ -260,12 +277,12 @@ export default function CartPage() {
                         <span className="text-xs text-gray-400">Calculée lors du paiement</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">TVA {isB2B ? '(0%)' : '(20%)'}</span>
+                        <span className="text-gray-500">TVA ({vatRate}%)</span>
                         <span className="font-semibold text-gray-900">{formatPrice(tva)}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center pt-5 mb-6">
-                      <span className="font-bold text-gray-900 text-base">{isB2B ? 'Total HT' : 'Total TTC'}</span>
+                      <span className="font-bold text-gray-900 text-base">Total à payer</span>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-gray-900 text-lg">{formatPrice(total)}</span>
                         {!forceB2B && (
@@ -315,6 +332,9 @@ export default function CartPage() {
                     Passer à la caisse
                     <ArrowRight size={18} />
                   </button>
+                  {vatMessageEnabled && (
+                    <p className="mt-3 text-[11px] text-gray-500 leading-relaxed text-center">{vatMessage}</p>
+                  )}
                   <div className="flex justify-center gap-4 mt-5 opacity-40">
                     <CreditCard size={22} className="text-gray-500" />
                     <Landmark size={22} className="text-gray-500" />
@@ -427,7 +447,7 @@ export default function CartPage() {
                         {/* Prix + actions */}
                         <div className="shrink-0 flex items-center justify-between gap-2 sm:flex-col sm:items-end sm:gap-2.5">
                           {item.price > 0 && (
-                            <div className="text-sm font-bold text-gray-900">{formatPrice(item.price)}</div>
+                            <div className="text-sm font-bold text-gray-900">{formatPrice(item.price)} HT</div>
                           )}
                           <div className="flex items-center gap-1.5">
                             {addToCartButton}

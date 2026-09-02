@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import type { Settings as AppSettings } from '@/lib/types';
 import { updateSettings } from '@/app/admin/actions';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
@@ -25,10 +24,12 @@ const flowSchema = z.object({
     enableContractEditing: z.boolean(),
     saleContractTemplate: z.string().optional(),
     rentalContractTemplate: z.string().optional(),
-    taxEnabled: z.boolean(),
+    taxEnabled: z.boolean().optional(),
     taxRate: z.coerce.number().min(0).max(100),
-    taxMode: z.enum(['ht', 'ttc']),
-    boutiqueB2B: z.boolean(),
+    taxMode: z.enum(['ht', 'ttc']).optional(),
+    boutiqueB2B: z.boolean().optional(),
+    vatMessage: z.string().optional(),
+    vatMessageEnabled: z.boolean().optional(),
     sale: z.object({
       maxProductsPerQuote: z.coerce.number().min(1).default(3),
       flatScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
@@ -219,6 +220,8 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     taxRate: initialSettings.estimationFlow?.taxRate ?? 19,
     taxMode: (initialSettings.estimationFlow?.taxMode ?? 'ht') as 'ht' | 'ttc',
     boutiqueB2B: initialSettings.estimationFlow?.boutiqueB2B ?? false,
+    vatMessageEnabled: initialSettings.estimationFlow?.vatMessageEnabled ?? true,
+    vatMessage: initialSettings.estimationFlow?.vatMessage ?? 'Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.',
     sale: (initialSettings.estimationFlow as any)?.sale || {
       maxProductsPerQuote: 3,
       flatScreen: { maxWidth: 20, maxHeight: 10 },
@@ -243,7 +246,6 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     },
   });
 
-  const taxEnabled = form.watch('estimationFlow.taxEnabled');
   const canEditContract = form.watch('estimationFlow.enableContractEditing');
   const saleContract = form.watch('estimationFlow.saleContractTemplate');
   const rentalContract = form.watch('estimationFlow.rentalContractTemplate');
@@ -473,44 +475,38 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
               <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">%</div>
               <div>
                 <h4 className="text-sm font-bold text-slate-900">{t('TVA')}</h4>
-                <p className="text-[10px] text-slate-400">{t('Mode et taux')}</p>
+                <p className="text-[10px] text-slate-400">{t('Taux et message')}</p>
               </div>
             </div>
             <div className="space-y-3">
               <div className="space-y-1">
-                <Label className="text-xs font-semibold text-slate-700">{t("Mode d'affichage")}</Label>
-                <Select value={form.watch('estimationFlow.taxMode')} onValueChange={(v) => form.setValue('estimationFlow.taxMode', v as 'ht' | 'ttc')}>
-                  <SelectTrigger className="h-9 rounded-xl bg-white border-slate-200 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ht">{t('HT (hors taxe)')}</SelectItem>
-                    <SelectItem value="ttc">{t('TTC (toutes taxes comprises)')}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs font-semibold text-slate-700">{t('Taux de TVA (%)')}</Label>
+                <Input type="number" min="0" max="100" step="0.1"
+                  value={form.watch('estimationFlow.taxRate')}
+                  onChange={(e) => form.setValue('estimationFlow.taxRate', parseFloat(e.target.value) || 0)}
+                  className="h-9 rounded-xl bg-white border-slate-200" />
               </div>
               <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/40">
-                <Label className="text-xs font-bold text-slate-900">{t('Activer TVA')}</Label>
-                <Switch checked={form.watch('estimationFlow.taxEnabled')} onCheckedChange={(v) => form.setValue('estimationFlow.taxEnabled', v)} />
+                <div className="space-y-0.5 pr-2">
+                  <Label className="text-xs font-bold text-slate-900">{t('Afficher le message TVA')}</Label>
+                  <p className="text-[10px] text-slate-400 leading-tight">{t('Afficher le message informatif TVA sur la boutique')}</p>
+                </div>
+                <Switch checked={form.watch('estimationFlow.vatMessageEnabled')} onCheckedChange={(v) => form.setValue('estimationFlow.vatMessageEnabled', v)} />
               </div>
-              {taxEnabled ? (
+              {(form.watch('estimationFlow.vatMessageEnabled') ?? true) ? (
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-slate-700">{t('Taux TVA (%)')}</Label>
-                  <Input type="number" min="0" max="100" step="0.1"
-                    value={form.watch('estimationFlow.taxRate')}
-                    onChange={(e) => form.setValue('estimationFlow.taxRate', parseFloat(e.target.value) || 0)}
-                    className="h-9 rounded-xl bg-white border-slate-200" />
+                  <Label className="text-xs font-semibold text-slate-700">{t('Message TVA')}</Label>
+                  <textarea
+                    value={form.watch('estimationFlow.vatMessage')}
+                    onChange={(e) => form.setValue('estimationFlow.vatMessage', e.target.value)}
+                    rows={3}
+                    className="w-full h-auto rounded-xl border border-slate-200 bg-white p-3 text-xs focus:outline-none focus:border-blue-500 resize-y"
+                    placeholder={t('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.')}
+                  />
                 </div>
               ) : (
-                <p className="text-[10px] text-slate-400 italic">{t('100% HT — Aucune TVA appliquée')}</p>
+                <p className="text-[10px] text-slate-400 italic">{t('Aucun message TVA affiché')}</p>
               )}
-              <div className="flex items-center justify-between p-3 rounded-xl border border-amber-100 bg-amber-50/30">
-                <div className="space-y-0.5 pr-2">
-                  <Label className="text-xs font-bold text-slate-900">Boutique TVA</Label>
-                  <p className="text-[10px] text-slate-400 leading-tight">Toute la boutique passe en mode professionnel (HT), sélecteur de profil masqué</p>
-                </div>
-                <Switch checked={form.watch('estimationFlow.boutiqueB2B')} onCheckedChange={(v) => form.setValue('estimationFlow.boutiqueB2B', v)} />
-              </div>
             </div>
           </CardContent>
         </Card>

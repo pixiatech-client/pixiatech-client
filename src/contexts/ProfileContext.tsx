@@ -7,9 +7,6 @@ export type ProfileType = 'entreprise' | 'particulier' | null;
 interface ProfileContextValue {
   profileType: ProfileType;
   setProfileType: (type: ProfileType) => void;
-  showHT: boolean;
-  showTTC: boolean;
-  priceLabel: string;
   isB2B: boolean;
   hydrated: boolean;
   forceB2B: boolean;
@@ -18,9 +15,6 @@ interface ProfileContextValue {
 const ProfileContext = createContext<ProfileContextValue>({
   profileType: null,
   setProfileType: () => {},
-  showHT: false,
-  showTTC: false,
-  priceLabel: '',
   isB2B: false,
   hydrated: false,
   forceB2B: false,
@@ -67,12 +61,9 @@ export function ProfileProvider({ children, initialBoutiqueB2B = false }: { chil
 
   const resolvedType = forceB2B ? 'entreprise' : profileType;
   const isB2B = resolvedType === 'entreprise';
-  const showHT = resolvedType !== 'particulier'; // true par défaut (null) et pour entreprise
-  const showTTC = resolvedType === 'particulier';
-  const priceLabel = isB2B ? 'Prix hors taxes' : 'TVA incluse';
 
   return (
-    <ProfileContext.Provider value={{ profileType: resolvedType, setProfileType, showHT, showTTC, priceLabel, isB2B, hydrated, forceB2B }}>
+    <ProfileContext.Provider value={{ profileType: resolvedType, setProfileType, isB2B, hydrated, forceB2B }}>
       {children}
     </ProfileContext.Provider>
   );

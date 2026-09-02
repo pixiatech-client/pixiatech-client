@@ -14,7 +14,6 @@ import type { Product, ProductVariant, GalleryItem } from '@/lib/boutique-data';
 import BoutiqueRentalFlow from '@/components/BoutiqueRentalFlow';
 import CityInput from '@/components/CityInput';
 import { useProfile } from '@/contexts/ProfileContext';
-import { PriceLabel } from '@/components/B2BProfileSelector';
 import { useI18n } from '@/lib/i18n';
 import { useVatValidation } from '@/hooks/useVatValidation';
 
@@ -225,6 +224,8 @@ export default function ProductDetailPage() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [taxRate, setTaxRate] = useState(20);
+  const [vatMessage, setVatMessage] = useState('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
+  const [vatMessageEnabled, setVatMessageEnabled] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [locationCompleted, setLocationCompleted] = useState(false);
   const [showRentalContent, setShowRentalContent] = useState(false);
@@ -306,7 +307,7 @@ export default function ProductDetailPage() {
   const [budgetResult, setBudgetResult] = useState<{ totalSurface: number; panelSurface: number; panelCount: number; unitPrice: number; totalPrice: number } | null>(null);
   const activeThumbRef = useRef<HTMLButtonElement>(null);
   const { addItem, itemCount } = useCart();
-  const { showHT, showTTC, setProfileType, profileType, forceB2B } = useProfile();
+  const { setProfileType, profileType, forceB2B } = useProfile();
   const isB2B = profileType === 'entreprise';
   const { t } = useI18n();
 
@@ -412,6 +413,8 @@ export default function ProductDetailPage() {
         const data = snap.data() as any;
         const rate = data?.estimationFlow?.taxRate;
         if (typeof rate === 'number' && rate > 0) setTaxRate(rate);
+        if (typeof data?.estimationFlow?.vatMessage === 'string' && data.estimationFlow.vatMessage.trim()) setVatMessage(data.estimationFlow.vatMessage);
+        if (typeof data?.estimationFlow?.vatMessageEnabled === 'boolean') setVatMessageEnabled(data.estimationFlow.vatMessageEnabled);
       }
     }).catch(() => {});
   }, []);
@@ -1213,12 +1216,12 @@ export default function ProductDetailPage() {
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-gray-500">Prix unitaire</span>
-                              <span className="text-xs font-bold text-gray-800">{formatPrice(autoResult.unitPrice)}</span>
+                              <span className="text-xs font-bold text-gray-800">{formatPrice(autoResult.unitPrice)} HT</span>
                             </div>
                             <div className="h-px bg-emerald-200/50 my-1" />
                             <div className="flex items-center justify-between">
                               <span className="text-sm font-bold text-gray-900">Prix total estimé</span>
-                              <span className="text-lg font-black text-emerald-700 tracking-tight">{formatPrice(autoResult.totalPrice)}</span>
+                              <span className="text-lg font-black text-emerald-700 tracking-tight">{formatPrice(autoResult.totalPrice)} HT</span>
                             </div>
                           </div>
                         </div>
@@ -1415,7 +1418,7 @@ export default function ProductDetailPage() {
                       return <div className="text-2xl font-bold text-emerald-600">Gratuit</div>;
                     }
                     if (currentVar && currentVar.price > 0) {
-                      return <div className="text-2xl font-bold text-gray-900">{formatPrice(currentVar.price)}</div>;
+                      return <div className="text-2xl font-bold text-gray-900">{formatPrice(currentVar.price)} HT</div>;
                     }
                     if (product?.priceDisplay === 'multiprice' && !selectedVariant) {
                       return <div className="text-2xl font-bold text-gray-900">Tarifs multiples</div>;
@@ -1423,13 +1426,26 @@ export default function ProductDetailPage() {
                     if (product?.priceDisplay === 'quote') {
                       return <div className="text-2xl font-bold text-gray-900">Sur devis</div>;
                     }
-                    return <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>;
+                    return <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)} HT{canRent ? <span className="text-sm font-semibold text-gray-400"> / jour</span> : null}</div>;
                   })()}
-                  <span className="text-[10px] font-bold text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md tracking-wider">Hors taxes</span>
+                  {!canRent && (
+                    <span className="text-[10px] font-bold text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md tracking-wider">HT</span>
+                  )}
                   {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                     <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">-{Math.round((1 - effectivePrice / effectiveOldPrice) * 100)}%</span>
                   )}
                 </div>
+
+                {vatMessageEnabled && (
+                  <div className="mt-3 flex items-start gap-2.5 px-3 py-2.5 bg-amber-50 border border-amber-200/70 rounded-xl">
+                    <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M12 16v-4"></path>
+                      <path d="M12 8h.01"></path>
+                    </svg>
+                    <p className="text-[11px] text-amber-800 leading-relaxed">{vatMessage}</p>
+                  </div>
+                )}
 
                 <div className="relative mt-2">
                   {!forceB2B && (
@@ -1781,7 +1797,7 @@ export default function ProductDetailPage() {
                     return <div className="text-3xl font-bold text-emerald-600">Gratuit</div>;
                   }
                   if (currentVar && currentVar.price > 0) {
-                    return <div className="text-3xl font-bold text-gray-900">{formatPrice(currentVar.price)}</div>;
+                    return <div className="text-3xl font-bold text-gray-900">{formatPrice(currentVar.price)} HT</div>;
                   }
                   if (product?.priceDisplay === 'multiprice' && !selectedVariant) {
                     return <div className="text-3xl font-bold text-gray-900">Tarifs multiples</div>;
@@ -1789,7 +1805,7 @@ export default function ProductDetailPage() {
                   if (product?.priceDisplay === 'quote') {
                     return <div className="text-3xl font-bold text-gray-900">Sur devis</div>;
                   }
-                  return <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)}</div>;
+                  return <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)} HT{canRent ? <span className="text-sm font-semibold text-gray-400"> / jour</span> : null}</div>;
                 })()}
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -1797,6 +1813,16 @@ export default function ProductDetailPage() {
                   </span>
                 )}
               </div>
+              {vatMessageEnabled && (
+                <div className="mt-3 flex items-start gap-2.5 px-3 py-2.5 bg-amber-50 border border-amber-200/70 rounded-xl">
+                  <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 16v-4"></path>
+                    <path d="M12 8h.01"></path>
+                  </svg>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">{vatMessage}</p>
+                </div>
+              )}
               <div className="relative mt-1">
                 {!forceB2B && (
                   <>

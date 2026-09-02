@@ -2474,9 +2474,11 @@
         "freeShippingMessage": "Congratulations! You get FREE Express Delivery on this order.",
         "summary": "Summary",
         "subtotal": "Subtotal",
+        "subtotalHT": "Subtotal excl. tax",
         "expressDelivery": "Express delivery",
         "free": "Free",
         "vat": "VAT (20%)",
+        "vatMessage": "Prices displayed are excl. tax. VAT will be added to the total amount at checkout.",
         "totalToPay": "Total to pay",
         "checkout": "Checkout",
         "remove": "Remove",
@@ -2487,6 +2489,9 @@
         "discount": "Discount"
     },
     "checkout": {
+        "totalToPay": "Total to pay",
+        "subtotalHT": "Subtotal excl. tax",
+        "vatMessage": "Prices displayed are excl. tax. VAT will be added to the total amount at checkout.",
         "paypalLoadError": "PayPal loading error",
         "paypalLoadErrorDesc": "PayPal SDK could not be loaded. Please try again.",
         "unexpectedStatus": "Unexpected status: ",

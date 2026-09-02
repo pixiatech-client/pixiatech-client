@@ -10,7 +10,6 @@ import { fetchBoutiqueProducts, getModeBadge } from '@/lib/boutique-data';
 import { isProductOutOfStockForSale, isRentalOnlyProduct, isQuoteOnlyProduct } from '@/lib/product-status';
 import type { Product } from '@/lib/boutique-data';
 import { PriceDisplay, ActionButton, isProductMoreInfo } from '@/components/boutique/ProductActionButton';
-import { useProfile } from '@/contexts/ProfileContext';
 import { useI18n } from '@/lib/i18n';
 import { calculatePromotionPercent } from '@/lib/pricing-engine';
 import { normalizeSearchText } from '@/lib/utils';
@@ -266,7 +265,6 @@ export default function BoutiquePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem, savedItems, saveItem, unsaveItem, isSaved } = useCart();
-  const { showHT, showTTC } = useProfile();
   const { t } = useI18n();
 
   const [filterOpen, setFilterOpen] = useState(false);
