@@ -32,13 +32,6 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'PixiaTech',
   },
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any', type: 'image/x-icon' },
-    ],
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
-  },
 };
 
 // Viewport séparé pour Next.js 14+ — empêche le navigateur de compenser
@@ -62,13 +55,14 @@ export default async function RootLayout({
   const isDark = globalTheme.mode === 'dark';
   const boutiqueB2B = settings.estimationFlow?.boutiqueB2B ?? false;
   const boutiqueEnabled = settings.isBoutiqueEnabled !== false;
+  const faviconHref = settings.logoConfig?.favicon ?? '/favicon.ico';
 
   return (
     <html lang="en" className={`scroll-smooth${isDark ? ' dark' : ''}`} suppressHydrationWarning>
       <head>
-        {/* Favicon forcé explicitement pour tous les environnements (local + production) */}
-        <link rel="icon" href="/favicon.ico" sizes="any" type="image/x-icon" />
-        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        {/* Favicon : source de vérité unique — favicon admin (logoConfig.favicon) sinon fichier statique */}
+        <link rel="icon" href={faviconHref} sizes="any" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
         <style dangerouslySetInnerHTML={{ __html: themeCss }} />
       </head>
       <body className={`${inter.variable} ${orbitron.variable} font-body antialiased min-h-[100dvh]${isDark ? ' dark-theme' : ' light-theme'}`} suppressHydrationWarning>
