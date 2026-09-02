@@ -12,7 +12,7 @@ import { ActionButton, formatProductPriceLabel } from '@/components/boutique/Pro
 import { toast } from 'sonner';
 import { useProfile } from '@/contexts/ProfileContext';
 
-function QtySelector({ value, onMinus, onPlus }: { value: number; onMinus: () => void; onPlus: () => void }) {
+function QtySelector({ value, onMinus, onPlus, maxQty }: { value: number; onMinus: () => void; onPlus: () => void; maxQty?: number }) {
   const [anim, setAnim] = useState(false);
 
   const handleMinus = () => {
@@ -22,22 +22,32 @@ function QtySelector({ value, onMinus, onPlus }: { value: number; onMinus: () =>
   };
 
   const handlePlus = () => {
+    if (maxQty !== undefined && value >= maxQty) return;
     onPlus();
     setAnim(true);
     setTimeout(() => setAnim(false), 200);
   };
 
+  const isAtLimit = maxQty !== undefined && maxQty > 0 && value >= maxQty;
+
   return (
-    <div className="flex items-center border border-gray-200/70 rounded-lg overflow-hidden w-fit bg-white">
-      <button onClick={handleMinus} className="px-3 py-2 hover:bg-gray-50 transition-colors active:scale-90">
-        <Minus size={16} className="text-gray-500" />
-      </button>
-      <span className={`px-4 py-2 text-sm font-semibold text-gray-900 border-x border-gray-200/70 min-w-[48px] text-center transition-all duration-200 ${anim ? 'scale-110' : ''}`}>
-        {value}
-      </span>
-      <button onClick={handlePlus} className="px-3 py-2 hover:bg-gray-50 transition-colors active:scale-90">
-        <Plus size={16} className="text-gray-500" />
-      </button>
+    <div className="flex flex-col gap-1">
+      <div className={`flex items-center border rounded-lg overflow-hidden w-fit bg-white transition-colors ${isAtLimit ? 'border-red-500 ring-1 ring-red-500/30' : 'border-gray-200/70'}`}>
+        <button onClick={handleMinus} disabled={value <= 1} className="px-3 py-2 hover:bg-gray-50 transition-colors active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed">
+          <Minus size={16} className="text-gray-500" />
+        </button>
+        <span className={`px-4 py-2 text-sm font-semibold text-gray-900 border-x border-gray-200/70 min-w-[48px] text-center transition-all duration-200 ${anim ? 'scale-110' : ''}`}>
+          {value}
+        </span>
+        <button onClick={handlePlus} disabled={isAtLimit} className="px-3 py-2 hover:bg-gray-50 transition-colors active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed">
+          <Plus size={16} className="text-gray-500" />
+        </button>
+      </div>
+      {isAtLimit && (
+        <p className="text-[10px] text-red-500 font-semibold flex items-center gap-1 mt-0.5">
+          <span>🔴</span> Quantité maximale disponible atteinte. Vous ne pouvez pas dépasser le stock disponible.
+        </p>
+      )}
     </div>
   );
 }
@@ -106,7 +116,7 @@ export default function CartPage() {
   const discount = promo ? subtotal - totalAfterDiscount : 0;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-screen bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
 
 
       <main className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 py-8">
@@ -201,6 +211,7 @@ export default function CartPage() {
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Quantité</label>
                           <QtySelector
                             value={item.quantity}
+                            maxQty={item.stock}
                             onMinus={() => updateQuantity(item.productId, item.quantity - 1, item.type, item.variantName)}
                             onPlus={() => updateQuantity(item.productId, item.quantity + 1, item.type, item.variantName)}
                           />

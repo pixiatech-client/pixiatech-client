@@ -29,7 +29,6 @@ import HintBubble from './ui/hint-bubble';
 import { ConfiguratorWizard } from './configurator-wizard';
 import { ConfiguratorModeSelection } from './configurator-mode-selection';
 import { preloadImages } from '@/lib/image-preload';
-import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import SignatureFlow from './SignatureFlow';
 import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR, computeProductLineTotal, computeLaborCost } from '@/lib/pricing-engine';
 
@@ -901,16 +900,6 @@ useEffect(() => {
             <AnimatePresence>
                 {showMediaPreviewMobile && <MobileImageModal />}
             </AnimatePresence>
-            {initialSettings.isWizardBotEnabled !== false && activeMode === 'selection' && (
-                <FloatingChatButton
-                    allProducts={allProducts}
-                    settings={initialSettings}
-                    laborSettings={laborSettings}
-                    deliverySettings={deliverySettings}
-                    locations={locations}
-                    onHome={handleGoToModeSelection}
-                />
-            )}
 
         </>
     );

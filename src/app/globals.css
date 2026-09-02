@@ -82,6 +82,7 @@
      pas casser. Retirer cette règle si un régression apparaît. */
   html {
     font-size: 87.5%;
+    background-color: #F5F5F5;
   }
 
    /* Admin specific overrides to respect dynamic theme */
@@ -665,12 +666,12 @@
 
 body {
    overflow-x: hidden;
-   background-color: #FAF8F5;
+   background-color: #F5F5F5;
    color: #1e293b;
 }
 
 body.light-theme {
-  background: #FAF8F5;
+  background: #F5F5F5;
 }
 
 body.dark-theme {

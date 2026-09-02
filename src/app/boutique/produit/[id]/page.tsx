@@ -218,6 +218,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedMedia, setSelectedMedia] = useState(0);
+  const [hoveredThumbIdx, setHoveredThumbIdx] = useState<number | null>(null);
   const [thumbStart, setThumbStart] = useState(0);
   const maxVisibleThumbs = 4;
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -443,12 +444,17 @@ export default function ProductDetailPage() {
   const canQuote = product?.availableFor?.includes('sur-commande') ?? false;
 
   const effectivePrice = selectedVariant?.price ?? product?.price ?? 0;
-  const effectiveMedia = selectedVariant?.image
-    ? { type: 'image' as const, url: selectedVariant.image }
-    : mediaItems[selectedMedia];
+  // If the user is hovering a thumbnail, show that thumbnail regardless of variant
+  const effectiveMedia = hoveredThumbIdx !== null
+    ? mediaItems[hoveredThumbIdx]
+    : (selectedVariant?.image
+      ? { type: 'image' as const, url: selectedVariant.image }
+      : mediaItems[selectedMedia]);
   const effectiveOldPrice = product?.oldPrice && (!selectedVariant || selectedVariant.price < product.oldPrice) ? product.oldPrice : undefined;
   const displayVariants = (product?.variants || []).filter(v => v.active && v.name);
-  const availableStock = normalizeStockQuantity(product?.stock ?? null);
+  const availableSaleStock = normalizeStockQuantity(product?.stock ?? null);
+  const availableRentalStock = normalizeStockQuantity(product?.rentalStock ?? product?.stock ?? null);
+  const availableStock = canRent && !canBuy ? availableRentalStock : availableSaleStock;
   const isOutOfStock = isProductOutOfStockForSale(product ?? {});
 
   useEffect(() => {
@@ -502,6 +508,7 @@ export default function ProductDetailPage() {
       variantReference: selectedVariant?.reference,
       variantImage: selectedVariant?.image,
       variantPrice: selectedVariant?.price,
+      stock: availableStock,
     }, quantity);
     toast.success(t('product.addedToCart', { name: product.name }));
   };
@@ -519,6 +526,7 @@ export default function ProductDetailPage() {
       variantReference: selectedVariant?.reference,
       variantImage: selectedVariant?.image,
       variantPrice: selectedVariant?.price,
+      stock: availableStock,
     }, quantity);
     router.push('/boutique/paiement');
   };
@@ -600,7 +608,7 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F5F5' }}>
+      <div className="w-full min-h-screen flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
         <div className="size-10 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
       </div>
     );
@@ -608,7 +616,7 @@ export default function ProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F5F5' }}>
+      <div className="w-full min-h-screen flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('product.notFound')}</h1>
           <button onClick={() => router.push('/boutique')} className="px-4 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-blue-600 transition-all">{t('product.backToShop')}</button>
@@ -618,7 +626,7 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-screen bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
       {lightboxOpen && (
         <Lightbox
           items={mediaItems}
@@ -634,7 +642,7 @@ export default function ProductDetailPage() {
             {showRentalContent ? (
             <div className="max-w-2xl">
               <button onClick={() => setShowRentalContent(false)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white text-xs font-semibold rounded-xl hover:bg-blue-600 transition-all mb-6"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all mb-6 shadow-sm"
               >
                 <ChevronLeft size={14} />
                 Retour au produit
@@ -642,6 +650,7 @@ export default function ProductDetailPage() {
               <BoutiqueRentalFlow
                 product={product}
                 dailyRate={effectivePrice}
+                maxQuantity={availableRentalStock}
                 onComplete={() => {
                   setShowRentalContent(false);
                   setLocationCompleted(true);
@@ -1116,7 +1125,7 @@ export default function ProductDetailPage() {
                   })() : null;
 
                   return (
-                    <div className="bg-white rounded-2xl shadow-sm w-full mt-[15px] mr-5 p-5 relative">
+                    <div className="w-full mt-[15px] mr-5 p-0 relative">
                       {/* Header */}
                       <div className="flex items-center gap-3 mb-5">
                         <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center">
@@ -1220,7 +1229,7 @@ export default function ProductDetailPage() {
               ) : (
                 /* ── Image principale + carrousel (vue normale) ── */
                 <>
-              <div className="bg-white rounded-2xl shadow-sm w-full mt-[15px] mr-5 p-5 relative">
+              <div className="w-full mt-[15px] mr-5 p-0 relative">
                 {(() => {
                   const modeBadge = getModeBadge(product);
                   return modeBadge ? (
@@ -1231,7 +1240,7 @@ export default function ProductDetailPage() {
                     </div>
                   ) : null;
                 })()}
-                <div className="cursor-pointer w-full aspect-[4/3] overflow-hidden rounded-xl" onClick={() => { setSelectedVariant(null); openLightbox(selectedMedia); }}>
+                <div className="cursor-pointer w-full aspect-[4/3] overflow-hidden rounded-xl" onClick={() => { openLightbox(hoveredThumbIdx ?? selectedMedia); }}>
                   {effectiveMedia ? (
                     effectiveMedia.type === 'video' ? (
                       getYouTubeId(effectiveMedia.url) ? (
@@ -1290,10 +1299,11 @@ export default function ProductDetailPage() {
                         return (
                           <button
                             key={`${realIdx}-${item.type}`}
-                            onClick={() => { setSelectedMedia(realIdx); setSelectedVariant(null); openLightbox(realIdx); }}
+                            onClick={() => { setSelectedMedia(realIdx); openLightbox(realIdx); }}
                             ref={realIdx === selectedMedia ? activeThumbRef : null}
                             className={`flex-shrink-0 w-24 aspect-square bg-white rounded-xl overflow-hidden border-2 transition-all duration-200 relative ${selectedMedia === realIdx ? 'border-gray-900' : 'border-gray-200/70 hover:border-gray-400'}`}
-                            onMouseEnter={() => setSelectedMedia(realIdx)}
+                            onMouseEnter={() => { setHoveredThumbIdx(realIdx); setSelectedMedia(realIdx); }}
+                            onMouseLeave={() => setHoveredThumbIdx(null)}
                           >
                             {item.url ? (
                               <>
@@ -1380,7 +1390,7 @@ export default function ProductDetailPage() {
             </section>
 
             {/* Mobile purchase info */}
-            <div className="lg:hidden flex flex-col mb-6 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="lg:hidden flex flex-col mb-6" style={{ backgroundColor: '#F5F5F5' }}>
               <span className="text-xs font-bold uppercase tracking-widest text-blue-500 mb-2">{product.category}</span>
               <h1 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h1>
               {product.description && product.description.length <= 60 && (
@@ -1531,118 +1541,9 @@ export default function ProductDetailPage() {
                   )}
                 </div>
               )}
-              <div className={`bg-violet-500/10 p-4 rounded-2xl border relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] ring-1 ${isOutOfStock ? 'border-red-400/40 ring-red-500/20' : 'border-violet-500/40 ring-violet-500/20'}`}>
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent"></div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]"></span>
-                    Quantité
-                  </label>
-                  <div className="flex items-center gap-1.5">
-                    {isOutOfStock ? (
-                      <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
-                    ) : availableStock <= 3 ? (
-                      <span className="inline-block w-2 h-2 rounded-full bg-orange-500"></span>
-                    ) : (
-                      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
-                    )}
-                    {isOutOfStock ? (
-                      <span className="text-xs font-medium text-red-500">Rupture</span>
-                    ) : availableStock <= 3 ? (
-                      <span className="text-xs font-medium text-orange-500">Plus que {availableStock}</span>
-                    ) : (
-                      <span className="text-xs font-medium text-green-600">{availableStock} en stock</span>
-                    )}
-                  </div>
-                </div>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.min(availableStock, Math.max(1, parseInt(e.target.value) || 1)))}
-                    placeholder="Ex : 10"
-                    disabled={isOutOfStock}
-                    className="w-full rounded-xl font-bold focus:outline-none transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none bg-[#1a1f2e] text-white border border-blue-500/30 focus:border-cyan-400 px-4 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                  />
-                  {!isOutOfStock && (
-                  <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col">
-                    <button onClick={() => setQuantity(Math.min(availableStock, quantity + 1))} className="p-2 transition-colors text-slate-500 hover:text-slate-300">
-                      <ChevronUp size={14} />
-                    </button>
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-2 transition-colors text-slate-500 hover:text-slate-300">
-                      <ChevronDown size={14} />
-                    </button>
-                  </div>
-                  )}
-                </div>
-              </div>
-              {canQuote ? (
-                quoteDone ? (
-                  <div className="flex flex-col gap-3 mt-2">
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-                      <p className="text-sm font-semibold text-emerald-800">Demande envoyée</p>
-                      <p className="text-xs text-emerald-600 mt-1">Nous vous contacterons sous 48h maximum.</p>
-                    </div>
-                    <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all">
-                      Continuer mes achats
-                    </button>
-                  </div>
-                ) : (
-                  <button onClick={() => setShowQuoteForm(true)}
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    <FileText size={15} /> {t('product.requestQuote')}
-                  </button>
-                )
-              ) : canRent && locationCompleted ? (
-                <div className="flex flex-col gap-3 mt-2">
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-                    <p className="text-sm font-semibold text-emerald-800">{t('product.readyForRental')}</p>
-                    <p className="text-xs text-emerald-600 mt-1">{t('product.rentalInfoAdded')}</p>
-                  </div>
-                  <button onClick={() => router.push('/boutique/panier')} className="w-full bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
-                    <ShoppingBag size={15} /> {t('product.viewCart')}
-                  </button>
-                  <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all flex items-center justify-center gap-2">
-                    <Store size={15} /> {t('product.continueShopping')}
-                  </button>
-                </div>
-              ) : canRent ? (
-                <button onClick={() => setShowRentalContent(true)}
-                  className="w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <CalendarDays size={15} /> {t('product.rental')}
-                </button>
-              ) : (
-                <>
-              <button onClick={handleAddToCart} disabled={isOutOfStock} className="w-full bg-gray-900 text-white py-2.5 px-4 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
-                  <ShoppingBag size={15} /> {isOutOfStock ? 'Indisponible' : t('product.addToCart')}
-                </button>
-              <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full mt-2 border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">{isOutOfStock ? 'Indisponible' : t('product.buyNow')}</button>
-                </>
-              )}
-            </div>
-
-            <div className="mt-28 border-t border-gray-200/40 pt-16 space-y-24">
-              {product?.description && product.description.length > 60 && (
-                <div className="bg-white rounded-2xl border border-gray-200/70 p-5">
-                  <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
-                </div>
-              )}
-
-              {(product.descriptionDetaillee || product.longDescription) && (
-              <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('product.description')}</h2>
-                {product.descriptionDetaillee?.includes('<') ? (
-                  <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed overflow-x-auto" dangerouslySetInnerHTML={{ __html: product.descriptionDetaillee }} />
-                ) : (
-                  <p className="text-gray-600 leading-relaxed">{product.descriptionDetaillee || product.longDescription}</p>
-                )}
-              </section>
-              )}
 
               <section>
-                <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                <div>
                   <div className="p-8 pb-0 flex items-center justify-between mb-8">
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3">
                       <Settings2 size={16} className="text-slate-400" />
@@ -1671,6 +1572,135 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
               </section>
+
+              <div className="flex items-stretch gap-3 min-w-0">
+              <div className={`bg-violet-500/10 p-4 rounded-2xl border border-violet-500/40 ring-1 ring-violet-500/20 relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] w-[130px] shrink-0 sm:w-auto sm:flex-1`}>
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent"></div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]"></span>
+                    Quantité
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    {isOutOfStock ? (
+                      <span className="inline-block w-2 h-2 rounded-full bg-red-500"></span>
+                    ) : availableStock <= 3 ? (
+                      <span className="inline-block w-2 h-2 rounded-full bg-orange-500"></span>
+                    ) : (
+                      <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
+                    )}
+                    {isOutOfStock ? (
+                      <span className="text-xs font-medium text-red-500">Rupture</span>
+                    ) : availableStock <= 3 ? (
+                      <span className="text-xs font-medium text-orange-500">Plus que {availableStock}</span>
+                    ) : (
+                      <span className="text-xs font-medium text-green-600">{availableStock} en stock</span>
+                    )}
+                  </div>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={quantity}
+                    min={1}
+                    max={availableStock}
+                    onChange={(e) => setQuantity(Math.min(availableStock, Math.max(1, parseInt(e.target.value) || 1)))}
+                    placeholder="Ex : 10"
+                    disabled={isOutOfStock}
+                    className="w-full rounded-xl font-bold focus:outline-none transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none bg-[#1a1f2e] text-white border border-blue-500/30 focus:border-cyan-400 px-4 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  />
+                  {!isOutOfStock && (
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col">
+                    <button
+                      onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
+                      disabled={quantity >= availableStock}
+                      className="p-2 transition-colors text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronUp size={14} />
+                    </button>
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                      className="p-2 transition-colors text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronDown size={14} />
+                    </button>
+                  </div>
+                  )}
+                </div>
+                {!isOutOfStock && quantity >= availableStock && (
+                  <p className="text-[11px] text-red-400 font-semibold mt-1.5 flex items-center gap-1">
+                    <span>🔴</span> Quantité maximale disponible atteinte. Vous ne pouvez pas dépasser le stock disponible.
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-col gap-3 flex-1 min-w-0 overflow-hidden">
+              {canQuote ? (
+                quoteDone ? (
+                  <div className="flex flex-col gap-3">
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                      <p className="text-sm font-semibold text-emerald-800">Demande envoyée</p>
+                      <p className="text-xs text-emerald-600 mt-1">Nous vous contacterons sous 48h maximum.</p>
+                    </div>
+                    <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all">
+                      Continuer mes achats
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setShowQuoteForm(true)}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <FileText size={15} /> {t('product.requestQuote')}
+                  </button>
+                )
+              ) : canRent && locationCompleted ? (
+                <div className="flex flex-col gap-3">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                    <p className="text-sm font-semibold text-emerald-800">{t('product.readyForRental')}</p>
+                    <p className="text-xs text-emerald-600 mt-1">{t('product.rentalInfoAdded')}</p>
+                  </div>
+                  <button onClick={() => router.push('/boutique/panier')} className="w-full bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2">
+                    <ShoppingBag size={15} /> {t('product.viewCart')}
+                  </button>
+                  <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all flex items-center justify-center gap-2">
+                    <Store size={15} /> {t('product.continueShopping')}
+                  </button>
+                </div>
+              ) : canRent ? (
+                <button onClick={() => setShowRentalContent(true)}
+                  className="w-full min-w-0 bg-gray-900 hover:bg-gray-800 text-white py-2.5 px-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm overflow-hidden"
+                >
+                  <CalendarDays size={14} className="shrink-0" /> <span className="truncate text-xs sm:text-sm">{t('product.rental')}</span>
+                </button>
+              ) : (
+                <>
+              <button onClick={handleAddToCart} disabled={isOutOfStock} className="w-full bg-gray-900 text-white py-2.5 px-4 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                  <ShoppingBag size={15} /> {isOutOfStock ? 'Indisponible' : t('product.addToCart')}
+                </button>
+              <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">{isOutOfStock ? 'Indisponible' : t('product.buyNow')}</button>
+                </>
+              )}
+              </div>
+              </div>
+            </div>
+
+            <div className="mt-28 border-t border-gray-200/40 pt-16 space-y-24">
+              {product?.description && product.description.length > 60 && (
+                <div className="bg-white rounded-2xl border border-gray-200/70 p-5">
+                  <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
+                </div>
+              )}
+
+              {(product.descriptionDetaillee || product.longDescription) && (
+              <section>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('product.description')}</h2>
+                {product.descriptionDetaillee?.includes('<') ? (
+                  <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed overflow-x-auto" dangerouslySetInnerHTML={{ __html: product.descriptionDetaillee }} />
+                ) : (
+                  <p className="text-gray-600 leading-relaxed">{product.descriptionDetaillee || product.longDescription}</p>
+                )}
+              </section>
+              )}
               {upsellProducts.length > 0 && (
                 <section>
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Complétez votre installation</h2>
@@ -1707,9 +1737,9 @@ export default function ProductDetailPage() {
 
         <aside
           className="hidden lg:flex flex-col fixed z-10 w-[420px] max-h-[calc(100vh-9rem)]"
-          style={{ top: stickyTop, right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))', transition: 'top 0.35s ease', overflow: 'visible' }}
+          style={{ top: stickyTop, right: 'max(16px, calc((100vw - 1280px) / 2 + 64px))', transition: 'top 0.35s ease', overflowY: 'auto', overflowX: 'hidden' }}
         >
-          <div className="flex-1 min-h-0 pr-1 overflow-visible">
+          <div className="flex-1 min-h-0 pr-1 overflow-y-auto overflow-x-hidden">
             <nav className="text-sm text-gray-400 mb-4">
               <ol className="flex list-none p-0">
                 <li className="flex items-center">
@@ -1812,14 +1842,6 @@ export default function ProductDetailPage() {
             {/* Variants */}
             {displayVariants.length > 0 && (
               <div className="space-y-3 mb-4">
-                {selectedVariant?.description && (
-                  <div className="flex items-center gap-2">
-                    <span className="bg-gray-900 text-white px-2.5 py-1 rounded-lg text-xs font-bold tracking-tight shadow-sm">{selectedVariant.description}</span>
-                    {selectedVariant?.reference && (
-                      <span className="text-xs text-gray-400 font-mono font-medium bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200/50">{selectedVariant.reference}</span>
-                    )}
-                  </div>
-                )}
                 {variantOverflow2 ? (
                   <div ref={comboboxRef2}>
                     <button
@@ -1890,6 +1912,14 @@ export default function ProductDetailPage() {
                         {v.name}
                       </button>
                     ))}
+                  </div>
+                )}
+                {selectedVariant?.description && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="bg-gray-900 text-white px-2.5 py-1 rounded-lg text-xs font-bold tracking-tight shadow-sm">{selectedVariant.description}</span>
+                    {selectedVariant?.reference && (
+                      <span className="text-xs text-gray-400 font-mono font-medium bg-gray-100 px-2 py-0.5 rounded-md border border-gray-200/50">{selectedVariant.reference}</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -1967,9 +1997,9 @@ export default function ProductDetailPage() {
                 </div>
               ) : (
                 <button onClick={() => setShowRentalContent(true)}
-                  className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
+                  className="w-full min-w-0 bg-gray-900 hover:bg-gray-800 text-white py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
                 >
-                  <CalendarDays size={18} /> {t('product.rental')}
+                  <CalendarDays size={18} className="shrink-0" /> <span className="truncate">{t('product.rental')}</span>
                 </button>
               )}
             </div>
@@ -1992,25 +2022,27 @@ export default function ProductDetailPage() {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center shrink-0">
+                <div className="flex items-center shrink-0 rounded-lg border border-blue-500/30">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={isOutOfStock || quantity <= 1}
-                    className="w-10 h-10 flex items-center justify-center bg-[#1a1f2e] rounded-l-lg border border-blue-500/30 border-r-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="w-10 h-10 flex items-center justify-center bg-[#1a1f2e] rounded-l-lg text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <Minus size={13} />
                   </button>
                   <input
                     type="number"
                     value={quantity}
+                    min={1}
+                    max={availableStock}
                     onChange={(e) => setQuantity(Math.min(availableStock, Math.max(1, parseInt(e.target.value) || 1)))}
                     disabled={isOutOfStock}
-                    className="w-12 h-10 text-center text-sm font-bold bg-[#1a1f2e] text-white border border-blue-500/30 focus:outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-12 h-10 text-center text-sm font-bold bg-[#1a1f2e] text-white focus:outline-none appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                   <button
                     onClick={() => setQuantity(Math.min(availableStock, quantity + 1))}
                     disabled={isOutOfStock || quantity >= availableStock}
-                    className="w-10 h-10 flex items-center justify-center bg-[#1a1f2e] rounded-r-lg border border-blue-500/30 border-l-0 text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="w-10 h-10 flex items-center justify-center bg-[#1a1f2e] rounded-r-lg text-slate-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     <Plus size={13} />
                   </button>
@@ -2020,6 +2052,11 @@ export default function ProductDetailPage() {
                   {isOutOfStock ? 'Indisponible' : t('product.addToCart')}
                 </button>
               </div>
+              {!isOutOfStock && quantity >= availableStock && (
+                <p className="text-[11px] text-red-500 font-semibold flex items-center gap-1">
+                  <span>🔴</span> Quantité maximale disponible atteinte. Vous ne pouvez pas dépasser le stock disponible.
+                </p>
+              )}
               <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                 {isOutOfStock ? 'Indisponible' : t('product.buyNow')}
               </button>

@@ -23,6 +23,7 @@ interface BoutiqueRentalFlowProps {
     availableFor?: string[];
   };
   dailyRate?: number;
+  maxQuantity?: number;
   onComplete: () => void;
 }
 
@@ -32,7 +33,7 @@ const formatTime = (seconds: number) => {
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-export default function BoutiqueRentalFlow({ product, dailyRate, onComplete }: BoutiqueRentalFlowProps) {
+export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, onComplete }: BoutiqueRentalFlowProps) {
   const router = useRouter();
   const { addItem } = useCart();
 
@@ -177,6 +178,7 @@ export default function BoutiqueRentalFlow({ product, dailyRate, onComplete }: B
       additionalNotes: additionalNotes || undefined,
       contractSignedAt: isSignatureValidated ? new Date().toISOString() : undefined,
       rentalFlowCompleted: true,
+      stock: maxQuantity,
     }, quantity);
   };
 
@@ -193,7 +195,8 @@ export default function BoutiqueRentalFlow({ product, dailyRate, onComplete }: B
       rentalEndDate &&
       rentalStartTime &&
       rentalEndTime &&
-      quantity >= 1
+      quantity >= 1 &&
+      (maxQuantity ? quantity <= maxQuantity : true)
     );
   };
 
@@ -403,7 +406,7 @@ export default function BoutiqueRentalFlow({ product, dailyRate, onComplete }: B
             </div>
 
             <div className="md:col-span-2">
-              <div className="bg-violet-500/10 p-4 rounded-2xl border border-violet-500/40 relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] ring-1 ring-violet-500/20">
+              <div className="bg-violet-500/10 p-4 rounded-2xl border border-violet-500/40 ring-1 ring-violet-500/20 relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)]">
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent"></div>
                 <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest mb-1.5 block flex items-center gap-2">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(139,92,246,0.8)]"></span>
@@ -413,21 +416,50 @@ export default function BoutiqueRentalFlow({ product, dailyRate, onComplete }: B
                   <input
                     type="number"
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    min={1}
+                    max={maxQuantity ?? undefined}
+                    onChange={(e) => {
+                      const raw = parseInt(e.target.value) || 1;
+                      const clamped = Math.max(1, maxQuantity !== undefined && maxQuantity > 0 ? Math.min(maxQuantity, raw) : raw);
+                      setQuantity(clamped);
+                    }}
                     placeholder="Ex : 1"
                     className="w-full rounded-xl font-bold focus:outline-none transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none bg-[#1a1f2e] text-white border border-blue-500/30 focus:border-cyan-400 px-4 py-3 text-sm"
                   />
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
-                    <button type="button" onClick={() => setQuantity(quantity + 1)} className="transition-colors text-slate-500 hover:text-slate-300">
+                    <button
+                      type="button"
+                      disabled={maxQuantity !== undefined && maxQuantity > 0 && quantity >= maxQuantity}
+                      onClick={() => {
+                        if (maxQuantity !== undefined && maxQuantity > 0 && quantity >= maxQuantity) return;
+                        setQuantity(q => q + 1);
+                      }}
+                      className="transition-colors text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
                       <ChevronUp size={12} />
                     </button>
-                    <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="transition-colors text-slate-500 hover:text-slate-300">
+                    <button
+                      type="button"
+                      disabled={quantity <= 1}
+                      onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                      className="transition-colors text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
                       <ChevronDown size={12} />
                     </button>
                   </div>
                 </div>
+                {maxQuantity !== undefined && maxQuantity > 0 ? (
+                  quantity >= maxQuantity ? (
+                    <p className="text-[11px] text-red-400 font-semibold mt-1.5 flex items-center gap-1">
+                      <span>🔴</span> Quantité maximale disponible atteinte. Vous ne pouvez pas dépasser le stock disponible.
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-violet-300/70 mt-1.5">Stock disponible : {maxQuantity}</p>
+                  )
+                ) : null}
               </div>
             </div>
+
           </div>
 
           <div className="flex justify-end mt-6 pt-4 border-t border-gray-100">

@@ -47,6 +47,11 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
 }) {
   const { t } = useI18n();
   const isMobile = useMediaQuery('(max-width: 767px)');
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(open ? 'pixia:overlay-open' : 'pixia:overlay-close'));
+  }, [open]);
+
   return (
     <AnimatePresence>
       {open && (
@@ -383,7 +388,7 @@ export default function BoutiquePage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-screen bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
       <FilterDrawer
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
@@ -399,7 +404,7 @@ export default function BoutiquePage() {
       />
 
       {quoteDeclinedId && (
-        <div className="mx-6 md:mx-10 lg:mx-14 mt-4 p-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 lg:px-14 mt-4 p-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
               <ShoppingBag className="w-6 h-6 text-amber-600" />
@@ -441,7 +446,7 @@ export default function BoutiquePage() {
           </div>
         </div>
       )}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 px-4 md:px-10 lg:px-14 py-2 md:py-4 border-b border-gray-200/40">
+      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2 md:gap-3 px-4 sm:px-6 md:px-10 lg:px-14 py-2 md:py-4 border-b border-gray-200/40">
         <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1 sm:p-1.5 rounded-full overflow-x-auto scrollbar-hide">
           {[
             { id: 'all', label: t('boutique.products') },
@@ -633,7 +638,7 @@ export default function BoutiquePage() {
               <article
                 key={product.id}
                 style={{ animationDelay: `${idx * 0.08}s` }}
-                className={`product-card-entry w-full bg-white p-3 sm:p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative flex flex-col ${outOfStock ? 'opacity-70' : ''}`}
+                className={`product-card-entry w-full bg-[#F5F5F5] p-3 sm:p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative flex flex-col ${outOfStock ? 'opacity-70' : ''}`}
               >
                 <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }} className="block relative mb-3 group">
                   {outOfStock && (

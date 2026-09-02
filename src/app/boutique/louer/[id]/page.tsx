@@ -55,7 +55,7 @@ export default function QuickRentPage() {
   }, [params.id, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-screen flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
       <div className="size-10 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
     </div>
   );

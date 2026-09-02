@@ -9,7 +9,7 @@ export const DEFAULT_PALETTES: Omit<Theme, 'id' | 'createdAt'>[] = [
     isDefault: false,
     colors: {
       adminBackground: '210 40% 96%',
-      background: '0 0% 100%',
+      background: '0 0% 96%',
       foreground: '222 47% 11%',
       primary: '221 83% 53%',
       primaryForeground: '210 40% 98%',
@@ -61,7 +61,7 @@ export const DEFAULT_PALETTES: Omit<Theme, 'id' | 'createdAt'>[] = [
     isDefault: false,
     colors: {
       adminBackground: '210 15% 95%',
-      background: '210 20% 98%',
+      background: '0 0% 96%',
       foreground: '220 15% 22%',
       primary: '220 45% 78%',
       primaryForeground: '220 25% 25%',
@@ -113,7 +113,7 @@ export const DEFAULT_PALETTES: Omit<Theme, 'id' | 'createdAt'>[] = [
     isDefault: false,
     colors: {
       adminBackground: '40 20% 94%',
-      background: '40 25% 97%',
+      background: '0 0% 96%',
       foreground: '30 15% 18%',
       primary: '40 60% 55%',
       primaryForeground: '30 15% 10%',
@@ -217,7 +217,7 @@ export const DEFAULT_PALETTES: Omit<Theme, 'id' | 'createdAt'>[] = [
     isDefault: true,
     colors: {
       adminBackground: '80 15% 96%',
-      background: '0 0% 99%',
+      background: '0 0% 96%',
       foreground: '0 0% 9%',
       primary: '74 95% 42%',
       primaryForeground: '0 0% 100%',
@@ -269,7 +269,7 @@ export const DEFAULT_PALETTES: Omit<Theme, 'id' | 'createdAt'>[] = [
     isDefault: false,
     colors: {
       adminBackground: '40 10% 87%',
-      background: '40 8% 97%',
+      background: '0 0% 96%',
       foreground: '35 8% 12%',
       primary: '68 72% 50%',
       primaryForeground: '35 8% 10%',

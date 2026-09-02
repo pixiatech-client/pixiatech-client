@@ -64,6 +64,7 @@ tsc_errors.txt
 
 # backup local (hors git)
 /scripts/backup.js
+/backup-audit-2026/
 
 # widget chatbot
 /chatbot-widget/node_modules

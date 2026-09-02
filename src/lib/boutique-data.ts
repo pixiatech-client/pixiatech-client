@@ -33,6 +33,7 @@ export interface Product {
   badges?: string[];
   variants?: ProductVariant[];
   stock?: number;
+  rentalStock?: number;
   isHidden?: boolean;
   upsellFor?: string[];
   quoteOnly?: boolean;
@@ -207,6 +208,7 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
       (v?.price == null || v?.price === '') ? v : ({ ...v, price: normalizePrice(v.price) })
     ),
     stock: data.stock ?? undefined,
+    rentalStock: data.rentalStock !== undefined && data.rentalStock !== '' ? Number(data.rentalStock) : undefined,
     upsellFor: data.upsellFor || [],
     quoteOnly: !!data.quoteOnly || data.availableFor?.includes('sur-commande') || false,
     isHidden: !!data.isHidden,

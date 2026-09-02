@@ -8,7 +8,7 @@ import { BoutiqueHeader } from '@/components/boutique-header';
 import { FirebaseClientProvider } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
-import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import { FloatingChatWrapper } from '@/components/chat/FloatingChatWrapper';
 import { RoleProvider } from '@/contexts/RoleContext';
 import { SiteBanners } from './SiteBanners';
 import { ExpandableTabs } from '@/components/ui/expandable-tabs';
@@ -95,14 +95,14 @@ export function LayoutProvider({
         <ThemeProvider initialThemeName={initialThemeName}>
           <ProfileProvider initialBoutiqueB2B={initialBoutiqueB2B}>
           <CartProvider>
-          <div className="flex flex-col bg-background min-h-dvh">
+          <div className={cn("flex flex-col min-h-dvh", isFrontendPage ? "bg-[#F5F5F5]" : "bg-background")}>
             {isFrontendPage && !isMonComptePage && <BoutiqueHeader boutiqueEnabled={initialBoutiqueEnabled} />}
             {isFrontendPage ? (
-              <div className={`flex flex-col flex-1 ${isMonComptePage ? '' : 'pt-[72px]'} ${showBottomNav ? 'pb-20' : ''}`}>
+              <div className={`flex flex-col flex-1 ${isMonComptePage ? '' : 'pt-[72px]'} ${showBottomNav ? 'pb-20' : ''} bg-[#F5F5F5]`}>
                 <SiteBanners />
                 <main
                   className={cn(
-                    'flex-1 flex items-start justify-center w-full',
+                    'flex-1 flex items-start justify-center w-full bg-[#F5F5F5]',
                     isHomePage && 'px-4 pb-4 pt-8 md:px-6 md:pb-6 md:pt-8',
                     !isHomePage && !isQuotePage && !isBoutiquePage && !isMonComptePage && 'px-4 pb-4 md:px-6 md:pb-6',
                   )}
@@ -124,6 +124,7 @@ export function LayoutProvider({
                 />
               </div>
             )}
+            {isFrontendPage && <FloatingChatWrapper />}
           </div>
           </CartProvider>
           </ProfileProvider>

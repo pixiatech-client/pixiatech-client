@@ -51,7 +51,7 @@ export function Stepper({ currentStep, onStepClick, steps }: StepperProps) {
                 </button>
                 <p suppressHydrationWarning className={cn(
                     "mt-2 text-xs font-semibold text-center",
-                     isActive ? "text-primary" : "text-muted-foreground",
+                     isActive ? "text-black" : "text-muted-foreground",
                      isMobile && "hidden"
                 )}>
                     {t(step.label)}
@@ -60,7 +60,7 @@ export function Stepper({ currentStep, onStepClick, steps }: StepperProps) {
 
               {index < steps.length - 1 && (
                 <div className="flex-auto border-t-2 transition-colors duration-300 mx-4"
-                     style={{ borderColor: isCompleted || isActive ? 'hsl(var(--primary))' : 'hsl(var(--border))' }}
+                     style={{ borderColor: isCompleted || isActive ? '#000000' : 'hsl(var(--border))' }}
                 ></div>
               )}
             </div>

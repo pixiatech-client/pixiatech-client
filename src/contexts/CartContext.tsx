@@ -23,6 +23,7 @@ export interface CartItem {
   additionalNotes?: string;
   contractSignedAt?: string;
   rentalFlowCompleted?: boolean;
+  stock?: number;
 }
 
 interface PromoInfo {
@@ -58,6 +59,14 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const STORAGE_KEY = 'boutique-cart';
 const SAVED_KEY = 'boutique-saved';
 
+const clampQuantity = (qty: number, stock?: number): number => {
+  const min = 1;
+  const next = Math.max(min, Math.floor(qty));
+  if (stock !== undefined && Number.isFinite(stock)) {
+    return Math.min(next, Math.max(min, Math.floor(stock)));
+  }
+  return next;
+};
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [savedItems, setSavedItems] = useState<CartItem[]>([]);
@@ -108,11 +117,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (existing) {
         return prev.map(i =>
           i.productId === product.productId && i.type === product.type && i.variantName === product.variantName
-            ? { ...i, quantity: i.quantity + qty }
+            ? { ...i, quantity: clampQuantity(i.quantity + qty, product.stock !== undefined ? product.stock : i.stock) }
             : i
         );
       }
-      return [...prev, { ...product, quantity: qty }];
+      return [...prev, { ...product, quantity: clampQuantity(qty, product.stock) }];
     });
   }, []);
 
@@ -127,11 +136,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const updateQuantity = useCallback((productId: string, qty: number, type?: 'purchase' | 'rental', variantName?: string) => {
     if (qty < 1) return;
     setItems(prev =>
-      prev.map(i =>
-        type !== undefined
-          ? i.productId === productId && i.type === type && (variantName === undefined || i.variantName === variantName) ? { ...i, quantity: qty } : i
-          : i.productId === productId ? { ...i, quantity: qty } : i
-      )
+      prev.map(i => {
+        const match = type !== undefined
+          ? i.productId === productId && i.type === type && (variantName === undefined || i.variantName === variantName)
+          : i.productId === productId;
+        return match ? { ...i, quantity: clampQuantity(qty, i.stock) } : i;
+      })
     );
   }, []);
 

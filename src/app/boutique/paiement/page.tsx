@@ -429,7 +429,7 @@ export default function CheckoutPage() {
 
   if (items.length === 0 && step === 'payment' && !isDemo) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F5F5' }}>
+      <div className="w-full min-h-screen flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
         <div className="text-center">
           <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
           <h2 className="text-xl font-bold text-primary-900 mb-2">Votre panier est vide</h2>
@@ -884,7 +884,7 @@ export default function CheckoutPage() {
 
   return (
     <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'EUR', components: 'buttons,card-fields' }}>
-    <div className="min-h-screen" style={{ backgroundColor: '#F5F5F5' }}>
+    <div className="w-full min-h-screen bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
 
 
       <main className="max-w-6xl mx-auto px-6 md:px-10 lg:px-14 pb-16">
