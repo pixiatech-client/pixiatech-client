@@ -61,7 +61,9 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   'codes-promo': '/admin/codes-promo',
   membres: '/admin/membres',
   messages: '/admin/messages',
-  notification: '/admin/notifications',
+  notification: '/admin/notification',
+  notifications: '/admin/notification',
+  'alertes-systeme': '/admin/alertes-systeme',
   alertesSysteme: '/admin/alertes-systeme',
   litigesSub: '/admin/litiges',
   paypal: '/admin/settings/paypal',
@@ -88,8 +90,8 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin/settings/emergency': 'emergencySub',
   '/admin/settings/software': 'software',
   '/admin/messages': 'messages',
-  '/admin/notifications': 'notification',
-  '/admin/alertes-systeme': 'alertesSysteme',
+  '/admin/notification': 'notifications',
+  '/admin/alertes-systeme': 'alertes-systeme',
   '/admin/litiges': 'litigesSub',
 };
 
@@ -228,20 +230,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  const PLUS_SUBITEM_IDS = ['history', 'codes-promo', 'alertes-systeme', 'profile'];
+
+  useEffect(() => {
+    if (PLUS_SUBITEM_IDS.includes(activeView)) {
+      setExpandedSubmenu('plus');
+    } else {
+      setExpandedSubmenu((current) => (current === 'plus' ? null : current));
+    }
+  }, [activeView]);
+
   const initialItems = useMemo(() => [
     { id: 'dashboard', label: t('admin.dashboard'), icon: LayoutDashboard, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'users', label: t('admin.users'), icon: Users, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'estimations', label: t('admin.estimations'), icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'history', label: t('admin.history'), icon: Clock, color: 'text-cyan-400', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'produit', label: t('admin.products'), icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'boutique', label: t('admin.navOrders'), icon: ClipboardList, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
-    { id: 'codes-promo', label: t('admin.navCodesPromo'), icon: Tag, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'membres', label: t('admin.memberSpace'), icon: Users, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'messages', label: t('admin.messages'), icon: MessageSquare, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'notifications', label: t('admin.notifications'), icon: Bell, color: 'text-amber-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
-    { id: 'alertes-systeme', label: t('admin.systemAlerts.title'), icon: AlertTriangle, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
-    { id: 'profile', label: t('admin.myProfile'), icon: UserIcon, color: 'text-purple-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'settings', label: t('admin.settings'), icon: Settings, color: 'text-fuchsia-500', roles: [UserRole.ADMINISTRATEUR] },
+    {
+      id: 'plus',
+      label: t('admin.more'),
+      icon: GripVertical,
+      color: 'text-gray-400',
+      roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL],
+      subItems: [
+        { id: 'history', label: t('admin.history'), icon: Clock, color: 'text-cyan-400' },
+        { id: 'codes-promo', label: t('admin.navCodesPromo'), icon: Tag, color: 'text-emerald-500' },
+        { id: 'alertes-systeme', label: t('admin.systemAlerts.title'), icon: AlertTriangle, color: 'text-red-500' },
+        { id: 'profile', label: t('admin.myProfile'), icon: UserIcon, color: 'text-purple-500' },
+      ],
+    },
   ], [t]);
 
   const [items, setItems] = useState(() => {
@@ -931,9 +952,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <Reorder.Group axis="y" values={filteredItems} onReorder={setItems} className="space-y-1">
             {filteredItems.map((item: any) => {
-              const isActive = activeView === item.id;
               const hasSubItems = item.subItems && item.subItems.length > 0;
-              const isExpanded = expandedSubmenu === item.id;
+              const isExpanded = expandedSubmenu === item.id || (hasSubItems && item.subItems.some((s: any) => s.id === activeView));
+              const isGroupToggle = hasSubItems && !VIEW_TO_ROUTE[item.id];
+              const isActive = activeView === item.id || (hasSubItems && item.subItems.some((s: any) => s.id === activeView));
 
               return (
                 <Reorder.Item
@@ -947,7 +969,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => {
                       if (isEditingOrder) return;
                       if (hasSubItems) {
-                        setActiveView(item.id);
+                        if (!isGroupToggle) setActiveView(item.id);
                         setExpandedSubmenu(isExpanded ? null : item.id);
                       } else {
                         setActiveView(item.id);
@@ -983,46 +1005,65 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </button>
 
                   {/* Sub-items */}
-                  {hasSubItems && !isCompact && isExpanded && (
-                    <div className="ml-6 mt-1 space-y-1">
-                      {item.subItems.map((subItem: any) => {
-                        // Map subItem id to SettingsSection
-                        const subItemToSection: Record<string, SettingsSection> = {
-                          'settings-main': 'general',
-                          'images-sub': 'images',
-                          'appearance-sub': 'appearance',
-                          'wizard-sub': 'wizard',
-                          'delivery-sub': 'livraison',
-                          'labor-sub': 'main-doeuvre',
-                          'pdf-sub': 'pdf',
-                          'emergency-sub': 'emergency',
-                        };
-                        const isSubItemActive = selectedSettingsSection === subItemToSection[subItem.id];
+                  <AnimatePresence initial={false}>
+                    {hasSubItems && !isCompact && isExpanded && (
+                      <motion.div
+                        key={`${item.id}-submenu`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div className="ml-3 mt-1 space-y-0.5">
+                          {item.subItems.map((subItem: any, idx: number) => {
+                            // Map subItem id to SettingsSection
+                            const subItemToSection: Record<string, SettingsSection> = {
+                              'settings-main': 'general',
+                              'images-sub': 'images',
+                              'appearance-sub': 'appearance',
+                              'wizard-sub': 'wizard',
+                              'delivery-sub': 'livraison',
+                              'labor-sub': 'main-doeuvre',
+                              'pdf-sub': 'pdf',
+                              'emergency-sub': 'emergency',
+                            };
+                            const isSubItemActive =
+                              (selectedSettingsSection === subItemToSection[subItem.id]) ||
+                              activeView === subItem.id;
 
-                        return (
-                          <button
-                            key={subItem.id}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isSubItemActive
-                              ? 'bg-theme-sidebar-active-bg text-theme-sidebar-active-text'
-                              : 'text-theme-sidebar-text opacity-70 hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
-                              }`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const section = subItemToSection[subItem.id];
-                              if (section && onSettingsSectionSelect) {
-                                onSettingsSectionSelect(section);
-                              } else {
-                                setActiveView(subItem.id);
-                              }
-                            }}
-                          >
-                            <subItem.icon className={`w-4 h-4 ${subItem.color || ''}`} />
-                            <span>{subItem.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                            return (
+                              <motion.div
+                                key={subItem.id}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: Math.min(idx * 0.04, 0.2), duration: 0.22, ease: 'easeOut' }}
+                              >
+                                <button
+                                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isSubItemActive
+                                    ? 'bg-theme-sidebar-active-bg text-theme-sidebar-active-text'
+                                    : 'text-theme-sidebar-text opacity-70 hover:opacity-100 hover:bg-theme-sidebar-active-bg hover:text-theme-sidebar-active-text'
+                                    }`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const section = subItemToSection[subItem.id];
+                                    if (section && onSettingsSectionSelect) {
+                                      onSettingsSectionSelect(section);
+                                    } else {
+                                      setActiveView(subItem.id);
+                                    }
+                                  }}
+                                >
+                                  <subItem.icon className={`w-4 h-4 ${subItem.color || ''}`} />
+                                  <span>{subItem.label}</span>
+                                </button>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </Reorder.Item>
               );
             })}

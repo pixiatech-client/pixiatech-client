@@ -68,3 +68,7 @@ tsc_errors.txt
 
 # widget chatbot
 /chatbot-widget/node_modules
+
+# python bytecode (skill helpers)
+__pycache__/
+*.pyc
