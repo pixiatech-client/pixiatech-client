@@ -33,6 +33,7 @@ import {
   Store,
   CreditCard,
   MoreHorizontal,
+  Info,
 } from 'lucide-react';
 import Link from 'next/link';
 import { logout, getSettings, saveSidebarConfig } from '@/app/admin/actions';
@@ -54,6 +55,7 @@ import { SettingsContent } from '../settings/_components/settings-content';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FloatingCalculator } from './FloatingCalculator';
 import { ResetApplicationDialog } from './ResetApplicationDialog';
+import { AboutApplicationDialog } from './AboutApplicationDialog';
 import { APP_VERSION } from '@/lib/build-info';
 import { isVersionNewer } from '@/lib/version';
 
@@ -247,6 +249,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
 
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetMode, setResetMode] = useState<'manual' | 'version'>('manual');
@@ -255,6 +258,9 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
   // Version disponible : celle servie au dernier /api/app/version (build du serveur).
   const [newVersion, setNewVersion] = useState<string>();
   const [newSignature, setNewSignature] = useState<string>();
+  const [isCheckingVersion, setIsCheckingVersion] = useState(false);
+  const [checkFailed, setCheckFailed] = useState(false);
+  const [lastCheckedAt, setLastCheckedAt] = useState<number | null>(null);
   const versionCheckedRef = useRef(false);
 
   const openManualReset = () => {
@@ -262,11 +268,68 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
     setResetDialogOpen(true);
   };
 
-  // Détection automatique de nouvelle version (chargement + intervalle raisonnable).
+  // ─────────── Vérification de version — SOURCE DE VÉRITÉ UNIQUE ───────────
+  // Utilisée par l'auto-check (60 s), le bouton du popup "À propos" et la
+  // confirmation post-mise à jour. Écrit l'état partagé currentVersion /
+  // newVersion / newSignature + horodatage ; aucun autre chemin ne fait un
+  // fetch /api/app/version.
+  const performVersionCheck = useCallback(async () => {
+    setIsCheckingVersion(true);
+    setCheckFailed(false);
+    try {
+      const res = await fetch('/api/app/version', { cache: 'no-store' });
+      if (!res.ok) {
+        setCheckFailed(true);
+        return null;
+      }
+      const data = await res.json();
+      const latestVersion = `${data.version}`;
+      const sig = `${data.signature}`;
+      const installedVersion = APP_VERSION;
+      const updateAvailable = isVersionNewer(latestVersion, installedVersion);
+
+      setCurrentVersion(installedVersion);
+      setNewVersion(updateAvailable ? latestVersion : undefined);
+      setNewSignature(updateAvailable ? sig : undefined);
+      setLastCheckedAt(Date.now());
+
+      // On mémorise l'état servi pour rester cohérent (même quand à jour).
+      localStorage.setItem('app-build-signature', sig);
+      localStorage.setItem('app-build-version', latestVersion);
+
+      // ── Confirmation POST-MISE À JOUR (vérification réelle côté serveur) ─
+      // Si un update a été demandé (clic "Mettre à jour maintenant"), on a
+      // stocké la signature cible. Après le reload, on ne confirme la réussite
+      // que si le serveur sert réellement cette signature.
+      const pendingUpdate = localStorage.getItem('app-update-pending');
+      if (pendingUpdate) {
+        if (sig === pendingUpdate) {
+          localStorage.removeItem('app-update-pending');
+          sonnerToast.success(t('admin.about.updateCompleteTitle') || 'Mise à jour terminée', {
+            description: `${t('admin.about.updateCompleteDesc') || 'Vous utilisez maintenant la version'} ${latestVersion}.`,
+            id: 'update-confirmed',
+            duration: 5000,
+          });
+        }
+        // Signature cible non servie (CDN/rollout en cours) : on garde la clé,
+        // le prochain check (60 s) retentera sans harceler (pas de toast d'erreur).
+      }
+
+      return { updateAvailable, latestVersion };
+    } catch {
+      /* réseau indisponible : on retentera au prochain intervalle */
+      setCheckFailed(true);
+      return null;
+    } finally {
+      setIsCheckingVersion(false);
+    }
+  }, [t]);
+
+  // Détection automatique de nouvelle version (chargement + intervalle 60 s).
   // Non destructif : on signale simplement la présence d'une mise à jour.
-  // RÉGLE ABSOLUE : notification UNIQUEMENT si la version disponible est
+  // RÈGLE ABSOLUE : notification UNIQUEMENT si la version disponible est
   // STRICTEMENT supérieure (comparaison SemVer) à la version installée.
-  //   latest > current  → notification
+  //   latest > current  → toast discret + ouverture du popup "À propos"
   //   latest === current → AUCUNE notification (serveur sur la même version que nous)
   //   latest < current  → AUCUNE notification (rollback / cas anormal)
   useEffect(() => {
@@ -276,43 +339,22 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
     const installedVersion = APP_VERSION;
 
     const checkVersion = async () => {
-      try {
-        const res = await fetch('/api/app/version', { cache: 'no-store' });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (disposed) return;
-        const latestVersion = `${data.version}`;
-        const sig = `${data.signature}`;
+      if (versionCheckedRef.current) return;
+      const result = await performVersionCheck();
+      if (disposed || !result?.updateAvailable) return;
 
-        // Une seule notification par session : on cesse de poller une fois
-        // la mise à jour signalée, pour ne pas harceler l'utilisateur.
-        if (versionCheckedRef.current) return;
-
-        // Comparaison SemVer réelle (pas de simple comparaison de chaînes).
-        const updateAvailable = isVersionNewer(latestVersion, installedVersion);
-
-        if (!updateAvailable) {
-          // latest === current (ou rollback) : aucune mise à jour à signaler.
-          // On mémorise quand même l'état servi pour rester cohérent.
-          localStorage.setItem('app-build-signature', sig);
-          localStorage.setItem('app-build-version', latestVersion);
-          setCurrentVersion(installedVersion);
-          setNewVersion(undefined);
-          setNewSignature(undefined);
-          return;
-        }
-
-        // Mise à jour réellement disponible : signaler une seule fois.
-        versionCheckedRef.current = true;
-        if (timer) clearInterval(timer);
-        setCurrentVersion(installedVersion);
-        setNewVersion(latestVersion);
-        setNewSignature(sig);
-        setResetMode('version');
-        setResetDialogOpen(true);
-      } catch {
-        /* réseau indisponible : on retentera au prochain intervalle */
-      }
+      // Mise à jour réellement disponible : signaler une seule fois.
+      versionCheckedRef.current = true;
+      if (timer) clearInterval(timer);
+      sonnerToast.info(t('admin.about.newVersionAvailable') || 'Nouvelle version disponible', {
+        description: `${t('admin.about.newVersionDesc') || 'Une nouvelle version est disponible.'} (${installedVersion} → ${result.latestVersion})`,
+        id: 'auto-version-detected',
+        duration: 8000,
+        action: {
+          label: t('admin.about.openAbout') || 'Voir',
+          onClick: () => setIsAboutOpen(true),
+        },
+      });
     };
 
     checkVersion();
@@ -322,34 +364,26 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
       if (timer) clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [performVersionCheck]);
 
-  const checkUpdateManually = async () => {
-    try {
-      sonnerToast.loading(t('admin.checkingUpdate') || 'Vérification des mises à jour...', { id: 'manual-version-check' });
-      const res = await fetch('/api/app/version', { cache: 'no-store' });
-      if (!res.ok) {
-        sonnerToast.error(t('admin.checkUpdateFailed') || 'Impossible de contacter le serveur.', { id: 'manual-version-check' });
-        return;
-      }
-      const data = await res.json();
-      const latestVersion = `${data.version}`;
-      const sig = `${data.signature}`;
-      const installedVersion = APP_VERSION;
+  // Clic sur la version du footer : ouvre le même popup "À propos"
+  // (un seul point d'entrée : Header → popup, Footer → popup).
+  const openAbout = () => {
+    setIsAboutOpen(true);
+  };
 
-      if (isVersionNewer(latestVersion, installedVersion)) {
-        sonnerToast.dismiss('manual-version-check');
-        setCurrentVersion(installedVersion);
-        setNewVersion(latestVersion);
-        setNewSignature(sig);
-        setResetMode('version');
-        setResetDialogOpen(true);
-      } else {
-        sonnerToast.success(`Votre application est à jour (v${installedVersion})`, { id: 'manual-version-check' });
-      }
-    } catch {
-      sonnerToast.error('Erreur de connexion au serveur.', { id: 'manual-version-check' });
+  // Clic "Mettre à jour maintenant" dans le popup : mémorise la signature cible
+  // (pour la confirmation post-reload), ferme le popup puis délègue la purge
+  // caches + reload au ResetApplicationDialog existant (mode 'version').
+  const handleUpdateNow = () => {
+    if (newSignature) {
+      try {
+        localStorage.setItem('app-update-pending', newSignature);
+      } catch { /* storage indisponible : confirmation silencieuse */ }
     }
+    setIsAboutOpen(false);
+    setResetMode('version');
+    setResetDialogOpen(true);
   };
 
   const handleLogout = async () => {
@@ -384,7 +418,7 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         initialOrder={initialSettings?.sidebarOrder}
         onSaveOrder={handleSaveOrder}
         onSaveLogo={handleSaveLogo}
-        onCheckUpdate={checkUpdateManually}
+        onCheckUpdate={openAbout}
         onOpenAccountDrawer={onOpenAccountDrawer}
         onLogout={handleLogout}
         userName={userProfile?.displayName}
@@ -475,6 +509,25 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
               >
                 {t('admin.reset.shortLabel')}
               </AnimatedButton>
+
+              {/* 0.5. À propos (popup version / mise à jour) */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={openAbout}
+                title={t('admin.about.title')}
+                aria-label={t('admin.about.title')}
+                className={cn(
+                  "group h-11 w-11 rounded-xl shadow-sm transition-all duration-200 hidden md:flex",
+                  "bg-white hover:bg-theme-sidebar-active-bg"
+                )}
+              >
+                <Info className={cn(
+                  "h-5 w-5 transition-colors",
+                  "text-gray-500 group-hover:text-blue-500"
+                )} />
+                <span className="sr-only">{t('admin.about.title')}</span>
+              </Button>
 
               {/* 1. Calculatrice flottante */}
               <Button
@@ -588,6 +641,13 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
                         {t('admin.floatingCalculator')}
                       </button>
                       <button
+                        onClick={() => { setIsAboutOpen(true); setMobileActionsOpen(false); }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <Info className="w-4 h-4 text-blue-500" />
+                        {t('admin.about.title')}
+                      </button>
+                      <button
                         onClick={() => { window.open('/', '_blank'); setMobileActionsOpen(false); }}
                         className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                       >
@@ -669,6 +729,19 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         currentVersion={currentVersion}
         newVersion={newVersion}
         targetSignature={newSignature}
+      />
+
+      {/* ── À propos : version, build et mise à jour (même vérification que l'auto-check) ── */}
+      <AboutApplicationDialog
+        open={isAboutOpen}
+        onOpenChange={setIsAboutOpen}
+        currentVersion={currentVersion}
+        newVersion={newVersion}
+        isChecking={isCheckingVersion}
+        lastCheckedAt={lastCheckedAt}
+        checkFailed={checkFailed}
+        onCheckUpdate={performVersionCheck}
+        onUpdateNow={handleUpdateNow}
       />
 
       <AnimatePresence>
