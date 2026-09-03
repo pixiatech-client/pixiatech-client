@@ -9,13 +9,14 @@ import { fetchBoutiqueProduct, fetchUpsellProducts, formatPrice, getModeBadge } 
 import { isProductOutOfStockForSale, normalizeStockQuantity } from '@/lib/product-status';
 import { ActionButton, formatProductPriceLabel } from '@/components/boutique/ProductActionButton';
 import { firestore } from '@/firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import type { Product, ProductVariant, GalleryItem } from '@/lib/boutique-data';
 import BoutiqueRentalFlow from '@/components/BoutiqueRentalFlow';
 import CityInput from '@/components/CityInput';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useI18n } from '@/lib/i18n';
 import { useVatValidation } from '@/hooks/useVatValidation';
+import QRCode from 'qrcode';
 
 const ICON_MAP: Record<string, any> = {
   screen: Monitor, distance: Eye, puissance: Zap, brightness: SunMedium,
@@ -240,6 +241,19 @@ export default function ProductDetailPage() {
   const [showRentalContent, setShowRentalContent] = useState(false);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [upsellProducts, setUpsellProducts] = useState<Product[]>([]);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [productQrDataUrl, setProductQrDataUrl] = useState<string>('');
+
+  useEffect(() => {
+    if (product?.showQrCodeOnProduct && product?.qrCodeUrl) {
+      QRCode.toDataURL(product.qrCodeUrl, { width: 320, margin: 1 })
+        .then(setProductQrDataUrl)
+        .catch(() => setProductQrDataUrl(''));
+    } else {
+      setProductQrDataUrl('');
+    }
+  }, [product?.showQrCodeOnProduct, product?.qrCodeUrl]);
+
   const [quoteFormData, setQuoteFormData] = useState({
     firstName: '',
     lastName: '',
@@ -417,7 +431,7 @@ export default function ProductDetailPage() {
   }, [params.id]);
 
   useEffect(() => {
-    getDoc(doc(firestore, 'settings', 'wizard')).then((snap) => {
+    const unsub = onSnapshot(doc(firestore, 'settings', 'main'), (snap) => {
       if (snap.exists()) {
         const data = snap.data() as any;
         const rate = data?.estimationFlow?.taxRate;
@@ -426,7 +440,8 @@ export default function ProductDetailPage() {
         if (typeof data?.estimationFlow?.vatMessageEnabled === 'boolean') setVatMessageEnabled(data.estimationFlow.vatMessageEnabled);
         if (typeof data?.estimationFlow?.vatMessageColor === 'string' && data.estimationFlow.vatMessageColor.trim()) setVatMessageColor(data.estimationFlow.vatMessageColor);
       }
-    }).catch(() => {});
+    }, () => {});
+    return () => unsub();
   }, []);
 
   useEffect(() => {
@@ -650,7 +665,7 @@ export default function ProductDetailPage() {
         />
       )}
 
-      <main className="max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pt-24 pb-16">
+      <main className={`max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pb-16 ${showRentalContent ? 'pt-6' : 'pt-24'}`}>
         <div className="lg:mr-[450px]">
             {showRentalContent ? (
             <div className="max-w-2xl">
@@ -1363,6 +1378,30 @@ export default function ProductDetailPage() {
               )}
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
+                {product.showQrCodeOnProduct && product.qrCodeUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setShowQrModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-cyan-600 transition-all cursor-pointer shadow-sm"
+                    title="Afficher le QR code"
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect width="5" height="5" x="3" y="3" rx="1" />
+                      <rect width="5" height="5" x="16" y="3" rx="1" />
+                      <rect width="5" height="5" x="3" y="16" rx="1" />
+                      <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+                      <path d="M21 21v.01" />
+                      <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+                      <path d="M3 12h.01" />
+                      <path d="M12 3h.01" />
+                      <path d="M12 16v.01" />
+                      <path d="M16 12h1" />
+                      <path d="M21 12v.01" />
+                      <path d="M12 21v-1" />
+                    </svg>
+                    <span className="text-xs uppercase tracking-wider">QR Code</span>
+                  </button>
+                )}
                 <button onClick={() => window.open(product.pdfUrl || '', '_blank')} disabled={!product.pdfUrl} className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-blue-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                   <FileText size={14} />
                   <span className="text-xs uppercase tracking-wider">{t('product.datasheet')}</span>
@@ -1698,20 +1737,6 @@ export default function ProductDetailPage() {
               </div>
               </div>
             </div>
-
-            {vatMessageEnabled && (() => {
-              const s = VAT_MESSAGE_STYLES[vatMessageColor] ?? VAT_MESSAGE_STYLES.orange;
-              return (
-                <div className={`mt-3 flex items-start gap-2.5 px-3 py-2.5 ${s.container} rounded-xl`}>
-                  <svg className={`w-4 h-4 ${s.icon} shrink-0 mt-0.5`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M12 16v-4"></path>
-                    <path d="M12 8h.01"></path>
-                  </svg>
-                  <p className={`text-[11px] ${s.text} leading-relaxed`}>{vatMessage}</p>
-                </div>
-              );
-            })()}
 
             <div className="mt-28 border-t border-gray-200/40 pt-16 space-y-24">
               {product?.description && product.description.length > 60 && (
@@ -2109,6 +2134,49 @@ export default function ProductDetailPage() {
           </div>
           </aside>
       </main>
+      {showQrModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowQrModal(false)}
+        >
+          <div
+            className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-gray-100 flex flex-col items-center text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowQrModal(false)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+              aria-label="Fermer"
+            >
+              <X size={18} />
+            </button>
+            <h3 className="text-base font-black text-gray-900 uppercase tracking-tight mb-4">
+              QR Code du produit
+            </h3>
+            <div className="w-56 h-56 bg-white p-3 rounded-2xl border-2 border-cyan-400/50 shadow-sm flex items-center justify-center mb-4">
+              {productQrDataUrl ? (
+                <img src={productQrDataUrl} alt="QR Code du produit" className="w-full h-full object-contain" />
+              ) : (
+                <div className="w-6 h-6 border-2 border-cyan-400/30 border-t-cyan-500 rounded-full animate-spin" />
+              )}
+            </div>
+            <p className="text-xs font-semibold text-gray-600 mb-4 leading-relaxed">
+              Scannez ce QR code pour accéder au contenu du produit.
+            </p>
+            {product?.qrCodeUrl && (
+              <a
+                href={product.qrCodeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium underline truncate max-w-full px-2"
+              >
+                {product.qrCodeUrl}
+              </a>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

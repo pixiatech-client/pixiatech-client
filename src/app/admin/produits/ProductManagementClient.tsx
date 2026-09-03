@@ -48,6 +48,7 @@ import { parseProductPdf, type ParsedProductData } from '@/lib/product-pdf-parse
 import { optimizeStagedVideo, stageVideoFile, unstageVideoFile, uploadImageFull } from '@/lib/uploadImage';
 import { getUploadIdForSignal, logUpload } from '@/lib/media-upload-diag';
 import { MediaProgress } from '@/components/ui/media-progress';
+import QRCode from 'qrcode';
 import { VideoUploadOverlay } from '@/components/ui/video-upload-overlay';
 import type { MediaUploadState, MediaStatus } from '@/hooks/use-media-upload';
 
@@ -2685,8 +2686,51 @@ const ProduitPage = ({
     setImportPdfFile,
     handleCancelEdit,
     resetProductForm,
+    qrCodeUrl,
+    setQrCodeUrl,
+    showQrCodeOnProduct,
+    setShowQrCodeOnProduct,
 }: any) => {
   const { t } = useI18n();
+  const { toast } = useToast();
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+
+  useEffect(() => {
+    if (qrCodeUrl && qrCodeUrl.trim()) {
+      QRCode.toDataURL(qrCodeUrl.trim(), { width: 280, margin: 1 })
+        .then(setQrCodeDataUrl)
+        .catch(() => setQrCodeDataUrl(''));
+    } else {
+      setQrCodeDataUrl('');
+    }
+  }, [qrCodeUrl]);
+
+  const handleGenerateQr = async () => {
+    if (!qrCodeUrl || !qrCodeUrl.trim()) {
+      toast({
+        title: "URL requise",
+        description: "Veuillez saisir une URL valide pour générer le QR code.",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      const url = await QRCode.toDataURL(qrCodeUrl.trim(), { width: 280, margin: 1 });
+      setQrCodeDataUrl(url);
+      toast({
+        title: "QR Code généré",
+        description: "Le QR code du produit a été généré avec succès.",
+        variant: "success"
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Erreur",
+        description: "Impossible de générer le QR code pour cette URL.",
+        variant: "destructive"
+      });
+    }
+  };
   const [specPage, setSpecPage] = useState(1);
   const [prevSpecPage, setPrevSpecPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -3649,6 +3693,86 @@ const ProduitPage = ({
                           </div>
                         </motion.div>
                       )}
+                    </div>
+                  </div>
+
+                  {/* QR CODE DU PRODUIT */}
+                  <div className="bg-[#0b1329] border-2 border-cyan-400/80 rounded-2xl p-5 space-y-3.5 shadow-[0_0_20px_rgba(6,182,212,0.12)]">
+                    <h4 className="text-xs font-black text-white uppercase tracking-wider">
+                      QR CODE DU PRODUIT
+                    </h4>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                        Lien à encoder
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="url"
+                          placeholder="https://pixiatech.com/f56"
+                          value={qrCodeUrl || ''}
+                          onChange={(e) => setQrCodeUrl(e.target.value)}
+                          className="flex-1 h-9 bg-[#070c18] border border-cyan-500/40 rounded-xl px-3 text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-400 transition-colors"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleGenerateQr}
+                          className="h-9 px-4 bg-[#c6ff00] hover:bg-[#b2e600] active:scale-95 text-slate-950 font-black text-xs rounded-xl transition-all flex items-center justify-center shrink-0 shadow-sm cursor-pointer"
+                        >
+                          Générer
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 pt-1">
+                      <div className="w-28 h-28 bg-white p-1.5 rounded-xl shrink-0 flex items-center justify-center shadow-md overflow-hidden">
+                        {qrCodeDataUrl ? (
+                          <img src={qrCodeDataUrl} alt="QR Code du produit" className="w-full h-full object-contain" />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 border border-dashed border-slate-200 rounded-lg">
+                            <svg className="w-8 h-8 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect width="5" height="5" x="3" y="3" rx="1" />
+                              <rect width="5" height="5" x="16" y="3" rx="1" />
+                              <rect width="5" height="5" x="3" y="16" rx="1" />
+                              <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+                              <path d="M21 21v.01" />
+                              <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+                              <path d="M3 12h.01" />
+                              <path d="M12 3h.01" />
+                              <path d="M12 16v.01" />
+                              <path d="M16 12h1" />
+                              <path d="M21 12v.01" />
+                              <path d="M12 21v-1" />
+                            </svg>
+                            <span className="text-[8px] font-bold mt-1 text-slate-400">Aucun QR</span>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs font-semibold text-slate-300 leading-snug">
+                        Scannez ce QR code<br />
+                        pour accéder au contenu<br />
+                        du produit.
+                      </p>
+                    </div>
+
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowQrCodeOnProduct(!showQrCodeOnProduct)}
+                        className="flex items-center gap-2.5 text-left cursor-pointer group select-none"
+                      >
+                        <div className={cn(
+                          "w-4 h-4 rounded flex items-center justify-center transition-all",
+                          showQrCodeOnProduct
+                            ? "bg-white text-slate-950"
+                            : "border border-slate-500 bg-transparent group-hover:border-slate-400"
+                        )}>
+                          {showQrCodeOnProduct && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        </div>
+                        <span className="text-xs font-bold text-white tracking-tight">
+                          Afficher sur la fiche produit
+                        </span>
+                      </button>
                     </div>
                   </div>
 
@@ -5201,6 +5325,8 @@ export default function ProductManagementClient() {
     setUploadedVideo(null);
     setUploadedPdf(null);
     setPdfImportMode(true);
+    setQrCodeUrl('');
+    setShowQrCodeOnProduct(false);
     setImportPdfFile(null);
     setIsParsingPdf(false);
     setPdfParseError('');
@@ -5610,6 +5736,8 @@ export default function ProductManagementClient() {
   const [showRating, setShowRating] = useState<boolean>(true);
   const [reviews, setReviews] = useState<string>('0');
   const [downloadEnabled, setDownloadEnabled] = useState<boolean>(true);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [showQrCodeOnProduct, setShowQrCodeOnProduct] = useState<boolean>(false);
   const [downloadLabel, setDownloadLabel] = useState<string>('');
   const [playStoreUrl, setPlayStoreUrl] = useState<string>('');
   const [appStoreUrl, setAppStoreUrl] = useState<string>('');
@@ -5988,6 +6116,8 @@ export default function ProductManagementClient() {
         reviews: Number(reviews) || 0,
         priceDisplay: priceDisplay,
         downloadEnabled: downloadEnabled !== false,
+        qrCodeUrl: qrCodeUrl ? qrCodeUrl.trim() : '',
+        showQrCodeOnProduct: !!showQrCodeOnProduct,
         downloadLabel: downloadLabel || '',
         playStoreUrl: playStoreUrl || '',
         appStoreUrl: appStoreUrl || '',
@@ -6808,6 +6938,8 @@ export default function ProductManagementClient() {
       setShowRating(editingProduct.showRating !== false);
       setReviews((editingProduct.reviews ?? 0).toString());
       setDownloadEnabled(editingProduct.downloadEnabled !== false);
+      setQrCodeUrl(editingProduct.qrCodeUrl || '');
+      setShowQrCodeOnProduct(!!editingProduct.showQrCodeOnProduct);
       setDownloadLabel(editingProduct.downloadLabel || '');
       setPlayStoreUrl(editingProduct.playStoreUrl || '');
       setAppStoreUrl(editingProduct.appStoreUrl || '');
@@ -7458,6 +7590,10 @@ export default function ProductManagementClient() {
                      reviews={reviews}
                      setReviews={setReviews}
                      downloadEnabled={downloadEnabled}
+                     qrCodeUrl={qrCodeUrl}
+                     setQrCodeUrl={setQrCodeUrl}
+                     showQrCodeOnProduct={showQrCodeOnProduct}
+                     setShowQrCodeOnProduct={setShowQrCodeOnProduct}
                      setDownloadEnabled={setDownloadEnabled}
                      downloadLabel={downloadLabel}
                      setDownloadLabel={setDownloadLabel}

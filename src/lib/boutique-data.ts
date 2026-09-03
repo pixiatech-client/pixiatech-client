@@ -52,6 +52,8 @@ export interface Product {
   downloadIcon3?: string;
   downloadCustomIcon3?: string;
   priceDisplay?: 'zero' | 'free' | 'multiprice' | 'quote';
+  qrCodeUrl?: string;
+  showQrCodeOnProduct?: boolean;
 }
 
 export interface RelatedProduct {
@@ -227,6 +229,8 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     downloadIcon3: data.downloadIcon3 || '',
     downloadCustomIcon3: data.downloadCustomIcon3 || '',
     priceDisplay: data.priceDisplay || undefined,
+    qrCodeUrl: data.qrCodeUrl || '',
+    showQrCodeOnProduct: !!data.showQrCodeOnProduct,
   };
 }
 

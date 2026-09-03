@@ -3225,6 +3225,9 @@ export async function getSettings(): Promise<Settings> {
       taxRate: 19,
       taxMode: 'ht',
       boutiqueB2B: false,
+      vatMessageEnabled: true,
+      vatMessage: 'Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.',
+      vatMessageColor: 'orange',
       sale: {
         maxProductsPerQuote: 3,
         flatScreen: { maxWidth: 20, maxHeight: 10 },

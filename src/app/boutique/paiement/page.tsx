@@ -16,7 +16,7 @@ import { useProfile } from '@/contexts/ProfileContext';
 import type { PdfSettings } from '@/lib/types';
 import { InvoiceButton } from '@/components/invoice-button';
 import { getPdfSettings } from '@/app/actions/quote-actions';
-import { getDoc, doc } from 'firebase/firestore';
+import { getDoc, doc, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/firebase/config';
 import Image from 'next/image';
 import confetti from 'canvas-confetti';
@@ -321,7 +321,7 @@ export default function CheckoutPage() {
   const [isPreFilledFromRental, setIsPreFilledFromRental] = useState(false);
 
   useEffect(() => {
-    getDoc(doc(firestore, 'settings', 'wizard')).then((snap) => {
+    const unsub = onSnapshot(doc(firestore, 'settings', 'main'), (snap) => {
       if (snap.exists()) {
         const data = snap.data() as any;
         const ef = data?.estimationFlow;
@@ -330,7 +330,8 @@ export default function CheckoutPage() {
         if (typeof ef?.vatMessageEnabled === 'boolean') setVatMessageEnabled(ef.vatMessageEnabled);
         if (typeof ef?.vatMessageColor === 'string' && ef.vatMessageColor.trim()) setVatMessageColor(ef.vatMessageColor);
       }
-    }).catch(() => {});
+    }, () => {});
+    return () => unsub();
   }, []);
 
   useEffect(() => {

@@ -28,6 +28,21 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
   const constraintsRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    const start = dragStartRef.current;
+    dragStartRef.current = null;
+    const moved = start
+      ? Math.hypot(e.clientX - start.x, e.clientY - start.y)
+      : 0;
+    if (moved > 8) return;
+    setIsOpen((prev) => !prev);
+  };
 
   return (
     <>
@@ -40,9 +55,9 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
         dragElastic={0.1}
         dragMomentum={true}
         whileHover={{ cursor: "grab", scale: 1.05 }}
-        whileDrag={{ cursor: "grabbing", scale: 1.1 }}
+        whileDrag={{ cursor: "grabbing", scale: 1.08 }}
         className={cn(
-          "fixed z-[101] pointer-events-auto touch-none transition-all duration-500",
+          "fixed z-[101] pointer-events-auto touch-none will-change-transform transition-[bottom,left,right] duration-500 ease-out",
           isMobile ? "bottom-24 left-2" : shifted ? "bottom-[38%] right-[440px]" : "bottom-[38%] right-12"
         )}
         style={{ touchAction: "none" }}
@@ -50,7 +65,8 @@ export function FloatingChatButton({ allProducts, settings, laborSettings, deliv
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          onClick={() => setIsOpen(!isOpen)}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
           className={cn(
             "transition-all duration-300 relative cursor-grab active:cursor-grabbing",
             isOpen
