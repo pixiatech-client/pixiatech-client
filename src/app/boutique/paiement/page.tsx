@@ -318,6 +318,7 @@ export default function CheckoutPage() {
   const [vatMessage, setVatMessage] = useState('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
   const [vatMessageEnabled, setVatMessageEnabled] = useState(true);
   const [vatMessageColor, setVatMessageColor] = useState('orange');
+  const [isPreFilledFromRental, setIsPreFilledFromRental] = useState(false);
 
   useEffect(() => {
     getDoc(doc(firestore, 'settings', 'wizard')).then((snap) => {
@@ -340,6 +341,70 @@ export default function CheckoutPage() {
     if (isDemo) setDelivery(d => ({ ...d, email: 'demo@example.com', firstName: 'Demo', lastName: 'User' }));
     getPdfSettings().then(setPdfSettings).catch(() => {});
   }, [isDemo]);
+
+  // Pré-remplissage du formulaire :
+  // Priorité 1 : profil client connecté (session active)
+  // Priorité 2 : renterDetails d'un article de location dans le panier
+  useEffect(() => {
+    if (isDemo) return; // Ne pas interférer avec le mode démo
+
+    async function prefillDelivery() {
+      try {
+        // Priorité 1 : client connecté via client_session
+        const sessionRes = await fetch('/api/boutique/session-status');
+        if (sessionRes.ok) {
+          const sessionData = await sessionRes.json();
+          if (sessionData?.loggedIn && sessionData.email) {
+            // Client connecté : l'email est fiable ; le reste du profil
+            // sera saisi par le client. On pré-remplit uniquement l'email.
+            setDelivery(d => ({
+              ...d,
+              email: sessionData.email,
+            }));
+            return; // Priorité 1 appliquée, on s'arrête ici.
+          }
+        }
+      } catch { /* Ignorer les erreurs réseau et laisser le formulaire vide */ }
+
+      // Priorité 2 : renterDetails présents dans un article de location du panier
+      const rentalItem = items.find(i => i.type === 'rental' && i.renterDetails);
+      if (!rentalItem?.renterDetails) return;
+
+      const rd = rentalItem.renterDetails;
+
+      // Mapping robuste de representative -> firstName / lastName
+      // On sépare uniquement sur le premier espace ; tout le reste va dans lastName.
+      // Cela évite de fragmenter des noms composés (Jean-Pierre Dupont, etc.).
+      let firstName = '';
+      let lastName = '';
+      if (rd.representative) {
+        const spaceIdx = rd.representative.indexOf(' ');
+        if (spaceIdx !== -1) {
+          firstName = rd.representative.slice(0, spaceIdx).trim();
+          lastName = rd.representative.slice(spaceIdx + 1).trim();
+        } else {
+          // Un seul mot : on le met en lastName pour que NAME_RE passe
+          lastName = rd.representative.trim();
+        }
+      }
+
+      setDelivery(d => ({
+        ...d,
+        ...(firstName ? { firstName } : {}),
+        ...(lastName ? { lastName } : {}),
+        ...(rd.email ? { email: rd.email } : {}),
+        ...(rd.phone ? { phone: rd.phone } : {}),
+        ...(rd.company ? { companyName: rd.company } : {}),
+        ...(rd.address ? { addressLine1: rd.address } : {}),
+        ...(rd.city ? { city: rd.city } : {}),
+        ...(rd.postcode ? { postcode: rd.postcode } : {}),
+      }));
+      setIsPreFilledFromRental(true);
+    }
+
+    prefillDelivery();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Exécuté une seule fois au montage ; items est lu via closure
 
   useEffect(() => {
     if (!delivery.postcode && !delivery.city) {
@@ -987,6 +1052,12 @@ export default function CheckoutPage() {
                   </button>
                   {deliveryOpen && (
                     <div className="px-4 pb-4 pt-1 border-t border-gray-100">
+                      {isPreFilledFromRental && (
+                        <div className="mb-4 p-3 bg-blue-50/70 border border-blue-200/60 rounded-xl flex items-center gap-2.5 text-xs text-blue-900 font-medium">
+                          <Check size={14} className="text-blue-600 shrink-0" />
+                          <span>Vos informations ont été récupérées depuis votre location. Vous pouvez les modifier si nécessaire.</span>
+                        </div>
+                      )}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.firstName')}</label>
