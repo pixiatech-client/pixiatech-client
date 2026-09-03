@@ -226,7 +226,7 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
       rentalEndTime,
       renterDetails: { company, representative, email, phone, address, city, postcode },
       additionalNotes: additionalNotes || undefined,
-      contractSignedAt: isSignatureValidated ? new Date().toISOString() : undefined,
+      contractSignedAt: (isSignatureValidated || isSessionEmailVerified()) ? new Date().toISOString() : undefined,
       rentalFlowCompleted: true,
       stock: maxQuantity,
     }, quantity);
@@ -264,6 +264,17 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
 
     if (hasError || !isStep1Valid()) return;
     setAttemptedSubmit(false);
+
+    // Si la session de location a déjà été validée (contrat signé + email vérifié par OTP)
+    // pour cet email exact, ajout direct au panier sans redemander contrat, signature ni OTP.
+    if (isSessionEmailVerified()) {
+      setIsOtpCompleted(true);
+      setIsSignatureValidated(true);
+      handleAddToCart();
+      setStep(4);
+      return;
+    }
+
     setStep(2);
   };
 
@@ -353,7 +364,11 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
           {isPreFilled && (
             <div className="mb-5 p-3.5 bg-blue-50/70 border border-blue-200/60 rounded-xl flex items-center gap-2.5 text-xs text-blue-900 font-medium">
               <CheckCircle size={15} className="text-blue-600 shrink-0" />
-              <span>Coordonnées client récupérées depuis votre panier. Vous pouvez les modifier si besoin.</span>
+              <span>
+                {isSessionEmailVerified()
+                  ? "Coordonnées et contrat déjà validés pour cette session. Renseignez uniquement vos dates et quantité pour ajouter ce produit au panier."
+                  : "Coordonnées client récupérées depuis votre panier. Vous pouvez les modifier si besoin."}
+              </span>
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -534,7 +549,7 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
             <button onClick={handleStep1Continue}
               disabled={!isStep1Valid() && attemptedSubmit}
               className="bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold text-sm hover:bg-gray-800 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
-              Continuer <ArrowRight size={16} />
+              {isSessionEmailVerified() ? 'Ajouter au panier' : 'Continuer'} <ArrowRight size={16} />
             </button>
           </div>
         </div>
