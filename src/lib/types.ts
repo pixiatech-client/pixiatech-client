@@ -230,6 +230,7 @@ export type Settings = {
     boutiqueB2B: boolean;
     vatMessage?: string;
     vatMessageEnabled?: boolean;
+    vatMessageColor?: string;
     sale: {
       maxProductsPerQuote: number;
       flatScreen: { maxWidth: number; maxHeight: number };

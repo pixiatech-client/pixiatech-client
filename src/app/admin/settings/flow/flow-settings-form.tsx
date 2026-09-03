@@ -30,6 +30,7 @@ const flowSchema = z.object({
     boutiqueB2B: z.boolean().optional(),
     vatMessage: z.string().optional(),
     vatMessageEnabled: z.boolean().optional(),
+    vatMessageColor: z.string().optional(),
     sale: z.object({
       maxProductsPerQuote: z.coerce.number().min(1).default(3),
       flatScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),
@@ -45,6 +46,14 @@ const flowSchema = z.object({
 });
 
 type FormValues = z.infer<typeof flowSchema>;
+
+const VAT_MESSAGE_COLORS = [
+  { value: 'green',  label: 'Couleur vert',   bg: '#e7f6ef', fg: '#0f7b4f', border: '#b7e3cf', dot: '#22a06b' },
+  { value: 'orange', label: 'Couleur orange', bg: '#fff4e6', fg: '#c2410c', border: '#fed7b0', dot: '#f97316' },
+  { value: 'yellow', label: 'Couleur jaune',  bg: '#fef9c3', fg: '#a16207', border: '#fde98a', dot: '#eab308' },
+  { value: 'blue',   label: 'Couleur bleu',   bg: '#eef2ff', fg: '#3730a3', border: '#c7d2fe', dot: '#6366f1' },
+  { value: 'gray',   label: 'Couleur gris',   bg: '#f3f4f6', fg: '#374151', border: '#d1d5db', dot: '#6b7280' },
+];
 
 interface FlowSettingsFormProps {
   initialSettings: AppSettings;
@@ -222,6 +231,7 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
     boutiqueB2B: initialSettings.estimationFlow?.boutiqueB2B ?? false,
     vatMessageEnabled: initialSettings.estimationFlow?.vatMessageEnabled ?? true,
     vatMessage: initialSettings.estimationFlow?.vatMessage ?? 'Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.',
+    vatMessageColor: initialSettings.estimationFlow?.vatMessageColor ?? 'orange',
     sale: (initialSettings.estimationFlow as any)?.sale || {
       maxProductsPerQuote: 3,
       flatScreen: { maxWidth: 20, maxHeight: 10 },
@@ -503,6 +513,27 @@ export function FlowSettingsForm({ initialSettings }: FlowSettingsFormProps) {
                     className="w-full h-auto rounded-xl border border-slate-200 bg-white p-3 text-xs focus:outline-none focus:border-blue-500 resize-y"
                     placeholder={t('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.')}
                   />
+                  <div className="space-y-1.5 pt-1">
+                    <Label className="text-xs font-semibold text-slate-700">{t('Couleur du message')}</Label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {(VAT_MESSAGE_COLORS).map((c) => {
+                        const active = (form.watch('estimationFlow.vatMessageColor') ?? 'orange') === c.value;
+                        return (
+                          <button
+                            key={c.value}
+                            type="button"
+                            onClick={() => form.setValue('estimationFlow.vatMessageColor', c.value)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${active ? 'ring-2 ring-offset-1 ring-slate-900/20 border-slate-900/30' : 'border-slate-200 hover:border-slate-300'}`}
+                            style={{ backgroundColor: c.bg, color: c.fg, borderColor: active ? c.border : c.border }}
+                          >
+                            <span className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: c.dot }} />
+                            {t(c.label)}
+                            {active && <span className="ml-0.5">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <p className="text-[10px] text-slate-400 italic">{t('Aucun message TVA affiché')}</p>

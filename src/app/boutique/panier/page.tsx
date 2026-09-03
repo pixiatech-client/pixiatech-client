@@ -54,6 +54,14 @@ function QtySelector({ value, onMinus, onPlus, maxQty }: { value: number; onMinu
   );
 }
 
+const VAT_MESSAGE_TEXT: Record<string, string> = {
+  green: 'text-emerald-700',
+  orange: 'text-orange-700',
+  yellow: 'text-yellow-700',
+  blue: 'text-indigo-700',
+  gray: 'text-gray-600',
+};
+
 export default function CartPage() {
   const router = useRouter();
   const { items, savedItems, addItem, removeItem, updateQuantity, itemCount, subtotal, promo, promoError, applyPromo, removePromo, totalAfterDiscount, clearCart, saveItem, unsaveItem, moveToCart, isSaved } = useCart();
@@ -66,6 +74,7 @@ export default function CartPage() {
   const [vatRate, setVatRate] = useState(20);
   const [vatMessage, setVatMessage] = useState('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
   const [vatMessageEnabled, setVatMessageEnabled] = useState(true);
+  const [vatMessageColor, setVatMessageColor] = useState('orange');
 
   useEffect(() => {
     getDoc(doc(firestore, 'settings', 'wizard')).then((snap) => {
@@ -75,6 +84,7 @@ export default function CartPage() {
         if (typeof ef?.taxRate === 'number' && ef.taxRate > 0) setVatRate(ef.taxRate);
         if (typeof ef?.vatMessage === 'string' && ef.vatMessage.trim()) setVatMessage(ef.vatMessage);
         if (typeof ef?.vatMessageEnabled === 'boolean') setVatMessageEnabled(ef.vatMessageEnabled);
+        if (typeof ef?.vatMessageColor === 'string' && ef.vatMessageColor.trim()) setVatMessageColor(ef.vatMessageColor);
       }
     }).catch(() => {});
   }, []);
@@ -333,7 +343,7 @@ export default function CartPage() {
                     <ArrowRight size={18} />
                   </button>
                   {vatMessageEnabled && (
-                    <p className="mt-3 text-[11px] text-gray-500 leading-relaxed text-center">{vatMessage}</p>
+                    <p className={`mt-3 text-[11px] leading-relaxed text-center ${VAT_MESSAGE_TEXT[vatMessageColor] ?? 'text-gray-500'}`}>{vatMessage}</p>
                   )}
                   <div className="flex justify-center gap-4 mt-5 opacity-40">
                     <CreditCard size={22} className="text-gray-500" />

@@ -278,6 +278,14 @@ function checkoutModeBadge(type: string): { label: string; colors: string } | nu
   return null;
 }
 
+const VAT_MESSAGE_STYLES: Record<string, { container: string; text: string }> = {
+  green:  { container: 'bg-emerald-50 border border-emerald-200/70', text: 'text-emerald-800' },
+  orange: { container: 'bg-amber-50 border border-amber-200/70', text: 'text-amber-800' },
+  yellow: { container: 'bg-yellow-50 border border-yellow-200/70', text: 'text-yellow-800' },
+  blue:   { container: 'bg-indigo-50 border border-indigo-200/70', text: 'text-indigo-800' },
+  gray:   { container: 'bg-slate-50 border border-slate-200/70', text: 'text-slate-700' },
+};
+
 export default function CheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -309,6 +317,7 @@ export default function CheckoutPage() {
   const [vatRate, setVatRate] = useState(20);
   const [vatMessage, setVatMessage] = useState('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
   const [vatMessageEnabled, setVatMessageEnabled] = useState(true);
+  const [vatMessageColor, setVatMessageColor] = useState('orange');
 
   useEffect(() => {
     getDoc(doc(firestore, 'settings', 'wizard')).then((snap) => {
@@ -318,6 +327,7 @@ export default function CheckoutPage() {
         if (typeof ef?.taxRate === 'number' && ef.taxRate > 0) setVatRate(ef.taxRate);
         if (typeof ef?.vatMessage === 'string' && ef.vatMessage.trim()) setVatMessage(ef.vatMessage);
         if (typeof ef?.vatMessageEnabled === 'boolean') setVatMessageEnabled(ef.vatMessageEnabled);
+        if (typeof ef?.vatMessageColor === 'string' && ef.vatMessageColor.trim()) setVatMessageColor(ef.vatMessageColor);
       }
     }).catch(() => {});
   }, []);
@@ -1487,11 +1497,14 @@ createOrder={async () => {
                   )}
                 </div>
 
-                {vatMessageEnabled && (
-                  <div className="mb-4 px-3 py-2.5 bg-gray-50 border border-gray-200/60 rounded-xl">
-                    <p className="text-[11px] text-gray-600 leading-relaxed text-center">{vatMessage}</p>
-                  </div>
-                )}
+                {vatMessageEnabled && (() => {
+                  const s = VAT_MESSAGE_STYLES[vatMessageColor] ?? VAT_MESSAGE_STYLES.orange;
+                  return (
+                    <div className={`mb-4 px-3 py-2.5 ${s.container} rounded-xl`}>
+                      <p className={`text-[11px] ${s.text} leading-relaxed text-center`}>{vatMessage}</p>
+                    </div>
+                  );
+                })()}
 
                 {paymentMethod === 'card' && (
                   <p className="text-center text-[11px] text-gray-400 mt-2 mb-4">

@@ -88,6 +88,7 @@ const settingsSchema = z.object({
     boutiqueB2B: z.boolean().optional(),
     vatMessage: z.string().optional(),
     vatMessageEnabled: z.boolean().optional(),
+    vatMessageColor: z.string().optional(),
     sale: z.object({
       maxProductsPerQuote: z.coerce.number().min(1).default(3),
       flatScreen: z.object({ maxWidth: z.coerce.number().min(1), maxHeight: z.coerce.number().min(1) }),

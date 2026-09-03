@@ -210,6 +210,14 @@ function Lightbox({ items, index, onClose, onPrev, onNext }: { items: MediaItem[
   );
 }
 
+const VAT_MESSAGE_STYLES: Record<string, { container: string; text: string; icon: string }> = {
+  green:  { container: 'bg-emerald-50 border border-emerald-200/70', text: 'text-emerald-800', icon: 'text-emerald-600' },
+  orange: { container: 'bg-amber-50 border border-amber-200/70', text: 'text-amber-800', icon: 'text-amber-600' },
+  yellow: { container: 'bg-yellow-50 border border-yellow-200/70', text: 'text-yellow-800', icon: 'text-yellow-600' },
+  blue:   { container: 'bg-indigo-50 border border-indigo-200/70', text: 'text-indigo-800', icon: 'text-indigo-600' },
+  gray:   { container: 'bg-slate-50 border border-slate-200/70', text: 'text-slate-700', icon: 'text-slate-500' },
+};
+
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -226,6 +234,7 @@ export default function ProductDetailPage() {
   const [taxRate, setTaxRate] = useState(20);
   const [vatMessage, setVatMessage] = useState('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
   const [vatMessageEnabled, setVatMessageEnabled] = useState(true);
+  const [vatMessageColor, setVatMessageColor] = useState('orange');
   const [showInfo, setShowInfo] = useState(false);
   const [locationCompleted, setLocationCompleted] = useState(false);
   const [showRentalContent, setShowRentalContent] = useState(false);
@@ -415,6 +424,7 @@ export default function ProductDetailPage() {
         if (typeof rate === 'number' && rate > 0) setTaxRate(rate);
         if (typeof data?.estimationFlow?.vatMessage === 'string' && data.estimationFlow.vatMessage.trim()) setVatMessage(data.estimationFlow.vatMessage);
         if (typeof data?.estimationFlow?.vatMessageEnabled === 'boolean') setVatMessageEnabled(data.estimationFlow.vatMessageEnabled);
+        if (typeof data?.estimationFlow?.vatMessageColor === 'string' && data.estimationFlow.vatMessageColor.trim()) setVatMessageColor(data.estimationFlow.vatMessageColor);
       }
     }).catch(() => {});
   }, []);
@@ -1436,17 +1446,6 @@ export default function ProductDetailPage() {
                   )}
                 </div>
 
-                {vatMessageEnabled && (
-                  <div className="mt-3 flex items-start gap-2.5 px-3 py-2.5 bg-amber-50 border border-amber-200/70 rounded-xl">
-                    <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <path d="M12 16v-4"></path>
-                      <path d="M12 8h.01"></path>
-                    </svg>
-                    <p className="text-[11px] text-amber-800 leading-relaxed">{vatMessage}</p>
-                  </div>
-                )}
-
                 <div className="relative mt-2">
                   {!forceB2B && (
                     <>
@@ -1700,6 +1699,20 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
+            {vatMessageEnabled && (() => {
+              const s = VAT_MESSAGE_STYLES[vatMessageColor] ?? VAT_MESSAGE_STYLES.orange;
+              return (
+                <div className={`mt-3 flex items-start gap-2.5 px-3 py-2.5 ${s.container} rounded-xl`}>
+                  <svg className={`w-4 h-4 ${s.icon} shrink-0 mt-0.5`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 16v-4"></path>
+                    <path d="M12 8h.01"></path>
+                  </svg>
+                  <p className={`text-[11px] ${s.text} leading-relaxed`}>{vatMessage}</p>
+                </div>
+              );
+            })()}
+
             <div className="mt-28 border-t border-gray-200/40 pt-16 space-y-24">
               {product?.description && product.description.length > 60 && (
                 <div className="bg-white rounded-2xl border border-gray-200/70 p-5">
@@ -1813,16 +1826,6 @@ export default function ProductDetailPage() {
                   </span>
                 )}
               </div>
-              {vatMessageEnabled && (
-                <div className="mt-3 flex items-start gap-2.5 px-3 py-2.5 bg-amber-50 border border-amber-200/70 rounded-xl">
-                  <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M12 16v-4"></path>
-                    <path d="M12 8h.01"></path>
-                  </svg>
-                  <p className="text-[11px] text-amber-800 leading-relaxed">{vatMessage}</p>
-                </div>
-              )}
               <div className="relative mt-1">
                 {!forceB2B && (
                   <>
@@ -2089,6 +2092,19 @@ export default function ProductDetailPage() {
             </div>
             )}
 
+            {vatMessageEnabled && (() => {
+              const s = VAT_MESSAGE_STYLES[vatMessageColor] ?? VAT_MESSAGE_STYLES.orange;
+              return (
+                <div className={`mt-3 flex items-start gap-2.5 px-3 py-2.5 ${s.container} rounded-xl`}>
+                  <svg className={`w-4 h-4 ${s.icon} shrink-0 mt-0.5`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 16v-4"></path>
+                    <path d="M12 8h.01"></path>
+                  </svg>
+                  <p className={`text-[11px] ${s.text} leading-relaxed`}>{vatMessage}</p>
+                </div>
+              );
+            })()}
 
           </div>
           </aside>
