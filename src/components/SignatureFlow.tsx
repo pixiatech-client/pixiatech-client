@@ -2236,6 +2236,9 @@ export default function SignatureFlow({
                           rentalStartTime: projectMode === 'location' ? rentalStartTime : undefined,
                           rentalEndTime: projectMode === 'location' ? rentalEndTime : undefined,
                           configuratorType: 'guided',
+                          selectedCityId: destination.resolved ? destination.cityId : null,
+                          isDeliveryCostFinal: !destination.fallbackUsed,
+                          unconfiguredCityQuery: destination.fallbackUsed ? renterDetails.city : undefined,
                         },
                         signatureDataUrl || ''
                       );

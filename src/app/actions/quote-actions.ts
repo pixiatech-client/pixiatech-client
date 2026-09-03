@@ -544,6 +544,9 @@ export async function createQuoteWithContract(
     rentalEndTime?: string;
     configuratorType?: 'guided' | 'manual' | 'lumi';
     priceSnapshot?: PriceSnapshot;
+    selectedCityId?: string | null;
+    isDeliveryCostFinal?: boolean;
+    unconfiguredCityQuery?: string;
   },
   signatureDataUrl: string
 ): Promise<{ success: boolean; id?: string; otpCode?: string; error?: string }> {

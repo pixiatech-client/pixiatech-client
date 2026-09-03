@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, ChevronDown, Check } from 'lucide-react';
 import { CITIES } from '@/lib/cities';
+import { getLocations } from '@/app/actions/public-actions';
+import type { City } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
 
 interface CityInputProps {
@@ -17,13 +19,36 @@ export default function CityInput({ value, onChange, error, errorMessage }: City
   const [searchQuery, setSearchQuery] = useState(value || '');
   const [selectedId, setSelectedId] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+  const [firestoreCities, setFirestoreCities] = useState<City[] | null>(null);
 
-  const filtered = CITIES.filter(
+  // Source principale : villes administrées dans Firestore (vrais ids + zoneId).
+  // Secours hors-ligne : liste statique CITIES (sans zoneId fiable).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getLocations();
+        if (!cancelled && Array.isArray(res?.villes) && res.villes.length > 0) {
+          setFirestoreCities((res.villes as City[]).filter(c => c && c.name));
+        }
+      } catch (e) {
+        console.error('Failed to load cities:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const cities = useMemo<City[]>(() => {
+    if (firestoreCities && firestoreCities.length > 0) return firestoreCities;
+    return CITIES as unknown as City[];
+  }, [firestoreCities]);
+
+  const filtered = cities.filter(
     c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
          c.postalCode.includes(searchQuery)
   );
 
-  const handleSelect = (city: typeof CITIES[number]) => {
+  const handleSelect = (city: City) => {
     setSelectedId(city.id);
     setSearchQuery(`${city.name} (${city.postalCode})`);
     onChange(city.name, city.postalCode, city.id);

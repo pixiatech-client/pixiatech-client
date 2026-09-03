@@ -67,22 +67,40 @@ export function resolveDestination(
   staticCities: City[]
 ): ResolvedDestination {
   const firestore = Array.isArray(firestoreCities) ? firestoreCities : [];
-  const lookup = (find: (list: City[], value: string) => City | undefined, value: string | null | undefined) => {
-    if (!value) return undefined;
-    return find(firestore, value) ?? find(staticCities, value);
-  };
 
-  let city: City | undefined;
-  if (input.cityId) {
-    city = findByPostcode(firestore, input.cityId) && findById(firestore, input.cityId)
-      ? findById(firestore, input.cityId)
-      : findById(staticCities, input.cityId);
-  }
   const postcode = input.postcode?.trim();
   const cityName = input.cityName?.trim();
-  if (!city && (postcode || cityName)) {
-    city = postcode ? lookup(findByPostcode, postcode) : undefined;
-    if (!city && cityName) city = lookup(findByName, cityName);
+
+  let city: City | undefined;
+
+  // 1) Résolution par id EXACT dans Firestore (vrais doc-ids créés par l'admin).
+  //    Un id statique ('1', '2', …) ne matche aucun doc Firestore → ici on n'obtient rien.
+  if (input.cityId) {
+    city = findById(firestore, input.cityId);
+  }
+
+  // 2) Si l'on n'a pas encore de ville Firestore (ou que celle résolue est sans zone),
+  //    on tente le repli par code postal PUIS par nom DANS Firestore. La liste statique
+  //    ne doit JAMAIS court-circuiter cette étape, car elle ne porte pas de zoneId fiable.
+  if (!city || city.zoneId == null) {
+    if (postcode) {
+      const byPost = findByPostcode(firestore, postcode);
+      if (byPost) {
+        city = byPost;
+      }
+    }
+    if ((!city || city.zoneId == null) && cityName) {
+      const byName = findByName(firestore, cityName);
+      if (byName) city = byName;
+    }
+  }
+
+  // 3) Dernier recours : liste statique (hors-ligne / ville jamais configurée côté admin),
+  //    uniquement si aucune ville Firestore (avec ou sans zone) n'a été trouvée.
+  if (!city) {
+    if (input.cityId) city = findById(staticCities, input.cityId);
+    if (!city && postcode) city = findByPostcode(staticCities, postcode);
+    if (!city && cityName) city = findByName(staticCities, cityName);
   }
 
   if (!city) {
