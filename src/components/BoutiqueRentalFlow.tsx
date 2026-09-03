@@ -33,13 +33,18 @@ const formatTime = (seconds: number) => {
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
+const RENTAL_SESSION_KEY = 'pixia_rental_session_verified';
+
 export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, onComplete }: BoutiqueRentalFlowProps) {
   const router = useRouter();
-  const { addItem } = useCart();
+  const { addItem, items } = useCart();
 
   const [step, setStep] = useState(1);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isPreFilled, setIsPreFilled] = useState(false);
+  const prefillDoneRef = useRef(false);
 
   const [company, setCompany] = useState('');
   const [representative, setRepresentative] = useState('');
@@ -91,6 +96,45 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
       }
     });
   }, []);
+
+  // Détection d'un article de location existant dans le panier pour pré-remplir les données client
+  useEffect(() => {
+    if (prefillDoneRef.current) return;
+    const existing = items.find(i => i.type === 'rental' && i.renterDetails);
+    if (existing?.renterDetails) {
+      const rd = existing.renterDetails;
+      if (rd.company) setCompany(rd.company);
+      if (rd.representative) setRepresentative(rd.representative);
+      if (rd.email) setEmail(rd.email);
+      if (rd.phone) setPhone(rd.phone);
+      if (rd.address) setAddress(rd.address);
+      if (rd.city) setCity(rd.city);
+      if (rd.postcode) setPostcode(rd.postcode);
+      setIsPreFilled(true);
+      prefillDoneRef.current = true;
+    }
+  }, [items]);
+
+  // Vérifie si l'email actuel a été authentifié par code OTP dans cette même session
+  const isSessionEmailVerified = useCallback(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const raw = sessionStorage.getItem(RENTAL_SESSION_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!data?.email || !data?.verifiedAt) return false;
+      const isSameEmail = data.email === email.trim().toLowerCase();
+      // Valide pendant 60 minutes au sein de cette session de navigation
+      const isFresh = Date.now() - data.verifiedAt < 60 * 60 * 1000;
+      // ET le panier contient déjà au moins une location finalisée avec cet email
+      const hasCompletedRental = items.some(
+        i => i.type === 'rental' && i.rentalFlowCompleted && i.renterDetails?.email?.trim().toLowerCase() === data.email
+      );
+      return isSameEmail && isFresh && hasCompletedRental;
+    } catch {
+      return false;
+    }
+  }, [email, items]);
 
   const validateEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
 
@@ -147,6 +191,12 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
       if (result.success) {
         setIsOtpCompleted(true);
         setOtpError(null);
+        try {
+          sessionStorage.setItem(RENTAL_SESSION_KEY, JSON.stringify({
+            email: email.trim().toLowerCase(),
+            verifiedAt: Date.now(),
+          }));
+        } catch {}
         setTimeout(() => {
           handleAddToCart();
           setStep(4);
@@ -227,6 +277,18 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
     setIsSignatureValidated(false);
   };
 
+  const handleStep2Continue = () => {
+    if (!acceptedCgl || !isSignatureValidated) return;
+    // Si l'identité/email a déjà été validée par OTP dans cette même session pour ce même email
+    if (isSessionEmailVerified()) {
+      setIsOtpCompleted(true);
+      handleAddToCart();
+      setStep(4);
+    } else {
+      setStep(3);
+    }
+  };
+
   const mappedPack: Pack = {
     id: product.id,
     name: product.name,
@@ -288,6 +350,12 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
 
       {step === 1 && (
         <div className="p-6">
+          {isPreFilled && (
+            <div className="mb-5 p-3.5 bg-blue-50/70 border border-blue-200/60 rounded-xl flex items-center gap-2.5 text-xs text-blue-900 font-medium">
+              <CheckCircle size={15} className="text-blue-600 shrink-0" />
+              <span>Coordonnées client récupérées depuis votre panier. Vous pouvez les modifier si besoin.</span>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Société *</label>
@@ -511,7 +579,7 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
               className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors">
               <ArrowLeft size={16} /> Précédent
             </button>
-            <button onClick={() => setStep(3)}
+            <button onClick={handleStep2Continue}
               disabled={!acceptedCgl || !isSignatureValidated}
               className="bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold text-sm hover:bg-gray-800 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
               Continuer <ArrowRight size={16} />
