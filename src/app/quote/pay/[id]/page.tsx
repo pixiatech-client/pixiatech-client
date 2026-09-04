@@ -10,6 +10,7 @@ import { InvoiceButton } from '@/components/invoice-button';
 import { getPdfSettings } from '@/app/actions/quote-actions';
 import type { PdfSettings } from '@/lib/types';
 import confetti from 'canvas-confetti';
+import LiquidLoader from '@/components/LiquidLoader';
 
 function ConfettiEffect() {
   useEffect(() => {
@@ -170,7 +171,7 @@ export default function QuotePayPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5] p-4">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+          <LiquidLoader size={110} />
           <p className="text-sm font-medium text-gray-600">Chargement du devis...</p>
         </div>
       </div>
@@ -433,7 +434,7 @@ export default function QuotePayPage() {
                       />
                       <button onClick={handleApplyPromo} disabled={promoLoading || !promoCode.trim()}
                         className="px-4 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-                        {promoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Appliquer'}
+                        {promoLoading ? <LiquidLoader size={16} /> : 'Appliquer'}
                       </button>
                     </div>
                   )}

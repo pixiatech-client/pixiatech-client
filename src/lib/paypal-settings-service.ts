@@ -13,16 +13,28 @@ const DEFAULT_SETTINGS: PayPalSettings = {
 };
 
 export async function getPayPalSettings(): Promise<PayPalSettings> {
+  const envSecret = process.env.PAYPAL_CLIENT_SECRET?.trim() || '';
+  const envClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID?.trim() || '';
+
   try {
     const { adminDb } = getFirebaseAdmin();
     const docRef = adminDb.collection('settings').doc('paypal');
     const docSnap = await docRef.get();
     if (docSnap.exists) {
       const data = docSnap.data() || {};
+      let clientSecret = (data.clientSecret || '').trim();
+      let clientId = (data.clientId || '').trim();
+
+      // If secret in Firestore is truncated (<75 chars) but env has the full secret (80 chars), self-heal!
+      if (clientSecret.length < 75 && envSecret.length >= 75) {
+        clientSecret = envSecret;
+        docRef.set({ clientSecret, clientId: clientId || envClientId }, { merge: true }).catch(() => {});
+      }
+
       return {
         ...DEFAULT_SETTINGS,
-        clientId: data.clientId || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
-        clientSecret: data.clientSecret || process.env.PAYPAL_CLIENT_SECRET || '',
+        clientId: clientId || envClientId,
+        clientSecret: clientSecret || envSecret,
         environment: data.environment || 'sandbox',
       };
     }
@@ -31,8 +43,8 @@ export async function getPayPalSettings(): Promise<PayPalSettings> {
   }
   return {
     ...DEFAULT_SETTINGS,
-    clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
-    clientSecret: process.env.PAYPAL_CLIENT_SECRET || '',
+    clientId: envClientId,
+    clientSecret: envSecret,
   };
 }
 

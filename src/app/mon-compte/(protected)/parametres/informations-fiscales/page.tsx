@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, Hash, Globe, MapPin, Save, Loader2, CheckCircle, ArrowLeft } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import Link from 'next/link';
 import { useI18n } from '@/lib/i18n';
 
@@ -57,7 +58,7 @@ export default function InformationsFiscalesPage() {
   if (loading) {
     return (
       <div className="p-6 max-w-2xl mx-auto flex items-center justify-center min-h-[40vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        <LiquidLoader size={24} />
       </div>
     );
   }
@@ -183,7 +184,7 @@ export default function InformationsFiscalesPage() {
             disabled={saving}
             className="flex items-center gap-2 h-11 px-5 rounded-xl bg-black text-white text-sm font-bold hover:opacity-90 transition-all disabled:opacity-60 shadow-lg shadow-black/10"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? <LiquidLoader size={16} /> : <Save className="w-4 h-4" />}
             {t('client.fiscal.save')}
           </button>
         </div>

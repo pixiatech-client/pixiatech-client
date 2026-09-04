@@ -42,6 +42,7 @@ import { X, Check } from 'lucide-react';
 import { translateStatus } from '../../../../lib/utils';
 import { useI18n, IntlHelpers } from '@/lib/i18n';
 import { useAdminT } from '@/hooks/useAdminT';
+import LiquidLoader from '@/components/LiquidLoader';
 
 const DAYS_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 const MONTH_KEYS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'] as const;
@@ -993,7 +994,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                               disabled={isDeleting === quote.id}
                               className="p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50"
                             >
-                              {isDeleting === quote.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                              {isDeleting === quote.id ? <LiquidLoader size={16} /> : <Trash2 className="w-4 h-4" />}
                             </button>
                           ) : (
                             <button className="p-2 rounded-lg text-gray-400 hover:bg-zinc-800 hover:text-white transition-colors">
@@ -1131,7 +1132,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ theme, onOpenChat, userNam
                                 disabled={isDeleting === quote.id}
                                 className={`p-3 rounded-xl border flex items-center justify-center bg-red-50 border-red-100 active:scale-95 transition-all disabled:opacity-50 dark:bg-red-950/20 dark:border-red-900/30`}
                               >
-                                {isDeleting === quote.id ? <RefreshCw className="w-4 h-4 animate-spin text-red-500" /> : <Trash2 className="w-4 h-4 text-red-500" />}
+                                {isDeleting === quote.id ? <LiquidLoader size={16} /> : <Trash2 className="w-4 h-4 text-red-500" />}
                               </button>
                             ) : (
                               <button className={`p-3 rounded-xl border flex items-center justify-center ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-gray-200 shadow-sm'} active:scale-95 transition-all`}>

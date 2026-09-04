@@ -11,7 +11,6 @@ import {
   Eye,
   EyeOff,
   KeyRound,
-  Loader2,
   Lock,
   LogIn,
   Mail,
@@ -24,6 +23,7 @@ import { loginAndRedirect, registerUser, handleGoogleSignIn as googleSignInActio
 import { useAuth } from '@/firebase';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAdminT } from '@/hooks/useAdminT';
+import LiquidLoader from '@/components/LiquidLoader';
 import { useI18n } from '@/lib/i18n';
 import { validatePhone, detectCountryConfig } from '@/lib/phone-validation';
 
@@ -676,7 +676,7 @@ export default function LoginPage() {
                       >
                         {isLoggingIn || isSigningOut ? (
                           <>
-                            <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                            <LiquidLoader size={20} />
                             {t('Logging in...')}
                           </>
                         ) : (
@@ -806,7 +806,7 @@ export default function LoginPage() {
                       >
                         {isSigningUp ? (
                           <>
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <LiquidLoader size={20} />
                             {t('Signing up...')}
                           </>
                         ) : (
@@ -887,7 +887,7 @@ export default function LoginPage() {
                       >
                         {isSavingGoogleProfile ? (
                           <>
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <LiquidLoader size={20} />
                             {t('Saving...')}
                           </>
                         ) : (
@@ -999,7 +999,7 @@ export default function LoginPage() {
                       >
                         {isLinking ? (
                           <>
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <LiquidLoader size={20} />
                             {t('Linking...')}
                           </>
                         ) : (
@@ -1101,7 +1101,7 @@ export default function LoginPage() {
                       >
                         {isAddingPassword ? (
                           <>
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <LiquidLoader size={20} />
                             {t('Saving...')}
                           </>
                         ) : (
@@ -1139,7 +1139,7 @@ export default function LoginPage() {
                       className="mt-4 flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white text-sm font-bold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {isSigningInWithGoogle ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <LiquidLoader size={20} />
                       ) : (
                         <svg className="h-5 w-5" viewBox="0 0 24 24">
                           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />

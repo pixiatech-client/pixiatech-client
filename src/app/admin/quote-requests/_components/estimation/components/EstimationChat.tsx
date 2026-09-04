@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Paperclip, MoreVertical, Phone, Video, Shield, Mic, StopCircle } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import { 
   doc, 
   collection, 
@@ -543,7 +544,7 @@ export const EstimationChat: React.FC<EstimationChatProps> = ({
                   className="p-2.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-all disabled:opacity-50 flex-shrink-0"
                 >
                   {isUploading ? (
-                    <div className="w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                    <LiquidLoader size={20} />
                   ) : (
                     <Paperclip className="w-5 h-5" />
                   )}

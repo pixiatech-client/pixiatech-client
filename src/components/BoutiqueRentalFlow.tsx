@@ -10,8 +10,13 @@ import SignaturePad from './SignaturePad';
 import CityInput from './CityInput';
 import { validatePhone } from '@/lib/phone-validation';
 import { sendBoutiqueOtp, sendBoutiqueOtpWithResend, verifyBoutiqueOtp } from '@/app/actions/boutique-actions';
-import { getSettings } from '@/app/actions/public-actions';
+import { getSettings, getLocations, getDeliverySettings } from '@/app/actions/public-actions';
+import { resolveDestination } from '@/lib/delivery-resolver';
+import { computeDeliveryCostDetails } from '@/lib/pricing-engine';
+import { CITIES } from '@/lib/cities';
+import type { City, DeliverySettings, Locations } from '@/lib/types';
 import DateRangePicker from './boutique/DateRangePicker';
+import LiquidLoader from '@/components/LiquidLoader';
 
 interface BoutiqueRentalFlowProps {
   product: {
@@ -70,6 +75,53 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
   })();
   const rentalUnitPrice = rentalDays * dailyRatePrice;
 
+  // ── Calcul de la livraison (même moteur que l'admin / SignatureFlow) ──────────
+  // Sources de vérité EXISTANTES : cities Firestore, settings/delivery,
+  // deliveryFeeRules. Aucun prix n'est inventé ici.
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings | null>(null);
+  const [locations, setLocations] = useState<Locations | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [ds, locs] = await Promise.all([getDeliverySettings(), getLocations()]);
+        if (!cancelled) {
+          setDeliverySettings(ds);
+          if (locs && Array.isArray(locs.villes)) setLocations(locs);
+        }
+      } catch (e) {
+        console.error('BoutiqueRentalFlow: échec chargement livraison', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Résolution ville → zone → règle → tarif. Recalculée à chaque changement
+  // d'adresse (city / postcode) : le coût suit donc la bonne ville/zone.
+  const deliveryResolution = resolveDestination(
+    {
+      postcode: postcode || undefined,
+      cityName: city || undefined,
+    },
+    locations?.villes ?? null,
+    CITIES as unknown as City[]
+  );
+  const deliveryCostDetails = deliverySettings
+    ? computeDeliveryCostDetails(deliverySettings, {
+        subtotal: rentalUnitPrice * quantity,
+        zoneId: deliveryResolution.zoneId,
+        cityId: deliveryResolution.cityId,
+      })
+    : null;
+  const deliveryCost = deliveryCostDetails?.cost ?? 0;
+  const deliveryKnown = !!deliverySettings && deliveryResolution.resolved;
+  const deliveryLabel = deliveryCostDetails
+    ? (deliveryCostDetails.reason === 'unconfigured'
+        ? 'À confirmer'
+        : 'Gratuit')
+    : 'À confirmer';
+  
   const [acceptedCgl, setAcceptedCgl] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [isSignatureValidated, setIsSignatureValidated] = useState(false);
@@ -229,6 +281,10 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
       contractSignedAt: (isSignatureValidated || isSessionEmailVerified()) ? new Date().toISOString() : undefined,
       rentalFlowCompleted: true,
       stock: maxQuantity,
+      deliveryCost: deliveryKnown ? deliveryCost : undefined,
+      deliveryReason: deliveryCostDetails?.reason,
+      zoneId: deliveryResolution.zoneId,
+      cityId: deliveryResolution.cityId,
     }, quantity);
   };
 
@@ -474,9 +530,23 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
                 <div className="text-sm text-emerald-800 space-y-1">
                   <p>Location du <span className="font-bold">{new Date(rentalStartDate).toLocaleDateString('fr-FR')}</span> au <span className="font-bold">{new Date(rentalEndDate).toLocaleDateString('fr-FR')}</span></p>
                   <p><span className="font-bold">{rentalDays} jours</span> × <span className="font-bold">{dailyRatePrice}€</span> / jour {quantity > 1 && <span>× <span className="font-bold">{quantity}</span></span>}</p>
-                  <div className="pt-2 mt-2 border-t border-emerald-200 flex items-center justify-between">
-                    <span className="text-sm font-bold">Total location</span>
-                    <span className="text-xl font-extrabold">{rentalUnitPrice * quantity}€</span>
+                  <div className="pt-2 mt-2 border-t border-emerald-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold">Total location</span>
+                      <span className="text-xl font-extrabold">{rentalUnitPrice * quantity}€</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="text-sm font-bold flex items-center gap-1.5">
+                        <span>🚚</span> Livraison
+                      </span>
+                      {deliverySettings && deliveryResolution.resolved ? (
+                        deliveryCost === 0
+                          ? <span className="text-base font-extrabold text-emerald-600">{deliveryLabel}</span>
+                          : <span className="text-base font-extrabold">{deliveryCost.toLocaleString('fr-FR')}€</span>
+                      ) : (
+                        <span className="text-sm font-semibold text-emerald-700/70">À confirmer</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -615,7 +685,7 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
 
           {isSendingOtp ? (
             <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
-              <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+              <LiquidLoader size={16} />
               Envoi du code...
             </div>
           ) : (

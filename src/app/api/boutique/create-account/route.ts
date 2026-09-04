@@ -4,6 +4,7 @@ import { createMagicLink } from '@/lib/magic-link';
 import { getSmtpTransport } from '@/lib/smtpService';
 
 function buildMagicLinkEmailHtml(linkUrl: string, expiresInMinutes: number): string {
+  const setPasswordUrl = `${linkUrl}&set-password=1`;
   return `
 <!DOCTYPE html>
 <html>
@@ -15,7 +16,8 @@ function buildMagicLinkEmailHtml(linkUrl: string, expiresInMinutes: number): str
         <tr><td style="padding:32px 32px 0;">
           <h1 style="font-size:22px;font-weight:800;color:#111827;margin:0 0 8px;">Bienvenue chez PIXIATECH</h1>
           <p style="font-size:14px;color:#6b7280;margin:0 0 24px;line-height:1.5;">
-            Cliquez sur le bouton ci-dessous pour accéder à votre espace client.
+            Votre compte client a été créé automatiquement.<br/>
+            Cliquez sur le bouton ci-dessous pour accéder à votre espace client grâce au lien sécurisé.
             Ce lien expire dans ${expiresInMinutes} minutes.
           </p>
         </td></tr>
@@ -24,8 +26,16 @@ function buildMagicLinkEmailHtml(linkUrl: string, expiresInMinutes: number): str
             Accéder à mon espace
           </a>
         </td></tr>
+        <tr><td style="padding:0 32px 24px;border-top:1px solid #f0f0f0;">
+          <p style="font-size:13px;color:#6b7280;margin:16px 0 8px;line-height:1.5;">
+            Vous préférez utiliser un mot de passe ?
+          </p>
+          <a href="${setPasswordUrl}" style="display:inline-block;padding:12px 28px;background:#ffffff;color:#111827;border:1px solid #d1d5db;border-radius:12px;font-size:13px;font-weight:700;text-decoration:none;">
+            Créer mon mot de passe
+          </a>
+        </td></tr>
         <tr><td style="padding:0 32px 24px;">
-          <p style="font-size:12px;color:#9ca3af;margin:0;line-height:1.4;">
+          <p style="font-size:12px;color:#9ca3af;margin:12px 0 0;line-height:1.4;">
             Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.
           </p>
         </td></tr>

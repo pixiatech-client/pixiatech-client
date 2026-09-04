@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { getSmtpSettings, updateSmtpSettings } from '@/app/admin/actions';
-import { Server, Mail, Shield, Eye, EyeOff, Save, RefreshCw, Bug, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Server, Mail, Shield, Eye, EyeOff, Save, Bug, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { useAdminT } from '@/hooks/useAdminT';
+import LiquidLoader from '@/components/LiquidLoader';
 
 export default function SoftwareSettingsPage() {
   const { toast } = useToast();
@@ -187,7 +188,7 @@ export default function SoftwareSettingsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <RefreshCw className="h-8 w-8 text-slate-400 animate-spin" />
+        <LiquidLoader size={32} />
       </div>
     );
   }
@@ -354,7 +355,7 @@ export default function SoftwareSettingsPage() {
               className="w-full md:w-auto min-w-[200px] h-12 rounded-xl font-black bg-slate-900 text-white hover:bg-slate-800 shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isSaving ? (
-                <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                <LiquidLoader size={16} />
               ) : (
                 <Save className="w-4 h-4 mr-2" />
               )}
@@ -389,7 +390,7 @@ export default function SoftwareSettingsPage() {
               disabled={isTestingSmtp}
               className="w-full md:w-auto min-w-[200px] h-12 rounded-xl font-black bg-slate-900 text-white hover:bg-slate-800 shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {isTestingSmtp && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+              {isTestingSmtp && <LiquidLoader size={16} />}
               {t('Send a test')}
             </Button>
 
@@ -446,7 +447,7 @@ export default function SoftwareSettingsPage() {
               className="w-full md:w-auto min-w-[240px] h-12 rounded-xl font-black bg-orange-600 text-white hover:bg-orange-700 shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isRunningDiag ? (
-                <><RefreshCw className="w-4 h-4 animate-spin" /> {t('Diagnostic in progress...')}</>
+                <><LiquidLoader size={16} /> {t('Diagnostic in progress...')}</>
               ) : (
                 <><Bug className="w-4 h-4" /> {t('Run full diagnostic')}</>
               )}

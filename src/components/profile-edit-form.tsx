@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Phone, Building2, MapPin, Globe, MapPinned, Hash,
   Briefcase, Users, Link as LinkIcon, Printer, Mail, CheckCircle2, AlertCircle,
-  Loader2, Save,
+  Save,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { updateCustomerProfile } from '@/app/actions/customer-actions';
+import LiquidLoader from '@/components/LiquidLoader';
 
 interface ProfileData {
   displayName?: string;
@@ -296,7 +297,7 @@ export function ProfileEditForm({
           className="flex h-12 items-center justify-center gap-2.5 rounded-xl bg-black px-8 text-sm font-bold text-white shadow-lg transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <LiquidLoader size={20} />
           ) : (
             <Save className="h-5 w-5" />
           )}

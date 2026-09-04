@@ -4,13 +4,14 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import type { QuoteRequest, Product, ProductSpec, UserProfile } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import LiquidLoader from '@/components/LiquidLoader';
 
 const DetailsApp = dynamic(
   () => import('@/app/admin/quote-requests/_components/estimation/details/App'),
   {
     loading: () => (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[110]">
-        <div className="w-10 h-10 border-4 border-[#95d230] border-t-transparent rounded-full animate-spin" />
+        <LiquidLoader size={40} />
       </div>
     ),
   }

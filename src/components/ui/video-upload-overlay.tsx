@@ -1,8 +1,9 @@
 'use client';
 
-import { Loader2, RefreshCw, Upload } from 'lucide-react';
+import { RefreshCw, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AlertTriangle } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 
 export type VideoUploadPhase = 'idle' | 'uploading' | 'processing' | 'error';
 
@@ -51,7 +52,7 @@ export function VideoUploadOverlay({
           </div>
         )}
         {status === 'processing' && (
-          <Loader2 className="h-8 w-8 animate-spin text-white" />
+          <LiquidLoader size={32} />
         )}
         {status === 'error' && (
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500/20 ring-1 ring-red-400/30">

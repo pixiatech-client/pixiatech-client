@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAdminT } from '@/hooks/useAdminT';
 import { useRouter } from 'next/navigation';
+import LiquidLoader from '@/components/LiquidLoader';
 
 // --- Types ---
 type LocationStatus = 'pending' | 'processed' | 'sent' | 'archived' | 'all';
@@ -230,7 +231,7 @@ const GestionLocations = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-10 h-10 border-4 border-slate-200 border-t-black rounded-full animate-spin" />
+        <LiquidLoader size={40} />
       </div>
     );
   }

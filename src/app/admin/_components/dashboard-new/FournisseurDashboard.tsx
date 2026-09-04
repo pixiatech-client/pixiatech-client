@@ -20,7 +20,6 @@ import {
   MoreHorizontal,
   AlertCircle,
   Eye,
-  RefreshCw,
   ShoppingBag,
   TrendingUp,
   Calendar,
@@ -35,6 +34,7 @@ import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebas
 import { collection, query, orderBy, where, limit, onSnapshot } from 'firebase/firestore';
 import { useAdminT } from '@/hooks/useAdminT';
 import { normalizeSearchText } from '@/lib/utils';
+import LiquidLoader from '@/components/LiquidLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { NotificationFirestore } from '@/lib/types';
@@ -377,7 +377,7 @@ export const FournisseurDashboard: React.FC<FournisseurDashboardProps> = ({ user
                 {isLoading ? (
                   <tr>
                     <td colSpan={7} className="py-12 text-center text-gray-400">
-                      <RefreshCw className="w-5 h-5 animate-spin mx-auto" />
+                      <LiquidLoader size={20} />
                     </td>
                   </tr>
                 ) : filteredEstimations.length === 0 ? (

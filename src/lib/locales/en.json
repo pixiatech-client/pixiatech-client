@@ -631,13 +631,29 @@
             "invalidLink": "Invalid link. Make sure you copied the full URL.",
             "expiredLink": "Invalid or expired link.",
             "validationError": "Validation error. Please try again.",
-            "loadingTitle": "Validation",
+            "loadingTitle": "Secure login",
             "successTitle": "Login successful",
             "errorTitle": "Invalid link",
             "loading": "Validating your link...",
             "redirecting": "Redirecting to your client area...",
             "retry": "Request a new link",
-            "backToSite": "Back to site"
+            "backToSite": "Back to site",
+            "linkUnavailable": "This link is no longer available",
+            "linkUnavailableDesc": "Don't worry, you can request a new login link or use your password if you created one.",
+            "resendLink": "Get a new link",
+            "resendLinkDone": "Email sent. Check your inbox (and spam).",
+            "createPasswordSent": "Email sent. Click the link inside to create your password.",
+            "resending": "Sending...",
+            "resendError": "Failed to send. Please try again.",
+            "createPassword": "Create a password",
+            "loginPassword": "Log in with my password"
+        },
+        "securityBanner": {
+            "title": "Secure your account",
+            "desc": "You can keep using the magic links sent by email or create a password to log in faster.",
+            "cta": "Create a password",
+            "hint": "You will still be able to use the magic link later.",
+            "dismiss": "Later"
         }
     },
     "admin": {
@@ -2404,6 +2420,7 @@
         "popular": "Popular",
         "newArrivals": "New arrivals",
         "sortPopular": "Popular",
+        "sortManual": "Manual",
         "sortNewest": "Newest",
         "sortPriceAsc": "Price: low to high",
         "sortPriceDesc": "Price: high to low",
@@ -2455,7 +2472,12 @@
         "validCity": "Please enter a valid city.",
         "validPostcode": "Please enter a valid postal code.",
         "validCompany": "Please enter a valid company name.",
-        "validSiren": "The SIREN must contain at least 9 digits."
+        "validSiren": "The SIREN must contain at least 9 digits.",
+        "validName": "Please enter a valid name.",
+        "quoteName": "Full name / Company name",
+        "quoteProject": "Describe your project",
+        "quoteProjectPlaceholder": "Describe your need, desired dimensions, quantity, specific constraints, or any helpful information to prepare your quote.",
+        "quoteCommentRequired": "Please describe your project so we can prepare your quote."
     },
     "cart": {
         "emptyTitle": "Your cart is empty",

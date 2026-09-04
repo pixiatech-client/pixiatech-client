@@ -10,12 +10,13 @@ import {
   AccordionItem, 
   AccordionTrigger 
 } from "@/components/ui/accordion";
-import { Loader2, Map, Truck, Settings, Percent } from 'lucide-react';
+import { Map, Truck, Settings, Percent } from 'lucide-react';
 import { ZoneManager } from '../delivery/_components/zone-manager';
 import { DepartmentFeesForm } from '../delivery/_components/department-fees-form';
 import { DefaultFeeForm } from '../delivery/_components/default-fee-form';
 import { FreeShippingForm } from '../delivery/_components/free-shipping-form';
 import { useAdminT } from '@/hooks/useAdminT';
+import LiquidLoader from '@/components/LiquidLoader';
 
 export default function DeliveryContent() {
     const { t } = useAdminT();
@@ -32,7 +33,7 @@ export default function DeliveryContent() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 text-slate-400 animate-spin" />
+                <LiquidLoader size={32} />
             </div>
         );
     }

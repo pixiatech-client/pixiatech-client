@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Loader2, CheckCircle, XCircle, RefreshCw, Package } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, Package } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import { useAdminT } from '@/hooks/useAdminT';
 
 import type { ProviderSettings } from '@/lib/tracking/types';
@@ -130,7 +131,7 @@ export default function TrackSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-6 h-6 animate-spin" />
+        <LiquidLoader size={24} />
       </div>
     );
   }
@@ -165,7 +166,7 @@ export default function TrackSettingsPage() {
                     onClick={() => testConnection(provider.id)}
                   >
                     {testing === provider.id ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                      <LiquidLoader size={16} />
                     ) : (
                       <RefreshCw className="w-3.5 h-3.5 mr-1" />
                     )}
@@ -177,7 +178,7 @@ export default function TrackSettingsPage() {
                     onClick={() => saveProvider(provider.id)}
                   >
                     {saving === provider.id ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                      <LiquidLoader size={16} />
                     ) : null}
                     {t('Save')}
                   </Button>

@@ -631,13 +631,29 @@
             "invalidLink": "Lien invalide. Vérifiez que vous avez bien copié l'URL complète.",
             "expiredLink": "Lien invalide ou expiré.",
             "validationError": "Erreur de validation. Veuillez réessayer.",
-            "loadingTitle": "Validation",
+            "loadingTitle": "Connexion sécurisée",
             "successTitle": "Connexion réussie",
             "errorTitle": "Lien invalide",
             "loading": "Validation de votre lien...",
             "redirecting": "Redirection vers votre espace client...",
             "retry": "Demander un nouveau lien",
-            "backToSite": "Retour au site"
+            "backToSite": "Retour au site",
+            "linkUnavailable": "Ce lien n'est plus disponible",
+            "linkUnavailableDesc": "Pas d'inquiétude, vous pouvez demander un nouveau lien de connexion ou utiliser votre mot de passe si vous en avez créé un.",
+            "resendLink": "Recevoir un nouveau lien",
+            "resendLinkDone": "Email envoyé. Vérifiez votre boîte de réception (et vos spams).",
+            "createPasswordSent": "Email envoyé. Cliquez sur le lien qu'il contient pour créer votre mot de passe.",
+            "resending": "Envoi...",
+            "resendError": "Échec de l'envoi. Veuillez réessayer.",
+            "createPassword": "Créer un mot de passe",
+            "loginPassword": "Se connecter avec mon mot de passe"
+        },
+        "securityBanner": {
+            "title": "Sécurisez votre compte",
+            "desc": "Vous pouvez continuer à utiliser les liens magiques envoyés par email ou créer un mot de passe pour vous connecter plus rapidement.",
+            "cta": "Créer un mot de passe",
+            "hint": "Vous pourrez toujours utiliser le lien magique plus tard.",
+            "dismiss": "Plus tard"
         }
     },
     "admin": {
@@ -2406,6 +2422,7 @@
         "popular": "Populaires",
         "newArrivals": "Nouveautés",
         "sortPopular": "Populaires",
+        "sortManual": "Manuel",
         "sortNewest": "Nouveautés",
         "sortPriceAsc": "Prix : croissant",
         "sortPriceDesc": "Prix : décroissant",
@@ -2457,7 +2474,12 @@
         "validCity": "Veuillez saisir une ville valide.",
         "validPostcode": "Veuillez saisir un code postal valide.",
         "validCompany": "Veuillez saisir une raison sociale valide.",
-        "validSiren": "Le SIREN doit contenir au moins 9 chiffres."
+        "validSiren": "Le SIREN doit contenir au moins 9 chiffres.",
+        "validName": "Veuillez saisir un nom valide.",
+        "quoteName": "Nom et prénom / Nom de l'entreprise",
+        "quoteProject": "Décrivez votre projet",
+        "quoteProjectPlaceholder": "Décrivez votre besoin, les dimensions souhaitées, la quantité, les contraintes particulières ou toute information utile pour préparer votre devis.",
+        "quoteCommentRequired": "Veuillez décrire votre projet afin que nous puissions préparer votre devis."
     },
     "cart": {
         "emptyTitle": "Votre panier est vide",

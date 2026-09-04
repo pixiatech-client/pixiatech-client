@@ -8,7 +8,8 @@ import type { DeliverySettings, City, Zone } from '@/lib/types';
 import { updateDeliverySettings } from '@/app/admin/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, PlusCircle, Info, Copy, Loader2 } from 'lucide-react';
+import { Trash2, PlusCircle, Info, Copy } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -146,7 +147,7 @@ export function DepartmentFeesForm({ initialSettings }: DepartmentFeesFormProps)
               <CardContent className="space-y-4 px-0 md:px-6">
                   {isLoadingCities || isLoadingZones ? (
                     <div className="flex items-center justify-center p-8">
-                      <Loader2 className="animate-spin mr-2"/> {t('Loading...')}
+                      <LiquidLoader size={24} /> {t('Loading...')}
                     </div>
                   ) : (
                     <>

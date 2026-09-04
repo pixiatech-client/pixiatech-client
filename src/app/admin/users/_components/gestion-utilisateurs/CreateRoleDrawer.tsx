@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Shield, PlusCircle, Copy, Lock, Trash2, AlertTriangle, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { X, Shield, PlusCircle, Copy, Lock, Trash2, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { createCustomRole, deleteCustomRole } from '@/app/admin/actions';
 import { useRoles } from '@/contexts/RoleContext';
 import { useAdminT } from '@/hooks/useAdminT';
+import LiquidLoader from '@/components/LiquidLoader';
 
 const ROLE_COLORS = [
   "#EAB308", "#8B5CF6", "#06B6D4", "#F43F5E",
@@ -323,7 +324,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                           className="w-full py-3.5 bg-theme-sidebar-active-bg text-theme-sidebar-active-text hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed rounded-2xl font-black uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-2"
                         >
                           {isSubmitting ? (
-                            <Loader2 size={16} className="animate-spin" />
+                            <LiquidLoader size={16} />
                           ) : (
                             <PlusCircle size={16} />
                           )}
@@ -381,7 +382,7 @@ export function CreateRoleDrawer({ isOpen, onClose, onRoleCreated }: CreateRoleD
                       className="flex-[2] py-3 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white rounded-2xl font-black uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-2"
                     >
                       {isDeleting ? (
-                        <Loader2 size={15} className="animate-spin" />
+                        <LiquidLoader size={16} />
                       ) : (
                         <Trash2 size={15} />
                       )}

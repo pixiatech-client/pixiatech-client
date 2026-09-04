@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, RefreshCcw, Loader2, Mail, Info, ArrowLeft } from 'lucide-react';
+import { Download, RefreshCcw, Mail, Info, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -21,6 +21,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase/config';
 import { updateQuotePdfUrl } from '@/app/actions/public-actions';
+import LiquidLoader from '@/components/LiquidLoader';
 
 // Loading component removed to prevent flashes
 
@@ -292,7 +293,7 @@ export function SuccessView({ quoteId, onNewQuote, initialEmail }: SuccessViewPr
           <div className="w-full min-h-screen flex items-center justify-center p-4 bg-[#FAFAFA] font-sans overflow-hidden pb-8 lg:pb-[20vh]">
               <div className="w-full max-w-md bg-white rounded-[32px] p-10 text-center shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] flex flex-col items-center gap-6">
                   <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center shadow-sm">
-                      <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                      <LiquidLoader size={32} />
                   </div>
                   <div>
                       <h1 className="text-2xl font-black text-slate-900 mb-2">{t('common.loading')}</h1>
@@ -366,7 +367,7 @@ export function SuccessView({ quoteId, onNewQuote, initialEmail }: SuccessViewPr
               className="group flex-1 flex items-center justify-center gap-3 bg-[#c3f53c] text-black px-8 py-5 rounded-2xl w-full font-bold text-[11px] md:text-xs tracking-widest uppercase transition-all duration-300 shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPdfRendering || showSkeleton ? (
-                <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+                <LiquidLoader size={16} />
               ) : (
                 <Download className="w-4 h-4 shrink-0" />
               )}

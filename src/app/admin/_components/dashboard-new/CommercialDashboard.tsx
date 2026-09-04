@@ -23,7 +23,6 @@ import {
   Share2,
   ShoppingCart,
   Eye,
-  RefreshCw,
   FileText,
   Users,
   ExternalLink,
@@ -37,6 +36,7 @@ import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebas
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { useAdminT } from '@/hooks/useAdminT';
 import { cn, normalizeSearchText } from '@/lib/utils';
+import LiquidLoader from '@/components/LiquidLoader';
 
 const formatDate = (date: Date | null | undefined, locale: string) => {
   if (!date) return '';
@@ -398,7 +398,7 @@ export const CommercialDashboard: React.FC<CommercialDashboardProps> = ({ userNa
                 {loadingQuotes ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-gray-400">
-                      <RefreshCw className="w-5 h-5 animate-spin mx-auto" />
+                      <LiquidLoader size={20} />
                     </td>
                   </tr>
                 ) : filteredEstimations.length === 0 ? (

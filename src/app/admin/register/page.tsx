@@ -20,8 +20,9 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerUser } from '@/app/admin/actions';
-import { Loader2, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAdminT } from '@/hooks/useAdminT';
+import LiquidLoader from '@/components/LiquidLoader';
 
 function RegisterForm() {
   const { t } = useAdminT();
@@ -107,7 +108,7 @@ function RegisterForm() {
       
       <div className="flex flex-col gap-4 pt-2">
         <Button type="submit" className="w-full" size="lg" disabled={form.formState.isSubmitting}>
-           {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : t('Sign up')}
+           {form.formState.isSubmitting ? <LiquidLoader size={16} /> : t('Sign up')}
         </Button>
       </div>
     </form>

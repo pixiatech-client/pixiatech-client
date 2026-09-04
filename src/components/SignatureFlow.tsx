@@ -73,6 +73,7 @@ import confetti from 'canvas-confetti';
 import { QuotePDF } from '@/app/admin/quote-pdf';
 import { BlurredPrice } from '@/components/ui/blurred-price';
 import { DEFAULT_SALE_PRICE_PER_SQM, DEFAULT_RENTAL_PRICE_PER_DAY, DEFAULT_RENTAL_PRICE_PER_HOUR, computeProductUnitPrice, computeProductLineTotal, calculateTilesCount, computeDeliveryCostDetails, computeLaborCost, computeDeposit, computePaymentSchedule } from '@/lib/pricing-engine';
+import LiquidLoader from '@/components/LiquidLoader';
 
 // Available professional LED packs for template selection
 const SEED_PACKS: Pack[] = [
@@ -586,7 +587,19 @@ export default function SignatureFlow({
   const totalSurface = productCalculations.reduce((sum, pc) => sum + pc.surface * pc.quantity, 0);
   const totalDalles = productCalculations.reduce((sum, pc) => sum + pc.dalles * pc.quantity, 0);
   const totalSubtotalProducts = productCalculations.reduce((sum, pc) => sum + pc.subtotal * pc.quantity, 0);
-  const selectedCity = CITIES.find(c => c.id === selectedCityId) || undefined;
+  // Villes du dropdown : sources administrées Firestore (vrais ids + zoneId)
+  // prioritairement. Les villes statiques non présentes dans Firestore restent
+  // listées comme secours / compatibilité (adresses déjà enregistrées, hors-ligne).
+  const resolvedCities = (locations?.villes ?? []).filter((c): c is City => !!c && !!c.name);
+  const staticCities = CITIES as unknown as City[];
+  const resolvedKeys = new Set(resolvedCities.map(c => `${c.name}|${c.postalCode}`));
+  const cityOptions: City[] = resolvedCities.length > 0
+    ? [...resolvedCities, ...staticCities.filter(c => !resolvedKeys.has(`${c.name}|${c.postalCode}`))]
+    : staticCities;
+  const selectedCity = cityOptions.find(c => c.id === selectedCityId)
+    || resolvedCities.find(c => c.name === renterDetails.city)
+    || staticCities.find(c => c.id === selectedCityId)
+    || undefined;
   // RÉSOLUTION CENTRALISÉE ville → zone → règle → tarif (même résultat qu'en
   // boutique). Catalogue prioritaire : Firestore (locations.villes, portent les
   // vrais ids + zoneId) ; secours : liste statique CITIES.
@@ -1342,11 +1355,11 @@ export default function SignatureFlow({
                     {/* Dropdown Options */}
                     {isCityDropdownOpen && (
                       <div className="absolute z-55 left-0 right-0 mt-1.5 bg-white border border-zinc-200 rounded-2xl shadow-xl max-h-56 overflow-y-auto divide-y divide-zinc-50 text-xs font-semibold">
-                        {CITIES.filter(c =>
+                        {cityOptions.filter(c =>
                           c.name.toLowerCase().includes(citySearchQuery.toLowerCase()) ||
                           c.postalCode.includes(citySearchQuery)
                         ).length > 0 ? (
-                          CITIES.filter(c =>
+                          cityOptions.filter(c =>
                             c.name.toLowerCase().includes(citySearchQuery.toLowerCase()) ||
                             c.postalCode.includes(citySearchQuery)
                           ).map(c => (
@@ -2320,7 +2333,7 @@ export default function SignatureFlow({
               <div className="space-y-3">
                 {emailDeliveryStatus === 'sending' && (
                   <div className="p-4 bg-blue-50/70 border border-blue-200 rounded-2xl flex items-center gap-3 text-blue-900 shadow-sm animate-pulse">
-                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                    <LiquidLoader size={20} />
                     <div className="text-xs font-semibold leading-normal">
                       <span className="font-extrabold block text-blue-850">{t('signature.emailSending')}</span>
                       {t('signature.emailSendingDesc', { email: renterDetails.email })}
@@ -2402,7 +2415,7 @@ export default function SignatureFlow({
                   </h3>
                   {isSimulatingLinkClick ? (
                     <div className="text-xs text-blue-600 font-black flex items-center justify-center gap-2 animate-pulse py-1">
-                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0"></div>
+                      <LiquidLoader size={16} />
                       <span>{t('signature.verificationProgress')}</span>
                     </div>
                   ) : (

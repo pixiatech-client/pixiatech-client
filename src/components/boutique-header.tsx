@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from 'usehooks-ts';
+import LiquidLoader from '@/components/LiquidLoader';
 
 export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: boolean }) {
   const router = useRouter();
@@ -568,10 +569,7 @@ function EspaceMembreContent({
                     >
                       {memberLoading ? (
                         <span className="flex items-center justify-center gap-1.5">
-                          <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
+                          <LiquidLoader size={16} />
                           {t('header.connecting')}
                         </span>
                       ) : t('header.memberLogin')}
@@ -599,10 +597,7 @@ function EspaceMembreContent({
                     >
                       {memberLoading ? (
                         <span className="flex items-center justify-center gap-1.5">
-                          <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
+                          <LiquidLoader size={16} />
                           {t('header.sending')}
                         </span>
                       ) : t('header.sendLink')}
@@ -670,10 +665,7 @@ function EspaceMembreContent({
                   >
                     {resellerLoading ? (
                       <span className="flex items-center gap-1.5">
-                        <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
+                        <LiquidLoader size={16} />
                         {t('header.sending')}
                       </span>
                     ) : t('header.notifyMe')}

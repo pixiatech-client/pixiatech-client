@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { verifyQuoteToken } from '@/app/actions/public-actions';
 import { verifyQuoteOtp, verifyPendingOtp, createEstimationFromPending } from '@/app/actions/quote-actions';
 import { Loader2, CheckCircle2, XCircle, ShieldCheck, X } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import { useI18n } from '@/lib/i18n';
 
 function VerifyContent() {
@@ -122,7 +123,7 @@ function VerifyContent() {
                         <div className="flex flex-col items-center gap-6">
                             <div className="relative">
                                 <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center">
-                                    <Loader2 className="w-9 h-9 text-blue-600 animate-spin" />
+                                    <LiquidLoader size={110} />
                                 </div>
                                 <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                                     <ShieldCheck size={13} className="text-white" />
@@ -235,7 +236,7 @@ export default function VerifyPage() {
                 <div className="w-full max-w-md mx-auto">
                     <div className="bg-white rounded-[28px] shadow-2xl border border-slate-100 p-10 text-center flex flex-col items-center gap-6">
                         <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
-                            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                            <LiquidLoader size={32} />
                         </div>
                         <h1 className="text-2xl font-black text-slate-900">{t('verify.fallback')}</h1>
                     </div>

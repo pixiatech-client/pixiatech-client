@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Tag, Trash2, Copy, Check, Percent, Euro, Edit2, AlertTriangle } from 'lucide-react';
 import { Pagination } from '@/components/pagination';
+import LiquidLoader from '@/components/LiquidLoader';
 
 interface PromoCode {
   id: string;
@@ -191,7 +192,7 @@ export default function CodesPromoPage() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <div className="size-8 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
+          <LiquidLoader size={32} />
         </div>
       ) : codes.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">

@@ -9,7 +9,6 @@ import {
   Settings,
   Users,
   LayoutGrid,
-  Loader2,
   User,
   History,
   Menu,
@@ -58,6 +57,7 @@ import { ResetApplicationDialog } from './ResetApplicationDialog';
 import { AboutApplicationDialog } from './AboutApplicationDialog';
 import { APP_VERSION } from '@/lib/build-info';
 import { isVersionNewer } from '@/lib/version';
+import LiquidLoader from '@/components/LiquidLoader';
 
 const mapRoleToUserRoleEnum = (role: string | undefined): UserRoleEnum => {
   switch (role) {
@@ -1098,7 +1098,7 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
   if ((isUserLoading || localLoading) && !forceLoaded) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center">
-        <Loader2 className="h-10 w-10 text-slate-500 animate-spin" />
+        <LiquidLoader size={40} />
       </div>
     );
   }

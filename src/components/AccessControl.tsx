@@ -4,8 +4,9 @@ import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { usePermissions } from '@/hooks/usePermissions';
 import { canAccessRoute, ROLE_LABELS, type Permission } from '@/lib/permissions';
-import { Shield, ArrowLeft, Loader2, Lock } from 'lucide-react';
+import { Shield, ArrowLeft, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import LiquidLoader from '@/components/LiquidLoader';
 
 interface AccessControlProps {
   children: React.ReactNode;
@@ -19,7 +20,7 @@ export function AccessControl({ children }: AccessControlProps) {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <LiquidLoader size={110} />
       </div>
     );
   }

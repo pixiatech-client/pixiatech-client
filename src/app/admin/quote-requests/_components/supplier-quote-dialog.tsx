@@ -11,7 +11,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, Eye, Loader2 } from 'lucide-react';
+import { Download, Eye } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { SupplierQuotePdf } from '@/app/admin/quotes/[id]/_components/supplier-quote-pdf';
@@ -138,7 +139,7 @@ export const SupplierQuoteDialog = React.forwardRef<HTMLDivElement, SupplierQuot
             <div className="w-fit mx-auto" ref={ref}>
               {isLoadingDetails ? (
                 <div className="flex flex-col items-center justify-center h-64 w-[210mm] bg-white rounded shadow text-slate-400">
-                  <Loader2 className="h-10 w-10 animate-spin mb-3" />
+                  <LiquidLoader size={40} />
                   <p className="font-bold text-sm">{t("Loading technical sheet...")}</p>
                 </div>
               ) : (
@@ -155,11 +156,11 @@ export const SupplierQuoteDialog = React.forwardRef<HTMLDivElement, SupplierQuot
 
           <DialogFooter className="sm:justify-start gap-2 pt-4 border-t">
             <Button variant="outline" onClick={handlePreview} disabled={isPdfRendering || isLoadingDetails}>
-              {isPdfRendering ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
+              {isPdfRendering ? <LiquidLoader size={16} /> : <Eye className="mr-2 h-4 w-4" />}
               {t("Preview")}
             </Button>
             <Button onClick={handleDownload} disabled={isPdfRendering || isLoadingDetails}>
-              {isPdfRendering ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+              {isPdfRendering ? <LiquidLoader size={16} /> : <Download className="mr-2 h-4 w-4" />}
               {t("Download")}
             </Button>
           </DialogFooter>

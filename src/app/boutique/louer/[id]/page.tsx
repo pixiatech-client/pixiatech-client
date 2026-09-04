@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { saveQuoteState } from '@/lib/quote-persistence';
 import { fetchBoutiqueProduct } from '@/lib/boutique-data';
+import LiquidLoader from '@/components/LiquidLoader';
 
 export default function QuickRentPage() {
   const params = useParams();
@@ -56,7 +57,7 @@ export default function QuickRentPage() {
 
   return (
     <div className="w-full min-h-screen flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
-      <div className="size-10 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
+      <LiquidLoader size={110} />
     </div>
   );
 }

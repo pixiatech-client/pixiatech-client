@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getSmtpTransport } from '@/lib/smtpService';
 
-const REQUIRED_FIELDS = ['productId', 'productName', 'quantity', 'customerName', 'customerPhone', 'customerEmail', 'customerCountry', 'customerAddress'] as const;
+const REQUIRED_FIELDS = ['productId', 'productName', 'quantity', 'customerName', 'customerPhone', 'customerEmail', 'customerCountry', 'customerAddress', 'comment'] as const;
 
 export async function POST(req: NextRequest) {
   try {

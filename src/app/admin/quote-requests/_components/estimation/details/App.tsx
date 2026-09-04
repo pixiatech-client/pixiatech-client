@@ -37,7 +37,6 @@ import {
   X,
   Pencil,
   Check,
-  Loader2,
   Sparkles,
   MapPin,
   Building2,
@@ -71,6 +70,7 @@ import {
   Tv,
   Calendar
 } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -720,7 +720,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                           disabled={isPdfLoading}
                           className="h-9 md:h-11 px-3 md:px-4 rounded-xl bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all text-slate-900 flex items-center justify-center disabled:opacity-50"
                         >
-                          {isPdfLoading ? <Loader2 size={14} className="animate-spin text-aura-accent" /> : <Download size={14} className="text-aura-accent md:w-4 md:h-4" />}
+                          {isPdfLoading ? <LiquidLoader size={14} /> : <Download size={14} className="text-aura-accent md:w-4 md:h-4" />}
                         </button>
 
                         {initialEstimation?.transactionType === 'rental' && (
@@ -1725,7 +1725,7 @@ export default function DetailsApp({ initialEstimation, allProducts = [], allPro
                               }}
                               className="futuristic-btn-primary w-full group py-4 flex items-center justify-center gap-3"
                             >
-                              {isAiLoading ? <Loader2 className="animate-spin" /> : <><CheckCircle2 size={18} /> Approve and Permanently Save</>}
+                              {isAiLoading ? <LiquidLoader size={24} /> : <><CheckCircle2 size={18} /> Approve and Permanently Save</>}
                             </button>
                           )}
                         </motion.div>

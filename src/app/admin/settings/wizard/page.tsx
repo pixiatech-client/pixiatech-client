@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, RefreshCw, Image, Sparkles, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, Image, Sparkles, ExternalLink } from 'lucide-react';
 import { getWizardSettings, updateWizardSettings, getSettings, updateSettings } from '@/app/admin/actions';
 import type { WizardSettings, PixelPitchOption, ViewingDistanceOption, Settings as AppSettings } from '@/lib/types';
 import { InputWithUpload } from '../_components/input-with-upload';
 import { useAdminT } from '@/hooks/useAdminT';
 import { detectVideoSource } from '@/lib/video-source';
+import LiquidLoader from '@/components/LiquidLoader';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 9);
@@ -108,7 +109,7 @@ export default function WizardPage() {
   if (isLoading || !settings || !appSettings) {
     return (
       <div className="flex items-center justify-center h-96">
-        <RefreshCw className="w-8 h-8 animate-spin text-slate-400" />
+        <LiquidLoader size={32} />
       </div>
     );
   }
@@ -121,7 +122,7 @@ export default function WizardPage() {
           <p className="text-slate-500 mt-1 hidden md:block">{t('Configure the options and content of the guided configurator.')}</p>
         </div>
         <Button onClick={handleSave} disabled={isSaving} className="bg-indigo-600 hover:bg-indigo-700">
-          {isSaving ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+          {isSaving ? <LiquidLoader size={16} /> : null}
           {t('Save')}
         </Button>
       </div>

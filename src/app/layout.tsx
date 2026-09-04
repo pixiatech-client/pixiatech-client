@@ -55,7 +55,9 @@ export default async function RootLayout({
   const isDark = globalTheme.mode === 'dark';
   const boutiqueB2B = settings.estimationFlow?.boutiqueB2B ?? false;
   const boutiqueEnabled = settings.isBoutiqueEnabled !== false;
-  const faviconHref = settings.logoConfig?.favicon ?? '/favicon.ico';
+  const faviconHref = (settings.logoConfig?.favicon && !settings.logoConfig.favicon.endsWith('.ico'))
+    ? settings.logoConfig.favicon
+    : '/favicon.png';
 
   return (
     <html lang="en" className={`scroll-smooth${isDark ? ' dark' : ''}`} suppressHydrationWarning>

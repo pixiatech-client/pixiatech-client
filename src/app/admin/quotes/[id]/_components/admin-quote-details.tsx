@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect, useMemo, useTransition } from "react";
 import type { QuoteRequest, City, Settings, Product, DeliverySettings, PdfSettings, ProductSpec, QuoteHistoryEntry, UserProfile } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Download, User, Package, Truck, Wrench, ArrowLeft, Eye, Users, FilePen, Loader2, History } from "lucide-react";
+import { Download, User, Package, Truck, Wrench, ArrowLeft, Eye, Users, FilePen, History } from "lucide-react";
+import LiquidLoader from '@/components/LiquidLoader';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { QuotePDF } from "@/app/admin/quote-pdf";
@@ -395,7 +396,7 @@ export default function AdminQuoteDetails({ quote: initialQuote, allProducts, de
   if (!quote) {
     return (
         <div className="flex items-center justify-center p-8">
-            <Loader2 className="animate-spin mr-2"/> {t('admin.quoteDetails.loading')}
+            <LiquidLoader size={24} /> {t('admin.quoteDetails.loading')}
         </div>
     );
   }

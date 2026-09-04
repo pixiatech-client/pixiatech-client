@@ -16,7 +16,8 @@ import { Label } from '@/components/ui/label';
 import { updateQuoteStatus } from '@/app/admin/actions';
 import type { QuoteRequest } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, FilePen } from 'lucide-react';
+import { FilePen } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import { useAdminT } from '@/hooks/useAdminT';
 
 interface EditTrackingNumberDialogProps {
@@ -77,7 +78,7 @@ export function EditTrackingNumberDialog({ quote, onUpdate, children }: EditTrac
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>{t("Cancel")}</Button>
           <Button onClick={handleSave} disabled={isPending}>
-            {isPending ? <Loader2 className="animate-spin" /> : t("Save")}
+            {isPending ? <LiquidLoader size={24} /> : t("Save")}
           </Button>
         </DialogFooter>
       </DialogContent>

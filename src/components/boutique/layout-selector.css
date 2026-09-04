@@ -1,0 +1,269 @@
+/* =========================================================
+   LAYOUT SELECTOR
+   ---------------------------------------------------------
+   Carré légèrement arrondi, style aligné sur les deux boutons
+   voisins de la toolbar (fond blanc + shadow-sm + hover fin).
+   Logique conservée : 1 → 2 → 3 → Liste → 1.
+   Actif = bleu, inactif = bleu clair. Pas de halo.
+   ========================================================= */
+
+.layout-selector {
+  --active: #111827; /* noir/gris-900 = sélectionné */
+  --inactive: #9ca3af; /* gris = inactif, comme les boutons voisins */
+
+  position: relative;
+
+  width: 34px;
+  height: 34px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  margin: 0;
+
+  border: 1px solid transparent;
+  border-radius: 10px; /* carré légèrement arrondi */
+
+  background: #ffffff;
+
+  cursor: pointer;
+
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: none;
+
+  box-shadow:
+    0 1px 2px 0 rgba(0, 0, 0, 0.05),
+    0 1px 3px 0 rgba(0, 0, 0, 0.03); /* shadow-sm des voisins */
+
+  transform: scale(var(--scale, 1)) translateZ(0);
+
+  transition:
+    background-color 250ms ease,
+    border-color 250ms ease,
+    box-shadow 250ms ease,
+    transform 160ms ease;
+}
+
+/* =========================================================
+   HOVER / ACTIF — discret, comme les boutons voisins
+   ========================================================= */
+
+.layout-selector:hover {
+  border-color: rgba(229, 231, 235, 1); /* gray-200 */
+  background-color: #fcfcfd;
+}
+
+.layout-selector:active {
+  --scale: 0.95;
+}
+
+.layout-selector:focus-visible {
+  outline: 2px solid var(--inactive);
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   ICONE
+   ========================================================= */
+
+.layout-selector-icon {
+  position: relative;
+
+  width: 17px;
+  height: 17px;
+
+  display: block;
+}
+
+/* =========================================================
+   GRID — carrés
+   ========================================================= */
+
+.grid-icon {
+  position: absolute;
+
+  inset: 0;
+
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+
+  gap: 3px;
+
+  transition:
+    opacity 300ms ease,
+    transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.grid-square {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  border-radius: 2px;
+
+  background: var(--inactive);
+
+  transform: scale(1);
+
+  transition:
+    background-color 250ms ease,
+    transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* =========================================================
+   ÉTATS ACTIFS — les carrés sélectionnés passent en bleu
+   ========================================================= */
+
+.layout-mode-1 .square-1,
+.layout-mode-2 .square-1,
+.layout-mode-2 .square-4,
+.layout-mode-3 .square-1,
+.layout-mode-3 .square-3,
+.layout-mode-3 .square-4 {
+  background: var(--active);
+}
+
+.layout-mode-2 .square-4 {
+  animation-delay: 40ms;
+}
+
+.layout-mode-3 .square-3 {
+  animation-delay: 40ms;
+}
+
+.layout-mode-3 .square-4 {
+  animation-delay: 80ms;
+}
+
+/* =========================================================
+   ANIMATION DU CARRÉ ACTIF — morphing fluide (sans lueur)
+   ========================================================= */
+
+.layout-mode-1 .square-1,
+.layout-mode-2 .square-1,
+.layout-mode-2 .square-4,
+.layout-mode-3 .square-1,
+.layout-mode-3 .square-3,
+.layout-mode-3 .square-4 {
+  animation: active-square 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes active-square {
+  0% {
+    transform: scale(0.7);
+  }
+
+  60% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* =========================================================
+   ÉTAT LISTE — lignes
+   ========================================================= */
+
+.layout-mode-4 .grid-icon {
+  opacity: 0;
+
+  transform: scale(0.7) rotate(-6deg);
+}
+
+.layout-mode-4 .list-icon {
+  opacity: 1;
+
+  transform: scale(1);
+}
+
+.list-icon {
+  position: absolute;
+
+  inset: 1px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: space-between;
+
+  opacity: 0;
+
+  transform: scale(0.7) rotate(6deg);
+
+  transition:
+    opacity 250ms ease,
+    transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.list-icon span {
+  display: block;
+
+  width: 100%;
+  height: 2px;
+
+  border-radius: 2px;
+
+  background: var(--active);
+
+  transform-origin: left center;
+
+  animation: list-line-in 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.list-icon span:nth-child(2) {
+  animation-delay: 30ms;
+}
+
+.list-icon span:nth-child(3) {
+  animation-delay: 60ms;
+}
+
+.list-icon span:nth-child(4) {
+  animation-delay: 90ms;
+}
+
+@keyframes list-line-in {
+  0% {
+    opacity: 0;
+
+    transform:
+      translateX(-6px)
+      scaleX(0.3);
+  }
+
+  60% {
+    opacity: 1;
+
+    transform:
+      translateX(1px)
+      scaleX(1.02);
+  }
+
+  100% {
+    opacity: 1;
+
+    transform:
+      translateX(0)
+      scaleX(1);
+  }
+}
+
+/* =========================================================
+   ACCESSIBILITÉ — motion réduite
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .layout-selector *,
+  .layout-selector {
+    animation: none !important;
+    transition: none !important;
+  }
+}

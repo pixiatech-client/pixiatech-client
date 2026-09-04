@@ -1,6 +1,7 @@
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getSaleBlockReason, normalizeStockQuantity } from '@/lib/product-status';
 import { computeDeliveryCostDetails } from '@/lib/pricing-engine';
+import { resolveDestination } from '@/lib/delivery-resolver';
 import { calculateCheckout } from '@/lib/checkout-calculations';
 import type { ProfileType } from '@/lib/checkout-calculations';
 import type { DeliverySettings, City, PriceSnapshot } from '@/lib/types';
@@ -62,6 +63,11 @@ export interface BoutiqueCartItem {
   rentalEndDate?: string;
   rentalStartTime?: string;
   rentalEndTime?: string;
+  // Destination de livraison de la ligne (figée au moment de l'ajout au panier,
+  // issue de renterDetails). Transmise au serveur pour le RECALCUL autoritaire
+  // de la livraison PAR LIGNE — jamais le montant client n'est utilisé.
+  renterCity?: string;
+  renterPostcode?: string;
 }
 
 export interface BoutiqueAmountInput {
@@ -204,6 +210,107 @@ async function resolvePromo(base: number, promo?: PromoInput): Promise<PromoResu
     code: code || data.code || undefined,
     docId: promoDoc.id,
   };
+}
+
+interface ServerDeliveryLine {
+  type?: string;
+  city?: string;
+  postcode?: string;
+  /** Sous-total de la ligne — pour les règles de livraison offerte (seuil). */
+  lineSubtotal: number;
+}
+
+const DELIVERY_DEFAULTS: DeliverySettings = {
+  defaultFee: 0,
+  isDefaultFeeEnabled: false,
+  isFreeDeliveryEnabled: false,
+  freeDeliveryThreshold: 0,
+  deliveryFeeRules: [],
+  isTotalFreeDeliveryEnabled: false,
+  unconfiguredZoneMessage: '',
+};
+
+async function loadServerDeliverySettings(): Promise<DeliverySettings> {
+  const { adminDb } = getFirebaseAdmin();
+  const settingsDoc = await adminDb.collection('settings').doc('delivery').get();
+  return settingsDoc.exists
+    ? { ...DELIVERY_DEFAULTS, ...settingsDoc.data() }
+    : DELIVERY_DEFAULTS;
+}
+
+async function loadAllFirestoreCities(): Promise<City[]> {
+  const { adminDb } = getFirebaseAdmin();
+  const snapshot = await adminDb.collection('cities').get();
+  if (snapshot.empty) return [];
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as City));
+}
+
+/**
+ * Recalcule la livraison côté serveur PAR LIGNE puis somme — la règle métier
+ * identique au panier :
+ *
+ *   CHAQUE ligne de location possède son propre coût de livraison
+ *   TOTAL LIVRAISON  =  Σ deliveryCost(chaque ligne)
+ *
+ * Chaque ligne de location est résolue depuis SA propre destination
+ * (renter city/postcode) via le moteur partagé. Les lignes sans destination
+ * (ex. vente) retombent sur l'adresse unique de checkout — comportement
+ * existant conservé.
+ */
+async function resolveBoutiqueDelivery(
+  lines: ServerDeliveryLine[],
+  checkout: { postcode?: string; city?: string } | null | undefined
+): Promise<number> {
+  if (!lines || lines.length === 0) return 0;
+
+  const settings = await loadServerDeliverySettings();
+  const firestoreCities = await loadAllFirestoreCities();
+
+  const rentalLines = lines.filter(l => l.type === 'rental');
+  const saleLines = lines.filter(l => l.type !== 'rental');
+
+  // 1) Locations : calcul PAR LIGNE depuis la destination propre de chaque ligne.
+  let rentalTotal = 0;
+  for (const line of rentalLines) {
+    if (!line.postcode && !line.city) continue; // pas de destination → non concerné
+    const res = resolveDestination(
+      { postcode: line.postcode, cityName: line.city },
+      firestoreCities,
+      []
+    );
+    const { cost } = computeDeliveryCostDetails(settings, {
+      subtotal: line.lineSubtotal,
+      zoneId: res.zoneId,
+      cityId: res.cityId,
+    });
+    rentalTotal += round2(cost);
+  }
+
+  // 2) Ventes (pas de destination par ligne) : modèle existant inchangé —
+  //    livraison unique depuis l'adresse de checkout sur le sous-total des ventes.
+  let saleTotal = 0;
+  const saleSubtotal = round2(saleLines.reduce((s, l) => s + l.lineSubtotal, 0));
+  if (saleSubtotal > 0 && (checkout?.postcode || checkout?.city)) {
+    const res = resolveDestination(
+      { postcode: checkout.postcode, cityName: checkout.city },
+      firestoreCities,
+      []
+    );
+    const { cost } = computeDeliveryCostDetails(settings, {
+      subtotal: saleSubtotal,
+      zoneId: res.zoneId,
+      cityId: res.cityId,
+    });
+    saleTotal = round2(cost);
+  } else if (saleSubtotal === 0) {
+    saleTotal = 0;
+  } else {
+    // Vente présente mais ADRESSE DE CHECKOUT ABSENTE → laisser 0 (l'adresse
+    // sera renseignée au paiement ; le montant est alors recalculé à la capture).
+    saleTotal = 0;
+  }
+
+  return round2(rentalTotal + saleTotal);
 }
 
 /** Recalcule le coût de livraison côté serveur (identique à /api/boutique/delivery-cost). */
@@ -436,10 +543,23 @@ export async function resolveBoutiqueAmount(input: BoutiqueAmountInput): Promise
   const promo = await resolvePromo(subtotal, { code: input.promoCode, docId: input.promoDocId });
   const totalAfterDiscount = Math.max(0, round2(subtotal - promo.discount));
 
-  const deliveryCost = await resolveServerDeliveryCost(
-    input.delivery?.postcode || '',
-    input.delivery?.city || '',
-    subtotal
+  // Livraison : recalcul serveur PAR LIGNE (chaque ligne de location a sa propre
+  // destination → son propre coût → somme). Les ventes retombent sur l'adresse
+  // de checkout. Le montant client n'est jamais utilisé.
+  const resolvedByKey = new Map(items.map(i => [i.key, i]));
+  const deliveryCost = await resolveBoutiqueDelivery(
+    input.items.map(inItem => {
+      const resolved = resolvedByKey.get(
+        `${inItem.productId}|${inItem.type}|${inItem.variantReference || inItem.variantName || ''}`
+      );
+      return {
+        type: inItem.type,
+        city: inItem.renterCity,
+        postcode: inItem.renterPostcode,
+        lineSubtotal: resolved?.lineTotal ?? 0,
+      };
+    }),
+    input.delivery
   );
 
   const calc = calculateCheckout({

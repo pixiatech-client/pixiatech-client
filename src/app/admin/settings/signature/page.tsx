@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { getSettings } from '@/app/admin/actions';
 import type { Settings as AppSettings } from '@/lib/types';
 import { SignatureForm } from './signature-form';
-import { Loader2 } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 
 export default function SignatureSettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -27,7 +27,7 @@ export default function SignatureSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 text-slate-400 animate-spin" />
+        <LiquidLoader size={32} />
       </div>
     );
   }

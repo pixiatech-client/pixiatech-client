@@ -1309,3 +1309,61 @@ img, video {
   background-color: #f8fafc;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+ *  LIQUID LOADER — Mikael Ainalem (CodePen eYmGLyp)
+ *  SVG gooey-filter + gradient dashed rotating rings
+ * ═══════════════════════════════════════════════════════════════ */
+
+.liquid-gegga {
+  width: 0;
+  height: 0;
+}
+
+.liquid-stopp1 {
+  stop-color: #2563eb;
+}
+
+.liquid-stopp3 {
+  stop-color: #0ea5e9;
+}
+
+.liquid-stopp4 {
+  stop-color: #a855f7;
+}
+
+.liquid-stopp2 {
+  stop-color: #d946ef;
+}
+
+.liquid-halvan {
+  animation: LiquidSnurra 10s infinite linear;
+  stroke-dasharray: 180 800;
+  fill: none;
+  stroke-width: 23;
+  stroke-linecap: round;
+}
+
+.liquid-strecken {
+  animation: LiquidSnurra 3s infinite linear;
+  stroke-dasharray: 26 54;
+  fill: none;
+  stroke-width: 23;
+  stroke-linecap: round;
+}
+
+@keyframes LiquidSnurra {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -403px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-snurra .liquid-halvan,
+  .liquid-snurra .liquid-strecken {
+    animation: none;
+  }
+}
+

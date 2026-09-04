@@ -1,13 +1,14 @@
 'use client';
 
 import { use } from 'react';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { UserProfileLayout } from './_components/user-profile-layout';
 import { useDoc, useMemoFirebase } from '@/firebase';
 import { doc, getFirestore } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
+import LiquidLoader from '@/components/LiquidLoader';
 
 export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -19,7 +20,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   if (isLoading) {
     return (
       <div className="w-full max-w-6xl mx-auto flex justify-center items-center p-20">
-        <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+        <LiquidLoader size={40} />
       </div>
     );
   }

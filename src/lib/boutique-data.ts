@@ -54,6 +54,7 @@ export interface Product {
   priceDisplay?: 'zero' | 'free' | 'multiprice' | 'quote';
   qrCodeUrl?: string;
   showQrCodeOnProduct?: boolean;
+  order?: number;
 }
 
 export interface RelatedProduct {
@@ -190,6 +191,7 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     id: docSnap.id,
     name,
     price,
+    order: typeof data.order === 'number' ? data.order : undefined,
     oldPrice: (normalizePrice(data.oldPrice) > 0 ? normalizePrice(data.oldPrice) : undefined),
     rating: data.rating ?? 5.0,
     reviews: data.reviews ?? 0,
@@ -240,7 +242,11 @@ export async function fetchBoutiqueProducts(): Promise<Product[]> {
     const q = collection(firestore, 'boutique_products');
     const snapshot = await getDocs(q);
     if (snapshot.empty) return [];
-    return snapshot.docs.map((d) => mapFirestoreDoc(d, charNameMap)).filter(p => !p.isHidden).sort((a, b) => a.name.localeCompare(b.name));
+    return snapshot.docs.map((d) => mapFirestoreDoc(d, charNameMap)).filter(p => !p.isHidden).sort((a, b) => {
+      const oa = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+      const ob = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+      return oa !== ob ? oa - ob : a.name.localeCompare(b.name);
+    });
   } catch (e) {
     console.warn('fetchBoutiqueProducts failed:', e);
     return [];

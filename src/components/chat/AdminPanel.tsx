@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { X, ChevronLeft, Shield, Check, CheckCheck, Trash2, Image, Video, Mic, AlertTriangle, Loader2, UserPlus, UserMinus, Search } from 'lucide-react';
+import { X, ChevronLeft, Shield, Check, CheckCheck, Trash2, Image, Video, Mic, AlertTriangle, UserPlus, UserMinus, Search } from 'lucide-react';
 import { useRoles } from '@/contexts/RoleContext';
 import { doc, updateDoc, onSnapshot, collection, setDoc, getDoc, getDocs } from 'firebase/firestore';
 import { firestore as db } from '@/firebase/config';
 import { UserProfileChat as UserProfile, AdminSettings } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { getAvatarUrl } from '@/lib/avatar';
+import LiquidLoader from '@/components/LiquidLoader';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCG55rqyEmmiA8dT_kBoqYPrlgcGA7Ws94",
@@ -201,7 +202,7 @@ function StorageTab() {
           disabled={loading}
           className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl font-bold text-white/80 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
         >
-          {loading ? <Loader2 className="animate-spin" size={16} /> : <Image size={16} />}
+          {loading ? <LiquidLoader size={16} /> : <Image size={16} />}
           Analyser
         </button>
 
@@ -210,7 +211,7 @@ function StorageTab() {
           disabled={selectedTypes.length === 0 || isDeleting}
           className="flex-1 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-500/20 rounded-xl font-bold text-red-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isDeleting ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+          {isDeleting ? <LiquidLoader size={16} /> : <Trash2 size={16} />}
           Supprimer
         </button>
       </div>
@@ -293,7 +294,7 @@ export default function AdminPanel({ onClose, onBack, currentUser }: AdminPanelP
   if (loading) {
     return (
       <div className="flex flex-col h-full bg-[#0f1113] items-center justify-center">
-        <Loader2 className="animate-spin text-blue-400" size={32} />
+        <LiquidLoader size={32} />
       </div>
     );
   }

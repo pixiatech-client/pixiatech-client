@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getUsers, updateQuoteStatus } from '@/app/admin/actions';
 import type { UserProfile, QuoteRequest } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import { useAdminT } from '@/hooks/useAdminT';
 
 interface TransmitToSupplierDialogProps {
@@ -88,7 +88,7 @@ export function TransmitToSupplierDialog({ quotes, children, onSuccess }: Transm
             <SelectContent>
               {isLoading ? (
                 <div className="p-4 text-center">
-                    <Loader2 className="h-4 w-4 animate-spin inline-flex" />
+                    <LiquidLoader size={16} />
                 </div>
               ) : fournisseurs.length > 0 ? (
                 fournisseurs.map(f => (

@@ -12,7 +12,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { PlusCircle, Trash2, Loader2, FilePen, ChevronLeft, ChevronRight, FolderUp, Palette, ChevronDown } from 'lucide-react';
+import { PlusCircle, Trash2, FilePen, ChevronLeft, ChevronRight, FolderUp, Palette, ChevronDown } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -116,7 +117,7 @@ function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
             onChange={(e) => setNewZoneName(e.target.value)}
           />
           <Button onClick={handleAddZone} disabled={isPending || !newZoneName.trim()}>
-            {isPending ? <Loader2 className="animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+            {isPending ? <LiquidLoader size={24} /> : <PlusCircle className="mr-2 h-4 w-4" />}
             Create
           </Button>
         </div>
@@ -124,7 +125,7 @@ function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
             <Table>
                 <TableBody>
                     {isLoadingZones ? (
-                         <TableRow><TableCell className="h-24 text-center"><Loader2 className="animate-spin inline-block mr-2" /> Loading...</TableCell></TableRow>
+                         <TableRow><TableCell className="h-24 text-center"><LiquidLoader size={24} /> Loading...</TableCell></TableRow>
                     ) : zones && zones.length > 0 ? (
                         zones.map(zone => (
                             <TableRow key={zone.id}>
@@ -337,7 +338,7 @@ export function ZoneManager() {
                 className="flex-grow"
             />
             <Button onClick={handleAddCities} disabled={isPending || !newCitiesText.trim()} className="w-full sm:w-auto">
-                {isPending ? <Loader2 className="animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                {isPending ? <LiquidLoader size={24} /> : <PlusCircle className="mr-2 h-4 w-4" />}
                 Add
             </Button>
             </div>
@@ -374,7 +375,7 @@ export function ZoneManager() {
                 </TableHeader>
                 <TableBody>
                 {isLoadingCities ? (
-                    <TableRow><TableCell colSpan={5} className="text-center h-24"><Loader2 className="animate-spin inline-block mr-2" /> {t('Loading...')}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="text-center h-24"><LiquidLoader size={24} /> {t('Loading...')}</TableCell></TableRow>
                 ) : cities && cities.length > 0 ? (
                     cities.map(city => {
                         const zone = zones?.find(z => z.id === city.zoneId);

@@ -6,8 +6,9 @@ import type { Settings as AppSettings } from '@/lib/types';
 import { EmailConfigurator } from '@/components/verification/EmailConfigurator';
 import { EmailTemplatePreview } from '@/components/verification/EmailTemplatePreview';
 import type { MessageStyle, PreviewTheme } from '@/components/verification/types';
-import { Loader2, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useAdminT } from '@/hooks/useAdminT';
+import LiquidLoader from '@/components/LiquidLoader';
 
 export default function EmailVerificationSettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -142,7 +143,7 @@ export default function EmailVerificationSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 text-slate-400 animate-spin" />
+        <LiquidLoader size={32} />
       </div>
     );
   }

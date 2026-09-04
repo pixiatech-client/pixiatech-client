@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Check, Loader2, RefreshCw, Trash2, Sparkles, AlertCircle } from 'lucide-react';
+import { Check, RefreshCw, Trash2, Sparkles, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
+import LiquidLoader from '@/components/LiquidLoader';
 import {
   resetApplication,
   type ResetStep,
@@ -207,7 +208,7 @@ export function ResetApplicationDialog({
                     {isDone ? (
                       <Check className="h-4 w-4 stroke-[3] animate-in zoom-in-75 duration-200 motion-reduce:animate-none" />
                     ) : isActive ? (
-                      <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />
+                      <LiquidLoader size={16} />
                     ) : isError ? (
                       <AlertCircle className="h-4 w-4" />
                     ) : (
@@ -289,7 +290,7 @@ export function ResetApplicationDialog({
           >
             {running ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <LiquidLoader size={16} />
                 {isAllCompleted
                   ? (isVersionMode ? t('admin.reset.reloading') : t('admin.reset.completedRedirect'))
                   : (isVersionMode ? t('admin.reset.reloading') : t('admin.reset.purging'))}

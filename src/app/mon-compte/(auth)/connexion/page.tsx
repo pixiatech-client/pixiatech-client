@@ -1,13 +1,14 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
-import { Mail, ArrowRight, Loader2, CheckCircle, Lock, Eye, EyeOff, LogIn, ArrowLeft, Sparkles } from 'lucide-react';
+import { Mail, ArrowRight, Loader2, CheckCircle, Lock, Eye, EyeOff, LogIn, ArrowLeft } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import LiquidLoader from '@/components/LiquidLoader';
 import { useI18n } from '@/lib/i18n';
 
 function MagicLinkTab() {
@@ -96,7 +97,7 @@ function MagicLinkTab() {
         className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-black text-sm font-bold text-white shadow-lg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 transition-all"
       >
         {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <LiquidLoader size={20} />
         ) : (
           <>
             <ArrowRight className="h-5 w-5" />
@@ -208,7 +209,7 @@ function PasswordTab() {
         className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-black text-sm font-bold text-white shadow-lg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 transition-all"
       >
         {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
+          <LiquidLoader size={20} />
         ) : (
           <>
             <LogIn className="h-5 w-5" />
@@ -245,9 +246,7 @@ export default function ConnexionPage() {
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <div className="px-6 pt-8 pb-0 sm:px-8">
                 <div className="mb-6 flex justify-center">
-                  <div className="flex h-20 w-20 items-center justify-center rounded-[1.75rem] bg-black shadow-lg shadow-slate-200/50">
-                    <Sparkles className="h-9 w-9 text-white" />
-                  </div>
+                  <img src="/favicon.png" alt="PIXIATECH" className="h-20 w-20 object-contain drop-shadow-lg" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                 </div>
                 <div className="text-center">
                   <h1 className="text-3xl font-black tracking-tight text-slate-900">{t('client.login.title')}</h1>

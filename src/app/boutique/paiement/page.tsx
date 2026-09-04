@@ -20,6 +20,7 @@ import { getDoc, doc, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/firebase/config';
 import Image from 'next/image';
 import confetti from 'canvas-confetti';
+import LiquidLoader from '@/components/LiquidLoader';
 
 function ConfettiEffect() {
   useEffect(() => {
@@ -48,7 +49,7 @@ function ConfettiEffect() {
   return null;
 }
 
-function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, vatValidated, paymentContext }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string>; deliveryCost: number; vatValidated: boolean; paymentContext: BoutiqueAmountInput }) {
+function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, vatValidated, paymentContext, fundingSource }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string>; deliveryCost: number; vatValidated: boolean; paymentContext: BoutiqueAmountInput; fundingSource?: (typeof FUNDING)[keyof typeof FUNDING] }) {
   const [{ isResolved, isRejected }] = usePayPalScriptReducer();
   const [error, setError] = useState<string | null>(null);
 
@@ -72,9 +73,16 @@ function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, va
   }
 
   return (
-    <div className="w-full bg-[#F9FAFB] rounded-xl p-5 md:p-6">
+    <div className="w-full">
       <PayPalButtons
-        fundingSource={FUNDING.PAYPAL}
+        fundingSource={fundingSource ?? FUNDING.PAYPAL}
+        style={{
+          layout: 'vertical',
+          shape: 'rect',
+          color: fundingSource === FUNDING.CARD ? 'black' : 'gold',
+          height: 48,
+          label: fundingSource === FUNDING.CARD ? 'pay' : 'paypal',
+        }}
         createOrder={async () => {
           // Le montant est résolu côté serveur depuis le panier reconstruit.
           const res = await fetch('/api/paypal/create-order', {
@@ -257,7 +265,7 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, de
         className="w-full py-3.5 px-5 rounded-xl text-sm font-bold text-white transition-all bg-gray-900 hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {submitting ? (
-          <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          <LiquidLoader size={16} />
         ) : (
           <Lock size={14} />
         )}
@@ -534,10 +542,22 @@ export default function CheckoutPage() {
     );
   }
 
+  const discount = promo ? subtotal - totalAfterDiscount : 0;
+
+  // Livraison : le panier somme le coût figé de CHAQUE ligne de location. Pour
+  // garantir la parité panier ↔ checkout, on affiche ici la même somme par ligne.
+  // Les paniers de vente (pas d'adresse par ligne) conservent le recalcul via
+  // l'adresse de checkout (modèle existant, `deliveryCost`).
+  const rentalDeliverySum = items
+    .filter(i => i.type === 'rental')
+    .reduce((s, i) => s + (typeof i.deliveryCost === 'number' && Number.isFinite(i.deliveryCost) ? i.deliveryCost : 0), 0);
+  const hasRentalDelivery = items.some(i => i.type === 'rental' && typeof i.deliveryCost === 'number');
+  const effectiveDeliveryCost = hasRentalDelivery ? rentalDeliverySum : deliveryCost;
+
   const calc = calculateCheckout({
     subtotal,
     totalAfterDiscount,
-    deliveryCost,
+    deliveryCost: effectiveDeliveryCost,
     profileType,
     country: delivery.country || 'FR',
     vatValidated,
@@ -547,7 +567,6 @@ export default function CheckoutPage() {
   const total = calc.total;
   const totalLabel = calc.totalLabel;
   const vatLabel = calc.vatLabel;
-  const discount = promo ? subtotal - totalAfterDiscount : 0;
 
   // Contexte envoyé au serveur pour la résolution du montant (jamais d'`amount` client).
   const paymentContext: BoutiqueAmountInput = {
@@ -562,6 +581,8 @@ export default function CheckoutPage() {
       rentalEndDate: i.rentalEndDate,
       rentalStartTime: i.rentalStartTime,
       rentalEndTime: i.rentalEndTime,
+      renterCity: i.type === 'rental' ? i.renterDetails?.city : undefined,
+      renterPostcode: i.type === 'rental' ? i.renterDetails?.postcode : undefined,
     })),
     delivery: {
       postcode: delivery.postcode,
@@ -837,7 +858,7 @@ export default function CheckoutPage() {
                   className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-[12px] font-bold flex items-center gap-2 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {magicSending ? (
-                    <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <LiquidLoader size={16} />
                   ) : magicSent ? (
                     <Check size={14} />
                   ) : (
@@ -977,7 +998,7 @@ export default function CheckoutPage() {
   const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '';
 
   return (
-    <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'EUR', components: 'buttons,card-fields' }}>
+    <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'EUR', components: 'buttons' }}>
     <div className="w-full min-h-screen bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
 
 
@@ -1007,7 +1028,11 @@ export default function CheckoutPage() {
                 {/* Payment method toggle — always visible */}
                 <div className="grid grid-cols-2 gap-2 mb-6">
                   <button
-                    onClick={() => setPaymentMethod('card')}
+                    type="button"
+                    onClick={() => {
+                      setPaymentMethod('card');
+                      if (!isDeliveryComplete) setDeliveryOpen(true);
+                    }}
                     className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
                       paymentMethod === 'card'
                         ? 'bg-gray-900 text-white shadow-sm'
@@ -1018,7 +1043,11 @@ export default function CheckoutPage() {
                     {t('checkout.cardPayment')}
                   </button>
                   <button
-                    onClick={() => setPaymentMethod('paypal')}
+                    type="button"
+                    onClick={() => {
+                      setPaymentMethod('paypal');
+                      if (!isDeliveryComplete) setDeliveryOpen(false);
+                    }}
                     className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
                       paymentMethod === 'paypal'
                         ? 'bg-gray-900 text-white shadow-sm'
@@ -1030,9 +1059,36 @@ export default function CheckoutPage() {
                   </button>
                 </div>
 
+                {/* PayPal direct payment block — displayed immediately when PayPal tab is active */}
+                {paymentMethod === 'paypal' && (
+                  <div className="bg-[#F9FAFB] border border-gray-200/80 rounded-2xl p-5 md:p-6 mb-6">
+                    <div className="flex items-center gap-2.5 mb-2">
+                      <Image src="/bot-avatars/PayPal.png" alt="PayPal" width={22} height={22} className="object-contain" />
+                      <div>
+                        <h4 className="text-sm font-bold text-gray-900">Paiement direct avec PayPal</h4>
+                        <p className="text-[11px] text-gray-500">Rapide, sécurisé et sans saisie d'adresse obligatoire</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                      Cliquez ci-dessous pour régler votre commande avec votre compte PayPal ou par carte sans créer de compte. Vos informations et votre adresse de livraison seront transmises automatiquement par PayPal.
+                    </p>
+                    <PayPalButtonGroup
+                      total={total}
+                      handlePay={handlePay}
+                      items={items}
+                      delivery={delivery}
+                      deliveryCost={deliveryCost}
+                      vatValidated={vatValidated}
+                      paymentContext={paymentContext}
+                      fundingSource={FUNDING.PAYPAL}
+                    />
+                  </div>
+                )}
+
                 {/* Delivery Address - shared for both payment methods */}
                 <div className="bg-gray-50/50 rounded-xl border border-gray-100 mb-6">
                   <button
+                    type="button"
                     onClick={() => setDeliveryOpen(!deliveryOpen)}
                     className="w-full flex items-center justify-between p-4 text-left"
                   >
@@ -1045,8 +1101,19 @@ export default function CheckoutPage() {
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">{t('checkout.deliveryAddress')}</p>
-                        <p className="text-[11px] text-gray-400">{isDeliveryComplete ? `${delivery.firstName} ${delivery.lastName}, ${delivery.addressLine1}, ${delivery.postcode} ${delivery.city}` : 'Requis pour commander'}</p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {t('checkout.deliveryAddress')}
+                          {paymentMethod === 'paypal' && (
+                            <span className="ml-2 text-[10px] font-normal text-gray-400 uppercase tracking-wider">(Optionnel)</span>
+                          )}
+                        </p>
+                        <p className="text-[11px] text-gray-400">
+                          {isDeliveryComplete
+                            ? `${delivery.firstName} ${delivery.lastName}, ${delivery.addressLine1}, ${delivery.postcode} ${delivery.city}`
+                            : paymentMethod === 'paypal'
+                              ? 'Optionnel — transmis directement via votre compte PayPal'
+                              : 'Requis pour commander par carte bancaire'}
+                        </p>
                       </div>
                     </div>
                     <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${deliveryOpen ? 'rotate-180' : ''}`} />
@@ -1335,68 +1402,34 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
-                {paymentMethod === 'card' ? (
-                  <PayPalCardFieldsProvider
-                    style={cardFieldStyle}
-createOrder={async () => {
-                      // Le montant est résolu côté serveur depuis le panier reconstruit.
-                      const res = await fetch('/api/paypal/create-order', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ cart: paymentContext }),
-                      });
-                      const data = await res.json();
-                      if (!res.ok) throw new Error(data.error);
-                      return data.id;
-                    }}
-                    onApprove={async (data) => {
-                      try {
-                        console.log('CardFields onApprove:', data);
-                        const rentalItems = items.filter(i => i.type === 'rental').map(i => ({
-                          productId: i.productId, productName: i.name, productImage: i.image,
-                          productPrice: i.price, quantity: i.quantity,
-                          variantName: i.variantName, variantReference: i.variantReference,
-                          renterDetails: i.renterDetails,
-                          rentalStartDate: i.rentalStartDate, rentalEndDate: i.rentalEndDate,
-                          rentalStartTime: i.rentalStartTime, rentalEndTime: i.rentalEndTime,
-                          additionalNotes: i.additionalNotes || '', contractSignedAt: i.contractSignedAt || null,
-                        }));
-                        const purchaseItems = items.filter(i => i.type === 'purchase').map(i => ({
-                          productId: i.productId, productName: i.name, productImage: i.image,
-                          productPrice: i.price, quantity: i.quantity,
-                          variantName: i.variantName, variantReference: i.variantReference,
-                        }));
-                        const res = await fetch('/api/paypal/capture-order', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ orderId: data.orderID, cart: paymentContext, rentalItems, purchaseItems, delivery: { ...delivery, vatValidated: vatValidated } }),
-                        });
-                        const capture = await res.json();
-                        if (!res.ok) throw new Error(capture.error);
-                        if (capture.status === 'COMPLETED') {
-                          handlePay(capture.isNewCustomer !== false);
-                        }
-                        else alert('Statut inattendu: ' + capture.status);
-                      } catch (err: any) {
-                        console.error('CardFields error:', err);
-                        alert('Erreur PayPal: ' + err.message);
-                      }
-                    }}
-                    onError={(err) => console.error('CardFields error:', err)}
-                  >
-                    <CardSection total={total} handlePay={handlePay} items={items} delivery={delivery} isDeliveryComplete={isDeliveryComplete} deliveryCost={deliveryCost} />
-                  </PayPalCardFieldsProvider>
-                ) : (
+
+                {paymentMethod === 'card' && (
                   isDeliveryComplete ? (
-                    <PayPalButtonGroup total={total} handlePay={handlePay} items={items} delivery={delivery} deliveryCost={deliveryCost} vatValidated={vatValidated} paymentContext={paymentContext} />
+                    <div className="bg-[#F9FAFB] border border-gray-200/80 rounded-2xl p-5 md:p-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <CreditCard size={18} className="text-gray-700" />
+                        <h4 className="text-sm font-bold text-gray-900">Payer par carte bancaire</h4>
+                      </div>
+                      <PayPalButtonGroup
+                        total={total}
+                        handlePay={handlePay}
+                        items={items}
+                        delivery={delivery}
+                        deliveryCost={deliveryCost}
+                        vatValidated={vatValidated}
+                        paymentContext={paymentContext}
+                        fundingSource={FUNDING.CARD}
+                      />
+                    </div>
                   ) : (
                     <div className="bg-gray-50/50 border border-dashed border-gray-200 rounded-xl p-6 text-center">
                       <MapPin size={24} className="mx-auto text-gray-300 mb-2" />
                       <p className="text-sm font-semibold text-gray-500 mb-1">{t('checkout.completeDeliveryAddress')}</p>
-                      <p className="text-xs text-gray-400">{t('checkout.fillPaypalFields')}</p>
+                      <p className="text-xs text-gray-400">Renseignez vos coordonnées de livraison ci-dessus pour activer le paiement par carte bancaire.</p>
                     </div>
                   )
                 )}
+
               </div>
 
               <div className="flex items-center justify-between px-4 mt-4">
@@ -1508,7 +1541,13 @@ createOrder={async () => {
                   )}
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">{t('cart.expressDelivery')}</span>
-                    {!delivery.postcode && !delivery.city ? (
+                    {hasRentalDelivery ? (
+                      effectiveDeliveryCost === 0 ? (
+                        <span className="font-semibold text-emerald-600">{t('cart.free')}</span>
+                      ) : (
+                        <span className="font-semibold text-gray-900">{formatPrice(effectiveDeliveryCost)}</span>
+                      )
+                    ) : !delivery.postcode && !delivery.city ? (
                       <span className="text-xs text-emerald-600 font-semibold">Saisissez votre adresse</span>
                     ) : deliveryLoading ? (
                       <span className="text-xs text-gray-400 animate-pulse">Calcul...</span>

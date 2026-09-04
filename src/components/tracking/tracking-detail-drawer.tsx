@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, Package, MapPin, Clock, Truck, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, Package, MapPin, Clock, Truck, CheckCircle, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from 'usehooks-ts';
 import { cn } from '@/lib/utils';
 import { STATUS_LABELS, STATUS_COLORS } from '@/lib/tracking/constants';
 import type { TrackingStatus, TrackingEvent } from '@/lib/tracking/types';
+import LiquidLoader from '@/components/LiquidLoader';
 interface TrackingDetailDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -104,7 +105,7 @@ export function TrackingDetailDrawer({ open, onClose, trackingNumber, carrier }:
             {loading ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                  <LiquidLoader size={24} />
                   <span className="text-xs text-slate-400">Recherche du colis...</span>
                 </div>
               </div>

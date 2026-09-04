@@ -3350,6 +3350,7 @@ export async function updatePayPalSettings(data: any) {
     const res = await updatePayPalSettingsDb(data);
     if (res.success) {
       revalidatePath('/admin/settings', 'layout');
+      return { ...res, hasClientSecret: Boolean(data.clientSecret) };
     }
     return res;
   } catch (error: any) {

@@ -3,7 +3,8 @@
 import { Progress } from '@/components/ui/progress';
 import { MediaUploadState } from '@/hooks/use-media-upload';
 import { cn } from '@/lib/utils';
-import { Loader2, CheckCircle2, AlertCircle, FileImage, FileVideo, Upload } from 'lucide-react';
+import { CheckCircle2, AlertCircle, FileImage, FileVideo, Upload } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 o';
@@ -59,7 +60,7 @@ export function MediaProgress({ state, className, onRetry }: MediaProgressProps)
       {state.status === 'processing' && (
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 text-sm text-blue-600">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <LiquidLoader size={16} />
             <span>
               {state.isVideo
                 ? 'Conversion de la vidéo en WebM...'

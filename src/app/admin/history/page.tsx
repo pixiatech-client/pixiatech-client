@@ -6,7 +6,7 @@ import type { QuoteRequest, QuoteHistoryEntry, UserProfile, ActivityLogEntry } f
 import { getQuoteRequests, updateQuoteStatus, getUsers, getActivityLogs } from '@/app/admin/actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Trash2, ChevronLeft, ChevronRight, SlidersHorizontal, Calendar as CalendarIcon, User, FileText, Settings, Shield, Key, PenLine, Hash } from 'lucide-react';
+import { Trash2, ChevronLeft, ChevronRight, SlidersHorizontal, Calendar as CalendarIcon, User, FileText, Settings, Shield, Key, PenLine, Hash } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Pagination } from '@/components/ui/Pagination';
 import { format, formatDistanceToNow, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
@@ -33,6 +33,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import type { DateRange } from 'react-day-picker';
 import { Badge } from '@/components/ui/badge';
 import { normalizeSearchText } from '@/lib/utils';
+import LiquidLoader from '@/components/LiquidLoader';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -247,7 +248,7 @@ export default function HistoryPage() {
                     <CardDescription>{t('history.loading')}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center p-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <LiquidLoader size={32} />
                 </CardContent>
             </Card>
         );
@@ -265,7 +266,7 @@ export default function HistoryPage() {
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive-ghost" disabled={isClearing || fullHistory.length === 0}>
-                      {isClearing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                      {isClearing ? <LiquidLoader size={16} /> : <Trash2 className="mr-2 h-4 w-4" />}
                       {t('history.clear')}
                     </Button>
                   </AlertDialogTrigger>

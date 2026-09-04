@@ -16,6 +16,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import MiniChat from '@/components/chat/MiniChat';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { getAllUsers } from '@/app/admin/actions';
+import LiquidLoader from '@/components/LiquidLoader';
 
 export default function MessagesPage() {
   const { userProfile: basicProfile } = useUser();
@@ -163,7 +164,7 @@ export default function MessagesPage() {
     };
   }, [isResizing]);
 
-  if (!user) return <div className="h-full flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+  if (!user) return <div className="h-full flex items-center justify-center"><LiquidLoader size={32} /></div>;
 
   if (user.role !== 'admin' && user.permissions?.canChat === false) {
     return (

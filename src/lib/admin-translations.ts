@@ -430,6 +430,7 @@ const adminTranslations: Record<string, string> = {
   'Hide secret': 'Masquer le secret',
   'Show secret': 'Afficher le secret',
   'The secret is never displayed by default for security reasons.': 'Le secret n\'est jamais affiché par défaut pour des raisons de sécurité.',
+  'A secret is already saved. Leave the field empty to keep it.': 'Un secret est déjà enregistré. Laissez le champ vide pour le conserver.',
   'Security notice': 'Avis de sécurité',
   'These credentials are stored securely in Firestore and are never exposed in the client-side code. Only administrators can access this page.': 'Ces identifiants sont stockés de manière sécurisée dans Firestore et ne sont jamais exposés dans le code client. Seuls les administrateurs peuvent accéder à cette page.',
   'Unable to load PayPal settings.': 'Impossible de charger les paramètres PayPal.',

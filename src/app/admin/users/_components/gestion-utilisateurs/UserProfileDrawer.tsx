@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Mail, Phone, User as UserIcon, Shield, Clock, Calendar, CheckCircle, Image as ImageIcon, Lock, UserCircle, PlusCircle, Save, FileText, ChevronDown, Loader2 } from 'lucide-react';
+import { X, Camera, Mail, Phone, User as UserIcon, Shield, Clock, Calendar, CheckCircle, Image as ImageIcon, Lock, UserCircle, PlusCircle, Save, FileText, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { User, UserRole, UserStatus } from './types';
 import { StatusBadge } from './StatusBadge';
@@ -14,6 +14,7 @@ import { CreateRoleDrawer } from './CreateRoleDrawer';
 import { useAdminT } from '@/hooks/useAdminT';
 import { useMediaUpload } from '@/hooks/use-media-upload';
 import { MediaProgress } from '@/components/ui/media-progress';
+import LiquidLoader from '@/components/LiquidLoader';
 
 interface UserProfileDrawerProps {
   isOpen: boolean;
@@ -151,7 +152,7 @@ export function UserProfileDrawer({ isOpen, onClose, user, onSave, isAddMode = f
                 {(bgMediaState.status === 'uploading' || bgMediaState.status === 'processing') && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
                     <div className="flex items-center gap-3 text-white">
-                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <LiquidLoader size={24} />
                       <span className="text-sm font-bold">{t('Uploading...')}</span>
                     </div>
                   </div>

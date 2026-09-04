@@ -24,6 +24,13 @@ export interface CartItem {
   contractSignedAt?: string;
   rentalFlowCompleted?: boolean;
   stock?: number;
+  // Livraison : coût figé au moment de l'ajout du produit au panier, calculé à
+  // partir de l'adresse de livraison (renterDetails) via le pricing engine partagé.
+  deliveryCost?: number;
+  deliveryReason?: string;
+  zoneId?: string | null;
+  cityId?: string | null;
+  deliveryLabel?: string;
 }
 
 interface PromoInfo {

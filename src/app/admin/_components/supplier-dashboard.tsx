@@ -15,12 +15,13 @@ import { Button } from '@/components/ui/button';
 import { useUser } from '@/firebase';
 import { getQuoteRequests, updateQuoteStatus, getProducts, getProductSpecs } from '../actions';
 import type { QuoteRequest, Product, ProductSpec } from '@/lib/types';
-import { Loader2, Package, Search, FilePen, RotateCcw, Truck, ClipboardList, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
+import { Package, Search, FilePen, RotateCcw, Truck, ClipboardList, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn, normalizeSearchText } from '@/lib/utils';
 import { Pagination } from '@/components/ui/Pagination';
+import LiquidLoader from '@/components/LiquidLoader';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -102,7 +103,7 @@ function QuoteTable({
                         {isLoading ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="h-24 text-center">
-                                    <Loader2 className="animate-spin mr-2 inline" /> {t("Loading...")}
+                                    <LiquidLoader size={16} /> {t("Loading...")}
                                 </TableCell>
                             </TableRow>
                         ) : paginatedQuotes.length > 0 ? (
@@ -121,7 +122,7 @@ function QuoteTable({
                                         <div className="flex items-center gap-2">
                                             <Input placeholder={t("Enter tracking number...")} value={trackingNumbers[quote.id] || ''} onChange={(e) => onTrackingChange(quote.id, e.target.value)} onBlur={() => onSaveTracking(quote.id, true)} disabled={savingStatus[quote.id]} />
                                             <Button variant="ghost" size="icon" className="h-9 w-9 text-blue-500 hover:text-blue-600" onClick={() => onSaveTracking(quote.id)} disabled={savingStatus[quote.id]}>
-                                                {savingStatus[quote.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : <FilePen className="h-4 w-4" />}
+                                                {savingStatus[quote.id] ? <LiquidLoader size={16} /> : <FilePen className="h-4 w-4" />}
                                             </Button>
                                         </div>
                                     </TableCell>

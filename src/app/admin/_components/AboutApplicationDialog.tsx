@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { AlertCircle, CheckCircle2, Info, Loader2, RefreshCw, Rocket } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Info, RefreshCw, Rocket } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { useI18n, IntlHelpers } from '@/lib/i18n';
 import { APP_VERSION, BUILD_COMMIT, BUILD_TIME } from '@/lib/build-info';
 import { isVersionNewer } from '@/lib/version';
+import LiquidLoader from '@/components/LiquidLoader';
 
 interface AboutApplicationDialogProps {
   open: boolean;
@@ -127,7 +128,7 @@ export function AboutApplicationDialog({
         <div role="status" aria-live="polite">
           {isChecking ? (
             <div className="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50/80 px-3.5 py-3 text-sm font-semibold text-blue-900 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-blue-600 dark:text-blue-300" />
+              <LiquidLoader size={16} />
               {t('admin.about.checking')}
             </div>
           ) : checkFailed ? (
@@ -195,7 +196,7 @@ export function AboutApplicationDialog({
           >
             {isChecking ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <LiquidLoader size={16} />
                 {t('admin.about.checking')}
               </>
             ) : (

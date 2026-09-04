@@ -12,10 +12,9 @@ import { firestore } from '@/firebase/config';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import type { Product, ProductVariant, GalleryItem } from '@/lib/boutique-data';
 import BoutiqueRentalFlow from '@/components/BoutiqueRentalFlow';
-import CityInput from '@/components/CityInput';
+import LiquidLoader from '@/components/LiquidLoader';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useI18n } from '@/lib/i18n';
-import { useVatValidation } from '@/hooks/useVatValidation';
 import QRCode from 'qrcode';
 
 const ICON_MAP: Record<string, any> = {
@@ -255,21 +254,14 @@ export default function ProductDetailPage() {
   }, [product?.showQrCodeOnProduct, product?.qrCodeUrl]);
 
   const [quoteFormData, setQuoteFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     phone: '',
-    addressLine1: '',
-    addressLine2: '',
-    city: '',
-    postcode: '',
+    address: '',
     country: 'FR',
-    companyName: '',
-    siren: '',
-    vatNumber: '',
     comment: '',
   });
-  const { vatValidated, vatValidating, vatStatus, vatErrorMessage, validate: validateVat, reset: resetVat } = useVatValidation();
+  const [prefillCompany, setPrefillCompany] = useState('');
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteDone, setQuoteDone] = useState(false);
   const [stickyTop, setStickyTop] = useState(194);
@@ -337,17 +329,15 @@ export default function ProductDetailPage() {
   const [deliveryErrors, setDeliveryErrors] = useState<Record<string, string>>({});
   const [deliveryTouched, setDeliveryTouched] = useState<Record<string, boolean>>({});
 
-  const NAME_RE = /^[\p{L}\s'-]{2,}$/u;
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const PHONE_RE = /^[\d\s+()]{8,}$/;
-  const POSTCODE_RE = /^\d{5}$/;
 
   function validateField(field: string, value: string): string {
     switch (field) {
-      case 'firstName':
-      case 'lastName':
+      case 'name':
         if (!value.trim()) return '';
-        if (!NAME_RE.test(value.trim())) return t('boutique.validFirstName');
+        const nameTrimmed = value.trim();
+        if (nameTrimmed.length < 2 || !/[a-zA-Z\u00C0-\u024F]/.test(nameTrimmed)) return t('boutique.validName');
         return '';
       case 'email':
         if (!value.trim()) return '';
@@ -358,29 +348,11 @@ export default function ProductDetailPage() {
         const digits = value.replace(/[^0-9]/g, '');
         if (digits.length < 8 || !PHONE_RE.test(value.trim())) return t('boutique.validPhone');
         return '';
-      case 'addressLine1':
+      case 'address':
         if (!value.trim()) return '';
         if (value.trim().length < 6) return t('boutique.validAddress');
         if (!/\d/.test(value)) return t('boutique.validAddress');
         if (!/[a-zA-Z\u00C0-\u024F]{2,}/.test(value)) return t('boutique.validAddress');
-        return '';
-      case 'city':
-        if (!value.trim()) return '';
-        if (value.trim().length < 2) return t('boutique.validCity');
-        if (/^\d+$/.test(value.trim())) return t('boutique.validCity');
-        return '';
-      case 'postcode':
-        if (!value.trim()) return '';
-        if (!POSTCODE_RE.test(value.trim())) return t('boutique.validPostcode');
-        return '';
-      case 'companyName':
-        if (!value.trim()) return '';
-        if (value.trim().length < 2) return t('boutique.validCompany');
-        return '';
-      case 'siren':
-        if (!value.trim()) return '';
-        const sirenDigits = value.replace(/[^0-9]/g, '');
-        if (sirenDigits.length < 9) return t('boutique.validSiren');
         return '';
       default:
         return '';
@@ -563,11 +535,8 @@ export default function ProductDetailPage() {
     e.preventDefault();
     if (!product) return;
 
-    // Validate all fields on submit
-    const fieldsToValidate = ['firstName', 'lastName', 'email', 'phone', 'addressLine1'];
-    if (isB2B) {
-      fieldsToValidate.push('companyName', 'siren');
-    }
+    // Champs obligatoires (le projet est toujours requis pour un devis)
+    const fieldsToValidate = ['name', 'email', 'phone', 'address'];
     const newErrors: Record<string, string> = {};
     const newTouched: Record<string, boolean> = {};
     let hasValidationError = false;
@@ -577,15 +546,14 @@ export default function ProductDetailPage() {
       const err = validateField(f, val);
       newTouched[f] = true;
       if (err || !val.trim()) {
-        newErrors[f] = err || 'Ce champ est obligatoire';
+        newErrors[f] = err || t('boutique.fieldRequired');
         hasValidationError = true;
       }
     }
 
-    // Also validate city / postcode
-    if (!quoteFormData.city || !quoteFormData.postcode) {
-      newTouched['city'] = true;
-      newErrors['city'] = 'Veuillez sélectionner une ville';
+    if (!quoteFormData.comment.trim()) {
+      newTouched['comment'] = true;
+      newErrors['comment'] = t('boutique.quoteCommentRequired');
       hasValidationError = true;
     }
 
@@ -593,15 +561,12 @@ export default function ProductDetailPage() {
     setDeliveryErrors(newErrors);
 
     if (hasValidationError) {
-      toast.error('Veuillez corriger les erreurs dans le formulaire');
+      toast.error(t('boutique.formErrors'));
       return;
     }
 
     setQuoteLoading(true);
     try {
-      const customerName = `${quoteFormData.firstName} ${quoteFormData.lastName}`.trim();
-      const customerAddress = `${quoteFormData.addressLine1}${quoteFormData.addressLine2 ? ', ' + quoteFormData.addressLine2 : ''}, ${quoteFormData.postcode} ${quoteFormData.city}`.trim();
-
       const res = await fetch('/api/quote-requests/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -610,24 +575,58 @@ export default function ProductDetailPage() {
           productName: product.name,
           productImage: product.image || '',
           quantity,
-          customerName,
-          customerEmail: quoteFormData.email,
-          customerPhone: quoteFormData.phone,
-          customerCompany: isB2B ? quoteFormData.companyName : '',
-          customerSiren: isB2B ? quoteFormData.siren : '',
-          customerVat: isB2B ? quoteFormData.vatNumber : '',
+          customerName: quoteFormData.name.trim(),
+          customerEmail: quoteFormData.email.trim(),
+          customerPhone: quoteFormData.phone.trim(),
+          customerCompany: prefillCompany,
           customerCountry: quoteFormData.country,
-          customerAddress,
-          comment: quoteFormData.comment,
+          customerAddress: quoteFormData.address.trim(),
+          comment: quoteFormData.comment.trim(),
         }),
       });
-      if (!res.ok) throw new Error('Erreur');
+      if (!res.ok) throw new Error(t('boutique.serverError'));
       setQuoteDone(true);
     } catch {
-      toast.error("Erreur lors de l'envoi de la demande");
+      toast.error(t('boutique.requestError'));
     }
     setQuoteLoading(false);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/boutique/session-status')
+      .then(res => res.json())
+      .then((data: {
+        loggedIn?: boolean;
+        email?: string;
+        displayName?: string;
+        companyName?: string;
+        phone?: string;
+        officePhone?: string;
+        companyAddress?: string;
+        country?: string;
+        city?: string;
+        zipCode?: string;
+      }) => {
+        if (cancelled || !data.loggedIn) return;
+        const validCountries = ['FR', 'BE', 'CH', 'LU', 'DE', 'ES', 'IT', 'NL', 'PT', 'GB', 'AT', 'IE', 'DK', 'SE', 'FI', 'PL', 'CZ', 'SK', 'HU', 'GR', 'RO', 'BG', 'HR', 'SI', 'LT', 'LV', 'EE', 'CY', 'MT'];
+        const name = (data.displayName || data.companyName || '').trim();
+        const phone = (data.phone || data.officePhone || '').trim();
+        const addressParts = [data.companyAddress, [data.zipCode, data.city].filter(Boolean).join(' ')].filter(Boolean);
+        const address = addressParts.join(', ').trim();
+        setQuoteFormData(prev => ({
+          ...prev,
+          name: prev.name || name,
+          email: prev.email || data.email || '',
+          phone: prev.phone || phone,
+          address: prev.address || address,
+          country: prev.country !== 'FR' && validCountries.includes(prev.country) ? prev.country : (validCountries.includes(data.country || '') ? (data.country as string) : prev.country),
+        }));
+        setPrefillCompany(data.companyName || '');
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const openLightbox = (idx: number) => {
     setLightboxIndex(idx);
@@ -637,7 +636,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
-        <div className="size-10 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
+        <LiquidLoader size={110} />
       </div>
     );
   }
@@ -665,7 +664,7 @@ export default function ProductDetailPage() {
         />
       )}
 
-      <main className={`max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pb-16 ${showRentalContent ? 'pt-6' : 'pt-24'}`}>
+      <main className={`max-w-7xl mx-auto px-6 md:px-12 lg:px-16 pb-16 ${showRentalContent || showQuoteForm ? 'pt-6' : 'pt-24'}`}>
         <div className="lg:mr-[450px]">
             {showRentalContent ? (
             <div className="max-w-2xl">
@@ -723,7 +722,7 @@ export default function ProductDetailPage() {
                         </div>
                         <div className="flex justify-between px-4 py-2.5">
                           <span className="text-gray-500">{t('boutique.fieldName')}</span>
-                          <span className="font-semibold text-gray-900">{quoteFormData.firstName} {quoteFormData.lastName}</span>
+                          <span className="font-semibold text-gray-900">{quoteFormData.name}</span>
                         </div>
                         <div className="flex justify-between px-4 py-2.5">
                           <span className="text-gray-500">{t('boutique.fieldEmail')}</span>
@@ -736,30 +735,17 @@ export default function ProductDetailPage() {
                         <div className="flex justify-between px-4 py-2.5">
                           <span className="text-gray-500">{t('boutique.fieldAddress')}</span>
                           <span className="font-semibold text-gray-900 text-right max-w-[60%]">
-                            {quoteFormData.addressLine1}{quoteFormData.addressLine2 ? ', ' + quoteFormData.addressLine2 : ''}
-                            <br />{quoteFormData.postcode} {quoteFormData.city}
+                            {quoteFormData.address}
                           </span>
                         </div>
                         <div className="flex justify-between px-4 py-2.5">
                           <span className="text-gray-500">{t('boutique.fieldCountry')}</span>
                           <span className="font-semibold text-gray-900">{quoteFormData.country}</span>
                         </div>
-                        {isB2B && quoteFormData.companyName && (
+                        {prefillCompany && (
                         <div className="flex justify-between px-4 py-2.5">
                           <span className="text-gray-500">{t('boutique.fieldCompany')}</span>
-                          <span className="font-semibold text-gray-900">{quoteFormData.companyName}</span>
-                        </div>
-                        )}
-                        {isB2B && quoteFormData.siren && (
-                        <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">{t('boutique.fieldSiren')}</span>
-                          <span className="font-semibold text-gray-900">{quoteFormData.siren}</span>
-                        </div>
-                        )}
-                        {isB2B && quoteFormData.vatNumber && (
-                        <div className="flex justify-between px-4 py-2.5">
-                          <span className="text-gray-500">{t('boutique.fieldVat')}</span>
-                          <span className="font-semibold text-gray-900">{quoteFormData.vatNumber}</span>
+                          <span className="font-semibold text-gray-900">{prefillCompany}</span>
                         </div>
                         )}
                         {quoteFormData.comment && (
@@ -803,46 +789,24 @@ export default function ProductDetailPage() {
                     {/* Fields */}
                     <div className="px-4 pb-4 pt-3">
                       <form onSubmit={handleRequestQuote} className="space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {/* Prénom */}
+                        <div className="space-y-3">
+                          {/* Nom et prénom / Nom de l'entreprise */}
                           <div>
-                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.firstName')}</label>
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.quoteName')} *</label>
                             <div className="relative">
                               <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                              <input type="text" placeholder="Jean" required value={quoteFormData.firstName}
-                                onChange={e => handleDeliveryChange('firstName', e.target.value)}
-                                onBlur={e => handleDeliveryBlur('firstName', e.target.value)}
-                                aria-invalid={fieldMeta('firstName', quoteFormData.firstName).hasError}
-                                aria-describedby={fieldMeta('firstName', quoteFormData.firstName).error ? 'err-firstName' : undefined}
-                                className={inputCls('firstName', quoteFormData.firstName)} />
+                              <input type="text" placeholder="Jean Dupont ou Nom de l'entreprise" required value={quoteFormData.name}
+                                onChange={e => handleDeliveryChange('name', e.target.value)}
+                                onBlur={e => handleDeliveryBlur('name', e.target.value)}
+                                aria-invalid={fieldMeta('name', quoteFormData.name).hasError}
+                                aria-describedby={fieldMeta('name', quoteFormData.name).error ? 'err-name' : undefined}
+                                className={inputCls('name', quoteFormData.name)} />
                             </div>
                             <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                              {fieldMeta('firstName', quoteFormData.firstName).error && (
-                                <p id="err-firstName" className="text-[10px] text-red-500 flex items-center gap-1">
+                              {fieldMeta('name', quoteFormData.name).error && (
+                                <p id="err-name" className="text-[10px] text-red-500 flex items-center gap-1">
                                   <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                  {deliveryErrors.firstName}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Nom */}
-                          <div>
-                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.lastName')}</label>
-                            <div className="relative">
-                              <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                              <input type="text" placeholder="Dupont" required value={quoteFormData.lastName}
-                                onChange={e => handleDeliveryChange('lastName', e.target.value)}
-                                onBlur={e => handleDeliveryBlur('lastName', e.target.value)}
-                                aria-invalid={fieldMeta('lastName', quoteFormData.lastName).hasError}
-                                aria-describedby={fieldMeta('lastName', quoteFormData.lastName).error ? 'err-lastName' : undefined}
-                                className={inputCls('lastName', quoteFormData.lastName)} />
-                            </div>
-                            <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                              {fieldMeta('lastName', quoteFormData.lastName).error && (
-                                <p id="err-lastName" className="text-[10px] text-red-500 flex items-center gap-1">
-                                  <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                  {deliveryErrors.lastName}
+                                  {deliveryErrors.name}
                                 </p>
                               )}
                             </div>
@@ -892,57 +856,30 @@ export default function ProductDetailPage() {
                             </div>
                           </div>
 
-                          {/* Ligne d'adresse 1 */}
-                          <div className="sm:col-span-2">
-                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldAddress')} 1 *</label>
+                          {/* Adresse */}
+                          <div>
+                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldAddress')} *</label>
                             <div className="relative">
                               <MapPin size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                              <input type="text" placeholder="123 Rue de l'Exemple" required value={quoteFormData.addressLine1}
-                                onChange={e => handleDeliveryChange('addressLine1', e.target.value)}
-                                onBlur={e => handleDeliveryBlur('addressLine1', e.target.value)}
-                                aria-invalid={fieldMeta('addressLine1', quoteFormData.addressLine1).hasError}
-                                aria-describedby={fieldMeta('addressLine1', quoteFormData.addressLine1).error ? 'err-addressLine1' : undefined}
-                                className={inputCls('addressLine1', quoteFormData.addressLine1)} />
+                              <input type="text" placeholder="123 Rue de l'Exemple, 75001 Paris" required value={quoteFormData.address}
+                                onChange={e => handleDeliveryChange('address', e.target.value)}
+                                onBlur={e => handleDeliveryBlur('address', e.target.value)}
+                                aria-invalid={fieldMeta('address', quoteFormData.address).hasError}
+                                aria-describedby={fieldMeta('address', quoteFormData.address).error ? 'err-address' : undefined}
+                                className={inputCls('address', quoteFormData.address)} />
                             </div>
                             <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                              {fieldMeta('addressLine1', quoteFormData.addressLine1).error && (
-                                <p id="err-addressLine1" className="text-[10px] text-red-500 flex items-center gap-1">
+                              {fieldMeta('address', quoteFormData.address).error && (
+                                <p id="err-address" className="text-[10px] text-red-500 flex items-center gap-1">
                                   <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                  {deliveryErrors.addressLine1}
+                                  {deliveryErrors.address}
                                 </p>
                               )}
                             </div>
                           </div>
 
-                          {/* Ligne d'adresse 2 */}
-                          <div className="sm:col-span-2">
-                            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldAddress')} 2</label>
-                            <div className="relative">
-                              <MapPin size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                              <input type="text" placeholder="Appartement, Bâtiment, etc." value={quoteFormData.addressLine2} onChange={e => setQuoteFormData(d => ({ ...d, addressLine2: e.target.value }))}
-                                className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300" />
-                            </div>
-                            <div className="h-5 mt-1" />
-                          </div>
-
-                          {/* Ville & Code Postal (CityInput) */}
-                          <div className="sm:col-span-2">
-                            <CityInput
-                              value={quoteFormData.city ? `${quoteFormData.city} (${quoteFormData.postcode})` : ''}
-                              onChange={(cityName, postcode) => {
-                                setQuoteFormData(d => ({ ...d, city: cityName, postcode }));
-                                setDeliveryErrors(prev => ({ ...prev, city: '', postcode: '' }));
-                                if (!deliveryTouched.city) setDeliveryTouched(prev => ({ ...prev, city: true }));
-                                if (!deliveryTouched.postcode) setDeliveryTouched(prev => ({ ...prev, postcode: true }));
-                              }}
-                              error={!!(deliveryErrors.city || deliveryErrors.postcode)}
-                              errorMessage={deliveryErrors.city || deliveryErrors.postcode}
-                            />
-                            <div className="h-5 mt-1" />
-                          </div>
-
                           {/* Pays */}
-                          <div className="sm:col-span-2">
+                          <div>
                             <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldCountry')}</label>
                             <select
                               value={quoteFormData.country}
@@ -983,105 +920,27 @@ export default function ProductDetailPage() {
                           </div>
                         </div>
 
-                        {isB2B && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 border-t border-gray-100 pt-3">
-                            {/* Raison sociale */}
-                            <div>
-                              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldCompany')} *</label>
-                              <input
-                                type="text"
-                                placeholder="Nom de l'entreprise"
-                                required
-                                value={quoteFormData.companyName}
-                                onChange={e => handleDeliveryChange('companyName', e.target.value)}
-                                onBlur={e => handleDeliveryBlur('companyName', e.target.value)}
-                                className={inputCls('companyName', quoteFormData.companyName, false)}
-                              />
-                              <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                                {fieldMeta('companyName', quoteFormData.companyName).error && (
-                                  <p className="text-[10px] text-red-500 flex items-center gap-1">
-                                    <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                    {deliveryErrors.companyName}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* SIREN / SIRET */}
-                            <div>
-                              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldSiren')} *</label>
-                              <input
-                                type="text"
-                                placeholder="123 456 789"
-                                required
-                                value={quoteFormData.siren}
-                                onChange={e => handleDeliveryChange('siren', e.target.value)}
-                                onBlur={e => handleDeliveryBlur('siren', e.target.value)}
-                                className={inputCls('siren', quoteFormData.siren, false)}
-                              />
-                              <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                                {fieldMeta('siren', quoteFormData.siren).error && (
-                                  <p className="text-[10px] text-red-500 flex items-center gap-1">
-                                    <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                    {deliveryErrors.siren}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* TVA */}
-                            <div className="sm:col-span-2">
-                              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldVat')}</label>
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  placeholder="FRXX999999999"
-                                  value={quoteFormData.vatNumber}
-                                  onChange={e => {
-                                    setQuoteFormData(d => ({ ...d, vatNumber: e.target.value }));
-                                    if (vatStatus !== 'idle') resetVat();
-                                  }}
-                                  className={`flex-1 px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
-                                    vatStatus === 'valid'
-                                      ? 'border-emerald-300 bg-emerald-50/30'
-                                      : vatStatus === 'invalid'
-                                        ? 'border-red-300 bg-red-50/30'
-                                        : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
-                                  }`}
-                                />
-                                <button
-                                  type="button"
-                                  disabled={vatValidating || !quoteFormData.vatNumber}
-                                  onClick={() => validateVat(quoteFormData.vatNumber)}
-                                  className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                                    vatStatus === 'valid'
-                                      ? 'bg-emerald-500 text-white'
-                                      : vatStatus === 'invalid'
-                                        ? 'bg-red-500 text-white'
-                                        : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50'
-                                  }`}
-                                >
-                                  {vatValidating ? '...' : vatStatus === 'valid' ? '✓ Valide' : vatStatus === 'invalid' ? '✗ Invalide' : 'Valider'}
-                                </button>
-                              </div>
-                              {vatStatus === 'valid' && (
-                                <p className="text-[10px] text-emerald-600 font-semibold mt-1">Numéro de TVA valide — TVA autoliquidée</p>
-                              )}
-                              {vatStatus === 'invalid' && (
-                                <p className="text-[10px] text-red-500 font-semibold mt-1">{vatErrorMessage}</p>
-                              )}
-                              {vatStatus === 'error' && (
-                                <p className="text-[10px] text-amber-600 font-semibold mt-1">{vatErrorMessage}</p>
-                              )}
-                            </div>
+                        {/* Décrivez votre projet — obligatoire, mis en avant */}
+                        <div className="pt-1">
+                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">
+                            {t('boutique.quoteProject')} <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <textarea rows={6} placeholder={t('boutique.quoteProjectPlaceholder')} required value={quoteFormData.comment}
+                              onChange={e => handleDeliveryChange('comment', e.target.value)}
+                              onBlur={e => handleDeliveryBlur('comment', e.target.value)}
+                              aria-invalid={fieldMeta('comment', quoteFormData.comment).hasError}
+                              aria-describedby={fieldMeta('comment', quoteFormData.comment).error ? 'err-comment' : undefined}
+                              className={`${inputCls('comment', quoteFormData.comment, false)} resize-y min-h-[150px] leading-relaxed`} />
                           </div>
-                        )}
-
-                        {/* Commentaire */}
-                        <div className="pt-2">
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldComment')}</label>
-                          <textarea placeholder="Décrivez votre projet, vos besoins spécifiques..." rows={3} value={quoteFormData.comment} onChange={e => setQuoteFormData(d => ({ ...d, comment: e.target.value }))}
-                            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white resize-none placeholder:text-gray-300" />
+                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
+                            {fieldMeta('comment', quoteFormData.comment).error && (
+                              <p id="err-comment" className="text-[10px] text-red-500 flex items-center gap-1">
+                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                                {deliveryErrors.comment}
+                              </p>
+                            )}
+                          </div>
                         </div>
 
                         <div className="pt-2">
@@ -1701,7 +1560,7 @@ export default function ProductDetailPage() {
                     </button>
                   </div>
                 ) : (
-                  <button onClick={() => setShowQuoteForm(true)}
+                  <button onClick={() => { setShowQuoteForm(true); setBudgetOpen(false); }}
                     className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
                   >
                     <FileText size={15} /> {t('product.requestQuote')}
@@ -1984,7 +1843,7 @@ export default function ProductDetailPage() {
               <div className="mb-6 bg-white rounded-2xl border border-gray-200/70 shadow-sm overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => setBudgetOpen(prev => !prev)}
+                  onClick={() => { setBudgetOpen(prev => !prev); setShowQuoteForm(false); }}
                   className={`w-full flex items-center justify-between p-5 hover:bg-gray-50/50 transition-colors ${
                     budgetOpen ? 'bg-emerald-50/30' : ''
                   }`}
@@ -2024,7 +1883,7 @@ export default function ProductDetailPage() {
                     <p className="text-xs text-amber-800 font-semibold">{t('product.priceOnRequest')}</p>
                     <p className="text-xs text-amber-600 mt-1">{t('product.quoteInfo')}</p>
                   </div>
-                  <button onClick={() => setShowQuoteForm(true)}
+                  <button onClick={() => { setShowQuoteForm(true); setBudgetOpen(false); }}
                     className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 px-6 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-sm">
                     <FileText size={16} />
                     {t('product.requestQuote')}
@@ -2158,7 +2017,7 @@ export default function ProductDetailPage() {
               {productQrDataUrl ? (
                 <img src={productQrDataUrl} alt="QR Code du produit" className="w-full h-full object-contain" />
               ) : (
-                <div className="w-6 h-6 border-2 border-cyan-400/30 border-t-cyan-500 rounded-full animate-spin" />
+                <LiquidLoader size={24} />
               )}
             </div>
             <p className="text-xs font-semibold text-gray-600 mb-4 leading-relaxed">

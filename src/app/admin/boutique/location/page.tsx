@@ -20,12 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Package, Euro, Activity, CheckCircle2, Loader2, XCircle, Eye } from 'lucide-react';
+import { Search, Package, Euro, Activity, CheckCircle2, XCircle, Eye } from 'lucide-react';
 import { getRentalOrders, updateRentalOrder, type RentalOrder, type RentalStatus } from '@/lib/rental-orders';
 import { formatPrice } from '@/lib/boutique-data';
 import { cn, normalizeSearchText } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { TrackingDetailDrawer } from '@/components/tracking/tracking-detail-drawer';
+import LiquidLoader from '@/components/LiquidLoader';
 
 const statusLabels: Record<RentalStatus, string> = {
   pending_validation: 'En attente',
@@ -347,7 +348,7 @@ export default function LocationPage() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         {loadingId === order.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                          <LiquidLoader size={16} />
                         ) : (
                           <>
                             {order.status === 'pending_validation' && (

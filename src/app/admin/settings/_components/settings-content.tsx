@@ -3,10 +3,11 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
 import type { LazyExoticComponent, ComponentType } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Settings, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, MessageSquare, ShieldCheck, Zap, PenTool, CreditCard, Package } from 'lucide-react';
+import { Settings, Palette, Wand2, Truck, HardHat, FileType, AlertTriangle, MessageSquare, ShieldCheck, Zap, PenTool, CreditCard, Package } from 'lucide-react';
 import { Tabs } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useAdminT } from '@/hooks/useAdminT';
+import LiquidLoader from '@/components/LiquidLoader';
 
 export type SettingsSection = 'general' | 'emergency' | 'images' | 'appearance' | 'wizard' | 'livraison' | 'main-doeuvre' | 'pdf' | 'messaging' | 'software' | 'email-verification' | 'flow' | 'content' | 'signature' | 'paypal' | 'track';
 
@@ -52,7 +53,7 @@ const sectionComponents: Record<SettingsSection, LazyExoticComponent<ComponentTy
 function LoadingFallback() {
     return (
         <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 text-slate-400 animate-spin" />
+            <LiquidLoader size={32} />
         </div>
     );
 }

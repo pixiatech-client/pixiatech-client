@@ -9,7 +9,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { getPayPalSettings, updatePayPalSettings } from '@/app/admin/actions';
 import { useAdminT } from '@/hooks/useAdminT';
-import { CreditCard, Save, RefreshCw, Eye, EyeOff, ShieldCheck, Globe, Pencil } from 'lucide-react';
+import { CreditCard, Save, Eye, EyeOff, ShieldCheck, Globe, Pencil } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 
 export default function PayPalSettingsPage() {
   const { toast } = useToast();
@@ -24,6 +25,7 @@ export default function PayPalSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+  const [secretSaved, setSecretSaved] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -34,6 +36,7 @@ export default function PayPalSettingsPage() {
           clientSecret: '',
           environment: data.environment || 'sandbox',
         });
+        setSecretSaved(Boolean(data.hasClientSecret));
       } catch (error) {
         console.error('Failed to load PayPal settings:', error);
         toast({
@@ -53,6 +56,8 @@ export default function PayPalSettingsPage() {
     try {
       const result = await updatePayPalSettings(settings);
       if (result.success) {
+        setSecretSaved(Boolean(settings.clientSecret) || (result as any).hasClientSecret === true || secretSaved);
+        setSettings((s) => ({ ...s, clientSecret: '' }));
         toast({
           title: t('Settings saved'),
           description: t('PayPal configuration has been updated.'),
@@ -79,7 +84,7 @@ export default function PayPalSettingsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <RefreshCw className="h-8 w-8 text-slate-400 animate-spin" />
+        <LiquidLoader size={32} />
       </div>
     );
   }
@@ -149,9 +154,12 @@ export default function PayPalSettingsPage() {
             <div className="relative">
               <Input
                 type={showSecret ? 'text' : 'password'}
-                placeholder={settings.clientSecret ? '••••••••' : t('Enter your secret')}
+                placeholder={secretSaved ? '••••••••••••••' : t('Enter your secret')}
                 value={settings.clientSecret}
-                onChange={(e) => setSettings({ ...settings, clientSecret: e.target.value })}
+                onChange={(e) => {
+                  setSettings({ ...settings, clientSecret: e.target.value });
+                  if (e.target.value) setSecretSaved(false);
+                }}
                 className="h-11 rounded-xl bg-theme-card border-theme-card-border focus:ring-theme-sidebar-active-bg font-mono text-sm text-theme-text pr-12"
               />
               <button
@@ -164,7 +172,9 @@ export default function PayPalSettingsPage() {
               </button>
             </div>
             <p className="text-[10px] text-theme-text-secondary">
-              {t('The secret is never displayed by default for security reasons.')}
+              {secretSaved
+                ? t('A secret is already saved. Leave the field empty to keep it.')
+                : t('The secret is never displayed by default for security reasons.')}
             </p>
           </div>
         </div>
@@ -188,7 +198,7 @@ export default function PayPalSettingsPage() {
             className="w-full md:w-auto min-w-[200px] h-12 rounded-xl font-black bg-theme-btn-primary-bg text-theme-btn-primary-text hover:bg-theme-btn-primary-hover shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isSaving ? (
-              <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+              <LiquidLoader size={16} />
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}

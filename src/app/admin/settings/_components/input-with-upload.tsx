@@ -4,11 +4,12 @@ import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader2, Trash2 } from 'lucide-react';
+import { Upload, Trash2 } from 'lucide-react';
 import { useAdminT } from '@/hooks/useAdminT';
 import { useMediaUpload } from '@/hooks/use-media-upload';
 import { MediaProgress } from '@/components/ui/media-progress';
 import Image from 'next/image';
+import LiquidLoader from '@/components/LiquidLoader';
 
 interface InputWithUploadProps {
   value?: string;
@@ -61,7 +62,7 @@ export function InputWithUpload({ value, onChange, placeholder }: InputWithUploa
             title={t('Upload a file')}
           >
             {(mediaState.status === 'uploading' || mediaState.status === 'processing') ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <LiquidLoader size={16} />
             ) : (
               <Upload className="h-4 w-4" />
             )}

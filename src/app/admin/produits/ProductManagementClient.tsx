@@ -19,6 +19,7 @@ import {
   Share2, Edit, MessageSquare, Bell, Gift, CreditCard, Award, BookOpen,
   Menu, Send, Navigation, ZoomIn, ZoomOut, Minus as MinusIcon, Unlink
 } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import { cn, normalizeSearchText } from '@/lib/utils';
 import { mergeVariantValues, ensureCharacteristicVariant } from '@/lib/characteristic-variants';
 import {
@@ -39,7 +40,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import {
   auth, db, storage, googleProvider, signInWithPopup, signOut, onAuthStateChanged, User,
   signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence,
-  collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, query, where, orderBy, addDoc, updateDoc,
+  collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, query, where, orderBy, addDoc, updateDoc, writeBatch,
   ref, uploadBytes, getDownloadURL, deleteObject
 } from './firebase';
 import TipTapEditor from '@/components/TipTapEditor';
@@ -620,10 +621,11 @@ const ProductListItem = ({
   onDuplicateProduct,
   onDeleteProduct,
   setDeletingId,
-  deletingId
+  deletingId,
+  dragEnabled = true
 }: any) => {
   const { t } = useI18n();
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: product.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: product.id, disabled: !dragEnabled });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -657,7 +659,10 @@ const ProductListItem = ({
           {selectedIds.includes(product.id) && <Check className="w-3 h-3" />}
         </button>
         <div
-          className="text-slate-300 transition-colors cursor-grab active:cursor-grabbing p-1 touch-none"
+          className={cn(
+            "transition-colors p-1 touch-none",
+            dragEnabled ? "text-slate-300 cursor-grab active:cursor-grabbing" : "text-slate-200/60 cursor-default"
+          )}
           {...attributes}
           {...listeners}
         >
@@ -1117,7 +1122,7 @@ const AISettingsSheet = ({
                     />
                     {isLoadingModels && (
                       <div className="absolute right-12 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                        <LiquidLoader size={16} />
                       </div>
                     )}
                   </div>
@@ -1187,7 +1192,7 @@ const AISettingsSheet = ({
                 )}
               >
                 {testStatus === 'testing' ? (
-                  <div className="w-4 h-4 border-2 border-slate-400 border-t-slate-700 rounded-full animate-spin" />
+                  <LiquidLoader size={16} />
                 ) : testStatus === 'success' ? (
                   <Check className="w-4 h-4" />
                 ) : testStatus === 'error' ? (
@@ -1859,7 +1864,7 @@ const CaracteristiquesPage = ({
                   className="w-10 h-10 flex items-center justify-center bg-amber-50 text-amber-600 rounded-full hover:bg-[#131E3F] hover:text-white transition-all shadow-sm group disabled:opacity-50"
                   title={t('admin.productManagement.dedupCharacteristics')}
                 >
-                  {isDeduping ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5 transition-colors group-hover:text-[#a3e635]" />}
+                  {isDeduping ? <LiquidLoader size={20} /> : <Trash2 className="w-5 h-5 transition-colors group-hover:text-[#a3e635]" />}
                 </button>
                 <button
                   onClick={async () => {
@@ -2203,7 +2208,7 @@ const CaracteristiquesPage = ({
                   className="bg-theme-sidebar-active-bg text-theme-sidebar-active-text px-8 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
                 >
                   {isSaving ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <LiquidLoader size={16} />
                   ) : (
                     <Save className="w-4 h-4 group-hover:text-[#a3e635] group-hover:drop-shadow-[0_0_8px_rgba(163,230,53,0.8)] transition-all" />
                   )}
@@ -2230,7 +2235,7 @@ const CaracteristiquesPage = ({
                         {editingId ? t('admin.productManagement.save') : t('admin.productManagement.add')}
                       </span>
                       <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center">
-                        {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-current" />}
+                        {isSaving ? <LiquidLoader size={16} /> : <Save size={14} strokeWidth={3} className="text-current" />}
                       </div>
                     </button>
                   </div>
@@ -4120,7 +4125,7 @@ const ProduitPage = ({
 
                   {isParsingPdf && (
                     <div className="mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-500 rounded-full animate-spin" />
+                      <LiquidLoader size={16} />
                       <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">
                         {t('admin.productManagement.pdfAnalyzing')}
                       </p>
@@ -4220,7 +4225,7 @@ const ProduitPage = ({
                   disabled={isSaving || !productName}
                   className="w-full h-10 bg-theme-sidebar-active-bg text-theme-sidebar-active-text rounded-xl font-black uppercase tracking-[0.2em] text-xs hover:shadow-2xl hover:shadow-black/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
-                  {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus className="w-5 h-5 text-theme-sidebar-active-text" />}
+                  {isSaving ? <LiquidLoader size={20} /> : <Plus className="w-5 h-5 text-theme-sidebar-active-text" />}
                   {editingProduct ? t('admin.productManagement.saveChanges') : t('admin.productManagement.addToCatalog')}
                 </button>
                 {/* Media progress during save */}
@@ -4246,7 +4251,7 @@ const ProduitPage = ({
                     className="w-full h-10 bg-emerald-50 text-emerald-700 rounded-xl font-black uppercase tracking-[0.2em] text-xs hover:bg-emerald-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {isCopying ? (
-                      <div className="w-5 h-5 border-2 border-emerald-700/30 border-t-emerald-700 rounded-full animate-spin" />
+                      <LiquidLoader size={20} />
                     ) : (
                       <Copy className="w-4 h-4" />
                     )}
@@ -4500,7 +4505,7 @@ const ProduitPage = ({
                   {editingProduct ? t('admin.productManagement.save') : t('admin.productManagement.add')}
                 </span>
                 <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center">
-                  {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save size={14} strokeWidth={3} className="text-current" />}
+                  {isSaving ? <LiquidLoader size={16} /> : <Save size={14} strokeWidth={3} className="text-current" />}
                 </div>
               </button>
             </div>
@@ -4514,6 +4519,7 @@ const ProduitPage = ({
 const GestionProduits = ({
   products,
   setProducts,
+  onReorderProducts,
   onAddProduct,
   onEditProduct,
   onDuplicateProduct,
@@ -4523,6 +4529,7 @@ const GestionProduits = ({
 }: {
   products: any[];
   setProducts: (products: any[]) => void;
+  onReorderProducts?: (reordered: any[]) => void;
   onAddProduct: () => void;
   onEditProduct: (product: any) => void;
   onDuplicateProduct: (product: any) => void;
@@ -4585,6 +4592,7 @@ const GestionProduits = ({
     const matchesType = filterType === 'all' || (Array.isArray(p.type) ? p.type.includes(filterType) : p.type === filterType);
     return matchesSearch && matchesType;
   }).sort((a, b) => {
+    if (sortBy === 'manual') return 0;
     if (sortBy === 'name') return a.name.localeCompare(b.name);
     if (sortBy === 'date') return (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0);
     const priceA = parseFloat((a.price || '0').toString().replace(/[^\d]/g, '')) || 0;
@@ -4912,15 +4920,38 @@ const GestionProduits = ({
       <div className="hidden md:block relative overflow-hidden min-h-[400px]">
         <AnimatePresence mode="popLayout">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <DndContext collisionDetection={closestCenter} onDragEnd={(e) => { if (e.active && e.over && e.active.id !== e.over.id && typeof setProducts === 'function') { const items = [...paginatedProducts]; const oldIdx = items.findIndex((p) => p.id === e.active.id); const newIdx = items.findIndex((p) => p.id === e.over.id); if (oldIdx !== -1 && newIdx !== -1) setProducts(arrayMove(items, oldIdx, newIdx)); } }}>
-              <SortableContext items={paginatedProducts.map(p => p.id)}>
-                <div className="space-y-4">
-                  {paginatedProducts.map((product) => (
-                    <ProductListItem key={product.id} product={product} selectedIds={selectedIds} toggleSelect={toggleSelect} onEditProduct={onEditProduct} onDuplicateProduct={onDuplicateProduct} onDeleteProduct={onDeleteProduct} setDeletingId={setDeletingId} deletingId={deletingId} />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
+<DndContext collisionDetection={closestCenter} onDragEnd={(e) => {
+            if (sortBy !== 'manual') return;
+            if (!e.active || !e.over || e.active.id === e.over.id) return;
+            const activeId = e.active.id as string;
+            const overId = e.over.id as string;
+            const oldIndex = filteredProducts.findIndex((p) => p.id === activeId);
+            const overIndex = filteredProducts.findIndex((p) => p.id === overId);
+            if (oldIndex === -1 || overIndex === -1) return;
+            const newFiltered = arrayMove(filteredProducts, oldIndex, overIndex);
+            const positionMap = new Map(newFiltered.map((p, i) => [p.id, i]));
+            const reordered = [...products].sort((a, b) => {
+              const ai = positionMap.get(a.id);
+              const bi = positionMap.get(b.id);
+              if (ai !== undefined && bi !== undefined) return ai - bi;
+              if (ai !== undefined) return -1;
+              if (bi !== undefined) return 1;
+              return 0;
+            });
+            if (typeof onReorderProducts === 'function') {
+              onReorderProducts(reordered);
+            } else if (typeof setProducts === 'function') {
+              setProducts(reordered);
+            }
+          }}>
+          <SortableContext items={paginatedProducts.map(p => p.id)}>
+            <div className="space-y-4">
+              {paginatedProducts.map((product) => (
+                <ProductListItem key={product.id} product={product} selectedIds={selectedIds} toggleSelect={toggleSelect} onEditProduct={onEditProduct} onDuplicateProduct={onDuplicateProduct} onDeleteProduct={onDeleteProduct} setDeletingId={setDeletingId} deletingId={deletingId} dragEnabled={sortBy === 'manual'} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
           </motion.div>
         </AnimatePresence>
 
@@ -5375,6 +5406,22 @@ export default function ProductManagementClient() {
   // Source unique partagée : les deux espaces utilisent la même liste de caractéristiques
   const charCol = 'characteristics';
 
+  // Persiste l'ordre manuel (glisser-déposer) en Firestore
+  const handleReorderProducts = async (reordered: any[]) => {
+    try {
+      const batch = writeBatch(db);
+      reordered.forEach((p, index) => {
+        if ((typeof p.order === 'number' ? p.order : Number.MAX_SAFE_INTEGER) !== index) {
+          batch.update(doc(db, prodCol, p.id), { order: index });
+        }
+      });
+      setProducts(reordered);
+      await batch.commit();
+    } catch (error) {
+      handleFirestoreError(error, 'updating', prodCol);
+    }
+  };
+
   const handleFirestoreError = (error: any, action: string, collection: string) => {
     console.error(`Firestore error ${action} ${collection}:`, error);
     let message = t('admin.productManagement.errorAccessing', { collection });
@@ -5405,8 +5452,8 @@ export default function ProductManagementClient() {
 
   // Data Sync (Real-time Firestore)
   useEffect(() => {
-    // Listen to products
-    const qProducts = query(collection(db, prodCol), orderBy("name", "asc"));
+    // Listen to products (order is applied in JS to respect the manual order)
+    const qProducts = query(collection(db, prodCol));
     const unsubProducts = onSnapshot(qProducts, (snapshot) => {
       const prods = snapshot.docs.map(doc => {
         const data = doc.data() as any;
@@ -5437,7 +5484,14 @@ export default function ProductManagementClient() {
           type: normalizedType
         };
       });
-      setProducts(prods);
+      // Manual order (order field) first, then name — keeps drag & drop layout intact on reload
+      const sortedProds = prods.sort((a, b) => {
+        const oa = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+        const ob = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+        if (oa !== ob) return oa - ob;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+      setProducts(sortedProds);
     }, (error) => handleFirestoreError(error, 'fetching', 'products'));
 
     // Listen to characteristics
@@ -7117,7 +7171,7 @@ export default function ProductManagementClient() {
                         className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2 group"
                       >
                         {isAuthenticating ? (
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <LiquidLoader size={20} />
                         ) : (
                           <>{t('admin.productManagement.logIn')} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
                         )}
@@ -7195,7 +7249,7 @@ export default function ProductManagementClient() {
                       className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
                     >
                       {isAuthenticating ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <LiquidLoader size={20} />
                       ) : (
                         t('admin.productManagement.createAccount')
                       )}
@@ -7275,7 +7329,7 @@ export default function ProductManagementClient() {
                         className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-[#131E3F] hover:text-white transition-all shadow-xl shadow-slate-900/10 flex items-center justify-center gap-2"
                       >
                         {isAuthenticating ? (
-                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <LiquidLoader size={20} />
                         ) : (
                           t('admin.productManagement.sendLink')
                         )}
@@ -7421,6 +7475,7 @@ export default function ProductManagementClient() {
                 <GestionProduits
                   products={products}
                   setProducts={setProducts}
+                  onReorderProducts={handleReorderProducts}
                   onAddProduct={startNewProduct}
                   onEditProduct={startEditProduct}
                   onDuplicateProduct={handleDuplicateProduct}

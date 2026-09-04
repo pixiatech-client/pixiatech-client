@@ -7,7 +7,7 @@ import {
   RefreshCw, SlidersHorizontal, X, ChevronDown,
   ImageOff, CircleDollarSign, Building2, Users, Timer, Box,
   Euro, RotateCcw, Trash2, Archive, Eye,
-  CalendarRange, Check, Loader2, User, Clock, Send, Phone, MessageSquare,
+  CalendarRange, Check, User, Clock, Send, Phone, MessageSquare,
   DollarSign, ExternalLink, Truck,
 } from 'lucide-react';
 import { getSaleOrders, updateSaleOrder, deleteSaleOrder, type SaleOrder, type SaleStatus } from '@/lib/sale-orders';
@@ -15,6 +15,7 @@ import { getRentalOrders, updateRentalOrder, type RentalOrder, type RentalStatus
 import { formatPrice } from '@/lib/boutique-data';
 import { normalizeSearchText } from '@/lib/utils';
 import { toast } from 'sonner';
+import LiquidLoader from '@/components/LiquidLoader';
 import { Pagination } from '@/components/pagination';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { TrackingDetailDrawer } from '@/components/tracking/tracking-detail-drawer';
@@ -540,7 +541,7 @@ export default function BoutiquePage() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+          <LiquidLoader size={40} />
           <p className="text-sm text-gray-400 font-medium">Chargement des commandes...</p>
         </div>
       </div>
@@ -1023,7 +1024,7 @@ export default function BoutiquePage() {
                                     <RotateCcw className="w-4 h-4" />
                                   </button>
                                 )}
-                                {updating === o.id && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+                                {updating === o.id && <LiquidLoader size={16} />}
                               </div>
                             </td>
                           </motion.tr>
@@ -1174,7 +1175,7 @@ export default function BoutiquePage() {
                                     <RotateCcw className="w-4 h-4" />
                                   </button>
                                 )}
-                                {updating === o.id && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+                                {updating === o.id && <LiquidLoader size={16} />}
                               </div>
                             </td>
                           </motion.tr>
@@ -1323,7 +1324,7 @@ export default function BoutiquePage() {
                                     <RotateCcw className="w-4 h-4" />
                                   </button>
                                 )}
-                                {quoteUpdating === q.id && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+                                {quoteUpdating === q.id && <LiquidLoader size={16} />}
                               </div>
                             </td>
                           </motion.tr>
@@ -1510,7 +1511,7 @@ export default function BoutiquePage() {
                       setQuoteUpdating(null);
                     }} disabled={quoteUpdating === detailQuote.id}
                       className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                      {quoteUpdating === detailQuote.id ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      {quoteUpdating === detailQuote.id ? <LiquidLoader size={16} /> : null}
                       Enregistrer les prix
                     </button>
                   </div>
@@ -1548,7 +1549,7 @@ export default function BoutiquePage() {
                         setQuoteUpdating(null);
                       }} disabled={quoteUpdating === detailQuote.id}
                         className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-xs font-bold transition-all border border-amber-200 disabled:opacity-50">
-                        {quoteUpdating === detailQuote.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                        {quoteUpdating === detailQuote.id ? <LiquidLoader size={16} /> : <Send className="w-3.5 h-3.5" />}
                         Renvoyer l'email
                       </button>
                     )}

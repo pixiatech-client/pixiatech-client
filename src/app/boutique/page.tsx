@@ -10,10 +10,19 @@ import { fetchBoutiqueProducts, getModeBadge } from '@/lib/boutique-data';
 import { isProductOutOfStockForSale, isRentalOnlyProduct, isQuoteOnlyProduct } from '@/lib/product-status';
 import type { Product } from '@/lib/boutique-data';
 import { PriceDisplay, ActionButton, isProductMoreInfo } from '@/components/boutique/ProductActionButton';
+import LayoutSelector, { type LayoutMode } from '@/components/boutique/LayoutSelector';
+import LiquidLoader from '@/components/LiquidLoader';
 import { useI18n } from '@/lib/i18n';
 import { calculatePromotionPercent } from '@/lib/pricing-engine';
 import { normalizeSearchText } from '@/lib/utils';
 import { useMediaQuery } from 'usehooks-ts';
+
+const LAYOUT_GRID_CLASS: Record<LayoutMode, string> = {
+  1: 'lg:grid-cols-1',
+  2: 'lg:grid-cols-2',
+  3: 'lg:grid-cols-3',
+  4: 'grid-cols-1',
+};
 
 const renderStars = (rating: number, size: number) => {
   const stars = [];
@@ -37,11 +46,12 @@ const renderStars = (rating: number, size: number) => {
   return stars;
 };
 
-function FilterDrawer({ open, onClose, categories, selectedCategories, onCategoriesChange, minRating, onMinRatingChange, transactionType, onTransactionTypeChange, onReset, activeCount }: {
+function FilterDrawer({ open, onClose, categories, selectedCategories, onCategoriesChange, minRating, onMinRatingChange, selectedBadges, onSelectedBadgesChange, showFavorites, onShowFavoritesChange, onReset, activeCount }: {
   open: boolean; onClose: () => void;
   categories: string[]; selectedCategories: string[]; onCategoriesChange: (c: string[]) => void;
   minRating: number; onMinRatingChange: (r: number) => void;
-  transactionType: 'all' | 'sale' | 'rental' | 'sur-commande'; onTransactionTypeChange: (t: 'all' | 'sale' | 'rental' | 'sur-commande') => void;
+  selectedBadges: string[]; onSelectedBadgesChange: (b: string[]) => void;
+  showFavorites: boolean; onShowFavoritesChange: (v: boolean) => void;
   onReset: () => void; activeCount: number;
 }) {
   const { t } = useI18n();
@@ -101,16 +111,18 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                     <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-3">{t('boutique.type')}</h3>
                     <div className="flex flex-col gap-1.5">
                       {[
-                        { value: 'all' as const, label: t('boutique.all') },
-                        { value: 'sale' as const, label: t('boutique.sale') },
-                        { value: 'rental' as const, label: t('boutique.rental') },
-                        { value: 'sur-commande' as const, label: t('boutique.surCommande') },
+                        { value: 'populaire', label: t('boutique.popular') },
+                        { value: 'nouveaute', label: t('boutique.newArrivals') },
                       ].map((opt) => (
                         <button
                           key={opt.value}
-                          onClick={() => onTransactionTypeChange(opt.value)}
+                          onClick={() => onSelectedBadgesChange(
+                            selectedBadges.includes(opt.value)
+                              ? selectedBadges.filter(b => b !== opt.value)
+                              : [...selectedBadges, opt.value]
+                          )}
                           className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                            transactionType === opt.value
+                            selectedBadges.includes(opt.value)
                               ? 'bg-gray-900 text-white shadow-sm'
                               : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
                           }`}
@@ -119,6 +131,16 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                         </button>
                       ))}
                     </div>
+                    <button
+                      onClick={() => onShowFavoritesChange(!showFavorites)}
+                      className={`w-full text-left px-4 py-2.5 mt-1.5 rounded-xl text-sm font-semibold transition-all ${
+                        showFavorites
+                          ? 'bg-gray-900 text-white shadow-sm'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {t('boutique.myFavorites')}
+                    </button>
                   </div>
 
                   <div>
@@ -198,16 +220,18 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                     <h3 className="text-xs font-black uppercase tracking-[0.2em] text-gray-400 mb-3">{t('boutique.type')}</h3>
                     <div className="flex flex-col gap-1.5">
                       {[
-                        { value: 'all' as const, label: t('boutique.all') },
-                        { value: 'sale' as const, label: t('boutique.sale') },
-                        { value: 'rental' as const, label: t('boutique.rental') },
-                        { value: 'sur-commande' as const, label: t('boutique.surCommande') },
+                        { value: 'populaire', label: t('boutique.popular') },
+                        { value: 'nouveaute', label: t('boutique.newArrivals') },
                       ].map((opt) => (
                         <button
                           key={opt.value}
-                          onClick={() => onTransactionTypeChange(opt.value)}
+                          onClick={() => onSelectedBadgesChange(
+                            selectedBadges.includes(opt.value)
+                              ? selectedBadges.filter(b => b !== opt.value)
+                              : [...selectedBadges, opt.value]
+                          )}
                           className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                            transactionType === opt.value
+                            selectedBadges.includes(opt.value)
                               ? 'bg-gray-900 text-white shadow-sm'
                               : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
                           }`}
@@ -216,6 +240,16 @@ function FilterDrawer({ open, onClose, categories, selectedCategories, onCategor
                         </button>
                       ))}
                     </div>
+                    <button
+                      onClick={() => onShowFavoritesChange(!showFavorites)}
+                      className={`w-full text-left px-4 py-2.5 mt-1.5 rounded-xl text-sm font-semibold transition-all ${
+                        showFavorites
+                          ? 'bg-gray-900 text-white shadow-sm'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {t('boutique.myFavorites')}
+                    </button>
                   </div>
 
                   <div>
@@ -268,14 +302,16 @@ export default function BoutiquePage() {
   const { t } = useI18n();
 
   const [filterOpen, setFilterOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'populaires' | 'nouveautes' | 'saved'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'sale' | 'rental' | 'sur-commande'>('all');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
-  const [transactionType, setTransactionType] = useState<'all' | 'sale' | 'rental' | 'sur-commande'>('all');
-  const [sortBy, setSortBy] = useState<'newest' | 'recent' | 'price-asc' | 'price-desc'>('newest');
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [sortBy, setSortBy] = useState<'manual' | 'newest' | 'recent' | 'price-asc' | 'price-desc'>('manual');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
+  const [layout, setLayout] = useState<LayoutMode>(3);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [displayCount, setDisplayCount] = useState(12);
   const [quoteDeclinedId, setQuoteDeclinedId] = useState<string | null>(null);
@@ -324,17 +360,21 @@ export default function BoutiquePage() {
       );
     }
 
-    if (activeTab === 'populaires') {
-      result = result.filter(p => p.badges?.includes('populaire'));
-    } else if (activeTab === 'nouveautes') {
-      result = result.filter(p => p.badges?.includes('nouveaute'));
-    } else if (activeTab === 'saved') {
-      const savedIds = savedItems.map(i => i.productId);
-      result = result.filter(p => savedIds.includes(p.id));
+    if (activeTab === 'sale') {
+      result = result.filter(p => p.availableFor?.includes('sale'));
+    } else if (activeTab === 'rental') {
+      result = result.filter(p => p.availableFor?.includes('rental'));
+    } else if (activeTab === 'sur-commande') {
+      result = result.filter(p => p.availableFor?.includes('sur-commande'));
     }
 
-    if (transactionType !== 'all') {
-      result = result.filter(p => p.availableFor?.includes(transactionType));
+    if (selectedBadges.length > 0) {
+      result = result.filter(p => selectedBadges.some(b => p.badges?.includes(b)));
+    }
+
+    if (showFavorites) {
+      const savedIds = savedItems.map(i => i.productId);
+      result = result.filter(p => savedIds.includes(p.id));
     }
 
     if (selectedCategories.length > 0) {
@@ -345,7 +385,13 @@ export default function BoutiquePage() {
       result = result.filter(p => p.rating >= minRating);
     }
 
-    if (sortBy === 'newest') {
+    if (sortBy === 'manual') {
+      result.sort((a, b) => {
+        const oa = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+        const ob = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+        return oa !== ob ? oa - ob : a.name.localeCompare(b.name);
+      });
+    } else if (sortBy === 'newest') {
       result.sort((a, b) => (Date.parse(b.createdAt ?? '') || 0) - (Date.parse(a.createdAt ?? '') || 0));
     } else if (sortBy === 'price-asc') {
       result.sort((a, b) => a.price - b.price);
@@ -356,9 +402,9 @@ export default function BoutiquePage() {
     }
 
     return result;
-  }, [products, activeTab, selectedCategories, minRating, sortBy, transactionType, searchQuery, savedItems]);
+  }, [products, activeTab, selectedCategories, minRating, sortBy, selectedBadges, showFavorites, searchQuery, savedItems]);
 
-  const activeFilterCount = selectedCategories.length + (minRating > 0 ? 1 : 0) + (transactionType !== 'all' ? 1 : 0);
+  const activeFilterCount = selectedCategories.length + (minRating > 0 ? 1 : 0) + selectedBadges.length + (showFavorites ? 1 : 0);
 
   const handleQuickAdd = (e: React.MouseEvent | Product, product?: Product) => {
     const p = product ?? (e as Product);
@@ -382,7 +428,8 @@ export default function BoutiquePage() {
   const resetFilters = () => {
     setSelectedCategories([]);
     setMinRating(0);
-    setTransactionType('all');
+    setSelectedBadges([]);
+    setShowFavorites(false);
   };
 
   return (
@@ -395,8 +442,10 @@ export default function BoutiquePage() {
         onCategoriesChange={setSelectedCategories}
         minRating={minRating}
         onMinRatingChange={setMinRating}
-        transactionType={transactionType}
-        onTransactionTypeChange={setTransactionType}
+        selectedBadges={selectedBadges}
+        onSelectedBadgesChange={setSelectedBadges}
+        showFavorites={showFavorites}
+        onShowFavoritesChange={setShowFavorites}
         onReset={resetFilters}
         activeCount={activeFilterCount}
       />
@@ -448,9 +497,9 @@ export default function BoutiquePage() {
         <nav className="relative flex items-center space-x-1 bg-gray-200/40 p-1 sm:p-1.5 rounded-full overflow-x-auto scrollbar-hide">
           {[
             { id: 'all', label: t('boutique.products') },
-            { id: 'populaires', label: t('boutique.popular') },
-            { id: 'nouveautes', label: t('boutique.newArrivals') },
-            { id: 'saved', label: t('boutique.myFavorites') },
+            { id: 'sale', label: t('boutique.sale') },
+            { id: 'rental', label: t('boutique.rental') },
+            { id: 'sur-commande', label: t('boutique.surCommande') },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -476,7 +525,7 @@ export default function BoutiquePage() {
               onClick={() => setSortOpen(!sortOpen)}
               className="flex items-center gap-1.5 bg-white border border-transparent hover:border-gray-200 rounded-full px-3 sm:px-4 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all duration-300 cursor-pointer"
             >
-              {sortBy === 'newest' ? t('boutique.sortNewest') : sortBy === 'recent' ? t('boutique.sortPopular') : sortBy === 'price-asc' ? t('boutique.sortPriceAsc') : t('boutique.sortPriceDesc')}
+              {sortBy === 'manual' ? t('boutique.sortManual') : sortBy === 'newest' ? t('boutique.sortNewest') : sortBy === 'recent' ? t('boutique.sortPopular') : sortBy === 'price-asc' ? t('boutique.sortPriceAsc') : t('boutique.sortPriceDesc')}
               <ChevronDown size={13} className="text-gray-400 transition-transform duration-300" style={{ transform: sortOpen ? 'rotate(180deg)' : undefined }} />
             </button>
             {/* Desktop dropdown */}
@@ -489,6 +538,7 @@ export default function BoutiquePage() {
                   className="hidden md:block absolute right-0 top-full mt-1 z-50 w-48 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden"
                 >
                   {[
+                    { value: 'manual', label: t('boutique.sortManual') },
                     { value: 'newest', label: t('boutique.sortNewest') },
                     { value: 'recent', label: t('boutique.sortPopular') },
                     { value: 'price-asc', label: t('boutique.sortPriceAsc') },
@@ -531,6 +581,7 @@ export default function BoutiquePage() {
                     </div>
                     <div className="p-3">
                       {[
+                        { value: 'manual', label: t('boutique.sortManual') },
                         { value: 'newest', label: t('boutique.sortNewest') },
                         { value: 'recent', label: t('boutique.sortPopular') },
                         { value: 'price-asc', label: t('boutique.sortPriceAsc') },
@@ -571,6 +622,7 @@ export default function BoutiquePage() {
               <span className="absolute -top-1 -right-1 size-4 bg-gray-900 text-white text-[9px] font-bold flex items-center justify-center rounded-full">!</span>
             )}
           </button>
+          <LayoutSelector value={layout} onChange={setLayout} />
           <button
             onClick={() => setFilterOpen(true)}
             className="relative flex items-center justify-center size-9 rounded-full border border-transparent hover:border-gray-200 bg-white shadow-sm text-gray-400 hover:text-gray-600 hover:scale-110 active:scale-95 transition-all duration-300 shrink-0"
@@ -615,8 +667,8 @@ export default function BoutiquePage() {
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 lg:px-14 py-6">
         {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="size-8 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
+          <div className="min-h-[calc(100dvh-160px)] flex items-center justify-center px-4">
+            <LiquidLoader size={150} />
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-20">
@@ -629,16 +681,16 @@ export default function BoutiquePage() {
           </div>
         ) : (
           <>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+          <div className={`grid ${layout === 4 ? 'grid-cols-1 gap-3' : `grid-cols-2 sm:grid-cols-2 ${LAYOUT_GRID_CLASS[layout]} gap-3 md:gap-4`}`}>
             {filteredProducts.slice(0, displayCount).map((product, idx) => {
               const outOfStock = isProductOutOfStockForSale(product);
               return (
               <article
                 key={product.id}
                 style={{ animationDelay: `${idx * 0.08}s` }}
-                className={`product-card-entry w-full bg-[#F5F5F5] p-3 sm:p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative flex flex-col ${outOfStock ? 'opacity-70' : ''}`}
+                className={`product-card-entry w-full bg-[#F5F5F5] p-3 sm:p-4 border border-gray-200/70 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 relative flex ${layout === 4 ? 'flex-row items-stretch gap-3 sm:gap-4' : 'flex-col'} ${outOfStock ? 'opacity-70' : ''}`}
               >
-                <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }} className="block relative mb-3 group">
+                <a href={`/boutique/produit/${product.id}`} onClick={(e) => { e.preventDefault(); router.push(`/boutique/produit/${product.id}`); }} className={`block relative group ${layout === 4 ? 'w-24 sm:w-32 md:w-40 shrink-0 mb-0' : 'w-full mb-3'}`}>
                   {outOfStock && (
                     <div className="absolute inset-0 rounded-xl border border-red-500 pointer-events-none z-10" />
                   )}
@@ -646,13 +698,13 @@ export default function BoutiquePage() {
                     <img
                       alt={product.name}
                       src={product.image}
-                      className={`rounded-xl w-full aspect-[1/1] object-cover bg-gray-50 ${outOfStock ? 'grayscale' : ''}`}
+                      className={`rounded-xl w-full object-cover bg-gray-50 ${outOfStock ? 'grayscale' : ''} aspect-[1/1]`}
                     />
                   ) : (
                     <img
                       src="/no-product.webp"
                       alt={product.name}
-                      className={`rounded-xl w-full aspect-[1/1] object-cover bg-gray-100 ${outOfStock ? 'grayscale' : ''}`}
+                      className={`rounded-xl w-full object-cover bg-gray-100 ${outOfStock ? 'grayscale' : ''} aspect-[1/1]`}
                     />
                   )}
                   {(() => {

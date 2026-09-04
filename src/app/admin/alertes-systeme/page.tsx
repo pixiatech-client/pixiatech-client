@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Eye, X, Check, Info, CheckCircle, AlertTriangle, AlertOctagon, Bell, Home, Store, User, RefreshCw, Calendar, Globe } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, X, Check, Info, CheckCircle, AlertTriangle, AlertOctagon, Bell, Home, Store, User, Calendar, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import type { SystemMessage, SystemMessageType } from '@/lib/types';
+import LiquidLoader from '@/components/LiquidLoader';
 
 function getTypeIcon(type: string) {
   const icons: Record<string, typeof Info> = { info: Info, success: CheckCircle, warning: AlertTriangle, alert: AlertOctagon };
@@ -186,7 +187,7 @@ export default function AlertesSystemePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
+        <LiquidLoader size={24} />
       </div>
     );
   }

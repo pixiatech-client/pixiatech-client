@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useI18n } from '@/lib/i18n';
 import { getAvatarUrl } from '@/lib/avatar';
+import LiquidLoader from '@/components/LiquidLoader';
 
 interface ChatWindowProps {
   chatId: string;
@@ -1276,7 +1277,7 @@ export default function ChatWindow({ chatId, onBack, currentUser, onShowAdmin, o
                       className="h-10 w-10 flex items-center justify-center text-[#a2ff00] hover:bg-white/5 rounded-xl transition-all flex-shrink-0 ml-1"
                     >
                       {isUploading ? (
-                        <div className="h-5 w-5 border-2 border-[#a2ff00] border-t-transparent rounded-full animate-spin" />
+                        <LiquidLoader size={20} />
                       ) : (
                         <Paperclip size={20} />
                       )}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronDown, ArrowRight, ArrowLeft, Loader2, Calendar as CalendarIcon, Clock, Video, Download, Info, Layers, RotateCcw, CheckCircle2, Shield, PenTool, FileText, MailCheck, KeyRound, Check } from 'lucide-react';
+import { X, ChevronDown, ArrowRight, ArrowLeft, Calendar as CalendarIcon, Clock, Video, Download, Info, Layers, RotateCcw, CheckCircle2, Shield, PenTool, FileText, MailCheck, KeyRound, Check } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { Calendar } from "@/components/ui/calendar";
@@ -43,6 +43,7 @@ import { buildPriceSnapshot } from '@/lib/price-snapshot';
 import { CITIES } from '@/lib/cities';
 
 import type { QuoteDetails } from '@/lib/types';
+import LiquidLoader from '@/components/LiquidLoader';
 
 interface WizardBotFlowProps {
   onClose: () => void;
@@ -1936,7 +1937,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                       <div className="flex gap-2">
                         {isSendingCode ? (
                           <div className="flex items-center gap-2 h-12 w-full justify-center">
-                            <Loader2 size={18} className="animate-spin text-[#0f766e]" />
+                            <LiquidLoader size={18} />
                             <span className="text-sm font-bold text-slate-500">{locale === 'fr' ? 'Envoi du code de vérification...' : 'Sending verification code...'}</span>
                           </div>
                         ) : (
@@ -2140,7 +2141,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             disabled={isGeneratingPdf}
                             className="h-12 rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 font-bold text-xs uppercase tracking-wider transition-all"
                           >
-                            {isGeneratingPdf ? <Loader2 size={14} className="animate-spin" /> : t('signature.consulterPdf')}
+                            {isGeneratingPdf ? <LiquidLoader size={14} /> : t('signature.consulterPdf')}
                           </Button>
                           <Button
                             variant="outline"
@@ -2148,7 +2149,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
                             disabled={isGeneratingPdf}
                             className="h-12 rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 font-bold text-xs uppercase tracking-wider transition-all"
                           >
-                            {isGeneratingPdf ? <Loader2 size={14} className="animate-spin" /> : t('signature.downloadPdf')}
+                            {isGeneratingPdf ? <LiquidLoader size={14} /> : t('signature.downloadPdf')}
                           </Button>
                         </div>
                       </div>
@@ -2157,7 +2158,7 @@ export function WizardBotFlow({ onClose, onHome, allProducts, settings, laborSet
 
                   {step === STEP.GENERATING && renderBotStep(STEP.GENERATING,
                     <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center bg-white p-6 rounded-3xl shadow-lg border border-slate-100 gap-4">
-                      <Loader2 size={32} className="animate-spin text-[#0f766e]" />
+                      <LiquidLoader size={32} />
                       <p className="font-bold text-slate-800 animate-pulse">{locale === 'en' ? "Generating your PDF estimate..." : "Génération de votre estimation PDF en cours..."}</p>
                     </motion.div>
                   )}

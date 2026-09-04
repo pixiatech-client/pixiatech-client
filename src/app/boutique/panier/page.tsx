@@ -11,6 +11,7 @@ import { isProductOutOfStockForSale } from '@/lib/product-status';
 import { ActionButton, formatProductPriceLabel } from '@/components/boutique/ProductActionButton';
 import { toast } from 'sonner';
 import { useProfile } from '@/contexts/ProfileContext';
+import { calculateCheckout } from '@/lib/checkout-calculations';
 import { getDoc, doc, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/firebase/config';
 
@@ -139,10 +140,31 @@ export default function CartPage() {
     }
   }, [items]);
 
-  const tva = Math.round(totalAfterDiscount * vatRate / 100);
-  const total = totalAfterDiscount + tva;
-  const discount = promo ? subtotal - totalAfterDiscount : 0;
+  // Somme des coûts de livraison connus (figés sur chaque article de location au
+  // moment de son ajout, via le moteur partagé). Les articles sans adresse connue
+  // (ex. vente) n'ont pas de coût ici : signalés "à confirmer" au recapitulatif.
+  const deliverySum = items.reduce((s, i) => s + ((i.deliveryCost ?? 0) || 0), 0);
+  const hasKnownDelivery = items.some(i => typeof i.deliveryCost === 'number');
 
+  // Règle fiscale UNIQUE, partagée avec la caisse et le serveur PayPal :
+  // particulier -> TVA vatRate% ; entreprise -> TVA 0% autoliquidée.
+  // Le profil est global (ProfileContext) ; le panier ne porte pas d'adresse de
+  // checkout ni de validation TVA, mais dès que le profil est "entreprise" la règle
+  // donne systématiquement 0% (identique à la caisse), quel que soit country/vatValidated.
+  const calc = calculateCheckout({
+    subtotal,
+    totalAfterDiscount,
+    deliveryCost: deliverySum,
+    profileType,
+    country: 'FR',
+    vatValidated: false,
+    vatRate,
+  });
+  const tva = calc.vat;
+  const totalLabel = calc.totalLabel;
+  const vatLabel = calc.vatLabel;
+  const total = calc.total;
+  const discount = promo ? subtotal - totalAfterDiscount : 0;
   return (
     <div className="w-full min-h-screen bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
 
@@ -226,6 +248,29 @@ export default function CartPage() {
                               <p>De {item.rentalStartTime} à {item.rentalEndTime}</p>
                             </div>
                           )}
+                          {item.type === 'rental' && typeof item.deliveryCost === 'number' && (
+                            <div className="mt-1.5 text-xs flex items-center gap-1.5">
+                              <Truck size={13} className="text-gray-400" />
+                              <span className="text-gray-500">Livraison</span>
+                              {item.deliveryCost === 0 ? (
+                                <span className="font-semibold text-emerald-600">Gratuit</span>
+                              ) : (
+                                <span className="font-semibold text-gray-900">{formatPrice(item.deliveryCost)}</span>
+                              )}
+                              {item.zoneId && (
+                                <span className="text-[10px] text-gray-400">{item.cityId ? '' : ''}</span>
+                              )}
+                              {item.renterDetails?.postcode && (
+                                <span className="text-[10px] text-gray-400">({item.renterDetails.city || ''} {item.renterDetails.postcode})</span>
+                              )}
+                            </div>
+                          )}
+                          {item.type === 'rental' && typeof item.deliveryCost !== 'number' && (
+                            <div className="mt-1.5 text-xs flex items-center gap-1.5 text-gray-400">
+                              <Truck size={13} className="text-gray-300" />
+                              <span>Livraison — à confirmer selon l'adresse</span>
+                            </div>
+                          )}
                           {item.variantPrice && item.variantPrice !== item.price && (
                             <div className="mt-1 text-xs text-gray-400">
                               Prix unitaire: {formatPrice(item.price)}
@@ -259,14 +304,6 @@ export default function CartPage() {
                   </div>
                 ))}
 
-                <div className="bg-amber-50 rounded-2xl p-5 flex items-center gap-4 border border-amber-200/60">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                    <Truck size={20} className="text-amber-600" />
-                  </div>
-                  <p className="text-sm text-amber-800">
-                    <strong>Livraison Express</strong> — le montant sera calculé lors du paiement selon votre adresse.
-                  </p>
-                </div>
               </div>
 
               <div className="col-span-12 lg:col-span-4 lg:sticky lg:top-8">
@@ -284,16 +321,24 @@ export default function CartPage() {
                         </div>
                       )}
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Livraison Express</span>
-                        <span className="text-xs text-gray-400">Calculée lors du paiement</span>
+                        <span className="text-gray-500 flex items-center gap-1.5"><Truck size={14} /> Livraison</span>
+                        {hasKnownDelivery ? (
+                          deliverySum === 0 ? (
+                            <span className="font-semibold text-emerald-600">Gratuit</span>
+                          ) : (
+                            <span className="font-semibold text-gray-900">{formatPrice(deliverySum)}</span>
+                          )
+                        ) : (
+                          <span className="text-xs text-gray-400">Calculée lors du paiement</span>
+                        )}
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">TVA ({vatRate}%)</span>
+                        <span className="text-gray-500">{vatLabel}</span>
                         <span className="font-semibold text-gray-900">{formatPrice(tva)}</span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center pt-5 mb-6">
-                      <span className="font-bold text-gray-900 text-base">Total à payer</span>
+                      <span className="font-bold text-gray-900 text-base">{totalLabel}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-gray-900 text-lg">{formatPrice(total)}</span>
                         {!forceB2B && (

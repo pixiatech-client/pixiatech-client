@@ -5,6 +5,7 @@ import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
+import LiquidLoader from '@/components/LiquidLoader';
 
 interface FloatingFooterNavProps {
     onBack: () => void;
@@ -84,7 +85,7 @@ export function FloatingFooterNav({
                                     </span>
                                     <div className="relative z-10 ml-auto w-8 h-8 rounded-[12px] bg-white/10 flex items-center justify-center transition-all duration-300 group-hover:bg-[#c6ff00] group-hover:scale-105">
                                         {isLoading ? (
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            <LiquidLoader size={16} />
                                         ) : (
                                             <ChevronRight size={14} strokeWidth={3} className="text-white group-hover:text-black transition-colors duration-300" />
                                         )}

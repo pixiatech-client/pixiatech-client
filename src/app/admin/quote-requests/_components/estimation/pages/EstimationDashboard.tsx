@@ -11,12 +11,13 @@ import { Pagination } from '@/components/ui/Pagination';
 import { TransmitModal, SimpleMessagePopup, ReturnReasonPopup, RentalTreatmentModal } from '@/application/admin/estimations/components/TransmitModal';
 
 const DetailsApp = dynamic(() => import('../details/App'), {
-  loading: () => <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[110]"><div className="w-10 h-10 border-4 border-[#95d230] border-t-transparent rounded-full animate-spin" /></div>,
+  loading: () => <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[110]"><LiquidLoader size={40} /></div>,
 });
 import { EstimationDrawer } from '../components/EstimationDrawer';
 import { MobileFilterDrawer } from '../components/MobileFilterDrawer';
 
 import { X, ShoppingBag, Calendar, Calculator, Database, Trash2 } from 'lucide-react';
+import LiquidLoader from '@/components/LiquidLoader';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EstimationStatus, Estimation, TrackingInfo } from '../types';
 import { getPaginatedQuotes, getQuoteCounts, updateQuoteStatus, moveQuotesToTrash, restoreQuotes, permanentDeleteQuotes, permanentDeleteAllTrashedQuotes, getSuppliers, getQuoteRequest, getProducts, getProductSpecs, calibrateQuoteStats } from '@/app/admin/actions';
