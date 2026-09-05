@@ -134,3 +134,88 @@ export function fieldMeta(
   const isValid = isTouched && !error && value.trim().length > 0;
   return { error, hasError, isValid };
 }
+
+export interface ClientSessionProfile {
+  email?: string;
+  displayName?: string;
+  companyName?: string;
+  phone?: string;
+  officePhone?: string;
+  companyAddress?: string;
+  country?: string;
+  city?: string;
+  zipCode?: string;
+}
+
+export interface FiscalProfile {
+  companyName?: string;
+  siret?: string;
+  vatNumber?: string;
+}
+
+function normalizeCountry(value: string): string {
+  return (value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z]/g, '');
+}
+
+const COUNTRY_LABEL_TO_ISO = (() => {
+  const map: Record<string, string> = {};
+  for (const opt of DEFAULT_COUNTRY_OPTIONS) {
+    map[normalizeCountry(opt.label)] = opt.value;
+  }
+  return map;
+})();
+
+export function toCountryISO(value: string): string {
+  const v = (value || '').trim();
+  if (!v) return '';
+  const upper = v.toUpperCase();
+  const isIso = DEFAULT_COUNTRY_OPTIONS.some(opt => opt.value === upper);
+  if (isIso) return upper;
+  return COUNTRY_LABEL_TO_ISO[normalizeCountry(v)] || '';
+}
+
+export function splitFullName(fullName: string): { firstName: string; lastName: string } {
+  const trimmed = (fullName || '').trim();
+  if (!trimmed) return { firstName: '', lastName: '' };
+  const spaceIdx = trimmed.indexOf(' ');
+  if (spaceIdx !== -1) {
+    return { firstName: trimmed.slice(0, spaceIdx).trim(), lastName: trimmed.slice(spaceIdx + 1).trim() };
+  }
+  // Un seul mot : on le met en lastName pour que NAME_RE passe
+  return { firstName: '', lastName: trimmed };
+}
+
+export function siretToSiren(siret: string): string {
+  const digits = (siret || '').replace(/[^0-9]/g, '');
+  return digits.length >= 9 ? digits.slice(0, 9) : '';
+}
+
+export function profileToCustomerValues(profile: ClientSessionProfile): Partial<CustomerInfoValues> {
+  const values: Partial<CustomerInfoValues> = {};
+  const name = splitFullName(profile.displayName || '');
+  if (name.firstName) values.firstName = name.firstName;
+  if (name.lastName) values.lastName = name.lastName;
+  if (profile.email) values.email = profile.email;
+  const phone = (profile.phone || profile.officePhone || '').trim();
+  if (phone) values.phone = phone;
+  if (profile.companyAddress) values.addressLine1 = profile.companyAddress;
+  if (profile.companyName) values.companyName = profile.companyName;
+  if (profile.city) values.city = profile.city;
+  if (profile.zipCode) values.postcode = profile.zipCode;
+  const country = toCountryISO(profile.country || '');
+  if (country) values.country = country;
+  return values;
+}
+
+export function fiscalProfileToCustomerValues(fiscal: FiscalProfile): Partial<CustomerInfoValues> {
+  const values: Partial<CustomerInfoValues> = {};
+  const siren = siretToSiren(fiscal.siret || '');
+  if (siren) values.siren = siren;
+  if (fiscal.vatNumber) values.vatNumber = fiscal.vatNumber;
+  return values;
+}

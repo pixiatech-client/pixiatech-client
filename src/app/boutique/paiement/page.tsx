@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { PayPalScriptProvider, usePayPalScriptReducer, PayPalButtons, FUNDING, PayPalCardFieldsProvider, PayPalNameField, PayPalNumberField, PayPalExpiryField, PayPalCVVField, usePayPalCardFields } from '@paypal/react-paypal-js';
 import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, User, ChevronDown, Tag, X, Info, Building2, ArrowLeft, ArrowRight } from 'lucide-react';
@@ -10,6 +10,8 @@ import {
   defaultCustomerValues,
   isCustomerInfoComplete,
   validateCustomerField,
+  profileToCustomerValues,
+  fiscalProfileToCustomerValues,
 } from '@/lib/customer-form-utils';
 import type { CustomerInfoValues } from '@/lib/customer-form-utils';
 import { useVatValidation } from '@/hooks/useVatValidation';
@@ -334,6 +336,19 @@ export default function CheckoutPage() {
   const [vatMessageColor, setVatMessageColor] = useState('orange');
   const [isPreFilledFromRental, setIsPreFilledFromRental] = useState(false);
 
+  // Reflet de l'état courant pour les effets asynchrones (fetch réseau) :
+  // évite d'écraser une valeur déjà saisie par l'utilisateur si le fetch
+  // aboutit après son interaction avec le formulaire.
+  const deliveryTouchedRef = useRef(deliveryTouched);
+  deliveryTouchedRef.current = deliveryTouched;
+  const isB2BRef = useRef(isB2B);
+  isB2BRef.current = isB2B;
+
+  // Le premier pré-remplissage s'applique à tous les champs encore vides ;
+  // un changement de session (customerId différent) autorise une re-application
+  // complète, sinon on ne remplit que les champs non touchés et vides.
+  const lastPrefillCustomerIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     const unsub = onSnapshot(doc(firestore, 'settings', 'main'), (snap) => {
       if (snap.exists()) {
@@ -370,12 +385,29 @@ export default function CheckoutPage() {
         if (sessionRes.ok) {
           const sessionData = await sessionRes.json();
           if (sessionData?.loggedIn && sessionData.email) {
-            // Client connecté : l'email est fiable ; le reste du profil
-            // sera saisi par le client. On pré-remplit uniquement l'email.
-            setDelivery(d => ({
-              ...d,
-              email: sessionData.email,
-            }));
+            // Le mapping session -> formulaire ne touche pas aux champs déjà saisis.
+            // Un changement de session (customerId différent) autorise une re-application
+            // complète sur les champs non touchés.
+            const customerId = typeof sessionData.customerId === 'string' ? sessionData.customerId : null;
+            const force = lastPrefillCustomerIdRef.current !== null
+              && lastPrefillCustomerIdRef.current !== customerId;
+            lastPrefillCustomerIdRef.current = customerId;
+            applyProfilePrefill(profileToCustomerValues(sessionData), force);
+
+            // Infos fiscales (B2B) : uniquement si nécessaire (client connecté + mode entreprise).
+            // Erreur silencieuse : le pré-remplissage reste utilisable sans ces infos.
+            try {
+              if (isB2BRef.current) {
+                const fiscalRes = await fetch('/api/boutique/customer/get-fiscal');
+                if (fiscalRes.ok) {
+                  const fiscalData = await fiscalRes.json();
+                  if (fiscalData && typeof fiscalData === 'object') {
+                    applyProfilePrefill(fiscalProfileToCustomerValues(fiscalData));
+                  }
+                }
+              }
+            } catch { /* Infos fiscales optionnelles */ }
+
             return; // Priorité 1 appliquée, on s'arrête ici.
           }
         }
@@ -459,6 +491,36 @@ export default function CheckoutPage() {
     setDeliveryTouched(prev => ({ ...prev, [field]: true }));
     const err = validateCustomerField(field, value);
     setDeliveryErrors(prev => err ? { ...prev, [field]: err } : { ...prev, [field]: '' });
+  }
+
+  // Applique les valeurs du profil/session vers le formulaire en protégeant
+  // la saisie manuelle : on ne remplit que les champs non touchés, et on
+  // n'écrase jamais une valeur déjà présente (sauf le pays resté sur le
+  // défaut 'FR', qui n'est pas une saisie utilisateur).
+  function applyProfilePrefill(values: Partial<CustomerInfoValues>, force = false) {
+    setDelivery(d => {
+      const patch: Partial<CustomerInfoValues> = {};
+      for (const [field, value] of Object.entries(values)) {
+        if (value === undefined || value === '') continue;
+        const key = field as keyof CustomerInfoValues;
+        // Champ déjà modifié par l'utilisateur : on ne touche jamais.
+        if (deliveryTouchedRef.current[key]) continue;
+        if (force) {
+          patch[key] = value as string;
+          continue;
+        }
+        const current = d[key];
+        if (current) {
+          // Le pays par défaut 'FR' n'est pas une saisie : un profil valide
+          // (ISO reconnu) peut le remplacer.
+          if (key === 'country' && current === 'FR') patch[key] = value as string;
+          continue;
+        }
+        patch[key] = value as string;
+      }
+      if (Object.keys(patch).length === 0) return d;
+      return { ...d, ...patch };
+    });
   }
 
   if (items.length === 0 && step === 'payment' && !isDemo) {
