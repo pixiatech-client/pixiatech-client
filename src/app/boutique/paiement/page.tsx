@@ -4,8 +4,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PayPalScriptProvider, usePayPalScriptReducer, PayPalButtons, FUNDING, PayPalCardFieldsProvider, PayPalNameField, PayPalNumberField, PayPalExpiryField, PayPalCVVField, usePayPalCardFields } from '@paypal/react-paypal-js';
-import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, Mail, Phone, User, ChevronDown, Tag, X, Info, Building2, ArrowLeft, ArrowRight } from 'lucide-react';
-import CityInput from '@/components/CityInput';
+import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, User, ChevronDown, Tag, X, Info, Building2, ArrowLeft, ArrowRight } from 'lucide-react';
+import CustomerInfoForm from '@/components/customer-info-form';
+import {
+  defaultCustomerValues,
+  isCustomerInfoComplete,
+  validateCustomerField,
+} from '@/lib/customer-form-utils';
+import type { CustomerInfoValues } from '@/lib/customer-form-utils';
 import { useVatValidation } from '@/hooks/useVatValidation';
 import { useCart, type CartItem } from '@/contexts/CartContext';
 import { useI18n } from '@/lib/i18n';
@@ -49,7 +55,7 @@ function ConfettiEffect() {
   return null;
 }
 
-function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, vatValidated, paymentContext, fundingSource }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string>; deliveryCost: number; vatValidated: boolean; paymentContext: BoutiqueAmountInput; fundingSource?: (typeof FUNDING)[keyof typeof FUNDING] }) {
+function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, vatValidated, paymentContext, fundingSource }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: CustomerInfoValues; deliveryCost: number; vatValidated: boolean; paymentContext: BoutiqueAmountInput; fundingSource?: (typeof FUNDING)[keyof typeof FUNDING] }) {
   const [{ isResolved, isRejected }] = usePayPalScriptReducer();
   const [error, setError] = useState<string | null>(null);
 
@@ -183,7 +189,7 @@ const cardFieldStyle = {
   },
 } satisfies Record<string, Record<string, string>>;
 
-function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, deliveryCost }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: Record<string, string>; isDeliveryComplete: boolean; deliveryCost: number }) {
+function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, deliveryCost }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: CustomerInfoValues; isDeliveryComplete: boolean; deliveryCost: number }) {
   const { cardFieldsForm } = usePayPalCardFields();
   const [ready, setReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -302,7 +308,7 @@ export default function CheckoutPage() {
   const { t } = useI18n();
   const [step, setStep] = useState<'payment' | 'confirmation'>(isDemo ? 'confirmation' : 'payment');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>(isDemo ? 'paypal' : 'card');
-  const [delivery, setDelivery] = useState({ firstName: '', lastName: '', email: '', phone: '', addressLine1: '', addressLine2: '', postcode: '', city: '', country: 'FR', companyName: '', siren: '', vatNumber: '' });
+  const [delivery, setDelivery] = useState<CustomerInfoValues>(defaultCustomerValues());
   const [deliveryErrors, setDeliveryErrors] = useState<Record<string, string>>({});
   const [deliveryTouched, setDeliveryTouched] = useState<Record<string, boolean>>({});
   const { vatValidated, vatValidating, vatStatus, vatErrorMessage, validate: validateVat, reset: resetVat } = useVatValidation();
@@ -439,93 +445,20 @@ export default function CheckoutPage() {
     return () => clearTimeout(timer);
   }, [delivery.postcode, delivery.city, subtotal]);
 
-  const isDeliveryComplete = !!(
-    delivery.firstName && delivery.lastName && delivery.email && delivery.phone &&
-    delivery.addressLine1 && delivery.postcode && delivery.city && delivery.country &&
-    (!isB2B || (delivery.companyName && delivery.siren))
-  );
+  const isDeliveryComplete = isCustomerInfoComplete(delivery, isB2B);
 
-  const NAME_RE = /^[\p{L}\s'-]{2,}$/u;
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  const PHONE_RE = /^[\d\s+()]{8,}$/;
-  const POSTCODE_RE = /^\d{5}$/;
-
-  function validateField(field: string, value: string): string {
-    switch (field) {
-      case 'firstName':
-      case 'lastName':
-        if (!value.trim()) return '';
-        if (!NAME_RE.test(value.trim())) return 'Veuillez saisir un prénom valide.';
-        return '';
-      case 'email':
-        if (!value.trim()) return '';
-        if (!EMAIL_RE.test(value.trim())) return 'Veuillez saisir une adresse e-mail valide.';
-        return '';
-      case 'phone':
-        if (!value.trim()) return '';
-        const digits = value.replace(/[^0-9]/g, '');
-        if (digits.length < 8 || !PHONE_RE.test(value.trim())) return 'Veuillez saisir un numéro de téléphone valide.';
-        return '';
-      case 'addressLine1':
-        if (!value.trim()) return '';
-        if (value.trim().length < 6) return 'Merci de saisir une adresse complète.';
-        if (!/\d/.test(value)) return 'Merci de saisir une adresse complète.';
-        if (!/[a-zA-Z\u00C0-\u024F]{2,}/.test(value)) return 'Merci de saisir une adresse complète.';
-        return '';
-      case 'city':
-        if (!value.trim()) return '';
-        if (value.trim().length < 2) return 'Veuillez saisir une ville valide.';
-        if (/^\d+$/.test(value.trim())) return 'Veuillez saisir une ville valide.';
-        return '';
-      case 'postcode':
-        if (!value.trim()) return '';
-        if (!POSTCODE_RE.test(value.trim())) return 'Veuillez saisir un code postal valide.';
-        return '';
-      case 'companyName':
-        if (!value.trim()) return '';
-        if (value.trim().length < 2) return 'Veuillez saisir une raison sociale valide.';
-        return '';
-      case 'siren':
-        if (!value.trim()) return '';
-        const sirenDigits = value.replace(/[^0-9]/g, '');
-        if (sirenDigits.length < 9) return 'Le SIREN doit contenir au moins 9 chiffres.';
-        return '';
-      default:
-        return '';
-    }
-  }
-
-  function handleDeliveryChange(field: string, value: string) {
+  function handleDeliveryChange(field: keyof CustomerInfoValues, value: string) {
     setDelivery(d => ({ ...d, [field]: value }));
     if (deliveryTouched[field]) {
-      const err = validateField(field, value);
+      const err = validateCustomerField(field, value);
       setDeliveryErrors(prev => err ? { ...prev, [field]: err } : { ...prev, [field]: '' });
     }
   }
 
-  function handleDeliveryBlur(field: string, value: string) {
+  function handleDeliveryBlur(field: keyof CustomerInfoValues, value: string) {
     setDeliveryTouched(prev => ({ ...prev, [field]: true }));
-    const err = validateField(field, value);
+    const err = validateCustomerField(field, value);
     setDeliveryErrors(prev => err ? { ...prev, [field]: err } : { ...prev, [field]: '' });
-  }
-
-  const fieldMeta = (field: string, value: string) => {
-    const error = deliveryErrors[field] || '';
-    const touched = deliveryTouched[field];
-    const hasError = touched && !!error;
-    const isValid = touched && !error && value.trim().length > 0;
-    return { error, hasError, isValid };
-  };
-
-  function inputCls(field: string, value: string, withIcon = true) {
-    const meta = fieldMeta(field, value);
-    return `${withIcon ? 'pl-9' : 'px-3'} pr-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white placeholder:text-gray-300 w-full ${
-      meta.hasError
-        ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-        : meta.isValid
-          ? 'border-emerald-300 focus:border-emerald-400 focus:ring-emerald-100'
-          : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
-    }`;
   }
 
   if (items.length === 0 && step === 'payment' && !isDemo) {
@@ -1120,284 +1053,29 @@ export default function CheckoutPage() {
                   </button>
                   {deliveryOpen && (
                     <div className="px-4 pb-4 pt-1 border-t border-gray-100">
-                      {isPreFilledFromRental && (
-                        <div className="mb-4 p-3 bg-blue-50/70 border border-blue-200/60 rounded-xl flex items-center gap-2.5 text-xs text-blue-900 font-medium">
-                          <Check size={14} className="text-blue-600 shrink-0" />
-                          <span>Vos informations ont été récupérées depuis votre location. Vous pouvez les modifier si nécessaire.</span>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.firstName')}</label>
-                          <div className="relative">
-                            <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                            <input
-                              type="text"
-                              placeholder={t('checkout.firstNamePlaceholder')}
-                              value={delivery.firstName}
-                              onChange={e => handleDeliveryChange('firstName', e.target.value)}
-                              onBlur={e => handleDeliveryBlur('firstName', e.target.value)}
-                              aria-invalid={fieldMeta('firstName', delivery.firstName).hasError}
-                              aria-describedby={fieldMeta('firstName', delivery.firstName).error ? 'err-firstName' : undefined}
-                              className={inputCls('firstName', delivery.firstName)}
-                            />
-                          </div>
-                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                            {fieldMeta('firstName', delivery.firstName).error && (
-                              <p id="err-firstName" className="text-[10px] text-red-500 flex items-center gap-1">
-                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                {deliveryErrors.firstName}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.lastName')}</label>
-                          <div className="relative">
-                            <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                            <input
-                              type="text"
-                              placeholder={t('checkout.lastNamePlaceholder')}
-                              value={delivery.lastName}
-                              onChange={e => handleDeliveryChange('lastName', e.target.value)}
-                              onBlur={e => handleDeliveryBlur('lastName', e.target.value)}
-                              aria-invalid={fieldMeta('lastName', delivery.lastName).hasError}
-                              aria-describedby={fieldMeta('lastName', delivery.lastName).error ? 'err-lastName' : undefined}
-                              className={inputCls('lastName', delivery.lastName)}
-                            />
-                          </div>
-                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                            {fieldMeta('lastName', delivery.lastName).error && (
-                              <p id="err-lastName" className="text-[10px] text-red-500 flex items-center gap-1">
-                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                {deliveryErrors.lastName}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.email')}</label>
-                          <div className="relative">
-                            <Mail size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                            <input
-                              type="email"
-                              placeholder={t('checkout.emailPlaceholder')}
-                              value={delivery.email}
-                              onChange={e => handleDeliveryChange('email', e.target.value)}
-                              onBlur={e => handleDeliveryBlur('email', e.target.value)}
-                              aria-invalid={fieldMeta('email', delivery.email).hasError}
-                              aria-describedby={fieldMeta('email', delivery.email).error ? 'err-email' : undefined}
-                              className={inputCls('email', delivery.email)}
-                            />
-                          </div>
-                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                            {fieldMeta('email', delivery.email).error && (
-                              <p id="err-email" className="text-[10px] text-red-500 flex items-center gap-1">
-                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                {deliveryErrors.email}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.mobilePhone')}</label>
-                          <div className="relative">
-                            <Phone size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                            <input
-                              type="tel"
-                              placeholder={t('checkout.phonePlaceholder')}
-                              value={delivery.phone}
-                              onChange={e => handleDeliveryChange('phone', e.target.value)}
-                              onBlur={e => handleDeliveryBlur('phone', e.target.value)}
-                              aria-invalid={fieldMeta('phone', delivery.phone).hasError}
-                              aria-describedby={fieldMeta('phone', delivery.phone).error ? 'err-phone' : undefined}
-                              className={inputCls('phone', delivery.phone)}
-                            />
-                          </div>
-                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                            {fieldMeta('phone', delivery.phone).error && (
-                              <p id="err-phone" className="text-[10px] text-red-500 flex items-center gap-1">
-                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                {deliveryErrors.phone}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.addressLine1')}</label>
-                          <div className="relative">
-                            <MapPin size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                            <input
-                              type="text"
-                              placeholder={t('checkout.addressLine1Placeholder')}
-                              value={delivery.addressLine1}
-                              onChange={e => handleDeliveryChange('addressLine1', e.target.value)}
-                              onBlur={e => handleDeliveryBlur('addressLine1', e.target.value)}
-                              aria-invalid={fieldMeta('addressLine1', delivery.addressLine1).hasError}
-                              aria-describedby={fieldMeta('addressLine1', delivery.addressLine1).error ? 'err-addressLine1' : undefined}
-                              className={inputCls('addressLine1', delivery.addressLine1)}
-                            />
-                          </div>
-                          <div className="h-5 mt-1" aria-live="polite" aria-atomic="true">
-                            {fieldMeta('addressLine1', delivery.addressLine1).error && (
-                              <p id="err-addressLine1" className="text-[10px] text-red-500 flex items-center gap-1">
-                                <svg className="w-3 h-3 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                                {deliveryErrors.addressLine1}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.addressLine2')}</label>
-                          <div className="relative">
-                            <MapPin size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                            <input
-                              type="text"
-                              placeholder={t('checkout.addressLine2Placeholder')}
-                              value={delivery.addressLine2}
-                              onChange={e => setDelivery(d => ({ ...d, addressLine2: e.target.value }))}
-                              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
-                            />
-                          </div>
-                        </div>
-                        <div className="sm:col-span-2">
-                          <CityInput
-                            value={delivery.city ? `${delivery.city} (${delivery.postcode})` : ''}
-                            onChange={(cityName, postcode) => {
-                              setDelivery(d => ({ ...d, city: cityName, postcode }));
-                              setDeliveryErrors(prev => ({ ...prev, city: '', postcode: '' }));
-                              if (!deliveryTouched.city) setDeliveryTouched(prev => ({ ...prev, city: true }));
-                              if (!deliveryTouched.postcode) setDeliveryTouched(prev => ({ ...prev, postcode: true }));
-                            }}
-                            error={!!(deliveryErrors.city || deliveryErrors.postcode)}
-                            errorMessage={deliveryErrors.city || deliveryErrors.postcode}
-                          />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Pays</label>
-                          <select
-                            value={delivery.country}
-                            onChange={e => handleDeliveryChange('country', e.target.value)}
-                            onBlur={e => handleDeliveryBlur('country', e.target.value)}
-                            className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
-                              fieldMeta('country', delivery.country).hasError
-                                ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                                : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
-                            }`}
-                          >
-                            <option value="FR">France</option>
-                            <option value="BE">Belgique</option>
-                            <option value="CH">Suisse</option>
-                            <option value="LU">Luxembourg</option>
-                            <option value="DE">Allemagne</option>
-                            <option value="ES">Espagne</option>
-                            <option value="IT">Italie</option>
-                            <option value="NL">Pays-Bas</option>
-                            <option value="PT">Portugal</option>
-                            <option value="GB">Royaume-Uni</option>
-                            <option value="AT">Autriche</option>
-                            <option value="IE">Irlande</option>
-                            <option value="DK">Danemark</option>
-                            <option value="SE">Suède</option>
-                            <option value="FI">Finlande</option>
-                            <option value="PL">Pologne</option>
-                            <option value="CZ">République Tchèque</option>
-                            <option value="SK">Slovaquie</option>
-                            <option value="HU">Hongrie</option>
-                            <option value="GR">Grèce</option>
-                            <option value="RO">Roumanie</option>
-                            <option value="BG">Bulgarie</option>
-                            <option value="HR">Croatie</option>
-                            <option value="SI">Slovénie</option>
-                            <option value="LT">Lituanie</option>
-                            <option value="LV">Lettonie</option>
-                            <option value="EE">Estonie</option>
-                            <option value="CY">Chypre</option>
-                            <option value="MT">Malte</option>
-                          </select>
-                        </div>
-                      </div>
-                      {isB2B && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 border-t border-gray-100 pt-3">
-                        <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Raison sociale *</label>
-                          <input
-                            type="text"
-                            placeholder="Nom de l'entreprise"
-                            value={delivery.companyName}
-                            onChange={e => handleDeliveryChange('companyName', e.target.value)}
-                            onBlur={e => handleDeliveryBlur('companyName', e.target.value)}
-                            className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
-                              fieldMeta('companyName', delivery.companyName).hasError
-                                ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                                : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
-                            }`}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">SIREN / SIRET *</label>
-                          <input
-                            type="text"
-                            placeholder="123 456 789"
-                            value={delivery.siren}
-                            onChange={e => handleDeliveryChange('siren', e.target.value)}
-                            onBlur={e => handleDeliveryBlur('siren', e.target.value)}
-                            className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
-                              fieldMeta('siren', delivery.siren).hasError
-                                ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                                : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
-                            }`}
-                          />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Numéro de TVA intracommunautaire</label>
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              placeholder="FRXX999999999"
-                              value={delivery.vatNumber}
-                              onChange={e => {
-                                setDelivery(d => ({ ...d, vatNumber: e.target.value }));
-                                if (vatStatus !== 'idle') resetVat();
-                              }}
-                              onBlur={e => handleDeliveryBlur('vatNumber', e.target.value)}
-                              className={`flex-1 px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
-                                vatStatus === 'valid'
-                                  ? 'border-emerald-300 bg-emerald-50/30'
-                                  : vatStatus === 'invalid'
-                                    ? 'border-red-300 bg-red-50/30'
-                                    : fieldMeta('vatNumber', delivery.vatNumber).hasError
-                                      ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                                      : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
-                              }`}
-                            />
-                            <button
-                              type="button"
-                              disabled={vatValidating || !delivery.vatNumber}
-                              onClick={() => validateVat(delivery.vatNumber)}
-                              className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                                vatStatus === 'valid'
-                                  ? 'bg-emerald-500 text-white'
-                                  : vatStatus === 'invalid'
-                                    ? 'bg-red-500 text-white'
-                                    : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50'
-                              }`}
-                            >
-                              {vatValidating ? '...' : vatStatus === 'valid' ? '✓ Valide' : vatStatus === 'invalid' ? '✗ Invalide' : 'Valider'}
-                            </button>
-                          </div>
-                          {vatStatus === 'valid' && (
-                            <p className="text-[10px] text-emerald-600 font-semibold mt-1">Numéro de TVA valide — TVA autoliquidée</p>
-                          )}
-                          {vatStatus === 'invalid' && (
-                            <p className="text-[10px] text-red-500 font-semibold mt-1">{vatErrorMessage}</p>
-                          )}
-                          {vatStatus === 'error' && (
-                            <p className="text-[10px] text-amber-600 font-semibold mt-1">{vatErrorMessage}</p>
-                          )}
-                        </div>
-                      </div>
-                      )}
+                      <CustomerInfoForm
+                        values={delivery}
+                        errors={deliveryErrors}
+                        touched={deliveryTouched}
+                        isB2B={isB2B}
+                        onFieldChange={handleDeliveryChange}
+                        onFieldBlur={handleDeliveryBlur}
+                        onCitySelect={(cityName, postcode) => {
+                          setDelivery(d => ({ ...d, city: cityName, postcode }));
+                          setDeliveryErrors(prev => ({ ...prev, city: '', postcode: '' }));
+                          if (!deliveryTouched.city) setDeliveryTouched(prev => ({ ...prev, city: true }));
+                          if (!deliveryTouched.postcode) setDeliveryTouched(prev => ({ ...prev, postcode: true }));
+                        }}
+                        banner={isPreFilledFromRental ? 'Vos informations ont été récupérées depuis votre location. Vous pouvez les modifier si nécessaire.' : null}
+                        vatStatus={vatStatus}
+                        vatErrorMessage={vatErrorMessage}
+                        vatValidating={vatValidating}
+                        onVatChange={(value) => {
+                          setDelivery(d => ({ ...d, vatNumber: value }));
+                          if (vatStatus !== 'idle') resetVat();
+                        }}
+                        onVatValidate={() => validateVat(delivery.vatNumber)}
+                      />
                     </div>
                   )}
                 </div>
