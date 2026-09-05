@@ -103,11 +103,20 @@ export async function POST(req: NextRequest) {
         : String(o.renterCompany || '');
 
     const isB2B = !!profInfo || !!buyerCompany;
-    const vatValidated = profInfo ? profInfo.vatValidated === true : false;
-    const vatRate: 0 | 0.2 = profInfo ? (profInfo.vatRate === 0 ? 0 : 0.2) : 0.2;
+    const vatValidated = !!(profInfo?.vatValidated && profInfo?.vatNumber);
+    const vatNumber = profInfo?.vatNumber || '';
+
+    // Taux de TVA admin (pourcentage entier, ex: 19 → décimal 0.19). Fallback 0.19 si absent.
+    // L'autoliquidation (0%) reste gérée dans computeInvoiceAmounts (vatValidated + vatNumber).
+    const settingsSnap = await adminDb.collection('settings').doc('main').get();
+    const settingsData = settingsSnap.exists ? (settingsSnap.data() || {}) : {};
+    const adminTaxRate =
+      typeof settingsData?.estimationFlow?.taxRate === 'number' && settingsData.estimationFlow.taxRate >= 0
+        ? settingsData.estimationFlow.taxRate
+        : 19;
 
     const items: InvoiceItem[] = buildInvoiceItems(order);
-    const amounts = computeInvoiceAmounts(order, { vatValidated, vatRate });
+    const amounts = computeInvoiceAmounts(order, { vatValidated, vatNumber, vatRate: adminTaxRate / 100 });
     const company = await getCompanySnapshot(adminDb);
 
     const customerName = String(o.customerName || o.renterRepresentative || profInfo?.companyName || '');

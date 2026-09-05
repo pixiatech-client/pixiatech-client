@@ -325,46 +325,9 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
     }
   }, [t]);
 
-  // Détection automatique de nouvelle version (chargement + intervalle 60 s).
-  // Non destructif : on signale simplement la présence d'une mise à jour.
-  // RÈGLE ABSOLUE : notification UNIQUEMENT si la version disponible est
-  // STRICTEMENT supérieure (comparaison SemVer) à la version installée.
-  //   latest > current  → toast discret + ouverture du popup "À propos"
-  //   latest === current → AUCUNE notification (serveur sur la même version que nous)
-  //   latest < current  → AUCUNE notification (rollback / cas anormal)
-  useEffect(() => {
-    let disposed = false;
-    let timer: ReturnType<typeof setTimeout>;
-
-    const installedVersion = APP_VERSION;
-
-    const checkVersion = async () => {
-      if (versionCheckedRef.current) return;
-      const result = await performVersionCheck();
-      if (disposed || !result?.updateAvailable) return;
-
-      // Mise à jour réellement disponible : signaler une seule fois.
-      versionCheckedRef.current = true;
-      if (timer) clearInterval(timer);
-      sonnerToast.info(t('admin.about.newVersionAvailable') || 'Nouvelle version disponible', {
-        description: `${t('admin.about.newVersionDesc') || 'Une nouvelle version est disponible.'} (${installedVersion} → ${result.latestVersion})`,
-        id: 'auto-version-detected',
-        duration: 8000,
-        action: {
-          label: t('admin.about.openAbout') || 'Voir',
-          onClick: () => setIsAboutOpen(true),
-        },
-      });
-    };
-
-    checkVersion();
-    timer = setInterval(checkVersion, 60000);
-    return () => {
-      disposed = true;
-      if (timer) clearInterval(timer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [performVersionCheck]);
+  // Note : La détection automatique globale et l'affichage de la popup
+  // sont assurés par VersionUpdateDialog monté dans LayoutProvider.
+  // performVersionCheck reste disponible pour le dialogue "À propos" manuel.
 
   // Clic sur la version du footer : ouvre le même popup "À propos"
   // (un seul point d'entrée : Header → popup, Footer → popup).

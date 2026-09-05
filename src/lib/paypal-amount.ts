@@ -77,6 +77,8 @@ export interface BoutiqueAmountInput {
   delivery?: { postcode?: string; city?: string; country?: string } | null;
   clientType?: ProfileType;
   vatValidated?: boolean;
+  vatNumber?: string | null;
+  vatRate?: number;
   promoCode?: string | null;
   promoDocId?: string | null;
 }
@@ -609,6 +611,8 @@ export async function resolveBoutiqueAmount(input: BoutiqueAmountInput): Promise
     profileType: input.clientType || null,
     country: input.delivery?.country || 'FR',
     vatValidated: input.vatValidated === true,
+    vatNumber: typeof input.vatNumber === 'string' && input.vatNumber.trim() ? input.vatNumber : undefined,
+    vatRate: typeof input.vatRate === 'number' && input.vatRate >= 0 ? input.vatRate : 19,
   });
 
   const amount = round2(calc.total);

@@ -19,6 +19,7 @@ import { useI18n } from '@/lib/i18n';
 import { formatPrice } from '@/lib/boutique-data';
 import { calculateCheckout } from '@/lib/checkout-calculations';
 import type { BoutiqueAmountInput } from '@/lib/paypal-amount';
+import { fetchProfessionalInfo } from '@/services/professionalInfoService';
 import { useProfile } from '@/contexts/ProfileContext';
 import type { PdfSettings } from '@/lib/types';
 import { InvoiceButton } from '@/components/invoice-button';
@@ -328,7 +329,9 @@ export default function CheckoutPage() {
   const { profileType, setProfileType, isB2B, forceB2B } = useProfile();
   const [deliveryCost, setDeliveryCost] = useState(0);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
-  const [vatRate, setVatRate] = useState(20);
+  const [vatRate, setVatRate] = useState(19);
+  const [vatValidated, setVatValidated] = useState(false);
+  const [vatNumber, setVatNumber] = useState('');
   const [vatMessage, setVatMessage] = useState('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
   const [vatMessageEnabled, setVatMessageEnabled] = useState(true);
   const [vatMessageColor, setVatMessageColor] = useState('orange');
@@ -353,7 +356,7 @@ export default function CheckoutPage() {
       if (snap.exists()) {
         const data = snap.data() as any;
         const ef = data?.estimationFlow;
-        if (typeof ef?.taxRate === 'number' && ef.taxRate > 0) setVatRate(ef.taxRate);
+        if (typeof ef?.taxRate === 'number' && ef.taxRate >= 0) setVatRate(ef.taxRate);
         if (typeof ef?.vatMessage === 'string' && ef.vatMessage.trim()) setVatMessage(ef.vatMessage);
         if (typeof ef?.vatMessageEnabled === 'boolean') setVatMessageEnabled(ef.vatMessageEnabled);
         if (typeof ef?.vatMessageColor === 'string' && ef.vatMessageColor.trim()) setVatMessageColor(ef.vatMessageColor);
@@ -370,6 +373,29 @@ export default function CheckoutPage() {
     if (isDemo) setDelivery(d => ({ ...d, email: 'demo@example.com', firstName: 'Demo', lastName: 'User' }));
     getPdfSettings().then(setPdfSettings).catch(() => {});
   }, [isDemo]);
+
+  // TVA : seuls les professionnels connectés avec TVA validée + numéro de TVA
+  // bénéficient de l'autoliquidation. Sinon la TVA s'applique au taux normal.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const sessionRes = await fetch('/api/boutique/session-status');
+        if (!sessionRes.ok) return;
+        const session = await sessionRes.json();
+        if (!session?.loggedIn) return;
+        const info = await fetchProfessionalInfo();
+        if (!active) return;
+        if (info) {
+          setVatValidated(info.vatValidated === true);
+          setVatNumber(info.vatNumber || '');
+        }
+      } catch {
+        // Session absente ou profil non rempli → TVA au taux normal.
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   // Pré-remplissage du formulaire :
   // Priorité 1 : profil client connecté (session active)
@@ -479,14 +505,15 @@ export default function CheckoutPage() {
 
   // Applique les valeurs du profil/session vers le formulaire en protégeant
   // la saisie manuelle : on ne remplit que les champs non touchés, et on
-  // n'écrase jamais une valeur déjà présente (sauf le pays resté sur le
-  // défaut 'FR', qui n'est pas une saisie utilisateur).
+  // n'écrase jamais une valeur déjà présente. Le pays est toujours 'FR' en dur
+  // (champ retiré du formulaire) : la valeur du profil est ignorée.
   function applyProfilePrefill(values: Partial<CustomerInfoValues>, force = false) {
     setDelivery(d => {
       const patch: Partial<CustomerInfoValues> = {};
       for (const [field, value] of Object.entries(values)) {
         if (value === undefined || value === '') continue;
         const key = field as keyof CustomerInfoValues;
+        if (key === 'country') continue;
         // Champ déjà modifié par l'utilisateur : on ne touche jamais.
         if (deliveryTouchedRef.current[key]) continue;
         if (force) {
@@ -494,12 +521,7 @@ export default function CheckoutPage() {
           continue;
         }
         const current = d[key];
-        if (current) {
-          // Le pays par défaut 'FR' n'est pas une saisie : un profil valide
-          // (ISO reconnu) peut le remplacer.
-          if (key === 'country' && current === 'FR') patch[key] = value as string;
-          continue;
-        }
+        if (current) continue;
         patch[key] = value as string;
       }
       if (Object.keys(patch).length === 0) return d;
@@ -539,7 +561,8 @@ export default function CheckoutPage() {
     deliveryCost: effectiveDeliveryCost,
     profileType,
     country: delivery.country || 'FR',
-    vatValidated: false,
+    vatValidated,
+    vatNumber,
     vatRate,
   });
   const tva = calc.vat;
@@ -569,6 +592,8 @@ export default function CheckoutPage() {
       country: delivery.country || 'FR',
     },
     clientType: profileType,
+    vatValidated,
+    vatNumber: vatNumber || null,
     promoCode: promo?.code || null,
     promoDocId: promo?.promoDocId || null,
   };
@@ -595,6 +620,7 @@ export default function CheckoutPage() {
       unitPrice: items.reduce((s, i) => s + i.price * i.quantity, 0) / items.reduce((s, i) => s + i.quantity, 0) || 0,
       subtotal,
       vat: tva,
+      vatRate: calc.vatRate,
       amountPaid: total,
       createdAt: new Date().toISOString(),
       type: items.some(i => i.type === 'rental') ? 'rental' as const : 'sale' as const,
@@ -895,12 +921,12 @@ export default function CheckoutPage() {
                   )}
                 </div>
                 <h2 className="text-4xl font-[900] tracking-tighter">{formatPrice(total)}</h2>
-                <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{vatMessageEnabled ? vatMessage : 'Prix toutes taxes comprises (TTC)'}</p>
+                <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{vatMessageEnabled && calc.vatRate === 0 ? vatMessage : 'Prix toutes taxes comprises (TTC)'}</p>
               </div>
               <div className="space-y-3 mb-6 border-t border-white/20 pt-5 relative z-10">
                 {[
                   ['Sous-total HT', formatPrice(subtotal)],
-                  ...(discount > 0 ? [[`Promo (${promo?.code})`, `-${formatPrice(discount)}`]] : []),
+                  ...(promo?.code ? [[`Promo (${promo.code})`, discount > 0 ? `-${formatPrice(discount)}` : formatPrice(0)]] : []),
                   [vatLabel, formatPrice(Math.round(tva))],
                 ].map(([label, val]) => (
                   <div key={label as string} className="flex justify-between items-center text-[13px]">
@@ -1229,10 +1255,10 @@ export default function CheckoutPage() {
                     <span className="text-gray-500">{t('cart.subtotalHT')}</span>
                     <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
                   </div>
-                  {discount > 0 && (
+                  {promo?.code && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-emerald-600">{t('cart.discount')} ({promo?.code})</span>
-                      <span className="font-semibold text-emerald-600">-{formatPrice(discount)}</span>
+                      <span className="text-emerald-600">{t('cart.discount')} ({promo.code})</span>
+                      <span className="font-semibold text-emerald-600">{discount > 0 ? `-${formatPrice(discount)}` : formatPrice(0)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
@@ -1304,7 +1330,7 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
-                {vatMessageEnabled && (() => {
+                {vatMessageEnabled && calc.vatRate === 0 && (() => {
                   const s = VAT_MESSAGE_STYLES[vatMessageColor] ?? VAT_MESSAGE_STYLES.orange;
                   return (
                     <div className={`mb-4 px-3 py-2.5 ${s.container} rounded-xl`}>

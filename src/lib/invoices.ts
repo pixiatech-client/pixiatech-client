@@ -2,7 +2,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 
 export interface InvoiceItem {
   productName: string;
-  variantName?: string;
+  variantName?: string | null;
   quantity: number;
   unitPrice: number;
   lineTotal: number;
@@ -38,7 +38,7 @@ export interface InvoiceDoc extends CompanySnapshot {
   discount: number;
   deliveryCost: number;
   vat: number;
-  vatRate: 0 | 0.2;
+  vatRate: number;
   totalTtc: number;
   orderDate: string;
   generatedAt: string;
@@ -52,7 +52,7 @@ export interface InvoiceAmounts {
   discount: number;
   deliveryCost: number;
   vat: number;
-  vatRate: 0 | 0.2;
+  vatRate: number;
   totalTtc: number;
 }
 
@@ -148,7 +148,7 @@ export function buildInvoiceItems(order: any): InvoiceItem[] {
       const unitPrice = asNumber(it.unitPrice);
       return {
         productName: String(it.productName || it.name || 'Produit'),
-        variantName: typeof it.variantName === 'string' && it.variantName ? it.variantName : undefined,
+        variantName: typeof it.variantName === 'string' && it.variantName ? it.variantName : null,
         quantity,
         unitPrice,
         lineTotal: round2(unitPrice * quantity),
@@ -161,7 +161,7 @@ export function buildInvoiceItems(order: any): InvoiceItem[] {
   return [
     {
       productName: String(order.productName || order.productReference || 'Produit'),
-      variantName: typeof order.variantName === 'string' && order.variantName ? order.variantName : undefined,
+      variantName: typeof order.variantName === 'string' && order.variantName ? order.variantName : null,
       quantity,
       unitPrice,
       lineTotal: round2(unitPrice * quantity),
@@ -169,7 +169,10 @@ export function buildInvoiceItems(order: any): InvoiceItem[] {
   ];
 }
 
-export function computeInvoiceAmounts(order: any, opts: { vatValidated: boolean; vatRate: 0 | 0.2 }): InvoiceAmounts {
+export function computeInvoiceAmounts(
+  order: any,
+  opts: { vatValidated: boolean; vatNumber?: string; vatRate?: number }
+): InvoiceAmounts {
   const asNumber = (v: unknown): number => {
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
@@ -184,17 +187,19 @@ export function computeInvoiceAmounts(order: any, opts: { vatValidated: boolean;
   const subtotal = round2(storedSubtotal > 0 ? storedSubtotal : itemSubtotal);
   const discount = round2(storedDiscount > 0 ? storedDiscount : 0);
   const deliveryCost = round2(storedDeliveryCost > 0 ? storedDeliveryCost : 0);
-  const hasStoredVat = typeof order.vat === 'number' && Number.isFinite(order.vat);
 
-  const vat = hasStoredVat
-    ? round2(order.vat)
-    : opts.vatValidated
-      ? 0
-      : round2(subtotal * opts.vatRate);
+  const hasVatExemption =
+    opts.vatValidated === true && typeof opts.vatNumber === 'string' && opts.vatNumber.trim() !== '';
 
-  const totalTtc = round2(subtotal - discount + deliveryCost + vat);
+  // Taux admin en décimal (ex: 19 → 0.19), fallback 0.19 si absent.
+  // L'autoliquidation (0%) reste réservée aux clients TVA validée + numéro présent.
+  const adminRate = typeof opts.vatRate === 'number' && opts.vatRate >= 0 ? opts.vatRate : 0.19;
+  const vatRate: number = hasVatExemption ? 0 : adminRate;
+  const subtotalAfterDiscount = round2(subtotal - discount);
+  const vat = hasVatExemption ? 0 : round2(subtotalAfterDiscount * vatRate);
+  const totalTtc = round2(subtotalAfterDiscount + vat + deliveryCost);
 
-  return { subtotal, discount, deliveryCost, vat, vatRate: opts.vatRate, totalTtc };
+  return { subtotal, discount, deliveryCost, vat, vatRate, totalTtc };
 }
 
 export function getInvoice(adminDb: Firestore, orderType: string, orderId: string) {

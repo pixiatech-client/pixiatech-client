@@ -51,37 +51,35 @@ export interface VerifiedCompanySiret {
 }
 
 export async function verifyCompanySiret(siret: string): Promise<VerifiedCompanySiret> {
-  const url = `https://recherche-entreprises.api.gouv.fr/search?per_page=1&q=${encodeURIComponent(siret)}`;
+  const res = await fetch(
+    `/api/siret?${new URLSearchParams({ siret }).toString()}`,
+    { cache: 'no-store' }
+  );
 
-  let res: Response;
-  try {
-    res = await fetch(url);
-  } catch {
-    throw new APIError(0, 'Impossible de contacter le service de vérification. Vérifiez votre connexion réessayez.');
+  if (!res.ok) {
+    let message = 'Aucune entreprise trouvée avec ce numéro SIRET. Veuillez vérifier.';
+    if (res.status !== 404) {
+      message = 'Le service de vérification est momentanément indisponible. Réessayez dans quelques instants.';
+    }
+    try {
+      const data = await res.json();
+      if (data && typeof data.error === 'string' && data.error) message = data.error;
+    } catch {
+      // corps non JSON : message par défaut
+    }
+    throw new APIError(res.status, message);
   }
 
-  if (!res.ok) throw new APIError(res.status, 'Le service de vérification est momentanément indisponible. Réessayez dans quelques instants.');
-
-  let data: any;
-  try {
-    data = await res.json();
-  } catch {
-    throw new APIError(res.status, 'Le service de vérification a renvoyé une réponse invalide. Réessayez dans quelques instants.');
-  }
-
-  const first = data?.results?.[0];
-  if (!first || !first.siege) {
-    throw new APIError(404, 'Aucune entreprise trouvée avec ce numéro SIRET. Veuillez vérifier.');
-  }
-
+  const data = await res.json();
+  const toStr = (v: unknown): string => (v == null ? '' : String(v));
   return {
-    companyName: typeof first.nom_complet === 'string' ? first.nom_complet : '',
-    siret: typeof first.siege.siret === 'string' ? first.siege.siret : siret,
-    address: typeof first.siege.adresse === 'string' ? first.siege.adresse : '',
-    city: typeof first.siege.libelle_commune === 'string' ? first.siege.libelle_commune : '',
-    state: typeof first.siege.departement === 'string' ? first.siege.departement : '',
-    postcode: typeof first.siege.code_postal === 'string' ? first.siege.code_postal : '',
-    country: 'France',
+    companyName: toStr(data.companyName),
+    siret: toStr(data.siret) || siret,
+    address: toStr(data.address),
+    city: toStr(data.city),
+    state: toStr(data.state),
+    postcode: toStr(data.postcode),
+    country: toStr(data.country) || 'France',
   };
 }
 

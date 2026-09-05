@@ -99,6 +99,16 @@ export async function POST(req: NextRequest) {
 
     const { adminDb, FieldValue } = getFirebaseAdmin();
 
+    // Taux de TVA admin (pourcentage entier, ex: 19) depuis `settings/main.estimationFlow.taxRate`.
+    // Fallback 19% si absent. Utilisé pour le recalul serveur et les commandes B2B.
+    const settingsSnap = await adminDb.collection('settings').doc('main').get();
+    const settingsData = settingsSnap.exists ? (settingsSnap.data() || {}) : {};
+    const adminTaxRate =
+      typeof settingsData?.estimationFlow?.taxRate === 'number' && settingsData.estimationFlow.taxRate >= 0
+        ? settingsData.estimationFlow.taxRate
+        : 19;
+    const adminVatRate = adminTaxRate / 100;
+
     // Montant attendu reconstruit côté serveur — jamais depuis le client.
     // Résolu AVANT toute capture : prix, rupture, promo et montage refusent en amont.
     const resolved = await resolveBoutiqueAmount({
@@ -106,6 +116,8 @@ export async function POST(req: NextRequest) {
       delivery: cart.delivery || delivery,
       clientType: cart.clientType,
       vatValidated: cart.vatValidated ?? delivery?.vatValidated,
+      vatNumber: typeof cart.vatNumber === 'string' ? cart.vatNumber : (delivery?.vatNumber as string | undefined) || null,
+      vatRate: adminTaxRate,
       promoCode: cart.promoCode ?? promoCode,
       promoDocId: cart.promoDocId ?? promoDocId,
     } as BoutiqueAmountInput);
@@ -247,9 +259,9 @@ export async function POST(req: NextRequest) {
 
     // Fiscale B2B : la vérité vient de user_professional_info, jamais des champs
     // envoyés par l'UI. Les commandes portent ensuite ce snapshot, et la TVA
-    // recalculée de façon cohérente (autoliquidée si TVA validée, sinon 20%).
+    // recalculée de façon cohérente (autoliquidée si TVA validée, sinon taux admin).
     let orderVat = resolved.vat;
-    let orderVatRate: 0 | 0.2 = 0.2;
+    let orderVatRate: number = adminVatRate;
     let saleSiren = customerSiren;
     let saleVatNumber = customerVatNumber;
     let saleVatValidated = customerVatValidated;
@@ -262,15 +274,15 @@ export async function POST(req: NextRequest) {
           saleSiren = typeof p.siret === 'string' ? p.siret.replace(/\s+/g, '').slice(0, 9) : saleSiren;
           saleVatNumber = typeof p.vatNumber === 'string' ? p.vatNumber : saleVatNumber;
           saleVatValidated = p.vatValidated === true;
-          orderVatRate = p.vatRate === 0 ? 0 : 0.2;
+          orderVatRate = p.vatRate === 0 ? 0 : adminVatRate;
         } else {
           saleVatValidated = false;
-          orderVatRate = 0.2;
+          orderVatRate = adminVatRate;
         }
       } catch (err) {
         console.error('[CaptureOrder] Failed to read user_professional_info:', err);
         saleVatValidated = false;
-        orderVatRate = 0.2;
+        orderVatRate = adminVatRate;
       }
       orderVat = saleVatValidated ? 0 : round2(resolved.subtotal * orderVatRate);
     }

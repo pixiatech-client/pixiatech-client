@@ -14,7 +14,8 @@ export interface EligibleOrder {
   discount: number;
   deliveryCost: number;
   vat: number;
-  vatRate: 0 | 0.2;
+  vatRate: number;
+  taxRate: number;
   totalTtc: number;
   rentalStartDate?: string;
   rentalEndDate?: string;
@@ -37,7 +38,7 @@ export interface InvoiceSummary {
   discount: number;
   deliveryCost: number;
   vat: number;
-  vatRate: 0 | 0.2;
+  vatRate: number;
   totalTtc: number;
   orderDate: string;
   generatedAt: string;

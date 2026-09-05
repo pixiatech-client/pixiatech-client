@@ -17,10 +17,14 @@ export type StepProgressCallback = (event: StepEvent) => void;
 export interface ResetOptions {
   /**
    * true = purge radicale manuelle : vide storage local + sessionNav + cookies + IndexedDB (Firebase) + signOut.
-   * false = mise à jour de version : vide uniquement les caches navigateur et recharge,
-   *         on conserve la session et le storage (non destructif).
+   * false = mise à jour de version.
    */
   radical?: boolean;
+  /**
+   * true = déconnecte l'utilisateur (Firebase Auth + cookies admin + cookies client boutique)
+   * et vide le stockage local lors de la mise à jour.
+   */
+  disconnect?: boolean;
   /**
    * Signature (issue du build) vers laquelle on met à jour.
    * Utilisée en mode "mise à jour" pour écrire la nouvelle signature AVANT le reload,
@@ -29,13 +33,13 @@ export interface ResetOptions {
   targetSignature?: string;
   /**
    * Route vers laquelle rediriger à la fin d'une purge radicale après déconnexion.
-   * Défaut : /admin/login. Ignoré en mode mise à jour.
+   * Défaut : /admin/login pour une purge admin, ou / si non spécifié.
    */
   redirectTo?: string;
 }
 
 /**
- * Purge de l'état local du navigateur et des cookies de session uniquement.
+ * Purge de l'état local du navigateur et des cookies de session.
  * NE supprime JAMAIS de données métier côté serveur (Firestore / Storage).
  */
 export async function resetApplication(
@@ -44,7 +48,8 @@ export async function resetApplication(
   legacyOnStep?: (step: ResetStep) => void,
   legacyOnStepDone?: (step: ResetStep) => void
 ): Promise<void> {
-  const { radical = false, targetSignature } = options;
+  const { radical = false, disconnect = false, targetSignature } = options;
+  const shouldDisconnect = radical || disconnect;
 
   const notify = (step: ResetStep, status: StepStatus, error?: string) => {
     onProgress?.({ step, status, error });
@@ -87,7 +92,7 @@ export async function resetApplication(
   // ─────────────────────────────────────────────────────────────
   // 2. Étape : STOCKAGE LOCAL (LocalStorage, SessionStorage, Cookies JS)
   // ─────────────────────────────────────────────────────────────
-  if (radical) {
+  if (shouldDisconnect) {
     notify('storage', 'running');
     await wait(100);
     try {
@@ -132,7 +137,7 @@ export async function resetApplication(
     notify('session', 'running');
     await wait(100);
     try {
-      // 3.1 Suppression serveur des cookies HTTP-Only (session, sessionToken, client_session)
+      // 3.1 Suppression serveur des cookies HTTP-Only admin (session, sessionToken)
       try {
         await clearSession();
       } catch (e) {
@@ -145,7 +150,14 @@ export async function resetApplication(
         console.warn('[resetApplication] endpoint /api/auth/clear-session fallback:', e);
       }
 
-      // 3.2 Déconnexion propre de Firebase Auth (vide automatiquement les identifiants locaux d'IndexedDB)
+      // 3.2 Suppression serveur des cookies de session client boutique (client_session)
+      try {
+        await fetch('/api/boutique/logout', { method: 'POST', cache: 'no-store' });
+      } catch (e) {
+        console.warn('[resetApplication] endpoint /api/boutique/logout fallback:', e);
+      }
+
+      // 3.3 Déconnexion propre de Firebase Auth (vide automatiquement les identifiants locaux d'IndexedDB)
       try {
         const auth = getAuth();
         await signOut(auth);
@@ -158,8 +170,10 @@ export async function resetApplication(
       console.warn('[resetApplication] Erreur session:', err);
       notify('session', 'completed');
     }
-  } else if (targetSignature) {
-    // Mode mise à jour : on enregistre la nouvelle signature pour éviter de
+  }
+
+  if (targetSignature) {
+    // On enregistre la nouvelle signature pour éviter de
     // re-proposer la mise à jour au rechargement (pas de boucle infinie).
     try {
       localStorage.setItem('app-build-signature', targetSignature);
@@ -175,12 +189,9 @@ export async function resetApplication(
   await wait(200);
   notify('reload', 'completed');
 
-  if (radical) {
-    // Purge radicale : redirection DIRECTE vers /admin/login sans coquille admin
-    const target = options.redirectTo || '/admin/login';
-    window.location.replace(target);
+  if (options.redirectTo) {
+    window.location.replace(options.redirectTo);
   } else {
-    // Mise à jour : rechargement propre
     window.location.reload();
   }
 }

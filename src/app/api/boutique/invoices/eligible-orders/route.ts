@@ -21,7 +21,8 @@ interface EligibleOrder {
   discount: number;
   deliveryCost: number;
   vat: number;
-  vatRate: 0 | 0.2;
+  vatRate: number;
+  taxRate: number;
   totalTtc: number;
   rentalStartDate?: string;
   rentalEndDate?: string;
@@ -35,6 +36,15 @@ export async function GET(req: NextRequest) {
     }
 
     const { adminDb } = getFirebaseAdmin();
+
+    // Taux de TVA admin (pourcentage entier, ex: 19). Fallback 19 % si absent.
+    // Renvoyé dans la réponse (`taxRate` + `vatRate` décimal) pour l'affichage wizard.
+    const settingsSnap = await adminDb.collection('settings').doc('main').get();
+    const settingsData = settingsSnap.exists ? (settingsSnap.data() || {}) : {};
+    const adminTaxRate =
+      typeof settingsData?.estimationFlow?.taxRate === 'number' && settingsData.estimationFlow.taxRate >= 0
+        ? settingsData.estimationFlow.taxRate
+        : 19;
 
     const [saleSnap, rentalSnap] = await Promise.all([
       adminDb.collection('sale_orders').where('customerId', '==', customerId).get(),
@@ -63,7 +73,8 @@ export async function GET(req: NextRequest) {
 
       const orderAny: any = order;
       const vatValidated = orderAny.customerVatValidated === true;
-      const amounts = computeInvoiceAmounts(orderAny, { vatValidated, vatRate: vatValidated ? 0 : 0.2 });
+      const vatNumber = typeof orderAny.customerVatNumber === 'string' ? orderAny.customerVatNumber : '';
+      const amounts = computeInvoiceAmounts(orderAny, { vatValidated, vatNumber, vatRate: adminTaxRate / 100 });
       const items = buildInvoiceItems(orderAny);
 
       results.push({
@@ -79,6 +90,7 @@ export async function GET(req: NextRequest) {
         deliveryCost: amounts.deliveryCost,
         vat: amounts.vat,
         vatRate: amounts.vatRate,
+        taxRate: adminTaxRate,
         totalTtc: amounts.totalTtc,
         rentalStartDate: orderAny.rentalStartDate || undefined,
         rentalEndDate: orderAny.rentalEndDate || undefined,

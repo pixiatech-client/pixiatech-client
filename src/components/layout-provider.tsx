@@ -31,6 +31,8 @@ import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { CartProvider } from '@/contexts/CartContext';
 import { ProfileProvider } from '@/contexts/ProfileContext';
 
+import { VersionUpdateDialog } from '@/components/VersionUpdateDialog';
+
 export function LayoutProvider({
   children,
   initialBoutiqueB2B = false,
@@ -129,6 +131,7 @@ export function LayoutProvider({
           </CartProvider>
           </ProfileProvider>
         </ThemeProvider>
+        <VersionUpdateDialog />
         <ShadcnToaster />
         <SonnerToaster 
           position="bottom-right" 

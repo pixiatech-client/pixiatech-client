@@ -6,7 +6,6 @@ import { useI18n } from '@/lib/i18n';
 import {
   type CustomerInfoValues,
   type CustomerInfoField,
-  DEFAULT_COUNTRY_OPTIONS,
   fieldMeta,
 } from '@/lib/customer-form-utils';
 
@@ -27,7 +26,6 @@ export interface CustomerInfoFormProps {
   onCitySelect?: (cityName: string, postcode: string) => void;
   onAddressLine2Change?: (value: string) => void;
   banner?: React.ReactNode | null;
-  countryOptions?: { value: string; label: string }[];
 }
 
 function ErrorMessage({ id, message }: { id: string; message: string }) {
@@ -62,7 +60,6 @@ export default function CustomerInfoForm({
   onCitySelect,
   onAddressLine2Change,
   banner,
-  countryOptions = DEFAULT_COUNTRY_OPTIONS,
 }: CustomerInfoFormProps) {
   const { t } = useI18n();
 
@@ -182,23 +179,6 @@ export default function CustomerInfoForm({
             error={!!(errors.city || errors.postcode)}
             errorMessage={errors.city || errors.postcode}
           />
-        </div>
-        <div className="sm:col-span-2">
-          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Pays</label>
-          <select
-            value={values.country}
-            onChange={e => onFieldChange('country', e.target.value)}
-            onBlur={e => onFieldBlur('country', e.target.value)}
-            className={`w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
-              meta('country', values.country).hasError
-                ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
-            }`}
-          >
-            {countryOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
         </div>
       </div>
     </>

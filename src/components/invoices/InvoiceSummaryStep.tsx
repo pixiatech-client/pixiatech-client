@@ -37,8 +37,10 @@ export function InvoiceSummaryStep({
   const unitPrice = order.quantity > 0 ? order.subtotal / order.quantity : 0;
   const showDiscount = order.discount > 0;
   const isAutoLiquidated = order.vatRate === 0;
+  // Taux admin remonté par eligible-orders (pourcentage, ex: 19). Fallback calculé depuis le décimal.
+  const vatRatePct = typeof order.taxRate === 'number' && order.taxRate >= 0 ? order.taxRate : Math.round(order.vatRate * 100);
 
-  const vatLabel = isAutoLiquidated ? 'Autoliquidée 0%' : 'TVA 20%';
+  const vatLabel = isAutoLiquidated ? 'TVA (0%) — Autoliquidée' : `TVA (${vatRatePct}%)`;
 
   const addressLine = [professionalInfo.address, professionalInfo.postcode, professionalInfo.city]
     .map((part) => part.trim())
@@ -154,7 +156,7 @@ export function InvoiceSummaryStep({
             </span>
           </div>
           <div className="flex items-center justify-between w-full text-sm">
-            <span className="text-gray-500">TVA ({vatLabel})</span>
+            <span className="text-gray-500">{vatLabel}</span>
             <span className="font-medium text-gray-900">{formatEuro(order.vat)}</span>
           </div>
           <div className="flex items-center justify-between w-full pt-3 mt-1 border-t border-gray-200">

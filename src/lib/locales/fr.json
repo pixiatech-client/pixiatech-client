@@ -733,6 +733,20 @@
                 "redirect": "Rediriger vers la page de connexion"
             }
         },
+        "updatePopup": {
+            "title": "Nouvelle mise à jour disponible !",
+            "subtitle": "Une nouvelle version de l'application est disponible. Faites-la tout de suite pour profiter des dernières nouveautés et corrections.",
+            "current": "Version actuelle",
+            "latest": "Nouvelle version",
+            "actionNotice": "En cliquant ci-dessous, vous allez être déconnecté, les caches seront vidés et l'application sera mise à jour.",
+            "updateNow": "Mettre à jour tout de suite",
+            "later": "Plus tard",
+            "updating": "Mise à jour en cours…",
+            "stepCaches": "Vidage des caches navigateur",
+            "stepStorage": "Nettoyage du stockage local",
+            "stepSession": "Déconnexion et purge de session",
+            "stepReload": "Chargement de la nouvelle version"
+        },
         "siteAccess": "Accéder au site",
         "boutique": "Boutique",
         "navOrders": "Commandes",

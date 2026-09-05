@@ -12,6 +12,7 @@ import { ActionButton, formatProductPriceLabel } from '@/components/boutique/Pro
 import { toast } from 'sonner';
 import { useProfile } from '@/contexts/ProfileContext';
 import { calculateCheckout } from '@/lib/checkout-calculations';
+import { fetchProfessionalInfo } from '@/services/professionalInfoService';
 import { getDoc, doc, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/firebase/config';
 
@@ -72,17 +73,42 @@ export default function CartPage() {
   const [showInfo, setShowInfo] = useState(false);
   const { profileType, setProfileType, forceB2B } = useProfile();
   const [liveProducts, setLiveProducts] = useState<Record<string, Product | null>>({});
-  const [vatRate, setVatRate] = useState(20);
+  const [vatRate, setVatRate] = useState(19);
+  const [vatValidated, setVatValidated] = useState(false);
+  const [vatNumber, setVatNumber] = useState('');
   const [vatMessage, setVatMessage] = useState('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
   const [vatMessageEnabled, setVatMessageEnabled] = useState(true);
   const [vatMessageColor, setVatMessageColor] = useState('orange');
+
+  // TVA : seuls les professionnels connectés avec TVA validée + numéro de TVA
+  // bénéficient de l'autoliquidation. Sinon la TVA s'applique au taux normal.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const sessionRes = await fetch('/api/boutique/session-status');
+        if (!sessionRes.ok) return;
+        const session = await sessionRes.json();
+        if (!session?.loggedIn) return;
+        const info = await fetchProfessionalInfo();
+        if (!active) return;
+        if (info) {
+          setVatValidated(info.vatValidated === true);
+          setVatNumber(info.vatNumber || '');
+        }
+      } catch {
+        // Session absente ou profil non rempli → TVA au taux normal.
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(firestore, 'settings', 'main'), (snap) => {
       if (snap.exists()) {
         const data = snap.data() as any;
         const ef = data?.estimationFlow;
-        if (typeof ef?.taxRate === 'number' && ef.taxRate > 0) setVatRate(ef.taxRate);
+        if (typeof ef?.taxRate === 'number' && ef.taxRate >= 0) setVatRate(ef.taxRate);
         if (typeof ef?.vatMessage === 'string' && ef.vatMessage.trim()) setVatMessage(ef.vatMessage);
         if (typeof ef?.vatMessageEnabled === 'boolean') setVatMessageEnabled(ef.vatMessageEnabled);
         if (typeof ef?.vatMessageColor === 'string' && ef.vatMessageColor.trim()) setVatMessageColor(ef.vatMessageColor);
@@ -163,17 +189,16 @@ export default function CartPage() {
   const hasKnownDelivery = items.some(i => typeof i.deliveryCost === 'number');
 
   // Règle fiscale UNIQUE, partagée avec la caisse et le serveur PayPal :
-  // particulier -> TVA vatRate% ; entreprise -> TVA 0% autoliquidée.
-  // Le profil est global (ProfileContext) ; le panier ne porte pas d'adresse de
-  // checkout ni de validation TVA, mais dès que le profil est "entreprise" la règle
-  // donne systématiquement 0% (identique à la caisse), quel que soit country/vatValidated.
+  // TVA au taux normal pour tous, sauf entreprise connectée avec TVA validée
+  // ET numéro de TVA renseigné (autoliquidation 0%).
   const calc = calculateCheckout({
     subtotal,
     totalAfterDiscount,
     deliveryCost: deliverySum,
     profileType,
     country: 'FR',
-    vatValidated: false,
+    vatValidated,
+    vatNumber,
     vatRate,
   });
   const tva = calc.vat;
@@ -330,10 +355,10 @@ export default function CartPage() {
                         <span className="text-gray-500">Sous-total HT</span>
                         <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
                       </div>
-                      {discount > 0 && (
+                      {promo?.code && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-emerald-600">Code promo ({promo?.code})</span>
-                          <span className="font-semibold text-emerald-600">-{formatPrice(discount)}</span>
+                          <span className="text-emerald-600">Code promo ({promo.code})</span>
+                          <span className="font-semibold text-emerald-600">{discount > 0 ? `-${formatPrice(discount)}` : formatPrice(0)}</span>
                         </div>
                       )}
                       <div className="flex justify-between text-sm">
@@ -404,7 +429,7 @@ export default function CartPage() {
                     Passer à la caisse
                     <ArrowRight size={18} />
                   </button>
-                  {vatMessageEnabled && (() => {
+                  {vatMessageEnabled && calc.vatRate === 0 && (() => {
                     const s = VAT_MESSAGE_STYLES[vatMessageColor] ?? VAT_MESSAGE_STYLES.orange;
                     return (
                       <div className={`mt-3 flex items-start gap-2.5 px-3 py-2.5 ${s.container} rounded-xl`}>

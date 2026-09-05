@@ -733,6 +733,20 @@
                 "redirect": "Redirect to the sign-in page"
             }
         },
+        "updatePopup": {
+            "title": "New update available!",
+            "subtitle": "A new version of the application is available. Update now to enjoy the latest features and bug fixes.",
+            "current": "Current version",
+            "latest": "New version",
+            "actionNotice": "By clicking below, you will be disconnected, caches will be cleared, and the application will update.",
+            "updateNow": "Update right now",
+            "later": "Later",
+            "updating": "Updating in progress…",
+            "stepCaches": "Clearing browser caches",
+            "stepStorage": "Purging local storage",
+            "stepSession": "Disconnecting and clearing session",
+            "stepReload": "Loading new version"
+        },
         "siteAccess": "Access Site",
         "boutique": "Shop",
         "navOrders": "Orders",

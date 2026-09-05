@@ -28,7 +28,7 @@ export interface InvoicePdfData {
   discount: number;
   deliveryCost: number;
   vat: number;
-  vatRate: 0 | 0.2;
+  vatRate: number;
   totalTtc: number;
 }
 
@@ -48,6 +48,12 @@ function fmtDate(iso?: string): string {
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+/** Taux décimal → pourcentage affichable, sans perte sur les taux non entiers (5.5 → "5,5"). */
+function fmtVatRatePct(rate: number): string {
+  const pct = Math.round(rate * 1000) / 10;
+  return String(pct).replace('.', ',');
 }
 
 export function generateInvoicePdf(data: InvoicePdfData): string {
@@ -185,15 +191,16 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
   y += 4;
   const summaryX = colTotal - 6;
   const summaryXRight = colTotalRight;
+  const isAutoLiquidated = data.vatRate === 0;
   const summaryLines: Array<[string, string, boolean]> = [
     ['Sous-total HT', fmtMoney(data.subtotal), false],
   ];
   if (data.discount > 0) summaryLines.push(['Remise', `- ${fmtMoney(data.discount)}`, false]);
   if (data.deliveryCost > 0) summaryLines.push(['Livraison', fmtMoney(data.deliveryCost), false]);
-  if (data.isB2B && data.vatValidated) {
-    summaryLines.push(['TVA (0%)', fmtMoney(0), false]);
+  if (isAutoLiquidated) {
+    summaryLines.push(['TVA (0%) — Autoliquidée', fmtMoney(0), false]);
   } else {
-    summaryLines.push([`TVA (${Math.round(data.vatRate * 100)}%)`, fmtMoney(data.vat), false]);
+    summaryLines.push([`TVA (${fmtVatRatePct(data.vatRate)}%)`, fmtMoney(data.vat), false]);
   }
 
   for (const [label, value] of summaryLines) {
@@ -204,12 +211,12 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
 
   doc.setFillColor(15, 23, 42);
   doc.roundedRect(summaryX - 4, y - 0.5, PAGE_W - MARGIN - summaryX + 4, 14, 2, 2, 'F');
-  const totalLabel = data.isB2B && data.vatValidated ? 'TOTAL HT' : 'TOTAL TTC';
+  const totalLabel = isAutoLiquidated ? 'TOTAL HT' : 'TOTAL TTC';
   text(totalLabel, summaryX, y + 6, { size: 10, bold: true, color: [255, 255, 255], align: 'right' });
   text(fmtMoney(data.totalTtc), summaryXRight, y + 6, { size: 13, bold: true, color: [255, 255, 255], align: 'right' });
   y += 18;
 
-  if (data.isB2B && data.vatValidated) {
+  if (isAutoLiquidated) {
     text('TVA autoliquidée — TVA non applicable, article 283-1 du CGI', summaryX, y, {
       size: 8,
       color: [60, 100, 60],

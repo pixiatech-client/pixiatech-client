@@ -23,7 +23,7 @@ import {
 type Mode = 'manual' | 'version';
 
 const MANUAL_STEPS: ResetStep[] = ['caches', 'storage', 'session', 'reload'];
-const VERSION_STEPS: ResetStep[] = ['caches', 'reload'];
+const VERSION_STEPS: ResetStep[] = ['caches', 'storage', 'session', 'reload'];
 
 interface ResetApplicationDialogProps {
   open: boolean;
@@ -96,6 +96,7 @@ export function ResetApplicationDialog({
       await resetApplication(
         {
           radical: !isVersionMode,
+          disconnect: true,
           targetSignature: isVersionMode ? targetSignature : undefined,
           redirectTo: '/admin/login',
         },

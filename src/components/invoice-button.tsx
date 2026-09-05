@@ -31,6 +31,7 @@ interface InvoiceData {
   unitPrice?: number;
   subtotal: number;
   vat: number;
+  vatRate?: number;
   amountPaid: number;
   createdAt: string;
   type: 'sale' | 'rental';
@@ -175,7 +176,7 @@ export function InvoiceButton({ data, pdfSettings, className }: { data: InvoiceD
         normal('Sous-total', 10, col3 - 10, '#666');
         right(`${data.subtotal.toFixed(2)} €`, 10);
         y += 6;
-        normal('TVA (20%)', 10, col3 - 10, '#666');
+        normal(`TVA (${data.vatRate ?? 19}%)`, 10, col3 - 10, '#666');
         right(`${data.vat.toFixed(2)} €`, 10);
         y += 6;
 
@@ -246,7 +247,7 @@ export function InvoiceButton({ data, pdfSettings, className }: { data: InvoiceD
             }]}
             subtotal={data.subtotal}
             vat={data.vat}
-            vatRate={20}
+            vatRate={data.vatRate ?? 19}
             totalTtc={data.amountPaid}
           />
         </div>
