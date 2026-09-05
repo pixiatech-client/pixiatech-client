@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mail, Loader2, Send, Lock, LogIn, X } from 'lucide-react';
 
 /**
@@ -36,6 +36,20 @@ export default function CustomerLoginPrompt({ email }: { email: string }) {
   const [loginMagicSending, setLoginMagicSending] = useState(false);
   const [loginMagicSent, setLoginMagicSent] = useState(false);
 
+  // Email saisi dans ce panneau, partagé entre les écrans magic-link et mot de
+  // passe (indépendant des formulaires parents).
+  const [magicEmail, setMagicEmail] = useState(email);
+  const lastPropEmailRef = useRef(email);
+  // Absorbe une nouvelle valeur de prop (pré-remplissage parent/session) sans
+  // écraser une saisie déjà modifiée par l'utilisateur.
+  useEffect(() => {
+    const oldProp = lastPropEmailRef.current;
+    if (email !== oldProp) {
+      lastPropEmailRef.current = email;
+      setMagicEmail(prev => (prev === oldProp ? email : prev));
+    }
+  }, [email]);
+
   // Détection de session active une seule fois au montage.
   useEffect(() => {
     let cancelled = false;
@@ -58,9 +72,9 @@ export default function CustomerLoginPrompt({ email }: { email: string }) {
 
   async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault();
-    const value = email.trim();
+    const value = magicEmail.trim();
     if (!value) {
-      setLoginError('Veuillez renseigner votre adresse email dans le formulaire ci-dessous.');
+      setLoginError('Veuillez renseigner votre adresse email.');
       return;
     }
     if (loginMagicSending || loginMagicSent) return;
@@ -86,7 +100,7 @@ export default function CustomerLoginPrompt({ email }: { email: string }) {
 
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
-    const value = email.trim();
+    const value = magicEmail.trim();
     if (!value || !loginPassword || loginLoading) return;
     setLoginError('');
     setLoginLoading(true);
@@ -171,10 +185,28 @@ export default function CustomerLoginPrompt({ email }: { email: string }) {
           {loginDisplay === 'magic' && (
             <form onSubmit={handleMagicLink} className="space-y-3">
               <div className="text-[12px] font-semibold text-gray-700">Recevoir un lien de connexion</div>
+              <div>
+                <label htmlFor="customer-login-magic-email" className="block text-[11px] font-semibold text-gray-700 mb-1">
+                  E-mail
+                </label>
+                <div className="relative">
+                  <Mail size={14} className="absolute left-3 top-2.5 text-gray-400" />
+                  <input
+                    id="customer-login-magic-email"
+                    type="email"
+                    autoComplete="email"
+                    autoFocus
+                    value={magicEmail}
+                    onChange={e => { setMagicEmail(e.target.value); setLoginError(''); }}
+                    placeholder="Votre adresse email"
+                    className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2.5 text-[12px] outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+              </div>
               <p className="text-[11px] text-gray-500 leading-relaxed">
-                {email.trim()
-                  ? <span>Un lien vous sera envoyé à <span className="font-semibold text-gray-700">{email.trim()}</span>.</span>
-                  : 'Renseignez votre adresse email dans le formulaire ci-dessous pour recevoir un lien.'}
+                {magicEmail.trim()
+                  ? <span>Un lien vous sera envoyé à <span className="font-semibold text-gray-700">{magicEmail.trim()}</span>.</span>
+                  : 'Renseignez votre adresse email ci-dessus pour recevoir un lien.'}
               </p>
               {loginMagicSent ? (
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[12px] text-emerald-700 leading-relaxed">
@@ -183,7 +215,7 @@ export default function CustomerLoginPrompt({ email }: { email: string }) {
               ) : (
                 <button
                   type="submit"
-                  disabled={loginMagicSending || !email.trim()}
+                  disabled={loginMagicSending || !magicEmail.trim()}
                   className="flex items-center justify-center gap-2 w-full rounded-xl bg-black text-white text-[12px] font-semibold px-4 py-2.5 hover:opacity-90 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loginMagicSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
@@ -203,6 +235,23 @@ export default function CustomerLoginPrompt({ email }: { email: string }) {
           {loginDisplay === 'password' && (
             <form onSubmit={handlePasswordLogin} className="space-y-3">
               <div className="text-[12px] font-semibold text-gray-700">Se connecter avec mon mot de passe</div>
+              <div>
+                <label htmlFor="customer-login-password-email" className="block text-[11px] font-semibold text-gray-700 mb-1">
+                  E-mail
+                </label>
+                <div className="relative">
+                  <Mail size={14} className="absolute left-3 top-2.5 text-gray-400" />
+                  <input
+                    id="customer-login-password-email"
+                    type="email"
+                    autoComplete="email"
+                    value={magicEmail}
+                    onChange={e => { setMagicEmail(e.target.value); setLoginError(''); }}
+                    placeholder="Votre adresse email"
+                    className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2.5 text-[12px] outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+              </div>
               <div className="relative">
                 <Lock size={14} className="absolute left-3 top-2.5 text-gray-400" />
                 <input
@@ -216,7 +265,7 @@ export default function CustomerLoginPrompt({ email }: { email: string }) {
               </div>
               <button
                 type="submit"
-                disabled={loginLoading || !loginPassword}
+                disabled={loginLoading || !loginPassword || !magicEmail.trim()}
                 className="flex items-center justify-center gap-2 w-full rounded-xl bg-black text-white text-[12px] font-semibold px-4 py-2.5 hover:opacity-90 transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loginLoading ? <Loader2 size={14} className="animate-spin" /> : <LogIn size={14} />}
