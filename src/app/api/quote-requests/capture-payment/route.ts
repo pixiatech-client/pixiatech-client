@@ -209,6 +209,7 @@ export async function POST(req: NextRequest) {
       productId: quote.productId,
       productName: quote.productName,
       productImage: quote.productImage || '',
+      quoteRequestId: quoteId,
       productPrice: resolved.subtotal,
       quantity: quote.quantity || 1,
       customerName: quote.customerName,
