@@ -30,6 +30,7 @@ interface BoutiqueRentalFlowProps {
   dailyRate?: number;
   maxQuantity?: number;
   onComplete: () => void;
+  onEmailChange?: (email: string) => void;
 }
 
 const formatTime = (seconds: number) => {
@@ -40,7 +41,7 @@ const formatTime = (seconds: number) => {
 
 const RENTAL_SESSION_KEY = 'pixia_rental_session_verified';
 
-export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, onComplete }: BoutiqueRentalFlowProps) {
+export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, onComplete, onEmailChange }: BoutiqueRentalFlowProps) {
   const router = useRouter();
   const { addItem, items } = useCart();
 
@@ -141,6 +142,13 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
   const [emailError, setEmailError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
+  // Met à jour l'email local ET prévient le parent (utilisé pour partager
+  // l'email courant vers le bloc de connexion facultative).
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    onEmailChange?.(val);
+  };
+
   useEffect(() => {
     getSettings().then(s => {
       if (s?.estimationFlow?.companySignatureDataUrl) {
@@ -157,7 +165,7 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
       const rd = existing.renterDetails;
       if (rd.company) setCompany(rd.company);
       if (rd.representative) setRepresentative(rd.representative);
-      if (rd.email) setEmail(rd.email);
+      if (rd.email) handleEmailChange(rd.email);
       if (rd.phone) setPhone(rd.phone);
       if (rd.address) setAddress(rd.address);
       if (rd.city) setCity(rd.city);
@@ -448,7 +456,7 @@ export default function BoutiqueRentalFlow({ product, dailyRate, maxQuantity, on
 
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Email *</label>
-              <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setEmailError(null); }}
+              <input type="email" value={email} onChange={(e) => { handleEmailChange(e.target.value); setEmailError(null); }}
                 className={`w-full rounded-xl px-4 py-3 text-sm font-medium border transition-all focus:outline-none focus:ring-2 focus:ring-gray-900/10 ${
                   emailError ? 'border-red-300 bg-red-50/30' : 'border-gray-200/70 bg-gray-50/30'
                 }`} placeholder="email@societe.com" />

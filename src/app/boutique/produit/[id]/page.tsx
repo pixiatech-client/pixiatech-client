@@ -12,6 +12,7 @@ import { firestore } from '@/firebase/config';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import type { Product, ProductVariant, GalleryItem } from '@/lib/boutique-data';
 import BoutiqueRentalFlow from '@/components/BoutiqueRentalFlow';
+import CustomerLoginPrompt from '@/components/customer-login-prompt';
 import LiquidLoader from '@/components/LiquidLoader';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useI18n } from '@/lib/i18n';
@@ -239,6 +240,9 @@ export default function ProductDetailPage() {
   const [locationCompleted, setLocationCompleted] = useState(false);
   const [showRentalContent, setShowRentalContent] = useState(false);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
+  // Email courant saisi dans le formulaire Location, partagé vers le bloc de
+  // connexion facultative affiché au-dessus.
+  const [rentalEmail, setRentalEmail] = useState('');
   const [upsellProducts, setUpsellProducts] = useState<Product[]>([]);
   const [showQrModal, setShowQrModal] = useState(false);
   const [productQrDataUrl, setProductQrDataUrl] = useState<string>('');
@@ -674,10 +678,12 @@ export default function ProductDetailPage() {
                 <ChevronLeft size={14} />
                 Retour au produit
               </button>
+              <CustomerLoginPrompt email={rentalEmail} />
               <BoutiqueRentalFlow
                 product={product}
                 dailyRate={effectivePrice}
                 maxQuantity={availableRentalStock}
+                onEmailChange={setRentalEmail}
                 onComplete={() => {
                   setShowRentalContent(false);
                   setLocationCompleted(true);
@@ -788,6 +794,7 @@ export default function ProductDetailPage() {
 
                     {/* Fields */}
                     <div className="px-4 pb-4 pt-3">
+                      <CustomerLoginPrompt email={quoteFormData.email} />
                       <form onSubmit={handleRequestQuote} className="space-y-3">
                         <div className="space-y-3">
                           {/* Nom et prénom / Nom de l'entreprise */}
