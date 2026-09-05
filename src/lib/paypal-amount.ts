@@ -485,9 +485,17 @@ export async function resolveBoutiqueAmount(input: BoutiqueAmountInput): Promise
 
     // Garde serveur globale (Vente et Location) : la quantité commandée ne peut
     // JAMAIS dépasser le stock disponible du produit (rentalStock pour location, stock pour vente).
+    // Location : un stock nul ou absent refuse la location (fail-closed) — un produit
+    // à louer doit toujours déclarer sa disponibilité.
     const stockQty = normalizeStockQuantity(
       item.type === 'rental' ? (data.rentalStock ?? data.stock) : data.stock
     );
+    if (item.type === 'rental' && stockQty <= 0) {
+      throw new PaypalAmountError(
+        'Produit indisponible à la location (aucun stock disponible).',
+        409
+      );
+    }
     if (stockQty > 0 && qty > stockQty) {
       throw new PaypalAmountError(
         `Quantité maximale disponible atteinte. Vous ne pouvez pas dépasser le stock disponible (${stockQty}) pour le produit ${item.productId}.`,

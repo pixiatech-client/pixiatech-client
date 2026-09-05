@@ -10,6 +10,11 @@ import {
   assertCompleted,
   getPaypalCaptureId,
 } from '@/lib/paypal-amount';
+import {
+  reserveBoutiqueStock,
+  releaseBoutiqueStock,
+  paypalCaptureAlreadyUsed,
+} from '@/lib/stock-reservation';
 
 // Auth gate: a valid session cookie must be present to prevent anonymous abuse.
 // PayPal orderId alone is not enough — it can leak through logs/network traces.
@@ -116,15 +121,41 @@ export async function POST(req: NextRequest) {
     const resolved = await resolveOfferAmount(quoteId, { promoCode, promoDocId });
     const quote = resolved.quote;
 
-    const capture = await capturePayPalOrder(orderId);
+    // Réservation atomique du stock AVANT le débit. Un devis porte un produit
+    // physique : s'il a du stock disponible on le réserve ; s'il est en
+    // fabrication (stock nul/absent, sur commande) on laisse passer sans
+    // décrémenter (`allowZeroStock`).
+    const reservation = await reserveBoutiqueStock(
+      [{ productId: quote.productId, type: 'purchase' as const, quantity: quote.quantity || 1 }],
+      { allowZeroStock: true }
+    );
 
-    // Refuse toute divergence entre le montant réellement capturé et l'attendu,
-    // AVANT toute création de commande ou changement de statut.
-    const capturedAmount = assertCompleted(capture, resolved.amount);
+    // Capture PayPal puis vérification du montant. En cas d'échec à ce stade,
+    // on libère la réservation : jamais de stock consommé sans paiement.
+    let capture: any;
+    let capturedAmount: number;
+    try {
+      capture = await capturePayPalOrder(orderId);
+      capturedAmount = assertCompleted(capture, resolved.amount);
+    } catch (err) {
+      await releaseBoutiqueStock(reservation).catch((e) =>
+        console.error('[CapturePayment] Failed to release stock reservation:', e)
+      );
+      throw err;
+    }
 
     const paypalCaptureId = getPaypalCaptureId(capture);
     const now = new Date().toISOString();
     const origin = req.nextUrl.origin;
+
+    // Idempotence post-capture : si ce captureId a déjà engendré une commande,
+    // la requête concurrente libère sa réservation et ne recrée pas de commande.
+    if (await paypalCaptureAlreadyUsed(adminDb, paypalCaptureId)) {
+      await releaseBoutiqueStock(reservation).catch((e) =>
+        console.error('[CapturePayment] Failed to release stock reservation:', e)
+      );
+      return NextResponse.json({ status: 'COMPLETED', isNewCustomer: false, alreadyProcessed: true });
+    }
 
     // Compte réel de la promo, uniquement après capture vérifiée.
     if (resolved.promoId) {
@@ -200,6 +231,10 @@ export async function POST(req: NextRequest) {
       amountSource: resolved.source,
       promoCode: resolved.promoCode || '',
       status: 'commande',
+      stockAtOrder:
+        reservation.length > 0
+          ? { before: reservation[0].before, after: reservation[0].after }
+          : null,
       createdAt: now,
       updatedAt: now,
     });

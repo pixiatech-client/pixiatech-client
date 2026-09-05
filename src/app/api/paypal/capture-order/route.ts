@@ -11,6 +11,12 @@ import {
   getPaypalCaptureId,
 } from '@/lib/paypal-amount';
 import type { BoutiqueAmountInput, ResolvedAmount } from '@/lib/paypal-amount';
+import {
+  reserveBoutiqueStock,
+  releaseBoutiqueStock,
+  paypalOrderAlreadyProcessed,
+  paypalCaptureAlreadyUsed,
+} from '@/lib/stock-reservation';
 
 // Lightweight auth gate: at least one valid session cookie must be present.
 // This blocks anonymous abuse of the capture endpoint (order creation, customer
@@ -90,9 +96,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Contexte de paiement manquant' }, { status: 400 });
     }
 
-    const capture = await capturePayPalOrder(orderId);
+    const { adminDb, FieldValue } = getFirebaseAdmin();
 
     // Montant attendu reconstruit côté serveur — jamais depuis le client.
+    // Résolu AVANT toute capture : prix, rupture, promo et montage refusent en amont.
     const resolved = await resolveBoutiqueAmount({
       items: cart.items,
       delivery: cart.delivery || delivery,
@@ -102,12 +109,67 @@ export async function POST(req: NextRequest) {
       promoDocId: cart.promoDocId ?? promoDocId,
     } as BoutiqueAmountInput);
 
-    // Refuse toute divergence entre le montant réellement capturé et l'attendu.
-    const capturedAmount = assertCompleted(capture, resolved.amount);
+    // Idempotence : un ordre déjà traité (rejeu, double onApprove) ne doit ni
+    // recapturer, ni re-réserver, ni recréer de commandes.
+    if (await paypalOrderAlreadyProcessed(adminDb, orderId)) {
+      return NextResponse.json({
+        status: 'COMPLETED',
+        isNewCustomer: false,
+        rentalOrderIds: [],
+        saleOrderIds: [],
+        alreadyProcessed: true,
+      });
+    }
 
-    const { adminDb, FieldValue } = getFirebaseAdmin();
+    // Réservation atomique du stock AVANT le débit. Deux captures concurrentes
+    // sur les dernières unités se neutralisent dans la transaction Firestore.
+    const reservation = await reserveBoutiqueStock(
+      resolved.items.map((i) => ({
+        productId: i.productId,
+        type: i.type as 'purchase' | 'rental',
+        quantity: i.quantity,
+      }))
+    );
+
+    // Capture PayPal puis vérification du montant. En cas d'échec à ce stade,
+    // on libère la réservation : jamais de stock consommé sans paiement.
+    let capture: any;
+    let capturedAmount: number;
+    try {
+      capture = await capturePayPalOrder(orderId);
+      capturedAmount = assertCompleted(capture, resolved.amount);
+    } catch (err) {
+      await releaseBoutiqueStock(reservation).catch((e) =>
+        console.error('[CaptureOrder] Failed to release stock reservation:', e)
+      );
+      throw err;
+    }
+
     const paypalCaptureId = getPaypalCaptureId(capture);
     const now = new Date().toISOString();
+
+    // Idempotence post-capture : même captureId déjà associé à des commandes
+    // (requête concurrente gagnante) → on libère la réservation faite ici et
+    // on ne recrée pas de commandes.
+    if (await paypalCaptureAlreadyUsed(adminDb, paypalCaptureId)) {
+      await releaseBoutiqueStock(reservation).catch((e) =>
+        console.error('[CaptureOrder] Failed to release stock reservation:', e)
+      );
+      return NextResponse.json({
+        status: 'COMPLETED',
+        isNewCustomer: false,
+        rentalOrderIds: [],
+        saleOrderIds: [],
+        alreadyProcessed: true,
+      });
+    }
+
+    // Quantités réservées par ligne, pour traçabilité sur chaque commande.
+    const stockAtByKey = new Map(
+      reservation.map((r) => [`${r.type}:${r.productId}`, { before: r.before, after: r.after }])
+    );
+    const stockAtFor = (type: 'purchase' | 'rental', productId: string) =>
+      stockAtByKey.get(`${type}:${productId}`) || null;
 
     // Increment real promo usage ONLY once the capture is verified
     if (resolved.promoId) {
@@ -212,6 +274,7 @@ export async function POST(req: NextRequest) {
             status: 'pending_validation',
             userId: null,
             customerId,
+            stockAtOrder: stockAtFor('rental', item.productId),
             createdAt: now,
             updatedAt: now,
           });
@@ -258,6 +321,7 @@ export async function POST(req: NextRequest) {
             amountSource: resolved.source,
             promoCode: resolved.promoCode || '',
             status: 'commande',
+            stockAtOrder: stockAtFor('purchase', item.productId),
             createdAt: now,
             updatedAt: now,
           });
