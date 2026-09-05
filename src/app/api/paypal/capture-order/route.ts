@@ -11,6 +11,7 @@ import {
   getPaypalCaptureId,
 } from '@/lib/paypal-amount';
 import type { BoutiqueAmountInput, ResolvedAmount } from '@/lib/paypal-amount';
+import { round2 } from '@/lib/invoices';
 import {
   reserveBoutiqueStock,
   releaseBoutiqueStock,
@@ -128,6 +129,8 @@ export async function POST(req: NextRequest) {
         productId: i.productId,
         type: i.type as 'purchase' | 'rental',
         quantity: i.quantity,
+        variantReference: i.variantReference,
+        variantName: i.variantName,
       }))
     );
 
@@ -165,11 +168,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Quantités réservées par ligne, pour traçabilité sur chaque commande.
+    // La clé intègre la variante : deux lignes de variantes différentes d'un même
+    // produit ne doivent pas écraser leur relevé respectif.
     const stockAtByKey = new Map(
-      reservation.map((r) => [`${r.type}:${r.productId}`, { before: r.before, after: r.after }])
+      reservation.map((r) => [`${r.type}:${r.productId}:${r.variantKey ?? ''}`, { before: r.before, after: r.after }])
     );
-    const stockAtFor = (type: 'purchase' | 'rental', productId: string) =>
-      stockAtByKey.get(`${type}:${productId}`) || null;
+    const stockAtFor = (
+      type: 'purchase' | 'rental',
+      item: { productId: string; variantReference?: string; variantName?: string }
+    ) => stockAtByKey.get(`${type}:${item.productId}:${item.variantReference || item.variantName || ''}`) || null;
 
     // Increment real promo usage ONLY once the capture is verified
     if (resolved.promoId) {
@@ -204,6 +211,14 @@ export async function POST(req: NextRequest) {
     const customerVatNumber = delivery?.vatNumber || '';
     const customerVatValidated = delivery?.vatValidated === true || delivery?.vatValidated === 'true';
 
+    // B2B detection : le client est une entreprise dès lors que le type de profil
+    // ou les données de livraison le signalent, ou qu'un nom de société est fourni.
+    const isB2B =
+      cart?.clientType === 'entreprise' ||
+      delivery?.isB2B === true ||
+      delivery?.clientType === 'entreprise' ||
+      !!customerCompany;
+
     // Upsert customer
     let customerId = '';
     let isNewCustomer = false;
@@ -228,6 +243,36 @@ export async function POST(req: NextRequest) {
           console.error('[CaptureOrder] Failed to send welcome email:', emailErr);
         }
       }
+    }
+
+    // Fiscale B2B : la vérité vient de user_professional_info, jamais des champs
+    // envoyés par l'UI. Les commandes portent ensuite ce snapshot, et la TVA
+    // recalculée de façon cohérente (autoliquidée si TVA validée, sinon 20%).
+    let orderVat = resolved.vat;
+    let orderVatRate: 0 | 0.2 = 0.2;
+    let saleSiren = customerSiren;
+    let saleVatNumber = customerVatNumber;
+    let saleVatValidated = customerVatValidated;
+
+    if (isB2B) {
+      try {
+        const profSnap = await adminDb.collection('user_professional_info').doc(customerId).get();
+        if (profSnap.exists) {
+          const p = profSnap.data() || {};
+          saleSiren = typeof p.siret === 'string' ? p.siret.replace(/\s+/g, '').slice(0, 9) : saleSiren;
+          saleVatNumber = typeof p.vatNumber === 'string' ? p.vatNumber : saleVatNumber;
+          saleVatValidated = p.vatValidated === true;
+          orderVatRate = p.vatRate === 0 ? 0 : 0.2;
+        } else {
+          saleVatValidated = false;
+          orderVatRate = 0.2;
+        }
+      } catch (err) {
+        console.error('[CaptureOrder] Failed to read user_professional_info:', err);
+        saleVatValidated = false;
+        orderVatRate = 0.2;
+      }
+      orderVat = saleVatValidated ? 0 : round2(resolved.subtotal * orderVatRate);
     }
 
     const rentalOrderIds: string[] = [];
@@ -268,13 +313,13 @@ export async function POST(req: NextRequest) {
             subtotal: resolved.subtotal,
             discount: resolved.discount,
             deliveryCost: resolved.deliveryCost,
-            vat: resolved.vat,
+            vat: orderVat,
             totalCaptured: capturedAmount,
             amountSource: resolved.source,
             status: 'pending_validation',
             userId: null,
             customerId,
-            stockAtOrder: stockAtFor('rental', item.productId),
+            stockAtOrder: stockAtFor('rental', item),
             createdAt: now,
             updatedAt: now,
           });
@@ -306,22 +351,22 @@ export async function POST(req: NextRequest) {
             customerPostcode,
             customerCountry,
             customerCompany,
-            customerSiren,
-            customerVatNumber,
-            customerVatValidated,
+            customerSiren: saleSiren,
+            customerVatNumber: saleVatNumber,
+            customerVatValidated: saleVatValidated,
             customerId,
             paypalOrderId: orderId,
             paypalCaptureId,
             amountPaid: Math.round(unitPrice * item.quantity * 100) / 100,
             subtotal: resolved.subtotal,
             discount: resolved.discount,
-            vat: resolved.vat,
+            vat: orderVat,
             deliveryCost: resolved.deliveryCost,
             totalCaptured: capturedAmount,
             amountSource: resolved.source,
             promoCode: resolved.promoCode || '',
             status: 'commande',
-            stockAtOrder: stockAtFor('purchase', item.productId),
+            stockAtOrder: stockAtFor('purchase', item),
             createdAt: now,
             updatedAt: now,
           });

@@ -1,12 +1,16 @@
 import { getFirebaseAdmin } from './firebase-admin';
 import { PaypalAmountError } from './paypal-amount';
-import { normalizeStockQuantity } from './product-status';
+import { effectiveVariantStock, normalizeStockQuantity } from './product-status';
 import type { DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
 
 export interface StockReserveItem {
   productId: string;
   type: 'purchase' | 'rental';
   quantity: number;
+  /** Variante ciblée : si présente (vente), le stock décrémenté est celui de la
+   *  variante, jamais le stock global du produit. */
+  variantReference?: string;
+  variantName?: string;
 }
 
 export interface StockReservationLine {
@@ -14,6 +18,10 @@ export interface StockReservationLine {
   type: 'purchase' | 'rental';
   ref: DocumentReference;
   field: 'stock' | 'rentalStock';
+  /** Chemin Firestore réellement écrit : 'stock', 'rentalStock' ou 'variants.<i>.stock'. */
+  path: string;
+  /** Identifiant de la variante réservée (référence préférée, sinon nom). */
+  variantKey?: string;
   quantity: number;
   before: number;
   after: number;
@@ -59,6 +67,31 @@ async function resolveProductRef(tx: Transaction, adminDb: Firestore, productId:
 }
 
 /**
+ * Si la ligne cible une variante (vente), résout le chemin Firestore
+ * 'variants.<i>.stock' vers la variante trouvée (référence préférée, sinon nom).
+ * Retourne null si aucune variante n'est demandée ou trouvée (on retombe alors
+ * sur le stock global du produit — comportement historique).
+ */
+function resolveVariantPath(
+  item: StockReserveItem,
+  variants: any[]
+): { index: number; path: string; variantKey: string } | null {
+  if (item.type !== 'purchase') return null;
+  if (!item.variantReference && !item.variantName) return null;
+  const idx = variants.findIndex(
+    (v) =>
+      (item.variantReference && v?.reference === item.variantReference) ||
+      (item.variantName && v?.name === item.variantName)
+  );
+  if (idx < 0) return null;
+  return {
+    index: idx,
+    path: `variants.${idx}.stock`,
+    variantKey: item.variantReference || item.variantName || '',
+  };
+}
+
+/**
  * Réserve (décrémente) le stock de chaque ligne dans UNE transaction Firestore.
  *
  * - Lecture du stock DANS la transaction + écriture conditionnelle : deux
@@ -90,9 +123,29 @@ export async function reserveBoutiqueStock(
       }
 
       const { ref, data } = await resolveProductRef(tx, adminDb, item.productId);
-      const stockInfo = stockFieldFor(data, item.type);
-      const stockQty = stockInfo?.qty ?? 0;
-      const field = stockInfo?.field;
+
+      // Variante ciblée (vente) : le stock décrémenté est celui de la variante.
+      // Rule : le champ stock de la variante fait foi quand il est défini (y
+      // compris 0 → refusé en amont par la garde de vente) ; sinon repli sur le
+      // stock global du produit (données legacy).
+      const variantInfo = resolveVariantPath(item, Array.isArray(data.variants) ? data.variants : []);
+      let stockQty: number;
+      let field: 'stock' | 'rentalStock' | undefined;
+      let path: string | undefined;
+      let variantKey: string | undefined;
+
+      if (variantInfo) {
+        const variant = (data.variants as any[])[variantInfo.index];
+        stockQty = effectiveVariantStock(variant, data.stock);
+        field = 'stock';
+        path = variantInfo.path;
+        variantKey = variantInfo.variantKey;
+      } else {
+        const stockInfo = stockFieldFor(data, item.type);
+        stockQty = stockInfo?.qty ?? 0;
+        field = stockInfo?.field;
+        path = field;
+      }
 
       if (item.type === 'rental' && stockQty <= 0 && !allowZeroStock) {
         throw new PaypalAmountError(
@@ -106,11 +159,11 @@ export async function reserveBoutiqueStock(
           409
         );
       }
-      if (field && stockQty > 0) {
+      if (path && stockQty > 0) {
         const before = stockQty;
         const after = Math.max(0, stockQty - qty);
-        tx.update(ref, { [field]: after });
-        reservation.push({ productId: item.productId, type: item.type, ref, field, quantity: qty, before, after });
+        tx.update(ref, { [path]: after });
+        reservation.push({ productId: item.productId, type: item.type, ref, field: field ?? 'stock', path, variantKey, quantity: qty, before, after });
       }
     }
   });
@@ -129,7 +182,7 @@ export async function releaseBoutiqueStock(reservation: StockReservation): Promi
   const { adminDb } = getFirebaseAdmin();
   await adminDb.runTransaction(async (tx) => {
     for (const line of reservation) {
-      tx.update(line.ref, { [line.field]: line.after + line.quantity });
+      tx.update(line.ref, { [line.path]: line.after + line.quantity });
     }
   });
 }

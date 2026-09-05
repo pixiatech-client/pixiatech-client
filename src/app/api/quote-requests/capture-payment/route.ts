@@ -195,6 +195,7 @@ export async function POST(req: NextRequest) {
     // Update quote status
     await adminDb.collection('quote_requests').doc(quoteId).update({
       status: 'awaiting_delivery',
+      isPaid: true,
       paypalOrderId: orderId,
       paypalCaptureId,
       amountPaid: capturedAmount,

@@ -18,6 +18,10 @@ export async function POST(req: NextRequest) {
     }
 
     const current = doc.data()!;
+    const isPaid = current.isPaid === true || current.paypalCaptureId != null;
+    if (current.status !== 'offer_sent' || isPaid) {
+      return NextResponse.json({ error: 'Cette offre ne permet plus de réponse' }, { status: 409 });
+    }
     const status = action === 'accept' ? 'accepted' : 'declined';
     await docRef.update({ status, updatedAt: new Date().toISOString() });
 

@@ -32,6 +32,7 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
   const [resellerDone, setResellerDone] = useState(false);
   const [resellerError, setResellerError] = useState('');
   const [espaceTab, setEspaceTab] = useState<'membre' | 'revendeur'>('membre');
+  const [guidedActive, setGuidedActive] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('step'));
   const dropdownRef = useRef<HTMLDivElement>(null);
   const resellerRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +42,19 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
       .then(data => setSession(data))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    function handleMode(e: Event) {
+      const mode = (e as CustomEvent<{ mode?: string }>)?.detail?.mode;
+      if (mode) setGuidedActive(mode === 'wizard');
+    }
+    window.addEventListener('quote-mode', handleMode);
+    return () => window.removeEventListener('quote-mode', handleMode);
+  }, []);
+
+  useEffect(() => {
+    setGuidedActive(pathname === '/' && new URLSearchParams(window.location.search).has('step'));
+  }, [pathname]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -121,6 +135,7 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
     if (pathname === '/') {
       // Déjà sur la page configurateur : on relance le mode guidé sans navigation
       e.preventDefault();
+      setGuidedActive(true);
       window.dispatchEvent(new Event('wizard-guide'));
     }
   };
@@ -169,7 +184,7 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
                   }}
                   className={cn(
                     "py-3 text-2xl font-medium transition-colors",
-                    pathname === '/'
+                    pathname === '/' && !guidedActive
                       ? 'text-white'
                       : 'text-white/60 hover:text-white'
                   )}
@@ -196,7 +211,12 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
                     setMobileMenuOpen(false);
                     handleGuidedConfig(e);
                   }}
-                  className="py-3 text-2xl font-medium transition-colors text-white/60 hover:text-white whitespace-nowrap"
+                  className={cn(
+                    "py-3 text-2xl font-medium transition-colors whitespace-nowrap",
+                    guidedActive
+                      ? 'text-white'
+                      : 'text-white/60 hover:text-white'
+                  )}
                 >
                   {t('header.guidedConfig')}
                 </Link>
@@ -254,7 +274,7 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
             }}
             className={cn(
               "font-medium nav-link text-sm",
-              pathname === '/' ? 'text-[#007bff]' : 'text-white'
+              pathname === '/' && !guidedActive ? 'text-[#007bff]' : 'text-white'
             )}
           >
             {t('header.home')}
@@ -273,7 +293,10 @@ export function BoutiqueHeader({ boutiqueEnabled = true }: { boutiqueEnabled?: b
           <Link
             href="/?step=1"
             onClick={handleGuidedConfig}
-            className="font-medium nav-link text-sm text-white hover:opacity-80 transition-opacity whitespace-nowrap"
+            className={cn(
+              "font-medium nav-link text-sm whitespace-nowrap",
+              guidedActive ? 'text-[#007bff]' : 'text-white'
+            )}
           >
             {t('header.guidedConfig')}
           </Link>

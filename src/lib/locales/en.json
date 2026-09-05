@@ -476,6 +476,9 @@
             "seeAllOrders": "See all my orders ({count})",
             "notifications": "Notifications"
         },
+        "invoices": {
+            "title": "My invoices"
+        },
         "orders": {
             "title": "My orders",
             "emptyTitle": "No orders",

@@ -23,6 +23,17 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Demande introuvable' }, { status: 404 });
     }
 
+    // Garde serveur : un devis payé ne peut pas changer de statut (ni être
+    // rouvert, ni réinterprété). Seuls les changements de statut inchangés ou
+    // vers 'corbeille' (soft-delete non restaurable) sont admis.
+    const current = doc.data()!;
+    const isPaid = current.isPaid === true
+      || (current.paypalCaptureId != null)
+      || current.status === 'awaiting_delivery';
+    if (isPaid && data.status !== undefined && data.status !== current.status && data.status !== 'corbeille') {
+      return NextResponse.json({ error: 'Un devis payé ne peut pas changer de statut' }, { status: 409 });
+    }
+
     const updatePayload: Record<string, any> = { ...data, updatedAt: new Date().toISOString() };
     delete updatePayload.id;
     delete updatePayload.createdAt;

@@ -65,6 +65,7 @@ interface ProductVariant {
   image: string;
   order: number;
   active: boolean;
+  stock?: number;
 }
 
 // --- Helper to identify if a URL is a video ---
@@ -4028,7 +4029,7 @@ const ProduitPage = ({
                                   <input type="number" value={v.price || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], price: Number(e.target.value) }; setVariants(n); }} className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
                                 </div>
                               </div>
-                              <div className="grid grid-cols-2 gap-2">
+<div className="grid grid-cols-2 gap-2">
                                 <div>
                                    <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.variantDisplayValue')}</label>
                                   <input value={v.description || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], description: e.target.value }; setVariants(n); }} placeholder="ex: 80x100 cm" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
@@ -4036,6 +4037,10 @@ const ProduitPage = ({
                                 <div>
                                    <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.variantReference')}</label>
                                   <input value={v.reference || ''} onChange={(e) => { const n = [...variants]; n[i] = { ...n[i], reference: e.target.value }; setVariants(n); }} placeholder="ex: REF-L" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
+                                </div>
+                                <div>
+                                   <label className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{t('admin.productManagement.variantStock')}</label>
+                                  <input type="number" min={0} value={v.stock === undefined || v.stock === null || v.stock === '' ? '' : v.stock} onChange={(e) => { const n = [...variants]; const val = e.target.value; n[i] = { ...n[i], stock: val === '' ? undefined : Number(val) }; setVariants(n); }} placeholder="ex: 20" className="w-full h-8 bg-white border border-slate-200 rounded-lg px-2 text-xs font-semibold outline-none focus:border-slate-400" />
                                 </div>
                               </div>
                               <div>

@@ -1,5 +1,5 @@
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { getSaleBlockReason, normalizeStockQuantity } from '@/lib/product-status';
+import { getSaleBlockReason, getVariantSaleBlockReason, effectiveVariantStock, normalizeStockQuantity } from '@/lib/product-status';
 import { computeDeliveryCostDetails } from '@/lib/pricing-engine';
 import { resolveDestination } from '@/lib/delivery-resolver';
 import { calculateCheckout } from '@/lib/checkout-calculations';
@@ -33,6 +33,8 @@ export interface ResolvedItem {
   quantity: number;
   serverPrice: number;
   lineTotal: number;
+  variantReference?: string;
+  variantName?: string;
 }
 
 export interface ResolvedAmount {
@@ -417,6 +419,18 @@ export async function resolveOfferAmount(
     throw new PaypalAmountError('Ce devis n\'est pas en attente de paiement');
   }
 
+  // Garde serveur : un devis déjà associé à une commande (sale_order créée via
+  // quoteRequestId) ne peut plus être payé, même si son statut a été rejoué
+  // artificiellement en 'accepted'.
+  const existingOrder = await adminDb
+    .collection('sale_orders')
+    .where('quoteRequestId', '==', quoteRequestId)
+    .limit(1)
+    .get();
+  if (!existingOrder.empty) {
+    throw new PaypalAmountError('Ce devis a déjà fait l\'objet d\'une commande', 409);
+  }
+
   const finalPrice = typeof quote.finalPrice === 'number' ? quote.finalPrice : NaN;
   if (!Number.isFinite(finalPrice)) {
     throw new PaypalAmountError('Montant du devis indisponible (aucun prix définitif)');
@@ -475,21 +489,43 @@ export async function resolveBoutiqueAmount(input: BoutiqueAmountInput): Promise
 
     const data = productSnap.data() || {};
 
-    // Garde serveur : une vente directe est refusée si le statut de vente est bloqué
+    // Résolution de la variante (si la ligne en porte une) : sert à la fois au
+    // contrôle de stock PAR VARIANTE et au prix unitaire.
+    const variants: any[] = Array.isArray(data.variants) ? data.variants : [];
+    const hasVariant = !!(item.variantReference || item.variantName);
+    const variant = hasVariant
+      ? variants.find(
+          (v) =>
+            (item.variantReference && v.reference === item.variantReference) ||
+            (item.variantName && v.name === item.variantName)
+        )
+      : undefined;
+
+    // Garde serveur : une vente directe est refusée si le statut de vente est bloqué.
+    // Pour une ligne portant une variante, la rupture s'évalue sur le stock de la
+    // variante (stock déclaré sinon repli stock global), indépendamment des autres
+    // variantes et du stock global du produit.
     if (item.type !== 'rental') {
-      const blockReason = getSaleBlockReason(data);
+      const blockReason =
+        variant !== undefined
+          ? getVariantSaleBlockReason(data, effectiveVariantStock(variant, data.stock))
+          : getSaleBlockReason(data);
       if (blockReason) {
         throw new PaypalAmountError(`${blockReason} (${item.productId})`, 409);
       }
     }
 
-    // Garde serveur globale (Vente et Location) : la quantité commandée ne peut
-    // JAMAIS dépasser le stock disponible du produit (rentalStock pour location, stock pour vente).
+    // Garde serveur (Vente et Location) : la quantité commandée ne peut JAMAIS
+    // dépasser le stock disponible (rentalStock pour location ; stock de la variante
+    // pour une vente avec variante, sinon stock global du produit).
     // Location : un stock nul ou absent refuse la location (fail-closed) — un produit
     // à louer doit toujours déclarer sa disponibilité.
-    const stockQty = normalizeStockQuantity(
-      item.type === 'rental' ? (data.rentalStock ?? data.stock) : data.stock
-    );
+    const stockQty =
+      item.type === 'rental'
+        ? normalizeStockQuantity(data.rentalStock ?? data.stock)
+        : variant !== undefined
+          ? effectiveVariantStock(variant, data.stock)
+          : normalizeStockQuantity(data.stock);
     if (item.type === 'rental' && stockQty <= 0) {
       throw new PaypalAmountError(
         'Produit indisponible à la location (aucun stock disponible).',
@@ -504,15 +540,9 @@ export async function resolveBoutiqueAmount(input: BoutiqueAmountInput): Promise
     }
 
     let baseUnit: number;
-    if (item.variantReference || item.variantName) {
-      const variants: any[] = Array.isArray(data.variants) ? data.variants : [];
-      const variant = variants.find(
-        (v) =>
-          (item.variantReference && v.reference === item.variantReference) ||
-          (item.variantName && v.name === item.variantName)
-      );
+    if (variant !== undefined) {
       baseUnit =
-        variant && typeof variant.price === 'number'
+        typeof variant.price === 'number'
           ? variant.price
           : resolveBoutiqueBasePrice(data) ?? NaN;
     } else {
@@ -544,6 +574,8 @@ export async function resolveBoutiqueAmount(input: BoutiqueAmountInput): Promise
       quantity: qty,
       serverPrice,
       lineTotal,
+      variantReference: item.variantReference,
+      variantName: item.variantName,
     });
   }
 

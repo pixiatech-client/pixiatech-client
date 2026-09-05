@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProducts, getModeBadge } from '@/lib/boutique-data';
-import { isProductOutOfStockForSale, isRentalOnlyProduct, isQuoteOnlyProduct } from '@/lib/product-status';
+import { isProductOutOfStockForSale, isRentalOnlyProduct, isQuoteOnlyProduct, isProductAvailable } from '@/lib/product-status';
 import type { Product } from '@/lib/boutique-data';
 import { PriceDisplay, ActionButton, isProductMoreInfo } from '@/components/boutique/ProductActionButton';
 import LayoutSelector, { type LayoutMode } from '@/components/boutique/LayoutSelector';
@@ -344,8 +344,20 @@ export default function BoutiquePage() {
   }, []);
 
   const categories = useMemo(() => {
-    const set = new Set(products.map(p => p.category).filter(Boolean));
-    return Array.from(set).sort();
+    const set = new Set<string>();
+    for (const p of products) {
+      const envs = p.environments?.length ? p.environments : p.category ? [p.category] : [];
+      envs.forEach((e) => set.add(e));
+    }
+    const ENV_ORDER = ['Intérieur', 'Semi-extérieur', 'Extérieur'];
+    return Array.from(set).sort((a, b) => {
+      const ia = ENV_ORDER.indexOf(a);
+      const ib = ENV_ORDER.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
   }, [products]);
 
   const filteredProducts = useMemo(() => {
@@ -378,7 +390,10 @@ export default function BoutiquePage() {
     }
 
     if (selectedCategories.length > 0) {
-      result = result.filter(p => selectedCategories.includes(p.category));
+      result = result.filter(p => {
+        const envs = p.environments?.length ? p.environments : p.category ? [p.category] : [];
+        return envs.some((e) => selectedCategories.includes(e));
+      });
     }
 
     if (minRating > 0) {
@@ -410,13 +425,20 @@ export default function BoutiquePage() {
     const p = product ?? (e as Product);
     const evt = 'stopPropagation' in e ? e as React.MouseEvent : null;
     if (evt) evt.stopPropagation();
-    if (isProductOutOfStockForSale(p)) {
+    if (!isProductAvailable(p)) {
       toast.error(t('boutique.outOfStock'));
       return;
     }
     // Produit réservé à la location : jamais d'ajout direct type 'purchase'.
     // On ouvre la fiche produit où le formulaire de location est obligatoire.
     if (isRentalOnlyProduct(p)) {
+      if (evt) evt.preventDefault();
+      router.push(`/boutique/produit/${p.id}`);
+      return;
+    }
+    // Produit à variantes : l'ajout direct sans variante est impossible (la variante
+    // est requise). On ouvre la fiche produit pour que le client choisisse sa variante.
+    if (Array.isArray(p.variants) && p.variants.some((v) => v.active && v.name)) {
       if (evt) evt.preventDefault();
       router.push(`/boutique/produit/${p.id}`);
       return;
@@ -683,7 +705,7 @@ export default function BoutiquePage() {
           <>
           <div className={`grid ${layout === 4 ? 'grid-cols-1 gap-3' : `grid-cols-2 sm:grid-cols-2 ${LAYOUT_GRID_CLASS[layout]} gap-3 md:gap-4`}`}>
             {filteredProducts.slice(0, displayCount).map((product, idx) => {
-              const outOfStock = isProductOutOfStockForSale(product);
+              const outOfStock = !isProductAvailable(product);
               return (
               <article
                 key={product.id}
@@ -708,7 +730,20 @@ export default function BoutiquePage() {
                     />
                   )}
                   {(() => {
-                    const modeBadge = getModeBadge(product);
+                    const rawBadge = getModeBadge(product);
+                    let modeBadge = rawBadge;
+                    if (rawBadge?.label === 'Rupture de stock' && isProductAvailable(product)) {
+                      const avail = product.availableFor ?? [];
+                      if (avail.includes('sur-commande')) {
+                        modeBadge = { label: 'Sur commande', colors: 'bg-amber-500 text-white' };
+                      } else if (avail.includes('sale')) {
+                        modeBadge = { label: 'Vente', colors: 'bg-emerald-500 text-white' };
+                      } else if (avail.includes('rental')) {
+                        modeBadge = { label: 'Location', colors: 'bg-blue-500 text-white' };
+                      } else {
+                        modeBadge = null;
+                      }
+                    }
                     return modeBadge ? (
                       <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
                         <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider shadow-sm ${modeBadge.colors}`}>

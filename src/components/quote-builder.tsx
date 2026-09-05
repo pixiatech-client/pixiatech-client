@@ -185,6 +185,11 @@ export function QuoteBuilder({
     const auth = useAuth();
     const { user, isUserLoading } = useUser();
 
+    // Notify the header of the current mode so nav active state stays in sync
+    useEffect(() => {
+        window.dispatchEvent(new CustomEvent('quote-mode', { detail: { mode: activeMode } }));
+    }, [activeMode]);
+
 
     // Automatically switch to wizard mode on mobile if in selection mode
     // REMOVED: forcing selection mode everywhere as requested by user

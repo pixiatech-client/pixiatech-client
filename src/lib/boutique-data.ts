@@ -11,6 +11,7 @@ export interface ProductVariant {
   image: string;
   order: number;
   active: boolean;
+  stock?: number;
 }
 
 export interface Product {
@@ -21,6 +22,7 @@ export interface Product {
   rating: number;
   reviews: number;
   category: string;
+  environments?: string[];
   description: string;
   longDescription: string;
   descriptionDetaillee?: string;
@@ -173,6 +175,23 @@ const TYPE_LABELS: Record<string, string> = {
   vitrine: 'Semi-extérieur',
 };
 
+function resolveEnvironments(data: any): string[] {
+  const seen = new Set<string>();
+  const add = (raw: any) => {
+    if (raw == null) return;
+    const key = String(raw).trim().toLowerCase();
+    if (!key) return;
+    const label = TYPE_LABELS[key] || String(raw).trim();
+    if (label) seen.add(label);
+  };
+  if (data.category) add(data.category);
+  const types = Array.isArray(data.type) ? data.type : (data.type != null ? [data.type] : []);
+  types.forEach(add);
+  const envs = Array.isArray(data.environment) ? data.environment : (data.environment != null ? [data.environment] : []);
+  envs.forEach(add);
+  return Array.from(seen);
+}
+
 function resolveProductPrice(data: any): number {
   const candidates = [data.price, data.salePricePerSqM, data.pricePerTile];
   for (const c of candidates) {
@@ -196,6 +215,7 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     rating: data.rating ?? 5.0,
     reviews: data.reviews ?? 0,
     category: data.category || TYPE_LABELS[data.type?.[0]] || 'Général',
+    environments: resolveEnvironments(data),
     description: data.description || '',
     longDescription: data.longDescription || '',
     descriptionDetaillee: data.descriptionDetaillee || '',

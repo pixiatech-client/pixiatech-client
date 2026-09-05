@@ -2,7 +2,6 @@
 
 import { MapPin, User, Mail, Phone, Check } from 'lucide-react';
 import CityInput from '@/components/CityInput';
-import type { VatStatus } from '@/hooks/useVatValidation';
 import { useI18n } from '@/lib/i18n';
 import {
   type CustomerInfoValues,
@@ -23,17 +22,11 @@ export interface CustomerInfoFormProps {
   values: CustomerInfoValues;
   errors: Record<string, string>;
   touched: Record<string, boolean>;
-  isB2B: boolean;
   onFieldChange: (field: CustomerInfoField, value: string) => void;
   onFieldBlur: (field: CustomerInfoField, value: string) => void;
   onCitySelect?: (cityName: string, postcode: string) => void;
   onAddressLine2Change?: (value: string) => void;
   banner?: React.ReactNode | null;
-  vatStatus?: VatStatus;
-  vatErrorMessage?: string;
-  vatValidating?: boolean;
-  onVatChange?: (value: string) => void;
-  onVatValidate?: () => void;
   countryOptions?: { value: string; label: string }[];
 }
 
@@ -60,29 +53,15 @@ function inputCls(meta: ErrorMeta, withIcon = true, extra?: Record<string, strin
   }`;
 }
 
-function plainInputCls(meta: ErrorMeta) {
-  return `w-full px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
-    meta.hasError
-      ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-      : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
-  }`;
-}
-
 export default function CustomerInfoForm({
   values,
   errors,
   touched,
-  isB2B,
   onFieldChange,
   onFieldBlur,
   onCitySelect,
   onAddressLine2Change,
   banner,
-  vatStatus = 'idle',
-  vatErrorMessage = '',
-  vatValidating = false,
-  onVatChange,
-  onVatValidate,
   countryOptions = DEFAULT_COUNTRY_OPTIONS,
 }: CustomerInfoFormProps) {
   const { t } = useI18n();
@@ -222,76 +201,6 @@ export default function CustomerInfoForm({
           </select>
         </div>
       </div>
-      {isB2B && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 border-t border-gray-100 pt-3">
-          <div>
-            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Raison sociale *</label>
-            <input
-              type="text"
-              placeholder="Nom de l'entreprise"
-              value={values.companyName}
-              onChange={e => onFieldChange('companyName', e.target.value)}
-              onBlur={e => onFieldBlur('companyName', e.target.value)}
-              className={plainInputCls(meta('companyName', values.companyName))}
-            />
-          </div>
-          <div>
-            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">SIREN / SIRET *</label>
-            <input
-              type="text"
-              placeholder="123 456 789"
-              value={values.siren}
-              onChange={e => onFieldChange('siren', e.target.value)}
-              onBlur={e => onFieldBlur('siren', e.target.value)}
-              className={plainInputCls(meta('siren', values.siren))}
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Numéro de TVA intracommunautaire</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="FRXX999999999"
-                value={values.vatNumber}
-                onChange={e => onVatChange ? onVatChange(e.target.value) : onFieldChange('vatNumber', e.target.value)}
-                onBlur={e => onFieldBlur('vatNumber', e.target.value)}
-                className={`flex-1 px-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 transition-all bg-white ${
-                  vatStatus === 'valid'
-                    ? 'border-emerald-300 bg-emerald-50/30'
-                    : vatStatus === 'invalid'
-                      ? 'border-red-300 bg-red-50/30'
-                      : meta('vatNumber', values.vatNumber).hasError
-                        ? 'border-red-300 focus:border-red-400 focus:ring-red-100'
-                        : 'border-gray-200 focus:ring-gray-900/20 focus:border-gray-400'
-                }`}
-              />
-              <button
-                type="button"
-                disabled={vatValidating || !values.vatNumber}
-                onClick={onVatValidate}
-                className={`shrink-0 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                  vatStatus === 'valid'
-                    ? 'bg-emerald-500 text-white'
-                    : vatStatus === 'invalid'
-                      ? 'bg-red-500 text-white'
-                      : 'bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50'
-                }`}
-              >
-                {vatValidating ? '...' : vatStatus === 'valid' ? '✓ Valide' : vatStatus === 'invalid' ? '✗ Invalide' : 'Valider'}
-              </button>
-            </div>
-            {vatStatus === 'valid' && (
-              <p className="text-[10px] text-emerald-600 font-semibold mt-1">Numéro de TVA valide — TVA autoliquidée</p>
-            )}
-            {vatStatus === 'invalid' && (
-              <p className="text-[10px] text-red-500 font-semibold mt-1">{vatErrorMessage}</p>
-            )}
-            {vatStatus === 'error' && (
-              <p className="text-[10px] text-amber-600 font-semibold mt-1">{vatErrorMessage}</p>
-            )}
-          </div>
-        </div>
-      )}
     </>
   );
 }

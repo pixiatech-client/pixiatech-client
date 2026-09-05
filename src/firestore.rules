@@ -41,6 +41,16 @@ service cloud.firestore {
       ]);
     }
 
+    // Un devis est considéré payé s'il porte le marqueur isPaid, un
+    // paypalCaptureId (y compris pour les devis payés avant l'introduction du
+    // marqueur) ou le statut 'awaiting_delivery'. Un devis payé ne peut jamais
+    // être rouvert, réinterprété ou restauré.
+    function isPaidQuoteResource() {
+      return resource.data.isPaid == true
+        || ('paypalCaptureId' in resource.data && resource.data.paypalCaptureId != null)
+        || resource.data.status == 'awaiting_delivery';
+    }
+
     match /users/{userId} {
       // Only the owner or an admin can read a user doc. Listing all users is
       // restricted to admins to avoid leaking every user's email/role/phone.
@@ -100,7 +110,18 @@ service cloud.firestore {
 
     match /quote_requests/{quoteRequestId} {
       allow read, list: if isAdmin() || isCommercial();
-      allow write: if isAdmin();
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
+      // Mises à jour autorisées :
+      //  - statut inchangé (édition prix/notes, sans réinterprétation)
+      //  - devis NON payé : transitions administratives existantes
+      //  - devis payé : uniquement vers 'corbeille' (soft-delete, non restaurable)
+      allow update: if isAdmin() && (
+        request.resource.data.status == resource.data.status
+        || (!isPaidQuoteResource()
+            && request.resource.data.status in ['pending_supplier','offer_sent','accepted','declined','expired','corbeille'])
+        || (isPaidQuoteResource() && request.resource.data.status == 'corbeille')
+      );
     }
 
     // Accessible via Admin SDK (server-side) only; locked down for defense-in-depth.

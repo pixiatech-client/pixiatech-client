@@ -8,9 +8,6 @@ export interface CustomerInfoValues {
   postcode: string;
   city: string;
   country: string;
-  companyName: string;
-  siren: string;
-  vatNumber: string;
 }
 
 export type CustomerInfoField = keyof CustomerInfoValues;
@@ -31,9 +28,6 @@ export function defaultCustomerValues(): CustomerInfoValues {
     postcode: '',
     city: '',
     country: 'FR',
-    companyName: '',
-    siren: '',
-    vatNumber: '',
   };
 }
 
@@ -100,25 +94,15 @@ export function validateCustomerField(field: CustomerInfoField, value: string): 
       if (!value.trim()) return '';
       if (!POSTCODE_RE.test(value.trim())) return 'Veuillez saisir un code postal valide.';
       return '';
-    case 'companyName':
-      if (!value.trim()) return '';
-      if (value.trim().length < 2) return 'Veuillez saisir une raison sociale valide.';
-      return '';
-    case 'siren':
-      if (!value.trim()) return '';
-      const sirenDigits = value.replace(/[^0-9]/g, '');
-      if (sirenDigits.length < 9) return 'Le SIREN doit contenir au moins 9 chiffres.';
-      return '';
     default:
       return '';
   }
 }
 
-export function isCustomerInfoComplete(values: CustomerInfoValues, isB2B: boolean): boolean {
+export function isCustomerInfoComplete(values: CustomerInfoValues): boolean {
   return !!(
     values.firstName && values.lastName && values.email && values.phone &&
-    values.addressLine1 && values.postcode && values.city && values.country &&
-    (!isB2B || (values.companyName && values.siren))
+    values.addressLine1 && values.postcode && values.city && values.country
   );
 }
 
@@ -145,12 +129,6 @@ export interface ClientSessionProfile {
   country?: string;
   city?: string;
   zipCode?: string;
-}
-
-export interface FiscalProfile {
-  companyName?: string;
-  siret?: string;
-  vatNumber?: string;
 }
 
 function normalizeCountry(value: string): string {
@@ -190,11 +168,6 @@ export function splitFullName(fullName: string): { firstName: string; lastName: 
   return { firstName: '', lastName: trimmed };
 }
 
-export function siretToSiren(siret: string): string {
-  const digits = (siret || '').replace(/[^0-9]/g, '');
-  return digits.length >= 9 ? digits.slice(0, 9) : '';
-}
-
 export function profileToCustomerValues(profile: ClientSessionProfile): Partial<CustomerInfoValues> {
   const values: Partial<CustomerInfoValues> = {};
   const name = splitFullName(profile.displayName || '');
@@ -204,18 +177,9 @@ export function profileToCustomerValues(profile: ClientSessionProfile): Partial<
   const phone = (profile.phone || profile.officePhone || '').trim();
   if (phone) values.phone = phone;
   if (profile.companyAddress) values.addressLine1 = profile.companyAddress;
-  if (profile.companyName) values.companyName = profile.companyName;
   if (profile.city) values.city = profile.city;
   if (profile.zipCode) values.postcode = profile.zipCode;
   const country = toCountryISO(profile.country || '');
   if (country) values.country = country;
-  return values;
-}
-
-export function fiscalProfileToCustomerValues(fiscal: FiscalProfile): Partial<CustomerInfoValues> {
-  const values: Partial<CustomerInfoValues> = {};
-  const siren = siretToSiren(fiscal.siret || '');
-  if (siren) values.siren = siren;
-  if (fiscal.vatNumber) values.vatNumber = fiscal.vatNumber;
   return values;
 }

@@ -12,10 +12,8 @@ import {
   isCustomerInfoComplete,
   validateCustomerField,
   profileToCustomerValues,
-  fiscalProfileToCustomerValues,
 } from '@/lib/customer-form-utils';
 import type { CustomerInfoValues } from '@/lib/customer-form-utils';
-import { useVatValidation } from '@/hooks/useVatValidation';
 import { useCart, type CartItem } from '@/contexts/CartContext';
 import { useI18n } from '@/lib/i18n';
 import { formatPrice } from '@/lib/boutique-data';
@@ -58,7 +56,7 @@ function ConfettiEffect() {
   return null;
 }
 
-function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, vatValidated, paymentContext, fundingSource }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: CustomerInfoValues; deliveryCost: number; vatValidated: boolean; paymentContext: BoutiqueAmountInput; fundingSource?: (typeof FUNDING)[keyof typeof FUNDING] }) {
+function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, paymentContext, fundingSource }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: CustomerInfoValues; deliveryCost: number; paymentContext: BoutiqueAmountInput; fundingSource?: (typeof FUNDING)[keyof typeof FUNDING] }) {
   const [{ isResolved, isRejected }] = usePayPalScriptReducer();
   const [error, setError] = useState<string | null>(null);
 
@@ -134,7 +132,7 @@ function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, va
             const res = await fetch('/api/paypal/capture-order', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderId: data.orderID, cart: paymentContext, rentalItems, purchaseItems, delivery: { ...delivery, vatValidated } }),
+              body: JSON.stringify({ orderId: data.orderID, cart: paymentContext, rentalItems, purchaseItems, delivery: { ...delivery } }),
             });
             const capture = await res.json();
             if (!res.ok) throw new Error(capture.error);
@@ -314,7 +312,6 @@ export default function CheckoutPage() {
   const [delivery, setDelivery] = useState<CustomerInfoValues>(defaultCustomerValues());
   const [deliveryErrors, setDeliveryErrors] = useState<Record<string, string>>({});
   const [deliveryTouched, setDeliveryTouched] = useState<Record<string, boolean>>({});
-  const { vatValidated, vatValidating, vatStatus, vatErrorMessage, validate: validateVat, reset: resetVat } = useVatValidation();
   const [deliveryOpen, setDeliveryOpen] = useState(true);
   const [promoInput, setPromoInput] = useState('');
   const [mounted, setMounted] = useState(false);
@@ -342,8 +339,6 @@ export default function CheckoutPage() {
   // aboutit après son interaction avec le formulaire.
   const deliveryTouchedRef = useRef(deliveryTouched);
   deliveryTouchedRef.current = deliveryTouched;
-  const isB2BRef = useRef(isB2B);
-  isB2BRef.current = isB2B;
 
   // Indique si une session client est active (détectée via session-status).
   // Si vrai, on n'affiche pas la proposition de connexion sous l'email.
@@ -398,20 +393,6 @@ export default function CheckoutPage() {
             lastPrefillCustomerIdRef.current = customerId;
             applyProfilePrefill(profileToCustomerValues(sessionData), force);
 
-            // Infos fiscales (B2B) : uniquement si nécessaire (client connecté + mode entreprise).
-            // Erreur silencieuse : le pré-remplissage reste utilisable sans ces infos.
-            try {
-              if (isB2BRef.current) {
-                const fiscalRes = await fetch('/api/boutique/customer/get-fiscal');
-                if (fiscalRes.ok) {
-                  const fiscalData = await fiscalRes.json();
-                  if (fiscalData && typeof fiscalData === 'object') {
-                    applyProfilePrefill(fiscalProfileToCustomerValues(fiscalData));
-                  }
-                }
-              }
-            } catch { /* Infos fiscales optionnelles */ }
-
             return; // Priorité 1 appliquée, on s'arrête ici.
           }
         }
@@ -445,7 +426,6 @@ export default function CheckoutPage() {
         ...(lastName ? { lastName } : {}),
         ...(rd.email ? { email: rd.email } : {}),
         ...(rd.phone ? { phone: rd.phone } : {}),
-        ...(rd.company ? { companyName: rd.company } : {}),
         ...(rd.address ? { addressLine1: rd.address } : {}),
         ...(rd.city ? { city: rd.city } : {}),
         ...(rd.postcode ? { postcode: rd.postcode } : {}),
@@ -481,7 +461,7 @@ export default function CheckoutPage() {
     return () => clearTimeout(timer);
   }, [delivery.postcode, delivery.city, subtotal]);
 
-  const isDeliveryComplete = isCustomerInfoComplete(delivery, isB2B);
+  const isDeliveryComplete = isCustomerInfoComplete(delivery);
 
   function handleDeliveryChange(field: keyof CustomerInfoValues, value: string) {
     setDelivery(d => ({ ...d, [field]: value }));
@@ -559,7 +539,7 @@ export default function CheckoutPage() {
     deliveryCost: effectiveDeliveryCost,
     profileType,
     country: delivery.country || 'FR',
-    vatValidated,
+    vatValidated: false,
     vatRate,
   });
   const tva = calc.vat;
@@ -589,7 +569,6 @@ export default function CheckoutPage() {
       country: delivery.country || 'FR',
     },
     clientType: profileType,
-    vatValidated,
     promoCode: promo?.code || null,
     promoDocId: promo?.promoDocId || null,
   };
@@ -606,15 +585,11 @@ export default function CheckoutPage() {
       orderRef: ordNo.replace('ORD', ''),
       customerName: `${delivery.firstName} ${delivery.lastName}`.trim() || 'Client',
       customerEmail: delivery.email || 'email@exemple.com',
-      customerCompany: delivery.companyName || undefined,
-      customerSiren: delivery.siren || undefined,
-      customerVatNumber: delivery.vatNumber || undefined,
       customerCountry: delivery.country,
       customerAddress: delivery.addressLine1 + (delivery.addressLine2 ? ', ' + delivery.addressLine2 : ''),
       customerPostcode: delivery.postcode,
       customerCity: delivery.city,
       isB2B: isB2B,
-      vatValidated: vatValidated,
       productName: items[0]?.name || 'Produit',
       quantity: items.reduce((s, i) => s + i.quantity, 0),
       unitPrice: items.reduce((s, i) => s + i.price * i.quantity, 0) / items.reduce((s, i) => s + i.quantity, 0) || 0,
@@ -690,28 +665,10 @@ export default function CheckoutPage() {
                 <div>
                   <h3 className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider mb-4 border-l-4 border-indigo-500 pl-3">{isB2B ? 'Client (Entreprise)' : 'Client (Particulier)'}</h3>
                   <div className="space-y-3">
-                    {isB2B && delivery.companyName && (
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Raison sociale</p>
-                        <p className="text-[12px] font-semibold text-slate-700">{delivery.companyName}</p>
-                      </div>
-                    )}
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{t('checkout.confirmed.client')}</p>
                       <p className="text-[12px] font-semibold text-slate-700">{delivery.firstName || '—'} {delivery.lastName || '—'}</p>
                     </div>
-                    {isB2B && delivery.siren && (
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">SIREN / SIRET</p>
-                        <p className="text-[12px] font-semibold text-slate-700">{delivery.siren}</p>
-                      </div>
-                    )}
-                    {isB2B && delivery.vatNumber && (
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">TVA intracommunautaire</p>
-                        <p className="text-[12px] font-semibold text-slate-700">{delivery.vatNumber} {vatValidated ? '✓' : ''}</p>
-                      </div>
-                    )}
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{t('checkout.confirmed.email')}</p>
                       <p className="text-[12px] font-semibold text-slate-700">{(delivery.email || '—').toUpperCase()}</p>
@@ -938,7 +895,7 @@ export default function CheckoutPage() {
                   )}
                 </div>
                 <h2 className="text-4xl font-[900] tracking-tighter">{formatPrice(total)}</h2>
-                <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{vatMessageEnabled ? vatMessage : (vatValidated && isB2B ? 'TVA autoliquidée – Achat hors taxes (HT)' : 'Prix toutes taxes comprises (TTC)')}</p>
+                <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{vatMessageEnabled ? vatMessage : 'Prix toutes taxes comprises (TTC)'}</p>
               </div>
               <div className="space-y-3 mb-6 border-t border-white/20 pt-5 relative z-10">
                 {[
@@ -1083,7 +1040,6 @@ export default function CheckoutPage() {
                       items={items}
                       delivery={delivery}
                       deliveryCost={deliveryCost}
-                      vatValidated={vatValidated}
                       paymentContext={paymentContext}
                       fundingSource={FUNDING.PAYPAL}
                     />
@@ -1129,7 +1085,6 @@ export default function CheckoutPage() {
                         values={delivery}
                         errors={deliveryErrors}
                         touched={deliveryTouched}
-                        isB2B={isB2B}
                         onFieldChange={handleDeliveryChange}
                         onFieldBlur={handleDeliveryBlur}
                         onCitySelect={(cityName, postcode) => {
@@ -1139,14 +1094,6 @@ export default function CheckoutPage() {
                           if (!deliveryTouched.postcode) setDeliveryTouched(prev => ({ ...prev, postcode: true }));
                         }}
                         banner={isPreFilledFromRental ? 'Vos informations ont été récupérées depuis votre location. Vous pouvez les modifier si nécessaire.' : null}
-                        vatStatus={vatStatus}
-                        vatErrorMessage={vatErrorMessage}
-                        vatValidating={vatValidating}
-                        onVatChange={(value) => {
-                          setDelivery(d => ({ ...d, vatNumber: value }));
-                          if (vatStatus !== 'idle') resetVat();
-                        }}
-                        onVatValidate={() => validateVat(delivery.vatNumber)}
                       />
                     </div>
                   )}
@@ -1166,7 +1113,6 @@ export default function CheckoutPage() {
                         items={items}
                         delivery={delivery}
                         deliveryCost={deliveryCost}
-                        vatValidated={vatValidated}
                         paymentContext={paymentContext}
                         fundingSource={FUNDING.CARD}
                       />

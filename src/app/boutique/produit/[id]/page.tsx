@@ -6,7 +6,7 @@ import { Star, ShoppingBag, Store, Minus, Plus, Copy, CalendarDays, FileText, Do
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 import { fetchBoutiqueProduct, fetchUpsellProducts, formatPrice, getModeBadge } from '@/lib/boutique-data';
-import { isProductOutOfStockForSale, normalizeStockQuantity } from '@/lib/product-status';
+import { isProductOutOfStockForSale, isVariantOutOfStockForSale, effectiveVariantStock, normalizeStockQuantity } from '@/lib/product-status';
 import { ActionButton, formatProductPriceLabel } from '@/components/boutique/ProductActionButton';
 import { firestore } from '@/firebase/config';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
@@ -456,10 +456,19 @@ export default function ProductDetailPage() {
       : mediaItems[selectedMedia]);
   const effectiveOldPrice = product?.oldPrice && (!selectedVariant || selectedVariant.price < product.oldPrice) ? product.oldPrice : undefined;
   const displayVariants = (product?.variants || []).filter(v => v.active && v.name);
-  const availableSaleStock = normalizeStockQuantity(product?.stock ?? null);
+  const hasVariants = displayVariants.length > 0;
   const availableRentalStock = normalizeStockQuantity(product?.rentalStock ?? product?.stock ?? null);
+  const availableSaleStock = hasVariants
+    ? effectiveVariantStock(selectedVariant ?? null, product?.stock)
+    : normalizeStockQuantity(product?.stock ?? null);
   const availableStock = canRent && !canBuy ? availableRentalStock : availableSaleStock;
-  const isOutOfStock = isProductOutOfStockForSale(product ?? {});
+  const isOutOfStock = hasVariants
+    ? isVariantOutOfStockForSale(product ?? {}, availableSaleStock)
+    : isProductOutOfStockForSale(product ?? {});
+
+  useEffect(() => {
+    setQuantity(1);
+  }, [selectedVariant?.name]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -1125,7 +1134,10 @@ export default function ProductDetailPage() {
                 <>
               <div className="w-full mt-[15px] mr-5 p-0 relative">
                 {(() => {
-                  const modeBadge = getModeBadge(product);
+                  const rawBadge = getModeBadge(product);
+                  const modeBadge = rawBadge?.label === 'Rupture de stock' && !isOutOfStock
+                    ? null
+                    : rawBadge;
                   return modeBadge ? (
                     <div className="absolute top-7 right-7 z-10 flex flex-col gap-1 items-end">
                       <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider shadow-sm ${modeBadge.colors}`}>

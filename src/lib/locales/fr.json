@@ -476,6 +476,9 @@
             "seeAllOrders": "Voir toutes mes commandes ({count})",
             "notifications": "Notifications"
         },
+        "invoices": {
+            "title": "Mes factures"
+        },
         "orders": {
             "title": "Mes commandes",
             "emptyTitle": "Aucune commande",

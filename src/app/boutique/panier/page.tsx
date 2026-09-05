@@ -7,7 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 import { formatPrice, fetchUpsellProducts, getModeBadge, fetchBoutiqueProduct } from '@/lib/boutique-data';
 import type { Product } from '@/lib/boutique-data';
 import type { CartItem } from '@/contexts/CartContext';
-import { isProductOutOfStockForSale } from '@/lib/product-status';
+import { isProductOutOfStockForSale, isVariantOutOfStockForSale, effectiveVariantStock } from '@/lib/product-status';
 import { ActionButton, formatProductPriceLabel } from '@/components/boutique/ProductActionButton';
 import { toast } from 'sonner';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -114,17 +114,33 @@ export default function CartPage() {
     return () => { active = false; };
   }, [items, savedItems]);
 
+  // Rupture en tenant compte de la variante : si la ligne porte une variante,
+  // l'état dépend uniquement du stock de cette variante (stock déclaré sinon
+  // repli sur le stock global du produit), et non du stock global.
+  const cartItemOutOfStock = (item: CartItem, liveP: Product): boolean => {
+    if (item.type === 'rental') return false;
+    if (item.variantReference || item.variantName) {
+      const variant = (liveP.variants || []).find(
+        (v) =>
+          (item.variantReference && v.reference === item.variantReference) ||
+          (item.variantName && v.name === item.variantName)
+      );
+      if (variant) return isVariantOutOfStockForSale(liveP, effectiveVariantStock(variant, liveP.stock));
+    }
+    return isProductOutOfStockForSale(liveP);
+  };
+
   const liveBadge = (item: CartItem): { label: string; colors: string } | null => {
     if (item.type === 'rental') return { label: 'Location', colors: 'bg-blue-500 text-white' };
     const liveP = liveProducts[item.productId];
-    if (liveP && isProductOutOfStockForSale(liveP)) return { label: 'Rupture de stock', colors: 'bg-red-500 text-white' };
+    if (liveP && cartItemOutOfStock(item, liveP)) return { label: 'Rupture de stock', colors: 'bg-red-500 text-white' };
     return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
   };
 
   const canMoveSavedToCart = (item: CartItem): boolean => {
     if (item.type !== 'purchase') return true;
     const liveP = liveProducts[item.productId];
-    return !(liveP && isProductOutOfStockForSale(liveP));
+    return !(liveP && cartItemOutOfStock(item, liveP));
   };
 
   useEffect(() => {
