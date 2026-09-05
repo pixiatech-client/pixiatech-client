@@ -1,7 +1,7 @@
 import { firestore } from '@/firebase/config';
-import { collection, addDoc, updateDoc, doc, getDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDoc, getDocs, deleteDoc, query, where, orderBy, limit } from 'firebase/firestore';
 
-export type RentalStatus = 'pending_validation' | 'validated' | 'shipped' | 'completed' | 'cancelled';
+export type RentalStatus = 'pending_validation' | 'validated' | 'shipped' | 'completed' | 'cancelled' | 'corbeille';
 
 export interface RentalOrder {
   id?: string;
@@ -78,5 +78,9 @@ export async function getRentalOrders(options?: {
   const q = query(collection(firestore, COLLECTION), ...constraints);
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as RentalOrder));
+}
+
+export async function deleteRentalOrder(id: string) {
+  await deleteDoc(doc(firestore, COLLECTION, id));
 }
 

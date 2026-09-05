@@ -1,4 +1,4 @@
-export type QuoteRequestStatus = 'pending_supplier' | 'offer_sent' | 'accepted' | 'declined' | 'expired' | 'awaiting_delivery';
+export type QuoteRequestStatus = 'pending_supplier' | 'offer_sent' | 'accepted' | 'declined' | 'expired' | 'awaiting_delivery' | 'corbeille';
 
 export interface QuoteRequest {
   id?: string;

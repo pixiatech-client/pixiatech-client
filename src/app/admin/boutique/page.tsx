@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   ClipboardList, ShoppingBag, Package, AlertTriangle, EyeOff, Search,
   RefreshCw, SlidersHorizontal, X, ChevronDown,
@@ -11,7 +11,7 @@ import {
   DollarSign, ExternalLink, Truck,
 } from 'lucide-react';
 import { getSaleOrders, updateSaleOrder, deleteSaleOrder, type SaleOrder, type SaleStatus } from '@/lib/sale-orders';
-import { getRentalOrders, updateRentalOrder, type RentalOrder, type RentalStatus } from '@/lib/rental-orders';
+import { getRentalOrders, updateRentalOrder, deleteRentalOrder, type RentalOrder, type RentalStatus } from '@/lib/rental-orders';
 import { formatPrice } from '@/lib/boutique-data';
 import { normalizeSearchText } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -20,7 +20,7 @@ import { Pagination } from '@/components/pagination';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { TrackingDetailDrawer } from '@/components/tracking/tracking-detail-drawer';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { listQuoteRequests, updateQuoteRequest } from '@/lib/quote-requests-service';
+import { listQuoteRequests, updateQuoteRequest, deleteQuoteRequest } from '@/lib/quote-requests-service';
 import type { QuoteRequest, QuoteRequestStatus } from '@/lib/quote-requests';
 
 type Mode = 'vente' | 'location' | 'sur-commande';
@@ -43,6 +43,7 @@ const rentalStatusLabels: Record<RentalStatus, string> = {
   shipped: 'Expédiée',
   completed: 'Terminée',
   cancelled: 'Annulée',
+  corbeille: 'Corbeille',
 };
 
 const rentalStatusColors: Record<RentalStatus, string> = {
@@ -51,6 +52,7 @@ const rentalStatusColors: Record<RentalStatus, string> = {
   shipped: 'bg-indigo-100 text-indigo-700 border-indigo-200',
   completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   cancelled: 'bg-red-100 text-red-700 border-red-200',
+  corbeille: 'bg-red-100 text-red-700 border-red-200',
 };
 
 const rentalMainStatuses: RentalStatus[] = ['pending_validation', 'validated', 'shipped', 'completed', 'cancelled'];
@@ -62,6 +64,7 @@ const quoteStatusLabels: Record<QuoteRequestStatus, string> = {
   declined: 'Refusé',
   expired: 'Expiré',
   awaiting_delivery: 'En attente de livraison',
+  corbeille: 'Corbeille',
 };
 
 const quoteStatusColors: Record<QuoteRequestStatus, string> = {
@@ -71,6 +74,7 @@ const quoteStatusColors: Record<QuoteRequestStatus, string> = {
   declined: 'bg-red-100 text-red-700 border-red-200',
   expired: 'bg-gray-100 text-gray-700 border-gray-200',
   awaiting_delivery: 'bg-blue-100 text-blue-700 border-blue-200',
+  corbeille: 'bg-red-100 text-red-700 border-red-200',
 };
 
 function DetailModal({ open, onClose, order, mode }: {
@@ -537,6 +541,52 @@ export default function BoutiquePage() {
     setUpdating(null);
   };
 
+  const trashedSales = useMemo(() => saleOrders.filter(o => o.status === 'corbeille' && o.id), [saleOrders]);
+  const trashedRentals = useMemo(() => rentalOrders.filter(o => o.status === 'corbeille' && o.id), [rentalOrders]);
+  const trashedQuotes = useMemo(() => quoteRequests.filter(q => q.status === 'corbeille' && q.id), [quoteRequests]);
+
+  const handleSalePermanentDelete = (id: string) => {
+    setConfirmDialog({
+      title: 'Supprimer définitivement',
+      description: 'Cette commande sera définitivement supprimée. Cette action est irréversible.',
+      onConfirm: async () => {
+        try { await deleteSaleOrder(id); } catch { /* skip */ }
+        setSaleOrders(prev => prev.filter(o => o.id !== id));
+        setConfirmDialog(null);
+        toast.success('Commande supprimée');
+      },
+    });
+  };
+
+  const handleRentalPermanentDelete = (id: string) => {
+    setConfirmDialog({
+      title: 'Supprimer définitivement',
+      description: 'Cette location sera définitivement supprimée. Cette action est irréversible.',
+      onConfirm: async () => {
+        try { await deleteRentalOrder(id); } catch { /* skip */ }
+        setRentalOrders(prev => prev.filter(o => o.id !== id));
+        setConfirmDialog(null);
+        toast.success('Location supprimée');
+      },
+    });
+  };
+
+  const handleQuotePermanentDelete = (q: QuoteRequest) => {
+    const id = q.id;
+    if (!id) return;
+    setConfirmDialog({
+      title: 'Supprimer définitivement',
+      description: 'Cette demande de devis sera définitivement supprimée. Cette action est irréversible.',
+      onConfirm: async () => {
+        try { await deleteQuoteRequest(id); } catch { /* skip */ }
+        setQuoteRequests(prev => prev.filter(r => r.id !== id));
+        if (detailQuote?.id === id) setDetailQuote(null);
+        setConfirmDialog(null);
+        toast.success('Demande supprimée');
+      },
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -646,6 +696,7 @@ export default function BoutiquePage() {
             { label: 'Locations actives', value: rentalStats.active, icon: Timer, gradient: 'from-violet-500/10 via-violet-500/5 to-transparent', border: 'border-violet-500/20', iconBg: 'bg-violet-500/20', iconColor: 'text-violet-600', textColor: 'text-violet-700' },
             { label: 'Terminées', value: rentalStats.completed, icon: Check, gradient: 'from-green-500/10 via-green-500/5 to-transparent', border: 'border-green-500/20', iconBg: 'bg-green-500/20', iconColor: 'text-green-600', textColor: 'text-green-700' },
             { label: 'Annulées', value: rentalOrders.filter(o => o.status === 'cancelled').length, icon: X, gradient: 'from-red-500/10 via-red-500/5 to-transparent', border: 'border-red-500/20', iconBg: 'bg-red-500/20', iconColor: 'text-red-600', textColor: 'text-red-700' },
+            { label: 'Corbeille', value: rentalOrders.filter(o => o.status === 'corbeille').length, icon: Trash2, gradient: 'from-red-500/10 via-red-500/5 to-transparent', border: 'border-red-500/20', iconBg: 'bg-red-500/20', iconColor: 'text-red-600', textColor: 'text-red-700' },
             { label: 'Revenu total', value: formatPrice(rentalStats.revenue), icon: Euro, gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent', border: 'border-emerald-500/20', iconBg: 'bg-emerald-500/20', iconColor: 'text-emerald-600', textColor: 'text-emerald-700' },
           ].map((card, i) => {
             const Icon = card.icon;
@@ -675,6 +726,7 @@ export default function BoutiquePage() {
             { label: 'Acceptées', value: quoteRequests.filter(q => q.status === 'accepted').length, icon: Check, gradient: 'from-emerald-500/10 via-emerald-500/5 to-transparent', border: 'border-emerald-500/20', iconBg: 'bg-emerald-500/20', iconColor: 'text-emerald-600', textColor: 'text-emerald-700' },
             { label: 'En attente livraison', value: quoteRequests.filter(q => q.status === 'awaiting_delivery').length, icon: Truck, gradient: 'from-blue-500/10 via-blue-500/5 to-transparent', border: 'border-blue-500/20', iconBg: 'bg-blue-500/20', iconColor: 'text-blue-600', textColor: 'text-blue-700' },
             { label: 'Total demandes', value: quoteRequests.length, icon: ShoppingBag, gradient: 'from-gray-500/10 via-gray-500/5 to-transparent', border: 'border-gray-500/20', iconBg: 'bg-gray-500/20', iconColor: 'text-gray-600', textColor: 'text-gray-700' },
+            { label: 'Corbeille', value: quoteRequests.filter(q => q.status === 'corbeille').length, icon: Trash2, gradient: 'from-red-500/10 via-red-500/5 to-transparent', border: 'border-red-500/20', iconBg: 'bg-red-500/20', iconColor: 'text-red-600', textColor: 'text-red-700' },
           ].map((card, i) => {
             const Icon = card.icon;
             return (
@@ -703,9 +755,9 @@ export default function BoutiquePage() {
           <RefreshCw className="w-4 h-4" />
           Actualiser
         </button>
-        {mode === 'vente' && saleStatus === 'corbeille' && saleOrders.filter(o => o.status === 'corbeille').length > 0 && (
+        {mode === 'vente' && saleStatus === 'corbeille' && trashedSales.length > 0 && (
           <button onClick={async () => {
-            const ids = saleOrders.filter(o => o.status === 'corbeille' && o.id).map(o => o.id!);
+            const ids = trashedSales.map(o => o.id!);
             setConfirmDialog({
               title: 'Vider la corbeille',
               description: `${ids.length} commande(s) seront définitivement supprimées.`,
@@ -714,6 +766,44 @@ export default function BoutiquePage() {
                   try { await deleteSaleOrder(id); } catch { /* skip */ }
                 }
                 setSaleOrders(prev => prev.filter(o => o.status !== 'corbeille'));
+                setConfirmDialog(null);
+                toast.success('Corbeille vidée');
+              },
+            });
+          }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-semibold text-xs transition-all border border-red-200 shadow-sm">
+            <Trash2 className="w-3.5 h-3.5" /> Vider la corbeille
+          </button>
+        )}
+        {mode === 'location' && rentalStatus === 'corbeille' && trashedRentals.length > 0 && (
+          <button onClick={async () => {
+            const ids = trashedRentals.map(o => o.id!);
+            setConfirmDialog({
+              title: 'Vider la corbeille',
+              description: `${ids.length} location(s) seront définitivement supprimées.`,
+              onConfirm: async () => {
+                for (const id of ids) {
+                  try { await deleteRentalOrder(id); } catch { /* skip */ }
+                }
+                setRentalOrders(prev => prev.filter(o => o.status !== 'corbeille'));
+                setConfirmDialog(null);
+                toast.success('Corbeille vidée');
+              },
+            });
+          }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg font-semibold text-xs transition-all border border-red-200 shadow-sm">
+            <Trash2 className="w-3.5 h-3.5" /> Vider la corbeille
+          </button>
+        )}
+        {mode === 'sur-commande' && quoteStatus === 'corbeille' && trashedQuotes.length > 0 && (
+          <button onClick={async () => {
+            const ids = trashedQuotes.map(q => q.id!);
+            setConfirmDialog({
+              title: 'Vider la corbeille',
+              description: `${ids.length} demande(s) seront définitivement supprimées.`,
+              onConfirm: async () => {
+                for (const id of ids) {
+                  try { await deleteQuoteRequest(id); } catch { /* skip */ }
+                }
+                setQuoteRequests(prev => prev.filter(q => q.status !== 'corbeille'));
                 setConfirmDialog(null);
                 toast.success('Corbeille vidée');
               },
@@ -747,7 +837,10 @@ export default function BoutiquePage() {
                   <RotateCcw className="w-3.5 h-3.5" /> Restaurer
                 </button>
                 <button onClick={async () => {
-                  const ids = Array.from(selectedIds).filter(id => saleOrders.find(o => o.id === id)?.status === 'archive');
+                  const ids = Array.from(selectedIds).filter(id => {
+                    const o = saleOrders.find(o => o.id === id);
+                    return o && o.status !== 'corbeille';
+                  });
                   for (const id of ids) await handleSaleAction(id, 'corbeille');
                   setSelectedIds(new Set());
                 }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-red-700 rounded-lg font-semibold text-xs transition-all border border-gray-200 shadow-sm">
@@ -805,12 +898,40 @@ export default function BoutiquePage() {
                 <button onClick={async () => {
                   const ids = Array.from(selectedIds).filter(id => {
                     const o = rentalOrders.find(o => o.id === id);
-                    return o?.status === 'completed' || o?.status === 'cancelled';
+                    return o && o.status !== 'corbeille';
+                  });
+                  for (const id of ids) await handleRentalAction(id, 'corbeille');
+                  setSelectedIds(new Set());
+                }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-red-700 rounded-lg font-semibold text-xs transition-all border border-gray-200 shadow-sm">
+                  <Trash2 className="w-3.5 h-3.5" /> Corbeille
+                </button>
+                <button onClick={async () => {
+                  const ids = Array.from(selectedIds).filter(id => {
+                    const o = rentalOrders.find(o => o.id === id);
+                    return o?.status === 'completed' || o?.status === 'cancelled' || o?.status === 'corbeille';
                   });
                   for (const id of ids) await handleRentalAction(id, 'pending_validation');
                   setSelectedIds(new Set());
                 }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-amber-50 text-amber-700 rounded-lg font-semibold text-xs transition-all border border-gray-200 shadow-sm">
                   <RotateCcw className="w-3.5 h-3.5" /> Restaurer
+                </button>
+                <button onClick={async () => {
+                  const ids = Array.from(selectedIds).filter(id => rentalOrders.find(o => o.id === id)?.status === 'corbeille');
+                  setConfirmDialog({
+                    title: 'Supprimer définitivement',
+                    description: `${ids.length} location(s) seront définitivement supprimées.`,
+                    onConfirm: async () => {
+                      for (const id of ids) {
+                        try { await deleteRentalOrder(id); } catch { /* skip */ }
+                      }
+                      setRentalOrders(prev => prev.filter(o => !ids.includes(o.id!)));
+                      setSelectedIds(new Set());
+                      setConfirmDialog(null);
+                      toast.success('Locations supprimées');
+                    },
+                  });
+                }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-red-700 rounded-lg font-semibold text-xs transition-all border border-red-200 shadow-sm">
+                  <Trash2 className="w-3.5 h-3.5" /> Supprimer définitivement
                 </button>
               </>
             ) : (
@@ -823,18 +944,43 @@ export default function BoutiquePage() {
                   <Send className="w-3.5 h-3.5" /> Offre envoyée
                 </button>
                 <button onClick={async () => {
-                  const qs = quoteRequests.filter(q => q.id && selectedIds.has(q.id) && q.status !== 'declined' && q.status !== 'expired' && q.status !== 'accepted' && q.status !== 'awaiting_delivery');
+                  const qs = quoteRequests.filter(q => q.id && selectedIds.has(q.id) && q.status !== 'declined' && q.status !== 'expired' && q.status !== 'accepted' && q.status !== 'awaiting_delivery' && q.status !== 'corbeille');
                   for (const q of qs) await handleQuoteStatus(q, 'declined');
                   setSelectedIds(new Set());
                 }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-red-700 rounded-lg font-semibold text-xs transition-all border border-gray-200 shadow-sm">
                   <X className="w-3.5 h-3.5" /> Refuser
                 </button>
                 <button onClick={async () => {
-                  const qs = quoteRequests.filter(q => q.id && selectedIds.has(q.id) && (q.status === 'declined' || q.status === 'expired' || q.status === 'accepted' || q.status === 'awaiting_delivery'));
+                  const qs = quoteRequests.filter(q => q.id && selectedIds.has(q.id) && (q.status === 'declined' || q.status === 'expired' || q.status === 'accepted' || q.status === 'awaiting_delivery' || q.status === 'corbeille'));
                   for (const q of qs) await handleQuoteStatus(q, 'pending_supplier');
                   setSelectedIds(new Set());
                 }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-amber-50 text-amber-700 rounded-lg font-semibold text-xs transition-all border border-gray-200 shadow-sm">
                   <RotateCcw className="w-3.5 h-3.5" /> Restaurer
+                </button>
+                <button onClick={async () => {
+                  const qs = quoteRequests.filter(q => q.id && selectedIds.has(q.id) && q.status !== 'corbeille');
+                  for (const q of qs) await handleQuoteStatus(q, 'corbeille');
+                  setSelectedIds(new Set());
+                }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-red-700 rounded-lg font-semibold text-xs transition-all border border-gray-200 shadow-sm">
+                  <Trash2 className="w-3.5 h-3.5" /> Corbeille
+                </button>
+                <button onClick={async () => {
+                  const ids = Array.from(selectedIds).filter(id => quoteRequests.find(q => q.id === id)?.status === 'corbeille');
+                  setConfirmDialog({
+                    title: 'Supprimer définitivement',
+                    description: `${ids.length} demande(s) seront définitivement supprimées.`,
+                    onConfirm: async () => {
+                      for (const id of ids) {
+                        try { await deleteQuoteRequest(id); } catch { /* skip */ }
+                      }
+                      setQuoteRequests(prev => prev.filter(q => !ids.includes(q.id!)));
+                      setSelectedIds(new Set());
+                      setConfirmDialog(null);
+                      toast.success('Demandes supprimées');
+                    },
+                  });
+                }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-red-700 rounded-lg font-semibold text-xs transition-all border border-red-200 shadow-sm">
+                  <Trash2 className="w-3.5 h-3.5" /> Supprimer définitivement
                 </button>
               </>
             )}
@@ -875,6 +1021,10 @@ export default function BoutiquePage() {
                 {rentalStatusLabels[s]}
               </button>
             ))}
+            <button onClick={() => setRentalStatus('corbeille')}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${rentalStatus === 'corbeille' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              {rentalStatusLabels['corbeille']}
+            </button>
           </div>
         ) : (
           <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
@@ -932,12 +1082,12 @@ export default function BoutiquePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    <AnimatePresence mode="popLayout">
-                      {paginatedSales.map((o, idx) => {
+                    {paginatedSales.map((o, idx) => {
                         const isSelected = o.id ? selectedIds.has(o.id) : false;
                         return (
-                          <motion.tr key={o.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className={`border-b border-gray-50 group transition-colors hover:bg-blue-50/20 cursor-pointer ${isSelected ? 'bg-blue-50/40' : ''}`}
+                          <tr key={o.id}
+                            className={`admin-row-entry border-b border-gray-50 group transition-colors hover:bg-blue-50/20 cursor-pointer ${isSelected ? 'bg-blue-50/40' : ''}`}
+                            style={{ animationDelay: `${idx * 0.04}s` }}
                             onClick={() => o && setDetailOrder(o)}
                           >
                             <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
@@ -1003,34 +1153,40 @@ export default function BoutiquePage() {
                                     <Archive className="w-4 h-4" />
                                   </button>
                                 )}
-                                {o.status === 'archive' && (
-                                  <>
-                                    <button onClick={(e) => { e.stopPropagation(); o.id && handleSaleAction(o.id, 'commande'); }}
-                                      className="p-1.5 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
-                                      title="Restaurer">
-                                      <RotateCcw className="w-4 h-4" />
-                                    </button>
-                                    <button onClick={(e) => { e.stopPropagation(); o.id && handleSaleAction(o.id, 'corbeille'); }}
-                                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
-                                      title="Corbeille">
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
-                                  </>
+                                {(o.status === 'commande' || o.status === 'archive') && (
+                                  <button onClick={(e) => { e.stopPropagation(); o.id && handleSaleAction(o.id, 'corbeille'); }}
+                                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+                                    title="Corbeille">
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
                                 )}
-                                {o.status === 'corbeille' && (
+                                {o.status === 'archive' && (
                                   <button onClick={(e) => { e.stopPropagation(); o.id && handleSaleAction(o.id, 'commande'); }}
                                     className="p-1.5 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
                                     title="Restaurer">
                                     <RotateCcw className="w-4 h-4" />
                                   </button>
                                 )}
+                                {o.status === 'corbeille' && (
+                                  <>
+                                    <button onClick={(e) => { e.stopPropagation(); o.id && handleSaleAction(o.id, 'commande'); }}
+                                      className="p-1.5 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
+                                      title="Restaurer">
+                                      <RotateCcw className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); o.id && handleSalePermanentDelete(o.id); }}
+                                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+                                      title="Supprimer définitivement">
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                )}
                                 {updating === o.id && <LiquidLoader size={16} />}
                               </div>
                             </td>
-                          </motion.tr>
+                          </tr>
                         );
                       })}
-                    </AnimatePresence>
                   </tbody>
                 </table>
               </div>
@@ -1076,12 +1232,12 @@ export default function BoutiquePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    <AnimatePresence mode="popLayout">
-                      {paginatedRentals.map((o, idx) => {
+                    {paginatedRentals.map((o, idx) => {
                         const isSelected = o.id ? selectedIds.has(o.id) : false;
                         return (
-                          <motion.tr key={o.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className={`border-b border-gray-50 group transition-colors hover:bg-violet-50/20 cursor-pointer ${isSelected ? 'bg-violet-50/40' : ''}`}
+                          <tr key={o.id}
+                            className={`admin-row-entry border-b border-gray-50 group transition-colors hover:bg-violet-50/20 cursor-pointer ${isSelected ? 'bg-violet-50/40' : ''}`}
+                            style={{ animationDelay: `${idx * 0.04}s` }}
                             onClick={() => o && setDetailOrder(o)}
                           >
                             <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
@@ -1175,13 +1331,33 @@ export default function BoutiquePage() {
                                     <RotateCcw className="w-4 h-4" />
                                   </button>
                                 )}
+                                {o.status !== 'corbeille' && (
+                                  <button onClick={(e) => { e.stopPropagation(); o.id && handleRentalAction(o.id, 'corbeille'); }}
+                                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+                                    title="Corbeille">
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                                {o.status === 'corbeille' && (
+                                  <>
+                                    <button onClick={(e) => { e.stopPropagation(); o.id && handleRentalAction(o.id, 'pending_validation'); }}
+                                      className="p-1.5 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
+                                      title="Restaurer">
+                                      <RotateCcw className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); o.id && handleRentalPermanentDelete(o.id); }}
+                                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+                                      title="Supprimer définitivement">
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                )}
                                 {updating === o.id && <LiquidLoader size={16} />}
                               </div>
                             </td>
-                          </motion.tr>
+                          </tr>
                         );
                       })}
-                    </AnimatePresence>
                   </tbody>
                 </table>
               </div>
@@ -1227,12 +1403,12 @@ export default function BoutiquePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    <AnimatePresence mode="popLayout">
-                      {paginatedQuotes.map((q) => {
+                    {paginatedQuotes.map((q, idx) => {
                         const isSelected = q.id ? selectedIds.has(q.id) : false;
                         return (
-                          <motion.tr key={q.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className={`border-b border-gray-50 group transition-colors hover:bg-amber-50/20 cursor-pointer ${isSelected ? 'bg-amber-50/40' : ''}`}
+                          <tr key={q.id}
+                            className={`admin-row-entry border-b border-gray-50 group transition-colors hover:bg-amber-50/20 cursor-pointer ${isSelected ? 'bg-amber-50/40' : ''}`}
+                            style={{ animationDelay: `${idx * 0.04}s` }}
                             onClick={() => { setDetailQuote(q); setQuoteSupplierPrice(q.supplierPrice?.toString() || ''); setQuoteFinalPrice(q.finalPrice?.toString() || ''); }}
                           >
                             <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
@@ -1310,7 +1486,7 @@ export default function BoutiquePage() {
                                     <Send className="w-4 h-4" />
                                   </button>
                                 )}
-                                {q.status !== 'declined' && q.status !== 'expired' && q.status !== 'accepted' && q.status !== 'awaiting_delivery' && (
+                                {q.status !== 'declined' && q.status !== 'expired' && q.status !== 'accepted' && q.status !== 'awaiting_delivery' && q.status !== 'corbeille' && (
                                   <button onClick={(e) => { e.stopPropagation(); handleQuoteStatus(q, 'declined'); }}
                                     className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
                                     title="Refuser">
@@ -1324,13 +1500,33 @@ export default function BoutiquePage() {
                                     <RotateCcw className="w-4 h-4" />
                                   </button>
                                 )}
+                                {q.status !== 'corbeille' && (
+                                  <button onClick={(e) => { e.stopPropagation(); handleQuoteStatus(q, 'corbeille'); }}
+                                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+                                    title="Corbeille">
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                                {q.status === 'corbeille' && (
+                                  <>
+                                    <button onClick={(e) => { e.stopPropagation(); handleQuoteStatus(q, 'pending_supplier'); }}
+                                      className="p-1.5 rounded-lg hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
+                                      title="Restaurer">
+                                      <RotateCcw className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleQuotePermanentDelete(q); }}
+                                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+                                      title="Supprimer définitivement">
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                )}
                                 {quoteUpdating === q.id && <LiquidLoader size={16} />}
                               </div>
                             </td>
-                          </motion.tr>
+                          </tr>
                         );
                       })}
-                    </AnimatePresence>
                   </tbody>
                 </table>
               </div>
@@ -1566,6 +1762,17 @@ export default function BoutiquePage() {
         onClose={() => setTrackingDrawerNumber(null)}
         trackingNumber={trackingDrawerNumber || ''}
       />
+
+      <style>{`
+        @keyframes cascadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .admin-row-entry {
+          opacity: 0;
+          animation: cascadeIn 0.4s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }

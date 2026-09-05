@@ -34,6 +34,7 @@ const statusLabels: Record<RentalStatus, string> = {
   shipped: 'Expédiée',
   completed: 'Terminée',
   cancelled: 'Annulée',
+  corbeille: 'Corbeille',
 };
 
 const statusColors: Record<RentalStatus, string> = {
@@ -42,6 +43,7 @@ const statusColors: Record<RentalStatus, string> = {
   shipped: 'bg-indigo-100 text-indigo-700 border-indigo-200',
   completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   cancelled: 'bg-red-100 text-red-700 border-red-200',
+  corbeille: 'bg-red-100 text-red-700 border-red-200',
 };
 
 const allStatuses: RentalStatus[] = [
@@ -50,6 +52,7 @@ const allStatuses: RentalStatus[] = [
   'shipped',
   'completed',
   'cancelled',
+  'corbeille',
 ];
 
 function StatCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: React.ComponentType<{ className?: string }> }) {
@@ -384,8 +387,22 @@ export default function LocationPage() {
                                 Terminer
                               </Button>
                             )}
+                            {order.status === 'corbeille' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="rounded-lg font-bold text-xs h-8 px-3 border-emerald-200 text-emerald-600 hover:bg-emerald-50 shadow-sm"
+                                onClick={() =>
+                                  handleStatusChange(order, 'pending_validation')
+                                }
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                                Restaurer
+                              </Button>
+                            )}
                             {order.status !== 'cancelled' &&
-                              order.status !== 'completed' && (
+                              order.status !== 'completed' &&
+                              order.status !== 'corbeille' && (
                                 <Button
                                   size="sm"
                                   variant="outline"
