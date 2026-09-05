@@ -75,9 +75,11 @@ export async function POST(req: NextRequest) {
     const customer = await findCustomerByEmail(normalizedEmail);
 
     if (!customer) {
+      // Anti-énumération : réponse 200 identique à celle d'un compte existant.
+      // On ne révèle jamais si le compte existe ou non.
       return NextResponse.json({
-        error: "Aucun compte associé n'a été trouvé. L'espace membre est exclusivement réservé aux clients ayant effectué une commande. Si vous avez récemment passé une commande, vérifiez que vous utilisez la même adresse e-mail que celle renseignée lors de votre achat.",
-      }, { status: 404 });
+        message: 'Si un compte correspondant existe, un lien de connexion vous sera envoyé à cette adresse.',
+      });
     }
 
     const hasPassword = !!(customer as any).passwordHash;
@@ -100,7 +102,7 @@ export async function POST(req: NextRequest) {
     console.log(`[MagicLink] Sent to ${normalizedEmail} (mode: ${mode})`);
 
     return NextResponse.json({
-      message: 'Si cet email est associé à un compte, un lien vous a été envoyé.',
+      message: 'Si un compte correspondant existe, un lien de connexion vous sera envoyé à cette adresse.',
     });
   } catch (err: any) {
     console.error('[MagicLink] Error:', err);
