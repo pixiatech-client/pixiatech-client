@@ -40,6 +40,51 @@ export const EMPTY_PROFESSIONAL_INFO: ProfessionalInfo = {
   vatRate: 0.2,
 };
 
+export interface VerifiedCompanySiret {
+  companyName: string;
+  siret: string;
+  address: string;
+  city: string;
+  state: string;
+  postcode: string;
+  country: string;
+}
+
+export async function verifyCompanySiret(siret: string): Promise<VerifiedCompanySiret> {
+  const url = `https://recherche-entreprises.api.gouv.fr/search?per_page=1&q=${encodeURIComponent(siret)}`;
+
+  let res: Response;
+  try {
+    res = await fetch(url);
+  } catch {
+    throw new APIError(0, 'Impossible de contacter le service de vérification. Vérifiez votre connexion réessayez.');
+  }
+
+  if (!res.ok) throw new APIError(res.status, 'Le service de vérification est momentanément indisponible. Réessayez dans quelques instants.');
+
+  let data: any;
+  try {
+    data = await res.json();
+  } catch {
+    throw new APIError(res.status, 'Le service de vérification a renvoyé une réponse invalide. Réessayez dans quelques instants.');
+  }
+
+  const first = data?.results?.[0];
+  if (!first || !first.siege) {
+    throw new APIError(404, 'Aucune entreprise trouvée avec ce numéro SIRET. Veuillez vérifier.');
+  }
+
+  return {
+    companyName: typeof first.nom_complet === 'string' ? first.nom_complet : '',
+    siret: typeof first.siege.siret === 'string' ? first.siege.siret : siret,
+    address: typeof first.siege.adresse === 'string' ? first.siege.adresse : '',
+    city: typeof first.siege.libelle_commune === 'string' ? first.siege.libelle_commune : '',
+    state: typeof first.siege.departement === 'string' ? first.siege.departement : '',
+    postcode: typeof first.siege.code_postal === 'string' ? first.siege.code_postal : '',
+    country: 'France',
+  };
+}
+
 export async function fetchProfessionalInfo(): Promise<ProfessionalInfo | null> {
   const res = await fetch('/api/boutique/customer/get-professional-info', { cache: 'no-store' });
 
