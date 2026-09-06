@@ -2530,6 +2530,11 @@
         "discount": "Remise"
     },
     "checkout": {
+        "outOfStockTitle": "Produit en rupture de stock",
+        "outOfStockDesc": "Ce produit vient malheureusement d'être acheté par un autre client et n'est plus disponible. Veuillez mettre à jour votre panier avant de continuer.",
+        "outOfStockItemDesc": "Le produit « {productName} » vient malheureusement d'être acheté par un autre client et n'est plus disponible. Veuillez mettre à jour votre panier avant de continuer.",
+        "backToCart": "Retourner au panier",
+        "updateCart": "Mettre à jour mon panier",
         "totalToPay": "Total à payer",
         "subtotalHT": "Sous-total HT",
         "vatMessage": "Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.",

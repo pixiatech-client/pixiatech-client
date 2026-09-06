@@ -666,5 +666,12 @@
   "Account Number": "账号",
   "Save bank information": "保存银行信息",
   "Bank information saved successfully.": "银行信息保存成功。",
-  "Error saving bank information.": "保存银行信息时出错。"
+  "Error saving bank information.": "保存银行信息时出错。",
+  "checkout": {
+    "outOfStockTitle": "商品缺货",
+    "outOfStockDesc": "很抱歉，该商品刚刚被其他客户购买，目前已无库存。请在继续前更新您的购物车。",
+    "outOfStockItemDesc": "很抱歉，商品“{productName}”刚刚被其他客户购买，目前已无库存。请在继续前更新您的购物车。",
+    "backToCart": "返回购物车",
+    "updateCart": "更新购物车"
+  }
 }

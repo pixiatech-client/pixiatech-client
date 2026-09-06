@@ -2528,6 +2528,11 @@
         "discount": "Discount"
     },
     "checkout": {
+        "outOfStockTitle": "Product out of stock",
+        "outOfStockDesc": "This product was unfortunately just purchased by another customer and is no longer available. Please update your cart before continuing.",
+        "outOfStockItemDesc": "The product \"{productName}\" was unfortunately just purchased by another customer and is no longer available. Please update your cart before continuing.",
+        "backToCart": "Back to cart",
+        "updateCart": "Update my cart",
         "totalToPay": "Total to pay",
         "subtotalHT": "Subtotal excl. tax",
         "vatMessage": "Prices displayed are excl. tax. VAT will be added to the total amount at checkout.",
