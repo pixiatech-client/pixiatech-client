@@ -68,6 +68,15 @@ interface ProductVariant {
   stock?: number;
 }
 
+function normalizeProductVariants(raw: unknown): ProductVariant[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'object') {
+    return Object.values(raw as Record<string, ProductVariant>);
+  }
+  return [];
+}
+
 // --- Helper to identify if a URL is a video ---
 interface GalleryItem {
   url: string;
@@ -85,11 +94,12 @@ const isVideoUrl = (url: string | undefined | null): boolean => {
   return isDirectVideo || isYouTube;
 };
 
-function normalizeGalleryItems(items: any[]): GalleryItem[] {
-  return (items || []).map((item: any) =>
+function normalizeGalleryItems(items: unknown): GalleryItem[] {
+  const arr = Array.isArray(items) ? items : (items && typeof items === 'object' ? Object.values(items) : []);
+  return arr.map((item: any) =>
     typeof item === 'string'
-      ? { url: item, type: isVideoUrl(item) ? 'video' as const : 'image' as const }
-      : { url: item.url, type: item.type || 'image', file: item.file }
+      ? { url: item, type: isVideoUrl(item) ? ('video' as const) : ('image' as const) }
+      : { url: item?.url || '', type: item?.type || 'image', file: item?.file }
   );
 }
 
@@ -244,9 +254,9 @@ function filterProductForSpace(product: any, targetSpace: 'boutique' | 'configur
     const { screenType, ...rest } = data;
     return {
       ...rest,
-      badges: data.badges || [],
-      galleryUrls: data.galleryUrls || [],
-      variants: data.variants || [],
+      badges: Array.isArray(data.badges) ? data.badges : [],
+      galleryUrls: Array.isArray(data.galleryUrls) ? data.galleryUrls : [],
+      variants: normalizeProductVariants(data.variants),
       description: data.description || '',
       descriptionDetaillee: data.descriptionDetaillee || '',
     };
@@ -2751,7 +2761,8 @@ const ProduitPage = ({
   const variantMatchCount = React.useMemo(() => {
     if (!variantFind.trim()) return 0;
     const search = variantFind.toLowerCase();
-    return variants.reduce((count, v) => {
+    const safeVariants = Array.isArray(variants) ? variants : [];
+    return safeVariants.reduce((count, v) => {
       let n = count;
       if (v.name?.toLowerCase().includes(search)) n++;
       if (v.description?.toLowerCase().includes(search)) n++;
@@ -2764,7 +2775,8 @@ const ProduitPage = ({
     if (!variantFind.trim()) return;
     const search = variantFind;
     const replace = variantReplace;
-    setVariants(variants.map(v => ({
+    const safeVariants = Array.isArray(variants) ? variants : [];
+    setVariants(safeVariants.map(v => ({
       ...v,
       name: v.name?.split(search).join(replace) ?? v.name,
       description: v.description?.split(search).join(replace) ?? v.description,
@@ -3922,7 +3934,7 @@ const ProduitPage = ({
 
 
             {/* Recherche / Remplacement global dans les variantes */}
-            {activeSpace === 'boutique' && variants.length > 1 && (
+            {activeSpace === 'boutique' && Array.isArray(variants) && variants.length > 1 && (
               <div className="bg-transparent md:bg-white border-none md:border-2 border-slate-100 rounded-[2rem] p-0 md:p-4 space-y-3 shadow-none md:shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
@@ -3995,7 +4007,7 @@ const ProduitPage = ({
                   </div>
                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{t('admin.productManagement.variants')}</h4>
                 </div>
-                {variants.length > 0 && (
+                {Array.isArray(variants) && variants.length > 0 && (
                   <div className="space-y-2">
                     {variants.map((v, i) => {
                       const isOpen = openVariantIdx === i;
@@ -6084,7 +6096,8 @@ export default function ProductManagementClient() {
       // remapper vers l'URL Storage réelle obtenue au-dessus évite d'écrire du
       // base64 dans Firestore (limite 1 MiB / document) et de casser l'affichage
       // côté boutique. Une référence orpheline est neutralisée (`image: ''`).
-      const finalVariants = variants.map(v => {
+      const safeVariants = normalizeProductVariants(variants);
+      const finalVariants = safeVariants.map(v => {
         if (v.image && v.image.startsWith('data:')) {
           const realUrl = galleryUrlByDataUrl.get(v.image);
           return { ...v, image: realUrl || '' };
@@ -6983,14 +6996,14 @@ export default function ProductManagementClient() {
       setPrixDalle(editingProduct.pricePerTile?.toString() || editingProduct.prixDalle || '20');
       setDimensionsEnabled(!!(editingProduct.dimensionsEnabled || editingProduct.hasDimensions));
       setScreenType(editingProduct.screenType || 'flat');
-      setBadges(editingProduct.badges || []);
+      setBadges(Array.isArray(editingProduct.badges) ? editingProduct.badges : []);
       setGalleryUrls(normalizeGalleryItems(editingProduct.galleryUrls || editingProduct.gallery || []));
       setDescription(editingProduct.description || '');
       setDescriptionDetaillee(editingProduct.descriptionDetaillee || '');
-      setVariants(editingProduct.variants || []);
+      setVariants(normalizeProductVariants(editingProduct.variants));
       setSurface(parseFloat(editingProduct.surfaceMinRequise || '0') || 9.00);
       setIsHidden(!!editingProduct.isHidden);
-      setUpsellFor(editingProduct.upsellFor || []);
+      setUpsellFor(Array.isArray(editingProduct.upsellFor) ? editingProduct.upsellFor : []);
 
       // Populate rating & downloads custom properties
       setRating((editingProduct.rating ?? 5).toString());
