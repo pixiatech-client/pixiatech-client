@@ -284,7 +284,12 @@ export async function POST(req: NextRequest) {
         saleVatValidated = false;
         orderVatRate = adminVatRate;
       }
-      orderVat = saleVatValidated ? 0 : round2(resolved.subtotal * orderVatRate);
+      // Autoliquidation (0%) UNIQUEMENT si le numéro TVA est validé ET présent,
+      // sinon taux admin. Règle stricte identique à computeInvoiceAmounts :
+      // vatValidated === true && vatNumber non vide.
+      const hasVatExemption = saleVatValidated && typeof saleVatNumber === 'string' && saleVatNumber.trim() !== '';
+      orderVat = hasVatExemption ? 0 : round2(resolved.subtotal * orderVatRate);
+      if (hasVatExemption) orderVatRate = 0;
     }
 
     const rentalOrderIds: string[] = [];
