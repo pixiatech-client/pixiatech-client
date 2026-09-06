@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2,
@@ -19,6 +19,7 @@ import {
   CheckCircle,
   ArrowLeft,
   ArrowRight,
+  Save,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -159,6 +160,8 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
   const [saving, setSaving] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<FieldErrors>({});
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const existingRef = useRef<ProfessionalInfo | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,6 +173,7 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
         if (info) {
           setExisting(true);
           setStep('complete');
+          existingRef.current = info;
           setValues({
             companyName: info.companyName,
             siret: info.siret,
@@ -284,13 +288,54 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
       ) as FormValues;
 
       const saved = await saveProfessionalInfo(cleaned);
-      onComplete(saved);
+      existingRef.current = saved;
+      setSuccessMessage('Vos informations ont été mises à jour.');
+      if (editing) {
+        // Retour en mode lecture sans avancer dans le wizard.
+        setEditing(false);
+      } else {
+        onComplete(saved);
+      }
     } catch (err: any) {
       setApiError(err?.message || 'Une erreur est survenue pendant l\'enregistrement.');
     } finally {
       setSaving(false);
     }
+  }, [values, editing, onComplete]);
+
+  const continueReadonly = useCallback(() => {
+    if (existingRef.current) {
+      onComplete(existingRef.current);
+      return;
+    }
+    onComplete({ ...values, vatValidated: false, vatRate: 0.2 });
   }, [values, onComplete]);
+
+  const cancelEdit = useCallback(() => {
+    if (existingRef.current) {
+      const info = existingRef.current;
+      setValues({
+        companyName: info.companyName,
+        siret: info.siret,
+        vatNumber: info.vatNumber,
+        address: info.address,
+        city: info.city,
+        state: info.state,
+        postcode: info.postcode,
+        country: info.country || 'France',
+        officePhone: info.officePhone,
+        companyEmail: info.companyEmail,
+        position: info.position,
+        employees: info.employees,
+        website: info.website,
+        fax: info.fax,
+      });
+    }
+    setFormErrors({});
+    setApiError(null);
+    setSuccessMessage(null);
+    setEditing(false);
+  }, []);
 
   const isSubmitDisabled = useMemo(() => saving, [saving]);
   const isVerifyDisabled = useMemo(() => verifying, [verifying]);
@@ -431,7 +476,7 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
               )}
               <div className="leading-relaxed">
                 {existing ? (
-                  <p>Vos informations professionnelles ont été récupérées. Vérifiez qu'elles sont toujours correctes.</p>
+                  <p>Vos informations professionnelles sont enregistrées. Vous pouvez les modifier à tout moment.</p>
                 ) : (
                   <>
                     <p className="font-semibold">
@@ -443,6 +488,13 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
               </div>
             </div>
 
+            {successMessage && (
+              <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm text-emerald-800 mb-6">
+                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <p className="leading-relaxed font-medium">{successMessage}</p>
+              </div>
+            )}
+
             <div
               className={cn(
                 'flex items-center justify-between gap-2 pb-3 mb-7 border-b border-gray-100',
@@ -450,10 +502,13 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
               )}
             >
               <h3 className="text-[15px] font-semibold text-gray-900">Informations professionnelles</h3>
-              {existing && (
+              {existing && !editing && (
                 <button
                   type="button"
-                  onClick={() => setEditing((prev) => !prev)}
+                  onClick={() => {
+                    setSuccessMessage(null);
+                    setEditing(true);
+                  }}
                   className="text-[13px] font-semibold text-[#004ac6] hover:text-[#003ea8] transition-colors"
                 >
                   Modifier mes informations
@@ -711,24 +766,52 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
                 </button>
               )}
 
-              <button
-                type="button"
-                onClick={submit}
-                disabled={isSubmitDisabled}
-                className={primaryBtnClass}
-              >
-                {saving ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Enregistrement…
-                  </>
-                ) : (
-                  <>
-                    Confirmer et continuer
-                    <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
-              </button>
+              {existing && editing && (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  disabled={isSubmitDisabled}
+                  className={outlineBtnClass}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Annuler
+                </button>
+              )}
+
+              {existing && !editing ? (
+                <button
+                  type="button"
+                  onClick={continueReadonly}
+                  className={primaryBtnClass}
+                >
+                  Continuer vers le choix de la commande
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={submit}
+                  disabled={isSubmitDisabled}
+                  className={primaryBtnClass}
+                >
+                  {saving ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      Enregistrement…
+                    </>
+                  ) : editing ? (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Enregistrer mes modifications
+                    </>
+                  ) : (
+                    <>
+                      Confirmer et continuer
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </motion.div>
         )}
