@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { PayPalScriptProvider, usePayPalScriptReducer, PayPalButtons, FUNDING, PayPalCardFieldsProvider, PayPalNameField, PayPalNumberField, PayPalExpiryField, PayPalCVVField, usePayPalCardFields } from '@paypal/react-paypal-js';
-import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, User, ChevronDown, Tag, X, Info, Building2, ArrowLeft, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, User, ChevronDown, Tag, X, Info, Building2, ArrowLeft, ArrowRight, Mail } from 'lucide-react';
 import CustomerInfoForm from '@/components/customer-info-form';
 import CustomerLoginPrompt from '@/components/customer-login-prompt';
 import {
@@ -12,6 +12,7 @@ import {
   isCustomerInfoComplete,
   validateCustomerField,
   profileToCustomerValues,
+  EMAIL_RE,
 } from '@/lib/customer-form-utils';
 import type { CustomerInfoValues } from '@/lib/customer-form-utils';
 import { useCart, type CartItem } from '@/contexts/CartContext';
@@ -57,7 +58,7 @@ function ConfettiEffect() {
   return null;
 }
 
-function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, paymentContext, fundingSource }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: CustomerInfoValues; deliveryCost: number; paymentContext: BoutiqueAmountInput; fundingSource?: (typeof FUNDING)[keyof typeof FUNDING] }) {
+function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, paymentContext, fundingSource, disabled }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: CustomerInfoValues; deliveryCost: number; paymentContext: BoutiqueAmountInput; fundingSource?: (typeof FUNDING)[keyof typeof FUNDING]; disabled?: boolean }) {
   const [{ isResolved, isRejected }] = usePayPalScriptReducer();
   const [error, setError] = useState<string | null>(null);
 
@@ -82,15 +83,21 @@ function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, pa
 
   return (
     <div className="w-full">
-      <PayPalButtons
-        fundingSource={fundingSource ?? FUNDING.PAYPAL}
-        style={{
-          layout: 'vertical',
-          shape: 'rect',
-          color: fundingSource === FUNDING.CARD ? 'black' : 'gold',
-          height: 48,
-          label: fundingSource === FUNDING.CARD ? 'pay' : 'paypal',
-        }}
+      {disabled ? (
+        <div className="w-full h-12 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center gap-2 cursor-not-allowed">
+          <Lock size={15} className="text-gray-400" />
+          <span className="text-sm font-semibold text-gray-400">Renseignez votre email ci-dessus pour activer PayPal</span>
+        </div>
+      ) : (
+        <PayPalButtons
+          fundingSource={fundingSource ?? FUNDING.PAYPAL}
+          style={{
+            layout: 'vertical',
+            shape: 'rect',
+            color: fundingSource === FUNDING.CARD ? 'black' : 'gold',
+            height: 48,
+            label: fundingSource === FUNDING.CARD ? 'pay' : 'paypal',
+          }}
         createOrder={async () => {
           // Le montant est résolu côté serveur depuis le panier reconstruit.
           const res = await fetch('/api/paypal/create-order', {
@@ -152,7 +159,8 @@ function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, pa
           console.error('PayPal error:', err);
           setError('Erreur de paiement PayPal. Veuillez réessayer.');
         }}
-      />
+        />
+      )}
       {error && (
         <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
           {error}
@@ -350,6 +358,7 @@ export default function CheckoutPage() {
   // un changement de session (customerId différent) autorise une re-application
   // complète, sinon on ne remplit que les champs non touchés et vides.
   const lastPrefillCustomerIdRef = useRef<string | null>(null);
+  const magicLinkAutoRef = useRef(false);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(firestore, 'settings', 'main'), (snap) => {
@@ -488,6 +497,7 @@ export default function CheckoutPage() {
   }, [delivery.postcode, delivery.city, subtotal]);
 
   const isDeliveryComplete = isCustomerInfoComplete(delivery);
+  const paypalEmailValid = EMAIL_RE.test(delivery.email.trim());
 
   function handleDeliveryChange(field: keyof CustomerInfoValues, value: string) {
     setDelivery(d => ({ ...d, [field]: value }));
@@ -603,6 +613,36 @@ export default function CheckoutPage() {
     clearCart();
     setStep('confirmation');
   };
+
+  // Lien magique automatique : dès qu'un paiement a créé un nouvel espace
+  // client, on envoie un lien d'accès à l'email saisi sur la page de paiement.
+  useEffect(() => {
+    if (step !== 'confirmation' || !isNewCustomer) return;
+    const email = delivery.email.trim();
+    if (!EMAIL_RE.test(email)) return;
+    if (magicLinkAutoRef.current) return;
+    magicLinkAutoRef.current = true;
+    setMagicSending(true);
+    setMagicError('');
+    (async () => {
+      try {
+        const res = await fetch('/api/boutique/send-magic-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body?.error || "Échec de l'envoi");
+        }
+        setMagicSent(true);
+      } catch (e: any) {
+        setMagicError(e?.message || "Erreur lors de l'envoi du lien");
+      } finally {
+        setMagicSending(false);
+      }
+    })();
+  }, [step, isNewCustomer, delivery.email]);
 
   if (step === 'confirmation') {
     const paymentLabel = paymentMethod === 'card' ? t('checkout.cardPayment') : t('checkout.paypal');
@@ -1060,6 +1100,32 @@ export default function CheckoutPage() {
                     <p className="text-xs text-gray-500 mb-4 leading-relaxed">
                       Cliquez ci-dessous pour régler votre commande avec votre compte PayPal ou par carte sans créer de compte. Vos informations et votre adresse de livraison seront transmises automatiquement par PayPal.
                     </p>
+                    <div className="mb-4">
+                      <label htmlFor="checkout-paypal-email" className="block text-[11px] font-semibold text-gray-700 mb-1.5">
+                        Votre email
+                      </label>
+                      <div className="relative">
+                        <Mail size={14} className="absolute left-3 top-2.5 text-gray-400" />
+                        <input
+                          id="checkout-paypal-email"
+                          type="email"
+                          autoComplete="email"
+                          value={delivery.email}
+                          onChange={e => handleDeliveryChange('email', e.target.value)}
+                          onBlur={e => handleDeliveryBlur('email', e.target.value)}
+                          placeholder="Votre adresse email pour recevoir votre espace client"
+                          className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2.5 text-[13px] outline-none focus:border-[#004ac6] focus:ring-2 focus:ring-blue-100 transition-colors"
+                        />
+                      </div>
+                      {deliveryTouched.email && deliveryErrors.email && (
+                        <p className="text-[11px] text-red-500 mt-1.5">{deliveryErrors.email}</p>
+                      )}
+                      <p className={`text-[11px] mt-1.5 ${paypalEmailValid ? 'text-emerald-600' : 'text-gray-400'}`}>
+                        {paypalEmailValid
+                          ? `Un lien d'accès à votre espace client sera envoyé à ${delivery.email.trim()} si un nouveau compte est créé.`
+                          : 'Le paiement PayPal ne s\'active qu\'après saisie d\'une adresse email valide.'}
+                      </p>
+                    </div>
                     <PayPalButtonGroup
                       total={total}
                       handlePay={handlePay}
@@ -1068,6 +1134,7 @@ export default function CheckoutPage() {
                       deliveryCost={deliveryCost}
                       paymentContext={paymentContext}
                       fundingSource={FUNDING.PAYPAL}
+                      disabled={!paypalEmailValid}
                     />
                   </div>
                 )}
