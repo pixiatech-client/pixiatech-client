@@ -75,7 +75,7 @@ export function InvoiceTable({ refreshKey }: InvoiceTableProps) {
   }, [load, refreshKey]);
 
   const downloadPdf = (invoice: InvoiceSummary) => {
-    // TODO Phase 4 : ouvrir le modal preview PDF reste à implémenter (bouton "Voir").
+    // Téléchargement du PDF stocké (route [id]/pdf, attachment).
     window.open(`/api/boutique/invoices/${invoice.id}/pdf`, '_blank');
   };
 
