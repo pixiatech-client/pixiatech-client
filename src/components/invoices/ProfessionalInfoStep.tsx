@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Save,
+  Lock,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -340,6 +341,8 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
   const isSubmitDisabled = useMemo(() => saving, [saving]);
   const isVerifyDisabled = useMemo(() => verifying, [verifying]);
   const part2Disabled = useMemo(() => existing && !editing, [existing, editing]);
+  // Champs d'identité définitivement verrouillés après la 1re validation.
+  const identityLocked = useMemo(() => existing, [existing]);
 
   if (loading) {
     return (
@@ -525,7 +528,7 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
                     value={values.companyName}
                     onChange={(e) => set('companyName', e.target.value)}
                     placeholder="Nom de votre entreprise"
-                    disabled={part2Disabled}
+                    disabled={identityLocked}
                     className={cn(inputClass, 'pl-10', formErrors.companyName && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
                     aria-invalid={!!formErrors.companyName}
                   />
@@ -542,7 +545,7 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
                     onChange={(e) => set('siret', e.target.value)}
                     placeholder="9 ou 14 chiffres"
                     inputMode="numeric"
-                    disabled={part2Disabled}
+                    disabled={identityLocked}
                     className={cn(inputClass, 'pl-10', formErrors.siret && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
                     aria-invalid={!!formErrors.siret}
                   />
@@ -558,11 +561,23 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
                     value={values.vatNumber}
                     onChange={(e) => set('vatNumber', e.target.value)}
                     placeholder="FR12345678901"
-                    disabled={part2Disabled}
+                    disabled={identityLocked}
                     className={cn(inputClass, 'pl-10')}
                   />
                 </div>
               </div>
+
+              {existing && (
+                <div className="md:col-span-2">
+                  <div className="flex items-start gap-2.5 rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5">
+                    <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
+                    <p className="text-[12.5px] leading-5 text-gray-500">
+                      Ces informations sont définitives après vérification de l'entreprise.
+                      Pour toute modification, contactez le support.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="md:col-span-2">
                 {lineLabel('Adresse complète', true)}
