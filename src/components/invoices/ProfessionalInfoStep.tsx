@@ -11,16 +11,17 @@ import {
   Phone,
   Mail,
   Briefcase,
-  Users,
-  Link2,
-  Printer,
   Info,
   AlertCircle,
   CheckCircle,
+  ShieldCheck,
+  User,
   ArrowLeft,
   ArrowRight,
   Save,
   Lock,
+  Tag,
+  CalendarDays,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -31,8 +32,6 @@ import {
   type ProfessionalInfo,
   type VerifiedCompanySiret,
 } from '@/services/professionalInfoService';
-
-const EMPLOYEE_OPTIONS = ['1-10', '11-50', '51-200', '200+'];
 
 const COUNTRIES = [
   'France',
@@ -82,6 +81,7 @@ const INITIAL_VALUES: FormValues = {
   employees: '',
   website: '',
   fax: '',
+  nafCode: '',
 };
 
 type FieldErrors = Partial<Record<keyof FormValues, string>>;
@@ -130,6 +130,24 @@ function FieldError({ message }: { message?: string }) {
   );
 }
 
+function formatSiret(siret: string): string {
+  const digits = siret.replace(/\s+/g, '');
+  if (digits.length === 14) {
+    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9)}`;
+  }
+  if (digits.length === 9) {
+    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+  }
+  return siret;
+}
+
+function formatDate(iso: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 interface ProfessionalInfoStepProps {
   onComplete: (info: ProfessionalInfo) => void;
 }
@@ -153,8 +171,9 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
   const [loadError, setLoadError] = useState<string | null>(null);
   const [existing, setExisting] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [step, setStep] = useState<'verify' | 'complete'>('verify');
   const [direction, setDirection] = useState<'left' | 'right'>('right');
+  const [clientType, setClientType] = useState<'particulier' | 'professionnel'>('professionnel');
+  const [showHelp, setShowHelp] = useState(false);
   const [verifiedCompany, setVerifiedCompany] = useState<VerifiedCompanySiret | null>(null);
   const [values, setValues] = useState<FormValues>(INITIAL_VALUES);
   const [verifying, setVerifying] = useState(false);
@@ -173,7 +192,6 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
         if (cancelled) return;
         if (info) {
           setExisting(true);
-          setStep('complete');
           existingRef.current = info;
           setValues({
             companyName: info.companyName,
@@ -190,6 +208,7 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
             employees: info.employees,
             website: info.website,
             fax: info.fax,
+            nafCode: info.nafCode || '',
           });
         }
       } catch (err: any) {
@@ -217,22 +236,23 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
     setApiError(null);
   }, []);
 
-  const goToContinue = useCallback((from: 'left' | 'right') => {
-    setDirection(from);
-    setStep('complete');
+  const goToVerify = useCallback(() => {
+    setEditing(false);
+    setVerifiedCompany(null);
+    setFormErrors({});
+    setApiError(null);
+    setSuccessMessage(null);
+    setDirection('right');
   }, []);
 
-  const goToVerify = useCallback((from: 'left' | 'right') => {
-    setDirection(from);
-    setStep('verify');
-  }, []);
+  const view = useMemo<'verify' | 'card' | 'form'>(() => {
+    if (!existing && !verifiedCompany) return 'verify';
+    if (editing) return 'form';
+    return 'card';
+  }, [existing, verifiedCompany, editing]);
 
   const handleVerify = useCallback(async () => {
     const errors: FieldErrors = {};
-
-    if (!values.companyName.trim()) {
-      errors.companyName = 'Ce champ est obligatoire.';
-    }
 
     const siret = values.siret.replace(/\s+/g, '');
     if (!siret) {
@@ -254,15 +274,17 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
       setVerifiedCompany(company);
       setValues((prev) => ({
         ...prev,
-        companyName: company.companyName,
+        companyName: company.companyName || company.legalName,
         siret: company.siret,
+        vatNumber: company.vatNumber,
         address: company.address,
         city: company.city,
         state: company.state,
         postcode: company.postcode,
         country: company.country,
+        nafCode: company.nafCode,
       }));
-      goToContinue('left');
+      setDirection('left');
     } catch (err: any) {
       setFormErrors((prev) => ({
         ...prev,
@@ -272,7 +294,7 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
     } finally {
       setVerifying(false);
     }
-  }, [values.companyName, values.siret, goToContinue]);
+  }, [values.siret]);
 
   const submit = useCallback(async () => {
     const errors = validatePart2(values);
@@ -312,6 +334,16 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
     onComplete({ ...values, vatValidated: false, vatRate: 0.2 });
   }, [values, onComplete]);
 
+  const continueNew = useCallback(() => {
+    const errors = validatePart2(values);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      setEditing(true);
+      return;
+    }
+    submit();
+  }, [values, submit]);
+
   const cancelEdit = useCallback(() => {
     if (existingRef.current) {
       const info = existingRef.current;
@@ -330,6 +362,7 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
         employees: info.employees,
         website: info.website,
         fax: info.fax,
+        nafCode: info.nafCode || '',
       });
     }
     setFormErrors({});
@@ -340,7 +373,6 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
 
   const isSubmitDisabled = useMemo(() => saving, [saving]);
   const isVerifyDisabled = useMemo(() => verifying, [verifying]);
-  const part2Disabled = useMemo(() => existing && !editing, [existing, editing]);
   // Champs d'identité définitivement verrouillés après la 1re validation.
   const identityLocked = useMemo(() => existing, [existing]);
 
@@ -370,12 +402,15 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
     );
   }
 
+  const siren = verifiedCompany?.siren || values.siret.replace(/\s+/g, '').slice(0, 9) || '';
+  const companyLabel = verifiedCompany ? (verifiedCompany.legalName || verifiedCompany.companyName) : (values.companyName || 'Votre entreprise');
+
   return (
     <div className={cn(cardClass, 'relative overflow-hidden')}>
       <AnimatePresence custom={direction} mode="wait" initial={false}>
-        {step === 'verify' ? (
+        {view === 'verify' ? (
           <motion.div
-            key="card-verify"
+            key="view-verify"
             custom={direction}
             variants={stepVariants}
             initial="initial"
@@ -383,64 +418,94 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
             exit="exit"
             transition={stepTransition}
           >
-            <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm text-amber-900 mb-6">
+            <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5 text-sm text-blue-900 mb-6">
               <Info className="mt-0.5 h-4 w-4 shrink-0" />
               <p className="leading-relaxed">
-                Avant de générer votre première facture, veuillez remplir vos informations professionnelles. Commencez par vérifier votre entreprise grâce à son numéro SIRET.
+                Avant de générer votre première facture, vérifiez votre entreprise en quelques secondes grâce à son numéro SIRET.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div className="md:col-span-2">
-                {lineLabel('Société', true)}
-                <div className="relative">
-                  <Building2 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    value={values.companyName}
-                    onChange={(e) => set('companyName', e.target.value)}
-                    placeholder="Nom de votre entreprise"
-                    className={cn(inputClass, 'pl-10', formErrors.companyName && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
-                    aria-invalid={!!formErrors.companyName}
-                  />
-                </div>
-                <FieldError message={formErrors.companyName} />
+            <div className="mb-6">
+              <span className="block text-[11px] font-semibold text-gray-500 mb-2">Vous êtes</span>
+              <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
+                <button
+                  type="button"
+                  onClick={() => setClientType('particulier')}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
+                    clientType === 'particulier' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  )}
+                >
+                  <User className="h-4 w-4" />
+                  Particulier
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setClientType('professionnel')}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
+                    clientType === 'professionnel' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  )}
+                >
+                  <Building2 className="h-4 w-4" />
+                  Professionnel
+                </button>
               </div>
+            </div>
 
+            {clientType === 'particulier' ? (
+              <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm text-amber-900">
+                <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                <p className="leading-relaxed">
+                  La génération de vos factures nécessite les informations de votre entreprise.
+                  Sélectionnez <span className="font-semibold">« Professionnel »</span> pour continuer.
+                </p>
+              </div>
+            ) : (
               <div>
-                {lineLabel('SIREN / SIRET', true)}
+                {lineLabel('Numéro SIRET', true)}
                 <div className="relative">
                   <Hash className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <Input
                     value={values.siret}
                     onChange={(e) => set('siret', e.target.value)}
-                    placeholder="9 ou 14 chiffres"
+                    placeholder="14 chiffres (ex : 552 049 447 00017)"
                     inputMode="numeric"
                     className={cn(inputClass, 'pl-10', formErrors.siret && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
                     aria-invalid={!!formErrors.siret}
                   />
                 </div>
                 <FieldError message={formErrors.siret} />
-              </div>
 
-              <div>
-                {lineLabel('Numéro de TVA Intracommunautaire')}
-                <div className="relative">
-                  <Globe className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    value={values.vatNumber}
-                    onChange={(e) => set('vatNumber', e.target.value)}
-                    placeholder="FR12345678901"
-                    className={cn(inputClass, 'pl-10')}
-                  />
-                </div>
+                <p className="mt-3 text-[13px] leading-5 text-gray-500">
+                  Votre SIRET permet de retrouver automatiquement les informations publiques de votre entreprise.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setShowHelp((s) => !s)}
+                  className="mt-2 inline-block text-[13px] font-semibold text-[#004ac6] hover:text-[#003ea8] transition-colors"
+                >
+                  {showHelp ? 'Masquer les détails' : 'En savoir plus'}
+                </button>
+
+                {showHelp && (
+                  <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5">
+                    <p className="text-[13px] leading-5 text-gray-600">
+                      Nous récupérons automatiquement la raison sociale, le SIREN/SIRET, le numéro de TVA
+                      intracommunautaire, l'activité et l'adresse du siège. Aucune donnée sensible n'est
+                      affichée.
+                    </p>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             <div className="mt-8 flex flex-col-reverse sm:flex-row gap-3 sm:items-center sm:justify-end">
               <button
                 type="button"
                 onClick={handleVerify}
-                disabled={isVerifyDisabled}
+                disabled={isVerifyDisabled || clientType !== 'professionnel'}
                 className={primaryBtnClass}
               >
                 {verifying ? (
@@ -454,9 +519,9 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
               </button>
             </div>
           </motion.div>
-        ) : (
+        ) : view === 'card' ? (
           <motion.div
-            key="card-complete"
+            key="view-card"
             custom={direction}
             variants={stepVariants}
             initial="initial"
@@ -475,17 +540,17 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
               {existing ? (
                 <Info className="mt-0.5 h-4 w-4 shrink-0" />
               ) : (
-                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
               )}
               <div className="leading-relaxed">
                 {existing ? (
                   <p>Vos informations professionnelles sont enregistrées. Vous pouvez les modifier à tout moment.</p>
                 ) : (
                   <>
-                    <p className="font-semibold">
-                      Entreprise vérifiée : {verifiedCompany?.companyName || values.companyName}
+                    <p className="font-semibold">✓ Entreprise vérifiée</p>
+                    <p className="mt-0.5">
+                      Les informations publiques de <span className="font-medium">{companyLabel}</span> ont été retrouvées automatiquement.
                     </p>
-                    <p className="mt-0.5">Vos informations ont été pré-remplies. Vérifiez et complétez les champs restants.</p>
                   </>
                 )}
               </div>
@@ -498,270 +563,65 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
               </div>
             )}
 
-            <div
-              className={cn(
-                'flex items-center justify-between gap-2 pb-3 mb-7 border-b border-gray-100',
-                existing && !editing && 'mb-2 border-b-0'
-              )}
-            >
-              <h3 className="text-[15px] font-semibold text-gray-900">Informations professionnelles</h3>
-              {existing && !editing && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSuccessMessage(null);
-                    setEditing(true);
-                  }}
-                  className="text-[13px] font-semibold text-[#004ac6] hover:text-[#003ea8] transition-colors"
-                >
-                  Modifier mes informations
-                </button>
-              )}
+            <div className="rounded-xl border border-gray-200 overflow-hidden">
+              <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
+                <span className="w-8 h-8 rounded-lg bg-[#004ac6] text-white flex items-center justify-center">
+                  <Building2 className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="text-[15px] font-semibold text-gray-900">{companyLabel}</h3>
+                  <p className="text-[12.5px] text-gray-500">
+                    {siren ? `SIREN ${formatSiret(siren)}` : 'Entreprise non vérifiée'}
+                  </p>
+                </div>
+              </div>
+
+              <dl className="grid grid-cols-1 gap-x-8 gap-y-4 px-5 py-5 sm:grid-cols-2">
+                <div>
+                  <dt className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">SIRET</dt>
+                  <dd className="text-sm font-semibold text-gray-900 mt-1">{values.siret ? formatSiret(values.siret) : '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">TVA Intracommunautaire</dt>
+                  <dd className="text-sm font-semibold text-gray-900 mt-1 flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-gray-400" />
+                    {values.vatNumber || 'Non communiquée'}
+                  </dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Adresse du siège</dt>
+                  <dd className="text-sm font-semibold text-gray-900 mt-1 flex items-start gap-1.5">
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
+                    {[values.address, values.postcode, values.city].map((p) => p.trim()).filter(Boolean).join(', ') || '—'}
+                  </dd>
+                </div>
+                {!existing && verifiedCompany && (
+                  <>
+                    <div>
+                      <dt className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Statut</dt>
+                      <dd className="text-sm font-semibold text-gray-900 mt-1 flex items-center gap-1.5">
+                        <span className={cn('h-2 w-2 rounded-full', verifiedCompany.active ? 'bg-emerald-500' : 'bg-red-500')} />
+                        {verifiedCompany.active ? 'Active' : 'Radiée'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Activité (NAF)</dt>
+                      <dd className="text-sm font-semibold text-gray-900 mt-1 flex items-center gap-1.5">
+                        <Tag className="h-3.5 w-3.5 text-gray-400" />
+                        {verifiedCompany.nafCode || '—'}
+                      </dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Créée le</dt>
+                      <dd className="text-sm font-semibold text-gray-900 mt-1 flex items-center gap-1.5">
+                        <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
+                        {formatDate(verifiedCompany.createdAt) || '—'}
+                      </dd>
+                    </div>
+                  </>
+                )}
+              </dl>
             </div>
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div className="md:col-span-2">
-                {lineLabel('Société', true)}
-                <div className="relative">
-                  <Building2 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    value={values.companyName}
-                    onChange={(e) => set('companyName', e.target.value)}
-                    placeholder="Nom de votre entreprise"
-                    disabled={identityLocked}
-                    className={cn(inputClass, 'pl-10', formErrors.companyName && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
-                    aria-invalid={!!formErrors.companyName}
-                  />
-                </div>
-                <FieldError message={formErrors.companyName} />
-              </div>
-
-              <div>
-                {lineLabel('SIREN / SIRET', true)}
-                <div className="relative">
-                  <Hash className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    value={values.siret}
-                    onChange={(e) => set('siret', e.target.value)}
-                    placeholder="9 ou 14 chiffres"
-                    inputMode="numeric"
-                    disabled={identityLocked}
-                    className={cn(inputClass, 'pl-10', formErrors.siret && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
-                    aria-invalid={!!formErrors.siret}
-                  />
-                </div>
-                <FieldError message={formErrors.siret} />
-              </div>
-
-              <div>
-                {lineLabel('Numéro de TVA Intracommunautaire')}
-                <div className="relative">
-                  <Globe className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    value={values.vatNumber}
-                    onChange={(e) => set('vatNumber', e.target.value)}
-                    placeholder="FR12345678901"
-                    disabled={identityLocked}
-                    className={cn(inputClass, 'pl-10')}
-                  />
-                </div>
-              </div>
-
-              {existing && (
-                <div className="md:col-span-2">
-                  <div className="flex items-start gap-2.5 rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5">
-                    <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
-                    <p className="text-[12.5px] leading-5 text-gray-500">
-                      Ces informations sont définitives après vérification de l'entreprise.
-                      Pour toute modification, contactez le support.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="md:col-span-2">
-                {lineLabel('Adresse complète', true)}
-                <div className="relative">
-                  <MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    value={values.address}
-                    onChange={(e) => set('address', e.target.value)}
-                    placeholder="Adresse complète"
-                    disabled={part2Disabled}
-                    className={cn(inputClass, 'pl-10', formErrors.address && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
-                    aria-invalid={!!formErrors.address}
-                  />
-                </div>
-                <FieldError message={formErrors.address} />
-              </div>
-
-              <div>
-                {lineLabel('Pays', true)}
-                <select
-                  value={values.country}
-                  onChange={(e) => set('country', e.target.value)}
-                  disabled={part2Disabled}
-                  className={cn(selectClass, formErrors.country && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
-                >
-                  {COUNTRIES.map((country) => (
-                    <option key={country} value={country}>
-                      {country}
-                    </option>
-                  ))}
-                </select>
-                <FieldError message={formErrors.country} />
-              </div>
-
-              <div>
-                {lineLabel('Ville', true)}
-                <div className="relative">
-                  <MapPinned className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    value={values.city}
-                    onChange={(e) => set('city', e.target.value)}
-                    placeholder="Paris"
-                    disabled={part2Disabled}
-                    className={cn(inputClass, 'pl-10', formErrors.city && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
-                    aria-invalid={!!formErrors.city}
-                  />
-                </div>
-                <FieldError message={formErrors.city} />
-              </div>
-
-              <div>
-                {lineLabel('État / Région')}
-                <div className="relative">
-                  <MapPinned className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    value={values.state}
-                    onChange={(e) => set('state', e.target.value)}
-                    placeholder="Île-de-France"
-                    disabled={part2Disabled}
-                    className={cn(inputClass, 'pl-10')}
-                  />
-                </div>
-              </div>
-
-              <div>
-                {lineLabel('Code postal', true)}
-                <div className="relative">
-                  <Hash className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    value={values.postcode}
-                    onChange={(e) => set('postcode', e.target.value)}
-                    placeholder="75001"
-                    inputMode="numeric"
-                    disabled={part2Disabled}
-                    className={cn(inputClass, 'pl-10', formErrors.postcode && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
-                    aria-invalid={!!formErrors.postcode}
-                  />
-                </div>
-                <FieldError message={formErrors.postcode} />
-              </div>
-
-              <div>
-                {lineLabel('Téléphone professionnel')}
-                <div className="relative">
-                  <Phone className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    type="tel"
-                    value={values.officePhone}
-                    onChange={(e) => set('officePhone', e.target.value)}
-                    placeholder="+33 1 XX XX XX XX"
-                    disabled={part2Disabled}
-                    className={cn(inputClass, 'pl-10')}
-                  />
-                </div>
-              </div>
-
-              <div>
-                {lineLabel('Email professionnel', true)}
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    type="email"
-                    value={values.companyEmail}
-                    onChange={(e) => set('companyEmail', e.target.value)}
-                    placeholder="contact@entreprise.com"
-                    disabled={part2Disabled}
-                    className={cn(inputClass, 'pl-10', formErrors.companyEmail && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
-                    aria-invalid={!!formErrors.companyEmail}
-                  />
-                </div>
-                <FieldError message={formErrors.companyEmail} />
-              </div>
-
-              <div>
-                {lineLabel('Poste')}
-                <div className="relative">
-                  <Briefcase className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    value={values.position}
-                    onChange={(e) => set('position', e.target.value)}
-                    placeholder="Gérant, Directeur…"
-                    disabled={part2Disabled}
-                    className={cn(inputClass, 'pl-10')}
-                  />
-                </div>
-              </div>
-
-              <div>
-                {lineLabel('Nombre d\'employés')}
-                <div className="relative">
-                  <Users className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <select
-                    value={values.employees}
-                    onChange={(e) => set('employees', e.target.value)}
-                    disabled={part2Disabled}
-                    className={cn(selectClass, 'pl-10')}
-                  >
-                    <option value="">Sélectionnez</option>
-                    {EMPLOYEE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                {lineLabel('Site web')}
-                <div className="relative">
-                  <Link2 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    type="url"
-                    value={values.website}
-                    onChange={(e) => set('website', e.target.value)}
-                    placeholder="https://"
-                    disabled={part2Disabled}
-                    className={cn(inputClass, 'pl-10')}
-                  />
-                </div>
-              </div>
-
-              <div>
-                {lineLabel('Fax')}
-                <div className="relative">
-                  <Printer className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    type="tel"
-                    value={values.fax}
-                    onChange={(e) => set('fax', e.target.value)}
-                    placeholder="+33 1 XX XX XX XX"
-                    disabled={part2Disabled}
-                    className={cn(inputClass, 'pl-10')}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {apiError && (
-              <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 text-sm text-red-700 mt-6">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <p className="leading-relaxed font-medium">{apiError}</p>
-              </div>
-            )}
 
             <div
               className={cn(
@@ -772,7 +632,286 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
               {!existing && (
                 <button
                   type="button"
-                  onClick={() => goToVerify('right')}
+                  onClick={() => setEditing(true)}
+                  disabled={isSubmitDisabled}
+                  className={outlineBtnClass}
+                >
+                  Modifier les informations
+                </button>
+              )}
+
+              {existing && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSuccessMessage(null);
+                    setEditing(true);
+                  }}
+                  disabled={isSubmitDisabled}
+                  className={outlineBtnClass}
+                >
+                  Modifier les informations
+                </button>
+              )}
+
+              {existing ? (
+                <button
+                  type="button"
+                  onClick={continueReadonly}
+                  className={primaryBtnClass}
+                >
+                  Continuer vers le choix de la commande
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={continueNew}
+                  disabled={isSubmitDisabled}
+                  className={primaryBtnClass}
+                >
+                  Continuer
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="view-form"
+            custom={direction}
+            variants={stepVariants}
+            initial="initial"
+            animate="enter"
+            exit="exit"
+            transition={stepTransition}
+          >
+            <div className="mb-6">
+              <h3 className="text-[17px] font-semibold text-gray-900">Confirmez vos informations</h3>
+              <p className="mt-1 text-[13px] text-gray-500">
+                Les données de l'entreprise sont déjà pré-remplies. Complétez simplement le contact et l'adresse.
+              </p>
+            </div>
+
+            {apiError && (
+              <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3.5 text-sm text-red-700 mb-6">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <p className="leading-relaxed font-medium">{apiError}</p>
+              </div>
+            )}
+
+            <div className="mb-5">
+              <div className="flex items-center justify-between gap-2 pb-3 border-b border-gray-100">
+                <h3 className="text-[15px] font-semibold text-gray-900">Entreprise</h3>
+                {!existing && (
+                  <button
+                    type="button"
+                    onClick={goToVerify}
+                    className="text-[13px] font-semibold text-[#004ac6] hover:text-[#003ea8] transition-colors"
+                  >
+                    Modifier le SIRET
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 mt-5">
+                <div className="md:col-span-2">
+                  {lineLabel('Société', true)}
+                  <div className="relative">
+                    <Building2 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={values.companyName}
+                      onChange={(e) => set('companyName', e.target.value)}
+                      placeholder="Nom de votre entreprise"
+                      disabled={identityLocked}
+                      className={cn(inputClass, 'pl-10', formErrors.companyName && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                      aria-invalid={!!formErrors.companyName}
+                    />
+                  </div>
+                  <FieldError message={formErrors.companyName} />
+                </div>
+
+                <div>
+                  {lineLabel('SIREN / SIRET', true)}
+                  <div className="relative">
+                    <Hash className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={values.siret}
+                      onChange={(e) => set('siret', e.target.value)}
+                      placeholder="9 ou 14 chiffres"
+                      inputMode="numeric"
+                      disabled={identityLocked}
+                      className={cn(inputClass, 'pl-10', formErrors.siret && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                      aria-invalid={!!formErrors.siret}
+                    />
+                  </div>
+                  <FieldError message={formErrors.siret} />
+                </div>
+
+                <div>
+                  {lineLabel('Numéro de TVA Intracommunautaire')}
+                  <div className="relative">
+                    <Globe className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={values.vatNumber}
+                      onChange={(e) => set('vatNumber', e.target.value)}
+                      placeholder="FR12345678901"
+                      disabled={identityLocked}
+                      className={cn(inputClass, 'pl-10')}
+                    />
+                  </div>
+                </div>
+
+                {existing && (
+                  <div className="md:col-span-2">
+                    <div className="flex items-start gap-2.5 rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2.5">
+                      <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
+                      <p className="text-[12.5px] leading-5 text-gray-500">
+                        Ces informations sont définitives après vérification de l'entreprise.
+                        Pour toute modification, contactez le support.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="md:col-span-2">
+                  {lineLabel('Adresse complète', true)}
+                  <div className="relative">
+                    <MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={values.address}
+                      onChange={(e) => set('address', e.target.value)}
+                      placeholder="Adresse complète"
+                      className={cn(inputClass, 'pl-10', formErrors.address && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                      aria-invalid={!!formErrors.address}
+                    />
+                  </div>
+                  <FieldError message={formErrors.address} />
+                </div>
+
+                <div>
+                  {lineLabel('Pays', true)}
+                  <select
+                    value={values.country}
+                    onChange={(e) => set('country', e.target.value)}
+                    className={cn(selectClass, formErrors.country && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                  >
+                    {COUNTRIES.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                  <FieldError message={formErrors.country} />
+                </div>
+
+                <div>
+                  {lineLabel('Ville', true)}
+                  <div className="relative">
+                    <MapPinned className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={values.city}
+                      onChange={(e) => set('city', e.target.value)}
+                      placeholder="Paris"
+                      className={cn(inputClass, 'pl-10', formErrors.city && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                      aria-invalid={!!formErrors.city}
+                    />
+                  </div>
+                  <FieldError message={formErrors.city} />
+                </div>
+
+                <div>
+                  {lineLabel('État / Région')}
+                  <div className="relative">
+                    <MapPinned className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={values.state}
+                      onChange={(e) => set('state', e.target.value)}
+                      placeholder="Île-de-France"
+                      className={cn(inputClass, 'pl-10')}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  {lineLabel('Code postal', true)}
+                  <div className="relative">
+                    <Hash className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={values.postcode}
+                      onChange={(e) => set('postcode', e.target.value)}
+                      placeholder="75001"
+                      inputMode="numeric"
+                      className={cn(inputClass, 'pl-10', formErrors.postcode && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                      aria-invalid={!!formErrors.postcode}
+                    />
+                  </div>
+                  <FieldError message={formErrors.postcode} />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
+                <h3 className="text-[15px] font-semibold text-gray-900">Votre interlocuteur</h3>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 mt-5">
+                <div>
+                  {lineLabel('Email professionnel', true)}
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      type="email"
+                      value={values.companyEmail}
+                      onChange={(e) => set('companyEmail', e.target.value)}
+                      placeholder="contact@entreprise.com"
+                      className={cn(inputClass, 'pl-10', formErrors.companyEmail && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                      aria-invalid={!!formErrors.companyEmail}
+                    />
+                  </div>
+                  <FieldError message={formErrors.companyEmail} />
+                </div>
+
+                <div>
+                  {lineLabel('Téléphone professionnel')}
+                  <div className="relative">
+                    <Phone className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      type="tel"
+                      value={values.officePhone}
+                      onChange={(e) => set('officePhone', e.target.value)}
+                      placeholder="+33 1 XX XX XX XX"
+                      className={cn(inputClass, 'pl-10')}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  {lineLabel('Poste')}
+                  <div className="relative">
+                    <Briefcase className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={values.position}
+                      onChange={(e) => set('position', e.target.value)}
+                      placeholder="Gérant, Directeur…"
+                      className={cn(inputClass, 'pl-10')}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className={cn(
+                'mt-8 flex flex-col-reverse sm:flex-row gap-3 sm:items-center',
+                existing ? 'sm:justify-end' : 'sm:justify-between'
+              )}
+            >
+              {!existing && (
+                <button
+                  type="button"
+                  onClick={goToVerify}
                   disabled={isSubmitDisabled}
                   className={outlineBtnClass}
                 >
@@ -793,40 +932,29 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
                 </button>
               )}
 
-              {existing && !editing ? (
-                <button
-                  type="button"
-                  onClick={continueReadonly}
-                  className={primaryBtnClass}
-                >
-                  Continuer vers le choix de la commande
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={submit}
-                  disabled={isSubmitDisabled}
-                  className={primaryBtnClass}
-                >
-                  {saving ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      Enregistrement…
-                    </>
-                  ) : editing ? (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Enregistrer mes modifications
-                    </>
-                  ) : (
-                    <>
-                      Confirmer et continuer
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={submit}
+                disabled={isSubmitDisabled}
+                className={primaryBtnClass}
+              >
+                {saving ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Enregistrement…
+                  </>
+                ) : existing ? (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Enregistrer mes modifications
+                  </>
+                ) : (
+                  <>
+                    Confirmer et continuer
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
             </div>
           </motion.div>
         )}

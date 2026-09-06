@@ -18,6 +18,7 @@ const FIELD_NAMES = [
   'employees',
   'website',
   'fax',
+  'nafCode',
 ] as const;
 
 export async function POST(req: NextRequest) {

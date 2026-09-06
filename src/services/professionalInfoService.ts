@@ -19,6 +19,7 @@ export interface ProfessionalInfo {
   fax: string;
   vatValidated: boolean;
   vatRate: 0 | 0.2;
+  nafCode?: string;
 }
 
 export const EMPTY_PROFESSIONAL_INFO: ProfessionalInfo = {
@@ -42,12 +43,20 @@ export const EMPTY_PROFESSIONAL_INFO: ProfessionalInfo = {
 
 export interface VerifiedCompanySiret {
   companyName: string;
+  legalName: string;
+  siren: string;
   siret: string;
+  vatNumber: string;
   address: string;
+  addressDetail: string;
   city: string;
   state: string;
+  department: string;
   postcode: string;
   country: string;
+  active: boolean;
+  createdAt: string;
+  nafCode: string;
 }
 
 export async function verifyCompanySiret(siret: string): Promise<VerifiedCompanySiret> {
@@ -74,12 +83,20 @@ export async function verifyCompanySiret(siret: string): Promise<VerifiedCompany
   const toStr = (v: unknown): string => (v == null ? '' : String(v));
   return {
     companyName: toStr(data.companyName),
+    legalName: toStr(data.legalName),
+    siren: toStr(data.siren),
     siret: toStr(data.siret) || siret,
+    vatNumber: toStr(data.vatNumber),
     address: toStr(data.address),
+    addressDetail: toStr(data.addressDetail),
     city: toStr(data.city),
     state: toStr(data.state),
+    department: toStr(data.department),
     postcode: toStr(data.postcode),
     country: toStr(data.country) || 'France',
+    active: data.active === true,
+    createdAt: toStr(data.createdAt),
+    nafCode: toStr(data.nafCode),
   };
 }
 
@@ -122,6 +139,7 @@ export async function fetchProfessionalInfo(): Promise<ProfessionalInfo | null> 
     fax: toStr(info.fax),
     vatValidated: info.vatValidated === true,
     vatRate: info.vatRate === 0 ? 0 : 0.2,
+    nafCode: toStr(info.nafCode),
   };
 }
 

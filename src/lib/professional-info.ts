@@ -17,6 +17,7 @@ export interface ProfessionalInfo {
   fax: string;
   vatValidated: boolean;
   vatRate: 0 | 0.2;
+  nafCode?: string;
   createdAt?: string;
   validatedAt?: string;
   updatedAt: string;
