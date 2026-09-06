@@ -496,6 +496,38 @@ export default function CheckoutPage() {
     return () => clearTimeout(timer);
   }, [delivery.postcode, delivery.city, subtotal]);
 
+  // Lien magique automatique : dès qu'un paiement a créé un nouvel espace
+  // client, on envoie un lien d'accès à l'email saisi sur la page de paiement.
+  // Ce hook reste dans le bloc inconditionnel : aucun retour anticipé ne doit
+  // modifier l'ordre des hooks (Rules of Hooks).
+  useEffect(() => {
+    if (step !== 'confirmation' || !isNewCustomer) return;
+    const email = delivery.email.trim();
+    if (!EMAIL_RE.test(email)) return;
+    if (magicLinkAutoRef.current) return;
+    magicLinkAutoRef.current = true;
+    setMagicSending(true);
+    setMagicError('');
+    (async () => {
+      try {
+        const res = await fetch('/api/boutique/send-magic-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body?.error || "Échec de l'envoi");
+        }
+        setMagicSent(true);
+      } catch (e: any) {
+        setMagicError(e?.message || "Erreur lors de l'envoi du lien");
+      } finally {
+        setMagicSending(false);
+      }
+    })();
+  }, [step, isNewCustomer, delivery.email]);
+
   const isDeliveryComplete = isCustomerInfoComplete(delivery);
   const paypalEmailValid = EMAIL_RE.test(delivery.email.trim());
 
@@ -613,36 +645,6 @@ export default function CheckoutPage() {
     clearCart();
     setStep('confirmation');
   };
-
-  // Lien magique automatique : dès qu'un paiement a créé un nouvel espace
-  // client, on envoie un lien d'accès à l'email saisi sur la page de paiement.
-  useEffect(() => {
-    if (step !== 'confirmation' || !isNewCustomer) return;
-    const email = delivery.email.trim();
-    if (!EMAIL_RE.test(email)) return;
-    if (magicLinkAutoRef.current) return;
-    magicLinkAutoRef.current = true;
-    setMagicSending(true);
-    setMagicError('');
-    (async () => {
-      try {
-        const res = await fetch('/api/boutique/send-magic-link', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body?.error || "Échec de l'envoi");
-        }
-        setMagicSent(true);
-      } catch (e: any) {
-        setMagicError(e?.message || "Erreur lors de l'envoi du lien");
-      } finally {
-        setMagicSending(false);
-      }
-    })();
-  }, [step, isNewCustomer, delivery.email]);
 
   if (step === 'confirmation') {
     const paymentLabel = paymentMethod === 'card' ? t('checkout.cardPayment') : t('checkout.paypal');
