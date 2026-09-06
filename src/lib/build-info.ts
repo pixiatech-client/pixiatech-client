@@ -2,6 +2,6 @@
 // Régénéré à chaque `next build` via le script "prebuild". Peut être committé
 // (sert de valeur par défaut pour `next dev`), la compilation l'actualise toujours.
 export const APP_VERSION = "0.1.18";
-export const BUILD_COMMIT = "8c43b4a";
-export const BUILD_TIME = "2026-09-06T20:18:26.082Z";
-export const BUILD_SIGNATURE = "0.1.18-8c43b4a-2026-09-06T20:18:26.082Z";
+export const BUILD_COMMIT = "fb3d763";
+export const BUILD_TIME = "2026-09-06T20:27:33.607Z";
+export const BUILD_SIGNATURE = "0.1.18-fb3d763-2026-09-06T20:27:33.607Z";

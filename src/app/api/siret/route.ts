@@ -66,12 +66,20 @@ export async function GET(request: Request) {
     const siege = first.siege;
     return NextResponse.json({
       companyName: toStr(first.nom_complet),
+      legalName: toStr(first.nom_raison_sociale),
+      siren: toStr(first.siren),
       siret: toStr(siege.siret) || siret,
+      vatNumber: toStr(first.tva),
       address: toStr(siege.adresse),
+      addressDetail: toStr(siege.complement_adresse),
       city: toStr(siege.libelle_commune),
       state: REGION_CODES[toStr(siege.region)] || '',
+      department: toStr(siege.departement),
       postcode: toStr(siege.code_postal),
       country: 'France',
+      active: toStr(first.etat_administratif) === 'A',
+      createdAt: toStr(first.date_creation),
+      nafCode: toStr(first.activite_principale),
     });
   } catch {
     return NextResponse.json(
