@@ -6,15 +6,15 @@ import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { getSettings, getDeliverySettings, getLaborSettings, getProducts, getLocations } from '@/app/actions/public-actions';
 import type { Product, Settings, LaborSettings, DeliverySettings, Locations } from '@/lib/types';
 
-// Le robot PixiaTech ne doit jamais apparaître sur les pages d'authentification /
-// de validation du compte. Il reste actif sur la boutique et les pages générales.
+// Le robot PixiaTech ne doit jamais apparaître dans l'espace utilisateur
+// (mon-compte entier : authentification, tableau de bord, commandes, factures…),
+// ni sur les paiements, l'admin ou les pages embarquées.
 const EXCLUDED_PATHS = [
   '/boutique/paiement',
   '/admin',
   '/embed',
   '/chat-widget',
-  '/mon-compte/connexion',
-  '/mon-compte/valider',
+  '/mon-compte',
 ];
 
 export function FloatingChatWrapper() {
