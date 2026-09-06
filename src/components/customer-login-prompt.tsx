@@ -24,17 +24,31 @@ import { Mail, Loader2, Send, Lock, LogIn, X } from 'lucide-react';
  * L'email est passé par le formulaire parent afin d'être réutilisé sans
  * nouvelle détection d'existence de compte (anti-énumération).
  */
-export default function CustomerLoginPrompt({ email }: { email: string }) {
+export default function CustomerLoginPrompt({
+  email,
+  forceOpen = false,
+  lockMessage,
+}: {
+  email: string;
+  forceOpen?: boolean;
+  lockMessage?: string;
+}) {
   const [loaded, setLoaded] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
 
-  const [loginPanelOpen, setLoginPanelOpen] = useState(false);
+  const [loginPanelOpen, setLoginPanelOpen] = useState(forceOpen);
   const [loginPassword, setLoginPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loginDisplay, setLoginDisplay] = useState<'choose' | 'password' | 'magic'>('choose');
   const [loginMagicSending, setLoginMagicSending] = useState(false);
   const [loginMagicSent, setLoginMagicSent] = useState(false);
+
+  useEffect(() => {
+    if (forceOpen) {
+      setLoginPanelOpen(true);
+    }
+  }, [forceOpen]);
 
   // Email saisi dans ce panneau, partagé entre les écrans magic-link et mot de
   // passe (indépendant des formulaires parents).
@@ -143,20 +157,30 @@ export default function CustomerLoginPrompt({ email }: { email: string }) {
         <div className="bg-gray-50/70 border border-gray-200 rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[12px] font-bold text-gray-800">Se connecter</p>
-            <button
-              type="button"
-              onClick={() => setLoginPanelOpen(false)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Fermer"
-            >
-              <X size={14} />
-            </button>
+            {!forceOpen && (
+              <button
+                type="button"
+                onClick={() => setLoginPanelOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Fermer"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
+
+          {lockMessage && (
+            <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-[11px] font-medium text-amber-900 leading-relaxed">
+              {lockMessage}
+            </div>
+          )}
 
           {loginDisplay === 'choose' && (
             <>
               <p className="text-[11px] text-gray-500 leading-relaxed mb-3">
-                Récupérez automatiquement vos informations en vous connectant à votre espace client.
+                {lockMessage
+                  ? 'Pour des raisons de sécurité, veuillez vous connecter pour utiliser cette adresse.'
+                  : 'Récupérez automatiquement vos informations en vous connectant à votre espace client.'}
               </p>
               <div className="flex flex-col gap-2">
                 <button
@@ -176,9 +200,11 @@ export default function CustomerLoginPrompt({ email }: { email: string }) {
                   Se connecter avec mon mot de passe
                 </button>
               </div>
-              <p className="mt-3 text-[10px] text-gray-400">
-                Vous pouvez aussi continuer sans vous connecter.
-              </p>
+              {!forceOpen && (
+                <p className="mt-3 text-[10px] text-gray-400">
+                  Vous pouvez aussi continuer sans vous connecter.
+                </p>
+              )}
             </>
           )}
 

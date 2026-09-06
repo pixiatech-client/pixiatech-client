@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { PayPalScriptProvider, usePayPalScriptReducer, PayPalButtons, FUNDING, PayPalCardFieldsProvider, PayPalNameField, PayPalNumberField, PayPalExpiryField, PayPalCVVField, usePayPalCardFields } from '@paypal/react-paypal-js';
-import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, User, ChevronDown, Tag, X, Info, Building2, ArrowLeft, ArrowRight, Mail, AlertTriangle } from 'lucide-react';
+import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, User, ChevronDown, Tag, X, Info, Building2, ArrowLeft, ArrowRight, Mail, AlertTriangle, Loader2 } from 'lucide-react';
 import CustomerInfoForm from '@/components/customer-info-form';
 import CustomerLoginPrompt from '@/components/customer-login-prompt';
 import {
@@ -105,7 +105,27 @@ function parseOutOfStockDetails(
   };
 }
 
-function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, paymentContext, fundingSource, disabled }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: CustomerInfoValues; deliveryCost: number; paymentContext: BoutiqueAmountInput; fundingSource?: (typeof FUNDING)[keyof typeof FUNDING]; disabled?: boolean }) {
+function PayPalButtonGroup({
+  total,
+  handlePay,
+  items,
+  delivery,
+  deliveryCost,
+  paymentContext,
+  fundingSource,
+  disabled,
+  disabledMessage,
+}: {
+  total: number;
+  handlePay: (isNew?: boolean) => void;
+  items: CartItem[];
+  delivery: CustomerInfoValues;
+  deliveryCost: number;
+  paymentContext: BoutiqueAmountInput;
+  fundingSource?: (typeof FUNDING)[keyof typeof FUNDING];
+  disabled?: boolean;
+  disabledMessage?: string;
+}) {
   const [{ isResolved, isRejected }] = usePayPalScriptReducer();
   const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
@@ -165,9 +185,11 @@ function PayPalButtonGroup({ total, handlePay, items, delivery, deliveryCost, pa
       )}
 
       {disabled ? (
-        <div className="w-full h-12 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center gap-2 cursor-not-allowed">
-          <Lock size={15} className="text-gray-400" />
-          <span className="text-sm font-semibold text-gray-400">Renseignez votre email ci-dessus pour activer PayPal</span>
+        <div className="w-full min-h-[48px] py-3 px-4 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center gap-2 cursor-not-allowed text-center">
+          <Lock size={15} className="text-gray-400 shrink-0" />
+          <span className="text-xs sm:text-sm font-semibold text-gray-500">
+            {disabledMessage || (fundingSource === FUNDING.CARD ? 'Complétez vos informations pour activer le paiement' : 'Renseignez votre email ci-dessus pour activer PayPal')}
+          </span>
         </div>
       ) : (
         <PayPalButtons
@@ -483,20 +505,88 @@ export default function CheckoutPage() {
   const [vatMessageColor, setVatMessageColor] = useState('orange');
   const [isPreFilledFromRental, setIsPreFilledFromRental] = useState(false);
 
+  // Détection session client + vérification proactive de stock et d'email
+  const [isSessionLoggedIn, setIsSessionLoggedIn] = useState(false);
+  const [outOfStockProductIds, setOutOfStockProductIds] = useState<string[]>([]);
+  const [stockChecking, setStockChecking] = useState(false);
+  const [emailAccountExists, setEmailAccountExists] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+
   // Reflet de l'état courant pour les effets asynchrones (fetch réseau) :
   // évite d'écraser une valeur déjà saisie par l'utilisateur si le fetch
   // aboutit après son interaction avec le formulaire.
   const deliveryTouchedRef = useRef(deliveryTouched);
   deliveryTouchedRef.current = deliveryTouched;
 
-  // Indique si une session client est active (détectée via session-status).
-  // Si vrai, on n'affiche pas la proposition de connexion sous l'email.
-
   // Le premier pré-remplissage s'applique à tous les champs encore vides ;
   // un changement de session (customerId différent) autorise une re-application
   // complète, sinon on ne remplit que les champs non touchés et vides.
   const lastPrefillCustomerIdRef = useRef<string | null>(null);
   const magicLinkAutoRef = useRef(false);
+
+  // Vérification de stock proactive dès le chargement ou la modification du panier
+  useEffect(() => {
+    if (items.length === 0) {
+      setOutOfStockProductIds([]);
+      return;
+    }
+    let active = true;
+    setStockChecking(true);
+    fetch('/api/boutique/verify-cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: items.map(i => ({
+          productId: i.productId,
+          type: i.type,
+          quantity: i.quantity,
+          variantReference: i.variantReference,
+          variantName: i.variantName,
+        })),
+      }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!active) return;
+        if (Array.isArray(data?.outOfStockProductIds)) {
+          setOutOfStockProductIds(data.outOfStockProductIds);
+        }
+      })
+      .catch(err => {
+        console.error('Erreur vérification stock panier:', err);
+      })
+      .finally(() => {
+        if (active) setStockChecking(false);
+      });
+    return () => { active = false; };
+  }, [items]);
+
+  // Vérification en temps réel de l'existence d'un compte client (debounce 500ms)
+  useEffect(() => {
+    const trimmed = delivery.email.trim().toLowerCase();
+    if (!EMAIL_RE.test(trimmed) || isSessionLoggedIn) {
+      setEmailAccountExists(false);
+      setCheckingEmail(false);
+      return;
+    }
+
+    setCheckingEmail(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/boutique/check-email?email=${encodeURIComponent(trimmed)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setEmailAccountExists(data?.exists === true);
+        }
+      } catch (err) {
+        console.error('Erreur vérification compte email:', err);
+      } finally {
+        setCheckingEmail(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [delivery.email, isSessionLoggedIn]);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(firestore, 'settings', 'main'), (snap) => {
@@ -530,6 +620,9 @@ export default function CheckoutPage() {
         const sessionRes = await fetch('/api/boutique/session-status');
         if (!sessionRes.ok) return;
         const session = await sessionRes.json();
+        if (session?.loggedIn) {
+          setIsSessionLoggedIn(true);
+        }
         if (!session?.loggedIn) return;
         const info = await fetchProfessionalInfo();
         if (!active) return;
@@ -749,6 +842,38 @@ export default function CheckoutPage() {
   const total = calc.total;
   const totalLabel = calc.totalLabel;
   const vatLabel = calc.vatLabel;
+
+  // Détection des blocages : stock ou compte existant non connecté
+  const hasCartOutOfStock = outOfStockProductIds.length > 0;
+  const outOfStockItemNames = items
+    .filter(i => outOfStockProductIds.includes(i.productId))
+    .map(i => i.name);
+
+  const paypalBlockedByStock = hasCartOutOfStock;
+  const paypalBlockedByEmailAccount = emailAccountExists && !isSessionLoggedIn;
+  const paypalDisabled = !paypalEmailValid || paypalBlockedByStock || paypalBlockedByEmailAccount;
+
+  let paypalDisabledMessage = '';
+  if (paypalBlockedByStock) {
+    paypalDisabledMessage = 'Paiement bloqué : article(s) en rupture de stock dans le panier';
+  } else if (paypalBlockedByEmailAccount) {
+    paypalDisabledMessage = 'Veuillez vous connecter ci-dessus pour finaliser votre commande';
+  } else if (!paypalEmailValid) {
+    paypalDisabledMessage = 'Renseignez votre email ci-dessus pour activer PayPal';
+  }
+
+  const cardBlockedByStock = hasCartOutOfStock;
+  const cardBlockedByEmailAccount = emailAccountExists && !isSessionLoggedIn;
+  const cardDisabled = !isDeliveryComplete || cardBlockedByStock || cardBlockedByEmailAccount;
+
+  let cardDisabledMessage = '';
+  if (cardBlockedByStock) {
+    cardDisabledMessage = 'Paiement bloqué : article(s) en rupture de stock dans le panier';
+  } else if (cardBlockedByEmailAccount) {
+    cardDisabledMessage = 'Veuillez vous connecter ci-dessus pour finaliser votre commande';
+  } else if (!isDeliveryComplete) {
+    cardDisabledMessage = "Complétez l'adresse de livraison pour activer le paiement";
+  }
 
   // Contexte envoyé au serveur pour la résolution du montant (jamais d'`amount` client).
   const paymentContext: BoutiqueAmountInput = {
@@ -1187,6 +1312,42 @@ export default function CheckoutPage() {
                   <ArrowLeft size={14} />
                   Retour
                 </button>
+                {/* Alerte bloquante en cas de rupture de stock */}
+                {hasCartOutOfStock && (
+                  <div className="p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl animate-in fade-in duration-200">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center shrink-0 mt-0.5 text-red-600">
+                        <AlertTriangle size={18} className="stroke-[2.5]" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <h4 className="text-sm font-bold text-red-950">
+                          Commande bloquée : article(s) en rupture de stock
+                        </h4>
+                        <p className="text-xs text-red-800 leading-relaxed">
+                          Le stock est insuffisant pour les articles suivants de votre panier :
+                        </p>
+                        <ul className="list-disc list-inside text-xs text-red-700 font-semibold space-y-0.5 pt-1">
+                          {outOfStockItemNames.map(name => (
+                            <li key={name}>{name}</li>
+                          ))}
+                        </ul>
+                        <p className="text-xs text-red-800 pt-1">
+                          Veuillez supprimer ou modifier ces articles depuis votre panier pour pouvoir finaliser votre commande.
+                        </p>
+                        <div className="pt-2">
+                          <Link
+                            href="/boutique/panier"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-sm"
+                          >
+                            <ArrowLeft size={14} />
+                            <span>Modifier mon panier</span>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Payment method toggle — always visible */}
                 <div className="grid grid-cols-2 gap-2 mb-6">
                   <button
@@ -1221,11 +1382,16 @@ export default function CheckoutPage() {
                   </button>
                 </div>
 
-                {/* Connexion facultative — entre les boutons de paiement et le formulaire.
-                    Non bloquante : le client peut toujours continuer en invité.
-                    Le composant réutilisable masque automatiquement le bloc si le
-                    client est déjà connecté (session-status). */}
-                <CustomerLoginPrompt email={delivery.email} />
+                {/* Connexion facultative ou obligatoire si un compte existe */}
+                <CustomerLoginPrompt
+                  email={delivery.email}
+                  forceOpen={emailAccountExists && !isSessionLoggedIn}
+                  lockMessage={
+                    emailAccountExists && !isSessionLoggedIn
+                      ? `Un compte client PIXIATECH est associé à « ${delivery.email.trim()} ». Veuillez vous connecter ci-dessous pour finaliser votre commande.`
+                      : undefined
+                  }
+                />
 
                 {/* PayPal direct payment block — displayed immediately when PayPal tab is active */}
                 {paymentMethod === 'paypal' && (
@@ -1260,11 +1426,25 @@ export default function CheckoutPage() {
                       {deliveryTouched.email && deliveryErrors.email && (
                         <p className="text-[11px] text-red-500 mt-1.5">{deliveryErrors.email}</p>
                       )}
-                      <p className={`text-[11px] mt-1.5 ${paypalEmailValid ? 'text-emerald-600' : 'text-gray-400'}`}>
-                        {paypalEmailValid
-                          ? `Un lien d'accès à votre espace client sera envoyé à ${delivery.email.trim()} si un nouveau compte est créé.`
-                          : 'Le paiement PayPal ne s\'active qu\'après saisie d\'une adresse email valide.'}
-                      </p>
+                      {checkingEmail && (
+                        <p className="text-[11px] text-gray-500 mt-1.5 flex items-center gap-1.5">
+                          <Loader2 size={12} className="animate-spin text-gray-400" />
+                          Vérification du compte client...
+                        </p>
+                      )}
+                      {emailAccountExists && !isSessionLoggedIn && !checkingEmail && (
+                        <p className="text-[11px] text-amber-700 font-semibold mt-1.5 flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg p-2">
+                          <AlertTriangle size={13} className="shrink-0 text-amber-600" />
+                          Un compte existe déjà avec cet email. Veuillez vous connecter ci-dessus pour continuer.
+                        </p>
+                      )}
+                      {!emailAccountExists && !checkingEmail && (
+                        <p className={`text-[11px] mt-1.5 ${paypalEmailValid ? 'text-emerald-600' : 'text-gray-400'}`}>
+                          {paypalEmailValid
+                            ? `Un lien d'accès à votre espace client sera envoyé à ${delivery.email.trim()} si un nouveau compte est créé.`
+                            : 'Le paiement PayPal ne s\'active qu\'après saisie d\'une adresse email valide.'}
+                        </p>
+                      )}
                     </div>
                     <PayPalButtonGroup
                       total={total}
@@ -1274,7 +1454,8 @@ export default function CheckoutPage() {
                       deliveryCost={deliveryCost}
                       paymentContext={paymentContext}
                       fundingSource={FUNDING.PAYPAL}
-                      disabled={!paypalEmailValid}
+                      disabled={paypalDisabled}
+                      disabledMessage={paypalDisabledMessage}
                     />
                   </div>
                 )}
@@ -1348,6 +1529,8 @@ export default function CheckoutPage() {
                         deliveryCost={deliveryCost}
                         paymentContext={paymentContext}
                         fundingSource={FUNDING.CARD}
+                        disabled={cardDisabled}
+                        disabledMessage={cardDisabledMessage}
                       />
                     </div>
                   ) : (

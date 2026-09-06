@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPayPalOrder } from '@/lib/paypal';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import {
   PaypalAmountError,
   resolveOfferAmount,
@@ -20,6 +21,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Taux de TVA admin depuis Firestore — même logique que capture-order/route.ts.
+    // Fallback 19 % si absent. Garantit que create-order et capture-order utilisent
+    // toujours le même taux et restent cohérents avec l'affichage frontend.
+    const { adminDb } = getFirebaseAdmin();
+    const settingsSnap = await adminDb.collection('settings').doc('main').get();
+    const settingsData = settingsSnap.exists ? (settingsSnap.data() || {}) : {};
+    const adminTaxRate =
+      typeof settingsData?.estimationFlow?.taxRate === 'number' &&
+      settingsData.estimationFlow.taxRate >= 0
+        ? settingsData.estimationFlow.taxRate
+        : 19;
+
     let resolved;
     if (body.quoteRequestId) {
       resolved = await resolveOfferAmount(body.quoteRequestId, {
@@ -32,7 +45,10 @@ export async function POST(req: NextRequest) {
         promoDocId: body.promoDocId,
       });
     } else if (body.cart) {
-      resolved = await resolveBoutiqueAmount(body.cart as BoutiqueAmountInput);
+      resolved = await resolveBoutiqueAmount({
+        ...(body.cart as BoutiqueAmountInput),
+        vatRate: adminTaxRate, // taux autoritaire serveur — jamais celui du client
+      });
     } else {
       return NextResponse.json({ error: 'Contexte de paiement manquant' }, { status: 400 });
     }

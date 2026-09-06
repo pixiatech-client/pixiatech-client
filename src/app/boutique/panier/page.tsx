@@ -169,6 +169,20 @@ export default function CartPage() {
     return !(liveP && cartItemOutOfStock(item, liveP));
   };
 
+  const isOutOfStockItem = (item: CartItem): boolean => {
+    if (item.type === 'rental') return false;
+    const liveP = liveProducts[item.productId];
+    return !!(liveP && cartItemOutOfStock(item, liveP));
+  };
+
+  const hasOutOfStock = items.some(isOutOfStockItem);
+
+  const sortedItems = [...items].sort((a, b) => {
+    const aOos = isOutOfStockItem(a) ? 1 : 0;
+    const bOos = isOutOfStockItem(b) ? 1 : 0;
+    return aOos - bOos;
+  });
+
   useEffect(() => {
     const cartIds = items.map(i => i.productId);
     console.log('[upsell] cartIds:', cartIds);
@@ -245,8 +259,10 @@ export default function CartPage() {
                     Vider le panier
                   </button>
                 </div>
-                {items.map((item) => (
-                  <div key={item.productId + '-' + item.type + '-' + (item.variantName || '')} className="bg-white rounded-2xl border border-gray-200/70 p-5 flex gap-6 transition-all duration-300 hover:shadow-md group">
+                {sortedItems.map((item) => {
+                  const isOos = isOutOfStockItem(item);
+                  return (
+                  <div key={item.productId + '-' + item.type + '-' + (item.variantName || '')} className={`rounded-2xl border p-5 flex gap-6 transition-all duration-300 ${isOos ? 'bg-gray-50/90 border-red-200 opacity-60' : 'bg-white border-gray-200/70 hover:shadow-md group'}`}>
                     <div className="w-24 h-24 sm:w-44 sm:h-44 rounded-xl overflow-hidden bg-gray-100 shrink-0 relative">
                       {(item.variantImage || item.image) ? (
                         <img src={item.variantImage || item.image!} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -283,6 +299,12 @@ export default function CartPage() {
                               </span>
                             )}
                           </div>
+                          {isOos && (
+                            <div className="mt-2 px-2.5 py-1 rounded-lg bg-red-50 border border-red-200 text-[11px] font-semibold text-red-600 flex items-center gap-1.5">
+                              <span className="shrink-0">⚠️</span>
+                              <span>Cet article est en rupture de stock. Supprimez-le pour passer commande.</span>
+                            </div>
+                          )}
                           {item.type === 'rental' && item.rentalStartDate && (
                             <div className="mt-2 text-xs text-gray-500 space-y-0.5">
                               <p>Du {item.rentalStartDate} au {item.rentalEndDate}</p>
@@ -323,12 +345,16 @@ export default function CartPage() {
                       <div className="mt-auto flex flex-wrap items-end justify-between gap-3">
                         <div className="flex flex-col gap-1.5">
                           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Quantité</label>
-                          <QtySelector
-                            value={item.quantity}
-                            maxQty={item.stock}
-                            onMinus={() => updateQuantity(item.productId, item.quantity - 1, item.type, item.variantName)}
-                            onPlus={() => updateQuantity(item.productId, item.quantity + 1, item.type, item.variantName)}
-                          />
+                          {isOos ? (
+                            <span className="text-xs font-semibold text-red-500 py-2">Rupture de stock</span>
+                          ) : (
+                            <QtySelector
+                              value={item.quantity}
+                              maxQty={item.stock}
+                              onMinus={() => updateQuantity(item.productId, item.quantity - 1, item.type, item.variantName)}
+                              onPlus={() => updateQuantity(item.productId, item.quantity + 1, item.type, item.variantName)}
+                            />
+                          )}
                         </div>
                         <div className="flex gap-3">
                           <button onClick={() => saveItem(item)} className={`flex items-center gap-1.5 text-xs transition-colors ${isSaved(item.productId, item.variantName) ? 'text-red-500' : 'text-gray-400 hover:text-gray-700'}`}>
@@ -343,7 +369,7 @@ export default function CartPage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                );})}
 
               </div>
 
@@ -423,12 +449,24 @@ export default function CartPage() {
                       </div>
                     </div>
                   <button
-                    onClick={() => router.push('/boutique/paiement')}
-                    className="w-full bg-gray-900 text-white py-3.5 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                    onClick={() => {
+                      if (hasOutOfStock) {
+                        toast.error('Veuillez retirer les articles en rupture de stock avant de passer commande.');
+                        return;
+                      }
+                      router.push('/boutique/paiement');
+                    }}
+                    disabled={hasOutOfStock}
+                    className="w-full bg-gray-900 text-white py-3.5 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Passer à la caisse
                     <ArrowRight size={18} />
                   </button>
+                  {hasOutOfStock && (
+                    <p className="text-[11px] text-red-500 text-center font-medium mt-2">
+                      Certains articles de votre panier sont en rupture de stock. Supprimez-les pour finaliser votre commande.
+                    </p>
+                  )}
                   {vatMessageEnabled && calc.vatRate === 0 && (() => {
                     const s = VAT_MESSAGE_STYLES[vatMessageColor] ?? VAT_MESSAGE_STYLES.orange;
                     return (
