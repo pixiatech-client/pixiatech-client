@@ -3,6 +3,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 export interface InvoiceItem {
   productName: string;
   variantName?: string | null;
+  productImage?: string | null;
   quantity: number;
   unitPrice: number;
   lineTotal: number;
@@ -146,9 +147,15 @@ export function buildInvoiceItems(order: any): InvoiceItem[] {
     return order.items.map((it: any) => {
       const quantity = Math.floor(asNumber(it.quantity)) || 1;
       const unitPrice = asNumber(it.unitPrice);
+      const img = typeof it.productImage === 'string' && it.productImage
+        ? it.productImage
+        : typeof it.image === 'string' && it.image
+          ? it.image
+          : null;
       return {
         productName: String(it.productName || it.name || 'Produit'),
         variantName: typeof it.variantName === 'string' && it.variantName ? it.variantName : null,
+        productImage: img,
         quantity,
         unitPrice,
         lineTotal: round2(unitPrice * quantity),
@@ -162,6 +169,7 @@ export function buildInvoiceItems(order: any): InvoiceItem[] {
     {
       productName: String(order.productName || order.productReference || 'Produit'),
       variantName: typeof order.variantName === 'string' && order.variantName ? order.variantName : null,
+      productImage: typeof order.productImage === 'string' && order.productImage ? order.productImage : null,
       quantity,
       unitPrice,
       lineTotal: round2(unitPrice * quantity),

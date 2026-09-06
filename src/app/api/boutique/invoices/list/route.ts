@@ -54,6 +54,9 @@ export async function GET(req: NextRequest) {
 
     const result = invoices.map((inv) => ({
       ...inv,
+      firstProductImage: Array.isArray(inv.items) && inv.items.length > 0
+        ? inv.items[0].productImage || null
+        : null,
       order: ordersMap.get(`${inv.orderType}:${inv.orderId}`) || null,
     }));
 

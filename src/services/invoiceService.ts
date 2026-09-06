@@ -43,6 +43,7 @@ export interface InvoiceSummary {
   orderDate: string;
   generatedAt: string;
   emailSentAt?: string;
+  firstProductImage?: string | null;
   order?: any;
   [key: string]: unknown;
 }

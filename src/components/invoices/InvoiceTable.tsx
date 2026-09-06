@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Eye, Download, FileText, AlertCircle } from 'lucide-react';
+import { Eye, Download, FileText, AlertCircle, Package } from 'lucide-react';
 import { fetchInvoiceList, type InvoiceSummary } from '@/services/invoiceService';
 import { EmptyState } from '@/components/invoices/EmptyState';
 
@@ -18,6 +18,19 @@ function formatDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function productInfo(invoice: InvoiceSummary): { name: string; image: string | null; count: number } {
+  const items = (invoice as any).items;
+  if (Array.isArray(items) && items.length > 0) {
+    const first = items[0];
+    return {
+      name: first.productName || 'Produit',
+      image: first.productImage || invoice.firstProductImage || null,
+      count: items.length,
+    };
+  }
+  return { name: '—', image: invoice.firstProductImage || null, count: 0 };
 }
 
 function statusConfig(status: string): { label: string; bg: string; text: string } {
@@ -100,6 +113,7 @@ export function InvoiceTable({ refreshKey }: InvoiceTableProps) {
       <div className="space-y-3 md:hidden">
         {invoices.map((invoice) => {
           const cfg = statusConfig(invoice.status);
+          const prod = productInfo(invoice);
           return (
             <div key={invoice.id} className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="flex items-center justify-between gap-3">
@@ -110,6 +124,23 @@ export function InvoiceTable({ refreshKey }: InvoiceTableProps) {
                 <span className={`inline-flex items-center px-2.5 py-1 rounded text-[11px] font-semibold shrink-0 ${cfg.bg} ${cfg.text}`}>
                   {cfg.label}
                 </span>
+              </div>
+              <div className="flex items-center gap-3 mt-3">
+                {prod.image ? (
+                  <img src={prod.image} alt="" className="w-9 h-9 rounded-lg object-cover bg-gray-100 shrink-0" />
+                ) : (
+                  <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                    <Package className="w-4 h-4 text-gray-400" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold text-gray-900 truncate">{prod.name}</p>
+                  {prod.count > 1 && (
+                    <span className="inline-flex mt-0.5 items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-500">
+                      +{prod.count - 1} autre{prod.count - 1 > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                 <div className="flex items-center gap-2">
@@ -152,6 +183,7 @@ export function InvoiceTable({ refreshKey }: InvoiceTableProps) {
               <tr>
                 <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">N° Facture</th>
                 <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">Produit</th>
                 <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">Type</th>
                 <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider text-right">Montant TTC</th>
                 <th className="px-6 py-4 text-[13px] font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
@@ -161,6 +193,7 @@ export function InvoiceTable({ refreshKey }: InvoiceTableProps) {
             <tbody className="divide-y divide-gray-100">
               {invoices.map((invoice) => {
                 const cfg = statusConfig(invoice.status);
+                const prod = productInfo(invoice);
                 return (
                   <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
@@ -168,6 +201,29 @@ export function InvoiceTable({ refreshKey }: InvoiceTableProps) {
                     </td>
                     <td className="px-6 py-4">
                       <span className="text-[14px] text-gray-700">{formatDate(invoice.orderDate)}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {prod.image ? (
+                          <img
+                            src={prod.image}
+                            alt=""
+                            className="w-10 h-10 rounded-lg object-cover bg-gray-100 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                            <Package className="w-5 h-5 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold text-gray-900 truncate max-w-[160px]">{prod.name}</p>
+                          {prod.count > 1 && (
+                            <span className="inline-flex mt-0.5 items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-500">
+                              +{prod.count - 1} autre{prod.count - 1 > 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-1 rounded text-[12px] font-bold bg-gray-100 text-gray-600">
