@@ -41,6 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         'Content-Disposition': `inline; filename="facture-${invoiceNumber}.pdf"`,
         'Content-Length': String(pdfBuffer.length),
         'Cache-Control': 'private, max-age=3600',
+        'X-Frame-Options': 'SAMEORIGIN',
       },
     });
   } catch (err: any) {

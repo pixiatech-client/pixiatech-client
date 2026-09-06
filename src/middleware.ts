@@ -24,15 +24,17 @@ function applySecurityHeaders(response: NextResponse, isHttps: boolean, isEmbedd
         "media-src 'self' blob: data:",
         "font-src 'self' data: https://fonts.gstatic.com",
         "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss: https://*.paypal.com",
-        "frame-src 'self' https://*.paypal.com https://www.youtube.com",
+        "frame-src 'self' blob: data: https://*.paypal.com https://www.youtube.com",
         "frame-ancestors *",
-        "object-src 'none'",
+        "object-src 'self' blob: data:",
         "base-uri 'self'",
         "form-action 'self'",
       ].join('; ')
     );
   } else {
-    response.headers.set('X-Frame-Options', 'DENY');
+    // Permet l'affichage en iframe au sein du même domaine (ex: aperçu de facture dans l'espace client)
+    // tout en bloquant les sites tiers non autorisés contre le clickjacking.
+    response.headers.set('X-Frame-Options', 'SAMEORIGIN');
     response.headers.set(
       'Content-Security-Policy',
       [
@@ -43,8 +45,9 @@ function applySecurityHeaders(response: NextResponse, isHttps: boolean, isEmbedd
         "media-src 'self' blob: data:",
         "font-src 'self' data: https://fonts.gstatic.com",
         "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net wss: https://*.paypal.com",
-        "frame-src 'self' https://*.paypal.com https://www.youtube.com",
-        "object-src 'none'",
+        "frame-src 'self' blob: data: https://*.paypal.com https://www.youtube.com",
+        "frame-ancestors 'self' https://pixiatech.com https://*.pixiatech.com https://*.pixiatech.pro",
+        "object-src 'self' blob: data:",
         "base-uri 'self'",
         "form-action 'self'",
       ].join('; ')
