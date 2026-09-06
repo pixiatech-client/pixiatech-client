@@ -19,6 +19,7 @@ export interface EligibleOrder {
   totalTtc: number;
   rentalStartDate?: string;
   rentalEndDate?: string;
+  promoCode?: string;
 }
 
 export type InvoiceStatus = 'generated' | 'sent' | 'failed' | (string & {});

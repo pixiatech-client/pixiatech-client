@@ -164,6 +164,7 @@ export async function POST(req: NextRequest) {
       vat: amounts.vat,
       vatRate: amounts.vatRate,
       totalTtc: amounts.totalTtc,
+      promoCode: typeof o.promoCode === 'string' && o.promoCode ? o.promoCode : undefined,
     });
 
     const invoiceDoc: InvoiceDoc = {

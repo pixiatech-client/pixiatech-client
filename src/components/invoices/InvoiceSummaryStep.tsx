@@ -36,6 +36,7 @@ export function InvoiceSummaryStep({
 
   const unitPrice = order.quantity > 0 ? order.subtotal / order.quantity : 0;
   const showDiscount = order.discount > 0;
+  const priceAfterDiscount = order.subtotal - order.discount;
   const isAutoLiquidated = order.vatRate === 0;
   // Taux admin remonté par eligible-orders (pourcentage, ex: 19). Fallback calculé depuis le décimal.
   const vatRatePct = typeof order.taxRate === 'number' && order.taxRate >= 0 ? order.taxRate : Math.round(order.vatRate * 100);
@@ -144,14 +145,20 @@ export function InvoiceSummaryStep({
             <span className="font-medium text-gray-900">{formatEuro(order.subtotal)}</span>
           </div>
           {showDiscount && (
-            <div className="flex items-center justify-between w-full text-sm">
-              <span className="text-gray-500">Remise</span>
-              <span className="font-medium text-gray-900">− {formatEuro(order.discount)}</span>
-            </div>
+            <>
+              <div className="flex items-center justify-between w-full text-sm">
+                <span className="text-emerald-600 font-medium">Code promo{order.promoCode ? ` (${order.promoCode})` : ''}</span>
+                <span className="font-semibold text-emerald-600">− {formatEuro(order.discount)}</span>
+              </div>
+              <div className="flex items-center justify-between w-full text-sm">
+                <span className="text-emerald-600 font-medium">Prix après remise</span>
+                <span className="font-semibold text-emerald-600">{formatEuro(priceAfterDiscount)}</span>
+              </div>
+            </>
           )}
           <div className="flex items-center justify-between w-full text-sm">
-            <span className="text-gray-500">Frais de livraison</span>
-            <span className="font-medium text-gray-900">
+            <span className="text-blue-600 font-medium">Frais de livraison</span>
+            <span className="font-semibold text-blue-600">
               {order.deliveryCost > 0 ? formatEuro(order.deliveryCost) : 'Gratuite'}
             </span>
           </div>
@@ -159,7 +166,12 @@ export function InvoiceSummaryStep({
             <span className="text-gray-500">{vatLabel}</span>
             <span className="font-medium text-gray-900">{formatEuro(order.vat)}</span>
           </div>
-          <div className="flex items-center justify-between w-full pt-3 mt-1 border-t border-gray-200">
+          {isAutoLiquidated && (
+            <p className="text-[11px] leading-4 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 w-full text-left">
+              N° TVA intracommunautaire valide — TVA autoliquidée, non applicable (article 283-1 du CGI).
+            </p>
+          )}
+          <div className="flex items-center justify-between w-full pt-3 mt-1 border-t border-gray-200 rounded-lg border-2 border-[#004ac6] bg-[#004ac6]/5 px-4 py-3">
             <span className="text-[15px] font-bold text-gray-900">TOTAL TTC</span>
             <span className="text-[18px] font-bold text-[#004ac6]">{formatEuro(order.totalTtc)}</span>
           </div>

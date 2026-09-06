@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import type { CompanySnapshot, InvoiceItem } from './invoices';
+import { round2 } from './invoices';
 
 export interface InvoicePdfBuyer {
   name: string;
@@ -30,7 +31,11 @@ export interface InvoicePdfData {
   vat: number;
   vatRate: number;
   totalTtc: number;
+  promoCode?: string;
 }
+
+const EMERALD: [number, number, number] = [4, 132, 84];
+const BLUE: [number, number, number] = [37, 99, 235];
 
 const PAGE_W = 210;
 const PAGE_H = 297;
@@ -192,28 +197,43 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
   const summaryX = colTotal - 6;
   const summaryXRight = colTotalRight;
   const isAutoLiquidated = data.vatRate === 0;
-  const summaryLines: Array<[string, string, boolean]> = [
+  const priceAfterDiscount = round2(data.subtotal - data.discount);
+
+  type SummaryRow = [string, string, boolean, [number, number, number]?];
+  const summaryLines: SummaryRow[] = [
     ['Sous-total HT', fmtMoney(data.subtotal), false],
   ];
-  if (data.discount > 0) summaryLines.push(['Remise', `- ${fmtMoney(data.discount)}`, false]);
-  if (data.deliveryCost > 0) summaryLines.push(['Livraison', fmtMoney(data.deliveryCost), false]);
+  if (data.discount > 0) {
+    const promoLabel = data.promoCode ? `Code promo (${data.promoCode})` : 'Code promo';
+    summaryLines.push([promoLabel, `- ${fmtMoney(data.discount)}`, false, EMERALD]);
+    summaryLines.push(['Prix après remise', fmtMoney(priceAfterDiscount), true, EMERALD]);
+  }
+  if (data.deliveryCost > 0) {
+    summaryLines.push(['Livraison', fmtMoney(data.deliveryCost), false, BLUE]);
+  } else {
+    summaryLines.push(['Livraison', 'Gratuite', false, BLUE]);
+  }
   if (isAutoLiquidated) {
-    summaryLines.push(['TVA (0%) — Autoliquidée', fmtMoney(0), false]);
+    summaryLines.push(['TVA (0%) — Autoliquidée', fmtMoney(0), false, EMERALD]);
   } else {
     summaryLines.push([`TVA (${fmtVatRatePct(data.vatRate)}%)`, fmtMoney(data.vat), false]);
   }
 
-  for (const [label, value] of summaryLines) {
-    text(label, summaryX, y, { size: 9, color: [70, 70, 85], align: 'right' });
-    text(value, summaryXRight, y, { size: 9, bold: true, align: 'right' });
+  for (const [label, value, isStrong, color] of summaryLines) {
+    if (color) text(label, summaryX, y, { size: 9, color, align: 'right' });
+    else text(label, summaryX, y, { size: 9, color: [70, 70, 85], align: 'right' });
+    if (isStrong) text(value, summaryXRight, y, { size: 9.5, bold: true, color: color ?? [20, 20, 30], align: 'right' });
+    else text(value, summaryXRight, y, { size: 9, bold: true, color: color ?? [20, 20, 30], align: 'right' });
     y += 6;
   }
 
   doc.setFillColor(15, 23, 42);
   doc.roundedRect(summaryX - 4, y - 0.5, PAGE_W - MARGIN - summaryX + 4, 14, 2, 2, 'F');
   const totalLabel = isAutoLiquidated ? 'TOTAL HT' : 'TOTAL TTC';
-  text(totalLabel, summaryX, y + 6, { size: 10, bold: true, color: [255, 255, 255], align: 'right' });
-  text(fmtMoney(data.totalTtc), summaryXRight, y + 6, { size: 13, bold: true, color: [255, 255, 255], align: 'right' });
+  // Label aligné à GAUCHE dans la boîte, montant aligné à DROITE : aucune troncature
+  // possible du label (« TOTAL HT » jamais rogné), quel que soit le montant.
+  text(totalLabel, summaryX - 2, y + 6, { size: 9.5, bold: true, color: [255, 255, 255], align: 'left' });
+  text(fmtMoney(data.totalTtc), summaryXRight - 2, y + 6, { size: 12.5, bold: true, color: [255, 255, 255], align: 'right' });
   y += 18;
 
   if (isAutoLiquidated) {

@@ -26,6 +26,7 @@ interface EligibleOrder {
   totalTtc: number;
   rentalStartDate?: string;
   rentalEndDate?: string;
+  promoCode?: string;
 }
 
 export async function GET(req: NextRequest) {
@@ -111,6 +112,7 @@ export async function GET(req: NextRequest) {
         totalTtc: amounts.totalTtc,
         rentalStartDate: orderAny.rentalStartDate || undefined,
         rentalEndDate: orderAny.rentalEndDate || undefined,
+        promoCode: typeof orderAny.promoCode === 'string' && orderAny.promoCode ? orderAny.promoCode : undefined,
       });
     }
 
