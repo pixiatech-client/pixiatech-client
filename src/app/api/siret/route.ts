@@ -25,7 +25,13 @@ const REGION_CODES: Record<string, string> = {
 };
 
 function toStr(v: unknown): string {
-  return typeof v === 'string' ? v : '';
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) {
+    // L'API renvoie parfois `tva` sous forme de tableau (ex: ["FR12345678901"]).
+    const first = v.find((x) => typeof x === 'string' && x);
+    return first || '';
+  }
+  return '';
 }
 
 export async function GET(request: Request) {
