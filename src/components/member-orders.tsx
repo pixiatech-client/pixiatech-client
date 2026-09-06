@@ -278,7 +278,7 @@ export function MemberOrders({ orders, translations }: { orders: Order[]; transl
         </div>
 
         <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <span className="text-[13px] text-gray-500">{translations.pagination.replace('{count}', String(orders.length))}</span>
+          <span className="text-[13px] text-gray-500">{translations.pagination.replaceAll('{count}', String(orders.length))}</span>
           <div className="flex items-center gap-2">
             <button className="p-1 border border-gray-200 rounded hover:bg-gray-100 transition-all disabled:opacity-50" disabled>
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
