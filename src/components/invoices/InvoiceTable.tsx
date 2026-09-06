@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Eye, Download, FileText, AlertCircle, Package } from 'lucide-react';
 import { fetchInvoiceList, type InvoiceSummary } from '@/services/invoiceService';
 import { EmptyState } from '@/components/invoices/EmptyState';
+import { InvoicePreviewDialog } from '@/components/invoices/InvoicePreviewDialog';
 
 interface InvoiceTableProps {
   refreshKey: number;
@@ -50,6 +51,7 @@ export function InvoiceTable({ refreshKey }: InvoiceTableProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
+  const [previewInvoice, setPreviewInvoice] = useState<InvoiceSummary | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -154,9 +156,7 @@ export function InvoiceTable({ refreshKey }: InvoiceTableProps) {
                     type="button"
                     title="Voir"
                     className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-[#004ac6] transition-colors"
-                    onClick={() => {
-                      // TODO Phase 4 : ouvrir modal preview
-                    }}
+                    onClick={() => setPreviewInvoice(invoice)}
                   >
                     <Eye className="w-4 h-4" />
                   </button>
@@ -244,9 +244,7 @@ export function InvoiceTable({ refreshKey }: InvoiceTableProps) {
                           type="button"
                           title="Voir"
                           className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-[#004ac6] transition-colors"
-                          onClick={() => {
-                            // TODO Phase 4 : ouvrir modal preview
-                          }}
+                          onClick={() => setPreviewInvoice(invoice)}
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -267,6 +265,12 @@ export function InvoiceTable({ refreshKey }: InvoiceTableProps) {
           </table>
         </div>
       </div>
+
+      <InvoicePreviewDialog
+        invoiceId={previewInvoice?.id ?? null}
+        invoiceNumber={previewInvoice?.invoiceNumber ?? ''}
+        onClose={() => setPreviewInvoice(null)}
+      />
     </>
   );
 }
