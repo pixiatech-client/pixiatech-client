@@ -220,15 +220,15 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
     longDescription: data.longDescription || '',
     descriptionDetaillee: data.descriptionDetaillee || '',
     image,
-    gallery: (data.galleryUrls || data.gallery || []).map((item: any) =>
+    gallery: (Array.isArray(data.galleryUrls) ? data.galleryUrls : Array.isArray(data.gallery) ? data.gallery : []).map((item: any) =>
       typeof item === 'string' ? { url: item, type: 'image' } : item
     ),
     videoUrl: data.videoUrl || '',
     pdfUrl: data.pdfUrl || '',
     availableFor: normalizeAvailableFor(data.availableFor || data.mode || ['sale', 'rental']),
     specs: buildSpecs(data, charNameMap),
-    badges: data.badges || [],
-    variants: (data.variants || []).map((v: any) =>
+    badges: (Array.isArray(data.badges) ? data.badges : []),
+    variants: (Array.isArray(data.variants) ? data.variants : []).map((v: any) =>
       (v?.price == null || v?.price === '') ? v : ({ ...v, price: normalizePrice(v.price) })
     ),
     stock: data.stock ?? undefined,
@@ -262,7 +262,16 @@ export async function fetchBoutiqueProducts(): Promise<Product[]> {
     const q = collection(firestore, 'boutique_products');
     const snapshot = await getDocs(q);
     if (snapshot.empty) return [];
-    return snapshot.docs.map((d) => mapFirestoreDoc(d, charNameMap)).filter(p => !p.isHidden).sort((a, b) => {
+    const mapped: Product[] = [];
+    for (const d of snapshot.docs) {
+      try {
+        const p = mapFirestoreDoc(d, charNameMap);
+        if (!p.isHidden) mapped.push(p);
+      } catch (e) {
+        console.warn(`fetchBoutiqueProducts: skipping malformed product ${d.id}:`, e);
+      }
+    }
+    return mapped.sort((a, b) => {
       const oa = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
       const ob = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
       return oa !== ob ? oa - ob : a.name.localeCompare(b.name);
@@ -273,8 +282,8 @@ export async function fetchBoutiqueProducts(): Promise<Product[]> {
   }
 }
 
-function normalizeAvailableFor(values: string[]): ('sale' | 'rental' | 'sur-commande')[] {
-  const modes = values.map(m => {
+function normalizeAvailableFor(values: any): ('sale' | 'rental' | 'sur-commande')[] {
+  const modes = (Array.isArray(values) ? values : values ? String(values).split(',') : []).map(m => {
     const lower = m.toLowerCase().replace(/[\s_-]/g, '');
     if (lower === 'surcommande' || lower === 'quoterequest' || lower === 'quoteonly') return 'sur-commande';
     if (lower === 'sale' || lower === 'achat' || lower === 'vente' || lower === 'purchase') return 'sale';
