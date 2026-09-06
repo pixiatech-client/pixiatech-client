@@ -62,8 +62,8 @@ const pushResult = spawnSync('git', ['push', ...extraArgs], {
 
 if (pushResult.status === 0) {
   console.log(`\n🎉 SUCCÈS : L’application a été poussée avec la version ${newVersion} !`);
-  console.log(`   Dès que le serveur ou le CDN servira cette version, tous les utilisateurs connectés`);
-  console.log(`   recevront immédiatement la pop-up pour mettre à jour tout de suite.\n`);
+  console.log(`   Dès que le serveur ou le CDN servira cette version, les administrateurs connectés`);
+  console.log(`   recevront la pop-up pour mettre à jour l’application.\n`);
 } else {
   console.error(`\n❌ Échec du push Git (code ${pushResult.status}).`);
   process.exit(pushResult.status || 1);

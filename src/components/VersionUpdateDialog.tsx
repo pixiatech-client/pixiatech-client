@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { Sparkles, RefreshCw, Check, AlertCircle, Clock } from 'lucide-react';
 import {
   Dialog,
@@ -26,6 +27,13 @@ const UPDATE_STEPS: ResetStep[] = ['caches', 'storage', 'session', 'reload'];
 
 export function VersionUpdateDialog() {
   const { t } = useI18n();
+  const pathname = usePathname();
+  const isAdminRoute = Boolean(
+    pathname?.startsWith('/admin') &&
+    !pathname.startsWith('/admin/login') &&
+    !pathname.startsWith('/admin/register')
+  );
+
   const [isOpen, setIsOpen] = useState(false);
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
   const [latestSignature, setLatestSignature] = useState<string | null>(null);
@@ -42,7 +50,7 @@ export function VersionUpdateDialog() {
   });
 
   const checkVersion = useCallback(async () => {
-    if (checkingRef.current || isUpdating) return;
+    if (!isAdminRoute || checkingRef.current || isUpdating) return;
     checkingRef.current = true;
     try {
       const res = await fetch('/api/app/version', {
@@ -69,9 +77,11 @@ export function VersionUpdateDialog() {
     } finally {
       checkingRef.current = false;
     }
-  }, [isUpdating]);
+  }, [isAdminRoute, isUpdating]);
 
   useEffect(() => {
+    if (!isAdminRoute) return;
+
     // Premier check après 3s
     const initialTimer = setTimeout(() => {
       checkVersion();
@@ -95,7 +105,7 @@ export function VersionUpdateDialog() {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [checkVersion]);
+  }, [isAdminRoute, checkVersion]);
 
   const handleUpdate = async () => {
     if (isUpdating) return;
@@ -137,7 +147,7 @@ export function VersionUpdateDialog() {
     setIsOpen(false);
   };
 
-  if (!latestVersion) return null;
+  if (!isAdminRoute || !latestVersion) return null;
 
   return (
     <Dialog

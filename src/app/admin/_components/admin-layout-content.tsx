@@ -55,6 +55,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FloatingCalculator } from './FloatingCalculator';
 import { ResetApplicationDialog } from './ResetApplicationDialog';
 import { AboutApplicationDialog } from './AboutApplicationDialog';
+import { VersionUpdateDialog } from '@/components/VersionUpdateDialog';
 import { APP_VERSION } from '@/lib/build-info';
 import { isVersionNewer } from '@/lib/version';
 import LiquidLoader from '@/components/LiquidLoader';
@@ -325,8 +326,8 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
     }
   }, [t]);
 
-  // Note : La détection automatique globale et l'affichage de la popup
-  // sont assurés par VersionUpdateDialog monté dans LayoutProvider.
+  // Note : La détection automatique et l'affichage de la popup de mise à jour
+  // sont assurés par VersionUpdateDialog monté ci-dessous (strictement réservé à l'espace admin).
   // performVersionCheck reste disponible pour le dialogue "À propos" manuel.
 
   // Clic sur la version du footer : ouvre le même popup "À propos"
@@ -683,6 +684,9 @@ const SidebarContentWrapper = ({ children, pageTitle, pageSubtitle, headerColor,
         isOpen={isCalculatorOpen}
         onClose={() => setIsCalculatorOpen(false)}
       />
+
+      {/* ── Dialogue automatique de nouvelle version (admin connecté uniquement) ── */}
+      <VersionUpdateDialog />
 
       {/* ── Réinitialisation / mise à jour de l'application ── */}
       <ResetApplicationDialog
