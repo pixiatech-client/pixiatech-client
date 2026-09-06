@@ -51,16 +51,30 @@ export async function GET(req: NextRequest) {
       adminDb.collection('rental_orders').where('customerId', '==', customerId).get(),
     ]);
 
-    const saleOrders = saleSnap.docs
-      .map((d) => ({ id: d.id, orderType: 'sale' as const, ...d.data() }) as any)
+    const allOrders = [
+      ...saleSnap.docs.map((d) => ({ id: d.id, orderType: 'sale' as const, ...d.data() }) as any),
+      ...rentalSnap.docs.map((d) => ({ id: d.id, orderType: 'rental' as const, ...d.data() }) as any),
+    ];
+
+    const CANCELLED_STATUSES = ['corbeille', 'cancelled', 'canceled', 'refunded', 'rembourse'];
+
+    const nonBillableOrders = allOrders.filter(
+      (o) => !SALE_BILLABLE_STATUSES.includes(o.status) && !RENTAL_BILLABLE_STATUSES.includes(o.status)
+    );
+    const cancelledOrders = nonBillableOrders.filter((o) => CANCELLED_STATUSES.includes(o.status)).length;
+    const otherNonBillableOrders = nonBillableOrders.length - cancelledOrders;
+
+    const saleOrders = allOrders
+      .filter((o) => o.orderType === 'sale')
       .filter((o) => SALE_BILLABLE_STATUSES.includes(o.status));
 
-    const rentalOrders = rentalSnap.docs
-      .map((d) => ({ id: d.id, orderType: 'rental' as const, ...d.data() }) as any)
+    const rentalOrders = allOrders
+      .filter((o) => o.orderType === 'rental')
       .filter((o) => RENTAL_BILLABLE_STATUSES.includes(o.status));
 
     const candidates = [...saleOrders, ...rentalOrders];
     const results: EligibleOrder[] = [];
+    let invoicedOrders = 0;
 
     for (const order of candidates) {
       const exists = await adminDb
@@ -69,7 +83,10 @@ export async function GET(req: NextRequest) {
         .get()
         .then((s) => s.exists)
         .catch(() => false);
-      if (exists) continue;
+      if (exists) {
+        invoicedOrders += 1;
+        continue;
+      }
 
       const orderAny: any = order;
       const vatValidated = orderAny.customerVatValidated === true;
@@ -99,7 +116,16 @@ export async function GET(req: NextRequest) {
 
     results.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-    return NextResponse.json({ orders: results });
+    return NextResponse.json({
+      orders: results,
+      counters: {
+        totalOrders: allOrders.length,
+        cancelledOrders,
+        otherNonBillableOrders,
+        invoicedOrders,
+        eligibleOrders: results.length,
+      },
+    });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

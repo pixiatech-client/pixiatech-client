@@ -67,13 +67,27 @@ async function readError(res: Response, fallback: string): Promise<string> {
   return fallback;
 }
 
-export async function fetchEligibleOrders(): Promise<EligibleOrder[]> {
+export interface EligibleOrdersResponse {
+  orders: EligibleOrder[];
+  counters?: {
+    totalOrders: number;
+    cancelledOrders: number;
+    otherNonBillableOrders: number;
+    invoicedOrders: number;
+    eligibleOrders: number;
+  };
+}
+
+export async function fetchEligibleOrders(): Promise<EligibleOrdersResponse> {
   const res = await fetch('/api/boutique/invoices/eligible-orders', { cache: 'no-store' });
   if (!res.ok) {
     throw new APIError(res.status, await readError(res, 'Impossible de récupérer vos commandes facturables.'));
   }
   const data = await res.json();
-  return Array.isArray(data?.orders) ? data.orders : [];
+  return {
+    orders: Array.isArray(data?.orders) ? data.orders : [],
+    counters: data?.counters,
+  };
 }
 
 export async function fetchInvoiceList(): Promise<InvoiceSummary[]> {

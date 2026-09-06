@@ -47,13 +47,37 @@ export function OrderSelectorStep({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<EligibleOrder[]>([]);
+  const [emptyReason, setEmptyReason] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await fetchEligibleOrders();
-      setOrders(data);
+      setOrders(data.orders);
+      if (data.orders.length === 0) {
+        const c = data.counters;
+        let reason = "Aucune commande n'est en attente de facturation.";
+        if (c && c.totalOrders > 0) {
+          const parts: string[] = [];
+          const n = c.totalOrders;
+          if (c.cancelledOrders > 0) {
+            parts.push(`${c.cancelledOrders} ${c.cancelledOrders > 1 ? 'annulées' : 'annulée'} (non facturable${c.cancelledOrders > 1 ? 's' : ''})`);
+          }
+          if (c.invoicedOrders > 0) {
+            parts.push(`${c.invoicedOrders} déjà facturée${c.invoicedOrders > 1 ? 's' : ''}`);
+          }
+          if (c.otherNonBillableOrders > 0) {
+            parts.push(`${c.otherNonBillableOrders} ${c.otherNonBillableOrders > 1 ? 'non facturables' : 'non facturable'} (validation de commande)`);
+          }
+          reason = parts.length > 0
+            ? `Vous avez ${n} ${n > 1 ? 'commandes' : 'commande'} : ${parts.join(' et ')}. Aucune commande n'est en attente de facturation.`
+            : reason;
+        }
+        setEmptyReason(reason);
+      } else {
+        setEmptyReason(null);
+      }
     } catch (err: any) {
       setError(err?.message || 'Impossible de charger vos commandes facturables.');
     } finally {
@@ -97,7 +121,7 @@ export function OrderSelectorStep({
       <EmptyState
         icon={ReceiptText}
         title="Aucune commande en attente de facturation"
-        description="Vous n'avez aucune commande en attente de facturation. Toutes vos commandes ont déjà été facturées."
+        description={emptyReason || "Vous n'avez aucune commande en attente de facturation. Toutes vos commandes ont déjà été facturées."}
       />
     );
   }
