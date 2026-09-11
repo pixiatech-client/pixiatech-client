@@ -541,7 +541,7 @@ export default function ProductDetailPage() {
       variantPrice: selectedVariant?.price,
       stock: availableStock,
     }, quantity);
-    router.push('/boutique/paiement');
+    router.push('/boutique/commande');
   };
 
   const handleRequestQuote = async (e: React.FormEvent) => {

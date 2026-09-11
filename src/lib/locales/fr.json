@@ -2584,6 +2584,7 @@
         "postalCodePlaceholder": "75001",
         "city": "Ville *",
         "cityPlaceholder": "Paris",
+        "country": "Pays *",
         "fillPaypalFields": "Remplissez les champs ci-dessus pour payer avec PayPal.",
         "securePayment": "Paiement 256-bit SSL sécurisé",
         "qty": "Qté: {quantity}",

@@ -12,6 +12,8 @@ import {
 } from '@/lib/paypal-amount';
 import type { BoutiqueAmountInput, ResolvedAmount } from '@/lib/paypal-amount';
 import { round2 } from '@/lib/invoices';
+import { createInvoiceForOrder } from '@/lib/accounting/invoice';
+import type { AccountingOrderType } from '@/lib/accounting/types';
 import {
   reserveBoutiqueStock,
   releaseBoutiqueStock,
@@ -388,6 +390,33 @@ export async function POST(req: NextRequest) {
             updatedAt: now,
           });
           saleOrderIds.push(ref.id);
+
+          // Facturation comptable fire-and-forget (jamais bloquant) : déclenchée
+          // ici UNIQUEMENT pour les ventes si le trigger 'payment' est actif.
+          // L'échec n'affecte jamais la commande — createInvoiceForOrder gère
+          // l'idempotence (pennylane_sync) et le retry.
+          void createInvoiceForOrder(
+            {
+              id: ref.id,
+              productName: item.productName,
+              productPrice: unitPrice,
+              quantity: item.quantity,
+              customerName,
+              customerEmail,
+              customerPhone,
+              customerAddress: customerAddress2
+                ? `${customerAddress}, ${customerAddress2}`
+                : customerAddress,
+              customerCity,
+              customerPostcode,
+              customerCountry,
+              customerCompany,
+              variantName: item.variantName || '',
+              subtotal: resolved.subtotal,
+              vat: orderVat,
+            },
+            { orderType: 'sale', trigger: 'payment' }
+          );
         } catch (err) {
           console.error('Failed to create sale order for item:', item.productId, err);
         }

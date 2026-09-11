@@ -8,6 +8,7 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, writeBatch, doc, deleteDoc, updateDoc, addDoc, query, orderBy, limit, startAfter, getDocs, where, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import type { City, Zone } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { DEFAULT_COUNTRY_OPTIONS } from '@/lib/customer-form-utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -32,6 +33,10 @@ const COLORS = [
   '#a855f7', '#d946ef', '#ec4899', '#ef4444', '#f97316', '#eab308',
   '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6',
 ];
+
+function countryLabel(code?: string): string {
+  return DEFAULT_COUNTRY_OPTIONS.find(o => o.value === (code || 'FR'))?.label || (code || 'FR');
+}
 
 
 function ZoneEditor({ onZoneUpdate }: { onZoneUpdate: () => void }) {
@@ -164,6 +169,7 @@ export function ZoneManager() {
   const { data: zones, isLoading: isLoadingZones, error: zonesError } = useCollection<Zone>(zonesQuery, { suppressPermissionError: true });
 
   const [newCitiesText, setNewCitiesText] = useState('');
+  const [newCitiesCountry, setNewCitiesCountry] = useState('FR');
   const [selectedCityIds, setSelectedCityIds] = useState<string[]>([]);
   const [editingCity, setEditingCity] = useState<City | null>(null);
   const [citiesToDelete, setCitiesToDelete] = useState<string[] | null>(null);
@@ -218,12 +224,12 @@ export function ZoneManager() {
     startTransition(async () => {
       try {
         const batch = writeBatch(firestore);
-        const citiesToAdd: { name: string; postalCode: string }[] = [];
+        const citiesToAdd: { name: string; postalCode: string; country: string }[] = [];
 
         for (const line of lines) {
           const parts = line.split(',').map(p => p.trim());
           if (parts.length === 2) {
-            citiesToAdd.push({ name: parts[0], postalCode: parts[1] });
+            citiesToAdd.push({ name: parts[0], postalCode: parts[1], country: newCitiesCountry });
           }
         }
 
@@ -276,7 +282,7 @@ export function ZoneManager() {
     startTransition(async () => {
       try {
         const cityRef = doc(firestore, 'cities', editingCity.id);
-        await updateDoc(cityRef, { name: editingCity.name, postalCode: editingCity.postalCode });
+        await updateDoc(cityRef, { name: editingCity.name, postalCode: editingCity.postalCode, country: editingCity.country || 'FR' });
         toast({ title: "City updated", variant: 'success' });
         setEditingCity(null);
         refreshCurrentPage();
@@ -337,10 +343,22 @@ export function ZoneManager() {
                 rows={4}
                 className="flex-grow"
             />
-            <Button onClick={handleAddCities} disabled={isPending || !newCitiesText.trim()} className="w-full sm:w-auto">
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+                <Select value={newCitiesCountry} onValueChange={setNewCitiesCountry}>
+                <SelectTrigger className="w-full sm:w-40">
+                    <SelectValue placeholder="Pays" />
+                </SelectTrigger>
+                <SelectContent>
+                    {DEFAULT_COUNTRY_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                </SelectContent>
+                </Select>
+                <Button onClick={handleAddCities} disabled={isPending || !newCitiesText.trim()} className="w-full">
                 {isPending ? <LiquidLoader size={24} /> : <PlusCircle className="mr-2 h-4 w-4" />}
                 Add
-            </Button>
+                </Button>
+            </div>
             </div>
 
             {selectedCityIds.length > 0 && (
@@ -369,13 +387,14 @@ export function ZoneManager() {
                     </TableHead>
                     <TableHead>Ville</TableHead>
                     <TableHead>Code Postal</TableHead>
+                    <TableHead>Pays</TableHead>
                     <TableHead>Zone</TableHead>
                     <TableHead className="text-right">{t('Actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                 {isLoadingCities ? (
-                    <TableRow><TableCell colSpan={5} className="text-center h-24"><LiquidLoader size={24} /> {t('Loading...')}</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center h-24"><LiquidLoader size={24} /> {t('Loading...')}</TableCell></TableRow>
                 ) : cities && cities.length > 0 ? (
                     cities.map(city => {
                         const zone = zones?.find(z => z.id === city.zoneId);
@@ -392,6 +411,7 @@ export function ZoneManager() {
                                     </TableCell>
                                     <TableCell className="font-bold text-slate-900">{city.name}</TableCell>
                                     <TableCell className="font-medium text-slate-600">{city.postalCode}</TableCell>
+                                    <TableCell className="text-slate-500">{countryLabel(city.country)}</TableCell>
                                     <TableCell>{zone ? <Badge style={{ backgroundColor: zone.color, color: 'white' }}>{zone.name}</Badge> : <span className="text-muted-foreground italic">None</span>}</TableCell>
                                     <TableCell className="text-right">
                                     <Button variant="ghost" size="icon" onClick={() => setEditingCity(city)}><FilePen className="h-4 w-4" /></Button>
@@ -401,7 +421,7 @@ export function ZoneManager() {
 
                                 {/* MOBILE VIEW */}
                                 <TableRow className="md:hidden border-b border-slate-100 hover:bg-zinc-50 transition-colors">
-                                    <TableCell colSpan={5} className="p-0">
+                                    <TableCell colSpan={6} className="p-0">
                                         <div className="w-full">
                                             <div 
                                                 className="flex items-center p-4 gap-3 cursor-pointer active:bg-slate-50 transition-colors"
@@ -416,7 +436,7 @@ export function ZoneManager() {
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="font-black text-slate-900 text-sm tracking-tight truncate">{city.name}</div>
-                                                    <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{city.postalCode}</div>
+                                                    <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{city.postalCode} · {countryLabel(city.country)}</div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     {zone && (
@@ -473,7 +493,7 @@ export function ZoneManager() {
                         )
                     })
                 ) : (
-                    <TableRow><TableCell colSpan={5} className="text-center h-24 text-slate-400 font-medium italic">No cities added.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center h-24 text-slate-400 font-medium italic">No cities added.</TableCell></TableRow>
                 )}
                 </TableBody>
             </Table>
@@ -507,6 +527,21 @@ export function ZoneManager() {
                 value={editingCity?.postalCode || ''}
                 onChange={(e) => setEditingCity(prev => prev ? { ...prev, postalCode: e.target.value } : null)}
                 />
+                <div>
+                <Select
+                    value={editingCity?.country || 'FR'}
+                    onValueChange={(value) => setEditingCity(prev => prev ? { ...prev, country: value } : null)}
+                >
+                    <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pays" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {DEFAULT_COUNTRY_OPTIONS.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+                </div>
             </div>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>

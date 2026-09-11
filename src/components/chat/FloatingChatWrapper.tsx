@@ -11,6 +11,7 @@ import type { Product, Settings, LaborSettings, DeliverySettings, Locations } fr
 // ni sur les paiements, l'admin ou les pages embarquées.
 const EXCLUDED_PATHS = [
   '/boutique/paiement',
+  '/boutique/commande',
   '/admin',
   '/embed',
   '/chat-widget',

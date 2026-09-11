@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { upsertCustomer } from '@/lib/customers';
+import bcrypt from 'bcryptjs';
+import {
+  createCustomer,
+  findCustomerByEmail,
+  updateCustomer,
+  upsertCustomer,
+} from '@/lib/customers';
+import { encrypt } from '@/lib/auth';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { createMagicLink } from '@/lib/magic-link';
 import { getSmtpTransport } from '@/lib/smtpService';
 
@@ -48,7 +56,9 @@ function buildMagicLinkEmailHtml(linkUrl: string, expiresInMinutes: number): str
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, displayName } = await req.json();
+    const body = await req.json();
+    const { email, displayName, password, civility, companyName, phone, addressLine1, addressLine2, postcode, city, country } = body;
+
     if (!email || typeof email !== 'string') {
       return NextResponse.json({ error: 'Email requis' }, { status: 400 });
     }
@@ -57,14 +67,71 @@ export async function POST(req: NextRequest) {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+    const existing = await findCustomerByEmail(normalizedEmail);
 
-    // Upsert or create customer
-    const { id } = await upsertCustomer(normalizedEmail, displayName.trim());
+    // Compte complet avec mot de passe : création + connexion automatique
+    if (password && typeof password === 'string' && password.length > 0) {
+      if (password.length < 8) {
+        return NextResponse.json({ error: 'Le mot de passe doit contenir au moins 8 caractères.' }, { status: 400 });
+      }
+      if (existing) {
+        return NextResponse.json(
+          { error: 'Un compte existe déjà avec cet email. Veuillez vous connecter.' },
+          { status: 409 }
+        );
+      }
+
+      const now = new Date().toISOString();
+      const passwordHash = await bcrypt.hash(password, 10);
+      const id = await createCustomer({
+        email: normalizedEmail,
+        displayName: displayName.trim(),
+        phone: phone || '',
+        createdAt: now,
+        lastLoginAt: now,
+        status: 'active',
+      });
+      if (!id) {
+        return NextResponse.json({ error: 'Erreur lors de la création du compte' }, { status: 500 });
+      }
+
+      const { adminDb } = getFirebaseAdmin();
+      await adminDb.collection('customers').doc(id).update({
+        passwordHash,
+        civility: civility || '',
+        companyName: companyName || '',
+        addressLine1: addressLine1 || '',
+        addressLine2: addressLine2 || '',
+        postcode: postcode || '',
+        city: city || '',
+        country: country || 'FR',
+      });
+
+      // Connexion automatique
+      const sessionToken = await encrypt(
+        { customerId: id, email: normalizedEmail, type: 'client' },
+        '12h'
+      );
+      const response = NextResponse.json({
+        success: true,
+        message: 'Votre compte a été créé et vous êtes connecté.',
+      });
+      response.cookies.set('client_session', sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 12,
+      });
+      return response;
+    }
+
+    // Flux sans mot de passe : upsert + lien magique (rétrocompatible)
+    const { id } = await upsertCustomer(normalizedEmail, displayName.trim(), phone || '');
     if (!id) {
       return NextResponse.json({ error: 'Erreur lors de la création du compte' }, { status: 500 });
     }
 
-    // Create magic link with customerId
     const origin = req.nextUrl.origin;
     const { url } = await createMagicLink(normalizedEmail, id, origin);
 

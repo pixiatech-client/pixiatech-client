@@ -2,6 +2,7 @@
 
 import { MapPin, User, Mail, Phone, Check } from 'lucide-react';
 import CityInput from '@/components/CityInput';
+import CountrySelect from '@/components/country-select';
 import { useI18n } from '@/lib/i18n';
 import {
   type CustomerInfoValues,
@@ -171,6 +172,17 @@ export default function CustomerInfoForm({
               className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white placeholder:text-gray-300"
             />
           </div>
+        </div>
+        <div className="sm:col-span-2">
+          <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('checkout.country')}</label>
+          <CountrySelect
+            value={values.country || 'FR'}
+            onChange={value => onFieldChange('country', value)}
+            onBlur={() => onFieldBlur('country', values.country)}
+            hasError={meta('country', values.country).hasError}
+            isValid={meta('country', values.country).isValid}
+          />
+          <ErrorMessage id="err-country" message={meta('country', values.country).error} />
         </div>
         <div className="sm:col-span-2">
           <CityInput

@@ -7,7 +7,8 @@ const config = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
-    './gestion-de-produits-audiovisuels/**/*.{js,ts,jsx,tsx}'
+    './gestion-de-produits-audiovisuels/**/*.{js,ts,jsx,tsx}',
+    './node_modules/flyonui/dist/js/*.js'
   ],
   prefix: "",
   theme: {

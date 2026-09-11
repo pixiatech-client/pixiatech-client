@@ -778,15 +778,14 @@ export default function CheckoutPage() {
 
   // Applique les valeurs du profil/session vers le formulaire en protégeant
   // la saisie manuelle : on ne remplit que les champs non touchés, et on
-  // n'écrase jamais une valeur déjà présente. Le pays est toujours 'FR' en dur
-  // (champ retiré du formulaire) : la valeur du profil est ignorée.
+  // n'écrase jamais une valeur déjà présente. Le pays est un vrai champ
+  // (menu déroulant dynamique) : la valeur du profil est appliquée comme les autres.
   function applyProfilePrefill(values: Partial<CustomerInfoValues>, force = false) {
     setDelivery(d => {
       const patch: Partial<CustomerInfoValues> = {};
       for (const [field, value] of Object.entries(values)) {
         if (value === undefined || value === '') continue;
         const key = field as keyof CustomerInfoValues;
-        if (key === 'country') continue;
         // Champ déjà modifié par l'utilisateur : on ne touche jamais.
         if (deliveryTouchedRef.current[key]) continue;
         if (force) {

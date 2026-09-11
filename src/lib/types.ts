@@ -249,6 +249,7 @@ export type City = {
   id: string;
   name: string;
   postalCode: string;
+  country?: string; // ISO 3166-1 alpha-2 (FR par défaut)
   zoneId?: string; // Link to the zone
 };
 
