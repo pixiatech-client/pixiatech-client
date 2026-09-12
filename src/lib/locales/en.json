@@ -2717,6 +2717,7 @@
         "paymentSecure": "100% secure payment — Your bank details are never stored.",
         "blockerStock": "Payment blocked: out-of-stock item(s) in your cart",
         "blockerTerms": "Please accept the terms and conditions to complete your order.",
+        "blockerVat": "Checking your VAT status…",
         "summaryTitle": "Order summary",
         "promoPlaceholder": "Promo code",
         "apply": "Apply",

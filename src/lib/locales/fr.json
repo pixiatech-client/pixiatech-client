@@ -2717,6 +2717,7 @@
         "paymentSecure": "Paiement 100% sécurisé — Vos données bancaires ne sont jamais stockées.",
         "blockerStock": "Paiement bloqué : article(s) en rupture de stock dans le panier",
         "blockerTerms": "Veuillez accepter les conditions générales de vente pour finaliser votre commande.",
+        "blockerVat": "Vérification de votre statut TVA en cours…",
         "summaryTitle": "Récapitulatif de votre commande",
         "promoPlaceholder": "Code promo",
         "apply": "Appliquer",

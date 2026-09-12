@@ -24,7 +24,6 @@ import {
   ShieldCheck,
   Tag,
   Truck,
-  Wallet,
   X,
 } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -73,7 +72,6 @@ export default function DeliveryPaymentStep({
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [termsError, setTermsError] = useState('');
 
   const [methods, setMethods] = useState<ShippingMethod[]>([]);
   const [shippingLoading, setShippingLoading] = useState(true);
@@ -85,6 +83,7 @@ export default function DeliveryPaymentStep({
   const [vatRate, setVatRate] = useState(19);
   const [vatValidated, setVatValidated] = useState(false);
   const [vatNumber, setVatNumber] = useState('');
+  const [vatLoaded, setVatLoaded] = useState(false);
 
   const [outOfStockProductIds, setOutOfStockProductIds] = useState<string[]>([]);
 
@@ -116,20 +115,36 @@ export default function DeliveryPaymentStep({
   }, [delivery.country, delivery.postcode, delivery.city, totalAfterDiscount]);
 
   // TVA : taux affiché depuis la config, statut TVA du profil connecté.
+  // `vatLoaded` n'est vrai qu'une fois les DEUX sources résolues : sans cela le
+  // montant et la TVA seraient calculés avec les valeurs par défaut (19 %,
+  // non validée) puis changeraient après coup — d'où l'incohérence observée.
   useEffect(() => {
+    let settingsLoaded = false;
+    let proLoaded = false;
+    const maybeReady = () => {
+      if (settingsLoaded && proLoaded) setVatLoaded(true);
+    };
     const unsub = onSnapshot(doc(firestore, 'settings', 'main'), snap => {
       if (snap.exists()) {
         const data = snap.data() as any;
         const ef = data?.estimationFlow;
         if (typeof ef?.taxRate === 'number' && ef.taxRate >= 0) setVatRate(ef.taxRate);
       }
-    }, () => {});
+      settingsLoaded = true;
+      maybeReady();
+    }, () => {
+      settingsLoaded = true;
+      maybeReady();
+    });
     fetchProfessionalInfo().then(info => {
       if (info) {
         setVatValidated(info.vatValidated === true);
         setVatNumber(info.vatNumber || '');
       }
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => {
+      proLoaded = true;
+      maybeReady();
+    });
     return () => unsub();
   }, []);
 
@@ -228,33 +243,27 @@ export default function DeliveryPaymentStep({
   const paypalBlockedByStock = hasCartOutOfStock;
   const cardBlockedByStock = hasCartOutOfStock;
   const termsBlocked = !acceptTerms;
+  const vatBlocked = !vatLoaded;
 
   // Contexte serveur : montant jamais accepté du navigateur.
   const handlePay = (isNew?: boolean) => {
     onPaid({ isNewCustomer: isNew, total });
   };
 
-  const cardDisabled = cardBlockedByStock || termsBlocked;
-  const paypalDisabled = paypalBlockedByStock || termsBlocked;
+  const cardDisabled = cardBlockedByStock || termsBlocked || vatBlocked;
+  const paypalDisabled = paypalBlockedByStock || termsBlocked || vatBlocked;
 
   const blockerMessage = hasCartOutOfStock
     ? t('checkout.blockerStock')
-    : t('checkout.blockerTerms');
+    : vatBlocked
+      ? t('checkout.blockerVat')
+      : t('checkout.blockerTerms');
 
   const countryLabel =
     DEFAULT_COUNTRY_OPTIONS.find(o => o.value === delivery.country)?.label ||
     DEFAULT_COUNTRY_OPTIONS.find(o => o.value === delivery.country?.toUpperCase())?.label ||
     delivery.country ||
     'France';
-
-  const handleBlackCta = () => {
-    if (!acceptTerms) {
-      setTermsError(t('checkout.errTerms'));
-      return;
-    }
-    setTermsError('');
-    document.getElementById('card-pay-cta')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
 
   const shippingCards = shippingLoading
     ? null
@@ -366,9 +375,9 @@ export default function DeliveryPaymentStep({
                   paymentMethod === 'card' ? 'border-gray-900 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
                 )}
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center gap-1 rounded-xl bg-white ring-1 ring-gray-200">
-                  <img className="h-4 w-auto" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="Visa" />
-                  <img className="h-4 w-auto" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard.svg" alt="Mastercard" />
+                <span className="flex h-10 w-auto shrink-0 items-center justify-center gap-1 rounded-xl bg-white px-3 ring-1 ring-gray-200">
+                  <img className="h-4 w-auto object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="Visa" />
+                  <img className="h-4 w-auto object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard.svg" alt="Mastercard" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-bold text-gray-900">{t('checkout.cardPayment')}</span>
@@ -411,64 +420,12 @@ export default function DeliveryPaymentStep({
               </button>
             </div>
 
-            <div id="card-pay-cta" className="mt-5">
-              {paymentMethod === 'card' ? (
-                <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <CreditCard size={18} className="text-gray-700" />
-                    <h4 className="text-sm font-bold text-gray-900">{t('checkout.payByCard')}</h4>
-                  </div>
-                  {!paypalClientId || paypalClientId === 'votre_client_id_ici' ? (
-                    <div className="text-center py-8 px-4 bg-amber-50 rounded-xl border border-amber-200">
-                      <p className="text-sm font-semibold text-amber-800 mb-1">{t('checkout.paypalNotConfiguredTitle')}</p>
-                      <p className="text-xs text-amber-600">{t('checkout.paypalNotConfiguredDesc', { envVar: 'NEXT_PUBLIC_PAYPAL_CLIENT_ID' })}</p>
-                    </div>
-                  ) : (
-                    <PayPalButtonGroup
-                      total={total}
-                      handlePay={handlePay}
-                      items={items}
-                      delivery={delivery}
-                      deliveryCost={effectiveDeliveryCost}
-                      paymentContext={paymentContext}
-                      fundingSource={FUNDING.CARD}
-                      disabled={cardDisabled}
-                      disabledMessage={blockerMessage}
-                    />
-                  )}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Wallet size={18} className="text-gray-700" />
-                    <h4 className="text-sm font-bold text-gray-900">{t('checkout.paypalDirect')}</h4>
-                    <span className="text-base">
-                      <img className="h-5 w-auto object-contain" src="/bot-avatars/PayPal.png" alt="PayPal" />
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                    {t('checkout.paypalDirectDesc')}
-                  </p>
-                  {!paypalClientId || paypalClientId === 'votre_client_id_ici' ? (
-                    <div className="text-center py-8 px-4 bg-amber-50 rounded-xl border border-amber-200">
-                      <p className="text-sm font-semibold text-amber-800 mb-1">{t('checkout.paypalNotConfiguredTitle')}</p>
-                      <p className="text-xs text-amber-600">{t('checkout.paypalNotConfiguredDesc', { envVar: 'NEXT_PUBLIC_PAYPAL_CLIENT_ID' })}</p>
-                    </div>
-                  ) : (
-                    <PayPalButtonGroup
-                      total={total}
-                      handlePay={handlePay}
-                      items={items}
-                      delivery={delivery}
-                      deliveryCost={effectiveDeliveryCost}
-                      paymentContext={paymentContext}
-                      fundingSource={undefined}
-                      disabled={paypalDisabled}
-                      disabledMessage={blockerMessage}
-                    />
-                  )}
-                </div>
-              )}
+            <div className="mt-5">
+              <p className="text-xs leading-relaxed text-gray-500">
+                {paymentMethod === 'card'
+                  ? t('checkout.cardSub')
+                  : t('checkout.paypalDirectDesc')}
+              </p>
             </div>
           </section>
 
@@ -486,7 +443,7 @@ export default function DeliveryPaymentStep({
                 id="co-terms-payment"
                 type="checkbox"
                 checked={acceptTerms}
-                onChange={(e) => { setAcceptTerms(e.target.checked); setTermsError(''); }}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-gray-900"
               />
               <span className="text-xs leading-5 text-gray-600">
@@ -503,21 +460,13 @@ export default function DeliveryPaymentStep({
                 <span className="text-red-500"> *</span>.
               </span>
             </label>
-            {termsError && (
-              <p className="mt-1.5 text-[10px] text-red-500">{termsError}</p>
-            )}
 
             <div className="mt-5">
-              {paymentMethod === 'card' ? (
-                <button
-                  type="button"
-                  onClick={handleBlackCta}
-                  disabled={hasCartOutOfStock}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 py-3.5 text-sm font-semibold text-white transition-all hover:bg-gray-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
-                >
-                  <Lock size={15} />
-                  {t('checkout.payAndOrder')} — {formatPrice(total)}
-                </button>
+              {hasCartOutOfStock ? (
+                <div className="flex w-full min-h-[48px] items-center justify-center gap-2 rounded-xl bg-gray-100 border border-gray-200 text-center cursor-not-allowed">
+                  <Lock size={15} className="text-gray-400 shrink-0" />
+                  <span className="text-xs sm:text-sm font-semibold text-gray-500">{t('checkout.blockerStock')}</span>
+                </div>
               ) : (
                 <PayPalButtonGroup
                   total={total}
@@ -526,8 +475,8 @@ export default function DeliveryPaymentStep({
                   delivery={delivery}
                   deliveryCost={effectiveDeliveryCost}
                   paymentContext={paymentContext}
-                  fundingSource={undefined}
-                  disabled={paypalDisabled}
+                  fundingSource={paymentMethod === 'card' ? FUNDING.CARD : undefined}
+                  disabled={paymentMethod === 'card' ? cardDisabled : paypalDisabled}
                   disabledMessage={blockerMessage}
                 />
               )}
@@ -659,15 +608,23 @@ export default function DeliveryPaymentStep({
                 )}
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">{calc.vatLabel}</span>
-                <span className="font-semibold text-gray-900">{formatPrice(Math.round(tva))}</span>
+                <span className="text-gray-500">{vatLoaded ? calc.vatLabel : t('checkout.calculating')}</span>
+                {vatLoaded ? (
+                  <span className="font-semibold text-gray-900">{formatPrice(Math.round(tva))}</span>
+                ) : (
+                  <span className="text-xs text-gray-400 animate-pulse">{t('checkout.calculating')}</span>
+                )}
               </div>
             </div>
 
             <div className="mt-4 flex items-end justify-between border-t border-gray-900 pt-4">
               <div>
-                <p className="text-[11px] font-semibold text-gray-500 uppercase">{calc.totalLabel}</p>
-                <p className="text-xl font-bold text-gray-900">{formatPrice(total)}</p>
+                <p className="text-[11px] font-semibold text-gray-500 uppercase">{vatLoaded ? calc.totalLabel : '—'}</p>
+                {vatLoaded ? (
+                  <p className="text-xl font-bold text-gray-900">{formatPrice(total)}</p>
+                ) : (
+                  <p className="text-sm font-semibold text-gray-400 animate-pulse">{t('checkout.calculating')}</p>
+                )}
               </div>
               {!forceB2B && (
                 <div className="relative">
@@ -704,13 +661,13 @@ export default function DeliveryPaymentStep({
               )}
             </div>
 
-            <div className="mt-5 flex items-center justify-center gap-5 border-t border-gray-100 pt-5">
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-gray-100 pt-5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="h-6 w-auto" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/paypal.svg" alt="PayPal" />
+              <img className="h-5 w-auto max-w-[64px] object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/paypal.svg" alt="PayPal" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="h-6 w-auto" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="Visa" />
+              <img className="h-5 w-auto max-w-[40px] object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="Visa" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="h-6 w-auto" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard.svg" alt="Mastercard" />
+              <img className="h-5 w-auto max-w-[46px] object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard.svg" alt="Mastercard" />
             </div>
           </div>
         </aside>

@@ -501,6 +501,7 @@ export default function CheckoutPage() {
   const [vatRate, setVatRate] = useState(19);
   const [vatValidated, setVatValidated] = useState(false);
   const [vatNumber, setVatNumber] = useState('');
+  const [vatLoaded, setVatLoaded] = useState(false);
   const [vatMessage, setVatMessage] = useState(t('checkout.vatMessage') || 'Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
   const [vatMessageEnabled, setVatMessageEnabled] = useState(true);
   const [vatMessageColor, setVatMessageColor] = useState('orange');
@@ -590,7 +591,14 @@ export default function CheckoutPage() {
   }, [delivery.email, isSessionLoggedIn]);
 
   useEffect(() => {
+    let active = true;
+    let settingsLoaded = false;
+    let proLoaded = false;
+    const maybeReady = () => {
+      if (settingsLoaded && proLoaded) setVatLoaded(true);
+    };
     const unsub = onSnapshot(doc(firestore, 'settings', 'main'), (snap) => {
+      if (!active) return;
       if (snap.exists()) {
         const data = snap.data() as any;
         const ef = data?.estimationFlow;
@@ -599,8 +607,38 @@ export default function CheckoutPage() {
         if (typeof ef?.vatMessageEnabled === 'boolean') setVatMessageEnabled(ef.vatMessageEnabled);
         if (typeof ef?.vatMessageColor === 'string' && ef.vatMessageColor.trim()) setVatMessageColor(ef.vatMessageColor);
       }
-    }, () => {});
-    return () => unsub();
+      settingsLoaded = true;
+      maybeReady();
+    }, () => {
+      if (!active) return;
+      settingsLoaded = true;
+      maybeReady();
+    });
+    (async () => {
+      try {
+        const sessionRes = await fetch('/api/boutique/session-status');
+        if (!sessionRes.ok || !active) return;
+        const session = await sessionRes.json();
+        if (!active) return;
+        if (session?.loggedIn) {
+          setIsSessionLoggedIn(true);
+          const info = await fetchProfessionalInfo();
+          if (!active) return;
+          if (info) {
+            setVatValidated(info.vatValidated === true);
+            setVatNumber(info.vatNumber || '');
+          }
+        }
+      } catch {
+        // Session absente ou profil non rempli → TVA au taux normal.
+      } finally {
+        if (active) {
+          proLoaded = true;
+          maybeReady();
+        }
+      }
+    })();
+    return () => { active = false; unsub(); };
   }, []);
 
   useEffect(() => {
@@ -611,32 +649,6 @@ export default function CheckoutPage() {
     if (isDemo) setDelivery(d => ({ ...d, email: 'demo@example.com', firstName: 'Demo', lastName: 'User' }));
     getPdfSettings().then(setPdfSettings).catch(() => {});
   }, [isDemo]);
-
-  // TVA : seuls les professionnels connectés avec TVA validée + numéro de TVA
-  // bénéficient de l'autoliquidation. Sinon la TVA s'applique au taux normal.
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const sessionRes = await fetch('/api/boutique/session-status');
-        if (!sessionRes.ok) return;
-        const session = await sessionRes.json();
-        if (session?.loggedIn) {
-          setIsSessionLoggedIn(true);
-        }
-        if (!session?.loggedIn) return;
-        const info = await fetchProfessionalInfo();
-        if (!active) return;
-        if (info) {
-          setVatValidated(info.vatValidated === true);
-          setVatNumber(info.vatNumber || '');
-        }
-      } catch {
-        // Session absente ou profil non rempli → TVA au taux normal.
-      }
-    })();
-    return () => { active = false; };
-  }, []);
 
   // Pré-remplissage du formulaire :
   // Priorité 1 : profil client connecté (session active)
@@ -851,10 +863,13 @@ export default function CheckoutPage() {
 
   const paypalBlockedByStock = hasCartOutOfStock;
   const paypalBlockedByEmailAccount = emailAccountExists && !isSessionLoggedIn;
-  const paypalDisabled = !paypalEmailValid || paypalBlockedByStock || paypalBlockedByEmailAccount;
+  const paypalBlockedByVat = !vatLoaded;
+  const paypalDisabled = !paypalEmailValid || paypalBlockedByStock || paypalBlockedByEmailAccount || paypalBlockedByVat;
 
   let paypalDisabledMessage = '';
-  if (paypalBlockedByStock) {
+  if (paypalBlockedByVat) {
+    paypalDisabledMessage = (t('checkout.blockerVat') || 'Checking your VAT status…');
+  } else if (paypalBlockedByStock) {
     paypalDisabledMessage = t('checkout.blockedOutOfStockTitle') || 'Paiement bloqué : article(s) en rupture de stock dans le panier';
   } else if (paypalBlockedByEmailAccount) {
     paypalDisabledMessage = t('checkout.loginToCheckout') || 'Veuillez vous connecter ci-dessus pour finaliser votre commande';
@@ -864,10 +879,13 @@ export default function CheckoutPage() {
 
   const cardBlockedByStock = hasCartOutOfStock;
   const cardBlockedByEmailAccount = emailAccountExists && !isSessionLoggedIn;
-  const cardDisabled = !isDeliveryComplete || cardBlockedByStock || cardBlockedByEmailAccount;
+  const cardBlockedByVat = !vatLoaded;
+  const cardDisabled = !isDeliveryComplete || cardBlockedByStock || cardBlockedByEmailAccount || cardBlockedByVat;
 
   let cardDisabledMessage = '';
-  if (cardBlockedByStock) {
+  if (cardBlockedByVat) {
+    cardDisabledMessage = (t('checkout.blockerVat') || 'Checking your VAT status…');
+  } else if (cardBlockedByStock) {
     cardDisabledMessage = t('checkout.blockedOutOfStockTitle') || 'Paiement bloqué : article(s) en rupture de stock dans le panier';
   } else if (cardBlockedByEmailAccount) {
     cardDisabledMessage = t('checkout.loginToCheckout') || 'Veuillez vous connecter ci-dessus pour finaliser votre commande';
@@ -1739,10 +1757,10 @@ export default function CheckoutPage() {
                   {t('checkout.acceptTerms')}
                 </p>
 
-                <div className="mt-5 flex items-center justify-center gap-5 border-t border-gray-100 pt-5">
-                  <img className="h-6 w-auto" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/paypal.svg" alt="PayPal" />
-                  <img className="h-6 w-auto" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="Visa" />
-                  <img className="h-6 w-auto" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard.svg" alt="Mastercard" />
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-gray-100 pt-5">
+                  <img className="h-5 w-auto max-w-[64px] object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/paypal.svg" alt="PayPal" />
+                  <img className="h-5 w-auto max-w-[40px] object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="Visa" />
+                  <img className="h-5 w-auto max-w-[46px] object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard.svg" alt="Mastercard" />
                 </div>
               </div>
             </aside>
