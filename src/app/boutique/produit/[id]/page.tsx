@@ -1505,8 +1505,8 @@ export default function ProductDetailPage() {
                 </div>
               </section>
 
-              <div className="flex items-stretch gap-3 min-w-0">
-              <div className={`bg-violet-500/10 p-4 rounded-2xl border border-violet-500/40 ring-1 ring-violet-500/20 relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] w-[130px] shrink-0 sm:w-auto sm:flex-1`}>
+              <div className="flex flex-col sm:flex-row items-stretch gap-3 min-w-0">
+              <div className={`bg-violet-500/10 p-4 rounded-2xl border border-violet-500/40 ring-1 ring-violet-500/20 relative group overflow-hidden shadow-[0_0_20px_rgba(139,92,246,0.08)] w-full sm:w-auto sm:flex-1`}>
                 <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent"></div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-[10px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">

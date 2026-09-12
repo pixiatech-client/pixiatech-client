@@ -18,9 +18,9 @@ import { normalizeSearchText } from '@/lib/utils';
 import { useMediaQuery } from 'usehooks-ts';
 
 const LAYOUT_GRID_CLASS: Record<LayoutMode, string> = {
-  1: 'lg:grid-cols-1',
-  2: 'lg:grid-cols-2',
-  3: 'lg:grid-cols-3',
+  1: 'grid-cols-1',
+  2: 'grid-cols-2',
+  3: 'grid-cols-3',
   4: 'grid-cols-1',
 };
 
@@ -703,7 +703,7 @@ export default function BoutiquePage() {
           </div>
         ) : (
           <>
-          <div className={`grid ${layout === 4 ? 'grid-cols-1 gap-3' : `grid-cols-2 sm:grid-cols-2 ${LAYOUT_GRID_CLASS[layout]} gap-3 md:gap-4`}`}>
+          <div className={`grid ${layout === 4 ? 'grid-cols-1 gap-3' : `${LAYOUT_GRID_CLASS[layout]} gap-3 md:gap-4`}`}>
             {filteredProducts.slice(0, displayCount).map((product, idx) => {
               const outOfStock = !isProductAvailable(product);
               return (
