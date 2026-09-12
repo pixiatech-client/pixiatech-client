@@ -2092,7 +2092,7 @@ export default function SignatureFlow({
                     <>
                       <div className="flex justify-between items-center bg-zinc-900/30 px-3 py-2 rounded-lg leading-normal">
                         <span className="text-zinc-400">{t('signature.saleTotal')}</span>
-                        <strong className="text-blue-400 font-mono text-[14px] sm:text-base font-black whitespace-nowrap">
+                        <strong className="text-blue-400 font-mono text-[14px] sm:text-base font-black whitespace-normal min-w-0 text-right break-words">
                           <BlurredPrice 
                             price={`${fmtPrice(totalAmount)}€ ${taxLabel}`} 
                             isPriceHidden={isPriceHidden} 
@@ -2102,7 +2102,7 @@ export default function SignatureFlow({
                       </div>
                       <div className="flex justify-between items-center leading-normal">
                         <span className="text-zinc-400">{t('signature.deposit60')}</span>
-                        <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
+                        <strong className="text-white font-mono text-[13px] font-bold whitespace-normal min-w-0 text-right break-words">
                           <BlurredPrice 
                             price={`${fmtPrice(computePaymentSchedule(totalAmount).firstPayment)}€ ${taxLabel}`} 
                             isPriceHidden={isPriceHidden} 
@@ -2112,7 +2112,7 @@ export default function SignatureFlow({
                       </div>
                       <div className="flex justify-between items-center leading-normal">
                         <span className="text-zinc-400">{t('signature.balance40')}</span>
-                        <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
+                        <strong className="text-white font-mono text-[13px] font-bold whitespace-normal min-w-0 text-right break-words">
                           <BlurredPrice 
                             price={`${fmtPrice(computePaymentSchedule(totalAmount).remainingPayment)}€ ${taxLabel}`} 
                             isPriceHidden={isPriceHidden} 
@@ -2125,7 +2125,7 @@ export default function SignatureFlow({
                     <>
                       <div className="flex justify-between items-center bg-zinc-900/30 px-3 py-2 rounded-lg leading-normal">
                         <span className="text-zinc-400">{t('signature.rentalFirstPayment')}</span>
-                        <strong className="text-blue-400 font-mono text-[14px] sm:text-base font-black whitespace-nowrap">
+                        <strong className="text-blue-400 font-mono text-[14px] sm:text-base font-black whitespace-normal min-w-0 text-right break-words">
                           <BlurredPrice 
                             price={`${fmtPrice(activePack.price + activePack.deposit)}€ ${taxLabel}`} 
                             isPriceHidden={isPriceHidden} 
@@ -2135,7 +2135,7 @@ export default function SignatureFlow({
                       </div>
                       <div className="flex justify-between items-center leading-normal">
                         <span className="text-zinc-400">{t('signature.rentalCost')}</span>
-                        <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
+                        <strong className="text-white font-mono text-[13px] font-bold whitespace-normal min-w-0 text-right break-words">
                           <BlurredPrice 
                             price={`${fmtPrice(activePack.price)}€ ${taxLabel}`} 
                             isPriceHidden={isPriceHidden} 
@@ -2145,7 +2145,7 @@ export default function SignatureFlow({
                       </div>
                       <div className="flex justify-between items-center leading-normal">
                         <span className="text-zinc-400">{t('signature.rentalDeposit')}</span>
-                        <strong className="text-white font-mono text-[13px] font-bold whitespace-nowrap">
+                        <strong className="text-white font-mono text-[13px] font-bold whitespace-normal min-w-0 text-right break-words">
                           <BlurredPrice 
                             price={`${fmtPrice(activePack.deposit)}€ ${taxLabel}`} 
                             isPriceHidden={isPriceHidden} 

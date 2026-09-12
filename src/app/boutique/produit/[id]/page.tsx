@@ -13,6 +13,7 @@ import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import type { Product, ProductVariant, GalleryItem } from '@/lib/boutique-data';
 import BoutiqueRentalFlow from '@/components/BoutiqueRentalFlow';
 import CustomerLoginPrompt from '@/components/customer-login-prompt';
+import { DEFAULT_COUNTRY_OPTIONS } from '@/lib/customer-form-utils';
 import LiquidLoader from '@/components/LiquidLoader';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useI18n } from '@/lib/i18n';
@@ -811,7 +812,7 @@ export default function ProductDetailPage() {
                             <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.quoteName')} *</label>
                             <div className="relative">
                               <User size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                              <input type="text" placeholder="Jean Dupont ou Nom de l'entreprise" required value={quoteFormData.name}
+                              <input type="text" placeholder={t('product.quoteNamePlaceholder')} required value={quoteFormData.name}
                                 onChange={e => handleDeliveryChange('name', e.target.value)}
                                 onBlur={e => handleDeliveryBlur('name', e.target.value)}
                                 aria-invalid={fieldMeta('name', quoteFormData.name).hasError}
@@ -833,7 +834,7 @@ export default function ProductDetailPage() {
                             <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldEmail')} *</label>
                             <div className="relative">
                               <Mail size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                              <input type="email" placeholder="email@exemple.com" required value={quoteFormData.email}
+                              <input type="email" placeholder={t('product.quoteEmailPlaceholder')} required value={quoteFormData.email}
                                 onChange={e => handleDeliveryChange('email', e.target.value)}
                                 onBlur={e => handleDeliveryBlur('email', e.target.value)}
                                 aria-invalid={fieldMeta('email', quoteFormData.email).hasError}
@@ -877,7 +878,7 @@ export default function ProductDetailPage() {
                             <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">{t('boutique.fieldAddress')} *</label>
                             <div className="relative">
                               <MapPin size={14} className="absolute left-3 top-3 pointer-events-none text-gray-400" />
-                              <input type="text" placeholder="123 Rue de l'Exemple, 75001 Paris" required value={quoteFormData.address}
+                              <input type="text" placeholder={t('product.quoteAddressPlaceholder')} required value={quoteFormData.address}
                                 onChange={e => handleDeliveryChange('address', e.target.value)}
                                 onBlur={e => handleDeliveryBlur('address', e.target.value)}
                                 aria-invalid={fieldMeta('address', quoteFormData.address).hasError}
@@ -902,35 +903,9 @@ export default function ProductDetailPage() {
                               onChange={e => setQuoteFormData(d => ({ ...d, country: e.target.value }))}
                               className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-400 transition-all bg-white"
                             >
-                              <option value="FR">France</option>
-                              <option value="BE">Belgique</option>
-                              <option value="CH">Suisse</option>
-                              <option value="LU">Luxembourg</option>
-                              <option value="DE">Allemagne</option>
-                              <option value="ES">Espagne</option>
-                              <option value="IT">Italie</option>
-                              <option value="NL">Pays-Bas</option>
-                              <option value="PT">Portugal</option>
-                              <option value="GB">Royaume-Uni</option>
-                              <option value="AT">Autriche</option>
-                              <option value="IE">Irlande</option>
-                              <option value="DK">Danemark</option>
-                              <option value="SE">Suède</option>
-                              <option value="FI">Finlande</option>
-                              <option value="PL">Pologne</option>
-                              <option value="CZ">République Tchèque</option>
-                              <option value="SK">Slovaquie</option>
-                              <option value="HU">Hongrie</option>
-                              <option value="GR">Grèce</option>
-                              <option value="RO">Roumanie</option>
-                              <option value="BG">Bulgarie</option>
-                              <option value="HR">Croatie</option>
-                              <option value="SI">Slovénie</option>
-                              <option value="LT">Lituanie</option>
-                              <option value="LV">Lettonie</option>
-                              <option value="EE">Estonie</option>
-                              <option value="CY">Chypre</option>
-                              <option value="MT">Malte</option>
+                              {DEFAULT_COUNTRY_OPTIONS.map((o) => (
+                                <option key={o.value} value={o.value}>{t(`countryNames.${o.value}`)}</option>
+                              ))}
                             </select>
                             <div className="h-5 mt-1" />
                           </div>
@@ -1035,14 +1010,14 @@ export default function ProductDetailPage() {
                           <Calculator size={16} className="text-emerald-600" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-bold text-gray-900">Calculer le budget</h3>
-                          <p className="text-xs text-gray-400 font-medium">Estimez le coût de votre projet</p>
+                          <h3 className="text-sm font-bold text-gray-900">{t('product.estimateBudget')}</h3>
+                          <p className="text-xs text-gray-400 font-medium">{t('product.estimateBudgetDesc')}</p>
                         </div>
                         <button
                           type="button"
                           onClick={() => setBudgetOpen(false)}
                           className="ml-auto w-8 h-8 flex items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-400 transition-all"
-                          title="Fermer et revoir les photos"
+                          title={t('product.closeAndReviewPhotos')}
                         >
                           <X size={15} />
                         </button>
@@ -1052,7 +1027,7 @@ export default function ProductDetailPage() {
                         <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-blue-50 border border-blue-100 rounded-xl">
                           <Package size={13} className="text-blue-500 shrink-0" />
                           <p className="text-xs text-blue-700 font-medium">
-                            Dalle détectée : <span className="font-bold">{dims.w} × {dims.h} cm</span>
+                            {t('product.tileDetected')} <span className="font-bold">{dims.w} × {dims.h} cm</span>
                           </p>
                         </div>
                       )}
@@ -1060,16 +1035,16 @@ export default function ProductDetailPage() {
                       {!dims && (
                         <div className="mb-4 space-y-3">
                           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 font-medium">
-                            Dimensions de dalle non trouvées. Saisissez-les :
+                            {t('product.tileNotFound')}
                           </p>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Largeur dalle (cm)</label>
+                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">{t('product.tileWidth')}</label>
                               <input type="number" value={panelW || ''} min={1} onChange={e => setPanelW(parseFloat(e.target.value) || 0)}
                                 className="w-full px-3 py-2 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50" />
                             </div>
                             <div>
-                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Hauteur dalle (cm)</label>
+                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">{t('product.tileHeight')}</label>
                               <input type="number" value={panelH || ''} min={1} onChange={e => setPanelH(parseFloat(e.target.value) || 0)}
                                 className="w-full px-3 py-2 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50" />
                             </div>
@@ -1079,48 +1054,48 @@ export default function ProductDetailPage() {
 
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Largeur surface (m)</label>
-                          <input type="number" value={surfaceW || ''} min={0.1} step={0.1} placeholder="ex: 10"
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">{t('product.surfaceWidth')}</label>
+                          <input type="number" value={surfaceW || ''} min={0.1} step={0.1} placeholder={t('product.surfaceWidthEx')}
                             onChange={e => setSurfaceW(parseFloat(e.target.value) || 0)}
                             className="w-full px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50 transition-colors" />
                         </div>
                         <div>
-                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">Hauteur surface (m)</label>
-                          <input type="number" value={surfaceH || ''} min={0.1} step={0.1} placeholder="ex: 3"
+                          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 block">{t('product.surfaceHeight')}</label>
+                          <input type="number" value={surfaceH || ''} min={0.1} step={0.1} placeholder={t('product.surfaceHeightEx')}
                             onChange={e => setSurfaceH(parseFloat(e.target.value) || 0)}
                             className="w-full px-3 py-2.5 text-sm font-semibold border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 bg-gray-50 transition-colors" />
                         </div>
                       </div>
 
                       {!canAutoCalc && surfaceW > 0 && surfaceH > 0 && (!dims && (panelW <= 0 || panelH <= 0)) && (
-                        <p className="text-xs text-amber-600 mt-2">Veuillez renseigner les dimensions de la dalle.</p>
+                        <p className="text-xs text-amber-600 mt-2">{t('product.enterDimensions')}</p>
                       )}
 
                       {autoResult && (
                         <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 overflow-hidden">
                           <div className="px-4 py-3 border-b border-emerald-100 bg-emerald-50">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Résultat de l&apos;estimation</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">{t('product.estimateResult')}</p>
                           </div>
                           <div className="px-4 py-3 space-y-2.5">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">Surface totale</span>
+                              <span className="text-xs text-gray-500">{t('product.totalSurface')}</span>
                               <span className="text-xs font-bold text-gray-800">{autoResult.totalSurface.toFixed(2)} m²</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">Surface d&apos;une dalle</span>
+                              <span className="text-xs text-gray-500">{t('product.tileSurface')}</span>
                               <span className="text-xs font-bold text-gray-800">{autoResult.panelSurface.toFixed(4)} m²</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">Nombre de dalles</span>
-                              <span className="text-xs font-bold text-gray-800">{autoResult.panelCount} dalles</span>
+                              <span className="text-xs text-gray-500">{t('product.tileCount')}</span>
+                              <span className="text-xs font-bold text-gray-800">{autoResult.panelCount} {t('product.tileCountSuffix')}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-gray-500">Prix unitaire</span>
+                              <span className="text-xs text-gray-500">{t('product.unitPrice')}</span>
                               <span className="text-xs font-bold text-gray-800">{formatPrice(autoResult.unitPrice)} HT</span>
                             </div>
                             <div className="h-px bg-emerald-200/50 my-1" />
                             <div className="flex items-center justify-between">
-                              <span className="text-sm font-bold text-gray-900">Prix total estimé</span>
+                              <span className="text-sm font-bold text-gray-900">{t('product.estimatedTotalPrice')}</span>
                               <span className="text-lg font-black text-emerald-700 tracking-tight">{formatPrice(autoResult.totalPrice)} HT</span>
                             </div>
                           </div>
@@ -1261,7 +1236,7 @@ export default function ProductDetailPage() {
                     type="button"
                     onClick={() => setShowQrModal(true)}
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white font-semibold rounded-xl hover:bg-cyan-600 transition-all cursor-pointer shadow-sm"
-                    title="Afficher le QR code"
+                    title={t('product.showQrCode')}
                   >
                     <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <rect width="5" height="5" x="3" y="3" rx="1" />
@@ -1301,7 +1276,7 @@ export default function ProductDetailPage() {
                       return product.downloadCustomIcon2 ? <img src={product.downloadCustomIcon2} className="w-3.5 h-3.5 object-contain" /> : <Icon size={14} />;
                     })()}
                     <span className="text-xs uppercase tracking-wider">
-                      {product.downloadLabel2 || 'Télécharger'}
+                      {product.downloadLabel2 || t('product.downloadFallback')}
                     </span>
                   </button>
                 )}
@@ -1312,7 +1287,7 @@ export default function ProductDetailPage() {
                       return product.downloadCustomIcon3 ? <img src={product.downloadCustomIcon3} className="w-3.5 h-3.5 object-contain" /> : <Icon size={14} />;
                     })()}
                     <span className="text-xs uppercase tracking-wider">
-                      {product.downloadLabel3 || 'Télécharger'}
+                      {product.downloadLabel3 || t('product.downloadFallback')}
                     </span>
                   </button>
                 )}
@@ -1342,18 +1317,18 @@ export default function ProductDetailPage() {
                   {(() => {
                     const currentVar = hoveredVariant ?? selectedVariant;
                     if (product?.priceDisplay === 'free') {
-                      return <div className="text-2xl font-bold text-emerald-600">Gratuit</div>;
+                      return <div className="text-2xl font-bold text-emerald-600">{t('product.free')}</div>;
                     }
                     if (currentVar && currentVar.price > 0) {
                       return <div className="text-2xl font-bold text-gray-900">{formatPrice(currentVar.price)} HT</div>;
                     }
                     if (product?.priceDisplay === 'multiprice' && !selectedVariant) {
-                      return <div className="text-2xl font-bold text-gray-900">Tarifs multiples</div>;
+                      return <div className="text-2xl font-bold text-gray-900">{t('product.multipleTariffs')}</div>;
                     }
                     if (product?.priceDisplay === 'quote') {
-                      return <div className="text-2xl font-bold text-gray-900">Sur devis</div>;
+                      return <div className="text-2xl font-bold text-gray-900">{t('product.onQuote')}</div>;
                     }
-                    return <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)} HT{canRent ? <span className="text-sm font-semibold text-gray-400"> / jour</span> : null}</div>;
+                    return <div className="text-2xl font-bold text-gray-900">{formatPrice(effectivePrice)} HT{canRent ? <span className="text-sm font-semibold text-gray-400">{t('product.perDay')}</span> : null}</div>;
                   })()}
                   {!canRent && (
                     <span className="text-[10px] font-bold text-gray-400 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded-md tracking-wider">HT</span>
@@ -1371,27 +1346,27 @@ export default function ProductDetailPage() {
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg hover:bg-blue-600 transition-all"
                   >
                     <Info size={13} />
-                    {profileType ? (profileType === 'entreprise' ? ' Profil entreprise ' : ' Profil particulier ') : 'Informations'}
+                    {profileType ? (profileType === 'entreprise' ? ` ${t('product.profileBusiness')} ` : ` ${t('product.profileIndividual')} `) : 'Informations'}
                   </button>
                   {showInfo && (
                     <div className="absolute z-20 left-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-4">
                       <p className="text-xs text-gray-500 leading-relaxed">{t('product.infoText')}</p>
                       <div className="mt-3 pt-3 border-t border-gray-100">
-                        <p className="text-xs font-semibold text-gray-800 mb-3">Vous êtes ?</p>
+                        <p className="text-xs font-semibold text-gray-800 mb-3">{t('product.whoAreYou')}</p>
                         <div className="flex flex-col gap-2">
                           <button
                             onClick={() => { setProfileType('particulier'); setShowInfo(false); }}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'particulier' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                           >
                             <User size={16} />
-                            Je suis un particulier
+                            {t('product.iAmIndividual')}
                           </button>
                           <button
                             onClick={() => { setProfileType('entreprise'); setShowInfo(false); }}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'entreprise' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                           >
                             <Building2 size={16} />
-                            Je suis une entreprise
+                            {t('product.iAmBusiness')}
                           </button>
                         </div>
                       </div>
@@ -1417,7 +1392,7 @@ export default function ProductDetailPage() {
                         }}
                         className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
                       >
-                        <span>{selectedVariant?.name || "Choisir une variante"}</span>
+                        <span>{selectedVariant?.name || t('product.chooseVariant')}</span>
                         <ChevronDown size={16} className={`transition-transform duration-200 ${comboboxOpen1 ? 'rotate-180' : ''}`} />
                       </button>
                       {comboboxOpen1 && dropdownRect1 && (
@@ -1522,11 +1497,11 @@ export default function ProductDetailPage() {
                       <span className="inline-block w-2 h-2 rounded-full bg-green-500"></span>
                     )}
                     {isOutOfStock ? (
-                      <span className="text-xs font-medium text-red-500">Rupture</span>
+                      <span className="text-xs font-medium text-red-500">{t('product.outOfStockShort')}</span>
                     ) : availableStock <= 3 ? (
-                      <span className="text-xs font-medium text-orange-500">Plus que {availableStock}</span>
+                      <span className="text-xs font-medium text-orange-500">{t('product.onlyLeftShort', { count: availableStock })}</span>
                     ) : (
-                      <span className="text-xs font-medium text-green-600">{availableStock} en stock</span>
+                      <span className="text-xs font-medium text-green-600">{t('product.inStock', { count: availableStock })}</span>
                     )}
                   </div>
                 </div>
@@ -1537,7 +1512,7 @@ export default function ProductDetailPage() {
                     min={1}
                     max={availableStock}
                     onChange={(e) => setQuantity(Math.min(availableStock, Math.max(1, parseInt(e.target.value) || 1)))}
-                    placeholder="Ex : 10"
+                    placeholder={t('product.quantityPlaceholder')}
                     disabled={isOutOfStock}
                     className="w-full rounded-xl font-bold focus:outline-none transition-colors appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none bg-[#1a1f2e] text-white border border-blue-500/30 focus:border-cyan-400 px-4 py-3 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                   />
@@ -1562,7 +1537,7 @@ export default function ProductDetailPage() {
                 </div>
                 {!isOutOfStock && quantity >= availableStock && (
                   <p className="text-[11px] text-red-400 font-semibold mt-1.5 flex items-center gap-1">
-                    <span>🔴</span> Quantité maximale disponible atteinte. Vous ne pouvez pas dépasser le stock disponible.
+                    <span>🔴</span> {t('product.maxQuantityReached')}
                   </p>
                 )}
               </div>
@@ -1571,11 +1546,11 @@ export default function ProductDetailPage() {
                 quoteDone ? (
                   <div className="flex flex-col gap-3">
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-                      <p className="text-sm font-semibold text-emerald-800">Demande envoyée</p>
-                      <p className="text-xs text-emerald-600 mt-1">Nous vous contacterons sous 48h maximum.</p>
+                      <p className="text-sm font-semibold text-emerald-800">{t('product.requestSent')}</p>
+                      <p className="text-xs text-emerald-600 mt-1">{t('product.willContactWithin48h')}</p>
                     </div>
                     <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all">
-                      Continuer mes achats
+                      {t('product.continueShopping')}
                     </button>
                   </div>
                 ) : (
@@ -1607,9 +1582,9 @@ export default function ProductDetailPage() {
               ) : (
                 <>
               <button onClick={handleAddToCart} disabled={isOutOfStock} className="w-full bg-gray-900 text-white py-2.5 px-4 rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
-                  <ShoppingBag size={15} /> {isOutOfStock ? 'Indisponible' : t('product.addToCart')}
+                  <ShoppingBag size={15} /> {isOutOfStock ? t('product.unavailable') : t('product.addToCart')}
                 </button>
-              <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">{isOutOfStock ? 'Indisponible' : t('product.buyNow')}</button>
+              <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full border-2 border-gray-900 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">{isOutOfStock ? t('product.unavailable') : t('product.buyNow')}</button>
                 </>
               )}
               </div>
@@ -1635,7 +1610,7 @@ export default function ProductDetailPage() {
               )}
               {upsellProducts.length > 0 && (
                 <section>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">Complétez votre installation</h2>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('product.completeYourInstallation')}</h2>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {upsellProducts.map((p) => (
                       <div key={p.id} className="bg-white rounded-2xl border border-gray-200/70 p-4 group hover:shadow-md transition-all duration-300">
@@ -1656,7 +1631,7 @@ export default function ProductDetailPage() {
                         </div>
                         <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.name}</h3>
                         <p className="text-sm font-bold text-gray-900 mb-3">{formatProductPriceLabel(p)}</p>
-                      <ActionButton product={p} onAddToCart={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(`${p.name} ajouté au panier`); }} />
+                      <ActionButton product={p} onAddToCart={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(t('product.addedToCart', { name: p.name })); }} />
                       </div>
                     ))}
                   </div>
@@ -1710,18 +1685,18 @@ export default function ProductDetailPage() {
                 {(() => {
                   const currentVar = hoveredVariant ?? selectedVariant;
                   if (product?.priceDisplay === 'free') {
-                    return <div className="text-3xl font-bold text-emerald-600">Gratuit</div>;
+                    return <div className="text-3xl font-bold text-emerald-600">{t('product.free')}</div>;
                   }
                   if (currentVar && currentVar.price > 0) {
                     return <div className="text-3xl font-bold text-gray-900">{formatPrice(currentVar.price)} HT</div>;
                   }
                   if (product?.priceDisplay === 'multiprice' && !selectedVariant) {
-                    return <div className="text-3xl font-bold text-gray-900">Tarifs multiples</div>;
+                    return <div className="text-3xl font-bold text-gray-900">{t('product.multipleTariffs')}</div>;
                   }
                   if (product?.priceDisplay === 'quote') {
-                    return <div className="text-3xl font-bold text-gray-900">Sur devis</div>;
+                    return <div className="text-3xl font-bold text-gray-900">{t('product.onQuote')}</div>;
                   }
-                  return <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)} HT{canRent ? <span className="text-sm font-semibold text-gray-400"> / jour</span> : null}</div>;
+                  return <div className="text-3xl font-bold text-gray-900">{formatPrice(effectivePrice)} HT{canRent ? <span className="text-sm font-semibold text-gray-400">{t('product.perDay')}</span> : null}</div>;
                 })()}
                 {effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -1737,27 +1712,27 @@ export default function ProductDetailPage() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg hover:bg-blue-600 transition-all"
                 >
                   <Info size={13} />
-                  {profileType ? (profileType === 'entreprise' ? ' Profil entreprise ' : ' Profil particulier ') : t('product.info')}
+                  {profileType ? (profileType === 'entreprise' ? ` ${t('product.profileBusiness')} ` : ` ${t('product.profileIndividual')} `) : t('product.info')}
                 </button>
                   {showInfo && (
                     <div className="absolute z-20 left-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-4">
                       <p className="text-xs text-gray-500 leading-relaxed">{t('product.infoText')}</p>
                       <div className="mt-3 pt-3 border-t border-gray-100">
-                        <p className="text-xs font-semibold text-gray-800 mb-3">Vous êtes ?</p>
+                        <p className="text-xs font-semibold text-gray-800 mb-3">{t('product.whoAreYou')}</p>
                         <div className="flex flex-col gap-2">
                           <button
                             onClick={() => { setProfileType('particulier'); setShowInfo(false); }}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'particulier' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                           >
                             <User size={16} />
-                            Je suis un particulier
+                            {t('product.iAmIndividual')}
                           </button>
                           <button
                             onClick={() => { setProfileType('entreprise'); setShowInfo(false); }}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'entreprise' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                           >
                             <Building2 size={16} />
-                            Je suis une entreprise
+                            {t('product.iAmBusiness')}
                           </button>
                         </div>
                       </div>
@@ -1785,7 +1760,7 @@ export default function ProductDetailPage() {
                       }}
                       className="inline-flex items-center justify-between w-full text-sm font-bold text-gray-600 bg-white border-2 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 rounded-2xl px-4 py-3.5 transition-all"
                     >
-                      <span>{selectedVariant?.name || "Choisir une variante"}</span>
+                      <span>{selectedVariant?.name || t('product.chooseVariant')}</span>
                       <ChevronDown size={16} className={`transition-transform duration-200 ${comboboxOpen2 ? 'rotate-180' : ''}`} />
                     </button>
                     {comboboxOpen2 && dropdownRect2 && (
@@ -1874,8 +1849,8 @@ export default function ProductDetailPage() {
                       <Calculator size={16} />
                     </div>
                     <div className="text-left">
-                      <h3 className="text-sm font-bold text-gray-900">Calculer le budget</h3>
-                      <p className="text-xs text-gray-400 font-medium">Estimez le coût de votre projet</p>
+                      <h3 className="text-sm font-bold text-gray-900">{t('product.estimateBudget')}</h3>
+                      <p className="text-xs text-gray-400 font-medium">{t('product.estimateBudgetDesc')}</p>
                     </div>
                   </div>
                   <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${budgetOpen ? 'rotate-180 text-emerald-600' : ''}`} />
@@ -1888,12 +1863,12 @@ export default function ProductDetailPage() {
               {quoteDone ? (
                 <div className="flex flex-col gap-3">
                   <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-                    <p className="text-sm font-semibold text-emerald-800">Demande envoyée</p>
-                    <p className="text-xs text-emerald-600 mt-1">Nous vous contacterons sous 48h maximum.</p>
+                    <p className="text-sm font-semibold text-emerald-800">{t('product.requestSent')}</p>
+                    <p className="text-xs text-emerald-600 mt-1">{t('product.willContactWithin48h')}</p>
                   </div>
                   <button onClick={() => router.push('/boutique')} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all">
                     <Store size={16} className="inline mr-2 -mt-0.5" />
-                    Continuer mes achats
+                    {t('product.continueShopping')}
                   </button>
                 </div>
               ) : (
@@ -1946,11 +1921,11 @@ export default function ProductDetailPage() {
                   <span className="inline-block w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
                 )}
                 {isOutOfStock ? (
-                  <span className="text-xs font-medium text-red-500">Rupture de stock</span>
+                  <span className="text-xs font-medium text-red-500">{t('product.outOfStock')}</span>
                 ) : availableStock <= 3 ? (
-                  <span className="text-xs font-medium text-orange-500">Plus que {availableStock} en stock</span>
+                  <span className="text-xs font-medium text-orange-500">{t('product.onlyLeft', { count: availableStock })}</span>
                 ) : (
-                  <span className="text-xs font-medium text-green-600">En stock</span>
+                  <span className="text-xs font-medium text-green-600">{t('product.inStockShort')}</span>
                 )}
               </div>
               <div className="flex items-center gap-3">
@@ -1981,16 +1956,16 @@ export default function ProductDetailPage() {
                 </div>
                 <button onClick={handleAddToCart} disabled={isOutOfStock} className="flex-1 bg-gray-900 text-white py-3 px-6 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
                   <ShoppingBag size={16} />
-                  {isOutOfStock ? 'Indisponible' : t('product.addToCart')}
+                  {isOutOfStock ? t('product.unavailable') : t('product.addToCart')}
                 </button>
               </div>
               {!isOutOfStock && quantity >= availableStock && (
                 <p className="text-[11px] text-red-500 font-semibold flex items-center gap-1">
-                  <span>🔴</span> Quantité maximale disponible atteinte. Vous ne pouvez pas dépasser le stock disponible.
+                  <span>🔴</span> {t('product.maxQuantityReached')}
                 </p>
               )}
               <button onClick={handleBuyNow} disabled={isOutOfStock} className="w-full border-2 border-gray-900 text-gray-900 py-3 px-6 rounded-xl font-semibold hover:bg-gray-900 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed">
-                {isOutOfStock ? 'Indisponible' : t('product.buyNow')}
+                {isOutOfStock ? t('product.unavailable') : t('product.buyNow')}
               </button>
             </div>
             )}
@@ -2025,22 +2000,22 @@ export default function ProductDetailPage() {
               type="button"
               onClick={() => setShowQrModal(false)}
               className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
-              aria-label="Fermer"
+              aria-label={t('header.close')}
             >
               <X size={18} />
             </button>
             <h3 className="text-base font-black text-gray-900 uppercase tracking-tight mb-4">
-              QR Code du produit
+              {t('product.qrCodeTitle')}
             </h3>
             <div className="w-56 h-56 bg-white p-3 rounded-2xl border-2 border-cyan-400/50 shadow-sm flex items-center justify-center mb-4">
               {productQrDataUrl ? (
-                <img src={productQrDataUrl} alt="QR Code du produit" className="w-full h-full object-contain" />
+                <img src={productQrDataUrl} alt={t('product.qrCodeTitle')} className="w-full h-full object-contain" />
               ) : (
                 <LiquidLoader size={24} />
               )}
             </div>
             <p className="text-xs font-semibold text-gray-600 mb-4 leading-relaxed">
-              Scannez ce QR code pour accéder au contenu du produit.
+              {t('product.qrCodeScanInfo')}
             </p>
             {product?.qrCodeUrl && (
               <a

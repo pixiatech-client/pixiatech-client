@@ -64,9 +64,9 @@ export function parseOutOfStockDetails(
   };
 }
 
-export function checkoutModeBadge(type: string): { label: string; colors: string } | null {
-  if (type === 'rental') return { label: 'Location', colors: 'bg-blue-500 text-white' };
-  if (type === 'purchase') return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
+export function checkoutModeBadge(type: string, t?: (key: string) => string): { label: string; colors: string } | null {
+  if (type === 'rental') return { label: t ? (t('checkout.modeRental') || 'Location') : 'Location', colors: 'bg-blue-500 text-white' };
+  if (type === 'purchase') return { label: t ? (t('checkout.modeSale') || 'Vente') : 'Vente', colors: 'bg-emerald-500 text-white' };
   return null;
 }
 
@@ -161,7 +161,7 @@ export function PayPalButtonGroup({
         <div className="w-full min-h-[48px] py-3 px-4 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center gap-2 cursor-not-allowed text-center">
           <Lock size={15} className="text-gray-400 shrink-0" />
           <span className="text-xs sm:text-sm font-semibold text-gray-500">
-            {disabledMessage || (fundingSource === FUNDING.CARD ? 'Complétez vos informations pour activer le paiement' : 'Renseignez votre email ci-dessus pour activer PayPal')}
+            {disabledMessage || (fundingSource === FUNDING.CARD ? (t('checkout.completeInfoToPay') || 'Complétez vos informations pour activer le paiement') : (t('checkout.fillEmailForPaypal') || 'Renseignez votre email ci-dessus pour activer PayPal'))}
           </span>
         </div>
       ) : (
@@ -275,7 +275,7 @@ export function PayPalButtonGroup({
                 return;
               }
               console.error('PayPal error:', err);
-              setError((t('checkout.paypalError') || 'Erreur PayPal: ') + (err?.message || 'Erreur inconnue'));
+              setError((t('checkout.paypalErrorPrefix') || 'Erreur PayPal: ') + (err?.message || (t('checkout.unknownError') || 'Erreur inconnue')));
             }
           }}
           onError={(err: any) => {

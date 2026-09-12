@@ -188,7 +188,7 @@ function PayPalButtonGroup({
         <div className="w-full min-h-[48px] py-3 px-4 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center gap-2 cursor-not-allowed text-center">
           <Lock size={15} className="text-gray-400 shrink-0" />
           <span className="text-xs sm:text-sm font-semibold text-gray-500">
-            {disabledMessage || (fundingSource === FUNDING.CARD ? 'Complétez vos informations pour activer le paiement' : 'Renseignez votre email ci-dessus pour activer PayPal')}
+            {disabledMessage || (fundingSource === FUNDING.CARD ? (t('checkout.completeInfoToPay') || 'Complétez vos informations pour activer le paiement') : (t('checkout.fillEmailForPaypal') || 'Renseignez votre email ci-dessus pour activer PayPal'))}
           </span>
         </div>
       ) : (
@@ -302,7 +302,7 @@ function PayPalButtonGroup({
               return;
             }
             console.error('PayPal error:', err);
-            setError((t('checkout.paypalError') || 'Erreur PayPal: ') + (err?.message || 'Erreur inconnue'));
+            setError((t('checkout.paypalErrorPrefix') || 'Erreur PayPal: ') + (err?.message || (t('checkout.unknownError') || 'Erreur inconnue')));
           }
         }}
         onError={(err: any) => {
@@ -361,6 +361,7 @@ const cardFieldStyle = {
 
 function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, deliveryCost }: { total: number; handlePay: (isNew?: boolean) => void; items: CartItem[]; delivery: CustomerInfoValues; isDeliveryComplete: boolean; deliveryCost: number }) {
   const { cardFieldsForm } = usePayPalCardFields();
+  const { t } = useI18n();
   const [ready, setReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [cardError, setCardError] = useState<string | null>(null);
@@ -379,7 +380,7 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, de
       await cardFieldsForm.submit();
     } catch (err: any) {
       console.error('CardFields submit error:', err);
-      setCardError(err.message || 'Vérifiez vos informations bancaires');
+      setCardError(err.message || (t('checkout.checkBankInfo') || 'Vérifiez vos informations bancaires'));
     } finally {
       setSubmitting(false);
     }
@@ -390,8 +391,8 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, de
       <div className="w-full bg-[#F9FAFB] rounded-xl p-5 md:p-6">
         <div className="bg-amber-50 border border-dashed border-amber-200 rounded-xl p-6 text-center">
           <MapPin size={24} className="mx-auto text-amber-300 mb-2" />
-          <p className="text-sm font-semibold text-amber-700 mb-1">Complétez l'adresse de livraison</p>
-          <p className="text-xs text-amber-500">Remplissez les champs ci-dessus pour payer par carte bancaire.</p>
+          <p className="text-sm font-semibold text-amber-700 mb-1">{t('checkout.completeDeliveryAddress') || "Complétez l'adresse de livraison"}</p>
+          <p className="text-xs text-amber-500">{t('checkout.fillDeliveryToEnableCard') || 'Remplissez les champs ci-dessus pour payer par carte bancaire.'}</p>
         </div>
       </div>
     );
@@ -401,7 +402,7 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, de
     <div className="w-full bg-[#F9FAFB] rounded-xl p-5 md:p-6 space-y-4">
       <div className="space-y-4">
         {[
-          { label: 'Nom du titulaire (optionnel)', Field: PayPalNameField, placeholder: 'Jean Dupont' },
+          { label: t('checkout.cardholderName') || 'Nom du titulaire (optionnel)', Field: PayPalNameField, placeholder: t('checkout.cardholderPlaceholder') || 'Jean Dupont' },
           { label: 'Numéro de carte', Field: PayPalNumberField, placeholder: '1234 5678 9012 3456' },
         ].map(({ label, Field, placeholder }, i) => (
           <motion.div
@@ -418,8 +419,8 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, de
         ))}
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: "Date d'expiration", Field: PayPalExpiryField, placeholder: 'MM / AA' },
-            { label: 'Cryptogramme', Field: PayPalCVVField, placeholder: '123' },
+            { label: t('checkout.expiryDate') || "Date d'expiration", Field: PayPalExpiryField, placeholder: 'MM / AA' },
+            { label: t('checkout.cvv') || 'Cryptogramme', Field: PayPalCVVField, placeholder: t('checkout.cvvPlaceholder') || '123' },
           ].map(({ label, Field, placeholder }, i) => (
             <motion.div
               key={label}
@@ -445,7 +446,7 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, de
         ) : (
           <Lock size={14} />
         )}
-        {submitting ? 'Paiement en cours…' : `Payer ${formatPrice(total)}`}
+        {submitting ? (t('checkout.paymentInProgress') || 'Paiement en cours…') : (t('checkout.pay', { amount: formatPrice(total) }) || `Payer ${formatPrice(total)}`)}
       </button>
       {cardError && (
         <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
@@ -456,9 +457,9 @@ function CardSection({ total, handlePay, items, delivery, isDeliveryComplete, de
   );
 }
 
-function checkoutModeBadge(type: string): { label: string; colors: string } | null {
-  if (type === 'rental') return { label: 'Location', colors: 'bg-blue-500 text-white' };
-  if (type === 'purchase') return { label: 'Vente', colors: 'bg-emerald-500 text-white' };
+function checkoutModeBadge(type: string, t?: (key: string) => string): { label: string; colors: string } | null {
+  if (type === 'rental') return { label: t ? (t('checkout.modeRental') || 'Location') : 'Location', colors: 'bg-blue-500 text-white' };
+  if (type === 'purchase') return { label: t ? (t('checkout.modeSale') || 'Vente') : 'Vente', colors: 'bg-emerald-500 text-white' };
   return null;
 }
 
@@ -500,7 +501,7 @@ export default function CheckoutPage() {
   const [vatRate, setVatRate] = useState(19);
   const [vatValidated, setVatValidated] = useState(false);
   const [vatNumber, setVatNumber] = useState('');
-  const [vatMessage, setVatMessage] = useState('Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
+  const [vatMessage, setVatMessage] = useState(t('checkout.vatMessage') || 'Les prix affichés sont hors taxes. La TVA sera ajoutée au montant total lors du paiement.');
   const [vatMessageEnabled, setVatMessageEnabled] = useState(true);
   const [vatMessageColor, setVatMessageColor] = useState('orange');
   const [isPreFilledFromRental, setIsPreFilledFromRental] = useState(false);
@@ -748,11 +749,11 @@ export default function CheckoutPage() {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
-          throw new Error(body?.error || "Échec de l'envoi");
+          throw new Error(body?.error || (t('checkout.sendError') || "Échec de l'envoi"));
         }
         setMagicSent(true);
       } catch (e: any) {
-        setMagicError(e?.message || "Erreur lors de l'envoi du lien");
+        setMagicError(e?.message || (t('checkout.sendLinkError2') || "Erreur lors de l'envoi du lien"));
       } finally {
         setMagicSending(false);
       }
@@ -765,14 +766,14 @@ export default function CheckoutPage() {
   function handleDeliveryChange(field: keyof CustomerInfoValues, value: string) {
     setDelivery(d => ({ ...d, [field]: value }));
     if (deliveryTouched[field]) {
-      const err = validateCustomerField(field, value);
+      const err = validateCustomerField(field, value, t);
       setDeliveryErrors(prev => err ? { ...prev, [field]: err } : { ...prev, [field]: '' });
     }
   }
 
   function handleDeliveryBlur(field: keyof CustomerInfoValues, value: string) {
     setDeliveryTouched(prev => ({ ...prev, [field]: true }));
-    const err = validateCustomerField(field, value);
+    const err = validateCustomerField(field, value, t);
     setDeliveryErrors(prev => err ? { ...prev, [field]: err } : { ...prev, [field]: '' });
   }
 
@@ -806,9 +807,9 @@ export default function CheckoutPage() {
       <div className="w-full min-h-screen flex items-center justify-center bg-[#F5F5F5]" style={{ backgroundColor: '#F5F5F5' }}>
         <div className="text-center">
           <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
-          <h2 className="text-xl font-bold text-primary-900 mb-2">Votre panier est vide</h2>
+          <h2 className="text-xl font-bold text-primary-900 mb-2">{t('cart.emptyTitle') || 'Votre panier est vide'}</h2>
           <button onClick={() => router.push('/boutique')} className="bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-all">
-            Découvrir la boutique
+            {t('cart.discoverShop') || 'Découvrir la boutique'}
           </button>
         </div>
       </div>
@@ -854,11 +855,11 @@ export default function CheckoutPage() {
 
   let paypalDisabledMessage = '';
   if (paypalBlockedByStock) {
-    paypalDisabledMessage = 'Paiement bloqué : article(s) en rupture de stock dans le panier';
+    paypalDisabledMessage = t('checkout.blockedOutOfStockTitle') || 'Paiement bloqué : article(s) en rupture de stock dans le panier';
   } else if (paypalBlockedByEmailAccount) {
-    paypalDisabledMessage = 'Veuillez vous connecter ci-dessus pour finaliser votre commande';
+    paypalDisabledMessage = t('checkout.loginToCheckout') || 'Veuillez vous connecter ci-dessus pour finaliser votre commande';
   } else if (!paypalEmailValid) {
-    paypalDisabledMessage = 'Renseignez votre email ci-dessus pour activer PayPal';
+    paypalDisabledMessage = t('checkout.fillEmailForPaypal') || 'Renseignez votre email ci-dessus pour activer PayPal';
   }
 
   const cardBlockedByStock = hasCartOutOfStock;
@@ -867,11 +868,11 @@ export default function CheckoutPage() {
 
   let cardDisabledMessage = '';
   if (cardBlockedByStock) {
-    cardDisabledMessage = 'Paiement bloqué : article(s) en rupture de stock dans le panier';
+    cardDisabledMessage = t('checkout.blockedOutOfStockTitle') || 'Paiement bloqué : article(s) en rupture de stock dans le panier';
   } else if (cardBlockedByEmailAccount) {
-    cardDisabledMessage = 'Veuillez vous connecter ci-dessus pour finaliser votre commande';
+    cardDisabledMessage = t('checkout.loginToCheckout') || 'Veuillez vous connecter ci-dessus pour finaliser votre commande';
   } else if (!isDeliveryComplete) {
-    cardDisabledMessage = "Complétez l'adresse de livraison pour activer le paiement";
+    cardDisabledMessage = t('checkout.completeDeliveryToPay') || "Complétez l'adresse de livraison pour activer le paiement";
   }
 
   // Contexte envoyé au serveur pour la résolution du montant (jamais d'`amount` client).
@@ -912,14 +913,14 @@ export default function CheckoutPage() {
     const paymentLabel = paymentMethod === 'card' ? t('checkout.cardPayment') : t('checkout.paypal');
     const invoiceData = mounted ? {
       orderRef: ordNo.replace('ORD', ''),
-      customerName: `${delivery.firstName} ${delivery.lastName}`.trim() || 'Client',
+      customerName: `${delivery.firstName} ${delivery.lastName}`.trim() || (t('checkout.clientLabel') || 'Client'),
       customerEmail: delivery.email || 'email@exemple.com',
       customerCountry: delivery.country,
       customerAddress: delivery.addressLine1 + (delivery.addressLine2 ? ', ' + delivery.addressLine2 : ''),
       customerPostcode: delivery.postcode,
       customerCity: delivery.city,
       isB2B: isB2B,
-      productName: items[0]?.name || 'Produit',
+      productName: items[0]?.name || (t('checkout.productLabel') || 'Produit'),
       quantity: items.reduce((s, i) => s + i.quantity, 0),
       unitPrice: items.reduce((s, i) => s + i.price * i.quantity, 0) / items.reduce((s, i) => s + i.quantity, 0) || 0,
       subtotal,
@@ -937,7 +938,7 @@ export default function CheckoutPage() {
     } : undefined;
 
     return (
-      <div className="h-screen overflow-hidden flex flex-col items-center py-6 px-4 relative">
+      <div className="min-h-screen overflow-x-hidden flex flex-col items-center py-6 px-4 relative">
         <ConfettiEffect />
 
         {/* Success Header */}
@@ -968,7 +969,7 @@ export default function CheckoutPage() {
                 className="absolute top-4 left-4 z-10 flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-900 text-white border border-white/20 text-xs font-semibold hover:bg-gray-800 hover:shadow-md transition-all cursor-pointer"
               >
                 <ArrowLeft size={14} />
-                Retour
+                {t('checkout.retour') || 'Retour'}
               </button>
               {/* Receipt Header */}
               <div className="p-5 flex justify-between items-center border-b border-slate-50">
@@ -990,10 +991,10 @@ export default function CheckoutPage() {
               </div>
 
               {/* Receipt Body */}
-              <div className="p-5 grid grid-cols-2 gap-8">
+              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-8">
                 {/* Billing Info */}
                 <div>
-                  <h3 className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider mb-4 border-l-4 border-indigo-500 pl-3">{isB2B ? 'Client (Entreprise)' : 'Client (Particulier)'}</h3>
+                  <h3 className="text-[11px] font-extrabold text-slate-900 uppercase tracking-wider mb-4 border-l-4 border-indigo-500 pl-3">{isB2B ? (t('checkout.clientBusiness') || 'Client (Entreprise)') : (t('checkout.clientIndividual') || 'Client (Particulier)')}</h3>
                   <div className="space-y-3">
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{t('checkout.confirmed.client')}</p>
@@ -1069,7 +1070,7 @@ export default function CheckoutPage() {
                                 )}
                               </div>
                               {(() => {
-                                const b = checkoutModeBadge(item.type);
+                                const b = checkoutModeBadge(item.type, t);
                                 return b ? (
                                   <div className="absolute -top-1 -right-1 z-10">
                                     <span className={`px-1 py-0.5 rounded text-[7px] font-black uppercase tracking-wider shadow-sm ${b.colors}`}>{b.label}</span>
@@ -1110,17 +1111,17 @@ export default function CheckoutPage() {
               </div>
               <div className="flex-1">
                 <h4 className="text-base font-extrabold text-slate-900 mb-1.5">
-                  {isNewCustomer ? t('checkout.confirmed.magicLink') : 'Merci de votre confiance'}
+                  {isNewCustomer ? t('checkout.confirmed.magicLink') : (t('checkout.thanksForTrust') || 'Merci de votre confiance')}
                 </h4>
                 <p className="text-[13px] text-slate-500 leading-relaxed mb-4">
                   {isNewCustomer
-                    ? "Un espace réservé aux membres a été créé pour vous. Consultez votre email et n'oubliez pas de vérifier les spams pour activer votre accès exclusif."
-                    : 'Retrouvez vos commandes et suivez leur suivi dans votre espace membre.'}
+                    ? (t('checkout.confirmed.magicLinkDesc') || "Un espace réservé aux membres a été créé pour vous. Consultez votre email et n'oubliez pas de vérifier les spams pour activer votre accès exclusif.")
+                    : (t('checkout.trackOrdersInMemberArea') || 'Retrouvez vos commandes et suivez leur suivi dans votre espace membre.')}
                 </p>
                 <button
                   onClick={async () => {
                     const email = delivery.email;
-                    if (!email) { setMagicError('Aucune adresse email associée à cette commande.'); return; }
+                    if (!email) { setMagicError(t('checkout.noEmailForOrder') || 'Aucune adresse email associée à cette commande.'); return; }
                     setMagicSending(true);
                     setMagicError('');
                     try {
@@ -1131,11 +1132,11 @@ export default function CheckoutPage() {
                       });
                       if (!res.ok) {
                         const body = await res.json().catch(() => ({}));
-                        throw new Error(body?.error || 'Échec de l\'envoi');
+                        throw new Error(body?.error || (t('checkout.sendError') || 'Échec de l\'envoi'));
                       }
                       setMagicSent(true);
                     } catch (e: any) {
-                      setMagicError(e?.message || 'Erreur lors de l\'envoi');
+                      setMagicError(e?.message || (t('checkout.sendLinkError2') || 'Erreur lors de l\'envoi'));
                     } finally {
                       setMagicSending(false);
                     }
@@ -1152,7 +1153,7 @@ export default function CheckoutPage() {
                       <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-.239-.756Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z" />
                     </svg>
                   )}
-                  {magicSending ? 'Envoi en cours…' : magicSent ? 'Email envoyé' : t('checkout.confirmed.checkEmail')}
+                  {magicSending ? (t('checkout.sending') || 'Envoi en cours…') : magicSent ? (t('checkout.emailSent') || 'Email envoyé') : t('checkout.confirmed.checkEmail')}
                 </button>
                 {magicError && (
                   <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-100 flex gap-2.5 items-start">
@@ -1196,23 +1197,23 @@ export default function CheckoutPage() {
                     </button>
                     {showInfo && (
                       <div className="absolute z-20 right-0 top-full mt-1 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-4">
-                        <p className="text-xs text-gray-500 leading-relaxed">Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs. Les particuliers peuvent également commander directement depuis notre boutique.</p>
+                        <p className="text-xs text-gray-500 leading-relaxed">{t('checkout.b2bInfo') || 'Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs. Les particuliers peuvent également commander directement depuis notre boutique.'}</p>
                         <div className="mt-3 pt-3 border-t border-gray-100">
-                          <p className="text-xs font-semibold text-gray-800 mb-3">Vous êtes ?</p>
+                          <p className="text-xs font-semibold text-gray-800 mb-3">{t('checkout.whoAreYou') || 'Vous êtes ?'}</p>
                           <div className="flex flex-col gap-2">
                             <button
                               onClick={() => { setProfileType('particulier'); setShowInfo(false); }}
                               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'particulier' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                             >
                               <User size={16} />
-                              Je suis un particulier
+                              {t('checkout.individual') || 'Je suis un particulier'}
                             </button>
                             <button
                               onClick={() => { setProfileType('entreprise'); setShowInfo(false); }}
                               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'entreprise' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                             >
                               <Building2 size={16} />
-                              Je suis une entreprise
+                              {t('checkout.companyClient') || 'Je suis une entreprise'}
                             </button>
                           </div>
                         </div>
@@ -1224,12 +1225,12 @@ export default function CheckoutPage() {
                   </div>
                   )}
                 </div>
-                <h2 className="text-4xl font-[900] tracking-tighter">{formatPrice(total)}</h2>
-                <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{vatMessageEnabled && calc.vatRate === 0 ? vatMessage : 'Prix toutes taxes comprises (TTC)'}</p>
+                <h2 className="text-2xl sm:text-3xl font-[900] tracking-tighter">{formatPrice(total)}</h2>
+                <p className="text-[9px] font-bold text-white/50 mt-2 uppercase tracking-widest">{vatMessageEnabled && calc.vatRate === 0 ? vatMessage : (t('checkout.totalTTC') || 'Prix toutes taxes comprises (TTC)')}</p>
               </div>
               <div className="space-y-3 mb-6 border-t border-white/20 pt-5 relative z-10">
                 {[
-                  ['Sous-total HT', formatPrice(subtotal)],
+                  [(t('checkout.subtotalHT') || 'Sous-total HT'), formatPrice(subtotal)],
                   ...(promo?.code ? [[`Promo (${promo.code})`, discount > 0 ? `-${formatPrice(discount)}` : formatPrice(0)]] : []),
                   [vatLabel, formatPrice(Math.round(tva))],
                 ].map(([label, val]) => (
@@ -1295,7 +1296,7 @@ export default function CheckoutPage() {
               <div className="bg-white rounded-2xl border border-gray-200/70 p-6 md:p-8">
                 <div className="text-center py-8 px-4 bg-amber-50 rounded-xl border border-amber-200">
                   <p className="text-sm font-semibold text-amber-800 mb-1">{t('checkout.paypalNotConfigured')}</p>
-                  <p className="text-xs text-amber-600">Ajoutez votre <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">NEXT_PUBLIC_PAYPAL_CLIENT_ID</code> dans le fichier <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">.env</code></p>
+                  <p className="text-xs text-amber-600">{t('checkout.paypalNotConfiguredDesc', { envVar: 'NEXT_PUBLIC_PAYPAL_CLIENT_ID' }) || 'Ajoutez votre NEXT_PUBLIC_PAYPAL_CLIENT_ID dans le fichier .env'}</p>
                 </div>
               </div>
             </section>
@@ -1309,7 +1310,7 @@ export default function CheckoutPage() {
                   className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-900 text-white border border-white/20 text-xs font-semibold hover:bg-gray-800 hover:shadow-md transition-all cursor-pointer mb-4"
                 >
                   <ArrowLeft size={14} />
-                  Retour
+                  {t('checkout.retour') || 'Retour'}
                 </button>
                 {/* Alerte bloquante en cas de rupture de stock */}
                 {hasCartOutOfStock && (
@@ -1320,10 +1321,10 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex-1 space-y-1">
                         <h4 className="text-sm font-bold text-red-950">
-                          Commande bloquée : article(s) en rupture de stock
+                          {t('checkout.blockedOutOfStockTitle') || 'Commande bloquée : article(s) en rupture de stock'}
                         </h4>
                         <p className="text-xs text-red-800 leading-relaxed">
-                          Le stock est insuffisant pour les articles suivants de votre panier :
+                          {t('checkout.insufficientStockFor') || 'Le stock est insuffisant pour les articles suivants de votre panier :'}
                         </p>
                         <ul className="list-disc list-inside text-xs text-red-700 font-semibold space-y-0.5 pt-1">
                           {outOfStockItemNames.map(name => (
@@ -1331,7 +1332,7 @@ export default function CheckoutPage() {
                           ))}
                         </ul>
                         <p className="text-xs text-red-800 pt-1">
-                          Veuillez supprimer ou modifier ces articles depuis votre panier pour pouvoir finaliser votre commande.
+                          {t('checkout.blockedOutOfStockDesc') || 'Veuillez supprimer ou modifier ces articles depuis votre panier pour pouvoir finaliser votre commande.'}
                         </p>
                         <div className="pt-2">
                           <Link
@@ -1339,7 +1340,7 @@ export default function CheckoutPage() {
                             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-sm"
                           >
                             <ArrowLeft size={14} />
-                            <span>Modifier mon panier</span>
+                            <span>{t('checkout.modifyCart') || 'Modifier mon panier'}</span>
                           </Link>
                         </div>
                       </div>
@@ -1387,7 +1388,7 @@ export default function CheckoutPage() {
                   forceOpen={emailAccountExists && !isSessionLoggedIn}
                   lockMessage={
                     emailAccountExists && !isSessionLoggedIn
-                      ? `Un compte client PIXIATECH est associé à « ${delivery.email.trim()} ». Veuillez vous connecter ci-dessous pour finaliser votre commande.`
+                      ? (t('checkout.accountAssociated', { email: delivery.email.trim() }) || `Un compte client PIXIATECH est associé à « ${delivery.email.trim()} ». Veuillez vous connecter ci-dessous pour finaliser votre commande.`)
                       : undefined
                   }
                 />
@@ -1398,16 +1399,16 @@ export default function CheckoutPage() {
                     <div className="flex items-center gap-2.5 mb-2">
                       <Image src="/bot-avatars/PayPal.png" alt="PayPal" width={22} height={22} className="object-contain" />
                       <div>
-                        <h4 className="text-sm font-bold text-gray-900">Paiement direct avec PayPal</h4>
-                        <p className="text-[11px] text-gray-500">Rapide, sécurisé et sans saisie d'adresse obligatoire</p>
+                        <h4 className="text-sm font-bold text-gray-900">{t('checkout.paypalDirect') || 'Paiement direct avec PayPal'}</h4>
+                        <p className="text-[11px] text-gray-500">{t('checkout.paypalFastNoAddress') || "Rapide, sécurisé et sans saisie d'adresse obligatoire"}</p>
                       </div>
                     </div>
                     <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                      Cliquez ci-dessous pour régler votre commande avec votre compte PayPal ou par carte sans créer de compte. Vos informations et votre adresse de livraison seront transmises automatiquement par PayPal.
+                      {t('checkout.paypalDirectDesc') || 'Cliquez ci-dessous pour régler votre commande avec votre compte PayPal ou par carte sans créer de compte. Vos informations et votre adresse de livraison seront transmises automatiquement par PayPal.'}
                     </p>
                     <div className="mb-4">
                       <label htmlFor="checkout-paypal-email" className="block text-[11px] font-semibold text-gray-700 mb-1.5">
-                        Votre email
+                        {t('checkout.yourEmail') || 'Votre email'}
                       </label>
                       <div className="relative">
                         <Mail size={14} className="absolute left-3 top-2.5 text-gray-400" />
@@ -1418,7 +1419,7 @@ export default function CheckoutPage() {
                           value={delivery.email}
                           onChange={e => handleDeliveryChange('email', e.target.value)}
                           onBlur={e => handleDeliveryBlur('email', e.target.value)}
-                          placeholder="Votre adresse email pour recevoir votre espace client"
+                          placeholder={t('checkout.memberAreaEmailPlaceholder') || 'Votre adresse email pour recevoir votre espace client'}
                           className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2.5 text-[13px] outline-none focus:border-[#004ac6] focus:ring-2 focus:ring-blue-100 transition-colors"
                         />
                       </div>
@@ -1428,20 +1429,20 @@ export default function CheckoutPage() {
                       {checkingEmail && (
                         <p className="text-[11px] text-gray-500 mt-1.5 flex items-center gap-1.5">
                           <Loader2 size={12} className="animate-spin text-gray-400" />
-                          Vérification du compte client...
+                          {t('checkout.checkingAccount') || 'Vérification du compte client...'}
                         </p>
                       )}
                       {emailAccountExists && !isSessionLoggedIn && !checkingEmail && (
                         <p className="text-[11px] text-amber-700 font-semibold mt-1.5 flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg p-2">
                           <AlertTriangle size={13} className="shrink-0 text-amber-600" />
-                          Un compte existe déjà avec cet email. Veuillez vous connecter ci-dessus pour continuer.
+                          {t('checkout.accountExists') || 'Un compte existe déjà avec cet email. Veuillez vous connecter ci-dessus pour continuer.'}
                         </p>
                       )}
                       {!emailAccountExists && !checkingEmail && (
                         <p className={`text-[11px] mt-1.5 ${paypalEmailValid ? 'text-emerald-600' : 'text-gray-400'}`}>
                           {paypalEmailValid
-                            ? `Un lien d'accès à votre espace client sera envoyé à ${delivery.email.trim()} si un nouveau compte est créé.`
-                            : 'Le paiement PayPal ne s\'active qu\'après saisie d\'une adresse email valide.'}
+                            ? (t('checkout.memberAreaLinkSent', { email: delivery.email.trim() }) || `Un lien d'accès à votre espace client sera envoyé à ${delivery.email.trim()} si un nouveau compte est créé.`)
+                            : (t('checkout.paypalNeedsEmail') || 'Le paiement PayPal ne s\'active qu\'après saisie d\'une adresse email valide.')}
                         </p>
                       )}
                     </div>
@@ -1478,15 +1479,15 @@ export default function CheckoutPage() {
                         <p className="text-sm font-semibold text-gray-900">
                           {t('checkout.deliveryAddress')}
                           {paymentMethod === 'paypal' && (
-                            <span className="ml-2 text-[10px] font-normal text-gray-400 uppercase tracking-wider">(Optionnel)</span>
+                            <span className="ml-2 text-[10px] font-normal text-gray-400 uppercase tracking-wider">({t('checkout.optional') || 'Optionnel'})</span>
                           )}
                         </p>
                         <p className="text-[11px] text-gray-400">
                           {isDeliveryComplete
                             ? `${delivery.firstName} ${delivery.lastName}, ${delivery.addressLine1}, ${delivery.postcode} ${delivery.city}`
                             : paymentMethod === 'paypal'
-                              ? 'Optionnel — transmis directement via votre compte PayPal'
-                              : 'Requis pour commander par carte bancaire'}
+                              ? (t('checkout.optionalViaPaypal') || 'Optionnel — transmis directement via votre compte PayPal')
+                              : (t('checkout.requiredForCard') || 'Requis pour commander par carte bancaire')}
                         </p>
                       </div>
                     </div>
@@ -1506,7 +1507,7 @@ export default function CheckoutPage() {
                           if (!deliveryTouched.city) setDeliveryTouched(prev => ({ ...prev, city: true }));
                           if (!deliveryTouched.postcode) setDeliveryTouched(prev => ({ ...prev, postcode: true }));
                         }}
-                        banner={isPreFilledFromRental ? 'Vos informations ont été récupérées depuis votre location. Vous pouvez les modifier si nécessaire.' : null}
+                        banner={isPreFilledFromRental ? (t('checkout.infoRecoveredFromRental') || 'Vos informations ont été récupérées depuis votre location. Vous pouvez les modifier si nécessaire.') : null}
                       />
                     </div>
                   )}
@@ -1518,7 +1519,7 @@ export default function CheckoutPage() {
                     <div className="bg-[#F9FAFB] border border-gray-200/80 rounded-2xl p-5 md:p-6">
                       <div className="flex items-center gap-2 mb-3">
                         <CreditCard size={18} className="text-gray-700" />
-                        <h4 className="text-sm font-bold text-gray-900">Payer par carte bancaire</h4>
+                        <h4 className="text-sm font-bold text-gray-900">{t('checkout.payByCard') || 'Payer par carte bancaire'}</h4>
                       </div>
                       <PayPalButtonGroup
                         total={total}
@@ -1536,7 +1537,7 @@ export default function CheckoutPage() {
                     <div className="bg-gray-50/50 border border-dashed border-gray-200 rounded-xl p-6 text-center">
                       <MapPin size={24} className="mx-auto text-gray-300 mb-2" />
                       <p className="text-sm font-semibold text-gray-500 mb-1">{t('checkout.completeDeliveryAddress')}</p>
-                      <p className="text-xs text-gray-400">Renseignez vos coordonnées de livraison ci-dessus pour activer le paiement par carte bancaire.</p>
+                      <p className="text-xs text-gray-400">{t('checkout.fillDeliveryToEnableCard') || 'Renseignez vos coordonnées de livraison ci-dessus pour activer le paiement par carte bancaire.'}</p>
                     </div>
                   )
                 )}
@@ -1568,7 +1569,7 @@ export default function CheckoutPage() {
                           <img src="/no-product.webp" alt={item.name} className="w-full h-full object-cover" />
                         )}
                         {(() => {
-                          const b = checkoutModeBadge(item.type);
+                          const b = checkoutModeBadge(item.type, t);
                           return b ? (
                             <div className="absolute top-0.5 right-0.5 z-10">
                               <span className={`px-1 py-0.5 rounded text-[7px] font-black uppercase tracking-wider shadow-sm ${b.colors}`}>{b.label}</span>
@@ -1659,9 +1660,9 @@ export default function CheckoutPage() {
                         <span className="font-semibold text-gray-900">{formatPrice(effectiveDeliveryCost)}</span>
                       )
                     ) : !delivery.postcode && !delivery.city ? (
-                      <span className="text-xs text-emerald-600 font-semibold">Saisissez votre adresse</span>
+                      <span className="text-xs text-emerald-600 font-semibold">{t('checkout.enterAddress') || 'Saisissez votre adresse'}</span>
                     ) : deliveryLoading ? (
-                      <span className="text-xs text-gray-400 animate-pulse">Calcul...</span>
+                      <span className="text-xs text-gray-400 animate-pulse">{t('checkout.calculating') || 'Calcul...'}</span>
                     ) : deliveryCost === 0 ? (
                       <span className="font-semibold text-emerald-600">{t('cart.free')}</span>
                     ) : (
@@ -1690,23 +1691,23 @@ export default function CheckoutPage() {
                     </button>
                     {showInfo && (
                       <div className="absolute z-20 right-0 bottom-full mb-2 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-4">
-                        <p className="text-xs text-gray-500 leading-relaxed">Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs. Les particuliers peuvent également commander directement depuis notre boutique.</p>
+                        <p className="text-xs text-gray-500 leading-relaxed">{t('checkout.b2bInfo') || 'Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs. Les particuliers peuvent également commander directement depuis notre boutique.'}</p>
                         <div className="mt-3 pt-3 border-t border-gray-100">
-                          <p className="text-xs font-semibold text-gray-800 mb-3">Vous êtes ?</p>
+                          <p className="text-xs font-semibold text-gray-800 mb-3">{t('checkout.whoAreYou') || 'Vous êtes ?'}</p>
                           <div className="flex flex-col gap-2">
                             <button
                               onClick={() => { setProfileType('particulier'); setShowInfo(false); }}
                               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'particulier' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                             >
                               <User size={16} />
-                              Je suis un particulier
+                              {t('checkout.individual') || 'Je suis un particulier'}
                             </button>
                             <button
                               onClick={() => { setProfileType('entreprise'); setShowInfo(false); }}
                               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${profileType === 'entreprise' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                             >
                               <Building2 size={16} />
-                              Je suis une entreprise
+                              {t('checkout.companyClient') || 'Je suis une entreprise'}
                             </button>
                           </div>
                         </div>

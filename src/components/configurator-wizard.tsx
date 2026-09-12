@@ -1487,7 +1487,7 @@ export function StepSummary({ state, t, locale }: { state: ConfigState, t: any, 
       </div>
 
       <div className="relative h-[280px] md:h-[350px] shrink-0 flex items-center justify-center overflow-hidden bg-transparent rounded-[2.5rem]">
-        <div className="relative w-full max-w-[300px] sm:max-w-[420px] aspect-[16/9] mt-0 z-10 ml-14" style={{ perspective: '1200px' }}>
+        <div className="relative w-full max-w-[300px] sm:max-w-[420px] aspect-[16/9] mt-0 z-10 ml-0 sm:ml-14" style={{ perspective: '1200px' }}>
           <div className="relative w-full h-full" style={{ transform: 'rotateY(15deg) rotateX(2deg)', transformStyle: 'preserve-3d' }}>
             <div className="absolute inset-0 bg-[#0f172a] border border-slate-700 shadow-2xl rounded-sm" style={{ transform: 'translateZ(-10px)' }}></div>
             <div className="absolute top-0 bottom-0 left-0 w-[10px] bg-[#1e293b] border-y border-l border-slate-600 rounded-l-sm" style={{ transform: 'rotateY(-90deg)', transformOrigin: 'left' }}></div>

@@ -26,6 +26,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 import CustomerInfoForm from '@/components/customer-info-form';
 import DeliveryPaymentStep from '@/components/checkout/DeliveryPaymentStep';
 import CheckoutConfirmation from '@/components/checkout/CheckoutConfirmation';
@@ -45,9 +46,15 @@ type Direction = 1 | -1;
 type LoginMode = 'login' | 'forgot';
 
 const FLOW_STEPS = [
-  { id: 'identification', label: 'Identification' },
-  { id: 'livraison', label: 'Livraison' },
-  { id: 'paiement', label: 'Paiement' },
+  { id: 'identification', labelKey: 'checkout.stepIdentification' },
+  { id: 'livraison', labelKey: 'checkout.stepDelivery' },
+  { id: 'paiement', labelKey: 'checkout.stepPayment' },
+] as const;
+
+const CIVILITY_OPTIONS = [
+  { value: 'Monsieur', labelKey: 'checkout.mr' },
+  { value: 'Madame', labelKey: 'checkout.mrs' },
+  { value: 'Mademoiselle', labelKey: 'checkout.ms' },
 ] as const;
 
 const stepVariants = {
@@ -104,6 +111,7 @@ export default function CheckoutFlow() {
   const [addressLoaded, setAddressLoaded] = useState(false);
 
   const router = useRouter();
+  const { t } = useI18n();
   const emailRef = useRef<HTMLInputElement>(null);
 
   const go = useCallback((next: Step, dir: Direction = 1) => {
@@ -164,11 +172,11 @@ export default function CheckoutFlow() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.error || 'Email ou mot de passe incorrect.');
+        throw new Error(data?.error || t('checkout.loginError'));
       }
       go('address', 1);
     } catch (err: any) {
-      setError(err?.message || 'Une erreur est survenue. Veuillez réessayer.');
+      setError(err?.message || t('checkout.genericError'));
     } finally {
       setLoading(false);
     }
@@ -176,14 +184,14 @@ export default function CheckoutFlow() {
 
   function handleFormChange(field: CustomerInfoField, value: string) {
     setFormValues(prev => ({ ...prev, [field]: value }));
-    const err = validateCustomerField(field, value);
+    const err = validateCustomerField(field, value, t);
     setFormErrors(prev => (err ? { ...prev, [field]: err } : { ...prev, [field]: '' }));
   }
 
   function handleFormBlur(field: CustomerInfoField, value: string) {
     setFormValues(prev => ({ ...prev, [field]: value }));
     setFormTouched(prev => ({ ...prev, [field]: true }));
-    const err = validateCustomerField(field, value);
+    const err = validateCustomerField(field, value, t);
     setFormErrors(prev => (err ? { ...prev, [field]: err } : { ...prev, [field]: '' }));
   }
 
@@ -194,24 +202,24 @@ export default function CheckoutFlow() {
     const newErrors: Record<string, string> = {};
     const newTouched: Record<string, boolean> = {};
     (['firstName', 'lastName', 'email', 'phone', 'addressLine1', 'city', 'postcode', 'country'] as CustomerInfoField[]).forEach(f => {
-      const err = validateCustomerField(f, formValues[f]);
+      const err = validateCustomerField(f, formValues[f], t);
       newTouched[f] = true;
       if (err) newErrors[f] = err;
     });
 
-    if (!formValues.firstName.trim()) newErrors.firstName = 'Veuillez saisir votre prénom.';
-    if (!formValues.lastName.trim()) newErrors.lastName = 'Veuillez saisir votre nom.';
-    if (!formValues.email.trim()) newErrors.email = 'Veuillez saisir une adresse e-mail.';
-    if (!formValues.phone.trim()) newErrors.phone = 'Veuillez saisir votre numéro de téléphone.';
-    if (!formValues.addressLine1.trim()) newErrors.addressLine1 = 'Merci de saisir une adresse complète.';
-    if (!civility) newErrors.civility = 'Veuillez sélectionner votre civilité.';
+    if (!formValues.firstName.trim()) newErrors.firstName = t('checkout.errFirstName');
+    if (!formValues.lastName.trim()) newErrors.lastName = t('checkout.errLastName');
+    if (!formValues.email.trim()) newErrors.email = t('checkout.errEmail');
+    if (!formValues.phone.trim()) newErrors.phone = t('checkout.errPhone');
+    if (!formValues.addressLine1.trim()) newErrors.addressLine1 = t('checkout.errAddress');
+    if (!civility) newErrors.civility = t('checkout.errCivility');
 
     if (!registerPassword) {
-      newErrors.registerPassword = 'Veuillez créer un mot de passe.';
+      newErrors.registerPassword = t('checkout.errPassword');
     } else if (registerPassword.length < 8) {
-      newErrors.registerPassword = 'Le mot de passe doit contenir au moins 8 caractères.';
+      newErrors.registerPassword = t('checkout.errPasswordShort');
     }
-    if (!acceptTerms) newErrors.terms = 'Veuillez accepter les conditions générales de vente.';
+    if (!acceptTerms) newErrors.terms = t('checkout.errTerms');
 
     setFormErrors(newErrors);
     setFormTouched(newTouched);
@@ -239,12 +247,12 @@ export default function CheckoutFlow() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.error || 'Erreur lors de la création du compte.');
+        throw new Error(data?.error || t('checkout.createAccountError'));
       }
       setEmail(formValues.email);
       go('address', 1);
     } catch (err: any) {
-      setError(err?.message || 'Une erreur est survenue. Veuillez réessayer.');
+      setError(err?.message || t('checkout.genericError'));
     } finally {
       setLoading(false);
     }
@@ -264,11 +272,11 @@ export default function CheckoutFlow() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error || "Échec de l'envoi du lien.");
+        throw new Error(body?.error || t('checkout.sendLinkError'));
       }
       setForgotSent(true);
     } catch (err: any) {
-      setError(err?.message || 'Une erreur est survenue. Veuillez réessayer.');
+      setError(err?.message || t('checkout.genericError'));
     } finally {
       setLoading(false);
     }
@@ -295,15 +303,15 @@ export default function CheckoutFlow() {
   function buildAddressErrors() {
     const newErrors: Record<string, string> = {};
     (['firstName', 'lastName', 'email', 'phone', 'addressLine1', 'city', 'postcode', 'country'] as CustomerInfoField[]).forEach(f => {
-      const err = validateCustomerField(f, formValues[f]);
+      const err = validateCustomerField(f, formValues[f], t);
       if (err) newErrors[f] = err;
     });
-    if (!formValues.firstName.trim()) newErrors.firstName = 'Veuillez saisir votre prénom.';
-    if (!formValues.lastName.trim()) newErrors.lastName = 'Veuillez saisir votre nom.';
-    if (!formValues.email.trim()) newErrors.email = 'Veuillez saisir une adresse e-mail.';
-    if (!formValues.phone.trim()) newErrors.phone = 'Veuillez saisir votre numéro de téléphone.';
-    if (!formValues.addressLine1.trim()) newErrors.addressLine1 = 'Merci de saisir une adresse complète.';
-    if (!civility) newErrors.civility = 'Veuillez sélectionner votre civilité.';
+    if (!formValues.firstName.trim()) newErrors.firstName = t('checkout.errFirstName');
+    if (!formValues.lastName.trim()) newErrors.lastName = t('checkout.errLastName');
+    if (!formValues.email.trim()) newErrors.email = t('checkout.errEmail');
+    if (!formValues.phone.trim()) newErrors.phone = t('checkout.errPhone');
+    if (!formValues.addressLine1.trim()) newErrors.addressLine1 = t('checkout.errAddress');
+    if (!civility) newErrors.civility = t('checkout.errCivility');
     return newErrors;
   }
 
@@ -345,12 +353,12 @@ export default function CheckoutFlow() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.error || "Erreur lors de l'enregistrement de votre adresse.");
+        throw new Error(data?.error || t('checkout.saveAddressError'));
       }
       setAddressEditing(false);
       return true;
     } catch (err: any) {
-      setError(err?.message || 'Une erreur est survenue. Veuillez réessayer.');
+      setError(err?.message || t('checkout.genericError'));
       return false;
     } finally {
       setAddressSaving(false);
@@ -377,18 +385,18 @@ export default function CheckoutFlow() {
       className="min-h-screen w-full bg-[#F5F5F5]"
     >
       <div className={cn('mx-auto flex min-h-screen w-full flex-col px-5 py-8 sm:px-8 sm:py-10', step === 'delivery' ? 'max-w-6xl' : 'max-w-5xl')}>
-        <div className="mb-10 flex items-center justify-between">
-          <div className="w-28">
+        <div className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-center sm:justify-between">
+          <div className="self-start sm:w-28">
             <button
               onClick={handleStepBack}
-              aria-label="Retour"
+              aria-label={t('checkout.retour')}
               className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-gray-800"
             >
               <ArrowLeft size={15} />
-              Retour
+              {t('checkout.retour')}
             </button>
           </div>
-          <nav className="flex items-center justify-center gap-1 sm:gap-2" aria-label="Étapes de la commande">
+          <nav className="flex w-full items-center justify-center gap-1 overflow-x-auto sm:w-auto sm:gap-2" aria-label={t('checkout.stepsAria')}>
             {FLOW_STEPS.map((s, i) => {
               const active = currentStepIndex(step) === i;
               const done = currentStepIndex(step) > i;
@@ -399,18 +407,18 @@ export default function CheckoutFlow() {
                   : 'bg-gray-300 text-gray-500';
               return (
                 <div key={s.id} className="flex items-center gap-1 sm:gap-2">
-                  <div className={cn('flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors', stateClass)}>
+                  <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors', stateClass)}>
                     {done ? <CheckCircle2 size={15} /> : i + 1}
                   </div>
                   <span className={cn('text-xs font-semibold sm:text-sm', active ? 'text-gray-900' : 'text-gray-400')}>
-                    {s.label}
+                    {t(s.labelKey)}
                   </span>
-                  {i < FLOW_STEPS.length - 1 && <span className="mx-1 h-px w-8 bg-gray-300 sm:w-12" />}
+                  {i < FLOW_STEPS.length - 1 && <span className="mx-1 h-px w-8 shrink-0 bg-gray-300 sm:w-12" />}
                 </div>
               );
             })}
           </nav>
-          <div className="w-28" />
+          <div className="hidden w-28 sm:block" />
         </div>
 
         <AnimatePresence mode="wait" custom={direction} initial={false}>
@@ -427,7 +435,7 @@ export default function CheckoutFlow() {
             {step === 'auth' && !sessionReady && (
               <div className="flex flex-1 flex-col items-center justify-center py-24 text-center">
                 <Loader2 size={30} className="animate-spin text-gray-300" />
-                <p className="mt-4 text-sm text-gray-400">Chargement de votre session…</p>
+                <p className="mt-4 text-sm text-gray-400">{t('checkout.loadingSession')}</p>
               </div>
             )}
 
@@ -435,10 +443,10 @@ export default function CheckoutFlow() {
               <div className="flex flex-1 flex-col">
                 <div className="text-center">
                   <h1 className="text-3xl font-black tracking-tight text-gray-900 sm:text-4xl">
-                    Finaliser ma commande
+                    {t('checkout.finalizeTitle')}
                   </h1>
                   <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-500 sm:text-base">
-                    Identifiez-vous pour récupérer automatiquement vos informations et accélérer votre commande.
+                    {t('checkout.finalizeSub')}
                   </p>
                 </div>
 
@@ -446,14 +454,14 @@ export default function CheckoutFlow() {
                   <section className="flex flex-col rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm sm:p-8">
                     {loginMode === 'login' ? (
                       <>
-                        <h2 className="text-center text-xl font-bold text-gray-900">Se connecter</h2>
+                        <h2 className="text-center text-xl font-bold text-gray-900">{t('checkout.signInTitle')}</h2>
                         <p className="mt-1.5 text-center text-sm leading-6 text-gray-500">
-                          Retrouvez vos informations client et votre historique de commandes.
+                          {t('checkout.signInDesc')}
                         </p>
                         <form onSubmit={handleLogin} className="mt-6 flex flex-1 flex-col gap-4">
                           <div>
                             <label htmlFor="co-email" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                              Email
+                              {t('checkout.emailRecap')}
                             </label>
                             <div className="relative">
                               <Mail size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -471,7 +479,7 @@ export default function CheckoutFlow() {
                           </div>
                           <div>
                             <label htmlFor="co-password" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                              Mot de passe
+                              {t('checkout.password')}
                             </label>
                             <div className="relative">
                               <Lock size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -481,13 +489,13 @@ export default function CheckoutFlow() {
                                 autoComplete="current-password"
                                 value={password}
                                 onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                                placeholder="Votre mot de passe"
+                                placeholder={t('checkout.passwordPlaceholder')}
                                 className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-10 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-gray-900 focus:bg-white"
                               />
                               <button
                                 type="button"
                                 onClick={() => setShowPassword(v => !v)}
-                                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                                aria-label={showPassword ? t('checkout.hidePassword') : t('checkout.showPassword')}
                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-700"
                               >
                                 {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -511,32 +519,31 @@ export default function CheckoutFlow() {
                               )}
                             >
                               {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-                              Se connecter
+                              {t('checkout.signInTitle')}
                             </button>
                             <button
                               type="button"
                               onClick={() => { setLoginMode('forgot'); setError(''); setForgotSent(false); }}
                               className="text-center text-xs font-semibold text-blue-600 transition-colors hover:underline"
                             >
-                              Mot de passe oublié ?
+                              {t('checkout.forgotPassword')}
                             </button>
                           </div>
                         </form>
                       </>
                     ) : (
                       <>
-                        <h2 className="text-center text-xl font-bold text-gray-900">Se connecter</h2>
+                        <h2 className="text-center text-xl font-bold text-gray-900">{t('checkout.signInTitle')}</h2>
                         <p className="mt-1.5 text-center text-sm leading-6 text-gray-500">
-                          Retrouvez vos informations client et votre historique de commandes.
+                          {t('checkout.signInDesc')}
                         </p>
                         <form onSubmit={handleForgotPassword} className="mt-6 flex flex-1 flex-col gap-4">
                           <p className="text-xs leading-5 text-gray-500">
-                            Saisissez l&apos;adresse email associée à votre compte. Un lien de connexion sécurisé
-                            vous sera envoyé.
+                            {t('checkout.forgotDesc')}
                           </p>
                           <div>
                             <label htmlFor="co-forgot-email" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                              Email
+                              {t('checkout.emailRecap')}
                             </label>
                             <div className="relative">
                               <Mail size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -554,8 +561,7 @@ export default function CheckoutFlow() {
                           </div>
                           {forgotSent ? (
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-700">
-                              Si un compte correspond à cette adresse, un lien de connexion vous a été envoyé.
-                              Vérifiez vos spams.
+                              {t('checkout.forgotSent')}
                             </div>
                           ) : (
                             <button
@@ -569,7 +575,7 @@ export default function CheckoutFlow() {
                               )}
                             >
                               {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                              Envoyer le lien
+                              {t('checkout.sendLink')}
                             </button>
                           )}
                           <button
@@ -578,7 +584,7 @@ export default function CheckoutFlow() {
                             className="mt-auto inline-flex items-center gap-1 pt-2 text-xs font-semibold text-blue-600 transition-colors hover:underline"
                           >
                             <ArrowLeft size={13} />
-                            Revenir à la connexion
+                            {t('checkout.backToSignIn')}
                           </button>
                         </form>
                       </>
@@ -586,18 +592,17 @@ export default function CheckoutFlow() {
                   </section>
 
                   <section className="flex flex-col rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm sm:p-8">
-                    <h2 className="text-center text-xl font-bold text-gray-900">Créer votre compte</h2>
+                    <h2 className="text-center text-xl font-bold text-gray-900">{t('checkout.createAccountTitle')}</h2>
                     <p className="mt-1.5 text-center text-sm leading-6 text-gray-500">
-                      Renseignez vos informations pour créer votre compte client PIXIATECH.
+                      {t('checkout.createAccountDesc')}
                     </p>
                     <div className="mt-6 flex flex-1 flex-col items-center rounded-2xl border border-gray-100 bg-gray-50 p-6">
                       <div className="flex h-14 w-14 items-center justify-center rounded-full border border-gray-900 bg-white text-gray-900">
                         <UserPlus size={22} />
                       </div>
-                      <h3 className="mt-3 text-sm font-bold text-gray-900">Nouveau client ?</h3>
+                      <h3 className="mt-3 text-sm font-bold text-gray-900">{t('checkout.newCustomer')}</h3>
                       <p className="mt-1.5 max-w-[16rem] text-center text-xs leading-5 text-gray-500">
-                        Créez votre compte en quelques instants. Votre adresse sera pré-remplie pour vos
-                        prochaines commandes.
+                        {t('checkout.newCustomerDesc')}
                       </p>
                     </div>
                     <button
@@ -605,14 +610,14 @@ export default function CheckoutFlow() {
                       className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-900 bg-white py-3 text-sm font-semibold text-gray-900 transition-all hover:bg-gray-900 hover:text-white active:scale-[0.98]"
                     >
                       <UserPlus size={16} />
-                      Créer un compte
+                      {t('checkout.createAccount')}
                     </button>
                   </section>
                 </div>
 
                 <p className="mt-8 flex items-center justify-center gap-1.5 text-xs leading-4 text-gray-400">
                   <ShieldCheck size={14} className="shrink-0 text-emerald-500" />
-                  Vos informations sont protégées et ne sont jamais partagées.
+                  {t('checkout.privacyNotice')}
                 </p>
               </div>
             )}
@@ -621,11 +626,10 @@ export default function CheckoutFlow() {
               <div className="flex flex-1 flex-col items-center pb-16">
                 <div className="text-center">
                   <h1 className="text-3xl font-black tracking-tight text-gray-900 sm:text-4xl">
-                    Créer votre compte
+                    {t('checkout.createAccountTitle')}
                   </h1>
                   <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-500 sm:text-base">
-                    Renseignez vos informations pour créer votre compte client PIXIATECH et accélérer vos
-                    prochaines commandes.
+                    {t('checkout.createAccountDescRegister')}
                   </p>
                 </div>
 
@@ -637,22 +641,22 @@ export default function CheckoutFlow() {
                   >
                     <div>
                       <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                        Civilité
+                        {t('checkout.civility')}
                       </label>
                       <div className="grid grid-cols-3 gap-2">
-                        {(['Monsieur', 'Madame', 'Mademoiselle'] as const).map(option => (
+                        {CIVILITY_OPTIONS.map(option => (
                           <button
-                            key={option}
+                            key={option.value}
                             type="button"
-                            onClick={() => { setCivility(option); setError(''); }}
+                            onClick={() => { setCivility(option.value); setError(''); }}
                             className={cn(
                               'rounded-xl border py-2.5 text-sm font-semibold transition-all',
-                              civility === option
+                              civility === option.value
                                 ? 'border-gray-900 bg-gray-900 text-white'
                                 : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                             )}
                           >
-                            {option}
+                            {t(option.labelKey)}
                           </button>
                         ))}
                       </div>
@@ -666,7 +670,7 @@ export default function CheckoutFlow() {
                         htmlFor="co-reg-company"
                         className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500"
                       >
-                        Nom de l&apos;entreprise
+                        {t('checkout.companyName')}
                       </label>
                       <div className="relative">
                         <Building2 size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -675,7 +679,7 @@ export default function CheckoutFlow() {
                           type="text"
                           value={companyName}
                           onChange={(e) => { setCompanyName(e.target.value); setError(''); }}
-                          placeholder="Nom de l'entreprise (optionnel)"
+                          placeholder={t('checkout.companyNameOptionalPlaceholder')}
                           className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-3.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-gray-900 focus:bg-white"
                         />
                       </div>
@@ -701,7 +705,7 @@ export default function CheckoutFlow() {
                         htmlFor="co-reg-password"
                         className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500"
                       >
-                        Mot de passe
+                        {t('checkout.password')}
                       </label>
                       <div className="relative">
                         <Lock size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -711,7 +715,7 @@ export default function CheckoutFlow() {
                           autoComplete="new-password"
                           value={registerPassword}
                           onChange={(e) => { setRegisterPassword(e.target.value); setError(''); }}
-                          placeholder="Créez votre mot de passe"
+                          placeholder={t('checkout.createPasswordPlaceholder')}
                           className={cn(
                             'w-full rounded-xl border bg-gray-50 py-2.5 pl-10 pr-10 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:bg-white',
                             formErrors.registerPassword
@@ -722,7 +726,7 @@ export default function CheckoutFlow() {
                         <button
                           type="button"
                           onClick={() => setShowRegisterPassword(v => !v)}
-                          aria-label={showRegisterPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                          aria-label={showRegisterPassword ? t('checkout.hidePassword') : t('checkout.showPassword')}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-700"
                         >
                           {showRegisterPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -748,7 +752,7 @@ export default function CheckoutFlow() {
                         className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-gray-900"
                       />
                       <span className="text-xs leading-5 text-gray-600">
-                        J&apos;accepte les conditions générales de vente et la{' '}
+                        {t('checkout.acceptTermsLabel')}{' '}
                         <a
                           href="https://pixiatech.com/politique-confidentialite/"
                           target="_blank"
@@ -756,7 +760,7 @@ export default function CheckoutFlow() {
                           onClick={(e) => e.stopPropagation()}
                           className="font-semibold text-blue-600 transition-colors hover:underline"
                         >
-                          politique de confidentialité
+                          {t('checkout.privacyPolicyLink')}
                         </a>
                         .
                       </span>
@@ -776,7 +780,7 @@ export default function CheckoutFlow() {
                       )}
                     >
                       {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-                      Créer mon compte et continuer
+                      {t('checkout.createAccountAndContinue')}
                     </button>
 
                     <button
@@ -785,7 +789,7 @@ export default function CheckoutFlow() {
                       className="mt-4 inline-flex w-full items-center justify-center gap-1 text-xs font-semibold text-gray-500 transition-colors hover:text-gray-700"
                     >
                       <ArrowLeft size={13} />
-                      Retour aux options
+                      {t('checkout.backToOptions')}
                     </button>
                   </form>
                 </div>
@@ -796,10 +800,10 @@ export default function CheckoutFlow() {
               <div className="flex flex-1 flex-col items-center pb-16">
                 <div className="w-full max-w-2xl text-center">
                   <h1 className="text-3xl font-black tracking-tight text-gray-900 sm:text-4xl">
-                    Confirmez votre adresse de livraison
+                    {t('checkout.addrTitle')}
                   </h1>
                   <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-500 sm:text-base">
-                    Vérifiez que les informations ci-dessous sont correctes avant de continuer.
+                    {t('checkout.addrDesc')}
                   </p>
                 </div>
 
@@ -811,45 +815,45 @@ export default function CheckoutFlow() {
                       className="absolute right-5 top-5 inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-900"
                     >
                       <Pencil size={13} />
-                      Modifier
+                      {t('checkout.edit')}
                     </button>
                   )}
 
                   {addressEditing ? (
                     <form onSubmit={(e) => { e.preventDefault(); persistAddress(); }} noValidate>
                       <div className="mb-6 flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-gray-900">Modifier mon adresse</h2>
+                        <h2 className="text-lg font-bold text-gray-900">{t('checkout.editAddressTitle')}</h2>
                         <button
                           type="button"
                           onClick={() => { setAddressEditing(false); setError(''); }}
                           className="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 transition-colors hover:text-gray-700"
                         >
                           <X size={13} />
-                          Annuler
+                          {t('checkout.cancel')}
                         </button>
                       </div>
 
                       <div>
                         <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                          Civilité
+                          {t('checkout.civility')}
                         </label>
                         <div className="grid grid-cols-3 gap-2">
-                          {(['Monsieur', 'Madame', 'Mademoiselle'] as const).map(option => (
+                          {CIVILITY_OPTIONS.map(option => (
                             <button
-                              key={option}
+                              key={option.value}
                               type="button"
-                              onClick={() => { setCivility(option); setError(''); }}
+                              onClick={() => { setCivility(option.value); setError(''); }}
                               className={cn(
                                 'rounded-xl border py-2.5 text-sm font-semibold transition-all',
-                                civility === option
-                                  ? 'border-gray-900 bg-gray-900 text-white'
-                                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                              )}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
+civility === option.value
+                                ? 'border-gray-900 bg-gray-900 text-white'
+                                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                            )}
+                          >
+                            {t(option.labelKey)}
+                          </button>
+                        ))}
+                      </div>
                         {formErrors.civility && (
                           <p className="mt-1.5 text-[10px] text-red-500">{formErrors.civility}</p>
                         )}
@@ -860,7 +864,7 @@ export default function CheckoutFlow() {
                           htmlFor="co-edit-company"
                           className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500"
                         >
-                          Nom de l&apos;entreprise
+                          {t('checkout.companyName')}
                         </label>
                         <div className="relative">
                           <Building2 size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -869,7 +873,7 @@ export default function CheckoutFlow() {
                             type="text"
                             value={companyName}
                             onChange={(e) => { setCompanyName(e.target.value); setError(''); }}
-                            placeholder="Nom de l'entreprise (optionnel)"
+                            placeholder={t('checkout.companyNameOptionalPlaceholder')}
                             className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-3.5 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-gray-900 focus:bg-white"
                           />
                         </div>
@@ -907,7 +911,7 @@ export default function CheckoutFlow() {
                         )}
                       >
                         {addressSaving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                        Enregistrer les modifications
+                        {t('checkout.saveChanges')}
                       </button>
                     </form>
                   ) : (
@@ -915,38 +919,38 @@ export default function CheckoutFlow() {
                       <div className="border-b border-gray-100">
                         <RecapRow
                           icon={<User size={16} />}
-                          label="Contact"
+                          label={t('checkout.contact')}
                           value={[civility, formValues.firstName, formValues.lastName].filter(Boolean).join(' ') || '—'}
                         />
                       </div>
                       {companyName.trim() && (
                         <div className="border-b border-gray-100">
-                          <RecapRow icon={<Building2 size={16} />} label="Entreprise" value={companyName.trim()} />
+                          <RecapRow icon={<Building2 size={16} />} label={t('checkout.company')} value={companyName.trim()} />
                         </div>
                       )}
                       <div className="border-b border-gray-100">
-                        <RecapRow icon={<MapPin size={16} />} label="Adresse" value={formValues.addressLine1 || '—'} />
+                        <RecapRow icon={<MapPin size={16} />} label={t('checkout.address')} value={formValues.addressLine1 || '—'} />
                       </div>
                       {formValues.addressLine2.trim() && (
                         <div className="border-b border-gray-100">
-                          <RecapRow icon={<MapPin size={16} />} label="Complément d&apos;adresse" value={formValues.addressLine2.trim()} />
+                          <RecapRow icon={<MapPin size={16} />} label={t('checkout.address2')} value={formValues.addressLine2.trim()} />
                         </div>
                       )}
                       <div className="border-b border-gray-100">
                         <RecapRow
                           icon={<MapPin size={16} />}
-                          label="Code postal et ville"
+                          label={t('checkout.postcodeCity')}
                           value={[formValues.postcode, formValues.city].filter(Boolean).join(' ') || '—'}
                         />
                       </div>
                       <div className="border-b border-gray-100">
-                        <RecapRow icon={<Globe size={16} />} label="Pays" value={countryLabel} />
+                        <RecapRow icon={<Globe size={16} />} label={t('checkout.countryLabel')} value={countryLabel} />
                       </div>
                       <div className="border-b border-gray-100">
-                        <RecapRow icon={<Phone size={16} />} label="Téléphone" value={formValues.phone || '—'} />
+                        <RecapRow icon={<Phone size={16} />} label={t('checkout.phone')} value={formValues.phone || '—'} />
                       </div>
                       <div className="border-b border-gray-100">
-                        <RecapRow icon={<Mail size={16} />} label="E-mail" value={formValues.email || '—'} />
+                        <RecapRow icon={<Mail size={16} />} label={t('checkout.emailRecap')} value={formValues.email || '—'} />
                       </div>
                     </div>
                   )}
@@ -964,22 +968,22 @@ export default function CheckoutFlow() {
                     )}
                   >
                     {addressSaving ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-                    Confirmer et continuer
+                    {t('checkout.confirmAndContinue')}
                   </button>
                   <button
                     type="button"
                     disabled
                     aria-disabled="true"
-                    title="Bientôt disponible"
+                    title={t('checkout.comingSoon')}
                     className="cursor-not-allowed select-none text-xs font-semibold text-gray-300"
                   >
-                    Utiliser une autre adresse
+                    {t('checkout.useAnotherAddress')}
                   </button>
                 </div>
 
                 <p className="mt-6 flex items-center justify-center gap-1.5 text-xs leading-4 text-gray-400">
                   <ShieldCheck size={14} className="shrink-0 text-emerald-500" />
-                  Vos informations sont protégées et ne sont jamais partagées.
+                  {t('checkout.privacyNotice')}
                 </p>
               </div>
             )}

@@ -15,8 +15,10 @@ import { calculateCheckout } from '@/lib/checkout-calculations';
 import { fetchProfessionalInfo } from '@/services/professionalInfoService';
 import { getDoc, doc, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/firebase/config';
+import { useI18n } from '@/lib/i18n';
 
 function QtySelector({ value, onMinus, onPlus, maxQty }: { value: number; onMinus: () => void; onPlus: () => void; maxQty?: number }) {
+  const { t } = useI18n();
   const [anim, setAnim] = useState(false);
 
   const handleMinus = () => {
@@ -49,7 +51,7 @@ function QtySelector({ value, onMinus, onPlus, maxQty }: { value: number; onMinu
       </div>
       {isAtLimit && (
         <p className="text-[10px] text-red-500 font-semibold flex items-center gap-1 mt-0.5">
-          <span>🔴</span> Quantité maximale disponible atteinte. Vous ne pouvez pas dépasser le stock disponible.
+          <span>🔴</span> {t('product.maxQuantityReached')}
         </p>
       )}
     </div>
@@ -65,6 +67,7 @@ const VAT_MESSAGE_STYLES: Record<string, { container: string; text: string; icon
 };
 
 export default function CartPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const { items, savedItems, addItem, removeItem, updateQuantity, itemCount, subtotal, promo, promoError, applyPromo, removePromo, totalAfterDiscount, clearCart, saveItem, unsaveItem, moveToCart, isSaved } = useCart();
   const [promoOpen, setPromoOpen] = useState(false);
@@ -228,10 +231,10 @@ export default function CartPage() {
         {items.length === 0 ? (
           <div className="text-center py-20">
             <ShoppingBag size={48} className="mx-auto text-gray-300 mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Votre panier est vide</h2>
-            <p className="text-gray-400 text-sm mb-6">Découvrez nos produits dans la boutique</p>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('cart.emptyTitle')}</h2>
+            <p className="text-gray-400 text-sm mb-6">{t('cart.emptyDesc')}</p>
             <button onClick={() => router.push('/boutique')} className="bg-gray-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 transition-all">
-              Découvrir la boutique
+              {t('cart.discoverShop')}
             </button>
           </div>
         ) : (
@@ -248,15 +251,15 @@ export default function CartPage() {
                     className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-900 text-white border border-white/20 text-xs font-semibold hover:bg-gray-800 hover:shadow-md transition-all cursor-pointer"
                   >
                     <ArrowLeft size={14} />
-                    Retour
+                    {t('cart.back')}
                   </button>
-                  <p className="text-sm text-gray-500">{itemCount} article{itemCount > 1 ? 's' : ''}</p>
+                  <p className="text-sm text-gray-500">{itemCount > 1 ? t('cart.itemsPlural', { count: itemCount }) : t('cart.items', { count: itemCount })}</p>
                   <button
-                    onClick={() => { clearCart(); toast.success('Panier vidé'); }}
+                    onClick={() => { clearCart(); toast.success(t('cart.cartCleared')); }}
                     className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors"
                   >
                     <Trash2 size={14} />
-                    Vider le panier
+                    {t('cart.clearCartLabel')}
                   </button>
                 </div>
                 {sortedItems.map((item) => {
@@ -302,7 +305,7 @@ export default function CartPage() {
                           {isOos && (
                             <div className="mt-2 px-2.5 py-1 rounded-lg bg-red-50 border border-red-200 text-[11px] font-semibold text-red-600 flex items-center gap-1.5">
                               <span className="shrink-0">⚠️</span>
-                              <span>Cet article est en rupture de stock. Supprimez-le pour passer commande.</span>
+                              <span>{t('cart.articleOutOfStock')}</span>
                             </div>
                           )}
                           {item.type === 'rental' && item.rentalStartDate && (
@@ -314,9 +317,9 @@ export default function CartPage() {
                           {item.type === 'rental' && typeof item.deliveryCost === 'number' && (
                             <div className="mt-1.5 text-xs flex items-center gap-1.5">
                               <Truck size={13} className="text-gray-400" />
-                              <span className="text-gray-500">Livraison</span>
+                              <span className="text-gray-500">{t('checkout.deliveryCost')}</span>
                               {item.deliveryCost === 0 ? (
-                                <span className="font-semibold text-emerald-600">Gratuit</span>
+                                <span className="font-semibold text-emerald-600">{t('product.free')}</span>
                               ) : (
                                 <span className="font-semibold text-gray-900">{formatPrice(item.deliveryCost)}</span>
                               )}
@@ -331,12 +334,12 @@ export default function CartPage() {
                           {item.type === 'rental' && typeof item.deliveryCost !== 'number' && (
                             <div className="mt-1.5 text-xs flex items-center gap-1.5 text-gray-400">
                               <Truck size={13} className="text-gray-300" />
-                              <span>Livraison — à confirmer selon l'adresse</span>
+                              <span>{t('cart.deliveryToConfirm')}</span>
                             </div>
                           )}
                           {item.variantPrice && item.variantPrice !== item.price && (
                             <div className="mt-1 text-xs text-gray-400">
-                              Prix unitaire: {formatPrice(item.price)}
+                              {t('product.unitPrice')}: {formatPrice(item.price)}
                             </div>
                           )}
                         </div>
@@ -378,17 +381,17 @@ export default function CartPage() {
                   <h3 className="font-bold text-gray-900 text-base mb-5">Récapitulatif</h3>
                     <div className="space-y-3 pb-5 border-b border-gray-200/40">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Sous-total HT</span>
+                        <span className="text-gray-500">{t('checkout.subtotalHT')}</span>
                         <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
                       </div>
                       {promo?.code && (
                         <div className="flex justify-between text-sm">
-                          <span className="text-emerald-600">Code promo ({promo.code})</span>
+                          <span className="text-emerald-600">{t('cart.promoAppliedLabel', { code: promo.code })}</span>
                           <span className="font-semibold text-emerald-600">{discount > 0 ? `-${formatPrice(discount)}` : formatPrice(0)}</span>
                         </div>
                       )}
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500 flex items-center gap-1.5"><Truck size={14} /> Livraison</span>
+                        <span className="text-gray-500 flex items-center gap-1.5"><Truck size={14} /> {t('checkout.deliveryCost')}</span>
                         {hasKnownDelivery ? (
                           deliverySum === 0 ? (
                             <span className="font-semibold text-emerald-600">Gratuit</span>
@@ -451,7 +454,7 @@ export default function CartPage() {
                   <button
                     onClick={() => {
                       if (hasOutOfStock) {
-                        toast.error('Veuillez retirer les articles en rupture de stock avant de passer commande.');
+                        toast.error(t('cart.removeOutOfStockToast'));
                         return;
                       }
                       router.push('/boutique/commande');
@@ -459,12 +462,12 @@ export default function CartPage() {
                     disabled={hasOutOfStock}
                     className="w-full bg-gray-900 text-white py-3.5 rounded-xl font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Passer à la caisse
+                    {t('cart.checkoutLabel')}
                     <ArrowRight size={18} />
                   </button>
                   {hasOutOfStock && (
                     <p className="text-[11px] text-red-500 text-center font-medium mt-2">
-                      Certains articles de votre panier sont en rupture de stock. Supprimez-les pour finaliser votre commande.
+                      {t('cart.certainItemsOutOfStock')}
                     </p>
                   )}
                   {vatMessageEnabled && calc.vatRate === 0 && (() => {
@@ -502,7 +505,7 @@ export default function CartPage() {
                       <button onClick={() => setPromoOpen(!promoOpen)} className="w-full flex items-center justify-between p-4 text-sm text-gray-500 hover:text-gray-900 transition-colors">
                         <span className="flex items-center gap-2">
                           <Tag size={15} />
-                          Ajouter un code promotionnel
+                          {t('cart.addPromoCode')}
                         </span>
                         <ChevronDown size={16} className={`transition-transform duration-200 ${promoOpen ? 'rotate-180' : ''}`} />
                       </button>
@@ -511,7 +514,7 @@ export default function CartPage() {
                           <div className="flex gap-2 w-full">
                             <input
                               type="text"
-                              placeholder="Code promo"
+                              placeholder={t('cart.promoPlaceholder')}
                               value={promoInput}
                               onChange={e => setPromoInput(e.target.value)}
                               onKeyDown={e => { if (e.key === 'Enter') applyPromo(promoInput); }}
@@ -542,7 +545,7 @@ export default function CartPage() {
                       <button
                         onClick={() => {
                           if (outOfStock) {
-                            toast.error('Produit en rupture de stock');
+                            toast.error(t('cart.productOutOfStockToast'));
                             return;
                           }
                           moveToCart(item);
@@ -635,7 +638,7 @@ export default function CartPage() {
                       </div>
                         <h3 className="text-sm font-semibold text-gray-900 mb-1">{p.name}</h3>
                         <p className="text-sm font-bold text-gray-900 mb-3">{formatProductPriceLabel(p)}</p>
-                      <ActionButton product={p} onAddToCart={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(`${p.name} ajouté au panier`); }} />
+                      <ActionButton product={p} onAddToCart={() => { addItem({ productId: p.id, name: p.name, price: p.price, image: p.image, category: p.category, type: 'purchase' }); toast.success(t('product.addedToCart', { name: p.name })); }} />
                     </div>
                   ))}
                 </div>

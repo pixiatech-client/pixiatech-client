@@ -11,6 +11,7 @@ import Link from 'next/link';
 import confetti from 'canvas-confetti';
 import { ArrowRight, Check, Lock, Loader2, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 import { formatPrice } from '@/lib/boutique-data';
 import type { CartItem } from '@/contexts/CartContext';
 import { checkoutModeBadge } from '@/components/checkout/paypal-checkout';
@@ -57,11 +58,13 @@ export default function CheckoutConfirmation({
   const [magicSent, setMagicSent] = useState(false);
   const [magicError, setMagicError] = useState('');
 
+  const { t } = useI18n();
+
   const orderRef = `ORD${Date.now().toString(36).toUpperCase()}`;
 
   const sendMagicLink = async () => {
     if (!email) {
-      setMagicError('Aucune adresse email associée à cette commande.');
+      setMagicError(t('checkout.noEmailForOrder'));
       return;
     }
     setMagicSending(true);
@@ -74,11 +77,11 @@ export default function CheckoutConfirmation({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error || "Échec de l'envoi");
+        throw new Error(body?.error || t('checkout.sendError'));
       }
       setMagicSent(true);
     } catch (e: any) {
-      setMagicError(e?.message || "Erreur lors de l'envoi du lien");
+      setMagicError(e?.message || t('checkout.sendLinkError2'));
     } finally {
       setMagicSending(false);
     }
@@ -97,16 +100,16 @@ export default function CheckoutConfirmation({
         </div>
 
         <h1 className="text-center text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
-          Paiement réussi, merci !
+          {t('checkout.paidSuccess')}
         </h1>
         <p className="mt-2 max-w-xl text-center text-sm leading-6 text-gray-500">
-          Votre commande <span className="font-bold text-gray-900">#{orderRef}</span> a bien été enregistrée
-          {isNewCustomer ? ' et un espace membre a été créé pour vous.' : '.'}
-          {email ? ` Un email de confirmation a été envoyé à ${email}.` : ''}
+          {t('checkout.orderRegisteredPrefix')} <span className="font-bold text-gray-900">#{orderRef}</span>{' '}
+          {isNewCustomer ? t('checkout.orderRegisteredSuffixNewCustomer') : t('checkout.orderRegisteredSuffix')}
+          {email ? ` ${t('checkout.confirmationEmailSent', { email })}` : ''}
         </p>
 
         <div className="mt-8 w-full rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="text-base font-bold text-gray-900">Récapitulatif de votre commande</h2>
+          <h2 className="text-base font-bold text-gray-900">{t('checkout.summaryTitle')}</h2>
 
           <div className="mt-4 space-y-4">
             {items.map((item, idx) => (
@@ -140,12 +143,12 @@ export default function CheckoutConfirmation({
 
           <div className="mt-6 flex items-center justify-between border-t border-gray-200/70 pt-5">
             <div>
-              <p className="text-[11px] font-semibold text-gray-500 uppercase">Total payé</p>
+              <p className="text-[11px] font-semibold text-gray-500 uppercase">{t('checkout.totalPaid')}</p>
               <p className="text-2xl font-black tracking-tight text-gray-900">{formatPrice(total)}</p>
             </div>
             <span className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600">
               <Lock size={13} />
-              Paiement sécurisé
+              {t('checkout.securePaymentBadge')}
             </span>
           </div>
 
@@ -156,10 +159,9 @@ export default function CheckoutConfirmation({
                   <Mail size={17} className="text-indigo-600" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h4 className="text-sm font-bold text-indigo-900">Activez votre espace membre</h4>
+                  <h4 className="text-sm font-bold text-indigo-900">{t('checkout.activateMemberArea')}</h4>
                   <p className="mt-1 text-xs leading-5 text-indigo-800/80">
-                    Un lien d&apos;accès sécurisé vous a été (ou sera) envoyé sur votre boîte mail. Consultez vos spams
-                    si besoin. Retrouvez-y vos commandes passées et leurs suivis.
+                    {t('checkout.activateMemberAreaDesc')}
                   </p>
                   <button
                     onClick={sendMagicLink}
@@ -170,7 +172,7 @@ export default function CheckoutConfirmation({
                     )}
                   >
                     {magicSending ? <Loader2 size={13} className="animate-spin" /> : magicSent ? <Check size={13} /> : <Mail size={13} />}
-                    {magicSending ? 'Envoi en cours…' : magicSent ? 'Email envoyé' : 'Renvoyer le lien par email'}
+                    {magicSending ? t('checkout.sending') : magicSent ? t('checkout.emailSent') : t('checkout.resendLink')}
                   </button>
                   {magicError && <p className="mt-2 text-xs text-amber-700">{magicError}</p>}
                 </div>
@@ -183,21 +185,21 @@ export default function CheckoutConfirmation({
               href="/boutique"
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
             >
-              Retour à la boutique
+              {t('checkout.backToShopConfirmation')}
               <ArrowRight size={15} />
             </Link>
             <a
               href="/espace"
               className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
             >
-              Accéder à mon espace membre
+              {t('checkout.memberArea')}
             </a>
           </div>
         </div>
 
         <p className="mt-6 flex items-center gap-1.5 text-xs text-gray-400">
           <Lock size={13} className="shrink-0" />
-          Vos informations bancaires ne sont jamais stockées par PIXIATECH.
+          {t('checkout.bankNeverStored')}
         </p>
       </div>
     </div>

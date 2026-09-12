@@ -30,6 +30,7 @@ import {
 import { doc, onSnapshot } from 'firebase/firestore';
 import { firestore } from '@/firebase/config';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 import { useCart, type CartItem } from '@/contexts/CartContext';
 import { useProfile } from '@/contexts/ProfileContext';
 import { calculateCheckout } from '@/lib/checkout-calculations';
@@ -68,6 +69,7 @@ export default function DeliveryPaymentStep({
 }) {
   const { items, subtotal, totalAfterDiscount, promo, promoError, applyPromo, removePromo, clearCart } = useCart();
   const { profileType, setProfileType, isB2B, forceB2B } = useProfile();
+  const { t } = useI18n();
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal'>('card');
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -236,8 +238,8 @@ export default function DeliveryPaymentStep({
   const paypalDisabled = paypalBlockedByStock || termsBlocked;
 
   const blockerMessage = hasCartOutOfStock
-    ? 'Paiement bloqué : article(s) en rupture de stock dans le panier'
-    : 'Veuillez accepter les conditions générales de vente pour finaliser votre commande.';
+    ? t('checkout.blockerStock')
+    : t('checkout.blockerTerms');
 
   const countryLabel =
     DEFAULT_COUNTRY_OPTIONS.find(o => o.value === delivery.country)?.label ||
@@ -247,7 +249,7 @@ export default function DeliveryPaymentStep({
 
   const handleBlackCta = () => {
     if (!acceptTerms) {
-      setTermsError('Veuillez accepter les conditions générales de vente.');
+      setTermsError(t('checkout.errTerms'));
       return;
     }
     setTermsError('');
@@ -258,7 +260,7 @@ export default function DeliveryPaymentStep({
     ? null
     : methods.length > 0
       ? methods
-      : [{ id: 'standard', name: 'Livraison standard', delay: '2-3 jours ouvrés', price: 0, isFree: true }];
+      : [{ id: 'standard', name: t('checkout.standardShipping'), delay: t('checkout.standardShippingDelay'), price: 0, isFree: true }];
 
   return (
     <PayPalCheckoutProvider clientId={paypalClientId}>
@@ -272,9 +274,9 @@ export default function DeliveryPaymentStep({
                   <AlertTriangle size={18} className="stroke-[2.5]" />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <h4 className="text-sm font-bold text-red-950">Commande bloquée : article(s) en rupture de stock</h4>
+                  <h4 className="text-sm font-bold text-red-950">{t('checkout.blockedOutOfStockTitle')}</h4>
                   <p className="text-xs text-red-800">
-                    Veuillez supprimer ou modifier ces articles depuis votre panier pour pouvoir finaliser votre commande.
+                    {t('checkout.blockedOutOfStockDesc')}
                   </p>
                 </div>
               </div>
@@ -288,7 +290,7 @@ export default function DeliveryPaymentStep({
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-700">
                   <Truck size={17} />
                 </span>
-                <h2 className="text-lg font-bold text-gray-900">Mode de livraison</h2>
+                <h2 className="text-lg font-bold text-gray-900">{t('checkout.deliveryMode')}</h2>
               </div>
               <button
                 type="button"
@@ -296,7 +298,7 @@ export default function DeliveryPaymentStep({
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-900"
               >
                 <Pencil size={13} />
-                Modifier l&apos;adresse
+                {t('checkout.editAddress')}
               </button>
             </div>
 
@@ -328,7 +330,7 @@ export default function DeliveryPaymentStep({
                         <span className="mt-0.5 block text-xs text-gray-500">{m.delay}</span>
                       </span>
                       <span className={cn('text-sm font-bold', m.isFree || m.price === 0 ? 'text-emerald-600' : 'text-gray-900')}>
-                        {m.isFree || m.price === 0 ? 'Gratuit' : formatPrice(m.price)}
+                        {m.isFree || m.price === 0 ? t('checkout.shippingFree') : formatPrice(m.price)}
                       </span>
                       <span
                         className={cn(
@@ -351,7 +353,7 @@ export default function DeliveryPaymentStep({
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-700">
                 <CreditCard size={17} />
               </span>
-              <h2 className="text-lg font-bold text-gray-900">Moyen de paiement</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('checkout.paymentMethod')}</h2>
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -369,8 +371,8 @@ export default function DeliveryPaymentStep({
                   <img className="h-4 w-auto" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard.svg" alt="Mastercard" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold text-gray-900">Carte bancaire</span>
-                  <span className="mt-0.5 block text-xs text-gray-500">Visa, Mastercard, CB</span>
+                  <span className="block text-sm font-bold text-gray-900">{t('checkout.cardPayment')}</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">{t('checkout.cardSub')}</span>
                 </span>
                 <span
                   className={cn(
@@ -395,8 +397,8 @@ export default function DeliveryPaymentStep({
                   <img className="h-5 w-auto object-contain" src="/bot-avatars/PayPal.png" alt="PayPal" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold text-gray-900">PayPal</span>
-                  <span className="mt-0.5 block text-xs text-gray-500">Rapide et sécurisé</span>
+                  <span className="block text-sm font-bold text-gray-900">{t('checkout.paypal')}</span>
+                  <span className="mt-0.5 block text-xs text-gray-500">{t('checkout.paypalSub')}</span>
                 </span>
                 <span
                   className={cn(
@@ -414,12 +416,12 @@ export default function DeliveryPaymentStep({
                 <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <CreditCard size={18} className="text-gray-700" />
-                    <h4 className="text-sm font-bold text-gray-900">Payer par carte bancaire</h4>
+                    <h4 className="text-sm font-bold text-gray-900">{t('checkout.payByCard')}</h4>
                   </div>
                   {!paypalClientId || paypalClientId === 'votre_client_id_ici' ? (
                     <div className="text-center py-8 px-4 bg-amber-50 rounded-xl border border-amber-200">
-                      <p className="text-sm font-semibold text-amber-800 mb-1">Paiement PayPal non configuré</p>
-                      <p className="text-xs text-amber-600">Ajoutez votre <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">NEXT_PUBLIC_PAYPAL_CLIENT_ID</code> dans le fichier <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">.env</code></p>
+                      <p className="text-sm font-semibold text-amber-800 mb-1">{t('checkout.paypalNotConfiguredTitle')}</p>
+                      <p className="text-xs text-amber-600">{t('checkout.paypalNotConfiguredDesc', { envVar: 'NEXT_PUBLIC_PAYPAL_CLIENT_ID' })}</p>
                     </div>
                   ) : (
                     <PayPalButtonGroup
@@ -439,19 +441,18 @@ export default function DeliveryPaymentStep({
                 <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <Wallet size={18} className="text-gray-700" />
-                    <h4 className="text-sm font-bold text-gray-900">Paiement direct avec PayPal</h4>
+                    <h4 className="text-sm font-bold text-gray-900">{t('checkout.paypalDirect')}</h4>
                     <span className="text-base">
                       <img className="h-5 w-auto object-contain" src="/bot-avatars/PayPal.png" alt="PayPal" />
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                    Cliquez ci-dessous pour régler votre commande avec votre compte PayPal sans créer de compte.
-                    Vos informations et votre adresse de livraison seront transmises automatiquement par PayPal.
+                    {t('checkout.paypalDirectDesc')}
                   </p>
                   {!paypalClientId || paypalClientId === 'votre_client_id_ici' ? (
                     <div className="text-center py-8 px-4 bg-amber-50 rounded-xl border border-amber-200">
-                      <p className="text-sm font-semibold text-amber-800 mb-1">Paiement PayPal non configuré</p>
-                      <p className="text-xs text-amber-600">Ajoutez votre <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">NEXT_PUBLIC_PAYPAL_CLIENT_ID</code> dans le fichier <code className="bg-amber-100 px-1.5 py-0.5 rounded text-xs">.env</code></p>
+                      <p className="text-sm font-semibold text-amber-800 mb-1">{t('checkout.paypalNotConfiguredTitle')}</p>
+                      <p className="text-xs text-amber-600">{t('checkout.paypalNotConfiguredDesc', { envVar: 'NEXT_PUBLIC_PAYPAL_CLIENT_ID' })}</p>
                     </div>
                   ) : (
                     <PayPalButtonGroup
@@ -477,7 +478,7 @@ export default function DeliveryPaymentStep({
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-gray-700">
                 <ShieldCheck size={17} />
               </span>
-              <h2 className="text-lg font-bold text-gray-900">Validation</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('checkout.validation')}</h2>
             </div>
 
             <label htmlFor="co-terms-payment" className="mt-5 flex cursor-pointer items-start gap-2.5">
@@ -489,7 +490,7 @@ export default function DeliveryPaymentStep({
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-gray-900"
               />
               <span className="text-xs leading-5 text-gray-600">
-                J&apos;accepte les conditions générales de vente et la{' '}
+                {t('checkout.acceptTermsLabel')}{' '}
                 <a
                   href="https://pixiatech.com/politique-confidentialite/"
                   target="_blank"
@@ -497,7 +498,7 @@ export default function DeliveryPaymentStep({
                   onClick={(e) => e.stopPropagation()}
                   className="font-semibold text-blue-600 transition-colors hover:underline"
                 >
-                  politique de confidentialité
+                  {t('checkout.privacyPolicyLink')}
                 </a>
                 <span className="text-red-500"> *</span>.
               </span>
@@ -515,7 +516,7 @@ export default function DeliveryPaymentStep({
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 py-3.5 text-sm font-semibold text-white transition-all hover:bg-gray-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400"
                 >
                   <Lock size={15} />
-                  Payer et commander — {formatPrice(total)}
+                  {t('checkout.payAndOrder')} — {formatPrice(total)}
                 </button>
               ) : (
                 <PayPalButtonGroup
@@ -534,7 +535,7 @@ export default function DeliveryPaymentStep({
 
             <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-[11px] leading-4 text-gray-400">
               <Lock size={13} className="shrink-0 text-gray-400" />
-              Paiement 100% sécurisé — Vos données bancaires ne sont jamais stockées.
+              {t('checkout.paymentSecure')}
             </p>
           </section>
         </div>
@@ -542,7 +543,7 @@ export default function DeliveryPaymentStep({
         {/* ======= COLONNE DROITE — RÉCAP (40 %) ======= */}
         <aside className="lg:col-span-2">
           <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm lg:sticky lg:top-8">
-            <h3 className="text-lg font-bold text-gray-900">Récapitulatif de votre commande</h3>
+            <h3 className="text-lg font-bold text-gray-900">{t('checkout.summaryTitle')}</h3>
 
             {/* Adresse condensée */}
             <div className="mt-4 flex items-start gap-3 border-b border-gray-100 pb-4">
@@ -566,7 +567,7 @@ export default function DeliveryPaymentStep({
                 className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-900"
               >
                 <Pencil size={11} />
-                Modifier
+                {t('checkout.edit')}
               </button>
             </div>
 
@@ -618,7 +619,7 @@ export default function DeliveryPaymentStep({
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Code promo"
+                    placeholder={t('checkout.promoPlaceholder')}
                     value={promoInput}
                     onChange={e => setPromoInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') applyPromo(promoInput); }}
@@ -628,7 +629,7 @@ export default function DeliveryPaymentStep({
                     onClick={() => applyPromo(promoInput)}
                     className="shrink-0 bg-gray-900 text-white px-3 py-2 rounded-xl text-[11px] font-semibold hover:bg-gray-800 transition-colors"
                   >
-                    Appliquer
+                    {t('checkout.apply')}
                   </button>
                 </div>
               )}
@@ -638,21 +639,21 @@ export default function DeliveryPaymentStep({
             {/* Totaux */}
             <div className="mt-3 space-y-2 border-t border-gray-200/40 pt-4">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Sous-total HT</span>
+                <span className="text-gray-500">{t('checkout.subtotalHT')}</span>
                 <span className="font-semibold text-gray-900">{formatPrice(subtotal)}</span>
               </div>
               {promo?.code && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-emerald-600">Promo ({promo.code})</span>
+                  <span className="text-emerald-600">{t('checkout.promo', { code: promo.code })}</span>
                   <span className="font-semibold text-emerald-600">{discount > 0 ? `-${formatPrice(discount)}` : formatPrice(0)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Livraison</span>
+                <span className="text-gray-500">{t('checkout.deliveryCost')}</span>
                 {shippingLoading ? (
-                  <span className="text-xs text-gray-400 animate-pulse">Calcul...</span>
+                  <span className="text-xs text-gray-400 animate-pulse">{t('checkout.calculating')}</span>
                 ) : effectiveDeliveryCost === 0 ? (
-                  <span className="font-semibold text-emerald-600">Gratuit</span>
+                  <span className="font-semibold text-emerald-600">{t('checkout.shippingFree')}</span>
                 ) : (
                   <span className="font-semibold text-gray-900">{formatPrice(effectiveDeliveryCost)}</span>
                 )}
@@ -673,27 +674,27 @@ export default function DeliveryPaymentStep({
                   <button
                     onClick={() => setShowInfo(!showInfo)}
                     className="relative flex h-6 w-6 items-center justify-center"
-                    aria-label="Quel type de client êtes-vous ?"
+                    aria-label={t('checkout.clientTypeAria')}
                   >
                     <Info size={15} className="relative z-10 text-blue-600" />
                   </button>
                   {showInfo && (
                     <div className="absolute right-0 bottom-full mb-2 z-20 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-4">
-                      <p className="text-xs text-gray-500 leading-relaxed">Nos produits sont principalement destinés aux professionnels, entreprises, collectivités et revendeurs. Les particuliers peuvent également commander directement depuis notre boutique.</p>
+                      <p className="text-xs text-gray-500 leading-relaxed">{t('checkout.b2bInfo')}</p>
                       <div className="mt-3 pt-3 border-t border-gray-100">
-                        <p className="text-xs font-semibold text-gray-800 mb-3">Vous êtes ?</p>
+                        <p className="text-xs font-semibold text-gray-800 mb-3">{t('checkout.whoAreYou')}</p>
                         <div className="flex flex-col gap-2">
                           <button
                             onClick={() => { setProfileType('particulier'); setShowInfo(false); }}
                             className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50"
                           >
-                            Je suis un particulier
+                            {t('checkout.individual')}
                           </button>
                           <button
                             onClick={() => { setProfileType('entreprise'); setShowInfo(false); }}
                             className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50"
                           >
-                            Je suis une entreprise
+                            {t('checkout.companyClient')}
                           </button>
                         </div>
                       </div>

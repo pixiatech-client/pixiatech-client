@@ -19,8 +19,8 @@ import { useMediaQuery } from 'usehooks-ts';
 
 const LAYOUT_GRID_CLASS: Record<LayoutMode, string> = {
   1: 'grid-cols-1',
-  2: 'grid-cols-2',
-  3: 'grid-cols-3',
+  2: 'grid-cols-1 sm:grid-cols-2',
+  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
   4: 'grid-cols-1',
 };
 
@@ -831,7 +831,7 @@ export default function BoutiquePage() {
                       <button
                         onClick={(e) => handleQuickAdd(e, product)}
                         type="button"
-                        className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer w-full md:w-auto"
+                        className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 min-h-11 transition-all cursor-pointer w-full md:w-auto"
                       >
                         <ShoppingBag size={14} />
                         {t('boutique.add')}

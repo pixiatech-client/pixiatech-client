@@ -63,36 +63,48 @@ export const DEFAULT_COUNTRY_OPTIONS: { value: string; label: string }[] = [
   { value: 'MT', label: 'Malte' },
 ];
 
-export function validateCustomerField(field: CustomerInfoField, value: string): string {
+export type Translator = (key: string) => string;
+
+export function validateCustomerField(
+  field: CustomerInfoField,
+  value: string,
+  t?: Translator
+): string {
+  const msg = (key: string, fallback: string) => (t ? t(key) : fallback);
   switch (field) {
     case 'firstName':
+      if (!value.trim()) return '';
+      if (!NAME_RE.test(value.trim())) return msg('customerForm.invalidFirstName', 'Veuillez saisir un prénom valide.');
+      return '';
     case 'lastName':
       if (!value.trim()) return '';
-      if (!NAME_RE.test(value.trim())) return 'Veuillez saisir un prénom valide.';
+      if (!NAME_RE.test(value.trim())) return msg('customerForm.invalidLastName', 'Veuillez saisir un nom valide.');
       return '';
     case 'email':
       if (!value.trim()) return '';
-      if (!EMAIL_RE.test(value.trim())) return 'Veuillez saisir une adresse e-mail valide.';
+      if (!EMAIL_RE.test(value.trim())) return msg('customerForm.invalidEmail', 'Veuillez saisir une adresse e-mail valide.');
       return '';
     case 'phone':
       if (!value.trim()) return '';
       const digits = value.replace(/[^0-9]/g, '');
-      if (digits.length < 8 || !PHONE_RE.test(value.trim())) return 'Veuillez saisir un numéro de téléphone valide.';
+      if (digits.length < 8 || !PHONE_RE.test(value.trim()))
+        return msg('customerForm.invalidPhone', 'Veuillez saisir un numéro de téléphone valide.');
       return '';
     case 'addressLine1':
       if (!value.trim()) return '';
-      if (value.trim().length < 6) return 'Merci de saisir une adresse complète.';
-      if (!/\d/.test(value)) return 'Merci de saisir une adresse complète.';
-      if (!/[a-zA-Z\u00C0-\u024F]{2,}/.test(value)) return 'Merci de saisir une adresse complète.';
+      if (value.trim().length < 6) return msg('customerForm.incompleteAddress', 'Merci de saisir une adresse complète.');
+      if (!/\d/.test(value)) return msg('customerForm.incompleteAddress', 'Merci de saisir une adresse complète.');
+      if (!/[a-zA-Z\u00C0-\u024F]{2,}/.test(value)) return msg('customerForm.incompleteAddress', 'Merci de saisir une adresse complète.');
       return '';
     case 'city':
       if (!value.trim()) return '';
-      if (value.trim().length < 2) return 'Veuillez saisir une ville valide.';
-      if (/^\d+$/.test(value.trim())) return 'Veuillez saisir une ville valide.';
+      if (value.trim().length < 2) return msg('customerForm.invalidCity', 'Veuillez saisir une ville valide.');
+      if (/^\d+$/.test(value.trim())) return msg('customerForm.invalidCity', 'Veuillez saisir une ville valide.');
       return '';
     case 'postcode':
       if (!value.trim()) return '';
-      if (!POSTCODE_RE.test(value.trim())) return 'Veuillez saisir un code postal valide.';
+      if (!POSTCODE_RE.test(value.trim()))
+        return msg('customerForm.invalidPostcode', 'Veuillez saisir un code postal valide.');
       return '';
     default:
       return '';

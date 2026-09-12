@@ -36,7 +36,7 @@ export function ActionButton({ product, onAddToCart }: { product: Product; onAdd
           router.push(`/boutique/produit/${product.id}`);
         }}
         type="button"
-        className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer w-full md:w-auto"
+        className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 min-h-11 transition-all cursor-pointer w-full md:w-auto"
       >
         Plus d'infos
       </button>
@@ -55,7 +55,7 @@ export function ActionButton({ product, onAddToCart }: { product: Product; onAdd
           router.push(`/boutique/produit/${product.id}`);
         }}
         type="button"
-        className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer w-full md:w-auto"
+        className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 min-h-11 transition-all cursor-pointer w-full md:w-auto"
       >
         <CalendarDays size={14} />
         Louer
@@ -68,7 +68,7 @@ export function ActionButton({ product, onAddToCart }: { product: Product; onAdd
       <button
         type="button"
         disabled
-        className="inline-flex items-center justify-center gap-1.5 text-gray-400 bg-gray-100 border border-gray-200 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 cursor-not-allowed w-full md:w-auto"
+        className="inline-flex items-center justify-center gap-1.5 text-gray-400 bg-gray-100 border border-gray-200 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 min-h-11 cursor-not-allowed w-full md:w-auto"
       >
         <ShoppingBag size={14} />
         Rupture de stock
@@ -84,10 +84,10 @@ export function ActionButton({ product, onAddToCart }: { product: Product; onAdd
         onAddToCart();
       }}
       type="button"
-      className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 transition-all cursor-pointer w-full md:w-auto"
-    >
-      <ShoppingBag size={14} />
-      Ajouter
+className="inline-flex items-center justify-center gap-1.5 text-white bg-gray-900 hover:bg-gray-800 border border-transparent focus:ring-4 focus:ring-gray-300 shadow-sm font-medium rounded-xl text-xs px-3.5 py-2 min-h-11 transition-all cursor-pointer w-full md:w-auto"
+      >
+        <ShoppingBag size={14} />
+        Ajouter
     </button>
   );
 }
