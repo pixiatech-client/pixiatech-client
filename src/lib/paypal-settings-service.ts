@@ -4,12 +4,14 @@ export type PayPalSettings = {
   clientId: string;
   clientSecret: string;
   environment: 'sandbox' | 'live';
+  enableCardPayments: boolean;
 };
 
 const DEFAULT_SETTINGS: PayPalSettings = {
   clientId: '',
   clientSecret: '',
   environment: 'sandbox',
+  enableCardPayments: true,
 };
 
 export async function getPayPalSettings(): Promise<PayPalSettings> {
@@ -36,6 +38,7 @@ export async function getPayPalSettings(): Promise<PayPalSettings> {
         clientId: clientId || envClientId,
         clientSecret: clientSecret || envSecret,
         environment: data.environment || 'sandbox',
+        enableCardPayments: data.enableCardPayments !== false,
       };
     }
   } catch (error) {

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { PayPalScriptProvider, usePayPalScriptReducer, PayPalButtons, FUNDING, PayPalCardFieldsProvider, PayPalNameField, PayPalNumberField, PayPalExpiryField, PayPalCVVField, usePayPalCardFields } from '@paypal/react-paypal-js';
+import { usePayPalConfig, PayPalConfigBanner } from '@/components/checkout/paypal-checkout';
 import { ShoppingBag, Lock, Shield, Check, CreditCard, Wallet, MapPin, User, ChevronDown, Tag, X, Info, Building2, ArrowLeft, ArrowRight, Mail, AlertTriangle, Loader2 } from 'lucide-react';
 import CustomerInfoForm from '@/components/customer-info-form';
 import CustomerLoginPrompt from '@/components/customer-login-prompt';
@@ -927,6 +928,18 @@ export default function CheckoutPage() {
     setStep('confirmation');
   };
 
+  // Config PayPal depuis le backend (settings/paypal) : clientId dynamique
+  // (sandbox → live sans recompiler) + activation du paiement par carte.
+  const paypalConfig = usePayPalConfig();
+  const paypalClientId = paypalConfig.clientId;
+  const cardPaymentsEnabled = paypalConfig.enableCardPayments;
+
+  useEffect(() => {
+    if (!cardPaymentsEnabled && paymentMethod === 'card') {
+      setPaymentMethod('paypal');
+    }
+  }, [cardPaymentsEnabled, paymentMethod]);
+
   if (step === 'confirmation') {
     const paymentLabel = paymentMethod === 'card' ? t('checkout.cardPayment') : t('checkout.paypal');
     const invoiceData = mounted ? {
@@ -1300,7 +1313,13 @@ export default function CheckoutPage() {
     );
   }
 
-  const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '';
+  if (paypalConfig.loading) {
+    return (
+      <div className="w-full min-h-screen bg-[#F5F5F5] flex items-center justify-center">
+        <LiquidLoader size={40} />
+      </div>
+    );
+  }
 
   return (
     <PayPalScriptProvider options={{ clientId: paypalClientId, currency: 'EUR', components: 'buttons' }}>
@@ -1312,10 +1331,7 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <section className="lg:col-span-7">
               <div className="bg-white rounded-2xl border border-gray-200/70 p-6 md:p-8">
-                <div className="text-center py-8 px-4 bg-amber-50 rounded-xl border border-amber-200">
-                  <p className="text-sm font-semibold text-amber-800 mb-1">{t('checkout.paypalNotConfigured')}</p>
-                  <p className="text-xs text-amber-600">{t('checkout.paypalNotConfiguredDesc', { envVar: 'NEXT_PUBLIC_PAYPAL_CLIENT_ID' }) || 'Ajoutez votre NEXT_PUBLIC_PAYPAL_CLIENT_ID dans le fichier .env'}</p>
-                </div>
+                <PayPalConfigBanner configured={false} />
               </div>
             </section>
           </div>
@@ -1367,22 +1383,24 @@ export default function CheckoutPage() {
                 )}
 
                 {/* Payment method toggle — always visible */}
-                <div className="grid grid-cols-2 gap-2 mb-6">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPaymentMethod('card');
-                      if (!isDeliveryComplete) setDeliveryOpen(true);
-                    }}
-                    className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
-                      paymentMethod === 'card'
-                        ? 'bg-gray-900 text-white shadow-sm'
-                        : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <CreditCard size={16} />
-                    {t('checkout.cardPayment')}
-                  </button>
+                <div className={`grid gap-2 mb-6 ${cardPaymentsEnabled ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {cardPaymentsEnabled && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPaymentMethod('card');
+                        if (!isDeliveryComplete) setDeliveryOpen(true);
+                      }}
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold transition-all ${
+                        paymentMethod === 'card'
+                          ? 'bg-gray-900 text-white shadow-sm'
+                          : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <CreditCard size={16} />
+                      {t('checkout.cardPayment')}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => {

@@ -38,7 +38,7 @@ import { fetchProfessionalInfo } from '@/services/professionalInfoService';
 import { DEFAULT_COUNTRY_OPTIONS } from '@/lib/customer-form-utils';
 import type { CustomerInfoValues } from '@/lib/customer-form-utils';
 import type { BoutiqueAmountInput } from '@/lib/paypal-amount';
-import { PayPalButtonGroup, PayPalCheckoutProvider, checkoutModeBadge } from '@/components/checkout/paypal-checkout';
+import { PayPalButtonGroup, PayPalCheckoutProvider, PayPalConfigBanner, checkoutModeBadge, usePayPalConfig } from '@/components/checkout/paypal-checkout';
 
 interface ShippingMethod {
   id: string;
@@ -87,7 +87,18 @@ export default function DeliveryPaymentStep({
 
   const [outOfStockProductIds, setOutOfStockProductIds] = useState<string[]>([]);
 
-  const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '';
+  // Config PayPal depuis le backend (settings/paypal) : permet de basculer
+  // sandbox → live et d'activer/désactiver le paiement par carte sans recompiler.
+  const paypalConfig = usePayPalConfig();
+  const paypalClientId = paypalConfig.clientId;
+  const cardPaymentsEnabled = paypalConfig.enableCardPayments;
+
+  // Si la carte est désactivée côté admin, force le mode PayPal.
+  useEffect(() => {
+    if (!cardPaymentsEnabled && paymentMethod === 'card') {
+      setPaymentMethod('paypal');
+    }
+  }, [cardPaymentsEnabled, paymentMethod]);
 
   // Modes de livraison pour l'adresse confirmée (config réelle, aucun tarif inventé).
   useEffect(() => {
@@ -271,6 +282,18 @@ export default function DeliveryPaymentStep({
       ? methods
       : [{ id: 'standard', name: t('checkout.standardShipping'), delay: t('checkout.standardShippingDelay'), price: 0, isFree: true }];
 
+  if (paypalConfig.loading) {
+    return (
+      <div className="flex w-full justify-center py-20">
+        <span className="text-sm text-gray-400 animate-pulse">{t('checkout.loadingPayment') || 'Chargement du paiement…'}</span>
+      </div>
+    );
+  }
+
+  if (!paypalClientId) {
+    return <PayPalConfigBanner configured={false} />;
+  }
+
   return (
     <PayPalCheckoutProvider clientId={paypalClientId}>
       <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-8">
@@ -365,33 +388,35 @@ export default function DeliveryPaymentStep({
               <h2 className="text-lg font-bold text-gray-900">{t('checkout.paymentMethod')}</h2>
             </div>
 
-            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('card')}
-                aria-pressed={paymentMethod === 'card'}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-all',
-                  paymentMethod === 'card' ? 'border-gray-900 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
-                )}
-              >
-                <span className="flex h-10 w-auto shrink-0 items-center justify-center gap-1 rounded-xl bg-white px-3 ring-1 ring-gray-200">
-                  <img className="h-4 w-auto object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="Visa" />
-                  <img className="h-4 w-auto object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard.svg" alt="Mastercard" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold text-gray-900">{t('checkout.cardPayment')}</span>
-                  <span className="mt-0.5 block text-xs text-gray-500">{t('checkout.cardSub')}</span>
-                </span>
-                <span
+            <div className={cn('mt-5 grid grid-cols-1 gap-3', cardPaymentsEnabled && 'sm:grid-cols-2')}>
+              {cardPaymentsEnabled && (
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('card')}
+                  aria-pressed={paymentMethod === 'card'}
                   className={cn(
-                    'ml-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-                    paymentMethod === 'card' ? 'border-gray-900' : 'border-gray-300'
+                    'flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition-all',
+                    paymentMethod === 'card' ? 'border-gray-900 bg-gray-50' : 'border-gray-200 bg-white hover:border-gray-300'
                   )}
                 >
-                  {paymentMethod === 'card' && <span className="h-2 w-2 rounded-full bg-gray-900" />}
-                </span>
-              </button>
+                  <span className="flex h-10 w-auto shrink-0 items-center justify-center gap-1 rounded-xl bg-white px-3 ring-1 ring-gray-200">
+                    <img className="h-4 w-auto object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="Visa" />
+                    <img className="h-4 w-auto object-contain" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard.svg" alt="Mastercard" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold text-gray-900">{t('checkout.cardPayment')}</span>
+                    <span className="mt-0.5 block text-xs text-gray-500">{t('checkout.cardSub')}</span>
+                  </span>
+                  <span
+                    className={cn(
+                      'ml-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
+                      paymentMethod === 'card' ? 'border-gray-900' : 'border-gray-300'
+                    )}
+                  >
+                    {paymentMethod === 'card' && <span className="h-2 w-2 rounded-full bg-gray-900" />}
+                  </span>
+                </button>
+              )}
 
               <button
                 type="button"

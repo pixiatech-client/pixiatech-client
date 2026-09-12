@@ -2711,7 +2711,7 @@
         "paypalDirect": "Paiement direct avec PayPal",
         "paypalDirectDesc": "Cliquez ci-dessous pour régler votre commande avec votre compte PayPal sans créer de compte. Vos informations et votre adresse de livraison seront transmises automatiquement par PayPal.",
         "paypalNotConfiguredTitle": "Paiement PayPal non configuré",
-        "paypalNotConfiguredDesc": "Ajoutez votre {envVar} dans le fichier .env",
+        "paypalNotConfiguredDesc": "Configurez vos identifiants PayPal depuis le back-office, rubrique Paramètres > PayPal.",
         "validation": "Validation",
         "payAndOrder": "Payer et commander",
         "paymentSecure": "Paiement 100% sécurisé — Vos données bancaires ne sont jamais stockées.",

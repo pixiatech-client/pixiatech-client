@@ -5,11 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { getPayPalSettings, updatePayPalSettings } from '@/app/admin/actions';
 import { useAdminT } from '@/hooks/useAdminT';
-import { CreditCard, Save, Eye, EyeOff, ShieldCheck, Globe, Pencil } from 'lucide-react';
+import { CreditCard, Save, Eye, EyeOff, ShieldCheck, Globe, Pencil, Wallet } from 'lucide-react';
 import LiquidLoader from '@/components/LiquidLoader';
 
 export default function PayPalSettingsPage() {
@@ -20,6 +21,7 @@ export default function PayPalSettingsPage() {
     clientId: '',
     clientSecret: '',
     environment: 'sandbox' as 'sandbox' | 'live',
+    enableCardPayments: true,
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -35,6 +37,7 @@ export default function PayPalSettingsPage() {
           clientId: data.clientId || '',
           clientSecret: '',
           environment: data.environment || 'sandbox',
+          enableCardPayments: data.enableCardPayments !== false,
         });
         setSecretSaved(Boolean(data.hasClientSecret));
       } catch (error) {
@@ -130,6 +133,29 @@ export default function PayPalSettingsPage() {
               <Label htmlFor="live" className="font-medium text-theme-text cursor-pointer">Production (Live)</Label>
             </div>
           </RadioGroup>
+        </div>
+
+        {/* Card payments toggle */}
+        <div className="space-y-3">
+          <h3 className="text-lg font-black text-theme-text flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-theme-text-secondary" />
+            {t('Card payments')}
+          </h3>
+          <div className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-theme-card-border bg-theme-card">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-theme-text">{t('Allow payment with debit / credit card')}</p>
+              <p className="text-xs text-theme-text-secondary mt-0.5">
+                {settings.enableCardPayments
+                  ? t('Customers can pay with Visa, Mastercard… without a PayPal account.')
+                  : t('Only the PayPal button is shown to customers.')}
+              </p>
+            </div>
+            <Switch
+              checked={settings.enableCardPayments}
+              onCheckedChange={(val) => setSettings({ ...settings, enableCardPayments: val })}
+              className="shrink-0"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4">

@@ -9,7 +9,7 @@
  * partir du panier reconstruit — jamais accepté du navigateur.
  */
 
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { PayPalButtons, usePayPalScriptReducer, PayPalScriptProvider, FUNDING } from '@paypal/react-paypal-js';
 import { AlertTriangle, ArrowLeft, Lock } from 'lucide-react';
@@ -75,6 +75,66 @@ export function PayPalCheckoutProvider({ clientId, children }: { clientId: strin
     <PayPalScriptProvider options={{ clientId, currency: 'EUR', components: 'buttons' }}>
       {children}
     </PayPalScriptProvider>
+  );
+}
+
+export type PayPalClientConfig = {
+  clientId: string;
+  environment: 'sandbox' | 'live';
+  enableCardPayments: boolean;
+  loading: boolean;
+};
+
+/**
+ * Récupère la configuration PayPal depuis le backend (settings/paypal) : le
+ * clientId, l'environnement et l'activation du paiement par carte. Permet de
+ * passer de sandbox → live sans recompiler. Retombe sur l'env var si l'API
+ * échoue ou si rien n'est configuré.
+ */
+export function usePayPalConfig(): PayPalClientConfig {
+  const [config, setConfig] = useState<PayPalClientConfig>({
+    clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
+    environment: 'sandbox',
+    enableCardPayments: true,
+    loading: true,
+  });
+
+  useEffect(() => {
+    let active = true;
+    fetch('/api/paypal/client-id')
+      .then((r) => r.json())
+      .then((data) => {
+        if (!active) return;
+        setConfig({
+          clientId: data?.clientId || process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
+          environment: data?.environment === 'live' ? 'live' : 'sandbox',
+          enableCardPayments: data?.enableCardPayments !== false,
+          loading: false,
+        });
+      })
+      .catch(() => {
+        if (!active) return;
+        setConfig((c) => ({ ...c, loading: false }));
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return config;
+}
+
+export function PayPalConfigBanner({ configured }: { configured: boolean }) {
+  const { t } = useI18n();
+  if (configured) return null;
+  return (
+    <div className="text-center py-8 px-4 bg-amber-50 rounded-xl border border-amber-200">
+      <p className="text-sm font-semibold text-amber-800 mb-1">{t('checkout.paypalNotConfigured') || 'PayPal n\'est pas encore configuré'}</p>
+      <p className="text-xs text-amber-600">
+        {t('checkout.paypalNotConfiguredDesc') ||
+          'Configurez vos identifiants PayPal (clientId / secret) depuis le back-office, rubrique Paramètres > PayPal.'}
+      </p>
+    </div>
   );
 }
 

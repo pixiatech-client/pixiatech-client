@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { PayPalScriptProvider, usePayPalScriptReducer, PayPalButtons, FUNDING } from '@paypal/react-paypal-js';
+import { usePayPalConfig } from '@/components/checkout/paypal-checkout';
 import { ShoppingBag, Lock, Shield, Check, Loader2, Package, User, MapPin, Mail, Phone, ArrowLeft, Tag, Percent, X, FileText, Sparkles } from 'lucide-react';
 import type { QuoteRequest } from '@/lib/quote-requests';
 import { InvoiceButton } from '@/components/invoice-button';
@@ -114,7 +115,8 @@ export default function QuotePayPage() {
   const [orderRef, setOrderRef] = useState('');
   const [pdfSettings, setPdfSettings] = useState<PdfSettings | null>(null);
 
-  const paypalClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '';
+  const paypalConfig = usePayPalConfig();
+  const paypalClientId = paypalConfig.clientId;
 
   useEffect(() => {
     if (!id) { setError('ID de devis manquant'); setLoading(false); return; }
@@ -308,6 +310,28 @@ export default function QuotePayPage() {
               <ShoppingBag className="w-4 h-4" /> Continuer mes achats
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (paypalConfig.loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5] p-4">
+        <div className="flex flex-col items-center gap-3">
+          <LiquidLoader size={60} />
+          <p className="text-sm font-medium text-gray-600">Chargement du paiement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!paypalClientId || paypalClientId === 'votre_client_id_ici') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5] p-4">
+        <div className="text-center py-8 px-4 bg-amber-50 rounded-xl border border-amber-200 max-w-md">
+          <p className="text-sm font-semibold text-amber-800 mb-1">PayPal n'est pas encore configuré</p>
+          <p className="text-xs text-amber-600">Configurez vos identifiants PayPal (clientId / secret) depuis le back-office, rubrique Paramètres &gt; Paypal.</p>
         </div>
       </div>
     );

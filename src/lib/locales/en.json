@@ -2711,7 +2711,7 @@
         "paypalDirect": "Direct PayPal payment",
         "paypalDirectDesc": "Click below to pay for your order with your PayPal account without creating an account. Your details and delivery address will be sent automatically by PayPal.",
         "paypalNotConfiguredTitle": "PayPal payment not configured",
-        "paypalNotConfiguredDesc": "Add your {envVar} to the .env file",
+        "paypalNotConfiguredDesc": "Configure your PayPal credentials from the admin, Settings > PayPal.",
         "validation": "Checkout",
         "payAndOrder": "Pay and order",
         "paymentSecure": "100% secure payment — Your bank details are never stored.",
