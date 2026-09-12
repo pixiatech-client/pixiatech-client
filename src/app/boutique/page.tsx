@@ -312,6 +312,13 @@ export default function BoutiquePage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const [layout, setLayout] = useState<LayoutMode>(3);
+  const layoutInitializedRef = useRef(false);
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  useEffect(() => {
+    if (layoutInitializedRef.current) return;
+    layoutInitializedRef.current = true;
+    if (isMobile) setLayout(1);
+  }, [isMobile]);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [displayCount, setDisplayCount] = useState(12);
   const [quoteDeclinedId, setQuoteDeclinedId] = useState<string | null>(null);
