@@ -22,6 +22,8 @@ import {
   Lock,
   Tag,
   CalendarDays,
+  Send,
+  Clock,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -32,6 +34,7 @@ import {
   type ProfessionalInfo,
   type VerifiedCompanySiret,
 } from '@/services/professionalInfoService';
+import { DEFAULT_COUNTRY_OPTIONS } from '@/lib/customer-form-utils';
 
 const COUNTRIES = [
   'France',
@@ -111,6 +114,71 @@ function validatePart2(values: FormValues): FieldErrors {
   return errors;
 }
 
+// ─── Formulaire Particulier (« Envoyer la demande ») ───────────────────────────
+
+export interface PersonalBillingInfo {
+  fullName: string;
+  email: string;
+  phone: string;
+  address: string;
+  country: string;
+  city: string;
+  postcode: string;
+}
+
+const INITIAL_PERSONAL: PersonalBillingInfo = {
+  fullName: '',
+  email: '',
+  phone: '',
+  address: '',
+  country: 'France',
+  city: '',
+  postcode: '',
+};
+
+const PERSONAL_REQUIRED_FIELDS: (keyof PersonalBillingInfo)[] = [
+  'fullName',
+  'email',
+  'address',
+  'country',
+  'city',
+  'postcode',
+];
+
+function validatePersonal(values: PersonalBillingInfo): Partial<Record<keyof PersonalBillingInfo, string>> {
+  const errors: Partial<Record<keyof PersonalBillingInfo, string>> = {};
+
+  for (const field of PERSONAL_REQUIRED_FIELDS) {
+    if (!values[field].trim()) {
+      errors[field] = field === 'fullName' || field === 'city' ? `Le champ « ${labelPersonalField(field)} » est obligatoire.` : 'Ce champ est obligatoire.';
+    }
+  }
+
+  if (values.fullName.trim() && values.fullName.trim().length < 2) {
+    errors.fullName = 'Veuillez saisir un nom complet valide.';
+  }
+
+  const email = values.email.trim();
+  if (email && !EMAIL_RE.test(email)) {
+    errors.email = 'Veuillez saisir une adresse e-mail valide.';
+  }
+
+  return errors;
+}
+
+function labelPersonalField(field: keyof PersonalBillingInfo): string {
+  const labels: Record<keyof PersonalBillingInfo, string> = {
+    fullName: 'Nom complet',
+    email: 'E-mail',
+    phone: 'Téléphone',
+    address: 'Adresse complète',
+    country: 'Pays',
+    city: 'Ville',
+    postcode: 'Code postal',
+  };
+  return labels[field];
+}
+
 function lineLabel(label: string, required?: boolean) {
   return (
     <label className="block text-[11px] font-semibold text-gray-500 mb-1.5">
@@ -181,6 +249,9 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
   const [apiError, setApiError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<FieldErrors>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [personal, setPersonal] = useState<PersonalBillingInfo>(INITIAL_PERSONAL);
+  const [personalErrors, setPersonalErrors] = useState<Partial<Record<keyof PersonalBillingInfo, string>>>({});
+  const [requestSent, setRequestSent] = useState(false);
   const existingRef = useRef<ProfessionalInfo | null>(null);
 
   useEffect(() => {
@@ -235,6 +306,76 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
     });
     setApiError(null);
   }, []);
+
+  // Pré-remplissage du formulaire « Particulier » depuis le compte (profil client).
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch('/api/boutique/session-status', { cache: 'no-store' });
+        if (!res.ok) return;
+        const profile = await res.json();
+        if (cancelled || !profile?.loggedIn) return;
+
+        const isoToLabel = (iso: string): string => {
+          const found = DEFAULT_COUNTRY_OPTIONS.find(
+            (o) => o.value.toUpperCase() === String(iso || '').toUpperCase()
+          );
+          return found?.label || '';
+        };
+
+        setPersonal((prev) => ({
+          ...prev,
+          fullName: typeof profile.displayName === 'string' && profile.displayName ? profile.displayName : prev.fullName,
+          email: typeof profile.email === 'string' && profile.email ? profile.email : prev.email,
+          phone:
+            typeof profile.phone === 'string' && profile.phone
+              ? profile.phone
+              : typeof profile.officePhone === 'string' && profile.officePhone
+                ? profile.officePhone
+                : prev.phone,
+          address: typeof profile.companyAddress === 'string' && profile.companyAddress ? profile.companyAddress : prev.address,
+          city: typeof profile.city === 'string' && profile.city ? profile.city : prev.city,
+          postcode: typeof profile.zipCode === 'string' && profile.zipCode ? profile.zipCode : prev.postcode,
+          country: isoToLabel(profile.country) || prev.country,
+        }));
+      } catch {
+        // Pré-remplissage optionnel : on garde le formulaire vide.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const setPersonalField = useCallback((key: keyof PersonalBillingInfo, value: string) => {
+    setPersonal((prev) => ({ ...prev, [key]: value }));
+    setPersonalErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
+
+  const handleClientTypeChange = useCallback((type: 'particulier' | 'professionnel') => {
+    setClientType(type);
+    setRequestSent(false);
+    setPersonalErrors({});
+    setDirection('right');
+  }, []);
+
+  const submitPersonalRequest = useCallback(() => {
+    const errors = validatePersonal(personal);
+    if (Object.keys(errors).length > 0) {
+      setPersonalErrors(errors);
+      return;
+    }
+    setPersonalErrors({});
+    setRequestSent(true);
+  }, [personal]);
 
   const goToVerify = useCallback(() => {
     setEditing(false);
@@ -407,8 +548,211 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
 
   return (
     <div className={cn(cardClass, 'relative overflow-hidden')}>
+      {/* Choix du profil de facturation — toujours accessible */}
+      <div className="mb-6">
+        <span className="block text-[11px] font-semibold text-gray-500 mb-2">Vous êtes</span>
+        <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
+          <button
+            type="button"
+            onClick={() => handleClientTypeChange('particulier')}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
+              clientType === 'particulier' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            )}
+          >
+            <User className="h-4 w-4" />
+            Particulier
+          </button>
+          <button
+            type="button"
+            onClick={() => handleClientTypeChange('professionnel')}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
+              clientType === 'professionnel' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            )}
+          >
+            <Building2 className="h-4 w-4" />
+            Professionnel
+          </button>
+        </div>
+      </div>
+
       <AnimatePresence custom={direction} mode="wait" initial={false}>
-        {view === 'verify' ? (
+        {clientType === 'particulier' ? (
+          requestSent ? (
+            <motion.div
+              key="personal-sent"
+              custom={direction}
+              variants={stepVariants}
+              initial="initial"
+              animate="enter"
+              exit="exit"
+              transition={stepTransition}
+            >
+              <div className="flex flex-col items-center text-center rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-10">
+                <span className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-emerald-600" />
+                </span>
+                <h3 className="mt-4 text-[17px] font-semibold text-gray-900">Votre demande a bien été envoyée</h3>
+                <p className="mt-1.5 max-w-md text-[13px] leading-5 text-gray-600">
+                  Votre demande de facture est enregistrée. Notre équipe la traite et vous recevrez un e-mail dès que
+                  votre facture sera disponible dans votre espace client.
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#dbeafe] text-[#1d4ed8] text-[12px] font-bold">
+                  <Clock className="h-3.5 w-3.5" />
+                  Statut : En attente
+                </span>
+              </div>
+              <div className="mt-6 flex flex-col-reverse sm:flex-row gap-3 sm:items-center sm:justify-start">
+                <button
+                  type="button"
+                  onClick={() => setRequestSent(false)}
+                  className={cn(outlineBtnClass)}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Modifier mes informations
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="personal-form"
+              custom={direction}
+              variants={stepVariants}
+              initial="initial"
+              animate="enter"
+              exit="exit"
+              transition={stepTransition}
+            >
+              <div className="mb-6">
+                <h3 className="text-[17px] font-semibold text-gray-900">Vos informations de facturation</h3>
+                <p className="mt-1 text-[13px] text-gray-500">
+                  Vos informations ont été pré-remplies depuis votre compte. Vérifiez-les, puis envoyez votre demande de facture.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  {lineLabel('Nom complet', true)}
+                  <div className="relative">
+                    <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={personal.fullName}
+                      onChange={(e) => setPersonalField('fullName', e.target.value)}
+                      placeholder="Marie Dupont"
+                      className={cn(inputClass, 'pl-10', personalErrors.fullName && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                      aria-invalid={!!personalErrors.fullName}
+                    />
+                  </div>
+                  <FieldError message={personalErrors.fullName} />
+                </div>
+
+                <div>
+                  {lineLabel('E-mail', true)}
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      type="email"
+                      value={personal.email}
+                      onChange={(e) => setPersonalField('email', e.target.value)}
+                      placeholder="marie.dupont@example.com"
+                      className={cn(inputClass, 'pl-10', personalErrors.email && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                      aria-invalid={!!personalErrors.email}
+                    />
+                  </div>
+                  <FieldError message={personalErrors.email} />
+                </div>
+
+                <div>
+                  {lineLabel('Téléphone')}
+                  <div className="relative">
+                    <Phone className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      type="tel"
+                      value={personal.phone}
+                      onChange={(e) => setPersonalField('phone', e.target.value)}
+                      placeholder="+33 6 XX XX XX XX"
+                      className={cn(inputClass, 'pl-10')}
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  {lineLabel('Adresse complète', true)}
+                  <div className="relative">
+                    <MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={personal.address}
+                      onChange={(e) => setPersonalField('address', e.target.value)}
+                      placeholder="12 rue des Lilas"
+                      className={cn(inputClass, 'pl-10', personalErrors.address && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                      aria-invalid={!!personalErrors.address}
+                    />
+                  </div>
+                  <FieldError message={personalErrors.address} />
+                </div>
+
+                <div>
+                  {lineLabel('Pays', true)}
+                  <select
+                    value={personal.country}
+                    onChange={(e) => setPersonalField('country', e.target.value)}
+                    className={cn(selectClass, personalErrors.country && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                  >
+                    {COUNTRIES.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                  <FieldError message={personalErrors.country} />
+                </div>
+
+                <div>
+                  {lineLabel('Ville', true)}
+                  <div className="relative">
+                    <MapPinned className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={personal.city}
+                      onChange={(e) => setPersonalField('city', e.target.value)}
+                      placeholder="Paris"
+                      className={cn(inputClass, 'pl-10', personalErrors.city && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                      aria-invalid={!!personalErrors.city}
+                    />
+                  </div>
+                  <FieldError message={personalErrors.city} />
+                </div>
+
+                <div>
+                  {lineLabel('Code postal', true)}
+                  <div className="relative">
+                    <Hash className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      value={personal.postcode}
+                      onChange={(e) => setPersonalField('postcode', e.target.value)}
+                      placeholder="75001"
+                      inputMode="numeric"
+                      className={cn(inputClass, 'pl-10', personalErrors.postcode && 'border-red-300 focus:border-red-400 focus:ring-red-400/10')}
+                      aria-invalid={!!personalErrors.postcode}
+                    />
+                  </div>
+                  <FieldError message={personalErrors.postcode} />
+                </div>
+              </div>
+
+              <div className="mt-8 flex flex-col-reverse sm:flex-row gap-3 sm:items-center sm:justify-end">
+                <button
+                  type="button"
+                  onClick={submitPersonalRequest}
+                  className={cn(primaryBtnClass)}
+                >
+                  <Send className="h-4 w-4" />
+                  Envoyer la demande
+                </button>
+              </div>
+            </motion.div>
+          )
+        ) : view === 'verify' ? (
           <motion.div
             key="view-verify"
             custom={direction}
@@ -418,52 +762,17 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
             exit="exit"
             transition={stepTransition}
           >
-            <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5 text-sm text-blue-900 mb-6">
-              <Info className="mt-0.5 h-4 w-4 shrink-0" />
-              <p className="leading-relaxed">
-                Avant de générer votre première facture, vérifiez votre entreprise en quelques secondes grâce à son numéro SIRET.
-              </p>
-            </div>
-
             <div className="mb-6">
-              <span className="block text-[11px] font-semibold text-gray-500 mb-2">Vous êtes</span>
-              <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
-                <button
-                  type="button"
-                  onClick={() => setClientType('particulier')}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
-                    clientType === 'particulier' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  )}
-                >
-                  <User className="h-4 w-4" />
-                  Particulier
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setClientType('professionnel')}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-colors',
-                    clientType === 'professionnel' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  )}
-                >
-                  <Building2 className="h-4 w-4" />
-                  Professionnel
-                </button>
-              </div>
-            </div>
-
-            {clientType === 'particulier' ? (
-              <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm text-amber-900">
+              <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5 text-sm text-blue-900">
                 <Info className="mt-0.5 h-4 w-4 shrink-0" />
                 <p className="leading-relaxed">
-                  La génération de vos factures nécessite les informations de votre entreprise.
-                  Sélectionnez <span className="font-semibold">« Professionnel »</span> pour continuer.
+                  Avant de générer votre première facture, vérifiez votre entreprise en quelques secondes grâce à son numéro SIRET.
                 </p>
               </div>
-            ) : (
-              <div>
-                {lineLabel('Numéro SIRET', true)}
+            </div>
+
+            <div>
+              {lineLabel('Numéro SIRET', true)}
                 <div className="relative">
                   <Hash className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <Input
@@ -499,13 +808,12 @@ export function ProfessionalInfoStep({ onComplete }: ProfessionalInfoStepProps) 
                   </div>
                 )}
               </div>
-            )}
 
             <div className="mt-8 flex flex-col-reverse sm:flex-row gap-3 sm:items-center sm:justify-end">
               <button
                 type="button"
                 onClick={handleVerify}
-                disabled={isVerifyDisabled || clientType !== 'professionnel'}
+                disabled={isVerifyDisabled}
                 className={primaryBtnClass}
               >
                 {verifying ? (
