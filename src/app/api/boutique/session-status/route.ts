@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { decrypt } from '@/lib/auth';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { getProfessionalInfo } from '@/lib/professional-info';
 
-const EMPTY_PROFILE = { loggedIn: false, email: '', displayName: '', companyName: '', phone: '', companyAddress: '', addressLine2: '', country: '', city: '', zipCode: '', civility: '' };
+const EMPTY_PROFILE = {
+  loggedIn: false,
+  email: '',
+  displayName: '',
+  companyName: '',
+  phone: '',
+  companyAddress: '',
+  addressLine2: '',
+  country: '',
+  city: '',
+  zipCode: '',
+  civility: '',
+};
 
 export async function GET(req: NextRequest) {
   const sessionCookie = req.cookies.get('client_session')?.value;
@@ -13,6 +26,7 @@ export async function GET(req: NextRequest) {
   try {
     const payload = await decrypt(sessionCookie);
     const customerId = payload.customerId || '';
+
     let profile = {
       displayName: '',
       companyName: '',
@@ -24,6 +38,20 @@ export async function GET(req: NextRequest) {
       city: '',
       zipCode: '',
       civility: '',
+    };
+
+    let extras = {
+      siret: '',
+      siretVerified: false,
+      vatNumber: '',
+      vatValidated: false,
+      emailVerified: false,
+      hasPassword: false,
+      avatarUrl: '',
+      legalStatus: '',
+      nafCode: '',
+      createdAt: '',
+      lastLoginAt: '',
     };
 
     if (customerId) {
@@ -43,6 +71,31 @@ export async function GET(req: NextRequest) {
             city: typeof d.city === 'string' ? d.city : '',
             zipCode: typeof d.zipCode === 'string' ? d.zipCode : (typeof d.postcode === 'string' ? d.postcode : ''),
             civility: typeof d.civility === 'string' ? d.civility : '',
+          };
+          extras = {
+            siret: typeof d.siret === 'string' ? d.siret : '',
+            siretVerified: d.siretVerified === true,
+            vatNumber: typeof d.vatNumber === 'string' ? d.vatNumber : '',
+            vatValidated: d.vatValidated === true,
+            emailVerified: d.emailVerified === true,
+            hasPassword: !!d.passwordHash,
+            avatarUrl: typeof d.avatarUrl === 'string' ? d.avatarUrl : '',
+            legalStatus: typeof d.legalStatus === 'string' ? d.legalStatus : '',
+            nafCode: typeof d.nafCode === 'string' ? d.nafCode : '',
+            createdAt: typeof d.createdAt === 'string' ? d.createdAt : '',
+            lastLoginAt: typeof d.lastLoginAt === 'string' ? d.lastLoginAt : '',
+          };
+        }
+
+        const profInfo = await getProfessionalInfo(customerId);
+        if (profInfo) {
+          extras = {
+            ...extras,
+            siret: extras.siret || String(profInfo.siret || ''),
+            siretVerified: extras.siretVerified || (!!profInfo.siret && !!profInfo.validatedAt),
+            vatNumber: extras.vatNumber || String(profInfo.vatNumber || ''),
+            vatValidated: profInfo.vatValidated === true,
+            nafCode: String(profInfo.nafCode || ''),
           };
         }
       } catch {
@@ -64,6 +117,7 @@ export async function GET(req: NextRequest) {
       city: profile.city,
       zipCode: profile.zipCode,
       civility: profile.civility,
+      ...extras,
     });
   } catch {
     return NextResponse.json(EMPTY_PROFILE);

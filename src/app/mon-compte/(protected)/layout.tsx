@@ -1,10 +1,6 @@
 import { cookies } from 'next/headers';
 import { decrypt } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { MemberSidebar } from '@/components/member-sidebar';
-import { ClientHeader } from '@/components/client-header';
-import { SecurityBanner } from '@/components/security-banner';
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
@@ -14,31 +10,14 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     redirect('/mon-compte/connexion');
   }
 
-  let customerId = '';
-  let customerEmail = '';
-  let hasPassword = false;
   try {
     const payload = await decrypt(sessionCookie);
-    customerId = payload.customerId;
-    customerEmail = payload.email;
-
-    const { adminDb } = getFirebaseAdmin();
-    const customerSnap = await adminDb.collection('customers').doc(customerId).get();
-    hasPassword = !!customerSnap.data()?.passwordHash;
+    if (!payload.customerId) {
+      throw new Error('invalid session');
+    }
   } catch {
     redirect('/mon-compte/connexion');
   }
 
-  return (
-    <div className="min-h-screen w-full bg-[#f5f5f5]">
-      <ClientHeader customerEmail={customerEmail} customerId={customerId} />
-
-      <MemberSidebar />
-
-      <main className="pl-0 md:pl-64 pt-[84px] min-h-screen">
-        {!hasPassword && <div className="px-6 pt-6"><SecurityBanner customerId={customerId} /></div>}
-        {children}
-      </main>
-    </div>
-  );
+  return <>{children}</>;
 }
