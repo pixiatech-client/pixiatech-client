@@ -9,6 +9,7 @@ import {
   Clock,
   MessageSquare,
   Package,
+  Paperclip,
   Send,
   Truck,
   User,
@@ -378,7 +379,7 @@ export function DisputesView({ disputes, onSelectDispute, onNewDispute, onSendMe
                               {msg.date} à {msg.time}
                             </span>
                             {!isClient && (
-                              <span className="px-1.5 py-0.5 bg-[#0A0D0E] text-white text-[9px] font-bold rounded">
+                              <span className="px-1.5 py-0.2 bg-[#0A0D0E] text-white text-[9px] font-bold rounded">
                                 OFFICIEL
                               </span>
                             )}
@@ -387,11 +388,17 @@ export function DisputesView({ disputes, onSelectDispute, onNewDispute, onSendMe
                           <div
                             className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl text-xs leading-relaxed ${
                               isClient
-                                ? 'bg-[#0A0D0E] text-white shadow-xs'
-                                : 'bg-white border border-neutral-200/90 text-neutral-800 shadow-xs'
+                                ? 'bg-[#0A0D0E] text-white rounded-tr-xs shadow-xs'
+                                : 'bg-white border border-neutral-200/90 text-neutral-800 rounded-tl-xs shadow-xs'
                             }`}
                           >
                             <p className="whitespace-pre-wrap">{msg.message}</p>
+                            {msg.attachment && (
+                              <div className="mt-2 pt-2 border-t border-white/20 text-[10px] flex items-center gap-1 opacity-80">
+                                <Paperclip className="w-3 h-3" />
+                                <span>Pièce jointe : {msg.attachment}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );

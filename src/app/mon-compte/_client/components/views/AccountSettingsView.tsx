@@ -1,20 +1,26 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  BadgeCheck,
+  AlertTriangle,
+  Building2,
+  CheckCircle2,
   Eye,
   EyeOff,
+  KeyRound,
   Loader2,
+  Lock,
   Mail,
-  ShieldAlert,
+  Phone,
+  Save,
   ShieldCheck,
-  UserCheck,
+  Trash2,
+  User,
+  X,
 } from 'lucide-react';
 import type { ClientProfile } from '../../types';
 import { clientApi } from '../../lib/api';
-import { SlidingSwitch } from '../SlidingSwitch';
 
 interface AccountSettingsViewProps {
   profile: ClientProfile | null;
@@ -36,30 +42,31 @@ export function AccountSettingsView({
   const [tab, setTab] = useState<Tab>('profile');
 
   return (
-    <div id="pixiatech-account-settings" className="space-y-6">
-      <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+    <div id="pixiatech-settings-view" className="space-y-6">
+      <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-13 h-13 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
-            <UserCheck className="w-6 h-6 text-[#38E044]" />
+            <User className="w-6 h-6 text-[#38E044]" />
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">Paramètres du Compte</h1>
             <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
-              Gestion de votre profil, sécurité, coordonnées de contact et informations certifiées.
+              Identité client certifiée, conformité fiscale INSEE, sécurité et coordonnées.
             </p>
           </div>
         </div>
 
-        <SlidingSwitch
-          options={[
-            { id: 'profile', label: 'Profil & Coordonnées' },
-            { id: 'security', label: 'Sécurité & Accès' },
-            { id: 'danger', label: 'Compte' },
-          ]}
-          activeId={tab}
-          onChange={(id) => setTab(id as Tab)}
-          size="md"
-        />
+        <div className="flex items-center gap-1.5 p-1.5 bg-neutral-100/80 rounded-2xl border border-neutral-200/60 text-xs">
+          <TabButton active={tab === 'profile'} onClick={() => setTab('profile')}>
+            Profil & Entreprise
+          </TabButton>
+          <TabButton active={tab === 'security'} onClick={() => setTab('security')}>
+            Sécurité
+          </TabButton>
+          <TabButton danger active={tab === 'danger'} onClick={() => setTab('danger')}>
+            Zone critique
+          </TabButton>
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
@@ -79,7 +86,9 @@ export function AccountSettingsView({
               showToast={showToast}
             />
           )}
-          {tab === 'security' && <SecurityTab profile={profile} onRefreshProfile={onRefreshProfile} showToast={showToast} />}
+          {tab === 'security' && (
+            <SecurityTab profile={profile} onRefreshProfile={onRefreshProfile} showToast={showToast} />
+          )}
           {tab === 'danger' && <DangerTab email={profile?.email || ''} />}
         </motion.div>
       </AnimatePresence>
@@ -87,214 +96,229 @@ export function AccountSettingsView({
   );
 }
 
-function ProfileTab({ profile, onRefreshProfile, onOpenSiretModal, onOpenEmailModal, showToast }: AccountSettingsViewProps) {
-  const [saving, setSaving] = useState(false);
-  const [civility, setCivility] = useState(profile?.civility || '');
-  const fullName = profile?.name || profile?.email?.split('@')[0] || '';
-  const [firstName, setFirstName] = useState(fullName.split(' ')[0] || '');
-  const [lastName, setLastName] = useState(fullName.split(' ').slice(1).join(' ') || '');
-  const [phone, setPhone] = useState(profile?.phone || '');
-  const [companyName, setCompanyName] = useState(profile?.companyName || '');
-  const [companyAddress, setCompanyAddress] = useState(profile?.companyAddress || '');
+function TabButton({
+  active,
+  danger,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  danger?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  const base = 'py-1.5 px-3 rounded-xl font-bold transition-all cursor-pointer';
+  const activeCls = danger ? 'bg-red-600 text-white shadow-xs' : 'bg-[#0A0D0E] text-white shadow-xs';
+  const idleCls = danger ? 'text-red-700 hover:bg-red-50' : 'text-neutral-600 hover:text-neutral-900';
+  return (
+    <button type="button" onClick={onClick} className={`${base} ${active ? activeCls : idleCls}`}>
+      {children}
+    </button>
+  );
+}
 
-  async function save() {
-    setSaving(true);
+function ProfileTab({
+  profile,
+  onRefreshProfile,
+  onOpenSiretModal,
+  onOpenEmailModal,
+  showToast,
+}: AccountSettingsViewProps) {
+  const [phoneInput, setPhoneInput] = useState(profile?.phone || '');
+  const [phoneSaved, setPhoneSaved] = useState(false);
+  const [savingPhone, setSavingPhone] = useState(false);
+
+  async function handleSavePhone(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingPhone(true);
     try {
-      await clientApi.updateAddress({
-        firstName,
-        lastName,
-        email: profile?.email || '',
-        phone,
-        civility,
-        companyName,
-        companyAddress,
-      });
-      showToast('success', 'Vos informations ont été enregistrées.');
+      await clientApi.updatePhone(phoneInput);
+      setPhoneSaved(true);
+      setTimeout(() => setPhoneSaved(false), 2000);
+      showToast('success', 'Numéro de téléphone enregistré.');
       onRefreshProfile();
     } catch (err: any) {
-      showToast('error', err.message || "Impossible d'enregistrer vos informations.");
+      showToast('error', err?.message || "Impossible d'enregistrer le numéro de téléphone.");
     } finally {
-      setSaving(false);
+      setSavingPhone(false);
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-6">
-          <section className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
-            <h2 className="text-base font-bold text-neutral-900">Informations personnelles</h2>
-            <p className="mt-0.5 text-sm text-neutral-500">
-              Ces informations sont utilisées pour vos livraisons et votre facturation.
-            </p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">Civilité</span>
-                <select
-                  value={civility}
-                  onChange={(e) => setCivility(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-neutral-400"
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs space-y-5">
+        <div className="pb-3 border-b border-neutral-100 flex items-center gap-2.5">
+          <User className="w-5 h-5 text-neutral-900" />
+          <h2 className="text-base font-bold text-neutral-900">Coordonnées de Contact</h2>
+        </div>
+
+        <div className="space-y-4 text-xs">
+          <div>
+            <label className="text-neutral-500 font-semibold block mb-1">Nom et Prénom</label>
+            <input
+              type="text"
+              disabled
+              value={profile?.name || ''}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 bg-neutral-100/60 font-semibold text-neutral-700 cursor-not-allowed"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-neutral-500 font-semibold">Adresse e-mail du compte</label>
+              {profile?.emailVerified ? (
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Vérifiée
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenEmailModal}
+                  className="text-[11px] font-bold text-amber-700 hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <option value="">Non précisée</option>
-                  <option value="M.">M.</option>
-                  <option value="Mme">Mme</option>
-                </select>
+                  <AlertTriangle className="w-3 h-3" />
+                  Vérifier par PIN
+                </button>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type="email"
+                disabled
+                value={profile?.email || ''}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 bg-neutral-100/60 font-mono text-neutral-700 cursor-not-allowed pr-10"
+              />
+              <Lock className="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2" />
+            </div>
+          </div>
+
+          <form onSubmit={handleSavePhone} className="space-y-3 pt-2 border-t border-neutral-100">
+            <div>
+              <label className="text-neutral-700 font-semibold block mb-1">
+                Numéro de téléphone (modifiable)
               </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">E-mail (non modifiable)</span>
+              <div className="relative">
+                <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
-                  type="email"
-                  value={profile?.email || ''}
-                  disabled
-                  className="w-full rounded-xl border border-neutral-100 bg-neutral-50 px-3.5 py-2.5 text-sm text-neutral-400 outline-none"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">Prénom</span>
-                <input
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-neutral-400"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">Nom</span>
-                <input
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-neutral-400"
-                />
-              </label>
-              <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">Téléphone</span>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  type="text"
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
                   placeholder="+33 6 12 34 56 78"
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-neutral-400"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-neutral-300 font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-black/10 text-xs"
                 />
-              </label>
+              </div>
             </div>
-            <div className="mt-5 rounded-xl border border-neutral-100 bg-neutral-50/60 px-4 py-3 text-xs text-neutral-500">
-              Besoin d'un changement d'adresse de livraison ? Il s'applique à vos prochaines commandes.
-            </div>
-          </section>
 
-          <section className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
-            <h2 className="text-base font-bold text-neutral-900">Informations professionnelles</h2>
-            <p className="mt-0.5 text-sm text-neutral-500">
-              Renseignez votre société pour bénéficier de la facturation B2B.{' '}
-              {profile?.siretVerified ? 'Votre SIRET est vérifié.' : ''}
-            </p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">Raison sociale</span>
-                <input
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-neutral-400"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">Adresse société</span>
-                <input
-                  value={companyAddress}
-                  onChange={(e) => setCompanyAddress(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-neutral-400"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">SIRET</span>
-                <input
-                  value={profile?.siret || ''}
-                  disabled
-                  className="w-full rounded-xl border border-neutral-100 bg-neutral-50 px-3.5 py-2.5 text-sm text-neutral-400 outline-none"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">N° TVA</span>
-                <input
-                  value={profile?.vatNumber || ''}
-                  disabled
-                  className="w-full rounded-xl border border-neutral-100 bg-neutral-50 px-3.5 py-2.5 text-sm text-neutral-400 outline-none"
-                />
-              </label>
-            </div>
-          </section>
-        </div>
+            <div className="flex items-center justify-between pt-1">
+              {phoneSaved ? (
+                <span className="text-emerald-700 font-bold flex items-center gap-1.5 text-xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Numéro enregistré !
+                </span>
+              ) : (
+                <span />
+              )}
 
-        <div className="space-y-6">
-          <section className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
-            <h2 className="mb-4 text-base font-bold text-neutral-900">Vérifications</h2>
-            <div className="space-y-3">
-              <VerificationCard
-                icon={<Mail size={17} />}
-                title="Adresse e-mail"
-                verified={profile?.emailVerified === true}
-                onVerify={onOpenEmailModal}
-              />
-              <VerificationCard
-                icon={<ShieldCheck size={17} />}
-                title="SIRET professionnel"
-                verified={profile?.siretVerified === true}
-                onVerify={onOpenSiretModal}
-                detail={profile?.siret || undefined}
-              />
+              <button
+                type="submit"
+                disabled={savingPhone}
+                className="px-4 py-2 rounded-xl bg-[#0A0D0E] text-white font-bold text-xs hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {savingPhone ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#38E044]" />
+                ) : (
+                  <Save className="w-3.5 h-3.5 text-[#38E044]" />
+                )}
+                <span>Sauvegarder le téléphone</span>
+              </button>
             </div>
-          </section>
-
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0A0D0E] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-          >
-            {saving && <Loader2 size={15} className="animate-spin" />}
-            Enregistrer mes informations
-          </button>
+          </form>
         </div>
       </div>
-    </div>
-  );
-}
 
-function VerificationCard({
-  icon,
-  title,
-  verified,
-  onVerify,
-  detail,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  verified: boolean;
-  onVerify: () => void;
-  detail?: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 p-4">
-      <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${verified ? 'bg-emerald-100 text-emerald-700' : 'bg-neutral-200 text-neutral-500'}`}>
-        {icon}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-neutral-900">{title}</p>
-        <p className="truncate text-xs text-neutral-500">
-          {verified ? 'Vérifié' : 'Non vérifié'}
-          {detail && !verified ? ` · ${detail}` : ''}
-        </p>
+      <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs space-y-5">
+        <div className="pb-3 border-b border-neutral-100 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Building2 className="w-5 h-5 text-neutral-900 shrink-0" />
+            <h2 className="text-base font-bold text-neutral-900">Rattachement Entreprise (SIRET)</h2>
+          </div>
+          {profile?.siretVerified && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100/70 border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Certifié INSEE
+            </span>
+          )}
+        </div>
+
+        {profile?.siretVerified && profile?.companyName ? (
+          <div className="space-y-4 text-xs">
+            <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-emerald-200/60 gap-3">
+                <span className="font-bold text-emerald-950 text-sm truncate">{profile.companyName}</span>
+                <span className="font-mono text-[11px] bg-emerald-200/70 text-emerald-900 px-2 py-0.5 rounded font-bold shrink-0">
+                  VERROUILLÉ
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-neutral-400 block text-[10px]">Numéro SIRET</span>
+                  <span className="font-mono font-bold text-neutral-900 break-all">{profile.siret || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-neutral-400 block text-[10px]">N° TVA Intracommunautaire</span>
+                  <span className="font-mono font-bold text-neutral-900 break-all">{profile.vatNumber || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-neutral-400 block text-[10px]">Code NAF</span>
+                  <span className="text-neutral-800 font-semibold">{profile.nafCode || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-neutral-400 block text-[10px]">Forme Juridique</span>
+                  <span className="text-neutral-800 font-semibold">{profile.legalStatus || '—'}</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-emerald-200/60">
+                <span className="text-neutral-400 block text-[10px]">Siège Social</span>
+                <span className="text-neutral-700">
+                  {profile.companyAddress}
+                  {profile.companyPostalCode || profile.companyCity ? `, ${profile.companyPostalCode} ${profile.companyCity}` : ''}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[11px] text-neutral-500 flex items-start gap-2">
+              <Lock className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
+              <span>
+                Conformément aux règles de conformité fiscale, les données légales d'entreprise validées auprès
+                de l'INSEE sont verrouillées. Pour toute modification suite à un changement de Kbis, contactez
+                notre support officiel.
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 text-xs">
+            <div className="p-5 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-3">
+              <div className="font-bold text-neutral-800">Aucune entreprise rattachée</div>
+              <p className="text-neutral-500 leading-relaxed">
+                Vous êtes actuellement enregistré en tant que client particulier. Si vous réalisez des achats pour
+                le compte d'une société, effectuez la vérification INSEE pour obtenir des factures avec TVA
+                récupérable.
+              </p>
+              <button
+                type="button"
+                onClick={onOpenSiretModal}
+                className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-xs hover:bg-neutral-800 transition-colors shadow-xs cursor-pointer"
+              >
+                <Building2 className="w-4 h-4 text-[#38E044]" />
+                <span>Lancer la vérification SIRET</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-      {verified ? (
-        <BadgeCheck size={20} className="text-emerald-500" />
-      ) : (
-        <button
-          type="button"
-          onClick={onVerify}
-          className="rounded-lg bg-[#0A0D0E] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
-        >
-          Vérifier
-        </button>
-      )}
     </div>
   );
 }
@@ -313,72 +337,106 @@ function SecurityTab({
   const [confirm, setConfirm] = useState('');
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [mismatch, setMismatch] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
-  async function submit() {
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (!current) {
+      setErrorMsg('Veuillez renseigner votre mot de passe actuel.');
+      return;
+    }
     if (next.length < 8) {
-      showToast('error', 'Le mot de passe doit contenir au moins 8 caractères.');
+      setErrorMsg('Le nouveau mot de passe doit contenir au moins 8 caractères.');
       return;
     }
     if (next !== confirm) {
-      setMismatch(true);
-      showToast('error', 'Les mots de passe ne correspondent pas.');
+      setErrorMsg('Les deux nouveaux mots de passe ne correspondent pas.');
       return;
     }
-    setMismatch(false);
+
     setBusy(true);
     try {
       await clientApi.changePassword(current, next);
-      showToast('success', 'Mot de passe mis à jour.');
+      setSuccessMsg('Votre mot de passe a été mis à jour avec succès.');
       setCurrent('');
       setNext('');
       setConfirm('');
       onRefreshProfile();
     } catch (err: any) {
-      showToast('error', err.message || 'Impossible de modifier le mot de passe.');
+      setErrorMsg(err?.message || 'Impossible de modifier le mot de passe.');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="max-w-xl">
-      <section className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
-        <h2 className="text-base font-bold text-neutral-900">Mot de passe</h2>
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs space-y-5">
+        <div className="pb-3 border-b border-neutral-100 flex items-center gap-2.5">
+          <KeyRound className="w-5 h-5 text-neutral-900" />
+          <h2 className="text-base font-bold text-neutral-900">Modification du Mot de Passe</h2>
+        </div>
+
         {!profile?.hasPassword ? (
-          <div className="mt-4 flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/70 p-4 text-sm text-amber-800">
-            <ShieldAlert size={18} className="mt-0.5 shrink-0" />
+          <div className="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/70 p-4 text-xs text-amber-800">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <p>
-              Vous n'avez pas encore de mot de passe. Utilisez un lien de connexion reçu par e-mail pour en définir un
-              définitivement (lien « Définir un mot de passe »).
+              Vous n'avez pas encore de mot de passe. Utilisez un lien de connexion reçu par e-mail (lien
+              « Définir un mot de passe ») pour en créer un définitivement.
             </p>
           </div>
         ) : (
-          <div className="mt-5 space-y-4">
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-neutral-500">Mot de passe actuel</span>
+          <form onSubmit={submit} className="space-y-4 text-xs">
+            <div className="space-y-1.5">
+              <label className="text-neutral-700 font-semibold block">Mot de passe actuel</label>
               <PasswordInput value={current} onChange={setCurrent} show={show} onToggleShow={() => setShow(!show)} />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-neutral-500">Nouveau mot de passe</span>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-neutral-700 font-semibold block">Nouveau mot de passe</label>
               <PasswordInput value={next} onChange={setNext} show={show} onToggleShow={() => setShow(!show)} />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-neutral-500">Confirmer le nouveau mot de passe</span>
-              <PasswordInput value={confirm} onChange={setConfirm} show={show} onToggleShow={() => setShow(!show)} mismatch={mismatch} />
-            </label>
-            <button
-              type="button"
-              onClick={submit}
-              disabled={busy}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0A0D0E] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-            >
-              {busy && <Loader2 size={15} className="animate-spin" />}
-              Mettre à jour mon mot de passe
-            </button>
-          </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-neutral-700 font-semibold block">Confirmer le nouveau mot de passe</label>
+              <PasswordInput value={confirm} onChange={setConfirm} show={show} onToggleShow={() => setShow(!show)} />
+            </div>
+
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-red-50 text-red-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {successMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{successMsg}</span>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={busy}
+                className="px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-xs hover:bg-neutral-800 transition-colors shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {busy ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-[#38E044]" />
+                ) : (
+                  <KeyRound className="w-4 h-4 text-[#38E044]" />
+                )}
+                <span>Mettre à jour le mot de passe</span>
+              </button>
+            </div>
+          </form>
         )}
-      </section>
+      </div>
     </div>
   );
 }
@@ -388,13 +446,11 @@ function PasswordInput({
   onChange,
   show,
   onToggleShow,
-  mismatch,
 }: {
   value: string;
   onChange: (v: string) => void;
   show: boolean;
   onToggleShow: () => void;
-  mismatch?: boolean;
 }) {
   return (
     <div className="relative">
@@ -402,38 +458,143 @@ function PasswordInput({
         type={show ? 'text' : 'password'}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-xl border bg-white px-3.5 py-2.5 pr-11 text-sm outline-none transition focus:border-neutral-400 ${
-          mismatch ? 'border-red-300' : 'border-neutral-200'
-        }`}
+        placeholder="••••••••••••"
+        className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-black/10 pr-11"
       />
       <button
         type="button"
         onClick={onToggleShow}
-        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 transition hover:text-neutral-700"
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 transition hover:text-neutral-700"
         aria-label={show ? 'Masquer' : 'Afficher'}
       >
-        {show ? <EyeOff size={16} /> : <Eye size={16} />}
+        {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
       </button>
     </div>
   );
 }
 
 function DangerTab({ email }: { email: string }) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState('');
+
+  function confirmDelete() {
+    setOpen(false);
+    const subject = encodeURIComponent('Suppression de mon compte');
+    const body = encodeURIComponent(`Bonjour, je souhaite supprimer mon compte (${email}).`);
+    window.location.href = `mailto:support@pixiatech.com?subject=${subject}&body=${body}`;
+    setInput('');
+  }
+
   return (
-    <div className="max-w-xl">
-      <section className="rounded-2xl border border-red-100 bg-white p-6 shadow-xs">
-        <h2 className="text-base font-bold text-red-600">Zone de danger</h2>
-        <p className="mt-0.5 text-sm text-neutral-500">
-          La suppression de compte n'est pas disponible en libre-service. Contactez-nous à partir de l'adresse associée à
-          votre compte.
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="bg-white rounded-3xl border border-red-200/80 p-6 shadow-xs space-y-5">
+        <div className="pb-3 border-b border-red-100 flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-red-100 text-red-700">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-red-950">Zone Critique : Suppression du Compte</h2>
+            <p className="text-xs text-red-700/80 mt-0.5">
+              La suppression de votre compte est irréversible et clôture vos accès.
+            </p>
+          </div>
+        </div>
+
+        <p className="text-xs text-neutral-600 leading-relaxed">
+          La suppression de votre compte effacera vos identifiants d'accès. Conformément aux dispositions légales
+          du Code de Commerce et du Code Général des Impôts, les factures déjà émises sont archivées de manière
+          sécurisée et ne peuvent être supprimées.
         </p>
-        <a
-          href={`mailto:support@pixiatech.com?subject=Suppression%20de%20mon%20compte&body=Bonjour,%20je%20souhaite%20supprimer%20mon%20compte%20(${encodeURIComponent(email)}).`}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-        >
-          Contacter le support
-        </a>
-      </section>
+
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-colors shadow-xs flex items-center gap-2 cursor-pointer"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>Demander la suppression du compte</span>
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-xs sm:items-center sm:p-4"
+            onClick={() => setOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 40, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+              className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-neutral-200 bg-white shadow-2xl sm:rounded-3xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-neutral-100 p-5 pb-3">
+                <div className="flex items-center gap-2 text-red-600 font-bold text-base">
+                  <AlertTriangle className="w-5 h-5" />
+                  <span>Confirmation Requise</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg p-1.5 text-neutral-400 transition hover:bg-neutral-100 hover:text-black"
+                  aria-label="Fermer"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 space-y-5 p-5">
+                <p className="text-xs text-neutral-600 leading-relaxed">
+                  Êtes-vous absolument certain de vouloir supprimer le compte{' '}
+                  <strong className="text-neutral-900">{email}</strong> ? Cette opération est définitive.
+                </p>
+
+                <div className="space-y-1.5 text-xs">
+                  <label className="text-neutral-700 font-medium">
+                    Veuillez taper <strong className="text-red-600 font-mono">SUPPRIMER</strong> pour confirmer :
+                  </label>
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="SUPPRIMER"
+                    className="w-full px-3.5 py-2 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 border-t border-neutral-100 p-4">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-100"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  disabled={input !== 'SUPPRIMER'}
+                  onClick={confirmDelete}
+                  className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
+                    input === 'SUPPRIMER'
+                      ? 'bg-red-600 text-white hover:bg-red-700 shadow-md cursor-pointer'
+                      : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                  }`}
+                >
+                  Confirmer la suppression
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

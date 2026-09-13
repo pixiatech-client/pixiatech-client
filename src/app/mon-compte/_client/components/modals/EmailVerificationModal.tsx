@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Loader2, Mail, X } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Mail, X } from 'lucide-react';
 import { clientApi } from '../../lib/api';
 
 interface EmailVerificationModalProps {
@@ -13,19 +13,22 @@ interface EmailVerificationModalProps {
   email?: string;
 }
 
-const CODE_LENGTH = 4;
 const RESEND_DELAY = 60;
 
 export function EmailVerificationModal({ open, onClose, onVerified, showToast, email }: EmailVerificationModalProps) {
-  const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(''));
+  const [pinCode, setPinCode] = useState('');
   const [requesting, setRequesting] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    setDigits(Array(CODE_LENGTH).fill(''));
+    setPinCode('');
+    setErrorMsg('');
+    setSuccessMsg('');
     requestCode();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -49,41 +52,25 @@ export function EmailVerificationModal({ open, onClose, onVerified, showToast, e
     }
   }
 
-  function handleChange(index: number, value: string) {
-    const clean = value.replace(/\D/g, '').slice(-1);
-    const next = [...digits];
-    next[index] = clean;
-    setDigits(next);
-    if (clean && index < CODE_LENGTH - 1) {
-      inputsRef.current[index + 1]?.focus();
-    }
-  }
-
-  function handleKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Backspace' && !digits[index] && index > 0) {
-      inputsRef.current[index - 1]?.focus();
-    }
-  }
-
-  async function verify() {
-    const code = digits.join('');
-    if (code.length !== CODE_LENGTH) {
-      showToast('error', 'Saisissez le code reçu (4 chiffres).');
+  async function verify(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorMsg('');
+    if (pinCode.length !== 4) {
+      setErrorMsg('Veuillez saisir le code de sécurité à 4 chiffres.');
       return;
     }
     setVerifying(true);
     try {
-      const res = await clientApi.verifyEmailCode(code);
+      const res = await clientApi.verifyEmailCode(pinCode);
       if (res.verified) {
-        showToast('success', 'Adresse e-mail vérifiée. Merci !');
+        setSuccessMsg('Votre adresse e-mail a été vérifiée avec succès !');
         onVerified();
-        onClose();
-        setDigits(Array(CODE_LENGTH).fill(''));
+        setTimeout(onClose, 1000);
       }
     } catch (err: any) {
-      showToast('error', err.message || 'Code incorrect.');
-      setDigits(Array(CODE_LENGTH).fill(''));
-      inputsRef.current[0]?.focus();
+      setErrorMsg(err?.message || 'Code incorrect. Veuillez réessayer.');
+      setPinCode('');
+      inputRef.current?.focus();
     } finally {
       setVerifying(false);
     }
@@ -122,67 +109,82 @@ export function EmailVerificationModal({ open, onClose, onVerified, showToast, e
               </button>
             </div>
 
-            <div className="flex-1 space-y-5 p-5">
+            <div className="flex-1 overflow-y-auto p-5">
               <p className="text-xs text-neutral-600">
                 Nous avons envoyé un code de sécurité à 4 chiffres à l'adresse :{' '}
                 <strong className="text-neutral-900">{email || 'votre adresse e-mail'}</strong>.
               </p>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-neutral-700">Code de vérification (4 chiffres)</label>
-                <div className="flex justify-center gap-2.5 rounded-2xl border border-neutral-300 bg-neutral-100 p-3.5">
-                  {digits.map((d, i) => (
+              <form onSubmit={verify} className="mt-5 space-y-4 pb-1">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-neutral-700">Code de vérification (4 chiffres)</label>
+                  <div className="p-3 rounded-2xl border border-neutral-300 bg-neutral-100 text-center">
                     <input
-                      key={i}
-                      ref={(el) => {
-                        inputsRef.current[i] = el;
-                      }}
-                      value={d}
-                      onChange={(e) => handleChange(i, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(i, e)}
-                      disabled={verifying}
+                      ref={inputRef}
+                      type="text"
                       inputMode="numeric"
-                      autoFocus={i === 0}
-                      className="aspect-square w-full max-w-[52px] rounded-xl border border-neutral-300 bg-white text-center text-2xl font-extrabold tracking-[0.2em] text-neutral-900 outline-none transition focus:border-neutral-900 focus:ring-2 focus:ring-black/10"
+                      maxLength={4}
+                      value={pinCode}
+                      onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="7394"
+                      disabled={verifying}
+                      autoFocus
+                      className="w-full bg-transparent text-center text-2xl font-mono font-extrabold tracking-[0.5em] text-neutral-900 outline-none placeholder:text-neutral-300 disabled:opacity-50"
                     />
-                  ))}
-                </div>
-              </div>
-
-              <div className="text-center text-xs text-neutral-500">
-                {requesting ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Loader2 className="size-3.5 animate-spin" /> Envoi du code…
+                  </div>
+                  <span className="block text-center text-[10px] text-neutral-400">
+                    Exemple de test : <strong>7394</strong>
                   </span>
-                ) : countdown > 0 ? (
-                  <span>Renvoyer le code dans {countdown}s</span>
-                ) : (
-                  <button type="button" onClick={requestCode} className="text-xs font-semibold text-neutral-900 underline underline-offset-2 hover:opacity-80">
-                    Renvoyer le code
-                  </button>
-                )}
-              </div>
-            </div>
+                </div>
 
-            <div className="flex items-center justify-end gap-2.5 border-t border-neutral-100 p-4">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={verifying}
-                className="rounded-xl px-4 py-2 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-40"
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                onClick={verify}
-                disabled={verifying || requesting}
-                className="flex items-center gap-2 rounded-xl bg-[#0A0D0E] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-neutral-800 disabled:opacity-50"
-              >
-                {verifying && <Loader2 className="size-3.5 animate-spin text-[#38E044]" />}
-                <span>{verifying ? 'Validation…' : "Valider l'adresse"}</span>
-                <ArrowRight className="size-3.5 text-[#38E044]" />
-              </button>
+                {errorMsg && (
+                  <div className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-700">
+                    <AlertTriangle className="size-4 shrink-0" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+
+                {successMsg && (
+                  <div className="flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-xs font-bold text-emerald-800">
+                    <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                    <span>{successMsg}</span>
+                  </div>
+                )}
+
+                <div className="text-center text-[11px] text-neutral-500">
+                  {requesting ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Loader2 className="size-3.5 animate-spin" /> Envoi du code…
+                    </span>
+                  ) : countdown > 0 ? (
+                    <span>Renvoyer le code dans {countdown}s</span>
+                  ) : (
+                    <button type="button" onClick={requestCode} className="font-semibold text-neutral-900 underline underline-offset-2 hover:opacity-80">
+                      Renvoyer le code
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={verifying}
+                    className="rounded-xl px-4 py-2 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-40"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={verifying || requesting}
+                    className="flex items-center gap-2 rounded-xl bg-[#0A0D0E] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-neutral-800 disabled:opacity-50"
+                  >
+                    {verifying && <Loader2 className="size-3.5 animate-spin text-[#38E044]" />}
+                    <span>{verifying ? 'Validation...' : "Valider l'adresse"}</span>
+                    <ArrowRight className="size-3.5 text-[#38E044]" />
+                  </button>
+                </div>
+              </form>
             </div>
           </motion.div>
         </motion.div>

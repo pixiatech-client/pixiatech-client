@@ -109,6 +109,7 @@ export interface ClientDisputeMessage {
   message: string;
   date: string;
   time: string;
+  attachment?: string;
 }
 
 export interface ClientDispute {
@@ -134,6 +135,8 @@ export interface ClientProduct {
   badge?: string;
   description?: string;
   category?: string;
+  rating?: number;
+  reviews?: number;
 }
 
 export interface DraftOrderRef {

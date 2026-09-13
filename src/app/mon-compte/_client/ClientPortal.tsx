@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import type { ClientDispute, ClientInvoice, ClientNotification, ClientOrder, ClientProfile } from './types';
+import type { ClientDispute, ClientInvoice, ClientNotification, ClientOrder, ClientProduct, ClientProfile } from './types';
 import { clientApi, type SessionStatusPayload } from './lib/api';
 import { formatDate, formatShortDate } from './lib/format';
 import { Header } from './components/Header';
@@ -265,6 +265,15 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
     setDisputeModal({ open: true, defaultOrderId });
   }, []);
 
+  const handleOrderProduct = useCallback(
+    (_product: ClientProduct) => {
+      // TODO(boutique) : brancher le véritable parcours de commande PIXIATECH ici.
+      // Aucune commande n'est créée tant que le backend n'est pas connecté.
+      showToast('error', "La commande en ligne depuis l'espace client sera bientôt disponible.");
+    },
+    [showToast]
+  );
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F4F6F8] font-sans text-neutral-900 antialiased selection:bg-[#38E044] selection:text-black">
       <Header
@@ -369,7 +378,7 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
         </div>
       </footer>
 
-      <BoutiqueModal open={boutiqueModal} onClose={() => setBoutiqueModal(false)} />
+      <BoutiqueModal open={boutiqueModal} onClose={() => setBoutiqueModal(false)} onOrderProduct={handleOrderProduct} />
       <DisputeModal
         open={disputeModal.open}
         defaultOrderId={disputeModal.defaultOrderId}
