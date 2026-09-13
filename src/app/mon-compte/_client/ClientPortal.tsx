@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useCart } from '@/contexts/CartContext';
 import type { ClientDispute, ClientInvoice, ClientNotification, ClientOrder, ClientProduct, ClientProfile } from './types';
 import { clientApi, type SessionStatusPayload } from './lib/api';
 import { formatDate, formatShortDate } from './lib/format';
@@ -76,6 +77,7 @@ interface ToastState {
 
 export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps) {
   const router = useRouter();
+  const { addItem } = useCart();
   const initial = useRef(true);
 
   const [tab, setTabState] = useState<ClientTab>(() => {
@@ -266,12 +268,22 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
   }, []);
 
   const handleOrderProduct = useCallback(
-    (_product: ClientProduct) => {
-      // TODO(boutique) : brancher le véritable parcours de commande PIXIATECH ici.
-      // Aucune commande n'est créée tant que le backend n'est pas connecté.
-      showToast('error', "La commande en ligne depuis l'espace client sera bientôt disponible.");
+    (product: ClientProduct) => {
+      // Parcours de commande réel PIXIATECH : ajout au panier + check-out boutique.
+      // Le serveur re-résout le prix et le stock dans /api/boutique/verify-cart et
+      // /api/paypal/create-order (autorité = Firestore boutique_products).
+      addItem({
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image || null,
+        category: product.category || '',
+        type: 'purchase',
+      });
+      setBoutiqueModal(false);
+      router.push('/boutique/commande');
     },
-    [showToast]
+    [addItem, router]
   );
 
   return (
