@@ -59,14 +59,14 @@ export function DashboardNotifications({
   return (
     <div className="space-y-4">
       {openDisputes.length > 0 && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-[13px] font-semibold text-red-700 mb-2 flex items-center gap-2">
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl">
+          <p className="text-[13px] font-semibold text-amber-800 mb-2 flex items-center gap-2">
             Litiges en cours ({openDisputes.length})
             {(() => {
               const unreadCount = openDisputes.filter(d => d.unreadByClient).length;
               if (unreadCount === 0) return null;
               return (
-                <span className="text-[10px] font-bold text-white bg-red-600 px-1.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold text-black bg-amber-400 px-1.5 py-0.5 rounded-full">
                   {unreadCount} nouveau{unreadCount > 1 ? 'x' : ''}
                 </span>
               );
@@ -77,10 +77,10 @@ export function DashboardNotifications({
               <Link
                 key={d.id}
                 href={`/mon-compte/litiges/${d.id}`}
-                className={`block text-xs hover:underline ${d.unreadByClient ? 'text-red-700 font-bold' : 'text-red-600 hover:text-red-800'}`}
+                className={`block text-xs hover:underline ${d.unreadByClient ? 'text-amber-800 font-bold' : 'text-amber-700 hover:text-amber-900'}`}
               >
                 {d.unreadByClient && (
-                  <span className="inline-block w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5 align-middle" />
+                  <span className="inline-block w-1.5 h-1.5 bg-amber-500 rounded-full mr-1.5 align-middle" />
                 )}
                 <span className="font-medium">{d.reason}</span> —{' '}
                 {d.status === 'in_progress' || d.status === 'in_review' ? 'En cours de traitement' : 'Ouvert'}
@@ -93,7 +93,7 @@ export function DashboardNotifications({
       {!showNewForm ? (
         <button
           onClick={() => setShowNewForm(true)}
-          className="w-full p-3 border border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-red-300 hover:text-red-600 transition-colors flex items-center justify-center gap-2"
+          className="w-full p-3 border border-dashed border-neutral-300 rounded-2xl text-sm text-neutral-500 hover:border-amber-300 hover:text-amber-700 transition-colors flex items-center justify-center gap-2"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -101,18 +101,18 @@ export function DashboardNotifications({
           Signaler un problème
         </button>
       ) : sent ? (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 font-medium text-center">
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-700 font-medium text-center">
           Votre litige a été envoyé. Nous vous répondrons sous 48h.
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-3">
-          <p className="text-[13px] font-semibold text-gray-900">Nouveau litige</p>
+          <p className="text-[13px] font-semibold text-neutral-900">Nouveau litige</p>
           <div>
             <select
               value={reason}
               onChange={e => setReason(e.target.value)}
               required
-              className="w-full h-9 px-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20"
+              className="w-full h-9 px-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#38E044]/30 focus:border-[#38E044]/60"
             >
               <option value="">Motif du litige</option>
               <option value="produit_non_recu">Produit non reçu</option>
@@ -131,7 +131,7 @@ export function DashboardNotifications({
               required
               placeholder="Décrivez votre problème..."
               rows={3}
-              className="w-full px-2.5 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 resize-none"
+              className="w-full px-2.5 py-2 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#38E044]/30 focus:border-[#38E044]/60 resize-none"
             />
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
@@ -139,14 +139,14 @@ export function DashboardNotifications({
             <button
               type="submit"
               disabled={sending}
-              className="px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-[#0A0D0E] text-white text-xs font-semibold rounded-xl hover:bg-black transition-colors disabled:opacity-50"
             >
               {sending ? 'Envoi...' : 'Envoyer'}
             </button>
             <button
               type="button"
               onClick={() => { setShowNewForm(false); setError(''); }}
-              className="px-4 py-2 border border-gray-200 text-gray-600 text-xs font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 border border-neutral-200 text-neutral-600 text-xs font-semibold rounded-xl hover:bg-neutral-50 transition-colors"
             >
               Annuler
             </button>
@@ -154,10 +154,10 @@ export function DashboardNotifications({
         </form>
       )}
 
-      <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
+      <div className="pt-3 border-t border-neutral-100 flex flex-col gap-2">
         <Link
           href="/mon-compte/litiges"
-          className="inline-flex items-center gap-2 w-full px-4 py-2.5 text-xs font-semibold rounded-xl border border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 shadow-sm transition-all"
+          className="inline-flex items-center gap-2 w-full px-4 py-2.5 text-xs font-semibold rounded-xl border border-amber-200 bg-white text-amber-700 hover:bg-amber-50 hover:border-amber-300 shadow-xs transition-all"
         >
           <LifeBuoy className="h-3.5 w-3.5" />
           Voir tous mes litiges

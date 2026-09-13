@@ -597,7 +597,8 @@
             "statusOpen": "Open — awaiting reply",
             "statusInProgress": "Processing",
             "statusResolved": "Resolved",
-            "statusClosed": "Closed"
+            "statusClosed": "Closed",
+            "closedBanner": "This dispute is closed, you can no longer reply."
         },
         "settings": {
             "title": "Account settings",

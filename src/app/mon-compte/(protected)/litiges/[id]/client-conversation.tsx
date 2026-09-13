@@ -50,17 +50,17 @@ export function ClientDisputeConversation({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-      <div className="p-5 space-y-4 max-h-96 overflow-y-auto">
+    <div className="bg-white rounded-3xl border border-neutral-200/80 shadow-xs overflow-hidden">
+      <div className="p-5 sm:p-6 space-y-4 max-h-96 overflow-y-auto">
         {messages.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-8">Aucun message</p>
+          <p className="text-sm text-neutral-400 text-center py-10">Aucun message</p>
         )}
         {messages.map((msg, i) => {
           const isAdmin = msg.sender === 'admin';
           return (
             <div key={i} className={`flex ${isAdmin ? 'justify-start' : 'justify-end'}`}>
               <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                isAdmin ? 'bg-gray-100 text-gray-900' : 'bg-blue-600 text-white'
+                isAdmin ? 'bg-neutral-100 text-neutral-900' : 'bg-[#0A0D0E] text-white'
               }`}>
                 <div className="flex items-center gap-1.5 mb-1">
                   {isAdmin ? <Shield className="h-3 w-3 opacity-70" /> : <User className="h-3 w-3 opacity-70" />}
@@ -79,18 +79,18 @@ export function ClientDisputeConversation({
       </div>
 
       {!isClosed && (
-        <form onSubmit={handleSend} className="border-t border-gray-100 p-4 flex gap-3">
+        <form onSubmit={handleSend} className="border-t border-neutral-100 p-4 flex gap-3">
           <textarea
             value={text}
             onChange={e => setText(e.target.value)}
             placeholder="Votre réponse..."
             rows={2}
-            className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none"
+            className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#38E044]/30 focus:border-[#38E044]/60 resize-none transition-all"
           />
           <button
             type="submit"
             disabled={!text.trim() || sending}
-            className="self-end px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl flex items-center gap-2 transition-colors"
+            className="self-end px-5 py-2.5 bg-[#0A0D0E] hover:bg-black disabled:opacity-40 text-white text-sm font-semibold rounded-2xl flex items-center gap-2 transition-colors"
           >
             {sending ? 'Envoi...' : 'Envoyer'}
             <Send className="h-3.5 w-3.5" />

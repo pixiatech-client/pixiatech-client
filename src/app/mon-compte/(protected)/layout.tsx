@@ -3,7 +3,7 @@ import { decrypt } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { MemberSidebar } from '@/components/member-sidebar';
-import { MemberHeader } from '@/components/member-header';
+import { ClientHeader } from '@/components/client-header';
 import { SecurityBanner } from '@/components/security-banner';
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -31,11 +31,11 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-screen w-full bg-[#f5f5f5]">
-      <MemberHeader customerEmail={customerEmail} customerId={customerId} />
+      <ClientHeader customerEmail={customerEmail} customerId={customerId} />
 
       <MemberSidebar />
 
-      <main className="pl-0 md:pl-64 pt-14 min-h-screen">
+      <main className="pl-0 md:pl-64 pt-[84px] min-h-screen">
         {!hasPassword && <div className="px-6 pt-6"><SecurityBanner customerId={customerId} /></div>}
         {children}
       </main>

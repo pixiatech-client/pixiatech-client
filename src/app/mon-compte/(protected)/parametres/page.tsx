@@ -4,6 +4,8 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { getServerT } from '@/lib/server-i18n';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { Settings, ChevronRight, User, Lock, PencilLine, AtSign, Trash2 } from 'lucide-react';
+import { ClientPageHeader } from '@/components/client-ui/client-page-header';
 
 export default async function ParametresPage() {
   const cookieStore = await cookies();
@@ -31,86 +33,75 @@ export default async function ParametresPage() {
     : emailPrefix + '***@' + customerEmail.split('@')[1];
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-8">{t('client.settings.title')}</h2>
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <ClientPageHeader
+        title={t('client.settings.title')}
+        subtitle={t('client.settings.accountInfo')}
+        icon={Settings}
+      />
 
       {/* Informations du compte */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-        <div className="px-6 py-4 border-b border-gray-200 flex flex-col gap-3">
+      <div className="bg-white border border-neutral-200/80 rounded-3xl overflow-hidden shadow-xs">
+        <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center">
-              <svg className="w-4 h-4 text-[#004ac6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+            <div className="w-9 h-9 rounded-xl bg-[#0A0D0E] flex items-center justify-center">
+              <User className="w-4 h-4 text-[#38E044]" />
             </div>
-            <span className="text-base font-semibold text-gray-900">{t('client.settings.accountInfo')}</span>
+            <span className="text-base font-bold text-neutral-900">{t('client.settings.accountInfo')}</span>
           </div>
           <Link
             href="/mon-compte/parametres/profil"
-            className="w-full px-4 py-2.5 bg-gray-900 text-white text-[13px] font-medium rounded-lg hover:opacity-90 transition-all text-center"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A0D0E] text-white text-[13px] font-semibold rounded-xl hover:bg-black transition-all"
           >
+            <PencilLine className="w-3.5 h-3.5 text-[#38E044]" />
             {t('client.settings.editProfile')}
           </Link>
         </div>
-        <div className="divide-y divide-gray-100">
-          <Link href="/mon-compte/parametres/profil" className="flex items-center justify-between px-6 py-3.5 hover:bg-gray-50 transition-colors">
-            <span className="text-sm text-gray-900">{t('client.settings.myProfile')}</span>
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+        <div className="divide-y divide-neutral-100">
+          <Link href="/mon-compte/parametres/profil" className="flex items-center justify-between px-6 py-3.5 hover:bg-neutral-50 transition-colors">
+            <span className="text-sm font-medium text-neutral-900">{t('client.settings.myProfile')}</span>
+            <ChevronRight className="w-4 h-4 text-neutral-300" />
           </Link>
           <div className="flex items-center justify-between px-6 py-3.5">
-            <span className="text-sm text-gray-900">{t('client.settings.memberProfile')}</span>
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <span className="text-sm font-medium text-neutral-500">{t('client.settings.memberProfile')}</span>
+            <ChevronRight className="w-4 h-4 text-neutral-200" />
           </div>
-          <Link href="/mon-compte/parametres/informations-fiscales" className="flex items-center justify-between px-6 py-3.5 hover:bg-gray-50 transition-colors">
-            <span className="text-sm text-gray-900">{t('client.settings.fiscalInfo')}</span>
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+          <Link href="/mon-compte/parametres/informations-fiscales" className="flex items-center justify-between px-6 py-3.5 hover:bg-neutral-50 transition-colors">
+            <span className="text-sm font-medium text-neutral-900">{t('client.settings.fiscalInfo')}</span>
+            <ChevronRight className="w-4 h-4 text-neutral-300" />
           </Link>
         </div>
       </div>
 
       {/* Sécurité du compte */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-200">
-          <div className="w-8 h-8 rounded-lg bg-[#eef2ff] flex items-center justify-center">
-            <svg className="w-4 h-4 text-[#004ac6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+      <div className="bg-white border border-neutral-200/80 rounded-3xl overflow-hidden shadow-xs">
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-neutral-100">
+          <div className="w-9 h-9 rounded-xl bg-[#0A0D0E] flex items-center justify-center">
+            <Lock className="w-4 h-4 text-[#38E044]" />
           </div>
-          <span className="text-base font-semibold text-gray-900">{t('client.settings.security')}</span>
+          <span className="text-base font-bold text-neutral-900">{t('client.settings.security')}</span>
         </div>
-        <div className="divide-y divide-gray-100">
-          <Link href="/mon-compte/parametres/mot-de-passe" className="flex items-center justify-between px-6 py-3.5 hover:bg-gray-50 transition-colors">
-            <span className="text-sm text-gray-900">{t('client.settings.changePassword')}</span>
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+        <div className="divide-y divide-neutral-100">
+          <Link href="/mon-compte/parametres/mot-de-passe" className="flex items-center justify-between px-6 py-3.5 hover:bg-neutral-50 transition-colors">
+            <span className="text-sm font-medium text-neutral-900">{t('client.settings.changePassword')}</span>
+            <ChevronRight className="w-4 h-4 text-neutral-300" />
           </Link>
           <div className="flex items-center justify-between px-6 py-3.5">
-            <span className="text-sm text-gray-900">{t('client.settings.changeEmail')}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-[13px] text-gray-500">{maskedEmail}</span>
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+            <span className="text-sm font-medium text-neutral-500">{t('client.settings.changeEmail')}</span>
+            <div className="flex items-center gap-2 text-neutral-400 font-mono text-[13px]">
+              <AtSign className="w-3.5 h-3.5" />
+              {maskedEmail}
             </div>
           </div>
-          <Link href="/mon-compte/parametres/profil" className="flex items-center justify-between px-6 py-3.5 hover:bg-gray-50 transition-colors">
-            <span className="text-sm text-gray-900">{t('client.settings.changePhone')}</span>
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+          <Link href="/mon-compte/parametres/profil" className="flex items-center justify-between px-6 py-3.5 hover:bg-neutral-50 transition-colors">
+            <span className="text-sm font-medium text-neutral-900">{t('client.settings.changePhone')}</span>
+            <ChevronRight className="w-4 h-4 text-neutral-300" />
           </Link>
           <div className="flex items-center justify-between px-6 py-3.5 hover:bg-red-50 transition-colors">
-            <span className="text-sm text-red-600">{t('client.settings.deleteAccount')}</span>
-            <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <span className="flex items-center gap-2 text-sm font-medium text-red-600">
+              <Trash2 className="w-3.5 h-3.5" />
+              {t('client.settings.deleteAccount')}
+            </span>
           </div>
         </div>
       </div>

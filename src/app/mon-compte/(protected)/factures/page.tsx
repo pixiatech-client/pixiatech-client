@@ -9,6 +9,7 @@ import { ProfessionalInfoStep } from '@/components/invoices/ProfessionalInfoStep
 import { OrderSelectorStep } from '@/components/invoices/OrderSelectorStep';
 import { InvoiceSummaryStep } from '@/components/invoices/InvoiceSummaryStep';
 import { InvoiceTable } from '@/components/invoices/InvoiceTable';
+import { ClientPageHeader } from '@/components/client-ui/client-page-header';
 import type { EligibleOrder } from '@/services/invoiceService';
 import type { ProfessionalInfo } from '@/services/professionalInfoService';
 
@@ -61,18 +62,20 @@ export default function FacturesPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6">
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-2">
-        <div>
-          <h2 className="text-[24px] font-semibold tracking-tight text-gray-900">Mes factures</h2>
-          <p className="text-[13px] text-gray-500 mt-1">Générez et retrouvez vos factures en quelques clics.</p>
-        </div>
-      </div>
+    <div className="w-full max-w-[1536px] mx-auto px-4 sm:px-6 py-6">
+      <ClientPageHeader
+        title="Mes factures"
+        subtitle="Générez et retrouvez vos factures en quelques clics."
+        icon={FileText}
+      />
 
       {successMessage && (
-        <div className="mb-5 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm text-emerald-800">
+        <div className="mt-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-sm text-emerald-800">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-          <p className="leading-relaxed font-medium flex-1">{successMessage}</p>
+          <p className="leading-relaxed font-medium flex-1">
+            <span className="inline-block w-1.5 h-1.5 bg-[#38E044] rounded-full mr-2 align-middle shadow-[0_0_8px_#38E044]" />
+            {successMessage}
+          </p>
           <button
             type="button"
             onClick={() => setSuccessMessage(null)}
@@ -84,11 +87,13 @@ export default function FacturesPage() {
         </div>
       )}
 
-      <InvoiceStepper
-        steps={STEPS}
-        currentStep={currentStep}
-        onStepClick={(step) => canGoToStep(step) && setCurrentStep(step)}
-      />
+      <div className="mt-5">
+        <InvoiceStepper
+          steps={STEPS}
+          currentStep={currentStep}
+          onStepClick={(step) => canGoToStep(step) && setCurrentStep(step)}
+        />
+      </div>
 
       <div className="mt-5">
         <AnimatePresence mode="wait">
@@ -126,10 +131,12 @@ export default function FacturesPage() {
         </AnimatePresence>
       </div>
 
-      <div ref={historyRef} className="mt-12 scroll-mt-20">
+      <div ref={historyRef} className="mt-12 scroll-mt-24">
         <div className="flex items-center gap-2.5 mb-4">
-          <History className="w-5 h-5 text-[#004ac6]" />
-          <h3 className="text-[17px] font-semibold text-gray-900">Historique des factures</h3>
+          <div className="w-9 h-9 rounded-xl bg-[#0A0D0E] flex items-center justify-center shrink-0">
+            <History className="w-4 h-4 text-[#38E044]" />
+          </div>
+          <h3 className="text-lg font-bold text-neutral-900">Historique des factures</h3>
         </div>
         <InvoiceTable refreshKey={invoicesRefreshKey} />
       </div>

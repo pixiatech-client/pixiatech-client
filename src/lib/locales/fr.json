@@ -597,7 +597,8 @@
             "statusOpen": "Ouvert — en attente de réponse",
             "statusInProgress": "En cours de traitement",
             "statusResolved": "Résolu",
-            "statusClosed": "Fermé"
+            "statusClosed": "Fermé",
+            "closedBanner": "Ce litige est fermé, vous ne pouvez plus y répondre."
         },
         "settings": {
             "title": "Paramètres du compte",
