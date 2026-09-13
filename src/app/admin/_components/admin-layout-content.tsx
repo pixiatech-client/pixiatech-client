@@ -33,6 +33,7 @@ import {
   CreditCard,
   MoreHorizontal,
   Info,
+  Receipt,
 } from 'lucide-react';
 import Link from 'next/link';
 import { logout, getSettings, saveSidebarConfig } from '@/app/admin/actions';
@@ -1026,11 +1027,13 @@ export function AdminLayoutContent({ children }: { children: React.ReactNode }) 
       return [
         { href: '/admin', label: t('admin.dashboard'), icon: LayoutGrid, exact: true, color: 'text-blue-500', subtitle: t('admin.dashboardSubtitle') },
         { href: '/admin/quote-requests', label: t('admin.estimations'), icon: ListTodo, exact: false, color: 'text-orange-500', subtitle: t('admin.estimationsSubtitle') },
+        { href: '/admin/factures', label: t('admin.factures.title'), icon: Receipt, exact: false, color: 'text-teal-500', subtitle: t('admin.factures.subtitle') },
       ];
     }
     return [
       { href: '/admin', label: t('admin.dashboard'), icon: LayoutGrid, exact: true, color: 'text-blue-500', subtitle: t('admin.dashboardSubtitle') },
       { href: '/admin/quote-requests', label: t('admin.estimations'), icon: ListTodo, exact: false, color: 'text-orange-500', subtitle: t('admin.estimationsSubtitle') },
+      { href: '/admin/factures', label: t('admin.factures.title'), icon: Receipt, exact: false, color: 'text-teal-500', subtitle: t('admin.factures.subtitle') },
       { href: '/admin/produits', label: t('admin.products'), icon: Package, exact: false, color: 'text-yellow-500', subtitle: t('admin.productsSubtitle') },
       { href: '/admin/membres', label: t('admin.memberSpace'), icon: Users, exact: true, color: 'text-violet-500', subtitle: t('admin.memberManagement') },
       { href: '/admin/users', label: t('admin.users'), icon: Users, exact: true, color: 'text-emerald-500', subtitle: '' },

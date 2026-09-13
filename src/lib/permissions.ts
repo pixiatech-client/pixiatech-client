@@ -24,6 +24,7 @@ export type Permission =
   | 'quotes:view:delivery'
   | 'quotes:view:archive'
   | 'quotes:view:trash'
+  | 'invoices:list'
   | 'products:list'
   | 'products:read'
   | 'products:create'
@@ -74,6 +75,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'quotes:view:delivery',
     'quotes:view:archive',
     'quotes:view:trash',
+    'invoices:list',
     'products:list',
     'products:read',
     'products:create',
@@ -119,6 +121,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'quotes:view:delivery',
     'quotes:view:archive',
     'quotes:view:trash',
+    'invoices:list',
     'notifications:read',
     'profile:read',
     'profile:update',
@@ -163,6 +166,7 @@ export function canAccessRoute(role: UserRole | undefined, route: string): boole
     '/admin': ['dashboard:view'],
     '/admin/users': ['users:list'],
     '/admin/quote-requests': ['quotes:list'],
+    '/admin/factures': ['invoices:list'],
     '/admin/settings': ['settings:read'],
     '/admin/settings/wizard': ['settings:read'],
     '/admin/delivery': ['delivery:list'],

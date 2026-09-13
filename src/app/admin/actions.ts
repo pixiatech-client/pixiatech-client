@@ -17,6 +17,7 @@ import { buildSupplierEmailHtml } from '@/lib/email-templates';
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry, Dispute, PriceSnapshot } from '@/lib/types';
 import { normalizePrice, computeDeliveryCost, computeLaborCost } from '@/lib/pricing-engine';
 import { normalizeSearchText } from '@/lib/utils';
+import type { InvoiceRequestSummary } from '@/lib/invoices';
 import { clearSettingsCache, clearThemeCache } from '@/app/actions/public-actions';
 
 export interface ResellerLead {
@@ -1364,6 +1365,64 @@ function translateStatus(status: 'pending' | 'processed' | 'trashed' | 'in_progr
       return 'sent';
     default:
       return status;
+  }
+}
+
+// --- Invoice Request Actions (Admin) ---
+function normalizeInvoiceTimestamp(value: any): string {
+  if (!value) return '';
+  try {
+    if (typeof value.toDate === 'function') return value.toDate().toISOString();
+    if (value instanceof Date) return value.toISOString();
+    if (typeof value === 'number') return new Date(value).toISOString();
+    if (typeof value === 'string') {
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? value : parsed.toISOString();
+    }
+    return String(value);
+  } catch {
+    return '';
+  }
+}
+
+export async function getInvoiceRequests(): Promise<InvoiceRequestSummary[]> {
+  await requireRole('admin', 'commercial');
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) {
+    console.error('Firestore is not initialized.');
+    return [];
+  }
+  try {
+    const snap = await adminDb
+      .collection('invoices')
+      .where('status', 'in', ['pending', 'in_progress', 'completed', 'archived'])
+      .get();
+
+    const items: InvoiceRequestSummary[] = snap.docs.map((docSnap) => {
+      const d = docSnap.data() || {};
+      const billing = d.billing && typeof d.billing === 'object' ? d.billing : {};
+      const requestedAt = normalizeInvoiceTimestamp(
+        d.requestedAt ?? d.createdAt ?? d.requestedOn ?? d.orderDate ?? null
+      );
+      return {
+        id: docSnap.id,
+        orderType: d.orderType === 'rental' ? 'rental' : 'sale',
+        orderId: typeof d.orderId === 'string' && d.orderId ? d.orderId : docSnap.id,
+        customerId: String(d.customerId || d.userId || billing.userId || ''),
+        customerName: String(d.customerName || d.clientName || billing.fullName || billing.name || 'Client'),
+        customerEmail: String(d.customerEmail || billing.email || ''),
+        requestedAt,
+        status: String(d.status || 'pending'),
+        isB2B: d.isB2B === true,
+        hasPdf: typeof d.pdfContent === 'string' && d.pdfContent.length > 0,
+      };
+    });
+
+    items.sort((a, b) => (b.requestedAt || '').localeCompare(a.requestedAt || ''));
+    return items;
+  } catch (error: any) {
+    console.error('Error fetching invoice requests:', error);
+    return [];
   }
 }
 

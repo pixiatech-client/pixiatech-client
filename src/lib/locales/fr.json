@@ -787,6 +787,46 @@
         "boutique": "Boutique",
         "navOrders": "Commandes",
         "navCodesPromo": "Codes Promo",
+        "factures": {
+            "title": "Factures",
+            "subtitle": "Gérez les demandes de factures envoyées par vos clients.",
+            "tabs": {
+                "pending": "En attente",
+                "in_progress": "En cours",
+                "completed": "Terminé",
+                "archived": "Archivé"
+            },
+            "columns": {
+                "orderId": "ID de commande",
+                "customerName": "Nom du client",
+                "date": "Date de demande",
+                "status": "Statut",
+                "actions": "Actions",
+                "type": "Type"
+            },
+            "type": {
+                "particulier": "Particulier",
+                "b2b": "Professionnel"
+            },
+            "actions": {
+                "download": "Télécharger",
+                "edit": "Modifier",
+                "generate": "Générer",
+                "archive": "Archiver",
+                "transmit": "Transmettre"
+            },
+            "notAllowed": "Accès réservé aux administrateurs et aux commerciaux.",
+            "notAllowedDesc": "Vous n'avez pas les droits nécessaires pour consulter cette section.",
+            "loading": "Chargement des demandes de factures…",
+            "emptyTitle": "Aucune demande",
+            "emptyDesc": "Aucune demande de facture dans cette catégorie pour le moment.",
+            "emptyAllTitle": "Aucune demande de facture",
+            "emptyAllDesc": "Les demandes de factures envoyées par les clients apparaîtront ici.",
+            "backToDashboard": "Retour au tableau de bord",
+            "actionComing": "Cette action sera disponible dans une prochaine étape.",
+            "loadError": "Impossible de charger les demandes de factures.",
+            "refresh": "Actualiser"
+        },
         "profile": "Profil",
         "general": "Général",
         "images": "Images",

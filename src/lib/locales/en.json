@@ -787,6 +787,46 @@
         "boutique": "Shop",
         "navOrders": "Orders",
         "navCodesPromo": "Promo Codes",
+        "factures": {
+            "title": "Invoices",
+            "subtitle": "Manage invoice requests sent by your customers.",
+            "tabs": {
+                "pending": "Pending",
+                "in_progress": "In progress",
+                "completed": "Completed",
+                "archived": "Archived"
+            },
+            "columns": {
+                "orderId": "Order ID",
+                "customerName": "Customer name",
+                "date": "Request date",
+                "status": "Status",
+                "actions": "Actions",
+                "type": "Type"
+            },
+            "type": {
+                "particulier": "Individual",
+                "b2b": "Professional"
+            },
+            "actions": {
+                "download": "Download",
+                "edit": "Edit",
+                "generate": "Generate",
+                "archive": "Archive",
+                "transmit": "Transmit"
+            },
+            "notAllowed": "Access reserved for administrators and commercial staff.",
+            "notAllowedDesc": "You do not have the required permissions to view this section.",
+            "loading": "Loading invoice requests…",
+            "emptyTitle": "No requests",
+            "emptyDesc": "No invoice request in this category at the moment.",
+            "emptyAllTitle": "No invoice requests",
+            "emptyAllDesc": "Invoice requests sent by customers will appear here.",
+            "backToDashboard": "Back to dashboard",
+            "actionComing": "This action will be available in a future step.",
+            "loadError": "Unable to load invoice requests.",
+            "refresh": "Refresh"
+        },
         "profile": "Profile",
         "general": "General",
         "images": "Images",

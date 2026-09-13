@@ -28,6 +28,7 @@ import {
   Globe,
   Image as ImageIcon,
   Type,
+  Receipt,
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { UserRole } from './dashboard-new-types';
@@ -44,6 +45,7 @@ const VIEW_TO_ROUTE: Record<string, string> = {
   dashboard: '/admin',
   users: '/admin/users',
   estimations: '/admin/quote-requests',
+  factures: '/admin/factures',
   history: '/admin/history',
   profile: '/admin/users',
   settings: '/admin/settings',
@@ -73,6 +75,7 @@ const ROUTE_TO_VIEW: Record<string, string> = {
   '/admin': 'dashboard',
   '/admin/users': 'users',
   '/admin/quote-requests': 'estimations',
+  '/admin/factures': 'factures',
   '/admin/produits': 'produit',
   '/admin/boutique': 'boutique',
   '/admin/codes-promo': 'codes-promo',
@@ -244,6 +247,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: t('admin.dashboard'), icon: LayoutDashboard, color: 'text-blue-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
     { id: 'users', label: t('admin.users'), icon: Users, color: 'text-emerald-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'estimations', label: t('admin.estimations'), icon: FileText, color: 'text-orange-500', roles: [UserRole.ADMINISTRATEUR, UserRole.FOURNISSEUR, UserRole.COMMERCIAL] },
+    { id: 'factures', label: t('admin.factures.title'), icon: Receipt, color: 'text-teal-500', roles: [UserRole.ADMINISTRATEUR, UserRole.COMMERCIAL] },
     { id: 'produit', label: t('admin.products'), icon: Box, color: 'text-red-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'boutique', label: t('admin.navOrders'), icon: ClipboardList, color: 'text-sky-500', roles: [UserRole.ADMINISTRATEUR] },
     { id: 'membres', label: t('admin.memberSpace'), icon: Users, color: 'text-violet-500', roles: [UserRole.ADMINISTRATEUR] },

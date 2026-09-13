@@ -34,6 +34,10 @@ const STATUS_TRANSLATIONS: Record<string, { fr: string; en: string }> = {
   sent: { fr: 'Envoyé', en: 'Sent' },
   sale: { fr: 'Vente', en: 'Sale' },
   rental: { fr: 'Location', en: 'Rental' },
+  completed: { fr: 'Terminé', en: 'Completed' },
+  generated: { fr: 'Générée', en: 'Generated' },
+  draft: { fr: 'Brouillon', en: 'Draft' },
+  failed: { fr: 'Échouée', en: 'Failed' },
 };
 
 const STATUS_REVERSE_MAP: Record<string, string> = {};

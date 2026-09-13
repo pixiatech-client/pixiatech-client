@@ -22,7 +22,24 @@ export interface CompanySnapshot {
   companyEmail: string;
 }
 
-export type InvoiceStatus = 'draft' | 'generated' | 'sent' | 'failed';
+export type InvoiceStatus = 'draft' | 'generated' | 'sent' | 'failed' | 'pending' | 'in_progress' | 'completed' | 'archived';
+
+export type InvoiceRequestStatus = 'pending' | 'in_progress' | 'completed' | 'archived';
+
+export interface InvoiceRequestSummary {
+  id: string;
+  orderType: 'sale' | 'rental';
+  orderId: string;
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  requestedAt: string;
+  status: string;
+  isB2B: boolean;
+  hasPdf: boolean;
+}
+
+export const INVOICE_REQUEST_STATUSES: InvoiceRequestStatus[] = ['pending', 'in_progress', 'completed', 'archived'];
 
 export interface InvoiceDoc extends CompanySnapshot {
   orderId: string;

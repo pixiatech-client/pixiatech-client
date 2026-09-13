@@ -148,6 +148,46 @@
     "boutique": "商店",
     "navOrders": "订单",
     "navCodesPromo": "优惠码",
+    "factures": {
+        "title": "发票",
+        "subtitle": "管理客户发送的发票请求。",
+        "tabs": {
+            "pending": "待处理",
+            "in_progress": "处理中",
+            "completed": "已完成",
+            "archived": "已归档"
+        },
+        "columns": {
+            "orderId": "订单编号",
+            "customerName": "客户名称",
+            "date": "请求日期",
+            "status": "状态",
+            "actions": "操作",
+            "type": "类型"
+        },
+        "type": {
+            "particulier": "个人",
+            "b2b": "企业"
+        },
+        "actions": {
+            "download": "下载",
+            "edit": "编辑",
+            "generate": "生成",
+            "archive": "归档",
+            "transmit": "发送"
+        },
+        "notAllowed": "仅限管理员和销售访问。",
+        "notAllowedDesc": "您没有查看此部分的权限。",
+        "loading": "正在加载发票请求…",
+        "emptyTitle": "暂无请求",
+        "emptyDesc": "此类别中暂无发票请求。",
+        "emptyAllTitle": "暂无发票请求",
+        "emptyAllDesc": "客户发送的发票请求将显示在此处。",
+        "backToDashboard": "返回仪表板",
+        "actionComing": "此功能将在后续步骤中提供。",
+        "loadError": "无法加载发票请求。",
+        "refresh": "刷新"
+    },
     "logoConfigTitle": "Logo配置",
     "logoConfigDesc": "自定义视觉标识与网站图标",
     "livePreview": "实时预览",
