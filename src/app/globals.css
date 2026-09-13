@@ -664,6 +664,13 @@
 
 /* --- FULL GLASSMORPHISM STYLES (Adopted from template) --- */
 
+/* Réserve l'espace de la barre de défilement afin que le conteneur centré de
+   l'espace client ne décale pas horizontalement quand la hauteur de page
+   change entre deux vues (header / navigation / contenu restent alignés). */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
    overflow-x: hidden;
    background-color: #F5F5F5;

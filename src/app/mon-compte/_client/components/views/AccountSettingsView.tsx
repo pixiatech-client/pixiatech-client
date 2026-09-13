@@ -374,7 +374,7 @@ function SecurityTab({
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="space-y-6">
       <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs space-y-5">
         <div className="pb-3 border-b border-neutral-100 flex items-center gap-2.5">
           <KeyRound className="w-5 h-5 text-neutral-900" />
@@ -486,7 +486,7 @@ function DangerTab({ email }: { email: string }) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="bg-white rounded-3xl border border-red-200/80 p-6 shadow-xs space-y-5">
         <div className="pb-3 border-b border-red-100 flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-red-100 text-red-700">

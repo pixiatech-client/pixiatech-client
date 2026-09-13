@@ -44,7 +44,7 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
   const avatarFallback = (user?.name || 'C').charAt(0).toUpperCase();
 
   return (
-    <div className="w-full max-w-[1536px] mx-auto px-3 sm:px-6 pt-3 pb-1">
+    <div className="w-full max-w-[1536px] mx-auto px-4 sm:px-6 pt-3 pb-1">
       <header
         id="pixiatech-main-header"
         className="w-full bg-[#0A0D0E] text-white border border-[#262D30] rounded-2xl sm:rounded-3xl px-4 sm:px-6 py-2.5 shadow-2xl flex items-center justify-between gap-3 sm:gap-4 select-none"
