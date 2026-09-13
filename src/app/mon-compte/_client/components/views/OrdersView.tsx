@@ -1,10 +1,19 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Clock, MapPin, MessageSquareWarning, PackageCheck, Truck } from 'lucide-react';
-import type { ClientOrder, ClientOrderItem, ClientOrderTracker } from '../../types';
-import { formatDate, formatMoney, formatMonthYear } from '../../lib/format';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  FileText,
+  Package,
+  Search,
+  ShoppingBag,
+  Truck,
+} from 'lucide-react';
+import type { ClientOrder, ClientOrderItem, ClientTab } from '../../types';
+import { formatMoney, formatShortDate } from '../../lib/format';
 import { SlidingSwitch } from '../SlidingSwitch';
 
 interface OrdersViewProps {
@@ -12,339 +21,296 @@ interface OrdersViewProps {
   ordersCount: number;
   onOpenInvoice: (invoiceId: string) => void;
   onOpenDispute: (defaultOrderId?: string) => void;
+  onNavigate: (tab: ClientTab) => void;
 }
 
-type SubFilter = 'all' | 'sale' | 'rental';
-
-function buildTracker(order: ClientOrder): ClientOrderTracker[] {
-  const steps: ClientOrderTracker[] = [
-    { hour: '', label: 'Commande confirmÃ©e', status: 'done' },
-    { hour: '', label: 'En prÃ©paration', status: 'pending' },
-    { hour: '', label: 'ExpÃ©diÃ©e', status: 'pending' },
-    { hour: '', label: 'LivrÃ©e', status: 'pending' },
-  ];
-  if (order.statusKey === 'cancelled') {
-    return [
-      { hour: '', label: 'Commande confirmÃ©e', status: 'done' },
-      { hour: '', label: 'AnnulÃ©e', status: 'active' },
-    ];
+function statusChip(order: ClientOrder) {
+  if (order.statusKey === 'delivered') {
+    return {
+      text: '✓ Colis Livré',
+      cls: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+    };
   }
   if (order.statusKey === 'in_transit') {
-    steps[1].status = 'done';
-    steps[2].status = 'active';
+    return {
+      text: 'En cours d\'acheminement',
+      cls: 'bg-sky-50 text-sky-700 border border-sky-200',
+    };
   }
-  if (order.statusKey === 'delivered') {
-    steps[1].status = 'done';
-    steps[2].status = 'done';
-    steps[3].status = 'done';
+  if (order.statusKey === 'cancelled') {
+    return { text: 'Annulée', cls: 'bg-red-50 text-red-600 border border-red-200' };
   }
-  return steps;
+  return { text: 'En préparation', cls: 'bg-amber-50 text-amber-700 border border-amber-200' };
 }
 
-const COUNTRY_LABELS: Record<string, string> = {
-  FR: 'France',
-  BE: 'Belgique',
-  CH: 'Suisse',
-  LU: 'Luxembourg',
-  MC: 'Monaco',
-  DE: 'Allemagne',
-  ES: 'Espagne',
-  IT: 'Italie',
-  NL: 'Pays-Bas',
-};
-
-function OrderCard({ order, onOpenInvoice, onOpenDispute }: { order: ClientOrder; onOpenInvoice: (id: string) => void; onOpenDispute: (id?: string) => void }) {
-  const [expanded, setExpanded] = useState(false);
-  const item = order.items[0];
-  const tracker = buildTracker(order);
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-xs"
-    >
+function InvoiceAction({ order, onOpenInvoice, onNavigate }: { order: ClientOrder; onOpenInvoice: (id: string) => void; onNavigate: (tab: ClientTab) => void }) {
+  if (order.hasInvoice && order.invoiceId) {
+    return (
       <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-4 p-5 text-left transition hover:bg-neutral-50/60"
+        onClick={() => onOpenInvoice(order.invoiceId!)}
+        className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-300 transition-colors cursor-pointer"
+        title="Consulter et télécharger la facture définitive"
       >
-        <OrderImage item={item} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-bold text-neutral-900">{item?.title || order.number}</p>
-            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-              order.type === 'sale' ? 'bg-neutral-100 text-neutral-600' : 'bg-indigo-100 text-indigo-700'
-            }`}>
-              {order.kindLabel}
-            </span>
-          </div>
-          <p className="mt-0.5 text-xs text-neutral-500">
-            {order.number} Â· {formatDate(order.date)}
-          </p>
-          <p className="mt-1 text-xs font-semibold text-neutral-400">
-            {order.itemCount} article{order.itemCount > 1 ? 's' : ''} Â· {formatMoney(order.totalTTC)}
-            <span className="ml-2 text-neutral-300">Â·</span>
-            <span className="ml-2">{order.statusLabel}</span>
-          </p>
-        </div>
-        <ChevronDown size={18} className={`shrink-0 text-neutral-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+        <span>Voir ma facture</span>
       </button>
-
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="border-t border-neutral-100"
-          >
-            <div className="space-y-5 p-5">
-              <ItemDetail item={item} />
-              <DeliveryDetail order={order} item={item} />
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => onOpenDispute(order.id)}
-                  className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3.5 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
-                >
-                  <MessageSquareWarning size={14} /> Ouvrir un litige
-                </button>
-                {order.hasInvoice && order.invoiceId && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenInvoice(order.invoiceId!)}
-                    className="flex items-center gap-2 rounded-xl bg-[#0A0D0E] px-3.5 py-2 text-xs font-semibold text-white transition hover:opacity-90"
-                  >
-                    <FileTextIcon /> Voir ma facture
-                  </button>
-                )}
-              </div>
-
-              <div>
-                <p className="mb-2.5 text-xs font-bold uppercase tracking-wide text-neutral-400">Statut de livraison</p>
-                <div className="space-y-2">
-                  {tracker.map((step, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <span className={`flex size-5 items-center justify-center rounded-full border text-[10px] font-bold ${
-                        step.status === 'done'
-                          ? 'border-emerald-500 bg-emerald-500 text-white'
-                          : step.status === 'active'
-                          ? 'border-amber-400 bg-amber-400 text-white'
-                          : 'border-neutral-200 bg-white text-neutral-400'
-                      }`}>
-                        {step.status === 'done' ? 'âœ“' : step.status === 'active' ? 'â—' : 'â—¦'}
-                      </span>
-                      <span className={`text-xs ${
-                        step.status === 'done' ? 'font-semibold text-neutral-900' : step.status === 'active' ? 'font-semibold text-amber-600' : 'text-neutral-400'
-                      }`}>
-                        {step.label}
-                      </span>
-                      {i === tracker.length - 1 && step.status === 'active' && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">En temps rÃ©el</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-function OrderImage({ item }: { item?: ClientOrderItem }) {
-  if (item?.img) {
-    return <img src={item.img} alt={item.title} className="size-14 shrink-0 rounded-xl border border-neutral-100 object-cover" />;
+    );
+  }
+  if (order.invoiceStatusLabel === 'En attente' || order.invoiceStatusLabel === 'En attente de validation') {
+    return (
+      <span className="flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
+        <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+        <span>Demande en attente</span>
+      </span>
+    );
+  }
+  if (order.invoiceStatusLabel === 'En cours') {
+    return (
+      <span className="flex items-center gap-1.5 text-xs font-bold text-sky-800 bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200">
+        <Clock className="w-3.5 h-3.5 text-sky-600 animate-spin" />
+        <span>Traitement en cours</span>
+      </span>
+    );
   }
   return (
-    <span className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-400">
-      <PackageCheck size={22} />
-    </span>
+    <button
+      onClick={() => onNavigate('invoices')}
+      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+      title="Demander une facture pour cette commande"
+    >
+      <FileText className="w-3.5 h-3.5 text-[#38E044]" />
+      <span>Demander une facture</span>
+    </button>
   );
 }
 
-function ItemDetail({ item }: { item?: ClientOrderItem }) {
-  if (!item) return null;
-  return (
-    <div>
-      <p className="mb-2.5 text-xs font-bold uppercase tracking-wide text-neutral-400">Produit</p>
-      <div className="rounded-xl border border-neutral-100 bg-neutral-50/60 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-neutral-900">{item.title}</p>
-            <p className="text-xs text-neutral-500">{item.subtitle}</p>
-            {item.note && <p className="mt-1 text-xs text-neutral-500">{item.note}</p>}
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-neutral-400">Prix unitaire HT</p>
-            <p className="text-sm font-bold text-neutral-900">{formatMoney(item.unitPriceHT)}</p>
-            <p className="text-xs text-neutral-500">Ã— {item.quantity}</p>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 border-t border-neutral-100 pt-3 text-xs text-neutral-500">
-          <span>Prix unitaire TTC : <b className="text-neutral-900">{formatMoney(item.unitPriceTTC)}</b></span>
-          <span>TVA : <b className="text-neutral-900">{(item.vatRate * 100).toFixed(0).replace('.0', '')}%</b></span>
-          {item.estimatedDeliveryDate && <span>Fin prÃ©vue : <b className="text-neutral-900">{formatDate(item.estimatedDeliveryDate)}</b></span>}
-        </div>
-      </div>
-    </div>
-  );
-}
+export function OrdersView({ orders, ordersCount, onOpenInvoice, onOpenDispute, onNavigate }: OrdersViewProps) {
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
-function DeliveryDetail({ order, item }: { order: ClientOrder; item?: ClientOrderItem }) {
-  return (
-    <div>
-      <p className="mb-2.5 text-xs font-bold uppercase tracking-wide text-neutral-400">Livraison</p>
-      <div className="rounded-xl border border-neutral-100 bg-neutral-50/60 p-4">
-        <div className="flex flex-wrap gap-x-8 gap-y-3">
-          <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-1.5 text-xs font-semibold text-neutral-700">
-              <MapPin size={13} className="shrink-0 text-neutral-400" />
-              <span className="truncate">{item?.deliveryAddress || 'Adresse non renseignÃ©e'}</span>
-            </p>
-            <p className="mt-0.5 pl-[22px] text-xs text-neutral-500">
-              {item?.deliveryPostalCode} {item?.deliveryCity}
-              {item?.deliveryCountry ? `, ${COUNTRY_LABELS[item.deliveryCountry] || item.deliveryCountry}` : ''}
-            </p>
-          </div>
-          <div className="text-xs">
-            <p className="font-semibold text-neutral-700">Frais de livraison</p>
-            <p className="text-neutral-500">{item?.deliveryFees ? `${formatMoney(item.deliveryFees)} (TTC)` : 'Offerts'}</p>
-          </div>
-          {item?.trackingNumber && (
-            <div className="text-xs">
-              <p className="flex items-center gap-1.5 font-semibold text-neutral-700">
-                <Truck size={13} className="text-neutral-400" /> Suivi
-              </p>
-              <p className="text-neutral-500">
-                {item.carrier} Â· <b className="text-neutral-800">{item.trackingNumber}</b>
-                {item.deliveryPinCode && <span> Â· Code : {item.deliveryPinCode}</span>}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FileTextIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z" />
-      <path d="M14 2v6h6" />
-    </svg>
-  );
-}
-
-export function OrdersView({ orders, ordersCount, onOpenInvoice, onOpenDispute }: OrdersViewProps) {
-  const [subFilter, setSubFilter] = useState<SubFilter>('all');
-
-  const totalSpent = orders.filter((o) => o.statusKey !== 'cancelled').reduce((sum, o) => sum + o.totalTTC, 0);
-
-  const filtered = orders.filter((o) => (subFilter === 'all' ? true : o.type === subFilter));
-
-  const groups = filtered.reduce<Array<{ key: string; label: string; orders: ClientOrder[] }>>((acc, order) => {
-    const key = formatMonthYear(order.date) || 'Autres';
-    let group = acc.find((g) => g.key === key);
-    if (!group) {
-      group = { key, label: key, orders: [] };
-      acc.push(group);
+  const filteredOrders = orders.filter((order) => {
+    if (filterStatus === 'delivered' && order.statusKey !== 'delivered') return false;
+    if (filterStatus === 'in_transit' && order.statusKey !== 'in_transit') return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchesNum = order.number.toLowerCase().includes(q);
+      const matchesProduct = order.items.some((i) => i.title.toLowerCase().includes(q));
+      if (!matchesNum && !matchesProduct) return false;
     }
-    group.orders.push(order);
-    return acc;
-  }, []);
-
-  const canOpenDispute = orders.some((o) => o.statusKey === 'delivered');
+    return true;
+  });
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900">Mes commandes</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            {ordersCount} commande{ordersCount > 1 ? 's' : ''} au total Â· {orders.filter((o) => o.statusKey === 'delivered').length} livrÃ©e(s),{' '}
-            {orders.filter((o) => o.statusKey === 'in_transit').length} en cours d'acheminement
-          </p>
+    <div id="pixiatech-orders-view" className="space-y-6">
+      <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-13 h-13 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
+            <Package className="w-6 h-6 text-[#38E044]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">Mes Commandes</h1>
+            <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
+              {ordersCount} commande{ordersCount > 1 ? 's' : ''} au total ·{' '}
+              {orders.filter((o) => o.statusKey === 'delivered').length} livrée(s),{' '}
+              {orders.filter((o) => o.statusKey === 'in_transit').length} en cours d'acheminement
+            </p>
+          </div>
         </div>
 
+        <button
+          onClick={() => onNavigate('dashboard')}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A0D0E] text-white text-xs font-bold hover:bg-neutral-800 transition-all shadow-sm cursor-pointer"
+          title="Retour au tableau de bord"
+        >
+          <ShoppingBag className="w-4 h-4 text-[#38E044]" />
+          <span>Accéder à la boutique</span>
+          <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
+        </button>
+      </div>
+
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <SlidingSwitch
           options={[
-            { key: 'all', label: 'Tout' },
-            { key: 'sale', label: 'Achats' },
-            { key: 'rental', label: 'Locations' },
+            { id: 'all', label: 'Toutes les commandes', badge: orders.length },
+            {
+              id: 'in_transit',
+              label: 'En cours d\'acheminement',
+              badge: orders.filter((o) => o.statusKey === 'in_transit').length,
+            },
+            {
+              id: 'delivered',
+              label: 'Livrées',
+              badge: orders.filter((o) => o.statusKey === 'delivered').length,
+            },
           ]}
-          active={subFilter}
-          onChange={(k) => setSubFilter(k as SubFilter)}
-          className="max-w-xs"
+          activeId={filterStatus}
+          onChange={setFilterStatus}
+          size="sm"
         />
 
-        {groups.length === 0 ? (
-          <div className="flex flex-col items-center rounded-2xl border border-dashed border-neutral-200 bg-white py-16 text-center shadow-xs">
-            <p className="text-sm font-bold text-neutral-700">Aucune commande Ã  afficher</p>
-            <p className="mt-1 text-sm text-neutral-500">Vos commandes apparaÃ®tront ici dÃ¨s leur validation.</p>
-          </div>
-        ) : (
-          groups.map((group) => (
-            <div key={group.key}>
-              <p className="mb-3 text-sm font-bold uppercase tracking-wide text-neutral-400">
-                {group.label} Â· {group.orders.length}
-              </p>
-              <div className="space-y-4">
-                {group.orders.map((order) => (
-                  <OrderCard key={order.id} order={order} onOpenInvoice={onOpenInvoice} onOpenDispute={onOpenDispute} />
-                ))}
-              </div>
-            </div>
-          ))
-        )}
+        <div className="relative max-w-xs w-full">
+          <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Rechercher par n° ou produit..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-white border border-neutral-200/90 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-neutral-400"
+          />
+        </div>
       </div>
 
-      <div className="space-y-6">
-        <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
-          <p className="text-xs font-bold uppercase tracking-wide text-neutral-400">Total dÃ©pensÃ©</p>
-          <p className="mt-1 text-2xl font-extrabold text-neutral-900">{formatMoney(totalSpent)}</p>
-          <p className="text-xs text-neutral-500">TTC, toutes commandes confondues</p>
+      {filteredOrders.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-neutral-200/80 p-12 text-center shadow-xs">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4">
+            <Package className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-neutral-900">Aucune commande pour le moment</h3>
+          <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto mt-1 mb-6">
+            Votre historique de commande est actuellement vide. Découvrez nos équipements informatiques professionnels sur
+            notre boutique en ligne.
+          </p>
           <button
-            type="button"
-            onClick={() => onOpenDispute()}
-            disabled={!canOpenDispute}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
-            title={canOpenDispute ? '' : 'Un litige nÃ©cessite une commande livrÃ©e'}
+            onClick={() => onNavigate('dashboard')}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-xs hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
           >
-            <MessageSquareWarning size={16} /> Ouvrir un litige
+            <ShoppingBag className="w-4 h-4 text-[#38E044]" />
+            <span>Découvrir notre boutique</span>
+            <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
           </button>
         </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredOrders.map((order) => {
+            const chip = statusChip(order);
+            return (
+              <div key={order.id} className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs hover:border-neutral-300 transition-all space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-neutral-100">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-extrabold text-sm text-neutral-900">{order.number}</span>
+                      <span className="text-xs text-neutral-400">• Commandée le {formatShortDate(order.date)}</span>
+                    </div>
+                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${chip.cls}`}>
+                      {chip.text}
+                    </span>
+                    <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200">
+                      {order.kindLabel}
+                    </span>
+                  </div>
 
-        <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
-          <p className="mb-4 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-neutral-400">
-            <Clock size={13} /> Suivi de livraison
-          </p>
-          {orders.length === 0 ? (
-            <p className="text-sm text-neutral-500">Aucune commande Ã  suivre.</p>
-          ) : (
-            <div className="space-y-4">
-              {[...orders].slice(0, 3).map((order) => (
-                <div key={order.id} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100">
-                    <MessageSquareWarning size={15} className="hidden" />
-                    <PackageCheck size={15} className="text-neutral-500" />
-                  </span>
-                  <div>
-                    <p className="text-xs font-semibold text-neutral-900">{order.number}</p>
-                    <p className="text-xs text-neutral-500">{order.statusLabel}</p>
+                  <div className="flex items-center gap-2">
+                    <InvoiceAction order={order} onOpenInvoice={onOpenInvoice} onNavigate={onNavigate} />
+                    <button
+                      onClick={() => onOpenDispute(order.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-amber-50 border border-neutral-200 hover:border-amber-300 text-neutral-600 hover:text-amber-800 text-xs font-medium transition-colors cursor-pointer"
+                      title="Signaler une avarie ou un problème"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Litige</span>
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                <div className="space-y-4">
+                  {order.items.map((item, idx) => (
+                    <OrderItemRow key={item.id || idx} item={item} />
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 text-xs">
+                  <OrderLogistics item={order.items[0]} />
+                  <OrderFinance order={order} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OrderItemRow({ item }: { item: ClientOrderItem }) {
+  return (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3.5 rounded-2xl bg-neutral-50/60 border border-neutral-100 hover:bg-neutral-50 transition-colors">
+      <div className="flex items-center gap-4 min-w-0">
+        {item.img ? (
+          <img src={item.img} alt={item.title} className="w-16 h-16 rounded-2xl object-cover border border-neutral-200 shrink-0" />
+        ) : (
+          <span className="w-16 h-16 rounded-2xl bg-neutral-100 text-neutral-400 flex items-center justify-center shrink-0">
+            <Package className="w-7 h-7" />
+          </span>
+        )}
+        <div className="min-w-0">
+          <div className="text-left font-bold text-sm text-neutral-900 line-clamp-1">{item.title}</div>
+          {item.subtitle && <p className="text-xs text-neutral-500 line-clamp-1 mt-0.5">{item.subtitle}</p>}
+          {item.note && <p className="text-xs text-neutral-500 line-clamp-1 mt-0.5">{item.note}</p>}
+          <div className="flex items-center gap-3 text-xs text-neutral-500 mt-1">
+            <span>
+              Quantité : <strong className="text-neutral-800">{item.quantity}</strong>
+            </span>
+            <span>•</span>
+            <span>
+              Prix unitaire HT : <strong className="text-neutral-800 font-mono">{formatMoney(item.unitPriceHT)}</strong>
+            </span>
+            <span>•</span>
+            <span>
+              TVA : <strong>{(item.vatRate * 100).toFixed(0)}%</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-right shrink-0">
+        <div className="text-sm font-extrabold text-neutral-900 font-mono">
+          {formatMoney(item.unitPriceHT * item.quantity * (1 + item.vatRate))} TTC
+        </div>
+        <div className="text-[11px] text-neutral-400 mt-0.5">ligne HT : {formatMoney(item.unitPriceHT * item.quantity)}</div>
+      </div>
+    </div>
+  );
+}
+
+function OrderLogistics({ item }: { item?: ClientOrderItem }) {
+  return (
+    <div className="p-3.5 rounded-2xl bg-neutral-100/50 border border-neutral-200/60 space-y-1.5">
+      <div className="font-bold text-neutral-800 flex items-center gap-1.5">
+        <Truck className="w-3.5 h-3.5 text-neutral-600" />
+        <span>Expédition {item?.carrier || 'à définir'}</span>
+      </div>
+      {item?.trackingNumber ? (
+        <div className="text-neutral-500 font-mono">
+          N° suivi : <strong className="text-neutral-800">{item.trackingNumber}</strong>
+          {item.deliveryPinCode && (
+            <span className="ml-2 not-mono text-emerald-700">· Code PIN : {item.deliveryPinCode}</span>
           )}
         </div>
+      ) : (
+        <div className="text-neutral-500">Suivi non disponible pour le moment.</div>
+      )}
+      <div className="text-neutral-500">
+        Adresse : {item?.deliveryAddress || 'Adresse non renseignée'}
+        {item?.deliveryCity ? `, ${item.deliveryPostalCode} ${item.deliveryCity}` : ''}
+      </div>
+    </div>
+  );
+}
+
+function OrderFinance({ order }: { order: ClientOrder }) {
+  return (
+    <div className="p-3.5 rounded-2xl bg-neutral-100/50 border border-neutral-200/60 space-y-1.5 text-neutral-600">
+      <div className="flex justify-between">
+        <span>Sous-total HT :</span>
+        <span className="font-mono text-neutral-900">{formatMoney(order.totalHT)}</span>
+      </div>
+      <div className="flex justify-between">
+        <span>TVA :</span>
+        <span className="font-mono text-neutral-900">{formatMoney(order.totalVAT)}</span>
+      </div>
+      <div className="flex justify-between pt-1.5 border-t border-neutral-200 font-bold text-neutral-900 text-sm">
+        <span>Montant Total TTC :</span>
+        <span className="font-mono">{formatMoney(order.totalTTC)}</span>
       </div>
     </div>
   );

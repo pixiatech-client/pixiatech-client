@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Loader2, Mail, X } from 'lucide-react';
+import { ArrowRight, Loader2, Mail, X } from 'lucide-react';
 import { clientApi } from '../../lib/api';
 
 interface EmailVerificationModalProps {
@@ -41,7 +41,7 @@ export function EmailVerificationModal({ open, onClose, onVerified, showToast, e
     try {
       await clientApi.requestEmailCode();
       setCountdown(RESEND_DELAY);
-      showToast('success', 'Un code de vÃ©rification vous a Ã©tÃ© envoyÃ© par e-mail.');
+      showToast('success', 'Un code de vérification vous a été envoyé par e-mail.');
     } catch (err: any) {
       showToast('error', err.message || "Impossible d'envoyer le code.");
     } finally {
@@ -68,14 +68,14 @@ export function EmailVerificationModal({ open, onClose, onVerified, showToast, e
   async function verify() {
     const code = digits.join('');
     if (code.length !== CODE_LENGTH) {
-      showToast('error', 'Saisissez le code reÃ§u (4 chiffres).');
+      showToast('error', 'Saisissez le code reçu (4 chiffres).');
       return;
     }
     setVerifying(true);
     try {
       const res = await clientApi.verifyEmailCode(code);
       if (res.verified) {
-        showToast('success', 'Adresse e-mail vÃ©rifiÃ©e. Merci !');
+        showToast('success', 'Adresse e-mail vérifiée. Merci !');
         onVerified();
         onClose();
         setDigits(Array(CODE_LENGTH).fill(''));
@@ -104,64 +104,85 @@ export function EmailVerificationModal({ open, onClose, onVerified, showToast, e
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-white p-6 text-center shadow-2xl sm:rounded-3xl"
+            className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-neutral-200 bg-white shadow-2xl sm:rounded-3xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between">
-              <span className="flex size-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                <Mail size={22} />
-              </span>
-              <button type="button" onClick={onClose} className="rounded-xl p-2 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700" aria-label="Fermer">
-                <X size={20} />
+            <div className="flex items-center justify-between border-b border-neutral-100 p-5 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0D0E] text-white">
+                  <Mail className="size-5 text-[#38E044]" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-neutral-900">Vérification de votre E-mail</h2>
+                  <p className="text-xs text-neutral-500">Validation requise avant émission de facture</p>
+                </div>
+              </div>
+              <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-neutral-400 transition hover:bg-neutral-100 hover:text-black" aria-label="Fermer">
+                <X className="size-5" />
               </button>
             </div>
 
-            <h2 className="mt-4 text-lg font-extrabold text-neutral-900">VÃ©rifiez votre e-mail</h2>
-            <p className="mx-auto mt-1 max-w-sm text-sm text-neutral-500">
-              Saisissez le code Ã  4 chiffres envoyÃ© Ã {' '}
-              <b className="text-neutral-800">{email || 'votre adresse'}</b>.
-            </p>
+            <div className="flex-1 space-y-5 p-5">
+              <p className="text-xs text-neutral-600">
+                Nous avons envoyé un code de sécurité à 4 chiffres à l'adresse :{' '}
+                <strong className="text-neutral-900">{email || 'votre adresse e-mail'}</strong>.
+              </p>
 
-            <div className="mx-auto mt-6 flex max-w-[240px] justify-center gap-2.5">
-              {digits.map((d, i) => (
-                <input
-                  key={i}
-                  ref={(el) => {
-                    inputsRef.current[i] = el;
-                  }}
-                  value={d}
-                  onChange={(e) => handleChange(i, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(i, e)}
-                  disabled={verifying}
-                  inputMode="numeric"
-                  autoFocus={i === 0}
-                  className="aspect-square w-full rounded-2xl border border-neutral-200 bg-neutral-50 text-center text-2xl font-extrabold outline-none transition focus:border-neutral-900 focus:ring-2 focus:ring-neutral-200"
-                />
-              ))}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-neutral-700">Code de vérification (4 chiffres)</label>
+                <div className="flex justify-center gap-2.5 rounded-2xl border border-neutral-300 bg-neutral-100 p-3.5">
+                  {digits.map((d, i) => (
+                    <input
+                      key={i}
+                      ref={(el) => {
+                        inputsRef.current[i] = el;
+                      }}
+                      value={d}
+                      onChange={(e) => handleChange(i, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(i, e)}
+                      disabled={verifying}
+                      inputMode="numeric"
+                      autoFocus={i === 0}
+                      className="aspect-square w-full max-w-[52px] rounded-xl border border-neutral-300 bg-white text-center text-2xl font-extrabold tracking-[0.2em] text-neutral-900 outline-none transition focus:border-neutral-900 focus:ring-2 focus:ring-black/10"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-center text-xs text-neutral-500">
+                {requesting ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Loader2 className="size-3.5 animate-spin" /> Envoi du code…
+                  </span>
+                ) : countdown > 0 ? (
+                  <span>Renvoyer le code dans {countdown}s</span>
+                ) : (
+                  <button type="button" onClick={requestCode} className="text-xs font-semibold text-neutral-900 underline underline-offset-2 hover:opacity-80">
+                    Renvoyer le code
+                  </button>
+                )}
+              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={verify}
-              disabled={verifying || requesting}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#0A0D0E] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-            >
-              {verifying && <Loader2 size={16} className="animate-spin" />}
-              VÃ©rifier
-            </button>
-
-            <div className="mt-4 text-xs text-neutral-500">
-              {requesting ? (
-                <span className="flex items-center justify-center gap-1.5">
-                  <Loader2 size={13} className="animate-spin" /> Envoi du codeâ€¦
-                </span>
-              ) : countdown > 0 ? (
-                <span>Renvoyer le code dans {countdown}s</span>
-              ) : (
-                <button type="button" onClick={requestCode} className="font-semibold text-neutral-900 underline underline-offset-2 hover:opacity-80">
-                  Renvoyer le code
-                </button>
-              )}
+            <div className="flex items-center justify-end gap-2.5 border-t border-neutral-100 p-4">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={verifying}
+                className="rounded-xl px-4 py-2 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-40"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={verify}
+                disabled={verifying || requesting}
+                className="flex items-center gap-2 rounded-xl bg-[#0A0D0E] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-neutral-800 disabled:opacity-50"
+              >
+                {verifying && <Loader2 className="size-3.5 animate-spin text-[#38E044]" />}
+                <span>{verifying ? 'Validation…' : "Valider l'adresse"}</span>
+                <ArrowRight className="size-3.5 text-[#38E044]" />
+              </button>
             </div>
           </motion.div>
         </motion.div>

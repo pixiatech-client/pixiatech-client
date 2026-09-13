@@ -1,131 +1,312 @@
 ﻿'use client';
 
-import { ArrowRight, FileText, HelpCircle, MessageSquareWarning, MousePointerClick, ShoppingBag } from 'lucide-react';
-import type { ClientOrder, ClientProfile } from '../../types';
-import { formatDate, formatMoney, formatShortDate } from '../../lib/format';
+import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  ChevronRight,
+  ExternalLink,
+  FileText,
+  Package,
+  ShieldCheck,
+} from 'lucide-react';
+import type { ClientInvoice, ClientOrder, ClientProfile, ClientTab } from '../../types';
+import { formatMoney, formatShortDate } from '../../lib/format';
 
 interface DashboardViewProps {
   profile: ClientProfile | null;
   orders: ClientOrder[];
+  invoices: ClientInvoice[];
   disputes: { total: number; open: number };
-  onNavigate: (view: 'orders' | 'invoices' | 'disputes') => void;
+  onNavigate: (tab: ClientTab) => void;
   onOpenBoutique: () => void;
   onOpenDispute: () => void;
   onOpenInvoice: (invoiceId: string) => void;
 }
 
-function StatusPill({ label, tone }: { label: string; tone: 'neutral' | 'green' | 'amber' | 'red' }) {
-  const tones: Record<string, string> = {
-    neutral: 'bg-neutral-100 text-neutral-700',
-    green: 'bg-emerald-100 text-emerald-700',
-    amber: 'bg-amber-100 text-amber-700',
-    red: 'bg-red-100 text-red-600',
-  };
-  return (
-    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${tones[tone]}`}>{label}</span>
-  );
-}
-
 function statusTone(key: string) {
-  if (key === 'delivered') return 'green';
-  if (key === 'in_transit') return 'amber';
-  if (key === 'cancelled') return 'red';
-  return 'neutral';
+  if (key === 'delivered') return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+  if (key === 'in_transit') return 'bg-sky-50 text-sky-700 border border-sky-200';
+  if (key === 'cancelled') return 'bg-red-50 text-red-600 border border-red-200';
+  return 'bg-amber-50 text-amber-700 border border-amber-200';
 }
 
-export function DashboardView({ profile, orders, disputes, onNavigate, onOpenBoutique, onOpenDispute, onOpenInvoice }: DashboardViewProps) {
-  const firstName = profile?.name?.split(' ')[0] || 'Client';
-  const totalTTC = orders.reduce((sum, o) => sum + o.totalTTC, 0);
-  const recentOrders = [...orders].slice(0, 3);
+function statusLabel(order: ClientOrder) {
+  if (order.statusKey === 'delivered') return '✓ Livré';
+  if (order.statusKey === 'in_transit') return 'En cours d\'acheminement';
+  if (order.statusKey === 'cancelled') return 'Annulée';
+  return 'En préparation';
+}
 
-  const metrics = [
-    { label: 'Commandes', value: String(orders.length), icon: <ShoppingBag size={18} /> },
-    { label: 'Total dÃ©pensÃ© TTC', value: formatMoney(totalTTC), icon: <MousePointerClick size={18} /> },
-    { label: 'Litiges actifs', value: String(disputes.open), icon: <MessageSquareWarning size={18} /> },
-  ];
+export function DashboardView({
+  profile,
+  orders,
+  invoices,
+  disputes,
+  onNavigate,
+  onOpenBoutique,
+  onOpenDispute,
+  onOpenInvoice,
+}: DashboardViewProps) {
+  const pendingOrders = orders.filter((o) => o.statusKey !== 'delivered');
+  const deliveredOrders = orders.filter((o) => o.statusKey === 'delivered');
+  const totalSpentTTC = orders.reduce((acc, curr) => acc + curr.totalTTC, 0);
+  const resolvedDisputes = disputes.total - disputes.open;
+  const recentOrders = orders.slice(0, 3);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900">
-          Bon retour parmi nous, {firstName}
-        </h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Bienvenue dans votre espace client. Retrouvez vos commandes, factures et litiges.
-        </p>
+    <div id="pixiatech-dashboard-view" className="space-y-6">
+      <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-13 h-13 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
+            <Package className="w-6 h-6 text-[#38E044]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">Tableau de bord Client</h1>
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#38E044]" />
+                En ligne
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
+              Bienvenue, <strong className="text-neutral-800">{profile?.name || 'Client'}</strong>. Suivez vos commandes,
+              vos factures et vos livraisons en temps réel.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={onOpenBoutique}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A0D0E] text-white text-xs font-bold hover:bg-neutral-800 transition-all shadow-sm cursor-pointer"
+        >
+          <span>Accéder à la boutique</span>
+          <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
+        </button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {metrics.map((m) => (
-          <div key={m.label} className="rounded-2xl border border-neutral-200/80 bg-white p-5 shadow-xs">
-            <div className="flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-neutral-100 text-neutral-600">
-                {m.icon}
-              </span>
-              <div>
-                <p className="text-xs font-medium text-neutral-400">{m.label}</p>
-                <p className="text-lg font-extrabold text-neutral-900">{m.value}</p>
-              </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 shadow-xs hover:border-neutral-300 transition-all">
+          <div className="flex items-center justify-between text-neutral-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Commandes Totales</span>
+            <div className="p-2 rounded-xl bg-neutral-100 text-neutral-700">
+              <Package className="w-4 h-4" />
             </div>
           </div>
-        ))}
+          <div className="text-2xl sm:text-3xl font-extrabold text-neutral-900 font-mono">{orders.length}</div>
+          <div className="mt-2 text-xs text-neutral-500 flex items-center justify-between">
+            <span>{deliveredOrders.length} livrée(s)</span>
+            <span className="text-emerald-600 font-medium">
+              {pendingOrders.length > 0 ? `${pendingOrders.length} en transit` : 'Toutes remises'}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 shadow-xs hover:border-neutral-300 transition-all">
+          <div className="flex items-center justify-between text-neutral-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Factures Disponibles</span>
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+              <FileText className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-neutral-900 font-mono">{invoices.length}</div>
+          <div className="mt-2 text-xs text-neutral-500 flex items-center justify-between">
+            <span>Conformes TVA 20%</span>
+            <button
+              onClick={() => onNavigate('invoices')}
+              className="text-[#15803d] hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
+            >
+              Consulter <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 shadow-xs hover:border-neutral-300 transition-all">
+          <div className="flex items-center justify-between text-neutral-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Total Commandes TTC</span>
+            <div className="p-2 rounded-xl bg-neutral-100 text-neutral-700">
+              <span className="font-bold text-xs">€</span>
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-neutral-900 font-mono">{formatMoney(totalSpentTTC)}</div>
+          <div className="mt-2 text-xs text-neutral-500">Dépenses globales validées</div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 shadow-xs hover:border-neutral-300 transition-all">
+          <div className="flex items-center justify-between text-neutral-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Litiges & Réclamations</span>
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-neutral-900 font-mono">{disputes.total}</div>
+          <div className="mt-2 text-xs text-neutral-500 flex items-center justify-between">
+            <span>{resolvedDisputes} résolu(s)</span>
+            <button
+              onClick={onOpenDispute}
+              className="text-amber-700 hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
+            >
+              Déclarer <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-bold text-neutral-900">Mes derniÃ¨res commandes</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs">
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+              <div className="flex items-center gap-2.5">
+                <Package className="w-5 h-5 text-neutral-900" />
+                <h2 className="text-base font-bold text-neutral-900">Mes Dernières Commandes</h2>
+              </div>
+              {orders.length > 0 && (
+                <button
+                  onClick={() => onNavigate('orders')}
+                  className="text-xs font-semibold text-neutral-600 hover:text-black flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Voir toutes les commandes</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {orders.length === 0 ? (
+              <div className="py-12 text-center">
+                <div className="w-14 h-14 mx-auto rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-3">
+                  <Package className="w-7 h-7" />
+                </div>
+                <h3 className="text-base font-bold text-neutral-900">Aucune commande pour le moment</h3>
+                <p className="text-xs text-neutral-500 max-w-sm mx-auto mt-1 mb-5">
+                  Vous n'avez pas encore passé de commande sur notre boutique. Explorez nos produits haute performance dès
+                  maintenant.
+                </p>
+                <button
+                  onClick={onOpenBoutique}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-xs hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
+                >
+                  <span>Découvrir la boutique</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#38E044]" />
+                </button>
+              </div>
+            ) : (
+              <div className="divide-y divide-neutral-100">
+                {recentOrders.map((order) => {
+                  const firstItem = order.items[0];
+                  return (
+                    <div
+                      key={order.id}
+                      className="py-4.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        {firstItem?.img ? (
+                          <img
+                            src={firstItem.img}
+                            alt={firstItem.title}
+                            className="w-14 h-14 rounded-2xl object-cover border border-neutral-200 shrink-0"
+                          />
+                        ) : (
+                          <span className="w-14 h-14 rounded-2xl bg-neutral-100 text-neutral-400 flex items-center justify-center shrink-0">
+                            <Package className="w-6 h-6" />
+                          </span>
+                        )}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono font-bold text-neutral-900">{order.number}</span>
+                            <span className="text-[11px] text-neutral-400">• {formatShortDate(order.date)}</span>
+                          </div>
+                          <h4 className="text-sm font-semibold text-neutral-800 truncate mt-0.5">
+                            {firstItem?.title || order.kindLabel}
+                          </h4>
+                          <div className="text-xs text-neutral-500 mt-0.5">
+                            {order.items.length > 1
+                              ? `+ ${order.items.length - 1} autre(s) article(s)`
+                              : `Qté : ${firstItem?.quantity || 0}`}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 shrink-0">
+                        <div className="text-right">
+                          <div className="text-sm font-extrabold text-neutral-900 font-mono">{formatMoney(order.totalTTC)}</div>
+                          <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ${statusTone(order.statusKey)}`}>
+                            {statusLabel(order)}
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={() => onNavigate('orders')}
+                          className="p-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors cursor-pointer"
+                          title="Détails"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs">
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+              <div className="flex items-center gap-2.5">
+                <FileText className="w-5 h-5 text-neutral-900" />
+                <h2 className="text-base font-bold text-neutral-900">Mes Factures Certifiées</h2>
+              </div>
               <button
-                type="button"
-                onClick={() => onNavigate('orders')}
-                className="flex items-center gap-1 text-sm font-semibold text-neutral-900 hover:underline"
+                onClick={() => onNavigate('invoices')}
+                className="text-xs font-semibold text-neutral-600 hover:text-black flex items-center gap-1 cursor-pointer"
               >
-                Tout voir <ArrowRight size={15} />
+                <span>Accéder à l'espace factures</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {recentOrders.length === 0 ? (
-              <EmptyState
-                title="Aucune commande pour le moment"
-                subtitle="DÃ©couvrez nos produits en boutique pour passer votre premiÃ¨re commande."
-                actionLabel="Aller Ã  la boutique"
-                onAction={onOpenBoutique}
-              />
+            {invoices.length === 0 ? (
+              <div className="py-6 text-center text-xs text-neutral-500">
+                <p>Aucune facture émise pour le moment.</p>
+                <p className="mt-1 text-neutral-400">
+                  {orders.length > 0
+                    ? 'Vous pouvez générer une facture pour vos commandes validées depuis l\'onglet "Mes factures".'
+                    : 'Vous devez avoir passé une commande avant de pouvoir demander une facture.'}
+                </p>
+                {orders.length > 0 && (
+                  <button
+                    onClick={() => onNavigate('invoices')}
+                    className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0A0D0E] text-white font-semibold text-xs hover:bg-neutral-800 transition-colors cursor-pointer"
+                  >
+                    <span>Demander une facture</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#38E044]" />
+                  </button>
+                )}
+              </div>
             ) : (
-              <div className="space-y-3">
-                {recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center gap-4 rounded-2xl border border-neutral-100 bg-neutral-50/60 p-4">
-                    <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#0A0D0E] text-xs font-bold uppercase text-white">
-                      {order.kindLabel === 'Achat' ? 'Ach' : 'Loc'}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-neutral-900">{order.items[0]?.title || order.number}</p>
-                      <p className="text-xs text-neutral-500">
-                        {order.number} Â· {formatShortDate(order.date)}
-                      </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                {invoices.slice(0, 2).map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    onClick={() => onOpenInvoice(invoice.id)}
+                    className="p-4 rounded-2xl border border-neutral-200 hover:border-neutral-300 hover:shadow-md transition-all cursor-pointer bg-neutral-50/50"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                          {invoice.number}
+                        </span>
+                        <h4 className="text-xs font-bold text-neutral-800 mt-2 line-clamp-1">
+                          {invoice.companyName || 'Facture certifiée'}
+                        </h4>
+                        <div className="text-[11px] text-neutral-500 mt-0.5">Émise le {formatShortDate(invoice.date)}</div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-extrabold text-neutral-900 font-mono">{formatMoney(invoice.totalTTC)}</span>
+                        <span className="block text-[10px] text-neutral-400">TTC</span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-neutral-900">{formatMoney(order.totalTTC)}</p>
-                      <StatusPill label={order.statusLabel} tone={statusTone(order.statusKey)} />
-                    </div>
-                    {order.hasInvoice && order.invoiceId ? (
-                      <button
-                        type="button"
-                        onClick={() => onOpenInvoice(order.invoiceId!)}
-                        className="rounded-xl bg-[#0A0D0E] px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
-                      >
-                        Facture
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onNavigate('invoices')}
-                        className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
-                      >
-                        <FileText size={13} className="inline -translate-y-px" /> Demander
-                      </button>
-                    )}
                   </div>
                 ))}
               </div>
@@ -134,76 +315,92 @@ export function DashboardView({ profile, orders, disputes, onNavigate, onOpenBou
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
-            <h2 className="mb-4 text-base font-bold text-neutral-900">Mes donnÃ©es</h2>
-            <dl className="space-y-3 text-sm">
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-400">E-mail</dt>
-                <dd className="truncate font-medium text-neutral-900">{profile?.email || 'â€”'}</dd>
+          <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-4">Identité & Conformité Client</h3>
+
+            <div className="space-y-3.5 text-xs">
+              <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-1">
+                <div className="font-bold text-neutral-900">{profile?.name || 'Client'}</div>
+                <div className="text-neutral-500">{profile?.email || '—'}</div>
+                <div className="text-neutral-500">{profile?.phone || '—'}</div>
               </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-400">TÃ©lÃ©phone</dt>
-                <dd className="font-medium text-neutral-900">{profile?.phone || 'â€”'}</dd>
-              </div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-neutral-400">Membre depuis</dt>
-                <dd className="font-medium text-neutral-900">{profile?.lastLoginAt ? formatDate(profile.lastLoginAt) : 'â€”'}</dd>
-              </div>
-              {profile?.siret && (
-                <div className="flex justify-between gap-3">
-                  <dt className="text-neutral-400">SIRET</dt>
-                  <dd className="font-medium text-neutral-900">{profile.siret}</dd>
+
+              {profile?.siretVerified && profile?.companyName ? (
+                <div className="space-y-2">
+                  <div className="flex items-start gap-3 p-3 rounded-2xl bg-emerald-50/50 border border-emerald-200/80">
+                    <Building2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-bold text-neutral-900">{profile.companyName}</div>
+                      <div className="text-neutral-600 mt-0.5 font-mono">SIRET : {profile.siret || '—'}</div>
+                      <div className="text-[11px] text-neutral-500 mt-0.5 font-mono">TVA : {profile.vatNumber || '—'}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs">
+                    <span className="text-neutral-600">Vérification Entreprise</span>
+                    <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full text-[11px]">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Certifié INSEE
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-200/80 text-neutral-600">
+                  <div className="flex items-center justify-between">
+                    <span>Statut de facturation :</span>
+                    <span className="font-semibold text-neutral-800">Particulier</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 mt-1">
+                    Vous pouvez vérifier une entreprise lors de l'émission d'une facture.
+                  </p>
                 </div>
               )}
-            </dl>
+            </div>
+
+            <button
+              onClick={() => onNavigate('settings')}
+              className="w-full mt-4 py-2.5 px-4 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Gérer les paramètres du compte</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
           </div>
 
-          <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
-            <h2 className="mb-4 text-base font-bold text-neutral-900">Bon Ã  savoir</h2>
-            <div className="grid gap-3">
-              <button
-                type="button"
-                onClick={onOpenBoutique}
-                className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 p-3 text-left transition hover:bg-neutral-100"
-              >
-                <ShoppingBag size={18} className="text-neutral-500" />
-                <span className="flex-1 text-sm font-medium text-neutral-700">DÃ©couvrir la boutique</span>
-              </button>
-              <a
-                href="/estimation"
-                className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 p-3 text-left transition hover:bg-neutral-100"
-              >
-                <HelpCircle size={18} className="text-neutral-500" />
-                <span className="flex-1 text-sm font-medium text-neutral-700">Demander un devis</span>
-              </a>
-              <button
-                type="button"
-                onClick={onOpenDispute}
-                className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 p-3 text-left transition hover:bg-neutral-100"
-              >
-                <MessageSquareWarning size={18} className="text-neutral-500" />
-                <span className="flex-1 text-sm font-medium text-neutral-700">Ouvrir un litige</span>
-              </button>
+          <div className="bg-amber-50/60 rounded-3xl border border-amber-200/80 p-6 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-amber-500 text-white shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-amber-950">Un problème avec une livraison ?</h4>
+                <p className="text-xs text-amber-800/90 mt-1">
+                  Colis endommagé, retard ou erreur ? Notre support dédié traite vos réclamations sous 24h ouvrées.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    id="btn-open-dispute-dashboard"
+                    type="button"
+                    onClick={onOpenDispute}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-900 hover:bg-amber-950 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span>Ouvrir un litige</span>
+                  </button>
+                  {disputes.total > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('disputes')}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/80 hover:bg-white text-amber-900 text-xs font-semibold border border-amber-300 transition-colors cursor-pointer"
+                    >
+                      <span>Suivi réclamations ({disputes.total})</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function EmptyState({ title, subtitle, actionLabel, onAction }: { title: string; subtitle: string; actionLabel: string; onAction: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-neutral-200 py-12 text-center">
-      <p className="text-sm font-bold text-neutral-700">{title}</p>
-      <p className="mt-1 max-w-sm text-sm text-neutral-500">{subtitle}</p>
-      <button
-        type="button"
-        onClick={onAction}
-        className="mt-4 rounded-xl bg-[#0A0D0E] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-      >
-        {actionLabel}
-      </button>
     </div>
   );
 }

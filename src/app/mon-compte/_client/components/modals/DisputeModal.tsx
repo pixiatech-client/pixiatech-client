@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowRight, X } from 'lucide-react';
 import { DISPUTE_REASON_LABELS } from '@/lib/client-status';
 import type { ClientOrder } from '../../types';
 import { clientApi } from '../../lib/api';
@@ -26,7 +26,7 @@ export function DisputeModal({ open, defaultOrderId, orders, onClose, onCreated,
 
   async function submit() {
     if (!reason || !description.trim()) {
-      showToast('error', 'Merci de choisir un motif et de dÃ©crire le problÃ¨me.');
+      showToast('error', 'Merci de choisir un motif et de décrire le problème.');
       return;
     }
     setSending(true);
@@ -38,7 +38,7 @@ export function DisputeModal({ open, defaultOrderId, orders, onClose, onCreated,
         orderId: selected ? orderId : undefined,
         orderType: selected?.type,
       });
-      showToast('success', 'Votre litige a Ã©tÃ© ouvert. Notre Ã©quipe vous rÃ©pondra sous 24h ouvrÃ©es.');
+      showToast('success', 'Votre litige a été ouvert. Notre équipe vous répondra sous 24h ouvrées.');
       onCreated(res.disputeId);
       onClose();
       setReason('');
@@ -66,71 +66,108 @@ export function DisputeModal({ open, defaultOrderId, orders, onClose, onCreated,
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-3xl"
+            className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl border border-neutral-200 bg-white shadow-2xl sm:rounded-3xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-extrabold text-neutral-900">Ouvrir un litige</h2>
-                <p className="mt-0.5 text-sm text-neutral-500">DÃ©crivez le problÃ¨me rencontrÃ© avec votre commande.</p>
+            <div className="flex items-center justify-between border-b border-neutral-100 p-5 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white">
+                  <AlertCircle className="size-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-neutral-900">Ouvrir un Litige / Réclamation</h2>
+                  <p className="text-xs text-neutral-500">Traitement prioritaire sous 24h ouvrées par le support client</p>
+                </div>
               </div>
-              <button type="button" onClick={onClose} className="rounded-xl p-2 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700" aria-label="Fermer">
-                <X size={20} />
+              <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-neutral-400 transition hover:bg-neutral-100 hover:text-black" aria-label="Fermer">
+                <X className="size-5" />
               </button>
             </div>
 
-            <div className="mt-5 space-y-4">
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">Motif du litige</span>
-                <select
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-neutral-400"
+            {orders.length === 0 ? (
+              <div className="space-y-3 p-8 text-center text-xs text-neutral-500">
+                <AlertCircle className="mx-auto size-8 shrink-0 text-neutral-300" />
+                <p>Vous n'avez aucune commande sur laquelle ouvrir un litige.</p>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-xl bg-neutral-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-neutral-800"
                 >
-                  <option value="">Choisir un motifâ€¦</option>
-                  {Object.entries(DISPUTE_REASON_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
-                </select>
-              </label>
+                  Fermer
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex-1 space-y-4 overflow-y-auto p-5 text-xs">
+                  <label className="block space-y-1.5">
+                    <span className="font-semibold text-neutral-800">
+                      1. Commande concernée <span className="font-normal text-neutral-400">(facultatif)</span>
+                    </span>
+                    <select
+                      value={orderId}
+                      onChange={(e) => setOrderId(e.target.value)}
+                      className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-2.5 font-medium text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-black/10"
+                    >
+                      <option value="">Aucune commande</option>
+                      {selectableOrders.map((o) => (
+                        <option key={o.id} value={o.id}>
+                          {o.number} — {o.items[0]?.title || o.kindLabel}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="block text-[11px] text-neutral-400">
+                      Seules les commandes livrées ou en cours d'acheminement sont listées.
+                    </span>
+                  </label>
 
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">Commande concernÃ©e (facultatif)</span>
-                <select
-                  value={orderId}
-                  onChange={(e) => setOrderId(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-neutral-400"
-                >
-                  <option value="">Aucune commande</option>
-                  {selectableOrders.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.number} â€” {o.items[0]?.title || o.kindLabel}
-                    </option>
-                  ))}
-                </select>
-                <span className="mt-1 block text-[11px] text-neutral-400">Seules les commandes livrÃ©es ou en cours d'acheminement sont listÃ©es.</span>
-              </label>
+                  <label className="block space-y-1.5">
+                    <span className="font-semibold text-neutral-800">2. Motif principal de l'incident</span>
+                    <select
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      className="w-full rounded-xl border border-neutral-300 bg-white px-3.5 py-2.5 font-medium text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-black/10"
+                    >
+                      <option value="">Choisir un motif…</option>
+                      {Object.entries(DISPUTE_REASON_LABELS).map(([key, label]) => (
+                        <option key={key} value={key}>{label}</option>
+                      ))}
+                    </select>
+                  </label>
 
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">Description dÃ©taillÃ©e</span>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={5}
-                  placeholder="DÃ©crivez le problÃ¨me rencontrÃ© (date de livraison, rÃ©fÃ©rence, photos si nÃ©cessaireâ€¦)"
-                  className="w-full resize-none rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-neutral-400"
-                />
-              </label>
+                  <label className="block space-y-1.5">
+                    <span className="font-semibold text-neutral-800">3. Détaillez l'incident et vos constatations</span>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={4}
+                      placeholder="Indiquez l'état du colis, les réserves émises au livreur ou tout élément utile pour l'instruction de votre dossier…"
+                      className="w-full resize-none rounded-xl border border-neutral-300 px-3.5 py-2.5 text-xs text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-black/10"
+                    />
+                  </label>
+                </div>
 
-              <button
-                type="button"
-                onClick={submit}
-                disabled={sending}
-                className="flex w-full items-center justify-center rounded-xl bg-[#0A0D0E] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-              >
-                {sending ? 'Ouvertureâ€¦' : 'Ouvrir mon litige'}
-              </button>
-            </div>
+                <div className="flex items-center justify-end gap-2.5 border-t border-neutral-100 p-4">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={sending}
+                    className="rounded-xl px-4 py-2 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-40"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    onClick={submit}
+                    disabled={sending}
+                    className="flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-amber-700 disabled:opacity-50"
+                  >
+                    {sending && <AlertTriangle className="size-3.5 animate-pulse" />}
+                    <span>{sending ? 'Envoi en cours…' : 'Transmettre le litige'}</span>
+                    {!sending && <ArrowRight className="size-3.5" />}
+                  </button>
+                </div>
+              </>
+            )}
           </motion.div>
         </motion.div>
       )}

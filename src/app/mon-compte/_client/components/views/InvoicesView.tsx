@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, Download, FileText, Loader2, ShieldCheck } from 'lucide-react';
 import type { ClientInvoice, EligibleOrder, OrderDraftOption } from '../../types';
 import { clientApi } from '../../lib/api';
-import { formatDate, formatMoney, formatMonthYear, formatShortDate, getInvoiceStatusLabel } from '../../lib/format';
+import { formatDate, formatMoney, formatMonthYear, formatShortDate } from '../../lib/format';
 import { formatOrderNumber } from '@/lib/client-status';
 import { SlidingSwitch } from '../SlidingSwitch';
 
@@ -48,7 +48,7 @@ function buildOptions(eligible: EligibleOrder[]): OrderDraftOption[] {
   const refOf = (o: EligibleOrder) => ({
     orderId: o.orderId,
     orderType: o.orderType,
-    label: `${formatOrderNumber(o.orderType, o.orderId, o.createdAt)} â€” ${o.productName || 'Commande'}`,
+    label: `${formatOrderNumber(o.orderType, o.orderId, o.createdAt)} — ${o.productName || 'Commande'}`,
     date: o.createdAt,
     amount: o.totalTtc ?? 0,
   });
@@ -64,7 +64,7 @@ function buildOptions(eligible: EligibleOrder[]): OrderDraftOption[] {
   const allTotals = sum(all);
   options.push({
     key: 'all',
-    label: 'Toutes mes commandes Ã©ligibles',
+    label: 'Toutes mes commandes éligibles',
     periodLabel: `${all.length} commande${all.length > 1 ? 's' : ''}`,
     typeLabel: 'Toutes confondues',
     count: all.length,
@@ -151,7 +151,7 @@ export function InvoicesView({ invoices, onOpenInvoice, onDone, onRequireProfess
       setEligible(res.orders);
       if (res.orders.length > 0) setSelectedKey(null);
     } catch (err: any) {
-      showToast('error', err.message || "Impossible de charger les commandes Ã©ligibles.");
+      showToast('error', err.message || "Impossible de charger les commandes éligibles.");
     } finally {
       setEligibleLoading(false);
     }
@@ -177,7 +177,7 @@ export function InvoicesView({ invoices, onOpenInvoice, onDone, onRequireProfess
       });
       setVatValidated(p.vatValidated === true);
     } catch {
-      // Les infos pro sont optionnelles : on dÃ©marre le formulaire vide.
+      // Les infos pro sont optionnelles : on démarre le formulaire vide.
     }
   }, []);
 
@@ -188,17 +188,13 @@ export function InvoicesView({ invoices, onOpenInvoice, onDone, onRequireProfess
     }
   }, [tab, eligible, loadEligible, loadProfessionalInfo]);
 
+  const options = useMemo(() => (eligible ? buildOptions(eligible) : []), [eligible]);
+
   const selectedOption = useMemo(
     () => (selectedKey ? options.find((o) => o.key === selectedKey) : undefined),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [selectedKey, eligible]
   );
-
-  const options = useMemo(() => (eligible ? buildOptions(eligible) : []), [eligible]);
-
-  const goToCompany = () => {
-    setStep('company');
-  };
 
   const saveCompany = async () => {
     try {
@@ -220,7 +216,7 @@ export function InvoicesView({ invoices, onOpenInvoice, onDone, onRequireProfess
       });
       setVatValidated(res.vatValidated === true);
       setStep('summary');
-      showToast('success', 'Vos informations professionnelles ont Ã©tÃ© enregistrÃ©es.');
+      showToast('success', 'Vos informations professionnelles ont été enregistrées.');
     } catch (err: any) {
       showToast('error', err.message || "Impossible d'enregistrer vos informations.");
     }
@@ -241,7 +237,7 @@ export function InvoicesView({ invoices, onOpenInvoice, onDone, onRequireProfess
         const invoice = res.invoice as Record<string, unknown>;
         out.push({ orderId, invoiceNumber: String(invoice.invoiceNumber || '') });
       } catch (err: any) {
-        out.push({ orderId, error: err.message || 'Erreur de gÃ©nÃ©ration' });
+        out.push({ orderId, error: err.message || 'Erreur de génération' });
       }
       setResults([...out]);
       setGenerationProgress({ done: i + 1, total: orders.length });
@@ -252,46 +248,53 @@ export function InvoicesView({ invoices, onOpenInvoice, onDone, onRequireProfess
     onDone();
   };
 
-  const companyIsComplete = company.companyName.trim() && company.siret.trim();
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900">Mes factures</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Consultez et tÃ©lÃ©chargez vos factures, ou demandez-en de nouvelles pour vos commandes Ã©ligibles.
-        </p>
-      </div>
+    <div id="pixiatech-invoices-view" className="space-y-6">
+      <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-13 h-13 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
+            <FileText className="w-6 h-6 text-[#38E044]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">Mes Factures</h1>
+            <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
+              Consultez et téléchargez vos factures certifiées, ou demandez-en de nouvelles pour vos commandes éligibles.
+            </p>
+          </div>
+        </div>
 
-      <SlidingSwitch
-        options={[
-          { key: 'history', label: 'Mes factures', icon: <FileText size={15} /> },
-          { key: 'request', label: 'Demander une facture', icon: <Download size={15} /> },
-        ]}
-        active={tab}
-        onChange={(key) => setTab(key as Tab)}
-        className="max-w-sm"
-      />
+        <SlidingSwitch
+          options={[
+            { id: 'history', label: 'Mes factures', icon: <FileText size={15} /> },
+            { id: 'request', label: 'Demander une facture', icon: <Download size={15} /> },
+          ]}
+          activeId={tab}
+          onChange={(id) => setTab(id as Tab)}
+          size="sm"
+        />
+      </div>
 
       {tab === 'history' && (
         <div className="space-y-4">
           <SlidingSwitch
             options={[
-              { key: 'all', label: 'Tout' },
-              { key: 'available', label: 'Disponibles' },
-              { key: 'pending', label: 'En attente' },
+              { id: 'all', label: 'Tout' },
+              { id: 'available', label: 'Disponibles' },
+              { id: 'pending', label: 'En attente' },
             ]}
-            active={statusFilter}
-            onChange={(key) => setStatusFilter(key as StatusFilter)}
-            className="max-w-xs"
+            activeId={statusFilter}
+            onChange={(id) => setStatusFilter(id as StatusFilter)}
+            size="sm"
           />
 
           {historyInvoices.length === 0 ? (
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-neutral-200 bg-white py-16 text-center shadow-xs">
               <FileText size={36} className="text-neutral-300" />
-              <p className="mt-3 text-sm font-bold text-neutral-700">Aucune facture {statusFilter !== 'all' ? 'dans cette catÃ©gorie' : 'pour le moment'}</p>
+              <p className="mt-3 text-sm font-bold text-neutral-700">
+                Aucune facture {statusFilter !== 'all' ? 'dans cette catégorie' : 'pour le moment'}
+              </p>
               <p className="mt-1 max-w-sm text-sm text-neutral-500">
-                Vos factures apparaÃ®tront ici aprÃ¨s une demande, ou utilisez l'onglet Â« Demander une facture Â».
+                Vos factures apparaîtront ici après une demande, ou utilisez l'onglet « Demander une facture ».
               </p>
             </div>
           ) : (
@@ -311,24 +314,22 @@ export function InvoicesView({ invoices, onOpenInvoice, onDone, onRequireProfess
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold text-neutral-900">{invoice.number || 'Facture'}</p>
                       <p className="text-xs text-neutral-500">
-                        {formatDate(invoice.date)} Â· {invoice.companyName || 'PIXIATECH'}
+                        {formatDate(invoice.date)} · {invoice.companyName || 'PIXIATECH'}
                       </p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
-                        {downloadable ? (
-                          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-                            {invoice.statusLabel}
-                          </span>
-                        ) : (
-                          <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700">
-                            {invoice.statusLabel || 'En attente'}
-                          </span>
-                        )}
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                            downloadable ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                          }`}
+                        >
+                          {invoice.statusLabel || (downloadable ? 'Disponible' : 'En attente')}
+                        </span>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold text-neutral-900">{formatMoney(invoice.totalTTC)}</p>
                       <p className="text-xs text-neutral-500">
-                        HT {formatMoney(invoice.totalHT)} Â· TVA {formatMoney(invoice.totalVAT)}
+                        HT {formatMoney(invoice.totalHT)} · TVA {formatMoney(invoice.totalVAT)}
                       </p>
                     </div>
                     {downloadable && (
@@ -360,7 +361,7 @@ export function InvoicesView({ invoices, onOpenInvoice, onDone, onRequireProfess
                   options={options}
                   selectedKey={selectedKey}
                   onSelect={(key) => setSelectedKey(key)}
-                  onContinue={goToCompany}
+                  onContinue={() => setStep('company')}
                   canContinue={!!selectedKey}
                 />
               )}
@@ -418,26 +419,33 @@ function OptionRow({ option, selected, onSelect }: { option: OrderDraftOption; s
         selected ? 'border-neutral-900 ring-1 ring-neutral-900' : 'border-neutral-100 hover:border-neutral-300'
       }`}
     >
-      <span className={`flex size-5 shrink-0 items-center justify-center rounded-full border ${
-        selected ? 'border-neutral-900 bg-neutral-900' : 'border-neutral-300'
-      }`}>
+      <span
+        className={`flex size-5 shrink-0 items-center justify-center rounded-full border ${
+          selected ? 'border-neutral-900 bg-neutral-900' : 'border-neutral-300'
+        }`}
+      >
         {selected && <span className="size-2 rounded-full bg-[#38E044]" />}
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-neutral-900">{option.label}</p>
-        <p className="text-xs text-neutral-500">{option.periodLabel} Â· {option.typeLabel}</p>
+        <p className="text-xs text-neutral-500">{option.periodLabel} · {option.typeLabel}</p>
       </div>
       <div className="text-right">
         <p className="text-sm font-bold text-neutral-900">{formatMoney(option.totalTTC)}</p>
-        <p className="text-xs text-neutral-500">
-          HT {formatMoney(option.totalHT)} Â· TVA {formatMoney(option.totalVAT)}
-        </p>
+        <p className="text-xs text-neutral-500">HT {formatMoney(option.totalHT)} · TVA {formatMoney(option.totalVAT)}</p>
       </div>
     </button>
   );
 }
 
-function DraftStep({ loading, options, selectedKey, onSelect, onContinue, canContinue }: {
+function DraftStep({
+  loading,
+  options,
+  selectedKey,
+  onSelect,
+  onContinue,
+  canContinue,
+}: {
   loading: boolean;
   options: OrderDraftOption[];
   selectedKey: string | null;
@@ -448,24 +456,24 @@ function DraftStep({ loading, options, selectedKey, onSelect, onContinue, canCon
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-base font-bold text-neutral-900">Choisissez la pÃ©riode de facturation</h2>
+        <h2 className="text-base font-bold text-neutral-900">Choisissez la période de facturation</h2>
         <p className="mt-1 text-sm text-neutral-500">
-          SÃ©lectionnez les commandes Ã  facturer. Les factures sont gÃ©nÃ©rÃ©es immÃ©diatement et envoyÃ©es par e-mail.
+          Sélectionnez les commandes à facturer. Les factures sont générées immédiatement et envoyées par e-mail.
         </p>
       </div>
 
       {loading && (
         <div className="flex items-center gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/60 p-6 text-sm text-neutral-500">
-          <Loader2 size={18} className="animate-spin" /> Chargement de vos commandes Ã©ligiblesâ€¦
+          <Loader2 size={18} className="animate-spin" /> Chargement de vos commandes éligibles…
         </div>
       )}
 
       {!loading && options.length === 0 && (
         <div className="rounded-2xl border border-dashed border-neutral-200 p-10 text-center">
           <CheckCircle2 size={34} className="mx-auto text-emerald-500" />
-          <p className="mt-3 text-sm font-bold text-neutral-900">Toutes vos commandes ont dÃ©jÃ  Ã©tÃ© facturÃ©es</p>
+          <p className="mt-3 text-sm font-bold text-neutral-900">Toutes vos commandes ont déjà été facturées</p>
           <p className="mt-1 text-sm text-neutral-500">
-            Aucune commande Ã©ligible pour le moment. Les nouvelles commandes validÃ©es apparaÃ®tront ici.
+            Aucune commande éligible pour le moment. Les nouvelles commandes validées apparaîtront ici.
           </p>
         </div>
       )}
@@ -479,7 +487,7 @@ function DraftStep({ loading, options, selectedKey, onSelect, onContinue, canCon
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 px-4 py-3 text-xs text-neutral-500">
             <ShieldCheck size={16} className="shrink-0 text-emerald-600" />
-            Vos factures sont signÃ©es et Ã©mises au nom de PIXIATECH. TVA appliquÃ©e selon votre statut.
+            Vos factures sont signées et émises au nom de PIXIATECH. TVA appliquée selon votre statut.
           </div>
           <button
             type="button"
@@ -495,7 +503,13 @@ function DraftStep({ loading, options, selectedKey, onSelect, onContinue, canCon
   );
 }
 
-function CompanyStep({ company, onChange, onBack, onContinue, onOpenSiret }: {
+function CompanyStep({
+  company,
+  onChange,
+  onBack,
+  onContinue,
+  onOpenSiret,
+}: {
   company: CompanyForm;
   onChange: (c: CompanyForm) => void;
   onBack: () => void;
@@ -504,17 +518,17 @@ function CompanyStep({ company, onChange, onBack, onContinue, onOpenSiret }: {
 }) {
   const [checked, setChecked] = useState(false);
   const fields: Array<{ key: keyof CompanyForm; label: string; placeholder?: string; type?: string; className?: string }> = [
-    { key: 'companyName', label: 'Raison sociale', placeholder: 'Ex : Ma SociÃ©tÃ©' },
-    { key: 'siret', label: 'NumÃ©ro SIRET', placeholder: '14 chiffres', className: 'sm:col-span-1' },
-    { key: 'vatNumber', label: 'NÂ° TVA intracommunautaire', placeholder: 'Ex : FR12345678901', className: 'sm:col-span-1' },
+    { key: 'companyName', label: 'Raison sociale', placeholder: 'Ex : Ma Société' },
+    { key: 'siret', label: 'Numéro SIRET', placeholder: '14 chiffres', className: 'sm:col-span-1' },
+    { key: 'vatNumber', label: 'N° TVA intracommunautaire', placeholder: 'Ex : FR12345678901', className: 'sm:col-span-1' },
     { key: 'address', label: 'Adresse', className: 'sm:col-span-2' },
     { key: 'postcode', label: 'Code postal', className: 'sm:col-span-1' },
     { key: 'city', label: 'Ville', className: 'sm:col-span-1' },
     { key: 'country', label: 'Pays', className: 'sm:col-span-1' },
-    { key: 'officePhone', label: 'TÃ©lÃ©phone du siÃ¨ge', className: 'sm:col-span-1' },
-    { key: 'companyEmail', label: 'E-mail de la sociÃ©tÃ©', className: 'sm:col-span-1' },
+    { key: 'officePhone', label: 'Téléphone du siège', className: 'sm:col-span-1' },
+    { key: 'companyEmail', label: 'E-mail de la société', className: 'sm:col-span-1' },
     { key: 'position', label: 'Votre fonction', className: 'sm:col-span-1' },
-    { key: 'employees', label: "Nombre d'employÃ©s", className: 'sm:col-span-1' },
+    { key: 'employees', label: "Nombre d'employés", className: 'sm:col-span-1' },
     { key: 'website', label: 'Site web', className: 'sm:col-span-2' },
   ];
 
@@ -523,7 +537,7 @@ function CompanyStep({ company, onChange, onBack, onContinue, onOpenSiret }: {
       <div>
         <h2 className="text-base font-bold text-neutral-900">Informations de facturation</h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Ces informations figureront sur vos factures. Le numÃ©ro de TVA est vÃ©rifiÃ© automatiquement (VIES).
+          Ces informations figureront sur vos factures. Le numéro de TVA est vérifié automatiquement (VIES).
         </p>
       </div>
 
@@ -547,7 +561,7 @@ function CompanyStep({ company, onChange, onBack, onContinue, onOpenSiret }: {
         onClick={onOpenSiret}
         className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3.5 py-2 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50"
       >
-        <ShieldCheck size={14} /> VÃ©rifier mon SIRET
+        <ShieldCheck size={14} /> Vérifier mon SIRET
       </button>
 
       <label className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 p-4">
@@ -558,7 +572,7 @@ function CompanyStep({ company, onChange, onBack, onContinue, onOpenSiret }: {
           className="mt-0.5 size-4 accent-neutral-900"
         />
         <span className="text-sm text-neutral-600">
-          Je certifie l'exactitude de ces informations et j'accepte qu'elles soient utilisÃ©es pour l'Ã©mission de mes factures.
+          Je certifie l'exactitude de ces informations et j'accepte qu'elles soient utilisées pour l'émission de mes factures.
         </span>
       </label>
 
@@ -583,7 +597,14 @@ function CompanyStep({ company, onChange, onBack, onContinue, onOpenSiret }: {
   );
 }
 
-function SummaryStep({ option, vatValidated, generating, progress, onBack, onGenerate }: {
+function SummaryStep({
+  option,
+  vatValidated,
+  generating,
+  progress,
+  onBack,
+  onGenerate,
+}: {
   option: OrderDraftOption;
   vatValidated: boolean;
   generating: boolean;
@@ -594,8 +615,8 @@ function SummaryStep({ option, vatValidated, generating, progress, onBack, onGen
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-base font-bold text-neutral-900">RÃ©capitulatif</h2>
-        <p className="mt-1 text-sm text-neutral-500">{option.label} Â· {option.periodLabel}</p>
+        <h2 className="text-base font-bold text-neutral-900">Récapitulatif</h2>
+        <p className="mt-1 text-sm text-neutral-500">{option.label} · {option.periodLabel}</p>
       </div>
 
       <div className="rounded-2xl border border-neutral-100 bg-neutral-50/60 p-5">
@@ -622,7 +643,7 @@ function SummaryStep({ option, vatValidated, generating, progress, onBack, onGen
       {vatValidated && (
         <div className="flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-xs text-emerald-700">
           <ShieldCheck size={16} className="mt-0.5 shrink-0" />
-          Votre numÃ©ro de TVA est validÃ© : la TVA sera autoliquidÃ©e sur ces factures (taux 0%).
+          Votre numéro de TVA est validé : la TVA sera autoliquidée sur ces factures (taux 0%).
         </div>
       )}
 
@@ -644,10 +665,10 @@ function SummaryStep({ option, vatValidated, generating, progress, onBack, onGen
           {generating ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              GÃ©nÃ©ration en coursâ€¦ {progress.done}/{progress.total}
+              Génération en cours… {progress.done}/{progress.total}
             </>
           ) : (
-            <>GÃ©nÃ©rer {option.count > 1 ? `mes ${option.count} factures` : 'ma facture'}</>
+            <>Générer {option.count > 1 ? `mes ${option.count} factures` : 'ma facture'}</>
           )}
         </button>
       </div>
@@ -655,7 +676,11 @@ function SummaryStep({ option, vatValidated, generating, progress, onBack, onGen
   );
 }
 
-function DoneStep({ results, onViewHistory, onDismiss }: {
+function DoneStep({
+  results,
+  onViewHistory,
+  onDismiss,
+}: {
   results: GenerationResult[];
   onViewHistory: () => void;
   onDismiss: () => void;
@@ -668,10 +693,11 @@ function DoneStep({ results, onViewHistory, onDismiss }: {
         <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-600" />
         <div>
           <p className="text-sm font-bold text-emerald-800">
-            {ok} facture{ok > 1 ? 's' : ''} gÃ©nÃ©rÃ©e{ok > 1 ? 's' : ''} avec succÃ¨s
+            {ok} facture{ok > 1 ? 's' : ''} générée{ok > 1 ? 's' : ''} avec succès
           </p>
           <p className="text-xs text-emerald-700">
-            {failed > 0 ? `${failed} en Ã©chec. ` : ''}Les factures sont disponibles dans l'onglet Â« Mes factures Â» et envoyÃ©es par e-mail.
+            {failed > 0 ? `${failed} en échec. ` : ''}Les factures sont disponibles dans l'onglet « Mes factures » et
+            envoyées par e-mail.
           </p>
         </div>
       </div>

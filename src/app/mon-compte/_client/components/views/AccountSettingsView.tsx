@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BadgeCheck, Eye, EyeOff, Loader2, Mail, ShieldAlert, ShieldCheck } from 'lucide-react';
+import {
+  BadgeCheck,
+  Eye,
+  EyeOff,
+  Loader2,
+  Mail,
+  ShieldAlert,
+  ShieldCheck,
+  UserCheck,
+} from 'lucide-react';
 import type { ClientProfile } from '../../types';
 import { clientApi } from '../../lib/api';
 import { SlidingSwitch } from '../SlidingSwitch';
@@ -17,26 +26,41 @@ interface AccountSettingsViewProps {
 
 type Tab = 'profile' | 'security' | 'danger';
 
-export function AccountSettingsView({ profile, onRefreshProfile, onOpenSiretModal, onOpenEmailModal, showToast }: AccountSettingsViewProps) {
+export function AccountSettingsView({
+  profile,
+  onRefreshProfile,
+  onOpenSiretModal,
+  onOpenEmailModal,
+  showToast,
+}: AccountSettingsViewProps) {
   const [tab, setTab] = useState<Tab>('profile');
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900">Mes paramÃ¨tres</h1>
-        <p className="mt-1 text-sm text-neutral-500">GÃ©rez vos informations personnelles, votre sÃ©curitÃ© et vos vÃ©rifications.</p>
-      </div>
+    <div id="pixiatech-account-settings" className="space-y-6">
+      <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-13 h-13 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
+            <UserCheck className="w-6 h-6 text-[#38E044]" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">Paramètres du Compte</h1>
+            <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
+              Gestion de votre profil, sécurité, coordonnées de contact et informations certifiées.
+            </p>
+          </div>
+        </div>
 
-      <SlidingSwitch
-        options={[
-          { key: 'profile', label: 'Profil & vÃ©rifications' },
-          { key: 'security', label: 'SÃ©curitÃ©' },
-          { key: 'danger', label: 'Compte' },
-        ]}
-        active={tab}
-        onChange={(k) => setTab(k as Tab)}
-        className="max-w-md"
-      />
+        <SlidingSwitch
+          options={[
+            { id: 'profile', label: 'Profil & Coordonnées' },
+            { id: 'security', label: 'Sécurité & Accès' },
+            { id: 'danger', label: 'Compte' },
+          ]}
+          activeId={tab}
+          onChange={(id) => setTab(id as Tab)}
+          size="md"
+        />
+      </div>
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -46,7 +70,15 @@ export function AccountSettingsView({ profile, onRefreshProfile, onOpenSiretModa
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.18 }}
         >
-          {tab === 'profile' && <ProfileTab profile={profile} onRefreshProfile={onRefreshProfile} onOpenSiretModal={onOpenSiretModal} onOpenEmailModal={onOpenEmailModal} showToast={showToast} />}
+          {tab === 'profile' && (
+            <ProfileTab
+              profile={profile}
+              onRefreshProfile={onRefreshProfile}
+              onOpenSiretModal={onOpenSiretModal}
+              onOpenEmailModal={onOpenEmailModal}
+              showToast={showToast}
+            />
+          )}
           {tab === 'security' && <SecurityTab profile={profile} onRefreshProfile={onRefreshProfile} showToast={showToast} />}
           {tab === 'danger' && <DangerTab email={profile?.email || ''} />}
         </motion.div>
@@ -77,7 +109,7 @@ function ProfileTab({ profile, onRefreshProfile, onOpenSiretModal, onOpenEmailMo
         companyName,
         companyAddress,
       });
-      showToast('success', 'Vos informations ont Ã©tÃ© enregistrÃ©es.');
+      showToast('success', 'Vos informations ont été enregistrées.');
       onRefreshProfile();
     } catch (err: any) {
       showToast('error', err.message || "Impossible d'enregistrer vos informations.");
@@ -92,16 +124,18 @@ function ProfileTab({ profile, onRefreshProfile, onOpenSiretModal, onOpenEmailMo
         <div className="space-y-6">
           <section className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
             <h2 className="text-base font-bold text-neutral-900">Informations personnelles</h2>
-            <p className="mt-0.5 text-sm text-neutral-500">Ces informations sont utilisÃ©es pour vos livraisons et votre facturation.</p>
+            <p className="mt-0.5 text-sm text-neutral-500">
+              Ces informations sont utilisées pour vos livraisons et votre facturation.
+            </p>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">CivilitÃ©</span>
+                <span className="mb-1 block text-xs font-medium text-neutral-500">Civilité</span>
                 <select
                   value={civility}
                   onChange={(e) => setCivility(e.target.value)}
                   className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-neutral-400"
                 >
-                  <option value="">Non prÃ©cisÃ©e</option>
+                  <option value="">Non précisée</option>
                   <option value="M.">M.</option>
                   <option value="Mme">Mme</option>
                 </select>
@@ -116,7 +150,7 @@ function ProfileTab({ profile, onRefreshProfile, onOpenSiretModal, onOpenEmailMo
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">PrÃ©nom</span>
+                <span className="mb-1 block text-xs font-medium text-neutral-500">Prénom</span>
                 <input
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
@@ -132,7 +166,7 @@ function ProfileTab({ profile, onRefreshProfile, onOpenSiretModal, onOpenEmailMo
                 />
               </label>
               <label className="block sm:col-span-2">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">TÃ©lÃ©phone</span>
+                <span className="mb-1 block text-xs font-medium text-neutral-500">Téléphone</span>
                 <input
                   type="tel"
                   value={phone}
@@ -143,14 +177,15 @@ function ProfileTab({ profile, onRefreshProfile, onOpenSiretModal, onOpenEmailMo
               </label>
             </div>
             <div className="mt-5 rounded-xl border border-neutral-100 bg-neutral-50/60 px-4 py-3 text-xs text-neutral-500">
-              Besoin d'un changement d'adresse de livraison ? Il s'applique Ã  vos prochaines commandes.
+              Besoin d'un changement d'adresse de livraison ? Il s'applique à vos prochaines commandes.
             </div>
           </section>
 
           <section className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
             <h2 className="text-base font-bold text-neutral-900">Informations professionnelles</h2>
             <p className="mt-0.5 text-sm text-neutral-500">
-              Renseignez votre sociÃ©tÃ© pour bÃ©nÃ©ficier de la facturation B2B. {profile?.siretVerified ? 'Votre SIRET est vÃ©rifiÃ©.' : ''}
+              Renseignez votre société pour bénéficier de la facturation B2B.{' '}
+              {profile?.siretVerified ? 'Votre SIRET est vérifié.' : ''}
             </p>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <label className="block">
@@ -162,7 +197,7 @@ function ProfileTab({ profile, onRefreshProfile, onOpenSiretModal, onOpenEmailMo
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">Adresse sociÃ©tÃ©</span>
+                <span className="mb-1 block text-xs font-medium text-neutral-500">Adresse société</span>
                 <input
                   value={companyAddress}
                   onChange={(e) => setCompanyAddress(e.target.value)}
@@ -178,7 +213,7 @@ function ProfileTab({ profile, onRefreshProfile, onOpenSiretModal, onOpenEmailMo
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-medium text-neutral-500">NÂ° TVA</span>
+                <span className="mb-1 block text-xs font-medium text-neutral-500">N° TVA</span>
                 <input
                   value={profile?.vatNumber || ''}
                   disabled
@@ -191,7 +226,7 @@ function ProfileTab({ profile, onRefreshProfile, onOpenSiretModal, onOpenEmailMo
 
         <div className="space-y-6">
           <section className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
-            <h2 className="mb-4 text-base font-bold text-neutral-900">VÃ©rifications</h2>
+            <h2 className="mb-4 text-base font-bold text-neutral-900">Vérifications</h2>
             <div className="space-y-3">
               <VerificationCard
                 icon={<Mail size={17} />}
@@ -224,7 +259,13 @@ function ProfileTab({ profile, onRefreshProfile, onOpenSiretModal, onOpenEmailMo
   );
 }
 
-function VerificationCard({ icon, title, verified, onVerify, detail }: {
+function VerificationCard({
+  icon,
+  title,
+  verified,
+  onVerify,
+  detail,
+}: {
   icon: React.ReactNode;
   title: string;
   verified: boolean;
@@ -239,8 +280,8 @@ function VerificationCard({ icon, title, verified, onVerify, detail }: {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-neutral-900">{title}</p>
         <p className="truncate text-xs text-neutral-500">
-          {verified ? 'VÃ©rifiÃ©' : 'Non vÃ©rifiÃ©'}
-          {detail && !verified ? ` Â· ${detail}` : ''}
+          {verified ? 'Vérifié' : 'Non vérifié'}
+          {detail && !verified ? ` · ${detail}` : ''}
         </p>
       </div>
       {verified ? (
@@ -251,14 +292,22 @@ function VerificationCard({ icon, title, verified, onVerify, detail }: {
           onClick={onVerify}
           className="rounded-lg bg-[#0A0D0E] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
         >
-          VÃ©rifier
+          Vérifier
         </button>
       )}
     </div>
   );
 }
 
-function SecurityTab({ profile, onRefreshProfile, showToast }: { profile: ClientProfile | null; onRefreshProfile: () => void; showToast: (t: 'success' | 'error', m: string) => void }) {
+function SecurityTab({
+  profile,
+  onRefreshProfile,
+  showToast,
+}: {
+  profile: ClientProfile | null;
+  onRefreshProfile: () => void;
+  showToast: (t: 'success' | 'error', m: string) => void;
+}) {
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -268,7 +317,7 @@ function SecurityTab({ profile, onRefreshProfile, showToast }: { profile: Client
 
   async function submit() {
     if (next.length < 8) {
-      showToast('error', 'Le mot de passe doit contenir au moins 8 caractÃ¨res.');
+      showToast('error', 'Le mot de passe doit contenir au moins 8 caractères.');
       return;
     }
     if (next !== confirm) {
@@ -280,7 +329,7 @@ function SecurityTab({ profile, onRefreshProfile, showToast }: { profile: Client
     setBusy(true);
     try {
       await clientApi.changePassword(current, next);
-      showToast('success', 'Mot de passe mis Ã  jour.');
+      showToast('success', 'Mot de passe mis à jour.');
       setCurrent('');
       setNext('');
       setConfirm('');
@@ -300,8 +349,8 @@ function SecurityTab({ profile, onRefreshProfile, showToast }: { profile: Client
           <div className="mt-4 flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/70 p-4 text-sm text-amber-800">
             <ShieldAlert size={18} className="mt-0.5 shrink-0" />
             <p>
-              Vous n'avez pas encore de mot de passe. Utilisez un lien de connexion reÃ§u par e-mail pour en dÃ©finir un dÃ©finitivement
-              (lien Â« DÃ©finir un mot de passe Â»).
+              Vous n'avez pas encore de mot de passe. Utilisez un lien de connexion reçu par e-mail pour en définir un
+              définitivement (lien « Définir un mot de passe »).
             </p>
           </div>
         ) : (
@@ -325,7 +374,7 @@ function SecurityTab({ profile, onRefreshProfile, showToast }: { profile: Client
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0A0D0E] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
             >
               {busy && <Loader2 size={15} className="animate-spin" />}
-              Mettre Ã  jour mon mot de passe
+              Mettre à jour mon mot de passe
             </button>
           </div>
         )}
@@ -334,7 +383,13 @@ function SecurityTab({ profile, onRefreshProfile, showToast }: { profile: Client
   );
 }
 
-function PasswordInput({ value, onChange, show, onToggleShow, mismatch }: {
+function PasswordInput({
+  value,
+  onChange,
+  show,
+  onToggleShow,
+  mismatch,
+}: {
   value: string;
   onChange: (v: string) => void;
   show: boolean;
@@ -369,7 +424,8 @@ function DangerTab({ email }: { email: string }) {
       <section className="rounded-2xl border border-red-100 bg-white p-6 shadow-xs">
         <h2 className="text-base font-bold text-red-600">Zone de danger</h2>
         <p className="mt-0.5 text-sm text-neutral-500">
-          La suppression de compte n'est pas disponible en libre-service. Contactez-nous Ã  partir de l'adresse associÃ©e Ã  votre compte.
+          La suppression de compte n'est pas disponible en libre-service. Contactez-nous à partir de l'adresse associée à
+          votre compte.
         </p>
         <a
           href={`mailto:support@pixiatech.com?subject=Suppression%20de%20mon%20compte&body=Bonjour,%20je%20souhaite%20supprimer%20mon%20compte%20(${encodeURIComponent(email)}).`}

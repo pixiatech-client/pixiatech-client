@@ -1,47 +1,72 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import type { ReactNode } from 'react';
+import { motion } from 'framer-motion';
 
 export interface SwitchOption {
-  key: string;
+  id: string;
   label: string;
   icon?: ReactNode;
+  badge?: string | number;
 }
 
 interface SlidingSwitchProps {
   options: SwitchOption[];
-  active: string;
-  onChange: (key: string) => void;
+  activeId: string;
+  onChange: (id: string) => void;
   className?: string;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export function SlidingSwitch({ options, active, onChange, className = '' }: SlidingSwitchProps) {
-  const activeIndex = options.findIndex((o) => o.key === active);
+const SIZE_CLASSES: Record<'sm' | 'md' | 'lg', string> = {
+  sm: 'text-xs py-1.5 px-3',
+  md: 'text-sm py-2 px-4',
+  lg: 'text-base py-2.5 px-6',
+};
 
+export function SlidingSwitch({ options, activeId, onChange, className = '', size = 'md' }: SlidingSwitchProps) {
   return (
-    <div className={`relative flex items-stretch gap-1 rounded-2xl border border-neutral-200/80 bg-white p-1.5 shadow-xs ${className}`}>
-      {options.map((option, index) => {
-        const isActive = option.key === active;
+    <div
+      id="pixiatech-sliding-switch"
+      className={`inline-flex items-center rounded-2xl border border-neutral-200/80 bg-neutral-100/80 p-1.5 shadow-xs select-none ${className}`}
+    >
+      {options.map((option) => {
+        const isActive = option.id === activeId;
         return (
           <button
-            key={option.key}
+            key={option.id}
+            id={`switch-option-${option.id}`}
             type="button"
-            onClick={() => onChange(option.key)}
-            className={`relative z-10 flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors duration-150 ${
-              isActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-900'
+            onClick={() => onChange(option.id)}
+            className={`relative z-10 flex cursor-pointer items-center justify-center gap-2 rounded-xl font-medium transition-colors duration-150 ${SIZE_CLASSES[size]} ${
+              isActive ? 'text-white' : 'text-neutral-600 hover:bg-neutral-200/50 hover:text-neutral-900'
             }`}
-            aria-pressed={isActive}
           >
-            {isActive && index === activeIndex && (
-              <motion.span
-                layoutId="sliding-pill"
-                className="absolute inset-0 -z-10 rounded-xl bg-[#0A0D0E]"
-                transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+            {isActive && (
+              <motion.div
+                layoutId={`active-switch-pill-${options.map((o) => o.id).join('-')}`}
+                className="pointer-events-none absolute inset-0 z-0 rounded-xl border border-neutral-800 bg-[#0A0D0E] shadow-md"
+                transition={{ type: 'spring', stiffness: 360, damping: 28, mass: 0.7 }}
               />
             )}
-            {option.icon}
-            {option.label}
+
+            <div className="relative z-10 flex items-center gap-2">
+              {isActive && <span className="h-2 w-2 shrink-0 rounded-full bg-[#38E044] shadow-[0_0_8px_#38E044]" />}
+
+              {option.icon && <span className={`shrink-0 ${isActive ? 'text-white' : 'text-neutral-500'}`}>{option.icon}</span>}
+
+              <span className="font-semibold tracking-tight whitespace-nowrap">{option.label}</span>
+
+              {option.badge !== undefined && (
+                <span
+                  className={`ml-1 rounded-full px-2 py-0.5 text-xs font-bold leading-none ${
+                    isActive ? 'border border-neutral-700 bg-neutral-800 text-neutral-200' : 'bg-neutral-200 text-neutral-700'
+                  }`}
+                >
+                  {option.badge}
+                </span>
+              )}
+            </div>
           </button>
         );
       })}

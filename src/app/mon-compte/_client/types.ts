@@ -1,5 +1,21 @@
 import type { ClientOrderKind } from '@/lib/client-status';
 
+export type ClientTab = 'dashboard' | 'orders' | 'invoices' | 'disputes' | 'settings';
+
+export type ClientNotificationType = 'dispute' | 'invoice' | 'delivery' | 'order';
+
+export interface ClientNotification {
+  id: string;
+  type: ClientNotificationType;
+  title: string;
+  message: string;
+  date: string;
+  read: boolean;
+  linkTab?: string;
+  disputeId?: string;
+  invoiceId?: string;
+}
+
 export interface ClientProfile {
   name: string;
   email: string;

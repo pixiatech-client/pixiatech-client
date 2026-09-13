@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Building2, CheckCircle2, Loader2, X } from 'lucide-react';
+import { Building2, CheckCircle2, Info, Loader2, Lock, Search, X } from 'lucide-react';
 import { clientApi } from '../../lib/api';
 
 interface SiretVerificationModalProps {
@@ -40,7 +40,7 @@ export function SiretVerificationModal({ open, onClose, onVerified, showToast }:
   async function lookUp() {
     const clean = siret.replace(/\s+/g, '');
     if (!/^\d{14}$/.test(clean)) {
-      showToast('error', 'Saisissez un numÃ©ro SIRET valide Ã  14 chiffres.');
+      showToast('error', 'Saisissez un numéro SIRET valide à 14 chiffres.');
       return;
     }
     setLoading(true);
@@ -53,7 +53,7 @@ export function SiretVerificationModal({ open, onClose, onVerified, showToast }:
       setResult(res as unknown as CompanyResult);
       setStep('result');
     } catch (err: any) {
-      showToast('error', err.message || 'Impossible de vÃ©rifier le SIRET.');
+      showToast('error', err.message || 'Impossible de vérifier le SIRET.');
     } finally {
       setLoading(false);
     }
@@ -74,14 +74,14 @@ export function SiretVerificationModal({ open, onClose, onVerified, showToast }:
         nafCode: result.nafCode,
         state: result.state,
       });
-      showToast('success', 'Votre SIRET a Ã©tÃ© vÃ©rifiÃ© avec succÃ¨s.');
+      showToast('success', 'Votre SIRET a été vérifié avec succès.');
       onVerified();
       onClose();
       setStep('input');
       setSiret('');
       setResult(null);
     } catch (err: any) {
-      showToast('error', err.message || "Impossible d'enregistrer la vÃ©rification.");
+      showToast('error', err.message || "Impossible d'enregistrer la vérification.");
     } finally {
       setSaving(false);
     }
@@ -102,108 +102,133 @@ export function SiretVerificationModal({ open, onClose, onVerified, showToast }:
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 40, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl sm:rounded-3xl"
+            className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-neutral-200 bg-white shadow-2xl sm:rounded-3xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-extrabold text-neutral-900">VÃ©rifier mon SIRET</h2>
-                <p className="mt-0.5 text-sm text-neutral-500">
-                  Nous vÃ©rifions votre entreprise auprÃ¨s de la base officielle (INSEE / Recherche Entreprises).
-                </p>
+            <div className="flex items-center justify-between border-b border-neutral-100 p-5 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0D0E] text-white">
+                  <Building2 className="size-5 text-[#38E044]" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-neutral-900">Vérification Entreprise par SIRET</h2>
+                  <p className="text-xs text-neutral-500">Interrogation directe du registre INSEE / SIRENE</p>
+                </div>
               </div>
-              <button type="button" onClick={onClose} className="rounded-xl p-2 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700" aria-label="Fermer">
-                <X size={20} />
+              <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-neutral-400 transition hover:bg-neutral-100 hover:text-black" aria-label="Fermer">
+                <X className="size-5" />
               </button>
             </div>
 
-            {step === 'input' && (
-              <div className="mt-5 space-y-4">
-                <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-neutral-500">NumÃ©ro SIRET</span>
-                  <input
-                    value={siret}
-                    onChange={(e) => setSiret(e.target.value.replace(/[^\d]/g, ''))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') lookUp();
-                    }}
-                    placeholder="000 000 000 00000"
-                    maxLength={14}
-                    inputMode="numeric"
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-base font-semibold tracking-widest outline-none transition focus:border-neutral-400"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={lookUp}
-                  disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#0A0D0E] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-                >
-                  {loading && <Loader2 size={16} className="animate-spin" />}
-                  VÃ©rifier
-                </button>
+            <div className="flex-1 space-y-4 overflow-y-auto p-5">
+              <div className="flex items-start gap-2.5 rounded-2xl border border-neutral-200/80 bg-neutral-50 p-3.5 text-xs text-neutral-600">
+                <Info className="mt-0.5 size-4 shrink-0 text-neutral-500" />
+                <span>
+                  Saisissez votre SIRET à 14 chiffres. Nous récupérons automatiquement les informations légales de votre société.
+                </span>
               </div>
-            )}
 
-            {step === 'result' && result && (
-              <div className="mt-5 space-y-4">
-                <div className="overflow-hidden rounded-2xl border border-emerald-100">
-                  <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-700">
-                    <CheckCircle2 size={15} /> Entreprise trouvÃ©e â€” SIRET valide
-                  </div>
-                  <div className="p-4">
-                    <div className="flex items-start gap-3">
-                      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#0A0D0E] text-white">
-                        <Building2 size={20} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-base font-extrabold text-neutral-900">{result.companyName || result.legalName}</p>
-                        <p className="text-xs text-neutral-500">SIRET {result.siret} Â· SIREN {result.siren}</p>
-                        {result.vatNumber && (
-                          <p className="mt-0.5 text-xs text-neutral-500">NÂ° TVA : {result.vatNumber}</p>
-                        )}
-                      </div>
-                      {result.active ? (
-                        <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Active</span>
-                      ) : (
-                        <span className="shrink-0 rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-600">Inactive</span>
-                      )}
-                    </div>
-                    <dl className="mt-3 space-y-1.5 border-t border-neutral-100 pt-3 text-xs">
-                      <div className="flex justify-between gap-3">
-                        <dt className="text-neutral-400">Adresse</dt>
-                        <dd className="text-right font-medium text-neutral-800">
-                          {result.address} {result.postcode} {result.city}
-                        </dd>
-                      </div>
-                      {result.department && (
-                        <div className="flex justify-between gap-3">
-                          <dt className="text-neutral-400">DÃ©partement</dt>
-                          <dd className="font-medium text-neutral-800">{result.department}</dd>
-                        </div>
-                      )}
-                      {result.state && (
-                        <div className="flex justify-between gap-3">
-                          <dt className="text-neutral-400">RÃ©gion</dt>
-                          <dd className="font-medium text-neutral-800">{result.state}</dd>
-                        </div>
-                      )}
-                      {result.nafCode && (
-                        <div className="flex justify-between gap-3">
-                          <dt className="text-neutral-400">ActivitÃ© principale</dt>
-                          <dd className="font-medium text-neutral-800">{result.nafCode}</dd>
-                        </div>
-                      )}
-                    </dl>
+              {step === 'input' && (
+                <div className="space-y-1.5">
+                  <label className="flex items-center justify-between text-xs font-semibold text-neutral-700">
+                    <span>Numéro SIRET de l'entreprise</span>
+                    <span className="font-mono text-[11px] font-normal text-neutral-400">14 chiffres</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      value={siret}
+                      onChange={(e) => setSiret(e.target.value.replace(/[^\d]/g, ''))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') lookUp();
+                      }}
+                      placeholder="Ex : 849 203 119 00024"
+                      maxLength={14}
+                      inputMode="numeric"
+                      className="w-full rounded-xl border border-neutral-300 px-3.5 py-2.5 text-sm font-bold tracking-wider text-neutral-900 outline-none transition focus:border-neutral-500 focus:ring-2 focus:ring-black/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={lookUp}
+                      disabled={loading}
+                      className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-lg bg-[#0A0D0E] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-neutral-800 disabled:opacity-50"
+                    >
+                      {loading ? <Loader2 className="size-3.5 animate-spin text-[#38E044]" /> : <Search className="size-3.5 text-[#38E044]" />}
+                      <span>{loading ? 'Recherche…' : 'Vérifier'}</span>
+                    </button>
                   </div>
                 </div>
+              )}
 
-                <div className="flex gap-3">
+              {step === 'result' && result && (
+                <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
+                  <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2">
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
+                      <CheckCircle2 className="size-4 text-emerald-600" />
+                      Entreprise identifiée avec succès
+                    </span>
+                    <span className="rounded bg-emerald-100 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-800">SIRENE VALIDÉ</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                    <div>
+                      <span className="block text-[10px] text-neutral-400">Raison Sociale</span>
+                      <strong className="font-semibold text-neutral-900">{result.companyName || result.legalName}</strong>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-neutral-400">SIRET certifié</span>
+                      <strong className="font-mono text-neutral-900">{result.siret} · SIREN {result.siren}</strong>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-neutral-400">N° TVA Intracommunautaire</span>
+                      <strong className="font-mono text-neutral-900">{result.vatNumber || 'Non renseigné'}</strong>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-neutral-400">Activité (Code NAF)</span>
+                      <span className="text-neutral-700">{result.nafCode || 'Non renseigné'}</span>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <span className="block text-[10px] text-neutral-400">Siège social</span>
+                      <span className="text-neutral-700">
+                        {result.address} {result.postcode} {result.city}
+                        {result.department ? ` · ${result.department}` : ''}
+                      </span>
+                    </div>
+                    {result.active !== undefined && (
+                      <div className="sm:col-span-2">
+                        <span className="mr-2 text-[10px] text-neutral-400">Statut</span>
+                        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${result.active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
+                          {result.active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-start gap-1.5 border-t border-emerald-200/80 pt-2 text-[11px] text-emerald-950">
+                    <Lock className="mt-0.5 size-3.5 shrink-0 text-emerald-700" />
+                    <span>
+                      <strong>Avertissement légal :</strong> une fois vérifié, ce SIRET sera rattaché à votre compte pour la facturation B2B et le taux de TVA applicable.
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 border-t border-neutral-100 p-4">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={saving}
+                className="rounded-xl px-4 py-2 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-40"
+              >
+                Fermer
+              </button>
+              {step === 'result' && result ? (
+                <>
                   <button
                     type="button"
                     onClick={() => setStep('input')}
                     disabled={saving}
-                    className="rounded-xl border border-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40"
+                    className="rounded-xl px-4 py-2 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-40"
                   >
                     Modifier
                   </button>
@@ -211,14 +236,25 @@ export function SiretVerificationModal({ open, onClose, onVerified, showToast }:
                     type="button"
                     onClick={confirm}
                     disabled={saving}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0A0D0E] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-xl bg-[#0A0D0E] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-neutral-800 disabled:opacity-50"
                   >
-                    {saving && <Loader2 size={16} className="animate-spin" />}
-                    Confirmer la vÃ©rification
+                    {saving && <Loader2 className="size-3.5 animate-spin text-[#38E044]" />}
+                    <Lock className="size-3.5 text-[#38E044]" />
+                    Confirmer la vérification
                   </button>
-                </div>
-              </div>
-            )}
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={lookUp}
+                  disabled={loading}
+                  className="flex items-center gap-2 rounded-xl bg-[#0A0D0E] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-neutral-800 disabled:opacity-50"
+                >
+                  {loading ? <Loader2 className="size-3.5 animate-spin text-[#38E044]" /> : <Search className="size-3.5 text-[#38E044]" />}
+                  Vérifier mon SIRET
+                </button>
+              )}
+            </div>
           </motion.div>
         </motion.div>
       )}

@@ -1,121 +1,448 @@
 ﻿'use client';
 
-import { useMemo, useState } from 'react';
-import { MessageSquareWarning, Plus } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  MessageSquare,
+  Package,
+  Send,
+  Truck,
+  User,
+} from 'lucide-react';
 import type { ClientDispute } from '../../types';
-import { formatDate } from '../../lib/format';
-import { SlidingSwitch } from '../SlidingSwitch';
+import { formatShortDate } from '../../lib/format';
 
 interface DisputesViewProps {
   disputes: ClientDispute[];
   onSelectDispute: (id: string) => void;
   onNewDispute: () => void;
+  onSendMessage: (disputeId: string, text: string) => void;
 }
 
-type FilterKey = 'all' | 'open' | 'resolved';
+type Filter = 'all' | 'open' | 'resolved';
 
-export function DisputesView({ disputes, onSelectDispute, onNewDispute }: DisputesViewProps) {
-  const [filter, setFilter] = useState<FilterKey>('all');
+function isOpenLabel(label: string) {
+  return label === 'Ouvert' || label === 'En cours' || label === 'En attente';
+}
 
-  const filtered = useMemo(() => {
-    const sorted = [...disputes].sort((a, b) => b.date.localeCompare(a.date));
-    if (filter === 'all') return sorted;
-    if (filter === 'open') return sorted.filter((d) => d.statusLabel === 'Ouvert' || d.statusLabel === 'En cours' || d.statusLabel === 'En attente');
-    return sorted.filter((d) => d.statusLabel === 'RÃ©solu' || d.statusLabel === 'FermÃ©');
+function isResolvedLabel(label: string) {
+  return label === 'Résolu' || label === 'Fermé';
+}
+
+function getStatusBadge(status: string) {
+  if (status === 'Résolu') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+        <span>Résolu</span>
+      </span>
+    );
+  }
+  if (status === 'En cours') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-800 border border-sky-200">
+        <Clock className="w-3.5 h-3.5 text-sky-600 animate-spin" />
+        <span>En cours d'instruction</span>
+      </span>
+    );
+  }
+  if (status === 'En attente') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+        <Clock className="w-3.5 h-3.5 text-amber-600" />
+        <span>En attente de réponse</span>
+      </span>
+    );
+  }
+  if (status === 'Fermé') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-neutral-100 text-neutral-600 border border-neutral-200">
+        <span>Dossier clos</span>
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
+      <AlertCircle className="w-3.5 h-3.5 text-blue-600" />
+      <span>Dossier ouvert</span>
+    </span>
+  );
+}
+
+export function DisputesView({ disputes, onSelectDispute, onNewDispute, onSendMessage }: DisputesViewProps) {
+  const [filter, setFilter] = useState<Filter>('all');
+  const [selectedDisputeId, setSelectedDisputeId] = useState<string>('');
+  const [replyText, setReplyText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    if (!selectedDisputeId && disputes.length > 0) {
+      setSelectedDisputeId(disputes[0].id);
+    }
+  }, [disputes, selectedDisputeId]);
+
+  const filteredDisputes = useMemo(() => {
+    return disputes.filter((d) => {
+      if (filter === 'open') return isOpenLabel(d.statusLabel);
+      if (filter === 'resolved') return isResolvedLabel(d.statusLabel);
+      return true;
+    });
   }, [disputes, filter]);
 
-  const openCount = disputes.filter((d) => d.statusLabel === 'Ouvert' || d.statusLabel === 'En cours' || d.statusLabel === 'En attente').length;
+  const openDisputesCount = disputes.filter((d) => isOpenLabel(d.statusLabel)).length;
+  const resolvedCount = disputes.filter((d) => isResolvedLabel(d.statusLabel)).length;
+
+  const activeDispute = disputes.find((d) => d.id === selectedDisputeId) || filteredDisputes[0];
+
+  const handleSelect = (id: string) => {
+    setSelectedDisputeId(id);
+    onSelectDispute(id);
+  };
+
+  const handleSendReply = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim() || !activeDispute) return;
+    setIsSending(true);
+    const textToSend = replyText.trim();
+    setReplyText('');
+
+    setTimeout(() => {
+      onSendMessage(activeDispute.id, textToSend);
+      setIsSending(false);
+    }, 300);
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-neutral-900">Mes litiges</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            {openCount > 0 ? `${openCount} litige${openCount > 1 ? 's' : ''} en cours` : 'Aucun litige en cours'} Â· {disputes.length} au total
-          </p>
+    <div id="pixiatech-disputes-view" className="space-y-6">
+      <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-13 h-13 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
+            <AlertTriangle className="w-6 h-6 text-amber-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">Litiges & Réclamations</h1>
+              {openDisputesCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-50 text-amber-800 px-2.5 py-0.5 rounded-full border border-amber-200">
+                  {openDisputesCount} en cours
+                </span>
+              )}
+            </div>
+            <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
+              Suivi contradictoire de vos signalements, litiges transport et échanges directs avec le support PIXIATECH.
+            </p>
+          </div>
         </div>
+
         <button
-          type="button"
           onClick={onNewDispute}
-          className="flex items-center gap-2 rounded-xl bg-[#0A0D0E] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white text-xs font-bold hover:bg-neutral-800 transition-all shadow-sm cursor-pointer shrink-0"
         >
-          <Plus size={16} /> Ouvrir un litige
+          <AlertTriangle className="w-4 h-4 text-amber-400" />
+          <span>Ouvrir une nouvelle réclamation</span>
         </button>
       </div>
 
-      <SlidingSwitch
-        options={[
-          { key: 'all', label: 'Tout' },
-          { key: 'open', label: 'En cours' },
-          { key: 'resolved', label: 'RÃ©solus' },
-        ]}
-        active={filter}
-        onChange={(k) => setFilter(k as FilterKey)}
-        className="max-w-xs"
-      />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl border border-neutral-200/80 p-4 shadow-xs flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-neutral-100 text-neutral-700">
+            <MessageSquare className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-xs text-neutral-500 font-medium">Total Réclamations</div>
+            <div className="text-xl font-black text-neutral-900 font-mono">{disputes.length}</div>
+          </div>
+        </div>
 
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center rounded-2xl border border-dashed border-neutral-200 bg-white py-16 text-center shadow-xs">
-          <MessageSquareWarning size={36} className="text-neutral-300" />
-          <p className="mt-3 text-sm font-bold text-neutral-700">Aucun litige {filter !== 'all' ? 'dans cette catÃ©gorie' : ''}</p>
-          <p className="mt-1 max-w-sm text-sm text-neutral-500">
-            Un problÃ¨me avec votre commande ? Ouvrez un litige, nous rÃ©pondons sous 24h ouvrÃ©es.
+        <div className="bg-white rounded-2xl border border-neutral-200/80 p-4 shadow-xs flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/60">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-xs text-neutral-500 font-medium">Dossiers en traitement</div>
+            <div className="text-xl font-black text-amber-700 font-mono">{openDisputesCount}</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-neutral-200/80 p-4 shadow-xs flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-xs text-neutral-500 font-medium">Litiges résolus</div>
+            <div className="text-xl font-black text-emerald-700 font-mono">{resolvedCount}</div>
+          </div>
+        </div>
+      </div>
+
+      {disputes.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-neutral-200/80 p-12 text-center shadow-xs">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4">
+            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+          </div>
+          <h3 className="text-lg font-bold text-neutral-900">Aucun litige en cours</h3>
+          <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto mt-1 mb-6">
+            Toutes vos commandes sont conformes et sans incident signalé. En cas d'anomalie de livraison ou de produit
+            endommagé, vous pouvez ouvrir une réclamation à tout moment.
           </p>
           <button
-            type="button"
             onClick={onNewDispute}
-            className="mt-4 rounded-xl bg-[#0A0D0E] px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-xs hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
           >
-            Ouvrir un litige
+            <AlertTriangle className="w-4 h-4 text-amber-400" />
+            <span>Déclarer un incident sur une commande</span>
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((dispute) => (
-            <button
-              key={dispute.id}
-              type="button"
-              onClick={() => onSelectDispute(dispute.id)}
-              className="flex w-full items-center gap-4 rounded-2xl border border-neutral-200/80 bg-white p-5 text-left shadow-xs transition hover:border-neutral-300"
-            >
-              {dispute.unreadByClient ? (
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
-                  <MessageSquareWarning size={19} />
-                </span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="lg:col-span-5 space-y-4">
+            <div className="flex items-center gap-2 p-1.5 bg-neutral-100/80 rounded-2xl border border-neutral-200/60 text-xs">
+              <button
+                type="button"
+                onClick={() => setFilter('all')}
+                className={`flex-1 py-1.5 px-3 rounded-xl font-bold transition-all ${
+                  filter === 'all' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                Tous ({disputes.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter('open')}
+                className={`flex-1 py-1.5 px-3 rounded-xl font-bold transition-all ${
+                  filter === 'open' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                En cours ({openDisputesCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter('resolved')}
+                className={`flex-1 py-1.5 px-3 rounded-xl font-bold transition-all ${
+                  filter === 'resolved' ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                Résolus ({resolvedCount})
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-[700px] overflow-y-auto pr-1 pb-4">
+              {filteredDisputes.length === 0 ? (
+                <div className="p-8 text-center bg-white rounded-2xl border border-neutral-200 text-xs text-neutral-400">
+                  Aucun litige dans cette catégorie.
+                </div>
               ) : (
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-500">
-                  <MessageSquareWarning size={19} />
-                </span>
+                filteredDisputes.map((dispute) => {
+                  const isSelected = activeDispute?.id === dispute.id;
+                  const messageCount = dispute.messages?.length || 0;
+                  return (
+                    <div
+                      key={dispute.id}
+                      onClick={() => handleSelect(dispute.id)}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-3 ${
+                        isSelected
+                          ? 'bg-white border-[#0A0D0E] ring-2 ring-black/10 shadow-sm'
+                          : 'bg-white border-neutral-200/80 hover:border-neutral-300 hover:bg-neutral-50/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {dispute.orderNumber && (
+                            <span className="font-mono font-bold text-xs text-neutral-900 bg-neutral-100 px-2 py-0.5 rounded-md">
+                              {dispute.orderNumber}
+                            </span>
+                          )}
+                          {dispute.unreadByClient && (
+                            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" title="Nouvelle réponse" />
+                          )}
+                          <span className="text-[11px] text-neutral-400">• {formatShortDate(dispute.date)}</span>
+                        </div>
+                        {getStatusBadge(dispute.statusLabel)}
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        {dispute.productImage ? (
+                          <img
+                            src={dispute.productImage}
+                            alt={dispute.productName || 'Produit'}
+                            className="w-12 h-12 rounded-xl object-cover border border-neutral-200 shrink-0"
+                          />
+                        ) : (
+                          <span className="w-12 h-12 rounded-xl bg-neutral-100 text-neutral-400 flex items-center justify-center shrink-0">
+                            <Package className="w-5 h-5" />
+                          </span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-xs text-neutral-900 truncate">{dispute.reasonLabel}</div>
+                          <div className="text-[11px] text-neutral-500 line-clamp-2 mt-0.5">{dispute.description}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-neutral-100 text-[11px] text-neutral-400">
+                        <span className="flex items-center gap-1 font-medium text-neutral-600">
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          {messageCount} message(s) échangé(s)
+                        </span>
+                        <span className="text-neutral-500 flex items-center gap-0.5">
+                          Consulter l'échange <ChevronRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
               )}
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-sm font-bold text-neutral-900">{dispute.reasonLabel}</p>
-                  <DisputeStatusPill label={dispute.statusLabel} />
-                  {dispute.unreadByClient && (
-                    <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-600">Nouveau</span>
+            </div>
+          </div>
+
+          <div className="lg:col-span-7">
+            {activeDispute ? (
+              <div className="bg-white rounded-3xl border border-neutral-200/80 shadow-xs overflow-hidden flex flex-col min-h-[640px]">
+                <div className="p-5 border-b border-neutral-200/80 bg-neutral-50/50 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base font-bold text-neutral-900">Dossier de réclamation #{activeDispute.id}</h2>
+                        {getStatusBadge(activeDispute.statusLabel)}
+                      </div>
+                      <p className="text-xs text-neutral-500 mt-0.5">
+                        {activeDispute.orderNumber && (
+                          <>
+                            Rattaché à la commande <strong className="text-neutral-800 font-mono">{activeDispute.orderNumber}</strong> •{' '}
+                          </>
+                        )}
+                        Déclaré le {formatShortDate(activeDispute.date)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {activeDispute.productName && (
+                    <div className="p-3.5 rounded-2xl bg-white border border-neutral-200 flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {activeDispute.productImage ? (
+                          <img
+                            src={activeDispute.productImage}
+                            alt={activeDispute.productName}
+                            className="w-10 h-10 rounded-xl object-cover border border-neutral-200 shrink-0"
+                          />
+                        ) : (
+                          <span className="w-10 h-10 rounded-xl bg-neutral-100 text-neutral-400 flex items-center justify-center shrink-0">
+                            <Package className="w-4 h-4" />
+                          </span>
+                        )}
+                        <div className="min-w-0">
+                          <div className="font-bold text-neutral-800 truncate">{activeDispute.productName}</div>
+                          <div className="text-neutral-500 text-[11px]">
+                            Motif : <strong className="text-neutral-700">{activeDispute.reasonLabel}</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeDispute.carrierNote && (
+                    <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-xs flex items-start gap-2.5 text-amber-900">
+                      <Truck className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">Remarque logistique / transporteur : </span>
+                        <span>{activeDispute.carrierNote}</span>
+                      </div>
+                    </div>
                   )}
                 </div>
-                <p className="mt-0.5 truncate text-xs text-neutral-500">
-                  {dispute.orderNumber ? `${dispute.orderNumber} Â· ` : ''}
-                  {dispute.productName || 'Demande sans commande'} Â· {formatDate(dispute.date)}
-                </p>
+
+                <div className="p-5 flex-1 overflow-y-auto space-y-4 max-h-[420px] bg-neutral-50/30">
+                  <div className="p-4 rounded-2xl bg-neutral-100/90 border border-neutral-200 text-xs space-y-2">
+                    <div className="flex items-center justify-between text-neutral-500 font-semibold text-[11px]">
+                      <span className="flex items-center gap-1.5 text-neutral-800">
+                        <User className="w-3.5 h-3.5 text-neutral-600" />
+                        Signalement initial du client
+                      </span>
+                      <span>{formatShortDate(activeDispute.date)}</span>
+                    </div>
+                    <p className="text-neutral-800 leading-relaxed">{activeDispute.description}</p>
+                  </div>
+
+                  {activeDispute.messages && activeDispute.messages.length > 0 ? (
+                    activeDispute.messages.map((msg) => {
+                      const isClient = msg.sender === 'customer';
+                      return (
+                        <div key={msg.id} className={`flex flex-col ${isClient ? 'items-end' : 'items-start'} space-y-1`}>
+                          <div className="flex items-center gap-2 text-[11px] text-neutral-400 px-1">
+                            <span className="font-semibold text-neutral-600">{msg.senderName}</span>
+                            <span>•</span>
+                            <span>
+                              {msg.date} à {msg.time}
+                            </span>
+                            {!isClient && (
+                              <span className="px-1.5 py-0.5 bg-[#0A0D0E] text-white text-[9px] font-bold rounded">
+                                OFFICIEL
+                              </span>
+                            )}
+                          </div>
+
+                          <div
+                            className={`max-w-[85%] sm:max-w-[75%] p-4 rounded-2xl text-xs leading-relaxed ${
+                              isClient
+                                ? 'bg-[#0A0D0E] text-white shadow-xs'
+                                : 'bg-white border border-neutral-200/90 text-neutral-800 shadow-xs'
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap">{msg.message}</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="py-8 text-center text-xs text-neutral-400">
+                      Aucun message supplémentaire pour ce dossier.
+                    </div>
+                  )}
+                </div>
+
+                <form
+                  onSubmit={handleSendReply}
+                  className="p-4 border-t border-neutral-200/80 bg-white flex items-end gap-3"
+                >
+                  <div className="flex-1">
+                    <label htmlFor="dispute-reply-input" className="sr-only">
+                      Répondre au support PIXIATECH
+                    </label>
+                    <textarea
+                      id="dispute-reply-input"
+                      rows={2}
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Écrivez votre message ou précisez les détails de l'incident..."
+                      className="w-full px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-xs text-neutral-800 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-black focus:bg-white resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!replyText.trim() || isSending}
+                    className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs transition-all shrink-0 ${
+                      replyText.trim() && !isSending
+                        ? 'bg-[#0A0D0E] text-white hover:bg-neutral-800 shadow-md cursor-pointer'
+                        : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <span>Envoyer</span>
+                    <Send className="w-3.5 h-3.5 text-[#38E044]" />
+                  </button>
+                </form>
               </div>
-              <div className="text-right">
-                <p className="text-xs font-semibold text-neutral-900">DerniÃ¨re activitÃ©</p>
-                <p className="text-xs text-neutral-500">{formatDate(dispute.lastResponseDate)}</p>
+            ) : (
+              <div className="bg-white rounded-3xl border border-neutral-200/80 p-12 text-center text-xs text-neutral-400">
+                Sélectionnez un litige à gauche pour afficher la conversation.
               </div>
-            </button>
-          ))}
+            )}
+          </div>
         </div>
       )}
     </div>
   );
-}
-
-function DisputeStatusPill({ label }: { label: string }) {
-  const tone = label === 'RÃ©solu' || label === 'FermÃ©'
-    ? 'bg-emerald-100 text-emerald-700'
-    : 'bg-amber-100 text-amber-700';
-  return <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${tone}`}>{label}</span>;
 }
