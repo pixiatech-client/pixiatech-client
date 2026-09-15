@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Package,
   ShoppingBag,
@@ -10,12 +11,15 @@ import {
   Clock,
   FileText,
   AlertCircle,
+  AlertTriangle,
+  XCircle,
   Tag,
   KeyRound,
   Search
 } from 'lucide-react';
 import type { Order, OrderItem, Invoice } from '../../types';
 import { SlidingSwitch } from '../SlidingSwitch';
+import { useProductCatalog } from '../../lib/useProductStatus';
 
 interface OrdersViewProps {
   orders: Order[];
@@ -53,6 +57,8 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  const { getProductStatus } = useProductCatalog();
+
   const filteredOrders = orders.filter((order) => {
     if (filterStatus === 'delivered' && order.status !== 'delivered') return false;
     if (filterStatus === 'in_transit' && order.status !== 'in_transit') return false;
@@ -86,15 +92,14 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
         </div>
 
         {/* Action Button: Boutique */}
-        <button
-          type="button"
-          onClick={onOpenStore}
+        <Link
+          href="/boutique"
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0A0D0E] text-white text-xs font-bold hover:bg-neutral-800 transition-all shadow-sm cursor-pointer"
         >
           <ShoppingBag className="w-4 h-4 text-[#38E044]" />
           <span>Accéder à la boutique</span>
           <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
-        </button>
+        </Link>
       </div>
 
       {/* 2. Controls & Filters */}
@@ -143,15 +148,14 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
           <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto mt-1 mb-6">
             Votre historique de commande est actuellement vide. Découvrez nos équipements informatiques professionnels sur notre boutique en ligne.
           </p>
-          <button
-            type="button"
-            onClick={onOpenStore}
+          <Link
+            href="/boutique"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-xs hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4 text-[#38E044]" />
             <span>Découvrir notre boutique</span>
             <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
-          </button>
+          </Link>
         </div>
       ) : (
         <div className="space-y-4">
@@ -236,57 +240,110 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
 
                 {/* Products List in this Order */}
                 <div className="space-y-4">
-                  {order.items.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3.5 rounded-2xl bg-neutral-50/60 border border-neutral-100 hover:bg-neutral-50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4 min-w-0">
-                        <img
-                          src={item.productImage}
-                          alt={item.productName}
-                          className="w-16 h-16 rounded-2xl object-cover border border-neutral-200 shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => onViewProductInStore ? onViewProductInStore(item) : onOpenStore()}
-                            className="text-left font-bold text-sm text-neutral-900 hover:text-emerald-700 hover:underline inline-flex items-center gap-1.5 cursor-pointer group"
-                            title="Consulter la fiche produit"
-                          >
-                            <span className="truncate">{item.productName}</span>
-                            <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-700 shrink-0" />
-                          </button>
-                          {item.productDescription && (
-                            <p className="text-xs text-neutral-500 line-clamp-1 mt-0.5">
-                              {item.productDescription}
-                            </p>
+                  {order.items.map((item, idx) => {
+                    const statusInfo = getProductStatus(item.productId, item.productName);
+
+                    return (
+                      <div
+                        key={idx}
+                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3.5 rounded-2xl bg-neutral-50/60 border border-neutral-100 hover:bg-neutral-50 transition-colors"
+                      >
+                        <div className="flex items-center gap-4 min-w-0">
+                          {statusInfo.href ? (
+                            <Link
+                              href={statusInfo.href}
+                              className="w-16 h-16 rounded-2xl overflow-hidden border border-neutral-200 shrink-0 hover:opacity-85 transition-opacity"
+                              title="Consulter la fiche produit sur la boutique"
+                            >
+                              <img
+                                src={item.productImage}
+                                alt={item.productName}
+                                className="w-full h-full object-cover"
+                              />
+                            </Link>
+                          ) : (
+                            <div
+                              className="w-16 h-16 rounded-2xl overflow-hidden border border-neutral-200 shrink-0 bg-neutral-100"
+                              title="Produit indisponible"
+                            >
+                              <img
+                                src={item.productImage}
+                                alt={item.productName}
+                                className="w-full h-full object-cover grayscale opacity-70"
+                              />
+                            </div>
                           )}
-                          <div className="flex items-center gap-3 text-xs text-neutral-500 mt-1">
-                            <span>Quantité : <strong className="text-neutral-800">{item.quantity}</strong></span>
-                            <span>•</span>
-                            <span>Prix unitaire HT : <strong className="text-neutral-800 font-mono">{item.unitPriceHT.toFixed(2)} €</strong></span>
-                            <span>•</span>
-                            <span>TVA : <strong>{(item.vatRate * 100).toFixed(0)}%</strong></span>
+
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {statusInfo.href ? (
+                                <Link
+                                  href={statusInfo.href}
+                                  className="text-left font-bold text-sm text-neutral-900 hover:text-emerald-700 hover:underline inline-flex items-center gap-1.5 group"
+                                  title="Consulter la fiche produit sur la boutique"
+                                >
+                                  <span className="truncate">{item.productName}</span>
+                                  <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-700 shrink-0" />
+                                </Link>
+                              ) : (
+                                <span
+                                  className="text-left font-bold text-sm text-neutral-600 inline-flex items-center gap-1.5 cursor-not-allowed"
+                                  title="Ce produit n'est plus disponible dans le catalogue"
+                                >
+                                  <span className="truncate line-through decoration-neutral-300">{item.productName}</span>
+                                </span>
+                              )}
+
+                              {statusInfo.label && (
+                                <span
+                                  className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0 ${statusInfo.badgeClass}`}
+                                >
+                                  {statusInfo.type === 'not_found' && <AlertCircle className="w-3 h-3 shrink-0" />}
+                                  {statusInfo.type === 'out_of_stock' && <AlertTriangle className="w-3 h-3 shrink-0" />}
+                                  {statusInfo.type === 'unavailable' && <XCircle className="w-3 h-3 shrink-0" />}
+                                  {statusInfo.type === 'available' && <CheckCircle2 className="w-3 h-3 shrink-0" />}
+                                  <span>{statusInfo.label}</span>
+                                </span>
+                              )}
+                            </div>
+
+                            {item.productDescription && (
+                              <p className="text-xs text-neutral-500 line-clamp-1">
+                                {item.productDescription}
+                              </p>
+                            )}
+
+                            <div className="flex items-center gap-3 text-xs text-neutral-500">
+                              <span>Quantité : <strong className="text-neutral-800">{item.quantity}</strong></span>
+                              <span>•</span>
+                              <span>Prix unitaire HT : <strong className="text-neutral-800 font-mono">{item.unitPriceHT.toFixed(2)} €</strong></span>
+                              <span>•</span>
+                              <span>TVA : <strong>{(item.vatRate * 100).toFixed(0)}%</strong></span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="text-right shrink-0">
-                        <div className="text-sm font-extrabold text-neutral-900 font-mono">
-                          {(item.unitPriceHT * item.quantity * (1 + item.vatRate)).toFixed(2)} € TTC
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-extrabold text-neutral-900 font-mono">
+                            {(item.unitPriceHT * item.quantity * (1 + item.vatRate)).toFixed(2)} € TTC
+                          </div>
+                          {statusInfo.href ? (
+                            <Link
+                              href={statusInfo.href}
+                              className="text-[11px] text-emerald-700 hover:underline font-semibold mt-0.5 inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>Voir sur la boutique</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </Link>
+                          ) : (
+                            <span className="text-[11px] text-red-500 font-semibold mt-0.5 inline-flex items-center gap-1 cursor-not-allowed">
+                              <span>Non disponible</span>
+                            </span>
+                          )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => onViewProductInStore ? onViewProductInStore(item) : onOpenStore()}
-                          className="text-[11px] text-emerald-700 hover:underline font-semibold mt-0.5 inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>Voir sur la boutique</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Order Financial & Logistics Summary */}

@@ -256,7 +256,7 @@ function mapFirestoreDoc(docSnap: any, charNameMap: Record<string, string> = {})
   };
 }
 
-export async function fetchBoutiqueProducts(): Promise<Product[]> {
+export async function fetchBoutiqueProducts(includeHidden = false): Promise<Product[]> {
   try {
     const charNameMap = await fetchCharacteristicsMap();
     const q = collection(firestore, 'boutique_products');
@@ -266,7 +266,7 @@ export async function fetchBoutiqueProducts(): Promise<Product[]> {
     for (const d of snapshot.docs) {
       try {
         const p = mapFirestoreDoc(d, charNameMap);
-        if (!p.isHidden) mapped.push(p);
+        if (includeHidden || !p.isHidden) mapped.push(p);
       } catch (e) {
         console.warn(`fetchBoutiqueProducts: skipping malformed product ${d.id}:`, e);
       }

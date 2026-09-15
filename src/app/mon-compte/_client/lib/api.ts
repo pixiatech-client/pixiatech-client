@@ -56,8 +56,8 @@ export const clientApi = {
   orders: () => request<{ orders: ClientOrder[] }>('/api/boutique/orders'),
   invoices: () => request<{ invoices: ClientInvoice[] }>('/api/boutique/invoices/list'),
   eligibleOrders: () => request<{ orders: EligibleOrder[]; counters?: Record<string, number> }>('/api/boutique/invoices/eligible-orders'),
-  generateInvoice: (orderId: string, orderType: 'sale' | 'rental') =>
-    post<{ invoice: Record<string, unknown>; emailSentAt?: string | null }>('/api/boutique/invoices/generate', { orderId, orderType }),
+  generateInvoice: (orderId: string, orderType: 'sale' | 'rental', billingType?: string) =>
+    post<{ invoice: Record<string, unknown>; emailSentAt?: string | null }>('/api/boutique/invoices/generate', { orderId, orderType, billingType }),
   invoicePdf: (invoiceId: string) => `/api/boutique/invoices/${invoiceId}/pdf`,
   invoicePreview: (invoiceId: string) => `/api/boutique/invoices/${invoiceId}/preview`,
 

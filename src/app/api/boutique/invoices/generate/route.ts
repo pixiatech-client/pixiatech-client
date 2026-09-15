@@ -167,7 +167,9 @@ export async function POST(req: NextRequest) {
       promoCode: typeof o.promoCode === 'string' && o.promoCode ? o.promoCode : undefined,
     });
 
-    const invoiceDoc: InvoiceDoc = {
+    const requestedBillingType = body?.billingType === 'entreprise' ? 'entreprise' : (isB2B ? 'entreprise' : 'particulier');
+
+    const invoiceDoc: Record<string, unknown> = {
       ...company,
       orderId,
       orderType,
@@ -175,8 +177,9 @@ export async function POST(req: NextRequest) {
       customerEmail,
       customerName,
       invoiceNumber,
-      status: 'generated',
-      isB2B,
+      status: 'pending',
+      billingType: requestedBillingType,
+      isB2B: requestedBillingType === 'entreprise',
       vatValidated,
       items,
       subtotal: amounts.subtotal,
@@ -186,46 +189,30 @@ export async function POST(req: NextRequest) {
       vatRate: amounts.vatRate,
       totalTtc: amounts.totalTtc,
       orderDate,
+      requestedAt: generatedAt,
       generatedAt,
-      // TODO: Migrer vers Firebase Storage quand les factures dépassent 500 Ko
-      // ou quand le volume dépasse 1000 factures/mois.
+      clientSnapshot: {
+        billingType: requestedBillingType,
+        clientName: customerName,
+        email: customerEmail,
+        siret: buyer.siren || profInfo?.siret || '',
+        companyName: buyer.company || '',
+        vatNumber: buyer.vatNumber || '',
+        billingAddress: buyer.address || '',
+        city: buyer.city || '',
+        postalCode: buyer.postcode || '',
+        country: buyer.country || 'France',
+      },
+      // Document template préparatoire pour la certification
       pdfContent,
       pdfSize: Buffer.byteLength(Buffer.from(pdfContent, 'base64')),
     };
 
     await invoiceRef.set(invoiceDoc);
 
-    let emailSentAt: string | undefined;
-    if (customerEmail) {
-      try {
-        const { transporter, fromHeader } = await getSmtpTransport();
-        await transporter.sendMail({
-          from: fromHeader,
-          to: customerEmail,
-          subject: `Votre facture ${invoiceNumber} — PIXIATECH`,
-          html: buildInvoiceEmailHtml(invoiceNumber, customerName, amounts.totalTtc),
-          // nodemailer supports attachments: pièce jointe PDF en base64.
-          attachments: [
-            {
-              filename: `facture-${invoiceNumber}.pdf`,
-              content: Buffer.from(pdfContent, 'base64'),
-              contentType: 'application/pdf',
-            },
-          ],
-        });
-        emailSentAt = new Date().toISOString();
-        await invoiceRef.update({ emailSentAt, status: 'sent' });
-      } catch (err) {
-        // Fallback e-mail : la facture est créée et téléchargeable même si
-        // l'envoi échoue (SMTP down, adresse invalide, etc.). Statut :
-        // 'generated' (à renvoyer). Le champ emailSentAt reste absent.
-        console.error('[InvoicesGenerate] Failed to send invoice email:', err);
-      }
-    }
-
     const returned: Record<string, unknown> = { ...invoiceDoc };
     delete returned.pdfContent;
-    return NextResponse.json({ invoice: returned, emailSentAt: emailSentAt || null }, { status: 201 });
+    return NextResponse.json({ invoice: returned, emailSentAt: null }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

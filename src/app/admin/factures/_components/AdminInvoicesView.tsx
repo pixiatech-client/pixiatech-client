@@ -27,7 +27,7 @@ import {
 import { adminGenerateInvoice, markInvoiceInProgress } from '@/app/admin/actions';
 import type { InvoiceItem, InvoiceRequestSummary } from '@/lib/invoices';
 
-type StatusKey = 'ALL' | 'pending' | 'in_progress' | 'completed' | 'archived';
+type StatusKey = 'ALL' | 'pending' | 'in_progress' | 'completed' | 'archived' | 'generated' | 'sent';
 
 interface AdminInvoicesViewProps {
   requests: InvoiceRequestSummary[];
@@ -64,6 +64,8 @@ const STATUS_BADGE: Record<string, string> = {
   in_progress: 'text-sky-800 bg-sky-50 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/30',
   completed: 'text-emerald-800 bg-emerald-50 border-emerald-300 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30',
   archived: 'text-neutral-600 bg-neutral-50 border-neutral-200 dark:bg-white/5 dark:text-neutral-400 dark:border-white/10',
+  generated: 'text-violet-800 bg-violet-50 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/30',
+  sent: 'text-teal-800 bg-teal-50 border-teal-200 dark:bg-teal-500/10 dark:text-teal-400 dark:border-teal-500/30',
 };
 
 function statusBadgeClass(status: string): string {
@@ -74,6 +76,8 @@ function StatusBadgeIcon({ status }: { status: string }) {
   if (status === 'in_progress') return <Clock className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 animate-spin" />;
   if (status === 'completed') return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />;
   if (status === 'archived') return <CheckCircle2 className="w-3.5 h-3.5 text-neutral-500" />;
+  if (status === 'generated') return <FileText className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />;
+  if (status === 'sent') return <FileCheck className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />;
   return <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 animate-pulse" />;
 }
 
@@ -96,7 +100,7 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
 
   const counts = useMemo(
     () =>
-      (['pending', 'in_progress', 'completed', 'archived'] as const).reduce<Record<string, number>>(
+      (['pending', 'in_progress', 'completed', 'archived', 'generated', 'sent'] as const).reduce<Record<string, number>>(
         (acc, s) => {
           acc[s] = requests.filter((r) => r.status === s).length;
           return acc;
@@ -194,6 +198,10 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
         return t('admin.factures.statusAvailable');
       case 'archived':
         return t('admin.factures.statusArchived');
+      case 'generated':
+        return 'Générée';
+      case 'sent':
+        return 'Envoyée';
       default:
         return status;
     }
@@ -375,6 +383,26 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
           >
             <span>{t('admin.factures.filterArchived')}</span>
             <span className="px-1.5 rounded-full text-[10px] bg-neutral-700/70 text-white">{counts.archived}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterStatus(filterStatus === 'generated' ? 'ALL' : 'generated')}
+            className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              filterStatus === 'generated' ? 'bg-violet-600 text-white shadow-sm' : 'text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-500/10'
+            }`}
+          >
+            <span>Générées</span>
+            <span className="px-1.5 rounded-full text-[10px] bg-violet-700/60 text-white">{counts.generated ?? 0}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterStatus(filterStatus === 'sent' ? 'ALL' : 'sent')}
+            className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+              filterStatus === 'sent' ? 'bg-teal-600 text-white shadow-sm' : 'text-teal-700 hover:bg-teal-50 dark:hover:bg-teal-500/10'
+            }`}
+          >
+            <span>Envoyées</span>
+            <span className="px-1.5 rounded-full text-[10px] bg-teal-700/60 text-white">{counts.sent ?? 0}</span>
           </button>
         </div>
 

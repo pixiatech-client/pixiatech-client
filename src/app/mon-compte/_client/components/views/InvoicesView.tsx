@@ -1,10 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   FileText,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
+  XCircle,
   Download,
   ExternalLink,
   ShieldCheck,
@@ -21,11 +24,18 @@ import {
   Sparkles,
   RefreshCw,
   Eye,
-  ImageIcon
+  ImageIcon,
+  Mail,
+  KeyRound,
+  ChevronDown,
+  ChevronUp,
+  Send,
+  Check
 } from 'lucide-react';
 import type { UserProfile, Order, Invoice, OrderItem, BillingType, InvoiceStatus } from '../../types';
 import { SlidingSwitch } from '../SlidingSwitch';
 import { clientApi } from '../../lib/api';
+import { useProductCatalog } from '../../lib/useProductStatus';
 
 interface InvoicesViewProps {
   user: UserProfile;
@@ -37,6 +47,7 @@ interface InvoicesViewProps {
   onOpenStore?: () => void;
   onOpenSiretModal: () => void;
   onOpenEmailModal?: () => void;
+  onEmailVerified?: () => void;
   onViewProductInStore?: (item: OrderItem) => void;
   onViewInvoiceDetails: (invoice: Invoice) => void;
   initialSelectedOrder?: Order | null;
@@ -56,18 +67,90 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   onOpenStore,
   onOpenSiretModal,
   onOpenEmailModal,
+  onEmailVerified,
+  showToast,
   onViewProductInStore,
   onViewInvoiceDetails,
   initialSelectedOrder = null
 }) => {
   const [activeTab, setActiveTab] = useState<'history' | 'request'>('history');
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'pending'>('all');
+  const { getProductStatus } = useProductCatalog();
 
   // Multi-step request state
   const [selectedOrderId, setSelectedOrderId] = useState<string>(initialSelectedOrder?.id || '');
   const [step, setStep] = useState<number>(1);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [lastRequestedOrderId, setLastRequestedOrderId] = useState<string>('');
+
+  // Email verification accordion state for Particulier
+  const [showEmailAccordion, setShowEmailAccordion] = useState<boolean>(false);
+  const [emailCodeDigits, setEmailCodeDigits] = useState<string[]>(['', '', '', '']);
+  const [isSendingCode, setIsSendingCode] = useState<boolean>(false);
+  const [codeSent, setCodeSent] = useState<boolean>(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState<boolean>(false);
+  const [codeError, setCodeError] = useState<string>('');
+  const [codeSuccess, setCodeSuccess] = useState<boolean>(false);
+
+  const handleSendEmailCode = async () => {
+    setIsSendingCode(true);
+    setCodeError('');
+    try {
+      await clientApi.requestEmailCode();
+      setCodeSent(true);
+      showToast?.('success', `Un code à 4 chiffres a été envoyé à ${user.email}`);
+    } catch (err: any) {
+      setCodeError(err?.message || "Impossible d'envoyer le code. Réessayez dans un instant.");
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const handleDigitChange = (index: number, value: string) => {
+    const digit = value.replace(/\D/g, '').slice(-1);
+    const updated = [...emailCodeDigits];
+    updated[index] = digit;
+    setEmailCodeDigits(updated);
+    setCodeError('');
+    if (digit && index < 3) {
+      const nextInput = document.getElementById(`email-code-${index + 1}`);
+      nextInput?.focus();
+    }
+  };
+
+  const handleDigitKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !emailCodeDigits[index] && index > 0) {
+      const prevInput = document.getElementById(`email-code-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
+
+  const handleVerifyEmailCode = async () => {
+    const code = emailCodeDigits.join('').trim();
+    if (code.length !== 4) {
+      setCodeError('Veuillez saisir les 4 chiffres du code.');
+      return;
+    }
+    setIsVerifyingCode(true);
+    setCodeError('');
+    try {
+      const res = await clientApi.verifyEmailCode(code);
+      if (res?.verified || res?.success) {
+        setCodeSuccess(true);
+        onEmailVerified?.();
+        showToast?.('success', 'Votre adresse e-mail a été validée avec succès !');
+        setTimeout(() => {
+          setShowEmailAccordion(false);
+        }, 1200);
+      } else {
+        setCodeError('Code incorrect. Veuillez réessayer.');
+      }
+    } catch (err: any) {
+      setCodeError(err?.message || 'Code incorrect ou expiré.');
+    } finally {
+      setIsVerifyingCode(false);
+    }
+  };
 
   // Billing Type: Entreprise vs Particulier (chosen at invoice request time)
   const [billingType, setBillingType] = useState<BillingType>(
@@ -675,9 +758,16 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                             Compte vérifié
                           </span>
                         ) : (
-                          <span className="text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1 rounded-full">
-                            E-mail non validé
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowEmailAccordion((prev) => !prev)}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-3 py-1 rounded-full cursor-pointer transition-colors shadow-xs"
+                            title="Cliquez pour valider votre adresse e-mail"
+                          >
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-700" />
+                            <span>E-mail non validé</span>
+                            {showEmailAccordion ? <ChevronUp className="w-3 h-3 ml-0.5" /> : <ChevronDown className="w-3 h-3 ml-0.5" />}
+                          </button>
                         )}
                       </div>
 
@@ -697,6 +787,104 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                           </span>
                         </div>
                       </div>
+
+                      {/* Accordéon de validation par code 4 chiffres */}
+                      {!user.emailVerified && (
+                        <div className={`transition-all duration-200 overflow-hidden ${showEmailAccordion ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                          <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-300/80 space-y-3.5 text-left">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-amber-900 font-bold text-xs sm:text-sm">
+                                <KeyRound className="w-4 h-4 text-amber-700" />
+                                <span>Validation de votre adresse e-mail ({user.email})</span>
+                              </div>
+                              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-amber-200/70 text-amber-900">
+                                Code à 4 chiffres
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-amber-800 leading-relaxed">
+                              Pour demander votre facture en tant que particulier, votre adresse e-mail doit être validée. Cliquez ci-dessous pour recevoir un code à 4 chiffres par e-mail.
+                            </p>
+
+                            {!codeSent ? (
+                              <div>
+                                <button
+                                  type="button"
+                                  disabled={isSendingCode}
+                                  onClick={handleSendEmailCode}
+                                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A0D0E] text-white text-xs font-bold hover:bg-neutral-800 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                                >
+                                  <Send className="w-3.5 h-3.5 text-[#38E044]" />
+                                  <span>{isSendingCode ? 'Envoi du code...' : 'Recevoir le code à 4 chiffres'}</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="space-y-3 pt-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-xs font-semibold text-neutral-700">Code reçu :</span>
+                                  <div className="flex items-center gap-1.5">
+                                    {[0, 1, 2, 3].map((idx) => (
+                                      <input
+                                        key={idx}
+                                        id={`email-code-${idx}`}
+                                        type="text"
+                                        maxLength={1}
+                                        value={emailCodeDigits[idx]}
+                                        onChange={(e) => handleDigitChange(idx, e.target.value)}
+                                        onKeyDown={(e) => handleDigitKeyDown(idx, e)}
+                                        className="w-10 h-11 text-center font-mono font-bold text-base bg-white border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-neutral-900 shadow-xs"
+                                        placeholder="•"
+                                      />
+                                    ))}
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    disabled={isVerifyingCode || emailCodeDigits.join('').length !== 4}
+                                    onClick={handleVerifyEmailCode}
+                                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#38E044] text-black text-xs font-extrabold hover:bg-[#2ecc3a] transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                                  >
+                                    {isVerifyingCode ? (
+                                      <span>Vérification...</span>
+                                    ) : (
+                                      <>
+                                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                        <span>Valider le code</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+
+                                <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-1">
+                                  <span>Un code valide 15 minutes a été envoyé à <strong>{user.email}</strong>.</span>
+                                  <button
+                                    type="button"
+                                    disabled={isSendingCode}
+                                    onClick={handleSendEmailCode}
+                                    className="text-amber-800 font-semibold hover:underline cursor-pointer"
+                                  >
+                                    Renvoyer le code
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {codeError && (
+                              <div className="text-xs text-rose-600 bg-rose-50 border border-rose-200 p-2 rounded-lg font-medium flex items-center gap-1.5">
+                                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                <span>{codeError}</span>
+                              </div>
+                            )}
+
+                            {codeSuccess && (
+                              <div className="text-xs text-emerald-700 bg-emerald-100 border border-emerald-300 p-2 rounded-lg font-bold flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                                <span>Adresse e-mail validée avec succès ! Vous pouvez continuer.</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl font-medium">
                         ✓ C'est bon : Votre facture sera directement émise à votre nom personnel.

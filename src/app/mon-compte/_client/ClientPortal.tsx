@@ -20,7 +20,7 @@ import type {
 
 export type { ClientTab };
 import { clientApi } from './lib/api';
-import { mapApiOrders, mapApiInvoices, mapApiDisputes } from './lib/mappers';
+import { mapApiOrders, mapApiInvoice, mapApiInvoices, mapApiDisputes } from './lib/mappers';
 import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { NoticeBanner } from './components/NoticeBanner';
@@ -115,7 +115,7 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
       ]);
 
       let loadedInvoices: Invoice[] | null = null;
-      if (invoicesRes?.invoices && Array.isArray(invoicesRes.invoices) && invoicesRes.invoices.length > 0) {
+      if (invoicesRes?.invoices && Array.isArray(invoicesRes.invoices)) {
         loadedInvoices = mapApiInvoices(invoicesRes.invoices);
         setInvoices(loadedInvoices);
       }
@@ -265,13 +265,34 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
     billingType: BillingType = 'particulier'
   ) => {
     try {
-      await clientApi.generateInvoice(order.id, (order.type || 'sale') as 'sale' | 'rental');
+      const res = await clientApi.generateInvoice(
+        order.id,
+        (order.type || 'sale') as 'sale' | 'rental',
+        billingType
+      );
+
+      if (res?.invoice) {
+        const mapped = mapApiInvoice(res.invoice);
+        setInvoices((prev) => {
+          const exists = prev.some((i) => i.id === mapped.id || i.orderId === mapped.orderId);
+          if (exists) return prev.map((i) => (i.id === mapped.id || i.orderId === mapped.orderId ? mapped : i));
+          return [mapped, ...prev];
+        });
+        setOrders((prev) =>
+          prev.map((o) =>
+            o.id === order.id
+              ? { ...o, hasInvoice: true, invoiceId: mapped.id, invoiceStatus: mapped.status }
+              : o
+          )
+        );
+      }
+
       await refreshData();
-      showToast('success', 'Demande de facture transmise avec succès');
+      showToast('success', 'Votre demande de facturation a été enregistrée avec succès.');
       const notif: NotificationItem = {
         id: 'notif-inv-' + Date.now(),
         title: 'Demande de facture enregistrée',
-        message: `Votre demande pour la commande ${order.orderNumber} a été transmise.`,
+        message: `Votre demande pour la commande ${order.orderNumber} a été transmise au service comptabilité (statut : EN ATTENTE).`,
         date: "À l'instant",
         read: false,
         type: 'invoice',
@@ -624,7 +645,7 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
                 orders={orders}
                 onOpenDisputeModal={handleOpenDisputeForOrder}
                 onOpenInvoiceModal={handleOpenInvoiceForOrder}
-                onOpenStore={() => setShowBoutiqueModal(true)}
+                onOpenStore={() => router.push('/boutique')}
                 onViewProductInStore={(prod) => {
                   setBoutiqueProductSheet(prod);
                   setShowBoutiqueModal(true);
@@ -640,9 +661,11 @@ export function ClientPortal({ initialTab, initialDisputeId }: ClientPortalProps
                 onCreateInvoice={handleCreateInvoice}
                 onProcessInvoice={handleProcessInvoice}
                 onValidateInvoice={handleValidateInvoice}
-                onOpenStore={() => setShowBoutiqueModal(true)}
+                onOpenStore={() => router.push('/boutique')}
                 onOpenSiretModal={() => setShowSiretModal(true)}
                 onOpenEmailModal={() => setShowEmailModal(true)}
+                onEmailVerified={handleEmailVerified}
+                showToast={showToast}
                 onViewProductInStore={(item) => {
                   setBoutiqueProductSheet(item);
                   setShowBoutiqueModal(true);

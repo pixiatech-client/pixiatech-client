@@ -1404,7 +1404,7 @@ export async function getInvoiceRequests(): Promise<InvoiceRequestSummary[]> {
   try {
     const snap = await adminDb
       .collection('invoices')
-      .where('status', 'in', ['pending', 'in_progress', 'completed', 'archived'])
+      .where('status', 'in', ['pending', 'in_progress', 'completed', 'archived', 'generated', 'sent'])
       .get();
 
     const items: InvoiceRequestSummary[] = snap.docs.map((docSnap) => {

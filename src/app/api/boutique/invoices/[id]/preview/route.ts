@@ -26,6 +26,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Facture non accessible' }, { status: 403 });
     }
 
+    if (doc.status === 'pending' || doc.status === 'in_progress') {
+      return NextResponse.json(
+        { error: "La facture est actuellement en cours de certification par l'administration" },
+        { status: 403 }
+      );
+    }
+
     const pdfContent = doc.pdfContent;
     if (typeof pdfContent !== 'string' || !pdfContent) {
       return NextResponse.json({ error: 'PDF non disponible' }, { status: 500 });
