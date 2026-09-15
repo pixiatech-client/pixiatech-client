@@ -189,7 +189,7 @@ export default function CheckoutConfirmation({
               <ArrowRight size={15} />
             </Link>
             <a
-              href="/espace"
+              href="/mon-compte"
               className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
             >
               {t('checkout.memberArea')}

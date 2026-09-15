@@ -1,110 +1,151 @@
-import type { ClientOrderKind } from '@/lib/client-status';
+export type ActiveTab = 'dashboard' | 'orders' | 'invoices' | 'disputes' | 'settings';
+export type ClientTab = ActiveTab;
 
-export type ClientTab = 'dashboard' | 'orders' | 'invoices' | 'disputes' | 'settings';
+export type BillingType = 'entreprise' | 'particulier';
 
-export type ClientNotificationType = 'dispute' | 'invoice' | 'delivery' | 'order';
-
-export interface ClientNotification {
+export interface UserProfile {
   id: string;
-  type: ClientNotificationType;
-  title: string;
-  message: string;
-  date: string;
-  read: boolean;
-  linkTab?: string;
-  disputeId?: string;
-  invoiceId?: string;
-}
-
-export interface ClientProfile {
   name: string;
   email: string;
   phone: string;
   avatarUrl: string;
   emailVerified: boolean;
-  siretVerified: boolean;
-  vatValidated: boolean;
-  hasPassword: boolean;
-  civility: string;
-  companyName: string;
-  companyAddress: string;
-  companyCity: string;
-  companyPostalCode: string;
-  companyCountry: string;
-  legalStatus: string;
-  vatNumber: string;
-  siret: string;
-  nafCode: string;
-  officePhone: string;
-  personalAddress: { street: string; postalCode: string; city: string; country: string };
+  emailVerificationCode?: string;
+  role?: string;
+  firstName?: string;
+  lastName?: string;
+  address?: string;
+  legalForm?: string;
+  // Enterprise info
+  siret?: string;
+  siretVerified?: boolean;
+  companyName?: string;
+  vatNumber?: string;
+  companyAddress?: string;
+  legalStatus?: string; // e.g. SAS, SARL
+  nafCode?: string; // e.g. 62.01Z
+  city?: string;
+  postalCode?: string;
+  // Personal client address
+  personalAddress?: string;
+  personalCity?: string;
+  personalPostalCode?: string;
+  personalCountry?: string;
+  // Legacy fields
+  vatValidated?: boolean;
+  hasPassword?: boolean;
+  civility?: string;
+  officePhone?: string;
   createdAt?: string;
   lastLoginAt?: string;
 }
 
-export interface ClientOrderItem {
-  id: string;
-  img: string;
-  title: string;
-  subtitle: string;
-  kindLabel: 'Achat' | 'Location';
-  unitPriceHT: number;
-  unitPriceTTC: number;
+export type ClientProfile = UserProfile;
+
+export interface OrderItem {
+  productId: string;
+  productName: string;
+  productImage: string;
+  productDescription?: string;
   quantity: number;
-  deliveryAddress: string;
-  deliveryPostalCode: string;
-  deliveryCity: string;
-  deliveryCountry: string;
-  deliveryFees: number;
-  carrier: string;
-  trackingNumber: string;
-  deliveryPinCode: string;
-  estimatedDeliveryDate: string;
-  vatRate: number;
-  note?: string;
+  unitPriceHT: number;
+  vatRate: number; // 0.20 for 20%
+  unitPriceTTC: number;
+  category: string;
 }
 
-export interface ClientOrder {
-  id: string;
-  number: string;
+export type OrderStatus = 'delivered' | 'in_transit' | 'shipped' | 'processing' | 'cancelled';
+
+export type InvoiceStatus = 'EN ATTENTE' | 'EN COURS' | 'FACTURE DISPONIBLE';
+
+export interface Order {
+  id: string; // e.g. cmd-001 or CMD-2025-0842
+  orderNumber: string;
   date: string;
-  itemCount: number;
-  totalHT: number;
-  totalVAT: number;
+  status: OrderStatus;
+  statusKey?: 'processing' | 'in_transit' | 'delivered' | 'cancelled';
+  type?: string;
+  items: OrderItem[];
+  subtotalHT: number;
+  vatAmount: number;
+  vatRate?: number;
+  discountCode?: string;
+  discountAmount?: number;
+  deliveryCost?: number;
   totalTTC: number;
-  statusKey: 'processing' | 'in_transit' | 'delivered' | 'cancelled';
-  statusLabel: string;
-  type: ClientOrderKind;
-  kindLabel: 'Achat' | 'Location';
+  deliveryAddress?: string;
+  shippingAddress?: string;
+  carrier: string; // e.g. "Chronopost Spécialiste Frêt"
+  trackingNumber: string;
+  deliveryPin?: string;
+  deliveryPinCode?: string; // e.g. "7394"
+  estimatedDeliveryDate?: string;
+  actualDeliveryDate?: string;
   hasInvoice: boolean;
   invoiceId?: string;
-  invoiceStatusLabel?: string;
-  items: ClientOrderItem[];
+  invoiceStatus?: InvoiceStatus;
 }
 
-export interface ClientOrderTracker {
-  hour: string;
-  label: string;
-  status: 'done' | 'active' | 'pending';
-}
+export type ClientOrder = Order;
 
-export interface ClientInvoice {
-  id: string;
-  number: string;
-  date: string;
-  companyName: string;
-  statusLabel: string;
-  status: string;
-  totalHT: number;
-  totalVAT: number;
-  totalTTC: number;
+export interface Invoice {
+  id: string; // e.g. fac-001 or FAC-2025-0042
+  invoiceNumber: string;
+  number?: string;
   orderId: string;
-  orderType: 'sale' | 'rental';
-  downloadable: boolean;
+  orderNumber: string;
+  productId: string;
+  productName: string;
+  productImage: string;
+  productUrl?: string;
+  issueDate: string;
+  dueDate?: string;
+  subtotalHT: number;
+  totalHt?: number;
+  vatRate: number;
+  vatAmount: number;
+  vat?: number;
+  discountCode?: string;
+  discountAmount?: number;
+  totalTTC: number;
+  totalTtc?: number;
+  status: InvoiceStatus;
+  pdfUrl?: string;
+  downloadable?: boolean;
+  orders?: any[];
+  definitiveDocumentUploaded?: boolean;
+  uploadedAt?: string;
+  adminNotes?: string;
+  billingType?: BillingType;
+  clientSnapshot: {
+    billingType: BillingType;
+    clientName: string;
+    email: string;
+    siret?: string;
+    companyName?: string;
+    vatNumber?: string;
+    billingAddress: string;
+    city: string;
+    postalCode: string;
+    country: string;
+  };
 }
 
-export interface ClientDisputeMessage {
+export type ClientInvoice = Invoice;
+
+export type DisputeStatus = 'Ouvert' | 'En cours' | 'En attente' | 'Résolu' | 'Fermé';
+
+export type DisputeReason =
+  | 'damaged_package'
+  | 'missing_item'
+  | 'delivery_delay'
+  | 'wrong_reference'
+  | 'defective_product'
+  | 'other';
+
+export interface DisputeMessage {
   id: string;
-  sender: 'customer' | 'admin';
+  sender: 'client' | 'admin' | 'customer';
   senderName: string;
   message: string;
   date: string;
@@ -112,39 +153,47 @@ export interface ClientDisputeMessage {
   attachment?: string;
 }
 
-export interface ClientDispute {
+export interface Dispute {
   id: string;
+  orderId: string;
+  orderNumber: string;
+  productName: string;
+  productImage: string;
+  reason: DisputeReason;
   reasonLabel: string;
   description: string;
-  statusLabel: string;
-  unreadByClient: boolean;
+  status: DisputeStatus;
   date: string;
-  lastResponseDate: string;
-  orderNumber?: string;
-  productName?: string;
-  productImage?: string;
+  unreadByClient?: boolean;
+  lastResponseDate?: string;
   carrierNote?: string;
-  messages: ClientDisputeMessage[];
+  messages: DisputeMessage[];
 }
 
-export interface ClientProduct {
+export type ClientDispute = Dispute;
+
+export interface NotificationItem {
   id: string;
-  name: string;
-  price: number;
-  image: string;
-  badge?: string;
-  description?: string;
-  category?: string;
-  rating?: number;
-  reviews?: number;
+  title: string;
+  message: string;
+  date: string;
+  read: boolean;
+  type: 'order' | 'invoice' | 'delivery' | 'dispute' | 'security';
+  linkTab?: ActiveTab;
+  disputeId?: string;
+  invoiceId?: string;
 }
 
-export interface DraftOrderRef {
+export type ClientNotification = NotificationItem;
+
+export interface EligibleOrder {
   orderId: string;
   orderType: 'sale' | 'rental';
-  label: string;
-  date: string;
-  amount: number;
+  createdAt: string;
+  productName?: string;
+  subtotal?: number;
+  vat?: number;
+  totalTtc?: number;
 }
 
 export interface OrderDraftOption {
@@ -156,25 +205,21 @@ export interface OrderDraftOption {
   totalHT: number;
   totalVAT: number;
   totalTTC: number;
-  orders: DraftOrderRef[];
+  orders: Array<{
+    orderId: string;
+    orderType: 'sale' | 'rental';
+    label: string;
+    date: string;
+    amount: number;
+  }>;
 }
 
-export interface EligibleOrder {
-  orderId: string;
-  orderType: 'sale' | 'rental';
-  createdAt: string;
-  productName: string;
-  quantity: number;
-  status: string;
-  amountPaid: number;
-  subtotal: number;
-  discount: number;
-  deliveryCost: number;
-  vat: number;
-  vatRate: number;
-  taxRate: number;
-  totalTtc: number;
-  rentalStartDate?: string;
-  rentalEndDate?: string;
-  promoCode?: string;
+export interface ClientProduct {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  badge?: string;
+  description?: string;
+  category?: string;
 }

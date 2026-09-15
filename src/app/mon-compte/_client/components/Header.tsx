@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ExternalLink,
   FileText,
+  Globe,
   LogOut,
   Truck,
   UserCheck,
@@ -26,14 +27,18 @@ interface HeaderProps {
 export function Header({ user, notifications, onNavigate, onLogout, onMarkNotificationsAsRead }: HeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const [language, setLanguage] = useState<'FR' | 'EN'>('FR');
 
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notifMenuRef = useRef<HTMLDivElement>(null);
+  const langMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) setShowUserMenu(false);
       if (notifMenuRef.current && !notifMenuRef.current.contains(event.target as Node)) setShowNotifMenu(false);
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) setShowLangMenu(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -70,13 +75,9 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#141B1E] hover:bg-[#1C2529] border border-neutral-800 text-xs text-neutral-300 hover:text-white transition-colors cursor-pointer"
             title="Accéder au site PIXIATECH"
           >
-            <span className="flex items-center gap-1.5">
-              <span className="w-3.5 h-3.5 flex items-center justify-center text-neutral-400">
-                <FileText className="w-3.5 h-3.5" />
-              </span>
-              <span className="font-semibold text-xs">Accéder au site</span>
-              <ExternalLink className="w-3 h-3 text-neutral-400 ml-0.5" />
-            </span>
+            <Globe className="w-3.5 h-3.5 text-neutral-400" />
+            <span className="font-semibold text-xs">Accéder au site</span>
+            <ExternalLink className="w-3 h-3 text-neutral-400 ml-0.5" />
           </a>
 
           <div className="relative" ref={notifMenuRef}>
@@ -84,10 +85,11 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
               id="header-notifications-button"
               type="button"
               onClick={() => {
-                setShowNotifMenu((v) => {
-                  if (!v && unreadCount > 0) onMarkNotificationsAsRead();
-                  return !v;
-                });
+                const willOpen = !showNotifMenu;
+                setShowNotifMenu(willOpen);
+                if (willOpen && unreadCount > 0) {
+                  onMarkNotificationsAsRead();
+                }
               }}
               className="relative p-2 rounded-xl bg-[#141B1E] hover:bg-[#1C2529] border border-neutral-800 text-neutral-300 hover:text-white transition-colors cursor-pointer"
               title="Notifications"
@@ -149,6 +151,47 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
             </AnimatePresence>
           </div>
 
+          <div className="relative" ref={langMenuRef}>
+            <button
+              id="header-language-button"
+              type="button"
+              onClick={() => setShowLangMenu(!showLangMenu)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#141B1E] hover:bg-[#1C2529] border border-neutral-800 text-xs text-neutral-300 hover:text-white transition-colors cursor-pointer"
+              title="Changer de langue"
+            >
+              <Globe className="w-3.5 h-3.5 text-neutral-400" />
+              <span className="font-semibold">{language}</span>
+              <ChevronDown className="w-3 h-3 text-neutral-400" />
+            </button>
+
+            {showLangMenu && (
+              <div className="absolute right-0 mt-2 w-28 bg-[#12181B] border border-neutral-800 rounded-xl shadow-xl p-1 z-50">
+                <button
+                  onClick={() => {
+                    setLanguage('FR');
+                    setShowLangMenu(false);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer ${
+                    language === 'FR' ? 'bg-[#38E044] text-black font-bold' : 'text-neutral-300 hover:bg-neutral-800'
+                  }`}
+                >
+                  🇫🇷 Français
+                </button>
+                <button
+                  onClick={() => {
+                    setLanguage('EN');
+                    setShowLangMenu(false);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer ${
+                    language === 'EN' ? 'bg-[#38E044] text-black font-bold' : 'text-neutral-300 hover:bg-neutral-800'
+                  }`}
+                >
+                  🇬🇧 English
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="relative" ref={userMenuRef}>
             <button
               id="header-user-profile-button"
@@ -168,7 +211,7 @@ export function Header({ user, notifications, onNavigate, onLogout, onMarkNotifi
                   {avatarFallback}
                 </span>
               )}
-              <span className="hidden sm:inline text-xs font-semibold text-neutral-200 max-w-[120px] truncate">{firstName}</span>
+              <span className="hidden sm:inline text-xs font-semibold text-neutral-200 min-w-[5rem] max-w-[120px] truncate">{firstName}</span>
               <ChevronDown className="w-3 h-3 text-neutral-400" />
             </button>
 

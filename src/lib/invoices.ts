@@ -30,13 +30,32 @@ export interface InvoiceRequestSummary {
   id: string;
   orderType: 'sale' | 'rental';
   orderId: string;
+  orderNumber: string;
   customerId: string;
   customerName: string;
   customerEmail: string;
+  customerPhoto: string;
   requestedAt: string;
   status: string;
   isB2B: boolean;
   hasPdf: boolean;
+  invoiceNumber: string;
+  issueDate: string;
+  items: InvoiceItem[];
+  subtotal: number;
+  discount: number;
+  deliveryCost: number;
+  vat: number;
+  vatRate: number;
+  totalTtc: number;
+  siret: string;
+  billingAddress: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  pdfUrl: string;
+  certPdfName: string;
+  hasCustomCertPdf: boolean;
 }
 
 export const INVOICE_REQUEST_STATUSES: InvoiceRequestStatus[] = ['pending', 'in_progress', 'completed', 'archived'];
@@ -219,9 +238,29 @@ export function computeInvoiceAmounts(
   // Taux admin en décimal (ex: 19 → 0.19), fallback 0.19 si absent.
   // L'autoliquidation (0%) reste réservée aux clients TVA validée + numéro présent.
   const adminRate = typeof opts.vatRate === 'number' && opts.vatRate >= 0 ? opts.vatRate : 0.19;
-  const vatRate: number = hasVatExemption ? 0 : adminRate;
+  const fallbackRate = hasVatExemption ? 0 : adminRate;
   const subtotalAfterDiscount = round2(subtotal - discount);
-  const vat = hasVatExemption ? 0 : round2(subtotalAfterDiscount * vatRate);
+
+  // Un montant de TVA stocké sur la commande fait foi : la facture reflète ce qui a
+  // réellement été facturé, y compris une TVA légitime à 0 € (autoliquidation).
+  // Le recalcul n'est utilisé qu'en dernier recours si la commande n'a pas de TVA.
+  const hasStoredVat = order.vat !== undefined && order.vat !== null && order.vat !== '';
+  const storedRate =
+    typeof order.vatRate === 'number' && order.vatRate >= 0
+      ? order.vatRate
+      : typeof order.taxRate === 'number' && order.taxRate >= 0
+        ? order.taxRate
+        : null;
+
+  let vat: number;
+  let vatRate: number;
+  if (hasStoredVat) {
+    vat = round2(asNumber(order.vat));
+    vatRate = storedRate !== null ? storedRate : vat > 0 ? fallbackRate : 0;
+  } else {
+    vatRate = fallbackRate;
+    vat = round2(subtotalAfterDiscount * vatRate);
+  }
   const totalTtc = round2(subtotalAfterDiscount + vat + deliveryCost);
 
   return { subtotal, discount, deliveryCost, vat, vatRate, totalTtc };

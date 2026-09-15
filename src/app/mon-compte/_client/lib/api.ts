@@ -82,6 +82,8 @@ export const clientApi = {
   changePassword: (currentPassword: string, newPassword: string) =>
     post<{ success: boolean }>('/api/boutique/change-password', { currentPassword, newPassword }),
   updatePhone: (phone: string) => post<{ success: boolean; phone: string }>('/api/boutique/customer/update-phone', { phone }),
+  updateAvatar: (avatarUrl: string) =>
+    post<{ success: boolean; avatarUrl: string }>('/api/boutique/customer/upload-avatar', { avatarUrl }),
   updateAddress: (payload: Record<string, unknown>) =>
     request<{ success: boolean }>('/api/boutique/customer/address', {
       method: 'PUT',

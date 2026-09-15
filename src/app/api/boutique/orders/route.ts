@@ -40,6 +40,11 @@ interface OrderView {
   number: string;
   date: string;
   itemCount: number;
+  subtotalHT: number;
+  discount: number;
+  promoCode: string;
+  deliveryCost: number;
+  vatRate: number;
   totalHT: number;
   totalVAT: number;
   totalTTC: number;
@@ -69,11 +74,11 @@ function toMoney(value: unknown): number {
 function buildItem(
   type: ClientOrderKind,
   order: Record<string, unknown>,
-  delivery: Omit<OrderItemView, 'id' | 'img' | 'title' | 'subtitle' | 'kindLabel' | 'unitPriceHT' | 'unitPriceTTC' | 'quantity' | 'vatRate'>
+  delivery: Omit<OrderItemView, 'id' | 'img' | 'title' | 'subtitle' | 'kindLabel' | 'unitPriceHT' | 'unitPriceTTC' | 'quantity' | 'vatRate'>,
+  vatRate: number
 ): OrderItemView {
   const quantity = Math.max(1, Math.round(toMoney(order.quantity) || 1));
   const unitPriceHT = toMoney(order.productPrice) || toMoney(order.amountPaid) / quantity;
-  const vatRate = computeVatRate(toMoney(order.vat), unitPriceHT * quantity);
   const meta = productMeta(order.productId, order.productName, order.productImage);
   const subtitle = type === 'sale' ? 'Achat LED' : 'Location LED';
   return {
@@ -87,6 +92,30 @@ function buildItem(
     quantity,
     vatRate,
     ...delivery,
+  };
+}
+
+function orderSummary(order: Record<string, unknown>) {
+  const q = Math.max(1, Math.round(toMoney(order.quantity) || 1));
+  const grossUnit = toMoney(order.productPrice) || toMoney(order.amountPaid) / q;
+  const lineGross = toMoney(order.amountPaid) || grossUnit * q;
+  const subtotalHT = Math.round((toMoney(order.subtotal) > 0 ? toMoney(order.subtotal) : lineGross) * 100) / 100;
+  const discount = Math.round((toMoney(order.discount) > 0 ? toMoney(order.discount) : 0) * 100) / 100;
+  const deliveryCost = Math.round((toMoney(order.deliveryCost) > 0 ? toMoney(order.deliveryCost) : 0) * 100) / 100;
+  const vat = Math.round(toMoney(order.vat) * 100) / 100;
+  const storedRate = typeof order.vatRate === 'number' && order.vatRate >= 0 ? order.vatRate : null;
+  const vatRate = storedRate !== null ? storedRate : computeVatRate(vat, subtotalHT);
+  const totalHT = Math.round((subtotalHT - discount) * 100) / 100;
+  const totalTTC = Math.round((totalHT + deliveryCost + vat) * 100) / 100;
+  return {
+    subtotalHT,
+    discount,
+    deliveryCost,
+    vat,
+    vatRate,
+    totalHT,
+    totalTTC,
+    promoCode: typeof order.promoCode === 'string' ? order.promoCode : '',
   };
 }
 
@@ -120,13 +149,7 @@ export async function GET(req: NextRequest) {
 
     for (const snap of saleSnap.docs) {
       const order = snap.data() as Record<string, unknown>;
-      const q = Math.max(1, Math.round(toMoney(order.quantity) || 1));
-      const unitPriceHT = toMoney(order.productPrice) || toMoney(order.amountPaid) / q;
-      const subtotalHT = unitPriceHT * q;
-      const deliveryCost = toMoney(order.deliveryCost);
-      const vatAmount = toMoney(order.vat);
-      const totalTTC = toMoney(order.amountPaid) || Math.round((subtotalHT + deliveryCost + vatAmount) * 100) / 100;
-      const vatRate = computeVatRate(vatAmount, subtotalHT + deliveryCost);
+      const summary = orderSummary(order);
       const tracking = String(order.trackingNumber || '');
       const visual = saleOrderStatus(String(order.status || 'commande'), !!tracking);
 
@@ -138,10 +161,15 @@ export async function GET(req: NextRequest) {
         id: snap.id,
         number: formatOrderNumber('sale', snap.id, order.createdAt),
         date: String(order.createdAt || ''),
-        itemCount: q,
-        totalHT: Math.round((subtotalHT + deliveryCost) * 100) / 100,
-        totalVAT: Math.round(vatAmount * 100) / 100,
-        totalTTC,
+        itemCount: Math.max(1, Math.round(toMoney(order.quantity) || 1)),
+        subtotalHT: summary.subtotalHT,
+        discount: summary.discount,
+        promoCode: summary.promoCode,
+        deliveryCost: summary.deliveryCost,
+        vatRate: summary.vatRate,
+        totalHT: summary.totalHT,
+        totalVAT: summary.vat,
+        totalTTC: summary.totalTTC,
         statusKey: visual.key,
         statusLabel: visual.label,
         type: 'sale',
@@ -157,26 +185,20 @@ export async function GET(req: NextRequest) {
             deliveryPostalCode: String(order.customerPostcode || order.postcode || ''),
             deliveryCity: String(order.customerCity || ''),
             deliveryCountry: String(order.customerCountry || 'FR'),
-            deliveryFees: deliveryCost,
+            deliveryFees: summary.deliveryCost,
             carrier: tracking ? 'Chronopost Spécialiste Frêt' : '',
             trackingNumber: tracking,
             deliveryPinCode: '',
             estimatedDeliveryDate: '',
             note: undefined,
-          }),
+          }, summary.vatRate),
         ],
       });
     }
 
-    for (const snap of rentalSnap.docs) {
+for (const snap of rentalSnap.docs) {
       const order = snap.data() as Record<string, unknown>;
-      const q = Math.max(1, Math.round(toMoney(order.quantity) || 1));
-      const unitPriceHT = toMoney(order.productPrice) || toMoney(order.amountPaid) / q;
-      const subtotalHT = unitPriceHT * q;
-      const deliveryCost = toMoney(order.deliveryCost);
-      const vatAmount = toMoney(order.vat);
-      const totalTTC = toMoney(order.amountPaid) || Math.round((subtotalHT + deliveryCost + vatAmount) * 100) / 100;
-      const vatRate = computeVatRate(vatAmount, subtotalHT + deliveryCost);
+      const summary = orderSummary(order);
       const tracking = String(order.trackingNumber || '');
       const visual = rentalOrderStatus(String(order.status || 'pending_validation'));
 
@@ -190,10 +212,15 @@ export async function GET(req: NextRequest) {
         id: snap.id,
         number: formatOrderNumber('rental', snap.id, order.createdAt),
         date: String(order.createdAt || ''),
-        itemCount: q,
-        totalHT: Math.round((subtotalHT + deliveryCost) * 100) / 100,
-        totalVAT: Math.round(vatAmount * 100) / 100,
-        totalTTC,
+        itemCount: Math.max(1, Math.round(toMoney(order.quantity) || 1)),
+        subtotalHT: summary.subtotalHT,
+        discount: summary.discount,
+        promoCode: summary.promoCode,
+        deliveryCost: summary.deliveryCost,
+        vatRate: summary.vatRate,
+        totalHT: summary.totalHT,
+        totalVAT: summary.vat,
+        totalTTC: summary.totalTTC,
         statusKey: visual.key,
         statusLabel: visual.label,
         type: 'rental',
@@ -209,13 +236,13 @@ export async function GET(req: NextRequest) {
             deliveryPostalCode: String(order.renterPostcode || ''),
             deliveryCity: String(order.renterCity || ''),
             deliveryCountry: String(order.renterCountry || 'FR'),
-            deliveryFees: deliveryCost,
+            deliveryFees: summary.deliveryCost,
             carrier: tracking ? 'Chronopost Spécialiste Frêt' : '',
             trackingNumber: tracking,
             deliveryPinCode: '',
             estimatedDeliveryDate: end,
             note,
-          }),
+          }, summary.vatRate),
         ],
       });
     }

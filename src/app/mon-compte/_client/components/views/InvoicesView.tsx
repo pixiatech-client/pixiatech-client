@@ -1,732 +1,1021 @@
-﻿'use client';
+'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Download, FileText, Loader2, ShieldCheck } from 'lucide-react';
-import type { ClientInvoice, EligibleOrder, OrderDraftOption } from '../../types';
-import { clientApi } from '../../lib/api';
-import { formatDate, formatMoney, formatMonthYear, formatShortDate } from '../../lib/format';
-import { formatOrderNumber } from '@/lib/client-status';
+import React, { useState } from 'react';
+import {
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  Download,
+  ExternalLink,
+  ShieldCheck,
+  Building2,
+  User,
+  ShoppingBag,
+  ArrowRight,
+  ChevronRight,
+  Clock,
+  Printer,
+  FileCheck2,
+  Lock,
+  Tag,
+  Sparkles,
+  RefreshCw,
+  Eye,
+  ImageIcon
+} from 'lucide-react';
+import type { UserProfile, Order, Invoice, OrderItem, BillingType, InvoiceStatus } from '../../types';
 import { SlidingSwitch } from '../SlidingSwitch';
+import { clientApi } from '../../lib/api';
 
 interface InvoicesViewProps {
-  invoices: ClientInvoice[];
-  onOpenInvoice: (invoiceId: string) => void;
-  onDone: () => void;
-  onRequireProfessionalInfo: () => void;
-  showToast: (type: 'success' | 'error', message: string) => void;
+  user: UserProfile;
+  orders: Order[];
+  invoices: Invoice[];
+  onCreateInvoice: (order: Order, item: OrderItem, billingType: BillingType) => void;
+  onProcessInvoice?: (invoiceId: string) => void;
+  onValidateInvoice?: (invoiceId: string) => void;
+  onOpenStore?: () => void;
+  onOpenSiretModal: () => void;
+  onOpenEmailModal?: () => void;
+  onViewProductInStore?: (item: OrderItem) => void;
+  onViewInvoiceDetails: (invoice: Invoice) => void;
+  initialSelectedOrder?: Order | null;
+  onOpenInvoice?: (invoiceId: string) => void;
+  onDone?: () => void;
+  onRequireProfessionalInfo?: () => void;
+  showToast?: (type: 'success' | 'error', message: string) => void;
 }
 
-type Tab = 'history' | 'request';
-type StatusFilter = 'all' | 'available' | 'pending';
-type Step = 'draft' | 'company' | 'summary' | 'done';
+export const InvoicesView: React.FC<InvoicesViewProps> = ({
+  user,
+  orders,
+  invoices,
+  onCreateInvoice,
+  onProcessInvoice,
+  onValidateInvoice,
+  onOpenStore,
+  onOpenSiretModal,
+  onOpenEmailModal,
+  onViewProductInStore,
+  onViewInvoiceDetails,
+  initialSelectedOrder = null
+}) => {
+  const [activeTab, setActiveTab] = useState<'history' | 'request'>('history');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'pending'>('all');
 
-interface CompanyForm {
-  companyName: string;
-  siret: string;
-  vatNumber: string;
-  address: string;
-  city: string;
-  postcode: string;
-  country: string;
-  officePhone: string;
-  companyEmail: string;
-  position: string;
-  employees: string;
-  website: string;
-}
+  // Multi-step request state
+  const [selectedOrderId, setSelectedOrderId] = useState<string>(initialSelectedOrder?.id || '');
+  const [step, setStep] = useState<number>(1);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [lastRequestedOrderId, setLastRequestedOrderId] = useState<string>('');
 
-interface GenerationResult {
-  orderId: string;
-  invoiceNumber?: string;
-  error?: string;
-}
-
-const downloadStatuses = ['sent', 'completed', 'archived', 'generated'];
-
-function buildOptions(eligible: EligibleOrder[]): OrderDraftOption[] {
-  const refOf = (o: EligibleOrder) => ({
-    orderId: o.orderId,
-    orderType: o.orderType,
-    label: `${formatOrderNumber(o.orderType, o.orderId, o.createdAt)} — ${o.productName || 'Commande'}`,
-    date: o.createdAt,
-    amount: o.totalTtc ?? 0,
-  });
-
-  const sum = (list: EligibleOrder[]) => ({
-    totalHT: list.reduce((s, o) => s + (o.subtotal ?? 0), 0),
-    totalVAT: list.reduce((s, o) => s + (o.vat ?? 0), 0),
-    totalTTC: list.reduce((s, o) => s + (o.totalTtc ?? 0), 0),
-  });
-
-  const all = [...eligible].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const options: OrderDraftOption[] = [];
-  const allTotals = sum(all);
-  options.push({
-    key: 'all',
-    label: 'Toutes mes commandes éligibles',
-    periodLabel: `${all.length} commande${all.length > 1 ? 's' : ''}`,
-    typeLabel: 'Toutes confondues',
-    count: all.length,
-    ...allTotals,
-    orders: all.map(refOf),
-  });
-
-  const byMonth = new Map<string, EligibleOrder[]>();
-  for (const o of all) {
-    const key = formatMonthYear(o.createdAt) || 'Autres';
-    if (!byMonth.has(key)) byMonth.set(key, []);
-    byMonth.get(key)!.push(o);
-  }
-  for (const [month, list] of Array.from(byMonth.entries())) {
-    const totals = sum(list);
-    options.push({
-      key: `month:${month}`,
-      label: `Commandes de ${month}`,
-      periodLabel: `${list.length} commande${list.length > 1 ? 's' : ''}`,
-      typeLabel: month,
-      count: list.length,
-      ...totals,
-      orders: list.map(refOf),
-    });
-  }
-
-  for (const o of all) {
-    options.push({
-      key: `order:${o.orderId}`,
-      label: `Commande ${formatOrderNumber(o.orderType, o.orderId, o.createdAt)}`,
-      periodLabel: formatShortDate(o.createdAt),
-      typeLabel: o.productName || 'Commande',
-      count: 1,
-      totalHT: o.subtotal ?? 0,
-      totalVAT: o.vat ?? 0,
-      totalTTC: o.totalTtc ?? 0,
-      orders: [refOf(o)],
-    });
-  }
-
-  return options;
-}
-
-const EMPTY_COMPANY: CompanyForm = {
-  companyName: '',
-  siret: '',
-  vatNumber: '',
-  address: '',
-  city: '',
-  postcode: '',
-  country: 'France',
-  officePhone: '',
-  companyEmail: '',
-  position: '',
-  employees: '',
-  website: '',
-};
-
-export function InvoicesView({ invoices, onOpenInvoice, onDone, onRequireProfessionalInfo, showToast }: InvoicesViewProps) {
-  const [tab, setTab] = useState<Tab>('history');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-
-  const historyInvoices = useMemo(() => {
-    const sorted = [...invoices].sort((a, b) => b.date.localeCompare(a.date));
-    if (statusFilter === 'all') return sorted;
-    if (statusFilter === 'available') return sorted.filter((i) => downloadStatuses.includes(i.status));
-    return sorted.filter((i) => !downloadStatuses.includes(i.status));
-  }, [invoices, statusFilter]);
-
-  const [eligible, setEligible] = useState<EligibleOrder[] | null>(null);
-  const [eligibleLoading, setEligibleLoading] = useState(false);
-  const [step, setStep] = useState<Step>('draft');
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [company, setCompany] = useState<CompanyForm>(EMPTY_COMPANY);
-  const [generating, setGenerating] = useState(false);
-  const [generationProgress, setGenerationProgress] = useState({ done: 0, total: 0 });
-  const [results, setResults] = useState<GenerationResult[]>([]);
-  const [vatValidated, setVatValidated] = useState(false);
-
-  const loadEligible = useCallback(async () => {
-    setEligibleLoading(true);
-    try {
-      const res = await clientApi.eligibleOrders();
-      setEligible(res.orders);
-      if (res.orders.length > 0) setSelectedKey(null);
-    } catch (err: any) {
-      showToast('error', err.message || "Impossible de charger les commandes éligibles.");
-    } finally {
-      setEligibleLoading(false);
-    }
-  }, [showToast]);
-
-  const loadProfessionalInfo = useCallback(async () => {
-    try {
-      const res = await clientApi.professionalInfo();
-      const p = res.professionalInfo || {};
-      setCompany({
-        companyName: String(p.companyName || ''),
-        siret: String(p.siret || ''),
-        vatNumber: String(p.vatNumber || ''),
-        address: String(p.address || ''),
-        city: String(p.city || ''),
-        postcode: String(p.postcode || ''),
-        country: String(p.country || 'France'),
-        officePhone: String(p.officePhone || ''),
-        companyEmail: String(p.companyEmail || ''),
-        position: String(p.position || ''),
-        employees: String(p.employees || ''),
-        website: String(p.website || ''),
-      });
-      setVatValidated(p.vatValidated === true);
-    } catch {
-      // Les infos pro sont optionnelles : on démarre le formulaire vide.
-    }
-  }, []);
-
-  useEffect(() => {
-    if (tab === 'request') {
-      if (eligible === null) loadEligible();
-      loadProfessionalInfo();
-    }
-  }, [tab, eligible, loadEligible, loadProfessionalInfo]);
-
-  const options = useMemo(() => (eligible ? buildOptions(eligible) : []), [eligible]);
-
-  const selectedOption = useMemo(
-    () => (selectedKey ? options.find((o) => o.key === selectedKey) : undefined),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedKey, eligible]
+  // Billing Type: Entreprise vs Particulier (chosen at invoice request time)
+  const [billingType, setBillingType] = useState<BillingType>(
+    user.siretVerified && user.siret ? 'entreprise' : 'particulier'
   );
 
-  const saveCompany = async () => {
-    try {
-      const res = await clientApi.updateProfessionalInfo({
-        companyName: company.companyName,
-        siret: company.siret,
-        vatNumber: company.vatNumber,
-        address: company.address,
-        city: company.city,
-        state: '',
-        postcode: company.postcode,
-        country: company.country,
-        officePhone: company.officePhone,
-        companyEmail: company.companyEmail,
-        position: company.position,
-        employees: company.employees,
-        website: company.website,
-        fax: '',
-      });
-      setVatValidated(res.vatValidated === true);
-      setStep('summary');
-      showToast('success', 'Vos informations professionnelles ont été enregistrées.');
-    } catch (err: any) {
-      showToast('error', err.message || "Impossible d'enregistrer vos informations.");
+  // Filter orders that don't have an invoice yet
+  const availableOrdersForInvoice = orders.filter((o) => !o.hasInvoice);
+  const selectedOrder = orders.find((o) => o.id === selectedOrderId);
+
+  // Verification requirements: Entreprise requires SIRET; Particulier requires email verified
+  const isProfileReady =
+    billingType === 'entreprise'
+      ? Boolean(user.siretVerified && user.siret)
+      : Boolean(user.emailVerified);
+
+  const handleConfirmInvoiceRequest = () => {
+    if (!selectedOrder) return;
+    setIsProcessing(true);
+
+    setTimeout(() => {
+      const targetItem = selectedOrder.items[0];
+      setLastRequestedOrderId(selectedOrder.id);
+      onCreateInvoice(selectedOrder, targetItem, billingType);
+      setIsProcessing(false);
+      setStep(4); // Success step
+    }, 600);
+  };
+
+  const getStatusPill = (status: InvoiceStatus) => {
+    switch (status) {
+      case 'FACTURE DISPONIBLE':
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Facture disponible</span>
+          </span>
+        );
+      case 'EN COURS':
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-800 bg-sky-50 border border-sky-200 px-3 py-1 rounded-full">
+            <Clock className="w-3.5 h-3.5 text-sky-600 animate-spin" />
+            <span>Traitement en cours</span>
+          </span>
+        );
+      case 'EN ATTENTE':
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+            <Clock className="w-3.5 h-3.5 text-amber-600" />
+            <span>Demande en attente</span>
+          </span>
+        );
     }
   };
 
-  const generate = async () => {
-    if (!selectedOption) return;
-    const orders = selectedOption.orders;
-    setGenerating(true);
-    setResults([]);
-    setGenerationProgress({ done: 0, total: orders.length });
-    const out: GenerationResult[] = [];
-
-    for (let i = 0; i < orders.length; i += 1) {
-      const { orderId, orderType } = orders[i];
-      try {
-        const res = await clientApi.generateInvoice(orderId, orderType);
-        const invoice = res.invoice as Record<string, unknown>;
-        out.push({ orderId, invoiceNumber: String(invoice.invoiceNumber || '') });
-      } catch (err: any) {
-        out.push({ orderId, error: err.message || 'Erreur de génération' });
-      }
-      setResults([...out]);
-      setGenerationProgress({ done: i + 1, total: orders.length });
+  const filteredInvoices = invoices.filter((inv) => {
+    if (statusFilter === 'available') {
+      return inv.status === 'FACTURE DISPONIBLE';
     }
+    if (statusFilter === 'pending') {
+      return inv.status === 'EN ATTENTE' || inv.status === 'EN COURS';
+    }
+    return true;
+  });
 
-    setGenerating(false);
-    setStep('done');
-    onDone();
-  };
+  const availableCount = invoices.filter((i) => i.status === 'FACTURE DISPONIBLE').length;
+  const pendingCount = invoices.filter((i) => i.status === 'EN ATTENTE' || i.status === 'EN COURS').length;
 
   return (
     <div id="pixiatech-invoices-view" className="space-y-6">
+      {/* 1. Header Card */}
       <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-13 h-13 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
+          <div className="w-12 h-12 rounded-2xl bg-[#0A0D0E] text-white flex items-center justify-center shrink-0 shadow-md">
             <FileText className="w-6 h-6 text-[#38E044]" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">Mes Factures</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 tracking-tight">
+              Mes Factures
+            </h1>
             <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
-              Consultez et téléchargez vos factures certifiées, ou demandez-en de nouvelles pour vos commandes éligibles.
+              Émission, validation administrative et téléchargement de vos factures certifiées conformes.
             </p>
           </div>
         </div>
 
+        {/* Reusable Sliding Switch */}
         <SlidingSwitch
           options={[
-            { id: 'history', label: 'Mes factures', icon: <FileText size={15} /> },
-            { id: 'request', label: 'Demander une facture', icon: <Download size={15} /> },
+            { id: 'history', label: 'Toutes mes factures', badge: invoices.length },
+            {
+              id: 'request',
+              label: 'Demander une facture',
+              badge: availableOrdersForInvoice.length > 0 ? availableOrdersForInvoice.length : undefined
+            }
           ]}
-          activeId={tab}
-          onChange={(id) => setTab(id as Tab)}
-          size="sm"
+          activeId={activeTab}
+          onChange={(tab) => {
+            setActiveTab(tab as 'history' | 'request');
+            if (tab === 'request' && step === 4) {
+              setStep(1);
+            }
+          }}
+          size="md"
         />
       </div>
 
-      {tab === 'history' && (
+      {/* ========================================================================= */}
+      {/* TAB 1: HISTORIQUE DES FACTURES                                            */}
+      {/* ========================================================================= */}
+      {activeTab === 'history' && (
         <div className="space-y-4">
-          <SlidingSwitch
-            options={[
-              { id: 'all', label: 'Tout' },
-              { id: 'available', label: 'Disponibles' },
-              { id: 'pending', label: 'En attente' },
-            ]}
-            activeId={statusFilter}
-            onChange={(id) => setStatusFilter(id as StatusFilter)}
-            size="sm"
-          />
+          {invoices.length > 0 && (
+            <div className="flex items-center gap-2 p-1.5 bg-white rounded-2xl border border-neutral-200/80 w-fit text-sm">
+              <button
+                type="button"
+                onClick={() => setStatusFilter('all')}
+                className={`py-2 px-4 rounded-xl font-bold transition-all cursor-pointer ${
+                  statusFilter === 'all'
+                    ? 'bg-[#0A0D0E] text-white shadow-xs'
+                    : 'text-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                Toutes ({invoices.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('available')}
+                className={`py-2 px-4 rounded-xl font-bold transition-all cursor-pointer ${
+                  statusFilter === 'available'
+                    ? 'bg-[#0A0D0E] text-white shadow-xs'
+                    : 'text-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                Disponibles ({availableCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('pending')}
+                className={`py-2 px-4 rounded-xl font-bold transition-all cursor-pointer ${
+                  statusFilter === 'pending'
+                    ? 'bg-[#0A0D0E] text-white shadow-xs'
+                    : 'text-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                En attente & En cours ({pendingCount})
+              </button>
+            </div>
+          )}
 
-          {historyInvoices.length === 0 ? (
-            <div className="flex flex-col items-center rounded-2xl border border-dashed border-neutral-200 bg-white py-16 text-center shadow-xs">
-              <FileText size={36} className="text-neutral-300" />
-              <p className="mt-3 text-sm font-bold text-neutral-700">
-                Aucune facture {statusFilter !== 'all' ? 'dans cette catégorie' : 'pour le moment'}
+          {invoices.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-neutral-200/80 p-12 text-center shadow-xs">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4">
+                <FileText className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg font-bold text-neutral-900">
+                Aucune facture enregistrée
+              </h3>
+              <p className="text-sm text-neutral-500 max-w-md mx-auto mt-1 mb-6">
+                {orders.length === 0
+                  ? 'Vous devez avoir passé une commande avant de pouvoir demander une facture.'
+                  : 'Vous possédez des commandes pour lesquelles vous pouvez demander une facture fiscale certifiée.'}
               </p>
-              <p className="mt-1 max-w-sm text-sm text-neutral-500">
-                Vos factures apparaîtront ici après une demande, ou utilisez l'onglet « Demander une facture ».
-              </p>
+
+              {orders.length === 0 ? (
+                <a
+                  href="/boutique"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-sm hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
+                >
+                  <ShoppingBag className="w-4 h-4 text-[#38E044]" />
+                  <span>Découvrez notre boutique</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
+                </a>
+              ) : (
+                <button
+                  onClick={() => setActiveTab('request')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-sm hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
+                >
+                  <FileCheck2 className="w-4 h-4 text-[#38E044]" />
+                  <span>Demander ma première facture</span>
+                </button>
+              )}
             </div>
           ) : (
-            <div className="space-y-3">
-              {historyInvoices.map((invoice) => {
-                const downloadable = downloadStatuses.includes(invoice.status);
-                return (
-                  <button
-                    key={invoice.id}
-                    type="button"
-                    onClick={() => onOpenInvoice(invoice.id)}
-                    className="flex w-full items-center gap-4 rounded-2xl border border-neutral-200/80 bg-white p-5 text-left shadow-xs transition hover:border-neutral-300"
-                  >
-                    <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-500">
-                      <FileText size={19} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-neutral-900">{invoice.number || 'Facture'}</p>
-                      <p className="text-xs text-neutral-500">
-                        {formatDate(invoice.date)} · {invoice.companyName || 'PIXIATECH'}
-                      </p>
-                      <div className="mt-1 flex flex-wrap items-center gap-2">
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                            downloadable ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                          }`}
+            <div className="space-y-4">
+              {filteredInvoices.map((invoice) => (
+                <div
+                  key={invoice.id}
+                  className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs hover:border-neutral-300 transition-all space-y-4"
+                >
+                  {/* Top line of Invoice Card */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-neutral-100">
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono font-extrabold text-sm text-neutral-900 bg-neutral-100 px-3 py-1 rounded-xl">
+                        {invoice.invoiceNumber}
+                      </span>
+                      <span className="text-sm text-neutral-400">
+                        • Rattachée à la commande{' '}
+                        <strong className="text-neutral-700 font-mono">{invoice.orderNumber}</strong>
+                      </span>
+                      <span className="text-sm text-neutral-400">• Demandée le {invoice.issueDate}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {getStatusPill(invoice.status)}
+
+                      {invoice.status === 'FACTURE DISPONIBLE' ? (
+                        <button
+                          onClick={() => {
+                            if (invoice.id) {
+                              window.open(clientApi.invoicePdf(invoice.id), '_blank');
+                            } else {
+                              onViewInvoiceDetails(invoice);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-sm font-semibold transition-colors cursor-pointer"
+                          title="Consulter et télécharger la facture certifiée"
                         >
-                          {invoice.statusLabel || (downloadable ? 'Disponible' : 'En attente')}
-                        </span>
+                          <Download className="w-4 h-4 text-[#38E044]" />
+                          <span>Télécharger PDF</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onViewInvoiceDetails(invoice)}
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-sm font-semibold transition-colors cursor-pointer"
+                          title="Voir le récapitulatif de la demande"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span>Voir le récapitulatif</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Product Details inside Invoice */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-neutral-50/70 border border-neutral-100">
+                    <div className="flex items-center gap-4 min-w-0">
+                      {invoice.productImage ? (
+                        <img
+                          src={invoice.productImage}
+                          alt={invoice.productName}
+                          className="w-20 h-20 rounded-2xl object-cover border border-neutral-200 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-2xl bg-neutral-100 border border-neutral-200 shrink-0 flex items-center justify-center">
+                          <ImageIcon className="w-6 h-6 text-neutral-400" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <a
+                          href="/boutique"
+                          className="text-left font-bold text-sm text-neutral-900 hover:text-emerald-700 hover:underline flex items-center gap-1.5 cursor-pointer group"
+                        >
+                          <span className="truncate">{invoice.productName}</span>
+                          <ExternalLink className="w-3.5 h-3.5 text-neutral-400 group-hover:text-emerald-700 shrink-0" />
+                        </a>
+
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-500 mt-1.5">
+                          <span>
+                            Montant HT : <strong className="font-mono text-neutral-800">{invoice.subtotalHT.toFixed(2)} €</strong>
+                          </span>
+                          <span>•</span>
+                          <span>
+                            TVA 20% : <strong className="font-mono text-neutral-800">{invoice.vatAmount.toFixed(2)} €</strong>
+                          </span>
+                          {invoice.discountCode && (
+                            <>
+                              <span>•</span>
+                              <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                                <Tag className="w-3.5 h-3.5" />
+                                Promo : {invoice.discountCode} (-{invoice.discountAmount?.toFixed(2)} €)
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-neutral-900">{formatMoney(invoice.totalTTC)}</p>
-                      <p className="text-xs text-neutral-500">
-                        HT {formatMoney(invoice.totalHT)} · TVA {formatMoney(invoice.totalVAT)}
-                      </p>
+
+                    <div className="text-right shrink-0">
+                      <div className="text-lg font-extrabold text-neutral-900 font-mono">
+                        {invoice.totalTTC.toFixed(2)} € TTC
+                      </div>
+                      <span className="text-xs text-neutral-400">TVA acquittée</span>
                     </div>
-                    {downloadable && (
-                      <span className="flex items-center gap-1.5 rounded-xl bg-[#0A0D0E] px-3 py-2 text-xs font-semibold text-white">
-                        <Download size={13} /> PDF
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                  </div>
+
+                  {/* Administrative Simulation / Workflow Controller */}
+                  {(invoice.status === 'EN ATTENTE' || invoice.status === 'EN COURS') && (
+                    <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
+                      <div className="flex items-start gap-2 text-amber-900">
+                        <Clock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                        <div>
+                          <strong className="block font-semibold">
+                            {invoice.status === 'EN ATTENTE'
+                              ? "Demande soumise à l'administration"
+                              : 'Service comptabilité en cours de traitement'}
+                          </strong>
+                          <span className="text-amber-800">
+                            {invoice.status === 'EN ATTENTE'
+                              ? 'En attente de prise en charge par le service comptabilité PIXIATECH.'
+                              : 'Vérification légale effectuée. En attente de dépôt du PDF certifié.'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {invoice.status === 'EN ATTENTE' && onProcessInvoice && (
+                          <button
+                            type="button"
+                            onClick={() => onProcessInvoice(invoice.id)}
+                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Passer en "EN COURS" (Admin)</span>
+                          </button>
+                        )}
+
+                        {invoice.status === 'EN COURS' && onValidateInvoice && (
+                          <button
+                            type="button"
+                            onClick={() => onValidateInvoice(invoice.id)}
+                            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Valider & associer le PDF définitif</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Immutable historical snapshot preview */}
+                  <div className="text-xs text-neutral-400 flex items-center justify-between pt-1.5 border-t border-neutral-100">
+                    <span className="flex items-center gap-1">
+                      <Lock className="w-3.5 h-3.5 text-neutral-400" />
+                      Client facturé :{' '}
+                      <strong className="text-neutral-600">
+                        {invoice.clientSnapshot.companyName || invoice.clientSnapshot.clientName}
+                      </strong>
+                      {invoice.clientSnapshot.siret && (
+                        <span> (SIRET : {invoice.clientSnapshot.siret})</span>
+                      )}
+                    </span>
+                    <span>Snapshot fiscal certifié</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
       )}
 
-      {tab === 'request' && (
-        <div className="rounded-2xl border border-neutral-200/80 bg-white p-6 shadow-xs">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18 }}
-            >
-              {step === 'draft' && (
-                <DraftStep
-                  loading={eligibleLoading}
-                  options={options}
-                  selectedKey={selectedKey}
-                  onSelect={(key) => setSelectedKey(key)}
-                  onContinue={() => setStep('company')}
-                  canContinue={!!selectedKey}
-                />
-              )}
+      {/* ========================================================================= */}
+      {/* TAB 2: DEMANDER UNE FACTURE — WORKFLOW RÉEL                               */}
+      {/* ========================================================================= */}
+      {activeTab === 'request' && (
+        <div className="space-y-6">
+          {orders.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-neutral-200/80 p-10 text-center shadow-xs space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200">
+                <AlertCircle className="w-8 h-8" />
+              </div>
 
-              {step === 'company' && (
-                <CompanyStep
-                  company={company}
-                  onChange={setCompany}
-                  onBack={() => setStep('draft')}
-                  onContinue={saveCompany}
-                  onOpenSiret={onRequireProfessionalInfo}
-                />
-              )}
+              <div className="max-w-md mx-auto">
+                <h3 className="text-lg font-bold text-neutral-900">
+                  Aucune commande disponible
+                </h3>
+                <p className="text-sm text-neutral-600 mt-2">
+                  <strong>Vous devez avoir une commande avant de pouvoir demander une facture.</strong>
+                </p>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Le système de facturation légale PIXIATECH exige le rattachement obligatoire à une commande validée et réglée.
+                </p>
+              </div>
 
-              {step === 'summary' && selectedOption && (
-                <SummaryStep
-                  option={selectedOption}
-                  vatValidated={vatValidated}
-                  generating={generating}
-                  progress={generationProgress}
-                  onBack={() => setStep('company')}
-                  onGenerate={generate}
-                />
-              )}
-
-              {step === 'done' && (
-                <DoneStep
-                  results={results}
-                  onViewHistory={() => {
-                    setTab('history');
-                    setStep('draft');
-                    onDone();
-                  }}
-                  onDismiss={() => {
-                    setStep('draft');
-                    setEligible(null);
-                    loadEligible();
-                  }}
-                />
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function OptionRow({ option, selected, onSelect }: { option: OrderDraftOption; selected: boolean; onSelect: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition ${
-        selected ? 'border-neutral-900 ring-1 ring-neutral-900' : 'border-neutral-100 hover:border-neutral-300'
-      }`}
-    >
-      <span
-        className={`flex size-5 shrink-0 items-center justify-center rounded-full border ${
-          selected ? 'border-neutral-900 bg-neutral-900' : 'border-neutral-300'
-        }`}
-      >
-        {selected && <span className="size-2 rounded-full bg-[#38E044]" />}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold text-neutral-900">{option.label}</p>
-        <p className="text-xs text-neutral-500">{option.periodLabel} · {option.typeLabel}</p>
-      </div>
-      <div className="text-right">
-        <p className="text-sm font-bold text-neutral-900">{formatMoney(option.totalTTC)}</p>
-        <p className="text-xs text-neutral-500">HT {formatMoney(option.totalHT)} · TVA {formatMoney(option.totalVAT)}</p>
-      </div>
-    </button>
-  );
-}
-
-function DraftStep({
-  loading,
-  options,
-  selectedKey,
-  onSelect,
-  onContinue,
-  canContinue,
-}: {
-  loading: boolean;
-  options: OrderDraftOption[];
-  selectedKey: string | null;
-  onSelect: (key: string) => void;
-  onContinue: () => void;
-  canContinue: boolean;
-}) {
-  return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-base font-bold text-neutral-900">Choisissez la période de facturation</h2>
-        <p className="mt-1 text-sm text-neutral-500">
-          Sélectionnez les commandes à facturer. Les factures sont générées immédiatement et envoyées par e-mail.
-        </p>
-      </div>
-
-      {loading && (
-        <div className="flex items-center gap-3 rounded-2xl border border-neutral-100 bg-neutral-50/60 p-6 text-sm text-neutral-500">
-          <Loader2 size={18} className="animate-spin" /> Chargement de vos commandes éligibles…
-        </div>
-      )}
-
-      {!loading && options.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-neutral-200 p-10 text-center">
-          <CheckCircle2 size={34} className="mx-auto text-emerald-500" />
-          <p className="mt-3 text-sm font-bold text-neutral-900">Toutes vos commandes ont déjà été facturées</p>
-          <p className="mt-1 text-sm text-neutral-500">
-            Aucune commande éligible pour le moment. Les nouvelles commandes validées apparaîtront ici.
-          </p>
-        </div>
-      )}
-
-      {!loading && options.length > 0 && (
-        <>
-          <div className="space-y-3">
-            {options.map((option) => (
-              <OptionRow key={option.key} option={option} selected={selectedKey === option.key} onSelect={() => onSelect(option.key)} />
-            ))}
-          </div>
-          <div className="flex items-center gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 px-4 py-3 text-xs text-neutral-500">
-            <ShieldCheck size={16} className="shrink-0 text-emerald-600" />
-            Vos factures sont signées et émises au nom de PIXIATECH. TVA appliquée selon votre statut.
-          </div>
-          <button
-            type="button"
-            onClick={onContinue}
-            disabled={!canContinue}
-            className="w-full rounded-xl bg-[#0A0D0E] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Continuer
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
-
-function CompanyStep({
-  company,
-  onChange,
-  onBack,
-  onContinue,
-  onOpenSiret,
-}: {
-  company: CompanyForm;
-  onChange: (c: CompanyForm) => void;
-  onBack: () => void;
-  onContinue: () => void;
-  onOpenSiret: () => void;
-}) {
-  const [checked, setChecked] = useState(false);
-  const fields: Array<{ key: keyof CompanyForm; label: string; placeholder?: string; type?: string; className?: string }> = [
-    { key: 'companyName', label: 'Raison sociale', placeholder: 'Ex : Ma Société' },
-    { key: 'siret', label: 'Numéro SIRET', placeholder: '14 chiffres', className: 'sm:col-span-1' },
-    { key: 'vatNumber', label: 'N° TVA intracommunautaire', placeholder: 'Ex : FR12345678901', className: 'sm:col-span-1' },
-    { key: 'address', label: 'Adresse', className: 'sm:col-span-2' },
-    { key: 'postcode', label: 'Code postal', className: 'sm:col-span-1' },
-    { key: 'city', label: 'Ville', className: 'sm:col-span-1' },
-    { key: 'country', label: 'Pays', className: 'sm:col-span-1' },
-    { key: 'officePhone', label: 'Téléphone du siège', className: 'sm:col-span-1' },
-    { key: 'companyEmail', label: 'E-mail de la société', className: 'sm:col-span-1' },
-    { key: 'position', label: 'Votre fonction', className: 'sm:col-span-1' },
-    { key: 'employees', label: "Nombre d'employés", className: 'sm:col-span-1' },
-    { key: 'website', label: 'Site web', className: 'sm:col-span-2' },
-  ];
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-base font-bold text-neutral-900">Informations de facturation</h2>
-        <p className="mt-1 text-sm text-neutral-500">
-          Ces informations figureront sur vos factures. Le numéro de TVA est vérifié automatiquement (VIES).
-        </p>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        {fields.map((f) => (
-          <label key={f.key} className={`block ${f.className || ''}`}>
-            <span className="mb-1 block text-xs font-medium text-neutral-500">{f.label}</span>
-            <input
-              type={f.type || 'text'}
-              value={company[f.key]}
-              onChange={(e) => onChange({ ...company, [f.key]: e.target.value })}
-              placeholder={f.placeholder}
-              className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-200"
-            />
-          </label>
-        ))}
-      </div>
-
-      <button
-        type="button"
-        onClick={onOpenSiret}
-        className="flex items-center gap-2 rounded-xl border border-neutral-200 px-3.5 py-2 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50"
-      >
-        <ShieldCheck size={14} /> Vérifier mon SIRET
-      </button>
-
-      <label className="flex items-start gap-3 rounded-xl border border-neutral-100 bg-neutral-50/60 p-4">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => setChecked(e.target.checked)}
-          className="mt-0.5 size-4 accent-neutral-900"
-        />
-        <span className="text-sm text-neutral-600">
-          Je certifie l'exactitude de ces informations et j'accepte qu'elles soient utilisées pour l'émission de mes factures.
-        </span>
-      </label>
-
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded-xl border border-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-50"
-        >
-          Retour
-        </button>
-        <button
-          type="button"
-          onClick={onContinue}
-          disabled={!checked || !company.companyName.trim() || !company.siret.trim()}
-          className="flex-1 rounded-xl bg-[#0A0D0E] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          Continuer
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function SummaryStep({
-  option,
-  vatValidated,
-  generating,
-  progress,
-  onBack,
-  onGenerate,
-}: {
-  option: OrderDraftOption;
-  vatValidated: boolean;
-  generating: boolean;
-  progress: { done: number; total: number };
-  onBack: () => void;
-  onGenerate: () => void;
-}) {
-  return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-base font-bold text-neutral-900">Récapitulatif</h2>
-        <p className="mt-1 text-sm text-neutral-500">{option.label} · {option.periodLabel}</p>
-      </div>
-
-      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/60 p-5">
-        <dl className="space-y-2.5 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-neutral-500">Nombre de commandes</dt>
-            <dd className="font-semibold text-neutral-900">{option.count}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-neutral-500">Total HT</dt>
-            <dd className="font-semibold text-neutral-900">{formatMoney(option.totalHT)}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-neutral-500">TVA</dt>
-            <dd className="font-semibold text-neutral-900">{formatMoney(option.totalVAT)}</dd>
-          </div>
-          <div className="flex justify-between border-t border-neutral-200 pt-2.5">
-            <dt className="font-bold text-neutral-900">Total TTC</dt>
-            <dd className="font-bold text-neutral-900">{formatMoney(option.totalTTC)}</dd>
-          </div>
-        </dl>
-      </div>
-
-      {vatValidated && (
-        <div className="flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-xs text-emerald-700">
-          <ShieldCheck size={16} className="mt-0.5 shrink-0" />
-          Votre numéro de TVA est validé : la TVA sera autoliquidée sur ces factures (taux 0%).
-        </div>
-      )}
-
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={generating}
-          className="rounded-xl border border-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-50 disabled:opacity-40"
-        >
-          Retour
-        </button>
-        <button
-          type="button"
-          onClick={onGenerate}
-          disabled={generating}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0A0D0E] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {generating ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              Génération en cours… {progress.done}/{progress.total}
-            </>
+              <div className="pt-3">
+                <a
+                  href="/boutique"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#0A0D0E] text-white font-bold text-sm hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
+                >
+                  <ShoppingBag className="w-4 h-4 text-[#38E044]" />
+                  <span>Découvrez notre boutique</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
           ) : (
-            <>Générer {option.count > 1 ? `mes ${option.count} factures` : 'ma facture'}</>
+            <div className="space-y-6">
+              {/* Stepper Navigation Indicators */}
+              <div className="bg-white rounded-3xl border border-neutral-200/80 p-4 shadow-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-sm">
+                  <div
+                    className={`flex items-center gap-2 p-2.5 rounded-xl ${
+                      step >= 1 ? 'bg-neutral-100 text-neutral-900 font-bold' : 'text-neutral-400'
+                    }`}
+                  >
+                    <span
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-sm ${
+                        step >= 1 ? 'bg-[#0A0D0E] text-white' : 'bg-neutral-200 text-neutral-600'
+                      }`}
+                    >
+                      1
+                    </span>
+                    <span>Vérification Client</span>
+                  </div>
+
+                  <div
+                    className={`flex items-center gap-2 p-2.5 rounded-xl ${
+                      step >= 2 ? 'bg-neutral-100 text-neutral-900 font-bold' : 'text-neutral-400'
+                    }`}
+                  >
+                    <span
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-sm ${
+                        step >= 2 ? 'bg-[#0A0D0E] text-white' : 'bg-neutral-200 text-neutral-600'
+                      }`}
+                    >
+                      2
+                    </span>
+                    <span>Choix de la commande</span>
+                  </div>
+
+                  <div
+                    className={`flex items-center gap-2 p-2.5 rounded-xl ${
+                      step >= 3 ? 'bg-neutral-100 text-neutral-900 font-bold' : 'text-neutral-400'
+                    }`}
+                  >
+                    <span
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-sm ${
+                        step >= 3 ? 'bg-[#0A0D0E] text-white' : 'bg-neutral-200 text-neutral-600'
+                      }`}
+                    >
+                      3
+                    </span>
+                    <span>Récapitulatif</span>
+                  </div>
+
+                  <div
+                    className={`flex items-center gap-2 p-2.5 rounded-xl ${
+                      step >= 4 ? 'bg-amber-50 text-amber-900 font-bold' : 'text-neutral-400'
+                    }`}
+                  >
+                    <span
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-sm ${
+                        step >= 4 ? 'bg-amber-600 text-white' : 'bg-neutral-200 text-neutral-600'
+                      }`}
+                    >
+                      ✓
+                    </span>
+                    <span>Demande transmise</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ÉTAPE 1 : Choix et vérification du type de facturation */}
+              {step === 1 && (
+                <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs space-y-6">
+                  <div>
+                    <h2 className="text-base font-bold text-neutral-900">
+                      1. Type de facturation & Destinataire
+                    </h2>
+                    <p className="text-sm text-neutral-500 mt-0.5">
+                      Choisissez si cette facture doit être adressée à une entreprise ou émise à titre particulier.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* Option Particulier */}
+                    <div
+                      id="opt-billing-particulier"
+                      onClick={() => setBillingType('particulier')}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-start gap-3.5 ${
+                        billingType === 'particulier'
+                          ? 'bg-neutral-50 border-black ring-2 ring-black/10 shadow-sm'
+                          : 'bg-white border-neutral-200 hover:border-neutral-300'
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                          billingType === 'particulier'
+                            ? 'border-black bg-black text-white'
+                            : 'border-neutral-300 bg-white'
+                        }`}
+                      >
+                        {billingType === 'particulier' && (
+                          <span className="w-2 h-2 rounded-full bg-[#38E044]" />
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-neutral-700" />
+                          <span className="font-bold text-sm text-neutral-900">Particulier</span>
+                        </div>
+                        <p className="text-sm text-neutral-500">
+                          Facturation à titre personnel, sans mention d'entreprise.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Option Entreprise */}
+                    <div
+                      id="opt-billing-entreprise"
+                      onClick={() => setBillingType('entreprise')}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-start gap-3.5 ${
+                        billingType === 'entreprise'
+                          ? 'bg-neutral-50 border-black ring-2 ring-black/10 shadow-sm'
+                          : 'bg-white border-neutral-200 hover:border-neutral-300'
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                          billingType === 'entreprise'
+                            ? 'border-black bg-black text-white'
+                            : 'border-neutral-300 bg-white'
+                        }`}
+                      >
+                        {billingType === 'entreprise' && (
+                          <span className="w-2 h-2 rounded-full bg-[#38E044]" />
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-neutral-700" />
+                          <span className="font-bold text-sm text-neutral-900">Entreprise</span>
+                        </div>
+                        <p className="text-sm text-neutral-500">
+                          Facturation destinée à une société avec TVA et SIRET vérifié.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {billingType === 'entreprise' ? (
+                    <div className="p-5 rounded-2xl bg-neutral-50/80 border border-neutral-200 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <Building2 className="w-5 h-5 text-neutral-700" />
+                          <span className="font-bold text-sm text-neutral-900">
+                            Destinataire : Facturation Entreprise
+                          </span>
+                        </div>
+                        {user.siretVerified && user.siret ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+                            <ShieldCheck className="w-4 h-4" />
+                            SIRET Vérifié & Conforme
+                          </span>
+                        ) : (
+                          <span className="text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1 rounded-full">
+                            Vérification requise
+                          </span>
+                        )}
+                      </div>
+
+                      {user.siretVerified && user.siret ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                          <div className="p-3 bg-white rounded-xl border border-neutral-200">
+                            <span className="text-neutral-400 block font-medium">Raison Sociale :</span>
+                            <span className="font-bold text-neutral-800">{user.companyName}</span>
+                          </div>
+                          <div className="p-3 bg-white rounded-xl border border-neutral-200">
+                            <span className="text-neutral-400 block font-medium">Numéro SIRET :</span>
+                            <span className="font-mono font-bold text-neutral-800">{user.siret}</span>
+                          </div>
+                          <div className="p-3 bg-white rounded-xl border border-neutral-200">
+                            <span className="text-neutral-400 block font-medium">TVA Intracommunautaire :</span>
+                            <span className="font-mono font-bold text-neutral-800">{user.vatNumber}</span>
+                          </div>
+                          <div className="p-3 bg-white rounded-xl border border-neutral-200">
+                            <span className="text-neutral-400 block font-medium">Siège social :</span>
+                            <span className="font-bold text-neutral-800">
+                              {user.companyAddress}, {user.postalCode} {user.city}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm space-y-2">
+                          <p className="font-bold text-amber-900">
+                            Système de vérification entreprise obligatoire
+                          </p>
+                          <p className="text-amber-700">
+                            Pour émettre une facture destinée à une entreprise avec mention de TVA déductible, vous devez obligatoirement vérifier le SIRET auprès de l'INSEE.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={onOpenSiretModal}
+                            className="mt-2 px-4 py-2 rounded-xl bg-black text-white font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
+                          >
+                            Vérifier mon entreprise (SIRET)
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-5 rounded-2xl bg-neutral-50/80 border border-neutral-200 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <User className="w-5 h-5 text-neutral-700" />
+                          <span className="font-bold text-sm text-neutral-900">
+                            Destinataire : Client Particulier
+                          </span>
+                        </div>
+                        {user.emailVerified ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+                            <CheckCircle2 className="w-4 h-4" />
+                            Compte vérifié
+                          </span>
+                        ) : (
+                          <span className="text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1 rounded-full">
+                            E-mail non validé
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div className="p-3 bg-white rounded-xl border border-neutral-200">
+                          <span className="text-neutral-400 block font-medium">Nom complet :</span>
+                          <span className="font-bold text-neutral-800">{user.name}</span>
+                        </div>
+                        <div className="p-3 bg-white rounded-xl border border-neutral-200">
+                          <span className="text-neutral-400 block font-medium">Adresse e-mail :</span>
+                          <span className="font-bold text-neutral-800">{user.email}</span>
+                        </div>
+                        <div className="p-3 bg-white rounded-xl border border-neutral-200 sm:col-span-2">
+                          <span className="text-neutral-400 block font-medium">Adresse de facturation :</span>
+                          <span className="font-bold text-neutral-800">
+                            {user.personalAddress || '142 Avenue des Champs-Élysées'}, {user.personalPostalCode || '75008'} {user.personalCity || 'Paris'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl font-medium">
+                        ✓ C'est bon : Votre facture sera directement émise à votre nom personnel.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      disabled={!isProfileReady}
+                      onClick={() => setStep(2)}
+                      className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs transition-all ${
+                        isProfileReady
+                          ? 'bg-[#0A0D0E] text-white hover:bg-neutral-800 shadow-md cursor-pointer'
+                          : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <span>Continuer vers le choix de la commande</span>
+                      <ArrowRight className="w-4 h-4 text-[#38E044]" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ÉTAPE 2 : Sélection de la commande */}
+              {step === 2 && (
+                <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs space-y-5">
+                  <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+                    <div>
+                      <h2 className="text-base font-bold text-neutral-900">
+                        2. Sélection de la commande à facturer
+                      </h2>
+                      <p className="text-sm text-neutral-500 mt-0.5">
+                        Choisissez la commande pour laquelle vous souhaitez demander la facture officielle.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setStep(1)}
+                      className="text-xs text-neutral-500 hover:text-black cursor-pointer"
+                    >
+                      ← Modifier les informations
+                    </button>
+                  </div>
+
+                  {availableOrdersForInvoice.length === 0 ? (
+                    <div className="p-8 text-center bg-neutral-50 rounded-2xl border border-neutral-200 space-y-2">
+                      <FileCheck2 className="w-8 h-8 text-neutral-400 mx-auto" />
+                      <div className="font-bold text-sm text-neutral-800">
+                        Toutes vos commandes disposent déjà d'une demande ou facture associée.
+                      </div>
+                      <p className="text-sm text-neutral-500">
+                        Consultez l'onglet "Toutes mes factures" pour suivre l'état de traitement de vos demandes.
+                      </p>
+                      <button
+                        onClick={() => setActiveTab('history')}
+                        className="mt-2 text-sm font-bold text-emerald-700 hover:underline cursor-pointer"
+                      >
+                        Voir mes factures et demandes →
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {availableOrdersForInvoice.map((order) => {
+                        const isSelected = selectedOrderId === order.id;
+                        const item = order.items[0];
+
+                        return (
+                          <div
+                            key={order.id}
+                            onClick={() => setSelectedOrderId(order.id)}
+                            className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                              isSelected
+                                ? 'bg-neutral-50/90 border-[#0A0D0E] ring-2 ring-black/10 shadow-sm'
+                                : 'bg-white border-neutral-200 hover:border-neutral-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3.5 min-w-0">
+                              <div
+                                className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+                                  isSelected
+                                    ? 'border-black bg-black text-white'
+                                    : 'border-neutral-300 bg-white'
+                                }`}
+                              >
+                                {isSelected && <span className="w-2 h-2 rounded-full bg-[#38E044]" />}
+                              </div>
+
+                              <img
+                                src={item.productImage}
+                                alt={item.productName}
+                                className="w-14 h-14 rounded-xl object-cover border border-neutral-200 shrink-0"
+                              />
+
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-bold text-sm text-neutral-900">
+                                    {order.orderNumber}
+                                  </span>
+                                  <span className="text-xs text-neutral-400">
+                                    • {order.date}
+                                  </span>
+                                </div>
+                                <div className="font-bold text-sm text-neutral-800 truncate mt-0.5">
+                                  {item.productName}
+                                </div>
+                                <div className="text-sm text-neutral-500 mt-0.5">
+                                  Qté : {item.quantity} • Statut : {order.status === 'delivered' ? 'Livré' : 'En cours'}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <div className="font-mono font-extrabold text-sm text-neutral-900">
+                                {order.totalTTC.toFixed(2)} € TTC
+                              </div>
+                              <span className="text-xs text-neutral-400">
+                                Dont {order.vatAmount.toFixed(2)} € TVA
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
+                    <span className="text-xs text-neutral-500">
+                      {selectedOrderId
+                        ? '1 commande sélectionnée'
+                        : 'Veuillez sélectionner une commande ci-dessus pour continuer.'}
+                    </span>
+
+                    <button
+                      id="btn-continue-to-recap"
+                      disabled={!selectedOrderId}
+                      onClick={() => setStep(3)}
+                      className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                        selectedOrderId
+                          ? 'bg-[#0A0D0E] text-white hover:bg-neutral-800 shadow-md cursor-pointer'
+                          : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <span>Vérifier le récapitulatif</span>
+                      <ArrowRight className="w-4 h-4 text-[#38E044]" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ÉTAPE 3 : Demande de facture & Récapitulatif financier */}
+              {step === 3 && selectedOrder && (
+                <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 shadow-xs space-y-6">
+                  <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+                    <div>
+                      <h2 className="text-base font-bold text-neutral-900">
+                        3. Récapitulatif de la demande de facture
+                      </h2>
+                      <p className="text-sm text-neutral-500 mt-0.5">
+                        Vérifiez les mentions légales avant de transmettre votre demande au service comptabilité.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setStep(2)}
+                      className="text-sm text-neutral-500 hover:text-black cursor-pointer"
+                    >
+                      ← Changer de commande
+                    </button>
+                  </div>
+
+                  {/* Facture preview card */}
+                  <div className="p-5 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-4">
+                    <div className="flex items-start justify-between border-b border-neutral-200 pb-3">
+                      <div>
+                        <div className="font-mono font-bold text-xs text-neutral-500">
+                          ÉMETTEUR
+                        </div>
+                        <div className="font-bold text-sm text-neutral-900">
+                          PIXIATECH DISTRIBUTION SAS
+                        </div>
+                        <div className="text-sm text-neutral-500">
+                          SIRET : 522 888 888 00012 • TVA : FR44522888888
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <div className="font-mono font-bold text-xs text-neutral-500">
+                          CLIENT FACTURÉ ({billingType === 'entreprise' ? 'ENTREPRISE' : 'PARTICULIER'})
+                        </div>
+                        <div className="font-bold text-sm text-neutral-900">
+                          {billingType === 'entreprise'
+                            ? (user.companyName || user.name)
+                            : user.name}
+                        </div>
+                        <div className="text-sm text-neutral-500">
+                          {billingType === 'entreprise'
+                            ? (user.siret ? `SIRET : ${user.siret}` : 'Entreprise certifiée')
+                            : `E-mail : ${user.email}`}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Product line item */}
+                    <div className="flex items-center justify-between gap-4 py-2">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={selectedOrder.items[0].productImage}
+                          alt={selectedOrder.items[0].productName}
+                          className="w-12 h-12 rounded-xl object-cover border border-neutral-200"
+                        />
+                        <div>
+                          <div className="font-bold text-sm text-neutral-900">
+                            {selectedOrder.items[0].productName}
+                          </div>
+                          <div className="text-xs text-neutral-500">
+                            Quantité : {selectedOrder.items[0].quantity}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right font-mono text-sm">
+                        <div>HT : {selectedOrder.subtotalHT.toFixed(2)} €</div>
+                        <div>TVA 20% : {selectedOrder.vatAmount.toFixed(2)} €</div>
+                        {selectedOrder.discountCode && (
+                          <div className="text-emerald-700">
+                            Code : {selectedOrder.discountCode} (-{selectedOrder.discountAmount?.toFixed(2)} €)
+                          </div>
+                        )}
+                        <div className="font-bold text-sm text-neutral-900 pt-1">
+                          Total TTC : {selectedOrder.totalTTC.toFixed(2)} €
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-sky-50 border border-sky-200 text-sm text-sky-900 flex items-start gap-2.5">
+                    <Clock className="w-4 h-4 text-sky-600 mt-0.5 shrink-0" />
+                    <div>
+                      <strong className="block font-semibold">Parcours de demande & validation légale</strong>
+                      <span>
+                        En cliquant sur confirmer, votre demande sera enregistrée avec le statut <strong>EN ATTENTE</strong>. L'administration PIXIATECH vérifiera les mentions fiscales et associera le document officiel certifié (statut <strong>FACTURE DISPONIBLE</strong>).
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+<button
+                    onClick={() => setStep(2)}
+                    className="px-4 py-2 rounded-xl text-sm font-semibold text-neutral-600 hover:bg-neutral-100 cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+
+                  <button
+                    id="btn-confirm-invoice-creation"
+                    disabled={isProcessing}
+                    onClick={handleConfirmInvoiceRequest}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0A0D0E] text-white font-bold text-sm hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
+                  >
+                      {isProcessing ? (
+                        <span>Transmission en cours...</span>
+                      ) : (
+                        <>
+                          <span>Transmettre la demande de facture</span>
+                          <CheckCircle2 className="w-4 h-4 text-[#38E044]" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ÉTAPE 4 : Confirmation de la Demande */}
+              {step === 4 && (
+                <div className="bg-white rounded-3xl border border-neutral-200/80 p-8 text-center shadow-xs space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+                    <Clock className="w-8 h-8" />
+                  </div>
+
+                  <h3 className="text-xl font-bold text-neutral-900">
+                    Votre demande de facture a été enregistrée avec succès !
+                  </h3>
+
+                  <div className="max-w-md mx-auto space-y-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Statut actuel : EN ATTENTE DE TRAITEMENT</span>
+                    </span>
+                    <p className="text-sm text-neutral-500">
+                      Votre demande a été transmise au service comptabilité PIXIATECH. L'administration va instruire votre dossier et y associer le véritable document certifié.
+                    </p>
+                  </div>
+
+                  <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+                    <button
+                      onClick={() => {
+                        setActiveTab('history');
+                        setStep(1);
+                      }}
+                      className="px-5 py-2.5 rounded-xl bg-[#0A0D0E] text-white text-sm font-bold hover:bg-neutral-800 transition-all shadow-md cursor-pointer"
+                    >
+                      Suivre mes demandes dans l'historique
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setSelectedOrderId('');
+                        setStep(1);
+                      }}
+                      className="px-5 py-2.5 rounded-xl bg-neutral-100 text-neutral-700 text-sm font-semibold hover:bg-neutral-200 transition-all cursor-pointer"
+                    >
+                      Faire une autre demande
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function DoneStep({
-  results,
-  onViewHistory,
-  onDismiss,
-}: {
-  results: GenerationResult[];
-  onViewHistory: () => void;
-  onDismiss: () => void;
-}) {
-  const ok = results.filter((r) => r.invoiceNumber).length;
-  const failed = results.length - ok;
-  return (
-    <div className="space-y-5">
-      <div className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
-        <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-600" />
-        <div>
-          <p className="text-sm font-bold text-emerald-800">
-            {ok} facture{ok > 1 ? 's' : ''} générée{ok > 1 ? 's' : ''} avec succès
-          </p>
-          <p className="text-xs text-emerald-700">
-            {failed > 0 ? `${failed} en échec. ` : ''}Les factures sont disponibles dans l'onglet « Mes factures » et
-            envoyées par e-mail.
-          </p>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        {results.map((r, i) => (
-          <div key={i} className="flex items-center justify-between rounded-xl border border-neutral-100 bg-neutral-50/60 px-4 py-3 text-sm">
-            <span className="text-neutral-600">Commande #{r.orderId.slice(-6)}</span>
-            <span className={r.invoiceNumber ? 'font-semibold text-emerald-700' : 'font-semibold text-red-500'}>
-              {r.invoiceNumber || r.error || 'Erreur'}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <button
-        type="button"
-        onClick={onViewHistory}
-        className="w-full rounded-xl bg-[#0A0D0E] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
-      >
-        Voir mes factures
-      </button>
-      <button
-        type="button"
-        onClick={onDismiss}
-        className="w-full rounded-xl border border-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-600 transition hover:bg-neutral-50"
-      >
-        Faire une autre demande
-      </button>
+      )}
     </div>
   );
-}
+};

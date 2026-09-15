@@ -17,7 +17,16 @@ import { buildSupplierEmailHtml } from '@/lib/email-templates';
 import type { Product, Settings, DeliverySettings, LaborSettings, PdfSettings, ProductSpec, QuoteRequest, City, Locations, UserProfile, Theme, QuoteHistoryEntry, UserRole, QuoteDetails, WizardSettings, ActivityLogEntry, Dispute, PriceSnapshot } from '@/lib/types';
 import { normalizePrice, computeDeliveryCost, computeLaborCost } from '@/lib/pricing-engine';
 import { normalizeSearchText } from '@/lib/utils';
-import type { InvoiceRequestSummary } from '@/lib/invoices';
+import {
+  type InvoiceRequestSummary,
+  type InvoiceItem,
+  allocateInvoiceNumber,
+  buildInvoiceItems,
+  computeInvoiceAmounts,
+  getCompanySnapshot,
+} from '@/lib/invoices';
+import { generateInvoicePdf, type InvoicePdfBuyer } from '@/lib/server-invoice-pdf';
+import { getProfessionalInfo } from '@/lib/professional-info';
 import { clearSettingsCache, clearThemeCache } from '@/app/actions/public-actions';
 
 export interface ResellerLead {
@@ -1404,25 +1413,323 @@ export async function getInvoiceRequests(): Promise<InvoiceRequestSummary[]> {
       const requestedAt = normalizeInvoiceTimestamp(
         d.requestedAt ?? d.createdAt ?? d.requestedOn ?? d.orderDate ?? null
       );
+      const rawItems = Array.isArray(d.items) ? d.items : [];
+      const invoiceItems: InvoiceItem[] = rawItems.map((it: any) => ({
+        productName: String(it?.productName || it?.name || 'Produit'),
+        variantName: typeof it?.variantName === 'string' && it.variantName ? it.variantName : null,
+        productImage: typeof it?.productImage === 'string' && it.productImage ? it.productImage : null,
+        quantity: Number.isFinite(Number(it?.quantity)) ? Math.floor(Number(it.quantity)) || 1 : 1,
+        unitPrice: Number.isFinite(Number(it?.unitPrice)) ? Number(it.unitPrice) : 0,
+        lineTotal: Number.isFinite(Number(it?.lineTotal)) ? Number(it.lineTotal) : 0,
+      }));
+      const rawOrderId = typeof d.orderId === 'string' && d.orderId ? d.orderId : docSnap.id;
       return {
         id: docSnap.id,
         orderType: d.orderType === 'rental' ? 'rental' : 'sale',
-        orderId: typeof d.orderId === 'string' && d.orderId ? d.orderId : docSnap.id,
+        orderId: rawOrderId,
+        orderNumber: String(
+          d.orderNumber || d.orderReference || rawOrderId.replace(/^(sale|rental)_/, '')
+        ),
         customerId: String(d.customerId || d.userId || billing.userId || ''),
         customerName: String(d.customerName || d.clientName || billing.fullName || billing.name || 'Client'),
         customerEmail: String(d.customerEmail || billing.email || ''),
+        customerPhoto: '',
         requestedAt,
         status: String(d.status || 'pending'),
         isB2B: d.isB2B === true,
         hasPdf: typeof d.pdfContent === 'string' && d.pdfContent.length > 0,
+        invoiceNumber: typeof d.invoiceNumber === 'string' && d.invoiceNumber ? d.invoiceNumber : '',
+        issueDate: String(d.issueDate || d.invoiceDate || d.orderDate || requestedAt || ''),
+        items: invoiceItems,
+        subtotal: Number(d.subtotal) || 0,
+        discount: Number(d.discount) || 0,
+        deliveryCost: Number(d.deliveryCost) || 0,
+        vat: Number(d.vat) || 0,
+        vatRate: Number(d.vatRate) >= 0 ? Number(d.vatRate) : 0.2,
+        totalTtc: Number(d.totalTtc) || 0,
+        siret: String(d.siret || billing.siret || ''),
+        billingAddress: String(d.address || d.billingAddress || billing.address || ''),
+        city: String(d.city || billing.city || ''),
+        postalCode: String(d.postalCode || d.postcode || billing.postcode || ''),
+        country: String(d.country || billing.country || ''),
+        pdfUrl:
+          typeof d.pdfUrl === 'string' && d.pdfUrl
+            ? d.pdfUrl
+            : typeof d.pdfContent === 'string' && d.pdfContent.length > 0
+              ? `/api/admin/invoices/${docSnap.id}/pdf`
+              : '',
+        certPdfName: String(d.certPdfName || ''),
+        hasCustomCertPdf: d.hasCustomCertPdf === true,
       };
     });
+
+    // Join client profile photos (collection `users/<customerId>.photoURL`) so l'admin
+    // peut identifier qui a demandé la facture. Requêtes `in` groupées par lots de 10.
+    const uniqueCustomerIds = Array.from(new Set(items.map((it) => it.customerId).filter(Boolean)));
+    if (uniqueCustomerIds.length > 0) {
+      const photos = new Map<string, string>();
+      const CHUNK = 10;
+      try {
+        for (let i = 0; i < uniqueCustomerIds.length; i += CHUNK) {
+          const chunk = uniqueCustomerIds.slice(i, i + CHUNK);
+          const userSnap = await adminDb
+            .collection('users')
+            .where('__name__', 'in', chunk)
+            .select('photoURL')
+            .get();
+          userSnap.forEach((us) => {
+            const u = us.data() || {};
+            photos.set(us.id, String(u.photoURL || ''));
+          });
+        }
+      } catch (joinErr: any) {
+        console.warn('Could not join customer photos for invoice requests:', joinErr?.message || joinErr);
+      }
+      if (photos.size > 0) {
+        for (const it of items) {
+          if (it.customerId && photos.has(it.customerId)) {
+            it.customerPhoto = photos.get(it.customerId) || '';
+          }
+        }
+      }
+    }
 
     items.sort((a, b) => (b.requestedAt || '').localeCompare(a.requestedAt || ''));
     return items;
   } catch (error: any) {
     console.error('Error fetching invoice requests:', error);
     return [];
+  }
+}
+
+/**
+ * Action « Télécharger » côté admin : prend en charge la demande en passant
+ * son statut à `in_progress`. L'espace client affiche alors « En cours ».
+ */
+export async function markInvoiceInProgress(id: string): Promise<{ success: boolean; error?: string }> {
+  await requireRole('admin', 'commercial');
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) {
+    return { success: false, error: 'Service de base de données indisponible.' };
+  }
+
+  if (!id || !/^(sale|rental)_/.test(id)) {
+    return { success: false, error: 'Identifiant de facture invalide.' };
+  }
+
+  try {
+    const invoiceRef = adminDb.collection('invoices').doc(id);
+    const snap = await invoiceRef.get();
+    if (!snap.exists) {
+      return { success: false, error: 'Demande de facture introuvable.' };
+    }
+
+    const currentStatus = String(snap.data()?.status || 'pending');
+    if (currentStatus === 'completed' || currentStatus === 'archived') {
+      return { success: false, error: 'Impossible de reprendre une demande déjà terminée ou archivée.' };
+    }
+
+    await invoiceRef.update({ status: 'in_progress' });
+    revalidatePath('/admin/factures');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error marking invoice request in progress:', error);
+    return { success: false, error: error?.message || 'Une erreur est survenue.' };
+  }
+}
+
+/**
+ * Action « Générer » côté admin : attribue le numéro officiel (PIX-YYYY-NNNNN),
+ * génère le PDF et le stocke dans le document Firestore de la demande.
+ */
+export async function adminGenerateInvoice(
+  id: string
+): Promise<{ success: boolean; invoiceNumber?: string; error?: string; alreadyGenerated?: boolean }> {
+  await requireRole('admin', 'commercial');
+  const { adminDb } = getFirebaseAdmin();
+  if (!adminDb) {
+    return { success: false, error: 'Service de base de données indisponible.' };
+  }
+
+  if (!id || !/^(sale|rental)_/.test(id)) {
+    return { success: false, error: 'Identifiant de facture invalide.' };
+  }
+
+  try {
+    const invoiceRef = adminDb.collection('invoices').doc(id);
+    const snap = await invoiceRef.get();
+    if (!snap.exists) {
+      return { success: false, error: 'Demande de facture introuvable.' };
+    }
+    const d = snap.data() || {};
+
+    if (d.status === 'completed' && typeof d.pdfContent === 'string' && d.pdfContent) {
+      return { success: false, alreadyGenerated: true, error: 'Une facture a déjà été générée pour cette demande.' };
+    }
+    if (d.status === 'archived') {
+      return { success: false, error: 'Impossible de générer une facture archivée.' };
+    }
+
+    const orderType = d.orderType === 'rental' ? 'rental' : 'sale';
+    const orderId = typeof d.orderId === 'string' && d.orderId ? d.orderId : id.replace(/^(sale|rental)_/, '');
+    const customerId = String(d.customerId || d.userId || '');
+
+    const orderColl = orderType === 'sale' ? 'sale_orders' : 'rental_orders';
+    let order: Record<string, unknown> | null = null;
+    try {
+      const orderSnap = await adminDb.collection(orderColl).doc(orderId).get();
+      if (orderSnap.exists) order = orderSnap.data() || null;
+    } catch (err) {
+      console.warn(`[AdminGenerateInvoice] Could not load order ${orderColl}/${orderId}:`, err);
+    }
+
+    const billing = d.billing && typeof d.billing === 'object' ? d.billing : {};
+
+    const profInfo = customerId ? await getProfessionalInfo(customerId).catch(() => null) : null;
+
+    const buyerCompany =
+      orderType === 'sale'
+        ? String((order as any)?.customerCompany || billing.companyName || d.customerCompany || d.companyName || '')
+        : String((order as any)?.renterCompany || billing.companyName || d.renterCompany || d.companyName || '');
+
+    const isB2B = !!profInfo || !!buyerCompany;
+    const vatValidated = !!(profInfo?.vatValidated && profInfo?.vatNumber);
+    const vatNumber = profInfo?.vatNumber || d.vatNumber || '';
+
+    // Taux de TVA admin (pourcentage entier, ex: 19 → décimal 0.19). Fallback 0.19 si absent.
+    let adminTaxRate = 19;
+    try {
+      const settingsSnap = await adminDb.collection('settings').doc('main').get();
+      const s = settingsSnap.exists ? settingsSnap.data() || {} : {};
+      if (typeof (s as any)?.estimationFlow?.taxRate === 'number' && (s as any).estimationFlow.taxRate >= 0) {
+        adminTaxRate = (s as any).estimationFlow.taxRate;
+      }
+    } catch (err) {
+      console.warn('[AdminGenerateInvoice] Could not load settings, defaulting tax rate:', err);
+    }
+
+    const items: InvoiceItem[] = order
+      ? buildInvoiceItems(order)
+      : Array.isArray(d.items) && d.items.length > 0
+        ? (d.items as InvoiceItem[])
+        : [];
+
+    const amounts = order
+      ? computeInvoiceAmounts(order, { vatValidated, vatNumber, vatRate: adminTaxRate / 100 })
+      : {
+          subtotal: Number(d.subtotal) || 0,
+          discount: Number(d.discount) || 0,
+          deliveryCost: Number(d.deliveryCost) || 0,
+          vat: Number(d.vat) || 0,
+          vatRate: Number(d.vatRate) >= 0 ? Number(d.vatRate) : adminTaxRate / 100,
+          totalTtc: Number(d.totalTtc) || 0,
+        };
+
+    if (items.length === 0) {
+      return { success: false, error: 'Impossible de déterminer les articles de la facture.' };
+    }
+
+    const company = await getCompanySnapshot(adminDb);
+
+    const customerName = String(
+      (order as any)?.customerName ||
+        (order as any)?.renterRepresentative ||
+        d.customerName ||
+        d.clientName ||
+        billing.fullName ||
+        billing.name ||
+        'Client'
+    );
+    const customerEmail = String((order as any)?.customerEmail || (order as any)?.renterEmail || d.customerEmail || billing.email || '');
+
+    const buyer: InvoicePdfBuyer = {
+      name: customerName,
+      company: buyerCompany || profInfo?.companyName || undefined,
+      address:
+        String((order as any)?.customerAddress || (order as any)?.renterAddress || d.address || billing.address || '') ||
+        profInfo?.address ||
+        undefined,
+      city:
+        String((order as any)?.customerCity || (order as any)?.renterCity || d.city || billing.city || '') ||
+        profInfo?.city ||
+        undefined,
+      postcode:
+        String((order as any)?.customerPostcode || (order as any)?.renterPostcode || d.postcode || billing.postcode || '') ||
+        profInfo?.postcode ||
+        undefined,
+      country:
+        String((order as any)?.customerCountry || (order as any)?.renterCountry || d.country || billing.country || '') ||
+        profInfo?.country ||
+        undefined,
+      siren:
+        String(
+          (order as any)?.customerSiren || d.siren || (profInfo?.siret ? profInfo.siret.slice(0, 9) : '')
+        ) || undefined,
+      vatNumber: String((order as any)?.customerVatNumber || d.vatNumber || profInfo?.vatNumber || '') || undefined,
+      email: customerEmail || undefined,
+    };
+
+    const { invoiceNumber } = await allocateInvoiceNumber(adminDb);
+
+    const orderDate = String(
+      (order as any)?.createdAt || d.orderDate || d.requestedAt || d.createdAt || new Date().toISOString()
+    );
+    const generatedAt = new Date().toISOString();
+
+    const pdfContent = generateInvoicePdf({
+      invoiceNumber,
+      orderType,
+      orderDate,
+      company,
+      buyer,
+      isB2B,
+      vatValidated,
+      rentalStartDate: (order as any)?.rentalStartDate || d.rentalStartDate || undefined,
+      rentalEndDate: (order as any)?.rentalEndDate || d.rentalEndDate || undefined,
+      items,
+      subtotal: amounts.subtotal,
+      discount: amounts.discount,
+      deliveryCost: amounts.deliveryCost,
+      vat: amounts.vat,
+      vatRate: amounts.vatRate,
+      totalTtc: amounts.totalTtc,
+      promoCode:
+        (typeof (order as any)?.promoCode === 'string' && (order as any).promoCode
+          ? (order as any).promoCode
+          : typeof d.promoCode === 'string' && d.promoCode
+            ? d.promoCode
+            : undefined),
+    });
+
+    await invoiceRef.update({
+      orderId,
+      orderType,
+      customerId,
+      customerEmail,
+      customerName,
+      invoiceNumber,
+      status: 'completed',
+      isB2B,
+      vatValidated,
+      items,
+      subtotal: amounts.subtotal,
+      discount: amounts.discount,
+      deliveryCost: amounts.deliveryCost,
+      vat: amounts.vat,
+      vatRate: amounts.vatRate,
+      totalTtc: amounts.totalTtc,
+      orderDate,
+      generatedAt,
+      // TODO: Migrer vers Firebase Storage quand les factures dépassent 500 Ko.
+      pdfContent,
+      pdfSize: Buffer.byteLength(Buffer.from(pdfContent, 'base64')),
+    });
+
+    revalidatePath('/admin/factures');
+    return { success: true, invoiceNumber };
+  } catch (error: any) {
+    console.error('Error generating invoice:', error);
+    return { success: false, error: error?.message || 'Une erreur est survenue lors de la génération.' };
   }
 }
 

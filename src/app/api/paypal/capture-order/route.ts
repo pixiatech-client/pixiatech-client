@@ -289,8 +289,11 @@ export async function POST(req: NextRequest) {
       // Autoliquidation (0%) UNIQUEMENT si le numéro TVA est validé ET présent,
       // sinon taux admin. Règle stricte identique à computeInvoiceAmounts :
       // vatValidated === true && vatNumber non vide.
+      // La TVA stockée est celle réellement facturée : base = total après remise
+      // (identique à calculateCheckout), jamais le sous-total brut. La commande
+      // porte aussi le taux appliqué pour un affichage fidèle côté portail.
       const hasVatExemption = saleVatValidated && typeof saleVatNumber === 'string' && saleVatNumber.trim() !== '';
-      orderVat = hasVatExemption ? 0 : round2(resolved.subtotal * orderVatRate);
+      orderVat = hasVatExemption ? 0 : round2(resolved.totalAfterDiscount * orderVatRate);
       if (hasVatExemption) orderVatRate = 0;
     }
 
@@ -333,6 +336,7 @@ export async function POST(req: NextRequest) {
             discount: resolved.discount,
             deliveryCost: resolved.deliveryCost,
             vat: orderVat,
+            vatRate: orderVatRate,
             totalCaptured: capturedAmount,
             amountSource: resolved.source,
             status: 'pending_validation',
@@ -380,6 +384,7 @@ export async function POST(req: NextRequest) {
             subtotal: resolved.subtotal,
             discount: resolved.discount,
             vat: orderVat,
+            vatRate: orderVatRate,
             deliveryCost: resolved.deliveryCost,
             totalCaptured: capturedAmount,
             amountSource: resolved.source,

@@ -65,9 +65,9 @@ export function rentalOrderStatus(status: string): OrderVisualStatus {
 }
 
 export function computeVatRate(vat: number, base: number): number {
-  if (!isFinite(base) || base <= 0) return 0.2;
+  if (!isFinite(base) || base <= 0) return 0;
   if (isFinite(vat) && vat > 0) return Math.round((vat / base) * 1000) / 1000;
-  return 0.2;
+  return 0;
 }
 
 export function toIsoDate(value: unknown): string {
