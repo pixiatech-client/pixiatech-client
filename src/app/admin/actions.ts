@@ -1461,6 +1461,7 @@ export async function getInvoiceRequests(): Promise<InvoiceRequestSummary[]> {
               : '',
         certPdfName: String(d.certPdfName || ''),
         hasCustomCertPdf: d.hasCustomCertPdf === true,
+        certifiedUploadedAt: String(d.certifiedUploadedAt || ''),
       };
     });
 

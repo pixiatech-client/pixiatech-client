@@ -56,6 +56,7 @@ export type Product = {
   specs?: Record<string, string>;
   selectedChars?: { id: string | number; name?: string; value: string }[];
   distancePitches?: Record<string, string[]>;
+  screenType?: 'flat' | 'curved' | '360' | string;
   isHidden?: boolean;
   upsellFor?: string[];
 };

@@ -56,6 +56,7 @@ export interface InvoiceRequestSummary {
   pdfUrl: string;
   certPdfName: string;
   hasCustomCertPdf: boolean;
+  certifiedUploadedAt?: string;
 }
 
 export const INVOICE_REQUEST_STATUSES: InvoiceRequestStatus[] = ['pending', 'in_progress', 'completed', 'archived'];

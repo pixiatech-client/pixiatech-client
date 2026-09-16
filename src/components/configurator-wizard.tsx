@@ -170,6 +170,73 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+/** Normalize distance string for resilient comparison (handles dashes, commas, spaces, units). */
+export function normalizeDistance(val?: string | null): string {
+  if (!val) return '';
+  return val
+    .toLowerCase()
+    .replace(/m[eèé]tres?/g, 'm')
+    .replace(/\b[àa]\b/g, '-')
+    .replace(/[\u2013\u2014\u2212]/g, '-')
+    .replace(/(\d+),(\d+)/g, '$1.$2')
+    .replace(/\s+/g, '')
+    .replace(/m(?=-|$)/g, '')
+    .replace(/m/g, '');
+}
+
+/** Normalize pixel pitch string for strict comparison (e.g. 'P2.5', 'p 2.5' -> 'P2.5'). */
+export function normalizePitch(val?: string | null): string {
+  if (!val) return '';
+  return val.trim().replace(/\s+/g, '').toUpperCase();
+}
+
+/** Retrieve only the pitches associated with a specific viewing distance for a product. */
+export function getProductPitchesForDistance(p: Product, targetDistance: string): string[] {
+  if (!targetDistance || !targetDistance.trim()) return [];
+  const normalizedTarget = normalizeDistance(targetDistance);
+  const result = new Set<string>();
+
+  // 1. Structured distancePitches (primary source of truth)
+  if (p.distancePitches && typeof p.distancePitches === 'object') {
+    for (const [distKey, pitches] of Object.entries(p.distancePitches)) {
+      if (!Array.isArray(pitches) || pitches.length === 0) continue;
+      if (distKey.trim() === targetDistance.trim() || normalizeDistance(distKey) === normalizedTarget) {
+        pitches.forEach(pitch => {
+          if (pitch && pitch.trim()) result.add(pitch.trim());
+        });
+      }
+    }
+    if (Object.keys(p.distancePitches).length > 0) {
+      return Array.from(result);
+    }
+  }
+
+  // 2. Legacy fallback: requires both non-empty distance AND non-empty pitch
+  if (p.distance && p.pitch) {
+    const distances = p.distance.split(',').map(s => s.trim()).filter(Boolean);
+    const matchesDistance = distances.some(d => d === targetDistance.trim() || normalizeDistance(d) === normalizedTarget);
+    if (matchesDistance) {
+      const pitches = p.pitch.split(',').map(s => s.trim()).filter(Boolean);
+      pitches.forEach(pitch => result.add(pitch));
+    }
+  }
+
+  return Array.from(result);
+}
+
+/** Check if product's screenType matches the client's screen selection ('flat' | 'curved' | '360'). */
+export function matchProductScreenType(productScreenType?: string | string[] | null, selectedScreenType?: 'flat' | 'curved' | '360'): boolean {
+  const target = selectedScreenType || 'flat';
+  if (Array.isArray(productScreenType)) {
+    return productScreenType.map(s => String(s).toLowerCase().trim()).includes(target);
+  }
+  const rawType = String(productScreenType || 'flat').toLowerCase().trim();
+  if (rawType.includes(',')) {
+    return rawType.split(',').map(s => s.trim()).includes(target);
+  }
+  return rawType === target;
+}
+
 export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, wizardSettings, initialStep = 1, initialConfiguredProduct }: ConfiguratorWizardProps) {
   const { t, locale } = useI18n();
   const [state, setState] = useState<ConfigState>(() => {
@@ -467,19 +534,19 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
     });
     const dists = new Set<string>();
     matched.forEach(p => {
-      if (p.distancePitches) {
+      if (p.distancePitches && Object.keys(p.distancePitches).length > 0) {
         Object.keys(p.distancePitches).forEach(dist => {
-          const pitches = p.distancePitches[dist] || [];
+          const pitches = p.distancePitches![dist] || [];
           if (pitches.length > 0) dists.add(dist);
         });
-      } else {
-        (p.distance ? p.distance.split(',').map((s: string) => s.trim()) : []).forEach(dist => dists.add(dist));
+      } else if (p.distance && p.pitch) {
+        p.distance.split(',').map((s: string) => s.trim()).filter(Boolean).forEach(dist => dists.add(dist));
       }
     });
     return dists;
   }, [allProducts, targetMode, targetType]);
 
-  // Step 4: available pixel pitches
+  // Step 4: available pixel pitches strictly for selected viewing distance
   const compatiblePitches = useMemo(() => {
     const matched = allProducts.filter(p => {
       if (p.isHidden) return false;
@@ -488,15 +555,8 @@ export function ConfiguratorWizard({ onComplete, onBack, allProducts, settings, 
     });
     const pitches = new Set<string>();
     matched.forEach(p => {
-      if (p.distancePitches) {
-        const pitchesForDist = p.distancePitches[state.viewingDistance] || [];
-        pitchesForDist.forEach(pitch => pitches.add(pitch));
-      } else {
-        const distances = p.distance ? p.distance.split(',').map((s: string) => s.trim()) : [];
-        if (distances.includes(state.viewingDistance)) {
-          (p.pitch ? p.pitch.split(',').map((s: string) => s.trim()) : []).forEach(pitch => pitches.add(pitch));
-        }
-      }
+      const pPitches = getProductPitchesForDistance(p, state.viewingDistance);
+      pPitches.forEach(pitch => pitches.add(pitch));
     });
     return pitches;
   }, [allProducts, targetMode, targetType, state.viewingDistance]);
@@ -920,13 +980,13 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
 
   const distancesWithPitches = new Set<string>();
   matchedProducts.forEach(p => {
-    if (p.distancePitches) {
+    if (p.distancePitches && Object.keys(p.distancePitches).length > 0) {
       Object.keys(p.distancePitches).forEach(dist => {
-        const pitches = p.distancePitches[dist] || [];
+        const pitches = p.distancePitches![dist] || [];
         if (pitches.length > 0) distancesWithPitches.add(dist);
       });
-    } else {
-      const distances = p.distance ? p.distance.split(',').map((s: string) => s.trim()) : [];
+    } else if (p.distance && p.pitch) {
+      const distances = p.distance.split(',').map((s: string) => s.trim()).filter(Boolean);
       distances.forEach(dist => distancesWithPitches.add(dist));
     }
   });
@@ -967,7 +1027,10 @@ export function StepViewingDistance({ state, updateState, userProfile, wizardSet
             {/* Small Buttons Grid */}
             <div className="grid grid-cols-2 gap-3">
               {viewingDistances.map((d) => {
-                const hasPitch = distancesWithPitches.has(d.value);
+                const normD = normalizeDistance(d.value);
+                const hasPitch = Array.from(distancesWithPitches).some(
+                  dist => dist === d.value || normalizeDistance(dist) === normD
+                );
                 return (
                   <div key={d.id} className="relative">
                     <button
@@ -1027,22 +1090,14 @@ export function StepPixelPitch({ state, updateState, userProfile, wizardSettings
 
   const compatiblePitches = new Set<string>();
   matchedProducts.forEach(p => {
-    if (p.distancePitches) {
-      const pitchesForDist = p.distancePitches[state.viewingDistance] || [];
-      pitchesForDist.forEach(pitch => compatiblePitches.add(pitch));
-    } else {
-      // Legacy fallback
-      const distances = p.distance ? p.distance.split(',').map((s: string) => s.trim()) : [];
-      if (distances.includes(state.viewingDistance)) {
-        const pitches = p.pitch ? p.pitch.split(',').map((s: string) => s.trim()) : [];
-        pitches.forEach(pitch => compatiblePitches.add(pitch));
-      }
-    }
+    const pPitches = getProductPitchesForDistance(p, state.viewingDistance);
+    pPitches.forEach(pitch => compatiblePitches.add(pitch));
   });
 
   const pixelPitches = uniquePitches.filter(p => {
     if (!state.viewingDistance) return true;
-    return compatiblePitches.has(p.value);
+    const targetNorm = normalizePitch(p.value);
+    return Array.from(compatiblePitches).some(cp => normalizePitch(cp) === targetNorm);
   });
 
   const pixelPitchImageUrl = wizardSettings?.pixelPitchImageUrl;
@@ -1614,25 +1669,37 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
   // Map projectType to availableFor value
   const targetMode: 'sale' | 'rental' = state.projectType === 'location' ? 'rental' : 'sale';
 
-  // Helper: check if a product is compatible with the selected distance AND pitch
+  // Selected screen type from Step 5 (Plat / Incurvé / 360)
+  const selectedScreenType: 'flat' | 'curved' | '360' =
+    state.is360 ? '360' : state.isCurved ? 'curved' : 'flat';
+
+  // Helper: check if a product strictly satisfies all 4 cumulative filters (AND logic)
   const isCompatible = (p: Product): boolean => {
     if (p.isHidden) return false;
-    // Check environment and mode
-    if (!p.type?.includes(targetEnvType)) return false;
+
+    // Mode check (sale / rental)
     if (!p.availableFor?.includes(targetMode)) return false;
 
-    // Check distance + pitch compatibility
-    if (p.distancePitches && Object.keys(p.distancePitches).length > 0) {
-      const pitchesForDist = p.distancePitches[state.viewingDistance] || [];
-      return pitchesForDist.includes(state.pixelPitch);
-    }
+    // 1. FILTRE 1 — Environnement (Intérieur -> indoor, Semi-intérieur -> showcase, Extérieur -> outdoor)
+    if (!Array.isArray(p.type) || !p.type.includes(targetEnvType)) return false;
 
-    // Legacy fallback: check distance and pitch fields
-    const productDistances = p.distance ? p.distance.split(',').map((s: string) => s.trim()) : [];
-    const productPitches = p.pitch ? p.pitch.split(',').map((s: string) => s.trim()) : [];
-    const distanceMatch = !state.viewingDistance || productDistances.length === 0 || productDistances.includes(state.viewingDistance);
-    const pitchMatch = !state.pixelPitch || productPitches.length === 0 || productPitches.includes(state.pixelPitch);
-    return distanceMatch && pitchMatch;
+    // 2 & 3. FILTRE 2 (Distance) & FILTRE 3 (Pixel Pitch)
+    // Distance and pitch must be selected and explicitly matched in product data
+    if (!state.viewingDistance || !state.pixelPitch) return false;
+
+    const pitchesForSelectedDistance = getProductPitchesForDistance(p, state.viewingDistance);
+    if (pitchesForSelectedDistance.length === 0) return false;
+
+    const targetPitchNorm = normalizePitch(state.pixelPitch);
+    const hasMatchingPitch = pitchesForSelectedDistance.some(
+      pitch => normalizePitch(pitch) === targetPitchNorm
+    );
+    if (!hasMatchingPitch) return false;
+
+    // 4. FILTRE 4 — Type d'écran (Plat -> flat, Incurvé -> curved, 360 -> 360)
+    if (!matchProductScreenType(p.screenType, selectedScreenType)) return false;
+
+    return true;
   };
 
   const filteredProducts = (products || []).filter(isCompatible);
@@ -1791,11 +1858,13 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
             const showOnEstimate = settings.isPriceHidden || hasNoPricingData;
             const displayedUnitPrice = unitPrice;
 
-            const shortDesc = product.selectedChars && product.selectedChars.length > 0
-              ? product.selectedChars.slice(0, 2).map(c => c.value).join(' \u2022 ')
-              : product.pitch && product.distance
-                ? `${product.pitch} \u2022 ${product.distance}`
-                : product.pitch || product.distance || '';
+            const shortDesc = state.pixelPitch && state.viewingDistance
+              ? `${state.pixelPitch} • ${state.viewingDistance}`
+              : product.selectedChars && product.selectedChars.length > 0
+                ? product.selectedChars.slice(0, 2).map(c => c.value).join(' • ')
+                : product.pitch && product.distance
+                  ? `${product.pitch} • ${product.distance}`
+                  : product.pitch || product.distance || '';
 
             return (
               <div
@@ -1888,7 +1957,11 @@ export function StepFinal({ state, updateState, products, settings, t, locale, h
                 <div className="space-y-1">
                   <div className="flex justify-between items-start">
                     <h3 className="font-black uppercase tracking-[0.1em] text-sm text-gray-900 line-clamp-1">{product.name}</h3>
-                    {product.pitch && <span className="font-black text-[10px] bg-gray-100 px-2 py-0.5 rounded uppercase tracking-tighter shrink-0 ml-2">{product.pitch}</span>}
+                    {(state.pixelPitch || product.pitch) && (
+                      <span className="font-black text-[10px] bg-gray-100 px-2 py-0.5 rounded uppercase tracking-tighter shrink-0 ml-2">
+                        {state.pixelPitch || product.pitch}
+                      </span>
+                    )}
                   </div>
 
                   <p className="font-bold text-gray-400 text-[10px] uppercase tracking-widest">{typeLabel}</p>

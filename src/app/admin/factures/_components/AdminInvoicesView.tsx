@@ -24,6 +24,8 @@ import {
   Tag,
   Truck,
   Eye,
+  FileX,
+  AlertCircle,
 } from 'lucide-react';
 import { adminGenerateInvoice, markInvoiceInProgress, resetInvoiceToInProgress } from '@/app/admin/actions';
 import type { InvoiceItem, InvoiceRequestSummary } from '@/lib/invoices';
@@ -207,6 +209,15 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
       const data = await res.json();
       if (res.ok && data.success) {
         toast.success(`Facture certifiée "${data.certPdfName}" téléversée avec succès.`);
+        if (selectedInvoice && selectedInvoice.id === invoiceId) {
+          setSelectedInvoice({
+            ...selectedInvoice,
+            hasCustomCertPdf: true,
+            certPdfName: data.certPdfName,
+            certifiedUploadedAt: data.certifiedUploadedAt || new Date().toISOString(),
+            status: data.status || 'in_progress',
+          });
+        }
         onRefresh();
       } else {
         toast.error(data.error || "Erreur lors de l'upload du fichier certifié");
@@ -813,10 +824,20 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                   </div>
 
                                   <div className="flex items-center gap-2 flex-wrap shrink-0">
-                                    {(inv.hasCustomCertPdf || inv.hasPdf) && (
-                                      <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-extrabold bg-[#38E044] text-black px-2.5 py-1 rounded-full shrink-0">
-                                        <FileCheck className="w-3 h-3" />
-                                        {t('admin.factures.homologatedBadge')}
+                                    {inv.status === 'completed' ? (
+                                      <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-extrabold bg-[#38E044] text-black px-2.5 py-1 rounded-full shrink-0 shadow-sm">
+                                        <FileCheck className="w-3.5 h-3.5" />
+                                        HOMOLOGUÉE &amp; PUBLIÉE
+                                      </span>
+                                    ) : inv.hasCustomCertPdf ? (
+                                      <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-full shrink-0">
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-[#38E044]" />
+                                        PDF CERTIFIÉ PRÊT
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full shrink-0">
+                                        <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                                        PROJET INITIAL NON HOMOLOGUÉ
                                       </span>
                                     )}
                                     <button
@@ -839,13 +860,19 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                  {/* Étape 1 : Télécharger le modèle */}
                                   <div className="p-3.5 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-2.5 flex flex-col justify-between">
                                     <div>
-                                      <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
-                                        <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-mono">
-                                          1
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
+                                          <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-mono">
+                                            1
+                                          </span>
+                                          <span>{t('admin.factures.step1Title')}</span>
+                                        </div>
+                                        <span className="text-[10px] font-mono text-neutral-400 bg-neutral-800/80 px-2 py-0.5 rounded border border-neutral-700">
+                                          Modèle PIX
                                         </span>
-                                        <span>{t('admin.factures.step1Title')}</span>
                                       </div>
                                       <p className="text-[11px] text-neutral-400 mt-1.5 leading-relaxed">{t('admin.factures.step1Desc')}</p>
                                     </div>
@@ -859,34 +886,99 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                     </button>
                                   </div>
 
-                                  <div className="p-3.5 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-2.5 flex flex-col justify-between">
+                                  {/* Étape 2 : Uploader la facture certifiée */}
+                                  <div
+                                    className={`p-3.5 rounded-2xl bg-neutral-900/90 border transition-all space-y-2.5 flex flex-col justify-between ${
+                                      inv.hasCustomCertPdf
+                                        ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(56,224,68,0.1)]'
+                                        : 'border-neutral-800'
+                                    }`}
+                                  >
                                     <div>
-                                      <div className="flex items-center gap-2 text-xs font-bold text-sky-400">
-                                        <span className="w-5 h-5 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center text-[10px] font-mono">
-                                          2
-                                        </span>
-                                        <span>{t('admin.factures.step2Title')}</span>
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-sky-400">
+                                          <span
+                                            className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono ${
+                                              inv.hasCustomCertPdf
+                                                ? 'bg-emerald-500/20 text-emerald-400'
+                                                : 'bg-sky-500/20 text-sky-400'
+                                            }`}
+                                          >
+                                            2
+                                          </span>
+                                          <span>{t('admin.factures.step2Title')}</span>
+                                        </div>
+
+                                        {inv.hasCustomCertPdf ? (
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-bold font-mono px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                            <Check className="w-3 h-3 text-[#38E044]" />
+                                            <span>Fichier présent</span>
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-medium font-mono px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-400 border border-neutral-700">
+                                            En attente
+                                          </span>
+                                        )}
                                       </div>
+
                                       <p className="text-[11px] text-neutral-400 mt-1.5 leading-relaxed">
-                                        {inv.hasCustomCertPdf && inv.certPdfName
-                                          ? `PDF certifié actif : ${inv.certPdfName}`
-                                          : t('admin.factures.step2DescEmpty')}
+                                        {t('admin.factures.step2Desc')}
                                       </p>
                                     </div>
 
                                     <div className="space-y-2">
-                                      {inv.hasCustomCertPdf && (
-                                        <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-sky-950/50 border border-sky-500/30 text-[11px] text-sky-300">
-                                          <span className="truncate max-w-[150px] font-mono text-[10px]">{inv.certPdfName || 'certifie.pdf'}</span>
-                                          <button
-                                            type="button"
-                                            onClick={() => window.open(`/api/admin/invoices/${inv.id}/pdf`, '_blank')}
-                                            className="text-sky-400 hover:text-white underline text-[10px] shrink-0 ml-1 flex items-center gap-1"
-                                            title="Consulter le PDF certifié"
-                                          >
-                                            <Eye className="w-3 h-3" />
-                                            <span>Voir</span>
-                                          </button>
+                                      {inv.hasCustomCertPdf ? (
+                                        <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2">
+                                          <div className="flex items-start gap-2">
+                                            <FileCheck className="w-4 h-4 text-[#38E044] shrink-0 mt-0.5" />
+                                            <div className="min-w-0 flex-1">
+                                              <div className="font-mono text-xs font-bold text-white truncate" title={inv.certPdfName || 'facture-certifiee.pdf'}>
+                                                {inv.certPdfName || 'facture-certifiee.pdf'}
+                                              </div>
+                                              <div className="text-[10px] text-emerald-400/90 font-medium mt-0.5">
+                                                {inv.certifiedUploadedAt
+                                                  ? `Téléversé le ${new Date(inv.certifiedUploadedAt).toLocaleDateString('fr-FR', {
+                                                      day: '2-digit',
+                                                      month: '2-digit',
+                                                      year: 'numeric',
+                                                      hour: '2-digit',
+                                                      minute: '2-digit',
+                                                    })}`
+                                                  : 'Fichier officiel certifié actif'}
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-1.5 pt-1.5 border-t border-emerald-500/20">
+                                            <button
+                                              type="button"
+                                              onClick={() => window.open(`/api/admin/invoices/${inv.id}/pdf`, '_blank')}
+                                              className="flex-1 py-1 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-[10px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                                              title="Consulter le PDF certifié dans un nouvel onglet"
+                                            >
+                                              <Eye className="w-3 h-3 text-[#38E044]" />
+                                              <span>Voir le PDF</span>
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => window.open(`/api/admin/invoices/${inv.id}/pdf?download=1`, '_blank')}
+                                              className="flex-1 py-1 px-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[10px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                                              title="Télécharger une copie du PDF certifié"
+                                            >
+                                              <Download className="w-3 h-3 text-neutral-300" />
+                                              <span>Télécharger</span>
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="p-2.5 rounded-xl bg-neutral-950/70 border border-neutral-800 text-[11px] text-neutral-400 flex items-center gap-2">
+                                          <FileX className="w-4 h-4 text-amber-400/80 shrink-0" />
+                                          <div className="leading-snug">
+                                            <span className="font-semibold text-neutral-300">Aucun PDF certifié importé</span>
+                                            <p className="text-[10px] text-neutral-500 mt-0.5">
+                                              Le projet auto-généré sert de modèle tant qu&apos;aucun fichier officiel n&apos;est importé.
+                                            </p>
+                                          </div>
                                         </div>
                                       )}
 
@@ -894,45 +986,77 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                         type="button"
                                         disabled={uploadingInvoiceId === inv.id}
                                         onClick={() => triggerUpload(inv.id)}
-                                        className="w-full py-2 px-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-sky-500/40 shadow-sm disabled:opacity-60"
+                                        className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm disabled:opacity-60 ${
+                                          inv.hasCustomCertPdf
+                                            ? 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700'
+                                            : 'bg-sky-600 hover:bg-sky-500 text-white border border-sky-500/50 shadow-[0_0_12px_rgba(2,132,199,0.25)]'
+                                        }`}
                                       >
                                         {uploadingInvoiceId === inv.id ? (
                                           <>
-                                            <Loader2 className="w-3.5 h-3.5 text-sky-400 animate-spin" />
-                                            <span>Téléversement...</span>
+                                            <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                                            <span>Téléversement en cours...</span>
                                           </>
                                         ) : (
                                           <>
-                                            <FileUp className="w-3.5 h-3.5 text-sky-400" />
-                                            <span>{inv.hasCustomCertPdf ? 'Remplacer le PDF Certifié' : t('admin.factures.step2BtnUpload')}</span>
+                                            <FileUp className={`w-3.5 h-3.5 ${inv.hasCustomCertPdf ? 'text-neutral-400' : 'text-white'}`} />
+                                            <span>{inv.hasCustomCertPdf ? 'Remplacer le PDF Certifié' : 'Uploader le PDF Certifié'}</span>
                                           </>
                                         )}
                                       </button>
                                     </div>
                                   </div>
 
-                                  <div className="p-3.5 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-2.5 flex flex-col justify-between">
+                                  {/* Étape 3 : Publication Client */}
+                                  <div
+                                    className={`p-3.5 rounded-2xl bg-neutral-900/90 border transition-all space-y-2.5 flex flex-col justify-between ${
+                                      inv.status === 'completed'
+                                        ? 'border-emerald-500/30'
+                                        : inv.hasCustomCertPdf
+                                          ? 'border-[#38E044]/40 shadow-[0_0_15px_rgba(56,224,68,0.1)]'
+                                          : 'border-neutral-800'
+                                    }`}
+                                  >
                                     <div>
-                                      <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
-                                        <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-mono">
-                                          3
-                                        </span>
-                                        <span>{t('admin.factures.step3Title')}</span>
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
+                                          <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-mono">
+                                            3
+                                          </span>
+                                          <span>{t('admin.factures.step3Title')}</span>
+                                        </div>
+
+                                        {inv.status === 'completed' ? (
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-[#38E044] border border-emerald-500/40">
+                                            <Check className="w-3 h-3" />
+                                            En ligne
+                                          </span>
+                                        ) : inv.hasCustomCertPdf ? (
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#38E044]/20 text-[#38E044] border border-[#38E044]/40 animate-pulse">
+                                            Prêt
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-500 border border-neutral-700">
+                                            Verrouillé
+                                          </span>
+                                        )}
                                       </div>
+
                                       {inv.status === 'completed' ? (
                                         <p className="text-[11px] text-neutral-400 mt-1.5 leading-relaxed">
                                           <span className="text-emerald-400 font-semibold">{t('admin.factures.step3DescPublished')}</span>
                                         </p>
                                       ) : !inv.hasCustomCertPdf ? (
                                         <p className="text-[11px] text-amber-400/90 mt-1.5 leading-relaxed">
-                                          Uploadez d&apos;abord le PDF certifié à l&apos;étape 2 pour pouvoir publier.
+                                          ⚠️ Uploadez d&apos;abord le PDF certifié à l&apos;étape 2 pour débloquer la publication au client.
                                         </p>
                                       ) : (
                                         <p className="text-[11px] text-neutral-300 mt-1.5 leading-relaxed">
-                                          <span className="text-[#38E044] font-medium">✓ Document certifié prêt.</span> Cliquez pour publier et rendre disponible au client.
+                                          <span className="text-[#38E044] font-bold">✓ PDF certifié validé.</span> Cliquez pour publier la facture officielle sur l&apos;espace client.
                                         </p>
                                       )}
                                     </div>
+
                                     {inv.status === 'completed' ? (
                                       <button
                                         type="button"
@@ -956,21 +1080,21 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                                             ? "Téléversez le PDF certifié (Étape 2) pour débloquer la publication"
                                             : "Publier la facture officielle certifiée"
                                         }
-                                        className={`w-full py-2 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all shadow-md ${
+                                        className={`w-full py-2.5 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all shadow-md ${
                                           !inv.hasCustomCertPdf
-                                            ? 'bg-neutral-800 text-neutral-500 border border-neutral-700/60 cursor-not-allowed opacity-60'
-                                            : 'bg-[#38E044] hover:bg-[#2ecc3a] text-black cursor-pointer'
+                                            ? 'bg-neutral-800 text-neutral-500 border border-neutral-700/60 cursor-not-allowed opacity-50'
+                                            : 'bg-[#38E044] hover:bg-[#2ecc3a] text-black cursor-pointer shadow-[0_0_20px_rgba(56,224,68,0.3)] active:scale-95'
                                         }`}
                                       >
                                         {isBusy(inv.id) ? (
                                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                         ) : (
-                                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                          <Check className="w-4 h-4 stroke-[3]" />
                                         )}
                                         <span>
                                           {!inv.hasCustomCertPdf
                                             ? 'Publier (PDF certifié requis)'
-                                            : t('admin.factures.step3BtnPublish')}
+                                            : 'Publier la Facture Certifiée'}
                                         </span>
                                       </button>
                                     )}
@@ -1062,7 +1186,13 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
             </div>
 
             {/* Étape 2 : Uploader la facture certifiée */}
-            <div className="p-5 rounded-2xl bg-[#0A0D0E] text-white border border-neutral-800 space-y-3.5">
+            <div
+              className={`p-5 rounded-2xl bg-[#0A0D0E] text-white border transition-all space-y-3.5 ${
+                selectedInvoice.hasCustomCertPdf
+                  ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(56,224,68,0.15)]'
+                  : 'border-neutral-800'
+              }`}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-[#38E044]" />
@@ -1070,37 +1200,101 @@ export function AdminInvoicesView({ requests, loading, error, onRefresh }: Admin
                     {t('admin.factures.step2UploadTitle')}
                   </span>
                 </div>
-                {selectedInvoice.hasCustomCertPdf && (
-                  <span className="text-[10px] font-bold bg-[#38E044] text-black px-2 py-0.5 rounded-full font-mono">
+                {selectedInvoice.hasCustomCertPdf ? (
+                  <span className="text-[10px] font-bold bg-[#38E044] text-black px-2.5 py-0.5 rounded-full font-mono flex items-center gap-1">
+                    <Check className="w-3 h-3 text-black stroke-[3]" />
                     {t('admin.factures.certifieeBadge')}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-medium bg-neutral-800 text-neutral-400 border border-neutral-700 px-2 py-0.5 rounded-md font-mono">
+                    En attente d&apos;upload
                   </span>
                 )}
               </div>
 
               <p className="text-[11px] text-neutral-400 leading-relaxed">{t('admin.factures.step2UploadDesc')}</p>
 
-              <div className="p-3.5 rounded-xl bg-neutral-900 border border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="text-xs text-neutral-300">
-                  <div className="font-semibold flex items-center gap-1.5 text-neutral-200">
-                    <FileCheck className="w-4 h-4 text-[#38E044]" />
-                    <span>
-                      {selectedInvoice.certPdfName
-                        ? t('admin.factures.step2ActiveFile', { name: selectedInvoice.certPdfName })
-                        : t('admin.factures.step2ActiveProject', {
-                            number: selectedInvoice.invoiceNumber || selectedInvoice.orderNumber,
-                          })}
-                    </span>
+              {selectedInvoice.hasCustomCertPdf ? (
+                <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 space-y-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <FileCheck className="w-5 h-5 text-[#38E044] shrink-0 mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-xs font-bold text-white truncate" title={selectedInvoice.certPdfName || 'facture-certifiee.pdf'}>
+                        {selectedInvoice.certPdfName || 'facture-certifiee.pdf'}
+                      </div>
+                      <div className="text-[10px] text-emerald-400/90 font-medium mt-0.5">
+                        {selectedInvoice.certifiedUploadedAt
+                          ? `Téléversé le ${new Date(selectedInvoice.certifiedUploadedAt).toLocaleDateString('fr-FR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}`
+                          : 'Fichier officiel certifié actif'}
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-neutral-500">{t('admin.factures.step2FormatNote')}</span>
-                </div>
 
+                  <div className="flex items-center gap-2 pt-2 border-t border-emerald-500/20">
+                    <button
+                      type="button"
+                      onClick={() => window.open(`/api/admin/invoices/${selectedInvoice.id}/pdf`, '_blank')}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      title="Consulter le PDF certifié"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-[#38E044]" />
+                      <span>Consulter le PDF</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.open(`/api/admin/invoices/${selectedInvoice.id}/pdf?download=1`, '_blank')}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      title="Télécharger le fichier"
+                    >
+                      <Download className="w-3.5 h-3.5 text-neutral-300" />
+                      <span>Télécharger</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800 text-xs text-neutral-400 flex items-center gap-2.5">
+                  <FileX className="w-4 h-4 text-amber-400 shrink-0" />
+                  <div>
+                    <span className="font-semibold text-neutral-300">Aucun PDF officiel téléversé</span>
+                    <p className="text-[10px] text-neutral-500 mt-0.5">
+                      Le modèle auto-généré sert de document temporaire jusqu&apos;à l&apos;import de la facture officielle.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end">
                 <button
                   type="button"
+                  disabled={uploadingInvoiceId === selectedInvoice.id}
                   onClick={() => triggerUpload(selectedInvoice.id)}
-                  className="px-3.5 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer border border-neutral-700"
+                  className={`w-full sm:w-auto px-4 py-2 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer border shadow-sm disabled:opacity-60 ${
+                    selectedInvoice.hasCustomCertPdf
+                      ? 'bg-neutral-800 hover:bg-neutral-700 text-white border-neutral-700'
+                      : 'bg-sky-600 hover:bg-sky-500 text-white border-sky-500/50 shadow-[0_0_12px_rgba(2,132,199,0.3)]'
+                  }`}
                 >
-                  <FileUp className="w-3.5 h-3.5 text-[#38E044]" />
-                  <span>{t('admin.factures.step2BtnSelect')}</span>
+                  {uploadingInvoiceId === selectedInvoice.id ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 text-white animate-spin" />
+                      <span>Téléversement en cours...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileUp className={`w-3.5 h-3.5 ${selectedInvoice.hasCustomCertPdf ? 'text-neutral-400' : 'text-white'}`} />
+                      <span>
+                        {selectedInvoice.hasCustomCertPdf
+                          ? 'Remplacer par un autre PDF certifié'
+                          : 'Uploader la Facture Certifiée'}
+                      </span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

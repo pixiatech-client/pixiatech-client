@@ -275,6 +275,7 @@ export async function getProducts(options: { page?: number; limit?: number } = {
           rentalPricePerDay: parseFloat(data.prixLocationJour || data.rentalPricePerDay || 0),
           rentalPricePerHour: parseFloat(data.prixLocationHeure || data.rentalPricePerHour || 0),
           productUrl: data.pdfUrl || data.productUrl || '',
+          screenType: (data.screenType || 'flat').toLowerCase(),
           isHidden: !!data.isHidden,
           upsellFor: data.upsellFor || [],
         } as Product;

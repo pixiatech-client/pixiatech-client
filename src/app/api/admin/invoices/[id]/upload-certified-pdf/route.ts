@@ -60,6 +60,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const currentStatus = currentData.status || 'pending';
     const newStatus = currentStatus === 'completed' ? 'completed' : 'in_progress';
 
+    const uploadedAt = new Date().toISOString();
     await invoiceRef.update({
       pdfContent: base64,
       pdfSize: buffer.length,
@@ -67,8 +68,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       certPdfName: fileName,
       hasPdf: true,
       status: newStatus,
-      certifiedUploadedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      certifiedUploadedAt: uploadedAt,
+      updatedAt: uploadedAt,
     });
 
     try {
@@ -82,6 +83,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       certPdfName: fileName,
       pdfSize: buffer.length,
       status: newStatus,
+      certifiedUploadedAt: uploadedAt,
     });
   } catch (err: any) {
     console.error('[UploadCertifiedPdf] Error:', err);
